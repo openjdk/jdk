@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public class stop002t {
     volatile boolean stopLooping2 = false;
     volatile static int testNumReady = 0;
     static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+    static Thread testThread = null;
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
@@ -54,7 +55,8 @@ public class stop002t {
         log = argHandler.createDebugeeLog();
         pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(stop002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(stop002.DEBUGGEE_THRNAME);
 
         // non-throwable object which will be used by debugger
         // as wrong parameter of JDI method ThreadReference.stop()

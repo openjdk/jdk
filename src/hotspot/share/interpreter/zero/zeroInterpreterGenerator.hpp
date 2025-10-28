@@ -29,7 +29,6 @@
 // of the Zero interpreter generator.
 
 # include "entry_zero.hpp"
-// # include "interpreter/interp_masm.hpp"
 
 class ZeroInterpreterGenerator: public AbstractInterpreterGenerator {
 

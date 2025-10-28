@@ -405,10 +405,19 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
       JCOV_FILTERS="$with_jcov_filters"
     fi
   fi
+
+  UTIL_ARG_WITH(NAME: jcov-modules, TYPE: string,
+      DEFAULT: [], RESULT: JCOV_MODULES_COMMMA_SEPARATED,
+      DESC: [which modules to include in jcov (comma-separated)],
+      OPTIONAL: true)
+
+  # Replace ","  with " ".
+  JCOV_MODULES=${JCOV_MODULES_COMMMA_SEPARATED//,/ }
   AC_SUBST(JCOV_ENABLED)
   AC_SUBST(JCOV_HOME)
   AC_SUBST(JCOV_INPUT_JDK)
   AC_SUBST(JCOV_FILTERS)
+  AC_SUBST(JCOV_MODULES)
 ])
 
 ################################################################################
@@ -472,6 +481,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 
 ################################################################################
 #
+# Static analyzer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
+[
+  UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
+      DESC: [enable the GCC static analyzer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if static analyzer is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        STATIC_ANALYZER_CFLAGS="-fanalyzer -Wno-analyzer-fd-leak"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $STATIC_ANALYZER_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $STATIC_ANALYZER_CFLAGS"
+      ])
+  AC_SUBST(STATIC_ANALYZER_ENABLED)
+])
+
+################################################################################
+#
 # LeakSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
@@ -520,8 +554,26 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # Silence them for now.
   UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base -fno-sanitize=alignment \
       $ADDITIONAL_UBSAN_CHECKS"
-  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -Wno-array-bounds -Wno-stringop-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-array-bounds -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -Wno-format-overflow -Wno-stringop-overflow -Wno-stringop-truncation"
+  fi
   UBSAN_LDFLAGS="$UBSAN_CHECKS"
+  # On AIX, the llvm_symbolizer is not found out of the box, so we have to provide the
+  # full qualified llvm_symbolizer path in the __ubsan_default_options() function in
+  # make/data/ubsan/ubsan_default_options.c. To get it there we compile our sources
+  # with an additional define LLVM_SYMBOLIZER, which we set here.
+  # To calculate the correct llvm_symbolizer path we can use the location of the compiler, because
+  # their relation is fixed.
+  # In the ubsan case we have to link every binary with the C++-compiler as linker, because inherently
+  # the C-Compiler and the C++-compiler used as linker provide a different set of ubsan exports.
+  # Linking an executable with the C-compiler and one of its shared libraries with the C++-compiler
+  # leeds to unresolved symbols.
+  if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+    UBSAN_LDFLAGS="$UBSAN_LDFLAGS -Wl,-bbigtoc"
+    LD="$LDCXX"
+  fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [

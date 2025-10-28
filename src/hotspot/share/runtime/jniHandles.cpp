@@ -335,16 +335,16 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
     } else {
       block = new JNIHandleBlock();
     }
-    Atomic::inc(&_blocks_allocated);
+    AtomicAccess::inc(&_blocks_allocated);
     block->zap();
   }
   block->_top = 0;
   block->_next = nullptr;
   block->_pop_frame_link = nullptr;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
-  debug_only(block->_last = nullptr);
-  debug_only(block->_free_list = nullptr);
-  debug_only(block->_allocate_before_rebuild = -1);
+  DEBUG_ONLY(block->_last = nullptr);
+  DEBUG_ONLY(block->_free_list = nullptr);
+  DEBUG_ONLY(block->_allocate_before_rebuild = -1);
   return block;
 }
 
@@ -372,7 +372,7 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
     DEBUG_ONLY(block->set_pop_frame_link(nullptr));
     while (block != nullptr) {
       JNIHandleBlock* next = block->_next;
-      Atomic::dec(&_blocks_allocated);
+      AtomicAccess::dec(&_blocks_allocated);
       assert(block->pop_frame_link() == nullptr, "pop_frame_link should be null");
       delete block;
       block = next;

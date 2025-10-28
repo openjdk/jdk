@@ -67,6 +67,7 @@ public:
   ciConstant field_value_by_offset(int field_offset);
 
   ciKlass* java_lang_Class_klass();
+  char* java_lang_String_str(char* buf, size_t buflen);
 };
 
 #endif // SHARE_CI_CIINSTANCE_HPP

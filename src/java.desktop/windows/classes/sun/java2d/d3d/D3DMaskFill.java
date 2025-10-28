@@ -36,7 +36,7 @@ import sun.java2d.pipe.BufferedMaskFill;
 import static sun.java2d.loops.CompositeType.*;
 import static sun.java2d.loops.SurfaceType.*;
 
-class D3DMaskFill extends BufferedMaskFill {
+final class D3DMaskFill extends BufferedMaskFill {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

@@ -105,6 +105,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLSecurityManager;
@@ -131,7 +132,7 @@ import org.xml.sax.XMLReader;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class XSDHandler {
 
@@ -735,7 +736,8 @@ public class XSDHandler {
         fAnnotationValidator.setFeature(XMLSCHEMA_VALIDATION, true);
         fAnnotationValidator.setProperty(XMLGRAMMAR_POOL, fGrammarBucketAdapter);
         /** set security manager and XML Security Property Manager **/
-        fAnnotationValidator.setProperty(SECURITY_MANAGER, (fSecurityManager != null) ? fSecurityManager : new XMLSecurityManager(true));
+        fAnnotationValidator.setProperty(SECURITY_MANAGER,
+                (fSecurityManager != null) ? fSecurityManager : JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
         fAnnotationValidator.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
         /** Set error handler. **/
         fAnnotationValidator.setProperty(ERROR_HANDLER, (fErrorHandler != null) ? fErrorHandler : new DefaultErrorHandler());

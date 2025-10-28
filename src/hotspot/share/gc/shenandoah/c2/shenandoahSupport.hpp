@@ -62,8 +62,12 @@ private:
                             PhaseIdealLoop* phase, int flags);
   static void call_lrb_stub(Node*& ctrl, Node*& val, Node* load_addr,
                             DecoratorSet decorators, PhaseIdealLoop* phase);
+
+  static void collect_nodes_above_barrier(Unique_Node_List &nodes_above_barrier, PhaseIdealLoop* phase, Node* ctrl,
+                                          Node* init_raw_mem);
+
   static void test_in_cset(Node*& ctrl, Node*& not_cset_ctrl, Node* val, Node* raw_mem, PhaseIdealLoop* phase);
-  static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& uses_to_ignore, uint last, PhaseIdealLoop* phase);
+  static void fix_ctrl(Node* barrier, Node* region, const MemoryGraphFixer& fixer, Unique_Node_List& uses, Unique_Node_List& nodes_above_barrier, uint last, PhaseIdealLoop* phase);
 
   static Node* get_load_addr(PhaseIdealLoop* phase, VectorSet& visited, Node* lrb);
 public:
@@ -76,6 +80,11 @@ public:
   static bool expand(Compile* C, PhaseIterGVN& igvn);
   static void pin_and_expand(PhaseIdealLoop* phase);
 
+  static void push_data_inputs_at_control(PhaseIdealLoop* phase, Node* n, Node* ctrl,
+                                          Unique_Node_List &wq);
+  static bool is_anti_dependent_load_at_control(PhaseIdealLoop* phase, Node* maybe_load, Node* store, Node* control);
+
+  static void maybe_push_anti_dependent_loads(PhaseIdealLoop* phase, Node* maybe_store, Node* control, Unique_Node_List &wq);
 #ifdef ASSERT
   static void verify(RootNode* root);
 #endif

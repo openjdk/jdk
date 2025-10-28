@@ -23,9 +23,9 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -62,7 +62,7 @@ public:
 
   void update_all() {
     size_t committed = _monitoring_support->young_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 
@@ -83,7 +83,7 @@ public:
 
   void update_all() {
     size_t committed = _monitoring_support->old_gen_committed();
-    GenerationCounters::update_all(committed);
+    GenerationCounters::update_capacity(committed);
   }
 };
 

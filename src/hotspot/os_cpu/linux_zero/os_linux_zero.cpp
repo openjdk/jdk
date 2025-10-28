@@ -24,7 +24,6 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -36,6 +35,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -209,6 +209,11 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   } else {
     return frame(nullptr, nullptr);
   }
+}
+
+intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
+  ShouldNotCallThis();
+  return nullptr;
 }
 
 bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,

@@ -186,27 +186,36 @@ public abstract class FeaturePropertyBase {
 
 
     /**
-     * Read from system properties, or those in jaxp.properties
+     * Reads the system property, and sets the value if successful.
      *
      * @param property the property
      * @param systemProperty the name of the system property
      */
-    void getSystemProperty(Enum<?> property, String systemProperty) {
-        try {
-            String value = System.getProperty(systemProperty);
-            if (value != null) {
-                values[property.ordinal()] = value;
-                states[property.ordinal()] = State.SYSTEMPROPERTY;
-                return;
-            }
-
-            value = SecuritySupport.readConfig(systemProperty);
-            if (value != null) {
-                values[property.ordinal()] = value;
-                states[property.ordinal()] = State.JAXPDOTPROPERTIES;
-            }
-        } catch (NumberFormatException e) {
-            //invalid setting ignored
+    boolean getSystemProperty(Enum<?> property, String systemProperty) {
+        String value = System.getProperty(systemProperty);
+        if (value != null) {
+            values[property.ordinal()] = value;
+            states[property.ordinal()] = State.SYSTEMPROPERTY;
+            return true;
         }
+        return false;
+    }
+
+    /**
+     * Reads the property from the JAXP Configuration File.
+     *
+     * @param property the property
+     * @param sysPropertyName the name of the system property
+     * @return true if the property is read successfully from the JAXP Config,
+     * false otherwise.
+     */
+    boolean getPropertyConfig(Enum<?> property, String sysPropertyName) {
+        String value = SecuritySupport.readConfig(sysPropertyName);
+        if (value != null) {
+            values[property.ordinal()] = value;
+            states[property.ordinal()] = State.JAXPDOTPROPERTIES;
+            return true;
+        }
+        return false;
     }
 }

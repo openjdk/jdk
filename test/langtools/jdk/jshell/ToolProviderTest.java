@@ -29,8 +29,8 @@ import java.util.function.Function;
 import javax.tools.Tool;
 import jdk.internal.jshell.tool.JShellToolProvider;
 import jdk.jshell.tool.JavaShellToolBuilder;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
@@ -40,11 +40,11 @@ import static org.testng.Assert.assertTrue;
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool:+open
+ *          jdk.jshell/jdk.internal.jshell.tool.resources:+open
  * @library /tools/lib
  * @build Compiler toolbox.ToolBox
- * @run testng ToolProviderTest
+ * @run junit/othervm --patch-module jdk.jshell=${test.src}/StartOptionTest-module-patch ToolProviderTest
  */
-@Test
 public class ToolProviderTest extends StartOptionTest {
 
     // Through the provider, the console and console go to command out (we assume,
@@ -72,10 +72,20 @@ public class ToolProviderTest extends StartOptionTest {
     }
 
     @Override
+    protected void startCheckCommandUserOutput(Consumer<String> checkCommandOutput,
+            Consumer<String> checkUserOutput,
+            Consumer<String> checkCombinedCommandUserOutput,
+            String... args) {
+        runShell(args);
+        check(cmdout, checkCombinedCommandUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    @Override
     protected int runShell(String... args) {
         //make sure the JShell running during the test is not using persisted preferences from the machine:
         Function<JavaShellToolBuilder, JavaShellToolBuilder> prevAugmentedToolBuilder =
-                getAndSetAugmentedToolBuilder(builder -> builder.persistence(new HashMap<>()));
+                getAndSetAugmentedToolBuilder(builder -> builder.persistence(getThisTestPersistence()));
         try {
             ServiceLoader<Tool> sl = ServiceLoader.load(Tool.class);
             for (Tool provider : sl) {
@@ -91,6 +101,7 @@ public class ToolProviderTest extends StartOptionTest {
 
     // Test --show-version
     @Override
+    @Test
     public void testShowVersion() {
         startCo(s -> {
             assertTrue(s.startsWith("jshell "), "unexpected version: " + s);

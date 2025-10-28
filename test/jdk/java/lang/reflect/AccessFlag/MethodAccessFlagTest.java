@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static java.lang.reflect.AccessFlag.*;
 
 /*
  * Method modifiers include:
@@ -49,7 +54,7 @@ import java.lang.reflect.*;
  * Method parameters can be final, synthetic, and mandated.
  */
 public abstract class MethodAccessFlagTest {
-    @ExpectedMethodFlags("[PUBLIC, STATIC, VARARGS]")
+    @ExpectedMethodFlags({PUBLIC, STATIC, VARARGS})
     public static void main(String... args) {
         for (var ctor :
                  MethodAccessFlagTest.class.getDeclaredConstructors()) {
@@ -136,11 +141,17 @@ public abstract class MethodAccessFlagTest {
     }
 
     private static void checkExecutable(Executable method) {
-        ExpectedMethodFlags emf =
+        ExpectedMethodFlags expected =
             method.getAnnotation(ExpectedMethodFlags.class);
-        if (emf != null) {
-            String actual = method.accessFlags().toString();
-            checkString(method.toString(), emf.value(), actual);
+        if (expected != null) {
+            Set<AccessFlag> base = EnumSet.noneOf(AccessFlag.class);
+            Collections.addAll(base, expected.value());
+            Set<AccessFlag> actual = method.accessFlags();
+            if (!base.equals(actual)) {
+                throw new RuntimeException("On " + method +
+                        " expected " + base +
+                        " got " + actual);
+            }
         }
     }
 
@@ -155,33 +166,33 @@ public abstract class MethodAccessFlagTest {
     }
 
     // Constructors
-    @ExpectedMethodFlags("[PUBLIC]")
+    @ExpectedMethodFlags({PUBLIC})
     public MethodAccessFlagTest() {}
 
-    @ExpectedMethodFlags("[PROTECTED]")
+    @ExpectedMethodFlags({PROTECTED})
     protected MethodAccessFlagTest(int i) {super();}
 
-    @ExpectedMethodFlags("[PRIVATE]")
+    @ExpectedMethodFlags({PRIVATE})
     private MethodAccessFlagTest(String s) {super();}
 
     // Methods
-    @ExpectedMethodFlags("[PROTECTED, SYNCHRONIZED]")
+    @ExpectedMethodFlags({PROTECTED, SYNCHRONIZED})
     protected synchronized void m0() {}
 
-    @ExpectedMethodFlags("[PRIVATE]")
+    @ExpectedMethodFlags({PRIVATE})
     private void m1() {}
 
-    @ExpectedMethodFlags("[ABSTRACT]")
+    @ExpectedMethodFlags({ABSTRACT})
     abstract void m2();
 
-    @ExpectedMethodFlags("[PUBLIC, FINAL]")
+    @ExpectedMethodFlags({PUBLIC, FINAL})
     public final void m3() {}
 
-    @ExpectedMethodFlags("[NATIVE]")
+    @ExpectedMethodFlags({NATIVE})
     native void m4();
 
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ExpectedMethodFlags {
-        String value();
+        AccessFlag[] value();
     }
 }

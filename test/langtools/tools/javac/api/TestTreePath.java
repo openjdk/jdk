@@ -116,7 +116,9 @@ public class TestTreePath extends AbstractProcessor {
                         null, null, null,
                         Arrays.asList("-processor", this.getClass().getName()), null,
                         tests);
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
         }
     }
 

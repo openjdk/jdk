@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,9 @@ import nsk.share.jdi.*;
 public class getvalues003t {
     private Log log;
     private IOPipe pipe;
-    private OtherThr auxThr;
+
+    static Thread mainThread = null;
+    static OtherThr auxThr = null;
 
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
@@ -51,7 +53,8 @@ public class getvalues003t {
         log = argHandler.createDebugeeLog();
         pipe = argHandler.createDebugeeIOPipe();
 
-        Thread.currentThread().setName(getvalues003.DEBUGGEE_THRDNAMES[0]);
+        mainThread = Thread.currentThread();
+        mainThread.setName(getvalues003.DEBUGGEE_MAIN_THREAD_NAME);
         startThread();
 
         // dummy local vars used by debugger for testing
@@ -90,8 +93,7 @@ public class getvalues003t {
     private void startThread() {
         Object readyObj = new Object();
 
-        auxThr = new OtherThr(readyObj,
-            getvalues003.DEBUGGEE_THRDNAMES[1]);
+        auxThr = new OtherThr(readyObj, getvalues003.DEBUGGEE_AUX_THREAD_NAME);
         auxThr.setDaemon(true);
 
         log.display("Debuggee: starting thread \""

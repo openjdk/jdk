@@ -42,6 +42,7 @@ public final class XMouseInfoPeer implements MouseInfoPeer {
     XMouseInfoPeer() {
     }
 
+    @Override
     public int fillPointWithCoords(Point point) {
         long display = XToolkit.getDisplay();
         GraphicsEnvironment ge = GraphicsEnvironment.
@@ -83,6 +84,7 @@ public final class XMouseInfoPeer implements MouseInfoPeer {
         return 0;
     }
 
+    @Override
     public boolean isWindowUnderMouse(Window w) {
         if (w == null) {
             return false;

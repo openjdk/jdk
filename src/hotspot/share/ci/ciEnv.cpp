@@ -217,7 +217,7 @@ public:
   void push_va(ciEnv* ci, const char* fmt, va_list args) {
     char *e = ci->_dyno_name + strlen(ci->_dyno_name);
     char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
-    os::vsnprintf(e, m - e, fmt, args);
+    (void) os::vsnprintf(e, m - e, fmt, args);
     assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
   }
 
@@ -1159,6 +1159,13 @@ int ciEnv::compile_id() {
 // ciEnv::notice_inlined_method()
 void ciEnv::notice_inlined_method(ciMethod* method) {
   _num_inlined_bytecodes += method->code_size_for_inlining();
+  CompileTrainingData* ctd = task()->training_data();
+  if (ctd != nullptr) {
+    GUARDED_VM_ENTRY({
+      methodHandle mh(Thread::current(), method->get_Method());
+      ctd->notice_inlined_method(task(), mh);
+    });
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1170,6 +1177,15 @@ int ciEnv::num_inlined_bytecodes() const {
 // ------------------------------------------------------------------
 // ciEnv::record_failure()
 void ciEnv::record_failure(const char* reason) {
+  // record the bailout for hserr envlog
+  if (reason != nullptr) {
+    if (CompilationLog::log() != nullptr) {
+      CompilerThread* thread = CompilerThread::current();
+      CompileTask* task = thread->task();
+      CompilationLog::log()->log_failure(thread, task, reason, nullptr);
+    }
+  }
+
   if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
     _failure_reason.set(reason);

@@ -1,4 +1,4 @@
-## Harfbuzz v10.4.0
+## Harfbuzz 11.2.0
 
 ### Harfbuzz License
 

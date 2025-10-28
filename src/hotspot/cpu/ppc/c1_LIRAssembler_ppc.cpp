@@ -191,7 +191,7 @@ int LIR_Assembler::emit_exception_handler() {
   }
 
   int offset = code_offset();
-  address entry_point = CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::handle_exception_from_callee_id));
+  address entry_point = CAST_FROM_FN_PTR(address, Runtime1::entry_for(StubId::c1_handle_exception_from_callee_id));
   //__ load_const_optimized(R0, entry_point);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(entry_point));
   __ mtctr(R0);
@@ -227,12 +227,8 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R4_opr);
-    stub = new MonitorExitStub(FrameMap::R4_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ b(*stub->entry());
-    } else {
-      __ unlock_object(R5, R6, R4, *stub->entry());
-    }
+    stub = new MonitorExitStub(FrameMap::R4_opr, 0);
+    __ unlock_object(R5, R6, R4, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -241,7 +237,7 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   // Dispatch to the unwind logic.
-  address unwind_stub = Runtime1::entry_for(C1StubId::unwind_exception_id);
+  address unwind_stub = Runtime1::entry_for(StubId::c1_unwind_exception_id);
   //__ load_const_optimized(R0, unwind_stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(unwind_stub));
   if (preserve_exception) { __ mr(Rexception, Rexception_save); }
@@ -538,48 +534,32 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       __ extsh(dst->as_register(), src->as_register());
       break;
     }
-    case Bytecodes::_i2d:
-    case Bytecodes::_l2d: {
-      bool src_in_memory = !VM_Version::has_mtfprd();
+    case Bytecodes::_i2d:{
       FloatRegister rdst = dst->as_double_reg();
-      FloatRegister rsrc;
-      if (src_in_memory) {
-        rsrc = src->as_double_reg(); // via mem
-      } else {
-        // move src to dst register
-        if (code == Bytecodes::_i2d) {
-          __ mtfprwa(rdst, src->as_register());
-        } else {
-          __ mtfprd(rdst, src->as_register_lo());
-        }
-        rsrc = rdst;
-      }
-      __ fcfid(rdst, rsrc);
+      // move src to dst register
+      __ mtfprwa(rdst, src->as_register());
+      __ fcfid(rdst, rdst);
       break;
     }
-    case Bytecodes::_i2f:
-    case Bytecodes::_l2f: {
-      bool src_in_memory = !VM_Version::has_mtfprd();
+    case Bytecodes::_l2d: {
+      FloatRegister rdst = dst->as_double_reg();
+      // move src to dst register
+      __ mtfprd(rdst, src->as_register_lo());
+      __ fcfid(rdst, rdst);
+      break;
+    }
+    case Bytecodes::_i2f:{
       FloatRegister rdst = dst->as_float_reg();
-      FloatRegister rsrc;
-      if (src_in_memory) {
-        rsrc = src->as_double_reg(); // via mem
-      } else {
-        // move src to dst register
-        if (code == Bytecodes::_i2f) {
-          __ mtfprwa(rdst, src->as_register());
-        } else {
-          __ mtfprd(rdst, src->as_register_lo());
-        }
-        rsrc = rdst;
-      }
-      if (VM_Version::has_fcfids()) {
-        __ fcfids(rdst, rsrc);
-      } else {
-        assert(code == Bytecodes::_i2f, "fcfid+frsp needs fixup code to avoid rounding incompatibility");
-        __ fcfid(rdst, rsrc);
-        __ frsp(rdst, rdst);
-      }
+      // move src to dst register
+      __ mtfprwa(rdst, src->as_register());
+      __ fcfids(rdst, rdst);
+      break;
+    }
+    case Bytecodes::_l2f: {
+      FloatRegister rdst = dst->as_float_reg();
+      // move src to dst register
+      __ mtfprd(rdst, src->as_register_lo());
+      __ fcfids(rdst, rdst);
       break;
     }
     case Bytecodes::_f2d: {
@@ -592,49 +572,27 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     }
     case Bytecodes::_d2i:
     case Bytecodes::_f2i: {
-      bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2i) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
-      if (dst_in_memory) {
-        __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr);
-      } else {
-        __ li(dst->as_register(), 0);
-      }
+      __ li(dst->as_register(), 0);
       __ bso(CR0, L);
       __ fctiwz(rsrc, rsrc); // USE_KILL
-      if (dst_in_memory) {
-        __ stfd(rsrc, addr.disp(), addr.base());
-      } else {
-        __ mffprd(dst->as_register(), rsrc);
-      }
+      __ mffprd(dst->as_register(), rsrc);
       __ bind(L);
       break;
     }
     case Bytecodes::_d2l:
     case Bytecodes::_f2l: {
-      bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CR0, rsrc, rsrc);
-      if (dst_in_memory) {
-        __ li(R0, 0); // 0 in case of NAN
-        __ std(R0, addr);
-      } else {
-        __ li(dst->as_register_lo(), 0);
-      }
+      __ li(dst->as_register_lo(), 0);
       __ bso(CR0, L);
       __ fctidz(rsrc, rsrc); // USE_KILL
-      if (dst_in_memory) {
-        __ stfd(rsrc, addr.disp(), addr.base());
-      } else {
-        __ mffprd(dst->as_register_lo(), rsrc);
-      }
+      __ mffprd(dst->as_register_lo(), rsrc);
       __ bind(L);
       break;
     }
@@ -1581,8 +1539,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     default:                    ShouldNotReachHere();
   }
 
-  // Try to use isel on >=Power7.
-  if (VM_Version::has_isel() && result->is_cpu_register()) {
+  if (result->is_cpu_register()) {
     bool o1_is_reg = opr1->is_cpu_register(), o2_is_reg = opr2->is_cpu_register();
     const Register result_reg = result->is_single_cpu() ? result->as_register() : result->as_register_lo();
 
@@ -1827,8 +1784,8 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   __ calculate_address_from_global_toc(exceptionPC->as_register(), pc_for_athrow, true, true, /*add_relocation*/ true);
   add_call_info(pc_for_athrow_offset, info); // for exception handler
 
-  address stub = Runtime1::entry_for(compilation()->has_fpu_code() ? C1StubId::handle_exception_id
-                                                                   : C1StubId::handle_exception_nofpu_id);
+  address stub = Runtime1::entry_for(compilation()->has_fpu_code() ? StubId::c1_handle_exception_id
+                                                                   : StubId::c1_handle_exception_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mtctr(R0);
@@ -2019,7 +1976,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ check_klass_subtype_fast_path(sub_klass, super_klass, tmp, tmp2,
                                        &cont, copyfunc_addr != nullptr ? &copyfunc : &slow, nullptr);
 
-      address slow_stc = Runtime1::entry_for(C1StubId::slow_subtype_check_id);
+      address slow_stc = Runtime1::entry_for(StubId::c1_slow_subtype_check_id);
       //__ load_const_optimized(tmp, slow_stc, tmp2);
       __ calculate_address_from_global_toc(tmp, slow_stc, true, true, false);
       __ mtctr(tmp);
@@ -2447,7 +2404,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ b(*success);
     } else {
       // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
-      address entry = Runtime1::entry_for(C1StubId::slow_subtype_check_id);
+      address entry = Runtime1::entry_for(StubId::c1_slow_subtype_check_id);
       // Stub needs fixed registers (tmp1-3).
       Register original_k_RInfo = op->tmp1()->as_register();
       Register original_klass_RInfo = op->tmp2()->as_register();
@@ -2538,7 +2495,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, R0, &done, &failure, nullptr);
 
     // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
-    const address slow_path = Runtime1::entry_for(C1StubId::slow_subtype_check_id);
+    const address slow_path = Runtime1::entry_for(StubId::c1_slow_subtype_check_id);
     //__ load_const_optimized(R0, slow_path);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(slow_path));
     __ mtctr(R0);
@@ -2657,44 +2614,18 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (LockingMode != LM_MONITOR) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      // Add debug info for NullPointerException only if one is possible.
-      if (op->info() != nullptr) {
-        if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
-          explicit_null_check(obj, op->info());
-        } else {
-          add_debug_info_for_null_check_here(op->info());
-        }
-      }
-      __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
-    } else {
-      // always do slow locking
-      // note: The slow locking code could be inlined here, however if we use
-      //       slow locking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow locking code is the same in either case which simplifies
-      //       debugging.
-      if (op->info() != nullptr) {
+    // Add debug info for NullPointerException only if one is possible.
+    if (op->info() != nullptr) {
+      if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
+        explicit_null_check(obj, op->info());
+      } else {
         add_debug_info_for_null_check_here(op->info());
-        __ null_check(obj);
       }
-      __ b(*op->stub()->entry());
     }
+    __ lock_object(hdr, obj, lock, op->scratch_opr()->as_register(), *op->stub()->entry());
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (LockingMode != LM_MONITOR) {
-      assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-      __ unlock_object(hdr, obj, lock, *op->stub()->entry());
-    } else {
-      // always do slow unlocking
-      // note: The slow unlocking code could be inlined here, however if we use
-      //       slow unlocking, speed doesn't matter anyway and this solution is
-      //       simpler and requires less duplicated code - additionally, the
-      //       slow unlocking code is the same in either case which simplifies
-      //       debugging.
-      __ b(*op->stub()->entry());
-    }
+    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2814,11 +2745,6 @@ void LIR_Assembler::align_backward_branch_target() {
 }
 
 
-void LIR_Assembler::emit_delay(LIR_OpDelay* op) {
-  Unimplemented();
-}
-
-
 void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
   // tmp must be unused
   assert(tmp->is_illegal(), "wasting a register if tmp is allocated");
@@ -2840,9 +2766,9 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
 void LIR_Assembler::rt_call(LIR_Opr result, address dest,
                             const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   // Stubs: Called via rt_call, but dest is a stub address (no FunctionDescriptor).
-  if (dest == Runtime1::entry_for(C1StubId::register_finalizer_id) ||
-      dest == Runtime1::entry_for(C1StubId::new_multi_array_id   ) ||
-      dest == Runtime1::entry_for(C1StubId::is_instance_of_id    )) {
+  if (dest == Runtime1::entry_for(StubId::c1_register_finalizer_id) ||
+      dest == Runtime1::entry_for(StubId::c1_new_multi_array_id   ) ||
+      dest == Runtime1::entry_for(StubId::c1_is_instance_of_id    )) {
     assert(CodeCache::contains(dest), "simplified call is only for special C1 stubs");
     //__ load_const_optimized(R0, dest);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(dest));

@@ -51,7 +51,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  *
  * @author Michael C. Albers
  */
-public class WindowsProgressBarUI extends BasicProgressBarUI
+public final class WindowsProgressBarUI extends BasicProgressBarUI
 {
 
     private Rectangle previousFullBox;
@@ -62,6 +62,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
     }
 
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -80,6 +81,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */
+    @Override
     public int getBaseline(JComponent c, int width, int height) {
         int baseline = super.getBaseline(c, width, height);
         if (XPStyle.getXP() != null && progressBar.isStringPainted() &&
@@ -102,6 +104,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
         return baseline;
     }
 
+    @Override
     protected Dimension getPreferredInnerHorizontal() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -113,6 +116,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
          return super.getPreferredInnerHorizontal();
     }
 
+    @Override
     protected Dimension getPreferredInnerVertical() {
          XPStyle xp = XPStyle.getXP();
          if (xp != null) {
@@ -124,6 +128,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
          return super.getPreferredInnerVertical();
     }
 
+    @Override
     protected void paintDeterminate(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -218,6 +223,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void setAnimationIndex(int newValue) {
         super.setAnimationIndex(newValue);
         XPStyle xp = XPStyle.getXP();
@@ -241,6 +247,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected int getBoxLength(int availableLength, int otherDimension) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -253,6 +260,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected Rectangle getBox(Rectangle r) {
         Rectangle rect = super.getBox(r);
 
@@ -298,6 +306,7 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
     }
 
 
+    @Override
     protected void paintIndeterminate(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {

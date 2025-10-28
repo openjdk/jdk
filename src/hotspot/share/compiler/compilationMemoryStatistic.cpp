@@ -37,7 +37,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/checkedCast.hpp"
@@ -158,10 +158,10 @@ void FootprintTimeline::print_on(outputStream* st) const {
       st->print("%24s", e.info.text);
       col += 25; st->fill_to(col);
       char tmp[64];
-      os::snprintf(tmp, sizeof(tmp), "%9zu (%+zd)", e._bytes.cur, e._bytes.end_delta());
+      os::snprintf_checked(tmp, sizeof(tmp), "%9zu (%+zd)", e._bytes.cur, e._bytes.end_delta());
       st->print("%s ", tmp); // end
       col += 21; st->fill_to(col);
-      os::snprintf(tmp, sizeof(tmp), "%6u (%+d)", e._live_nodes.cur, e._live_nodes.end_delta());
+      os::snprintf_checked(tmp, sizeof(tmp), "%6u (%+d)", e._live_nodes.cur, e._live_nodes.end_delta());
       st->print("%s ", tmp); // end
       if (e._bytes.temporary_peak_size() > significant_peak_threshold) {
         col += 20; st->fill_to(col);
@@ -374,7 +374,7 @@ void ArenaStatCounter::on_arena_chunk_deallocation(size_t size, uint64_t stamp) 
 void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   st->print("Total Usage: %zu ", _peak);
   if (_peak > 0) {
-#ifdef COMPILER2
+#ifdef COMPILER1
     // C1: print allocations broken down by arena types
     if (_comp_type == CompilerType::compiler_c1) {
       st->print("[");
@@ -396,16 +396,16 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
 #ifdef COMPILER2
     // C2: print counters and timeline on multiple lines, indented
     if (_comp_type == CompilerType::compiler_c2) {
-      streamIndentor si(st, 4);
+      StreamIndentor si(st, 4);
       st->cr();
       st->print_cr("--- Arena Usage by Arena Type and compilation phase, at arena usage peak of %zu ---", _peak);
       {
-        streamIndentor si(st, 4);
+        StreamIndentor si(st, 4);
        _counters_at_global_peak.print_on(st);
       }
       st->print_cr("--- Allocation timelime by phase ---");
       {
-        streamIndentor si(st, 4);
+        StreamIndentor si(st, 4);
         _timeline.print_on(st);
       }
       st->print_cr("---");
@@ -825,7 +825,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (print) {
     // Pre-assemble string to prevent tearing
     stringStream ss;
-    StreamAutoIndentor sai(&ss);
     ss.print("%s (%d) (%s) Arena usage ", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id(), result);
     arena_stat->fmn().print_on(&ss);
     ss.print_raw(": ");
@@ -903,7 +902,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int aren
         // Store this ArenaStat. If other threads also run into OOMs, let them sleep.
         // We will never return, so the global store will not contain this info. We will
         // print the stored ArenaStat in hs-err (see print_error_report)
-        if (Atomic::cmpxchg(&_arenastat_oom_crash, (ArenaStatCounter*) nullptr, arena_stat) != nullptr) {
+        if (AtomicAccess::cmpxchg(&_arenastat_oom_crash, (ArenaStatCounter*) nullptr, arena_stat) != nullptr) {
           os::infinite_sleep();
         }
       }
@@ -993,16 +992,15 @@ static bool check_before_reporting(outputStream* st) {
 }
 
 bool CompilationMemoryStatistic::in_oom_crash() {
-  return Atomic::load(&_arenastat_oom_crash) != nullptr;
+  return AtomicAccess::load(&_arenastat_oom_crash) != nullptr;
 }
 
 void CompilationMemoryStatistic::print_error_report(outputStream* st) {
   if (!check_before_reporting(st)) {
     return;
   }
-  StreamAutoIndentor sai(tty);
-  streamIndentor si(tty, 4);
-  const ArenaStatCounter* const oom_stats = Atomic::load(&_arenastat_oom_crash);
+  StreamIndentor si(tty, 4);
+  const ArenaStatCounter* const oom_stats = AtomicAccess::load(&_arenastat_oom_crash);
   if (oom_stats != nullptr) {
     // we crashed due to a compiler limit hit. Lead with a printout of the offending stats
     // in detail.
@@ -1021,8 +1019,7 @@ void CompilationMemoryStatistic::print_final_report(outputStream* st) {
     return;
   }
   st->print_cr("Compiler Memory Statistic, 10 most expensive compilations:");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, false, false, 0, 10);
 }
 
@@ -1031,8 +1028,7 @@ void CompilationMemoryStatistic::print_jcmd_report(outputStream* st, bool verbos
     return;
   }
   st->print_cr("Compiler Memory Statistic");
-  StreamAutoIndentor sai(st);
-  streamIndentor si(st, 4);
+  StreamIndentor si(st, 4);
   print_all_by_size(st, verbose, legend, minsize, -1);
 }
 

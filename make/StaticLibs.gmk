@@ -111,11 +111,14 @@ else ifeq ($(call isTargetOs, aix), true)
       INFO := Generating export list for $(notdir $(lib)), \
       DEPS :=  $(lib), \
       OUTPUT_FILE := $(lib).exp, \
-      COMMAND := ( $(AR) $(ARFLAGS) -w $(lib) | $(GREP) -v '^\.' | $(AWK) '{print $$1}' | $(SORT) -u > $(lib).exp ), \
+      COMMAND := $(AR) $(ARFLAGS) -w $(lib) | $(GREP) -v '^\.' | $(AWK) '{print $$1}' | $(SORT) -u > $(lib).exp, \
     )) \
     $(eval STATIC_LIB_EXPORT_FILES += $(lib).exp) \
   )
   STATIC_LIBS := -Wl,-bexpfull $(STATIC_LIB_FILES) $(addprefix -Wl$(COMMA)-bE:, $(STATIC_LIB_EXPORT_FILES))
+  ifeq ($(DEBUG_LEVEL), slowdebug)
+    STATIC_LIBS += -Wl,-bbigtoc
+  endif
 else
   $(error Unsupported platform)
 endif

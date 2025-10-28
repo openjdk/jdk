@@ -22,10 +22,10 @@
  *
  */
 
+#include "asm/register.hpp"
+#include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/javaClasses.hpp"
-#include "ci/ciObjArray.hpp"
-#include "asm/register.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
@@ -47,8 +47,8 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.
@@ -72,8 +72,8 @@ GraphKit::GraphKit()
 {
   _exceptions = nullptr;
   set_map(nullptr);
-  debug_only(_sp = -99);
-  debug_only(set_bci(-99));
+  DEBUG_ONLY(_sp = -99);
+  DEBUG_ONLY(set_bci(-99));
 }
 
 
@@ -196,7 +196,7 @@ bool GraphKit::has_exception_handler() {
 void GraphKit::set_saved_ex_oop(SafePointNode* ex_map, Node* ex_oop) {
   assert(!has_saved_ex_oop(ex_map), "clear ex-oop before setting again");
   ex_map->add_req(ex_oop);
-  debug_only(verify_exception_state(ex_map));
+  DEBUG_ONLY(verify_exception_state(ex_map));
 }
 
 inline static Node* common_saved_ex_oop(SafePointNode* ex_map, bool clear_it) {
@@ -296,7 +296,7 @@ JVMState* GraphKit::transfer_exceptions_into_jvms() {
       _map = clone_map();
       _map->set_next_exception(nullptr);
       clear_saved_ex_oop(_map);
-      debug_only(verify_map());
+      DEBUG_ONLY(verify_map());
     } else {
       // ...or created from scratch
       JVMState* jvms = new (C) JVMState(_method, nullptr);
@@ -672,7 +672,7 @@ ciInstance* GraphKit::builtin_throw_exception(Deoptimization::DeoptReason reason
 
 //----------------------------PreserveJVMState---------------------------------
 PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
-  debug_only(kit->verify_map());
+  DEBUG_ONLY(kit->verify_map());
   _kit    = kit;
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
@@ -780,7 +780,7 @@ void GraphKit::set_map_clone(SafePointNode* m) {
   _map = m;
   _map = clone_map();
   _map->set_next_exception(nullptr);
-  debug_only(verify_map());
+  DEBUG_ONLY(verify_map());
 }
 
 
@@ -1537,7 +1537,7 @@ Node* GraphKit::memory(uint alias_idx) {
 Node* GraphKit::reset_memory() {
   Node* mem = map()->memory();
   // do not use this node for any more parsing!
-  debug_only( map()->set_memory((Node*)nullptr) );
+  DEBUG_ONLY( map()->set_memory((Node*)nullptr) );
   return _gvn.transform( mem );
 }
 
@@ -1574,7 +1574,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
   Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
   ld = _gvn.transform(ld);
@@ -1602,7 +1602,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = nullptr;
-  debug_only(adr_type = C->get_adr_type(adr_idx));
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
   if (unaligned) {
@@ -1880,14 +1880,20 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
 // after the call, if this call has restricted memory effects.
 Node* GraphKit::set_predefined_input_for_runtime_call(SafePointNode* call, Node* narrow_mem) {
   // Set fixed predefined input arguments
-  Node* memory = reset_memory();
-  Node* m = narrow_mem == nullptr ? memory : narrow_mem;
-  call->init_req( TypeFunc::Control,   control()  );
-  call->init_req( TypeFunc::I_O,       top()      ); // does no i/o
-  call->init_req( TypeFunc::Memory,    m          ); // may gc ptrs
-  call->init_req( TypeFunc::FramePtr,  frameptr() );
-  call->init_req( TypeFunc::ReturnAdr, top()      );
-  return memory;
+  call->init_req(TypeFunc::Control, control());
+  call->init_req(TypeFunc::I_O, top()); // does no i/o
+  call->init_req(TypeFunc::ReturnAdr, top());
+  if (call->is_CallLeafPure()) {
+    call->init_req(TypeFunc::Memory, top());
+    call->init_req(TypeFunc::FramePtr, top());
+    return nullptr;
+  } else {
+    Node* memory = reset_memory();
+    Node* m = narrow_mem == nullptr ? memory : narrow_mem;
+    call->init_req(TypeFunc::Memory, m); // may gc ptrs
+    call->init_req(TypeFunc::FramePtr, frameptr());
+    return memory;
+  }
 }
 
 //-------------------set_predefined_output_for_runtime_call--------------------
@@ -1905,6 +1911,11 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
                                                       const TypePtr* hook_mem) {
   // no i/o
   set_control(_gvn.transform( new ProjNode(call,TypeFunc::Control) ));
+  if (call->is_CallLeafPure()) {
+    // Pure function have only control (for now) and data output, in particular
+    // they don't touch the memory, so we don't want a memory proj that is set after.
+    return;
+  }
   if (keep_mem) {
     // First clone the existing memory state
     set_all_memory(keep_mem);
@@ -2298,16 +2309,18 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
       if (!data->as_BitData()->null_seen()) {
         ptr_kind = ProfileNeverNull;
       } else {
-        assert(data->is_ReceiverTypeData(), "bad profile data type");
-        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-        uint i = 0;
-        for (; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver != nullptr) {
-            break;
+        if (TypeProfileCasts) {
+          assert(data->is_ReceiverTypeData(), "bad profile data type");
+          ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+          uint i = 0;
+          for (; i < call->row_limit(); i++) {
+            ciKlass* receiver = call->receiver(i);
+            if (receiver != nullptr) {
+              break;
+            }
           }
+          ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
         }
-        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
       }
     }
   }
@@ -2491,6 +2504,8 @@ Node* GraphKit::make_runtime_call(int flags,
   } else  if (flags & RC_VECTOR){
     uint num_bits = call_type->range()->field_at(TypeFunc::Parms)->is_vect()->length_in_bytes() * BitsPerByte;
     call = new CallLeafVectorNode(call_type, call_addr, call_name, adr_type, num_bits);
+  } else if (flags & RC_PURE) {
+    call = new CallLeafPureNode(call_type, call_addr, call_name, adr_type);
   } else {
     call = new CallLeafNode(call_type, call_addr, call_name, adr_type);
   }
@@ -3447,8 +3462,6 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return nullptr;                // Not locking things?
   if (stopped())                // Dead monitor?
     return nullptr;
 
@@ -3511,8 +3524,6 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   // %%% SynchronizationEntryBCI is redundant; use InvocationEntryBci in interfaces
   assert(SynchronizationEntryBCI == InvocationEntryBci, "");
 
-  if( !GenerateSynchronizationCode )
-    return;
   if (stopped()) {               // Dead monitor?
     map()->pop_monitor();        // Kill monitor from debug info
     return;
@@ -3803,6 +3814,8 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     // Increase the size limit if we have exact knowledge of array type.
     int log2_esize = Klass::layout_helper_log2_element_size(layout_con);
+    assert(fast_size_limit == 0 || count_leading_zeros(fast_size_limit) > static_cast<unsigned>(LogBytesPerLong - log2_esize),
+           "fast_size_limit (%d) overflow when shifted left by %d", fast_size_limit, LogBytesPerLong - log2_esize);
     fast_size_limit <<= (LogBytesPerLong - log2_esize);
   }
 
@@ -3853,7 +3866,9 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     if (tilen != nullptr && tilen->_lo < 0) {
       // Add a manual constraint to a positive range.  Cf. array_element_address.
       jint size_max = fast_size_limit;
-      if (size_max > tilen->_hi)  size_max = tilen->_hi;
+      if (size_max > tilen->_hi && tilen->_hi >= 0) {
+        size_max = tilen->_hi;
+      }
       const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
 
       // Only do a narrow I2L conversion if the range check passed.
@@ -4050,13 +4065,20 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All
 // Runtime Predicates inside a Runtime Predicate block share the same uncommon trap as the Parse Predicate.
 void GraphKit::add_parse_predicates(int nargs) {
+  if (ShortRunningLongLoop) {
+    // Will narrow the limit down with a cast node. Predicates added later may depend on the cast so should be last when
+    // walking up from the loop.
+    add_parse_predicate(Deoptimization::Reason_short_running_long_loop, nargs);
+  }
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, nargs);
     if (UseProfiledLoopPredicate) {
       add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
     }
   }
-  add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  }
   // Loop Limit Check Predicate should be near the loop.
   add_parse_predicate(Deoptimization::Reason_loop_limit_check, nargs);
 }

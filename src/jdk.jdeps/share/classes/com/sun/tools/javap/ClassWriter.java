@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,36 @@
 
 package com.sun.tools.javap;
 
-import java.lang.reflect.AccessFlag;
-import java.net.URI;
-import java.text.DateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
-import java.lang.constant.ClassDesc;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassSignature;
-import java.lang.classfile.ClassFile;
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.ClassHierarchyResolver;
-import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
+import java.lang.reflect.ClassFileFormatVersion;
+import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import static java.lang.classfile.ClassFile.*;
 
 /*
  *  The main javap class to write the contents of a class file as text.
@@ -110,6 +113,18 @@ public class ClassWriter extends BasicWriter {
 
     protected void setMethod(MethodModel m) {
         method = m;
+    }
+
+    protected ClassFileFormatVersion cffv() {
+        var major = classModel.majorVersion();
+        if (major < JAVA_1_VERSION || major > ClassFile.latestMajorVersion())
+            // something not representable by CFFV, let's fall back
+            return ClassFileFormatVersion.latest();
+        if (major >= JAVA_12_VERSION && classModel.minorVersion() != 0) {
+            // preview versions aren't explicitly supported, but latest is good enough for now
+            return ClassFileFormatVersion.latest();
+        }
+        return ClassFileFormatVersion.fromMajor(major);
     }
 
     public boolean write(ClassModel cm) {
@@ -249,7 +264,7 @@ public class ClassWriter extends BasicWriter {
         println("}");
 
         if (options.verbose) {
-            attrWriter.write(classModel.attributes());
+            attrWriter.write(classModel.attributes(), cffv());
         }
 
         if (options.verify) {
@@ -266,10 +281,10 @@ public class ClassWriter extends BasicWriter {
     }
     // where
 
-    private static final ClassFile VERIFIER = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+    private static final ClassFile VERIFIER = ClassFile.of(ClassHierarchyResolverOption.of(
             ClassHierarchyResolver.defaultResolver().orElse(new ClassHierarchyResolver() {
                 @Override
-                public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+                public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
                     // mark all unresolved classes as interfaces to exclude them from assignability verification
                     return ClassHierarchyInfo.ofInterface();
                 }
@@ -419,7 +434,7 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = f.flags();
-        writeModifiers(flagsReportUnknown(flags).stream().filter(fl -> fl.sourceModifier())
+        writeModifiers(flagsReportUnknown(flags, cffv()).stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
                 f.findAttribute(Attributes.signature())
@@ -448,11 +463,11 @@ public class ClassWriter extends BasicWriter {
 
         if (options.verbose)
             writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
-                    flagsReportUnknown(flags).stream().map(fl -> "ACC_" + fl.name()).toList(),
+                    flagsReportUnknown(flags, cffv()).stream().map(fl -> "ACC_" + fl.name()).toList(),
                     "\n");
 
         if (options.showAllAttrs) {
-            attrWriter.write(f.attributes());
+            attrWriter.write(f.attributes(), cffv());
             showBlank = true;
         }
 
@@ -480,7 +495,7 @@ public class ClassWriter extends BasicWriter {
         int flags = m.flags().flagsMask();
 
         var modifiers = new ArrayList<String>();
-        for (var f : flagsReportUnknown(m.flags()))
+        for (var f : flagsReportUnknown(m.flags(), cffv()))
             if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
 
         String name = "???";
@@ -563,7 +578,7 @@ public class ClassWriter extends BasicWriter {
             StringBuilder sb = new StringBuilder();
             String sep = "";
             sb.append(String.format("flags: (0x%04x) ", flags));
-            for (var f : flagsReportUnknown(m.flags())) {
+            for (var f : flagsReportUnknown(m.flags(), cffv())) {
                 sb.append(sep).append("ACC_").append(f.name());
                 sep = ", ";
             }
@@ -573,7 +588,7 @@ public class ClassWriter extends BasicWriter {
         var code = (CodeAttribute)m.code().orElse(null);
 
         if (options.showAllAttrs) {
-            attrWriter.write(m.attributes());
+            attrWriter.write(m.attributes(), cffv());
         } else if (code != null && options.showDisassembled) {
             codeWriter.writeMinimal(code);
         }
@@ -786,7 +801,7 @@ public class ClassWriter extends BasicWriter {
     }
 
     private Set<String> getClassModifiers(AccessFlags flags) {
-        var flagSet = flagsReportUnknown(flags);
+        var flagSet = flagsReportUnknown(flags, cffv());
         Set<AccessFlag> set;
         if (flagSet.contains(AccessFlag.INTERFACE)) {
             set = EnumSet.copyOf(flagSet);
@@ -797,7 +812,7 @@ public class ClassWriter extends BasicWriter {
         return getModifiers(set);
     }
 
-    private static Set<String> getModifiers(Set<java.lang.reflect.AccessFlag> flags) {
+    private static Set<String> getModifiers(Set<AccessFlag> flags) {
         Set<String> s = new LinkedHashSet<>();
         for (var f : flags)
             if (f.sourceModifier()) s.add(Modifier.toString(f.mask()));
@@ -805,10 +820,10 @@ public class ClassWriter extends BasicWriter {
     }
 
     private Set<String> getClassFlags(AccessFlags flags) {
-        return getFlags(flags.flagsMask(), flagsReportUnknown(flags));
+        return getFlags(flags.flagsMask(), flagsReportUnknown(flags, cffv()));
     }
 
-    private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {
+    private static Set<String> getFlags(int mask, Set<AccessFlag> flags) {
         Set<String> s = new LinkedHashSet<>();
         for (var f: flags) {
             s.add("ACC_" + f.name());

@@ -37,6 +37,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @bug 8242165 8242162
  * @summary Test "jhsdb jinfo --sysprops", "jinfo -sysprops", and clhsdb "sysprops" commands
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestSysProps
  */

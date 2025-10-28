@@ -60,7 +60,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -149,7 +149,7 @@ void ConstantPool::release_C_heap_structures() {
 }
 
 void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(ConstantPool): %p", this);
+  log_trace(aot)("Iter(ConstantPool): %p", this);
 
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
@@ -277,7 +277,7 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
   CPKlassSlot kslot = klass_slot_at(class_index);
   int resolved_klass_index = kslot.resolved_klass_index();
   Klass** adr = resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  AtomicAccess::release_store(adr, k);
 
   // The interpreter assumes when the tag is stored, the klass is resolved
   // and the Klass* non-null, so we need hardware store ordering here.
@@ -374,40 +374,6 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
   return rr;
 }
-
-void ConstantPool::add_dumped_interned_strings() {
-  InstanceKlass* ik = pool_holder();
-  if (!ik->is_linked()) {
-    // resolved_references() doesn't exist yet, so we have no resolved CONSTANT_String entries. However,
-    // some static final fields may have default values that were initialized when the class was parsed.
-    // We need to enter those into the CDS archive strings table.
-    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (fs.access_flags().is_static()) {
-        fieldDescriptor& fd = fs.field_descriptor();
-        if (fd.field_type() == T_OBJECT) {
-          int offset = fd.offset();
-          check_and_add_dumped_interned_string(ik->java_mirror()->obj_field(offset));
-        }
-      }
-    }
-  } else {
-    objArrayOop rr = resolved_references();
-    if (rr != nullptr) {
-      int rr_len = rr->length();
-      for (int i = 0; i < rr_len; i++) {
-        check_and_add_dumped_interned_string(rr->obj_at(i));
-      }
-    }
-  }
-}
-
-void ConstantPool::check_and_add_dumped_interned_string(oop obj) {
-  if (obj != nullptr && java_lang_String::is_instance(obj) &&
-      !ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
-    HeapShared::add_to_dumped_interned_strings(obj);
-  }
-}
-
 #endif
 
 #if INCLUDE_CDS
@@ -417,8 +383,8 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
     return;
   }
   assert(is_constantPool(), "ensure C++ vtable is restored");
-  assert(on_stack(), "should always be set for shared constant pools");
-  assert(is_shared(), "should always be set for shared constant pools");
+  assert(on_stack(), "should always be set for constant pools in AOT cache");
+  assert(in_aot_cache(), "should always be set for constant pools in AOT cache");
   if (is_for_method_handle_intrinsic()) {
     // See the same check in remove_unshareable_info() below.
     assert(cache() == nullptr, "must not have cpCache");
@@ -429,7 +395,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != nullptr) return;
 
-  if (vmClasses::Object_klass_loaded()) {
+  if (vmClasses::Object_klass_is_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
     if (ArchiveHeapLoader::is_in_use() &&
@@ -462,11 +428,11 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
-  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
+  // ConstantPools in AOT cache are in the RO region, so the _flags cannot be modified.
   // The _on_stack flag is used to prevent ConstantPools from deallocation during
-  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
+  // class redefinition. Since such ConstantPools cannot be deallocated anyway,
   // we always set _on_stack to true to avoid having to change _flags during runtime.
-  _flags |= (_on_stack | _is_shared);
+  _flags |= (_on_stack | _in_aot_cache);
 
   if (is_for_method_handle_intrinsic()) {
     // This CP was created by Method::make_method_handle_intrinsic() and has nothing
@@ -480,7 +446,7 @@ void ConstantPool::remove_unshareable_info() {
   if (CDSConfig::is_dumping_final_static_archive()) {
     ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
     InstanceKlass* src_holder = src_cp->pool_holder();
-    if (src_holder->is_shared_unregistered_class()) {
+    if (src_holder->defined_by_other_loaders()) {
       // Unregistered classes are not loaded in the AOT assembly phase. The resolved reference length
       // is already saved during the training run.
       precond(!src_holder->is_loaded());
@@ -518,15 +484,14 @@ static const char* get_type(Klass* k) {
     type = "prim";
   } else {
     InstanceKlass* src_ik = InstanceKlass::cast(src_k);
-    oop loader = src_ik->class_loader();
-    if (loader == nullptr) {
-      type = "boot";
-    } else if (loader == SystemDictionary::java_platform_loader()) {
-      type = "plat";
-    } else if (loader == SystemDictionary::java_system_loader()) {
-      type = "app";
+    if (src_ik->defined_by_boot_loader()) {
+      return "boot";
+    } else if (src_ik->defined_by_platform_loader()) {
+      return "plat";
+    } else if (src_ik->defined_by_app_loader()) {
+      return "app";
     } else {
-      type = "unreg";
+      return "unreg";
     }
   }
 
@@ -535,7 +500,7 @@ static const char* get_type(Klass* k) {
 
 void ConstantPool::remove_unshareable_entries() {
   ResourceMark rm;
-  log_info(cds, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
+  log_info(aot, resolve)("Archiving CP entries for %s", pool_holder()->name()->as_C_string());
   for (int cp_index = 1; cp_index < length(); cp_index++) { // cp_index 0 is unused
     int cp_tag = tag_at(cp_index).value();
     switch (cp_tag) {
@@ -594,7 +559,7 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
     resolved_klasses()->at_put(resolved_klass_index, nullptr);
   }
 
-  LogStreamHandle(Trace, cds, resolve) log;
+  LogStreamHandle(Trace, aot, resolve) log;
   if (log.is_enabled()) {
     ResourceMark rm;
     log.print("%s klass  CP entry [%3d]: %s %s",
@@ -729,16 +694,16 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   // hardware store ordering here.
   // We also need to CAS to not overwrite an error from a racing thread.
   Klass** adr = this_cp->resolved_klasses()->adr_at(resolved_klass_index);
-  Atomic::release_store(adr, k);
+  AtomicAccess::release_store(adr, k);
 
-  jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                  (jbyte)JVM_CONSTANT_UnresolvedClass,
-                                  (jbyte)JVM_CONSTANT_Class);
+  jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
+                                        (jbyte)JVM_CONSTANT_UnresolvedClass,
+                                        (jbyte)JVM_CONSTANT_Class);
 
   // We need to recheck exceptions from racing thread and return the same.
   if (old_tag == JVM_CONSTANT_UnresolvedClassInError) {
     // Remove klass.
-    Atomic::store(adr, (Klass*)nullptr);
+    AtomicAccess::store(adr, (Klass*)nullptr);
     throw_resolution_error(this_cp, cp_index, CHECK_NULL);
   }
 
@@ -1070,9 +1035,9 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
     // This doesn't deterministically get an error.   So why do we save this?
     // We save this because jvmti can add classes to the bootclass path after
     // this error, so it needs to get the same error if the error is first.
-    jbyte old_tag = Atomic::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
-                                    (jbyte)tag.value(),
-                                    (jbyte)error_tag);
+    jbyte old_tag = AtomicAccess::cmpxchg((jbyte*)this_cp->tag_addr_at(cp_index),
+                                          (jbyte)tag.value(),
+                                          (jbyte)error_tag);
     if (old_tag != error_tag && old_tag != tag.value()) {
       // MethodHandles and MethodType doesn't change to resolved version.
       assert(this_cp->tag_at(cp_index).is_klass(), "Wrong tag value");
@@ -1972,18 +1937,20 @@ int ConstantPool::find_matching_entry(int pattern_i,
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
 bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2) {
-  int k1 = operand_bootstrap_method_ref_index_at(idx1);
-  int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
+  BSMAttributeEntry* e1 = bsm_attribute_entry(idx1);
+  BSMAttributeEntry* e2 = cp2->bsm_attribute_entry(idx2);
+  int k1 = e1->bootstrap_method_index();
+  int k2 = e2->bootstrap_method_index();
   bool match = compare_entry_to(k1, cp2, k2);
 
   if (!match) {
     return false;
   }
-  int argc = operand_argument_count_at(idx1);
-  if (argc == cp2->operand_argument_count_at(idx2)) {
+  int argc = e1->argument_count();
+  if (argc == e2->argument_count()) {
     for (int j = 0; j < argc; j++) {
-      k1 = operand_argument_index_at(idx1, j);
-      k2 = cp2->operand_argument_index_at(idx2, j);
+      k1 = e1->argument_index(j);
+      k2 = e2->argument_index(j);
       match = compare_entry_to(k1, cp2, k2);
       if (!match) {
         return false;
@@ -2291,13 +2258,13 @@ void ConstantPool::set_on_stack(const bool value) {
   if (value) {
     // Only record if it's not already set.
     if (!on_stack()) {
-      assert(!is_shared(), "should always be set for shared constant pools");
+      assert(!in_aot_cache(), "should always be set for constant pools in AOT cache");
       _flags |= _on_stack;
       MetadataOnStackMark::record(this);
     }
   } else {
     // Clearing is done single-threadedly.
-    if (!is_shared()) {
+    if (!in_aot_cache()) {
       _flags &= (u2)(~_on_stack);
     }
   }

@@ -89,7 +89,8 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     private float scaleX;
     private float scaleY;
 
-    final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     static {
 
@@ -590,7 +591,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      * The listener restores the default display mode when window is iconified
      * and sets it back to the one set by the user on de-iconification.
      */
-    private static class Win32FSWindowAdapter extends WindowAdapter {
+    private static final class Win32FSWindowAdapter extends WindowAdapter {
         private Win32GraphicsDevice device;
         private DisplayMode dm;
 

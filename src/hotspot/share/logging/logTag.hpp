@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ class outputStream;
   LOG_TAG(metaspace) \
   LOG_TAG(methodcomparator) \
   LOG_TAG(methodhandles) \
+  LOG_TAG(methodtrace) \
   LOG_TAG(mirror) \
   LOG_TAG(mmu) \
   LOG_TAG(module) \
@@ -148,6 +149,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(package) \
   LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
@@ -205,6 +207,7 @@ class outputStream;
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
+  LOG_TAG(training) \
   LOG_TAG(trimnative) /* trim native heap */ \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unmap) \
@@ -214,6 +217,7 @@ class outputStream;
   LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
+  LOG_TAG(vmatree) \
   LOG_TAG(vmmutex) \
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \

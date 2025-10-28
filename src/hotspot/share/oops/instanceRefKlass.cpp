@@ -71,10 +71,10 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Check that we have the right class
-  debug_only(static bool first_time = true);
+  DEBUG_ONLY(static bool first_time = true);
   assert(k == vmClasses::Reference_klass() && first_time,
          "Invalid update of maps");
-  debug_only(first_time = false);
+  DEBUG_ONLY(first_time = false);
   assert(ik->nonstatic_oop_map_count() == 1, "just checking");
 
   OopMapBlock* map = ik->start_of_nonstatic_oop_maps();

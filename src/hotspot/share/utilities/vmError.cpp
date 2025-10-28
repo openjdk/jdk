@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
@@ -43,7 +43,7 @@
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -57,9 +57,9 @@
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/trimNativeHeap.hpp"
+#include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
-#include "runtime/vm_version.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -104,17 +104,20 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
+Thread* volatile VMError::_handshake_timed_out_thread = nullptr;
+Thread* volatile VMError::_safepoint_timed_out_thread = nullptr;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
   // All platforms
   "JAVA_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
-  "PATH", "USERNAME",
+  "JDK_AOT_VM_OPTIONS",
+  "JAVA_OPTS", "PATH", "USERNAME",
 
   "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "FC_LANG", "FONTCONFIG_USE_MMAP",
 
   // Env variables that are defined on Linux/BSD
-  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
+  "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY", "WAYLAND_DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
   "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
   "TERM", "TMPDIR", "TZ",
@@ -266,7 +269,7 @@ char* VMError::error_string(char* buf, int buflen) {
   if (signame) {
     jio_snprintf(buf, buflen,
                  "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=%zu",
-                 signame, _id, _pc,
+                 signame, _id, p2i(_pc),
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != nullptr && _lineno > 0) {
     // skip directory names
@@ -530,7 +533,8 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                  "", "",
 #endif
                  UseCompressedOops ? ", compressed oops" : "",
-                 UseCompressedClassPointers ? ", compressed class ptrs" : "",
+                 UseCompactObjectHeaders ? ", compact obj headers"
+                                         : (UseCompressedClassPointers ? ", compressed class ptrs" : ""),
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
@@ -555,24 +559,24 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(&_reporting_start_time, now);
+  AtomicAccess::store(&_reporting_start_time, now);
 }
 
 jlong VMError::get_reporting_start_time() {
-  return Atomic::load(&_reporting_start_time);
+  return AtomicAccess::load(&_reporting_start_time);
 }
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(&_step_start_time, now);
+  AtomicAccess::store(&_step_start_time, now);
 }
 
 jlong VMError::get_step_start_time() {
-  return Atomic::load(&_step_start_time);
+  return AtomicAccess::load(&_step_start_time);
 }
 
 void VMError::clear_step_start_time() {
-  return Atomic::store(&_step_start_time, (jlong)0);
+  return AtomicAccess::store(&_step_start_time, (jlong)0);
 }
 
 // This is the main function to report a fatal error. Only one thread can
@@ -817,7 +821,13 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        st->print(" (sent by kill)");
+        if (get_handshake_timed_out_thread() == _thread) {
+          st->print(" (sent by handshake timeout handler)");
+        } else if (get_safepoint_timed_out_thread() == _thread) {
+          st->print(" (sent by safepoint timeout handler)");
+        } else {
+          st->print(" (sent by kill)");
+        }
       }
     } else {
       if (should_report_bug(_id)) {
@@ -1068,7 +1078,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
-  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread());
     st->print_cr("Lock stack of current Java thread (top to bottom):");
     JavaThread::cast(_thread)->lock_stack().print_on(st);
     st->cr();
@@ -1133,9 +1143,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
 
   STEP_IF("printing registered callbacks", _verbose && _thread != nullptr);
+    size_t count = 0;
     for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
         callback != nullptr;
         callback = callback->_next) {
+      st->print_cr("VMErrorCallback %zu:", ++count);
       callback->call(st);
       st->cr();
     }
@@ -1189,7 +1201,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1200,7 +1212,14 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     if (Universe::heap() != nullptr) {
       st->print_cr("Heap:");
-      Universe::heap()->print_on_error(st);
+      StreamIndentor si(st, 1);
+      Universe::heap()->print_heap_on(st);
+      st->cr();
+    }
+
+  STEP_IF("printing GC information", _verbose)
+    if (Universe::heap() != nullptr) {
+      Universe::heap()->print_gc_on(st);
       st->cr();
     }
 
@@ -1211,6 +1230,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing metaspace information", _verbose && Universe::is_fully_initialized())
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
 
   STEP_IF("printing code cache information", _verbose && Universe::is_fully_initialized())
@@ -1320,6 +1340,26 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
+void VMError::set_handshake_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  AtomicAccess::replace_if_null(&_handshake_timed_out_thread, thread);
+}
+
+void VMError::set_safepoint_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  AtomicAccess::replace_if_null(&_safepoint_timed_out_thread, thread);
+}
+
+Thread* VMError::get_handshake_timed_out_thread() {
+  return AtomicAccess::load(&_handshake_timed_out_thread);
+}
+
+Thread* VMError::get_safepoint_timed_out_thread() {
+  return AtomicAccess::load(&_safepoint_timed_out_thread);
+}
+
 // Report for the vm_info_cmd. This prints out the information above omitting
 // crash and thread specific information.  If output is added above, it should be added
 // here also, if it is safe to call during a running process.
@@ -1372,32 +1412,44 @@ void VMError::print_vm_info(outputStream* st) {
     CompressedOops::print_mode(st);
     st->cr();
   }
+#endif
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
   }
-#endif
 
-  // STEP("printing heap information")
-
+  // Take heap lock over heap, GC and metaspace printing so that information
+  // is consistent.
   if (Universe::is_fully_initialized()) {
-    MutexLocker hl(Heap_lock);
+    MutexLocker ml(Heap_lock);
+
+    // STEP("printing heap information")
+
     GCLogPrecious::print_on_error(st);
-    st->print_cr("Heap:");
-    Universe::heap()->print_on_error(st);
+
+    {
+      st->print_cr("Heap:");
+      StreamIndentor si(st, 1);
+      Universe::heap()->print_heap_on(st);
+      st->cr();
+    }
+
+    // STEP("printing GC information")
+
+    Universe::heap()->print_gc_on(st);
     st->cr();
+
     st->print_cr("Polling page: " PTR_FORMAT, p2i(SafepointMechanism::get_polling_page()));
     st->cr();
-  }
 
-  // STEP("printing metaspace information")
+    // STEP("printing metaspace information")
 
-  if (Universe::is_fully_initialized()) {
     st->print_cr("Metaspace:");
+    MetaspaceUtils::print_on(st);
     MetaspaceUtils::print_basic_report(st, 0);
   }
 
@@ -1641,7 +1693,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
   intptr_t mytid = os::current_thread_id();
   if (_first_error_tid == -1 &&
-      Atomic::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
+      AtomicAccess::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
 
     if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
@@ -1835,7 +1887,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log.set_fd(-1);
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown(true);)
+  JFR_ONLY(Jfr::on_vm_shutdown(static_cast<VMErrorType>(_id) == OOM_JAVA_HEAP_FATAL, true);)
 
   if (PrintNMTStatistics) {
     fdStream fds(fd_out);

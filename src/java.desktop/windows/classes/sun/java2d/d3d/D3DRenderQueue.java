@@ -33,7 +33,7 @@ import static sun.java2d.pipe.BufferedOpCodes.*;
 /**
  * D3D-specific implementation of RenderQueue.
  */
-public class D3DRenderQueue extends RenderQueue {
+public final class D3DRenderQueue extends RenderQueue {
 
     private static D3DRenderQueue theInstance;
     private static Thread rqThread;
@@ -132,11 +132,13 @@ public class D3DRenderQueue extends RenderQueue {
         }
     }
 
+    @Override
     public void flushNow() {
         // assert lock.isHeldByCurrentThread();
         flushBuffer(null);
     }
 
+    @Override
     public void flushAndInvokeNow(Runnable r) {
         // assert lock.isHeldByCurrentThread();
         flushBuffer(r);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,20 +335,6 @@ abstract class UnixFileSystem
     // case insensitive or Unicode canonical equal on MacOSX
     Pattern compilePathMatchPattern(String expr) {
         return Pattern.compile(expr);
-    }
-
-    // Override if the platform uses different Unicode normalization form
-    // for native file path. For example on MacOSX, the native path is stored
-    // in Unicode NFD form.
-    String normalizeNativePath(String path) {
-        return path;
-    }
-
-    // Override if the native file path use non-NFC form. For example on MacOSX,
-    // the native path is stored in Unicode NFD form, the path need to be
-    // normalized back to NFC before passed back to Java level.
-    String normalizeJavaPath(String path) {
-        return path;
     }
 
     //  Unix implementation of Files#copy and Files#move methods.
@@ -839,6 +825,9 @@ abstract class UnixFileSystem
                     new UnixException(errno).rethrowAsIOException(source);
             }
         } catch (UnixException x) {
+            if (x.errno() == ENOTDIR) {
+                x.setError(ENOENT);
+            }
             x.rethrowAsIOException(source);
         }
 
@@ -951,6 +940,9 @@ abstract class UnixFileSystem
         try {
             sourceAttrs = UnixFileAttributes.get(source, flags.followLinks);
         } catch (UnixException x) {
+            if (x.errno() == ENOTDIR) {
+                x.setError(ENOENT);
+            }
             x.rethrowAsIOException(source);
         }
 

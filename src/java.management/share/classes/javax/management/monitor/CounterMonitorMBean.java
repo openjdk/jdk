@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public interface CounterMonitorMBean extends MonitorMBean {
      *
      * @param object the MBean for which the derived gauge timestamp is to be returned
      * @return The derived gauge timestamp for the specified MBean if this MBean
-     *         is in the set of observed MBeans, or <code>null</code> otherwise.
+     *         is in the set of observed MBeans, or <code>0</code> otherwise.
      *
      */
     public long getDerivedGaugeTimeStamp(ObjectName object);

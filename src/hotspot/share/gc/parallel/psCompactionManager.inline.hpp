@@ -60,10 +60,6 @@ inline void ParCompactionManager::push(oop obj) {
   marking_stack()->push(ScannerTask(obj));
 }
 
-inline void ParCompactionManager::push(PartialArrayState* stat) {
-  marking_stack()->push(ScannerTask(stat));
-}
-
 void ParCompactionManager::push_region(size_t index)
 {
 #ifdef ASSERT

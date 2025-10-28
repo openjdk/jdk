@@ -25,7 +25,7 @@
  * @test
  * @bug     6292765
  * @summary NPE at Check.checkCompatibleConcretes
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T6292765.java
  */
 

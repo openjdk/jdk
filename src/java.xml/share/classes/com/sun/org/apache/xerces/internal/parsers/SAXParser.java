@@ -42,7 +42,7 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class SAXParser
     extends AbstractSAXParser {
@@ -154,7 +154,7 @@ public class SAXParser
         }
         if (name.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
-                securityPropertyManager = new XMLSecurityPropertyManager();
+                securityPropertyManager = config.getXMLSecurityPropertyManager(true);
             } else {
                 securityPropertyManager = (XMLSecurityPropertyManager)value;
             }

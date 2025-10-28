@@ -34,7 +34,6 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/regalloc.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -46,6 +45,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
@@ -1213,12 +1213,12 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       // (This is one of the few places where a generic PhaseTransform
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
-      if (memory_type() != T_VOID) {
+      if (value_basic_type() != T_VOID) {
         if (ReduceBulkZeroing || find_array_copy_clone(ld_alloc, in(MemNode::Memory)) == nullptr) {
           // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
           // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
           // by the ArrayCopyNode.
-          return phase->zerocon(memory_type());
+          return phase->zerocon(value_basic_type());
         }
       } else {
         // TODO: materialize all-zero vector constant
@@ -1981,13 +1981,11 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
          "must not happen");
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
     return TypeInt::make(klass->misc_flags());
   }
@@ -2047,7 +2045,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         int stable_dimension = (ary->stable_dimension() > 0 ? ary->stable_dimension() - 1 : 0);
         const Type* con_type = Type::make_constant_from_array_element(aobj->as_array(), off,
                                                                       stable_dimension,
-                                                                      memory_type(), is_unsigned());
+                                                                      value_basic_type(), is_unsigned());
         if (con_type != nullptr) {
           return con_type;
         }
@@ -2115,7 +2113,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const TypeInstPtr* tinst = tp->is_instptr();
     ciObject* const_oop = tinst->const_oop();
     if (!is_mismatched_access() && off != Type::OffsetBot && const_oop != nullptr && const_oop->is_instance()) {
-      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), memory_type());
+      const Type* con_type = Type::make_constant_from_field(const_oop->as_instance(), off, is_unsigned(), value_basic_type());
       if (con_type != nullptr) {
         return con_type;
       }
@@ -4231,10 +4229,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 }
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
-  if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
-    assert(outcnt() == 1, "Only control then");
-  }
+  assert(outcnt() > 0 && outcnt() <= 2, "Only one or two out edges allowed");
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
     if (leading != nullptr) {
@@ -4330,7 +4325,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::Memory:
-    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this, proj->_con, RegMask::EMPTY, MachProjNode::unmatched_proj);
   }
   ShouldNotReachHere();
   return nullptr;
@@ -4577,7 +4572,7 @@ const RegMask &InitializeNode::in_RegMask(uint idx) const {
   // This edge should be set to top, by the set_complete.  But be conservative.
   if (idx == InitializeNode::RawAddress)
     return *(Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()]);
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 Node* InitializeNode::memory(uint alias_idx) {
@@ -5789,7 +5784,7 @@ void MergeMemNode::set_base_memory(Node *new_base) {
 
 //------------------------------out_RegMask------------------------------------
 const RegMask &MergeMemNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------dump_spec--------------------------------------

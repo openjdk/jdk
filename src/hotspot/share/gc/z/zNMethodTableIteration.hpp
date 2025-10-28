@@ -35,10 +35,10 @@ private:
   size_t                         _size;
   ZCACHE_ALIGNED volatile size_t _claimed;
 
+  bool in_progress() const;
+
 public:
   ZNMethodTableIteration();
-
-  bool in_progress() const;
 
   void nmethods_do_begin(ZNMethodTableEntry* table, size_t size);
   void nmethods_do_end();

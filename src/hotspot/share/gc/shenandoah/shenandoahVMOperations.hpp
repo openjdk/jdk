@@ -55,6 +55,8 @@ public:
   void log_active_generation(const char* prefix);
   bool doit_prologue() override;
   void doit_epilogue() override;
+
+  bool is_gc_operation() const override { return true; };
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {

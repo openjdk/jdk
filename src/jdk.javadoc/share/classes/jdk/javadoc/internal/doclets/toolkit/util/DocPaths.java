@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,14 +106,32 @@ public class DocPaths {
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
     /** The name of the left pointing angle icon. */
     public static final DocPath LEFT_SVG = DocPath.create("left.svg");
 
     /** The name of the link icon file. */
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
 
+    /** The name of the table of contents toggle icon file. */
+    public static final DocPath SORT_A_Z_SVG = DocPath.create("sort-a-z.svg");
+
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
+
+    /** The name of the moon icon for the dark theme. */
+    public static final DocPath MOON_SVG = DocPath.create("moon.svg");
+
+    /** The name of the sun icon for the light theme. */
+    public static final DocPath SUN_SVG = DocPath.create("sun.svg");
+
+    /** The name of the syntax highlighting style sheet. */
+    public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");
+
+    /** The name of the syntax highlighting script file. */
+    public static final DocPath HIGHLIGHT_JS = DocPath.create("highlight.js");
 
     /** The name of the default jQuery directory. */
     public static final DocPath JQUERY_DIR = DocPath.create("jquery");

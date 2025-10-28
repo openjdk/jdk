@@ -2,7 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     6229758
  * @summary deprecatedNOT! is
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile -Xlint:deprecation DeprecatedYES.java
  * @compile/fail/ref=DeprecatedYES.out -XDrawDiagnostics -Werror -Xlint:deprecation DeprecatedYES.java
  */

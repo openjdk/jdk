@@ -802,11 +802,11 @@ class CompileReplay : public StackObj {
     // Make sure the existence of a prior compile doesn't stop this one
     nmethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != nullptr) {
-      nm->make_not_entrant("CI replay");
+      nm->make_not_entrant(nmethod::InvalidationReason::CI_REPLAY);
     }
     replay_state = this;
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,
-                                  methodHandle(), 0, CompileTask::Reason_Replay, THREAD);
+                                  0, CompileTask::Reason_Replay, THREAD);
     replay_state = nullptr;
   }
 
@@ -1572,7 +1572,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
 
   do {
     if (!ik->has_nonstatic_fields()) {
-      ik = ik->java_super();
+      ik = ik->super();
       continue;
     }
 
@@ -1591,7 +1591,7 @@ oop ciReplay::obj_field(oop obj, Symbol* name) {
       }
     }
 
-    ik = ik->java_super();
+    ik = ik->super();
   } while (ik != nullptr);
   return nullptr;
 }

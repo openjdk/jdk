@@ -28,17 +28,18 @@
 #include "asm/codeBuffer.hpp"
 #include "ci/compilerInterface.hpp"
 #include "code/debugInfoRec.hpp"
-#include "compiler/compiler_globals.hpp"
-#include "compiler/compileBroker.hpp"
-#include "compiler/compilerEvent.hpp"
 #include "compiler/cHeapStringHolder.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
+#include "compiler/compilerEvent.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/phasetype.hpp"
 #include "opto/phase.hpp"
+#include "opto/phasetype.hpp"
+#include "opto/printinlining.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -46,7 +47,6 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
 #include "utilities/vmEnums.hpp"
-#include "opto/printinlining.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -308,6 +308,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
+  StubId                   _stub_id;               // unique id for stub or NO_STUBID
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -346,14 +347,13 @@ class Compile : public Phase {
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
+  uint                  _phase_counter;         // Counter for the number of already printed phases
   uint                  _igv_idx;               // Counter for IGV node identifiers
   uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
-  // JSR 292
-  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -524,6 +524,12 @@ public:
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
   int                   _interpreter_frame_size;
 
+  // Holds dynamically allocated extensions of short-lived register masks. Such
+  // extensions are potentially quite large and need tight resource marks which
+  // may conflict with other allocations in the default resource area.
+  // Therefore, we use a dedicated resource area for register masks.
+  ResourceArea          _regmask_arena;
+
   PhaseOutput*          _output;
 
  public:
@@ -570,6 +576,7 @@ public:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
+  StubId            stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
@@ -640,13 +647,14 @@ public:
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
 
   // check the CompilerOracle for special behaviours for this compile
-  bool          method_has_option(CompileCommandEnum option) {
+  bool          method_has_option(CompileCommandEnum option) const {
     return method() != nullptr && method()->has_option(option);
   }
 
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
+  void          print_phase(const char* phase_name);
   void          print_ideal_ir(const char* phase_name);
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
@@ -656,30 +664,27 @@ public:
   bool              has_irreducible_loop() const { return _has_irreducible_loop; }
   void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
 
-  // JSR 292
-  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
-
   Ticks _latest_stage_start_counter;
 
   void begin_method();
   void end_method();
-  bool should_print_igv(int level);
-  bool should_print_phase(CompilerPhaseType cpt);
 
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  bool should_print_igv(int level);
+  bool should_print_phase(int level) const;
+  bool should_print_ideal_phase(CompilerPhaseType cpt) const;
   void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_graph(graph_name);
+      _igv_printer->print_graph(graph_name, nullptr);
     }
   }
 
-  void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
-  void igv_print_method_to_network(const char* phase_name = "Debug");
-  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes);
+  void igv_print_method_to_file(const char* phase_name = nullptr, bool append = false, const frame* fr = nullptr);
+  void igv_print_method_to_network(const char* phase_name = nullptr, const frame* fr = nullptr);
+  void igv_print_graph_to_network(const char* name, GrowableArray<const Node*>& visible_nodes, const frame* fr);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -923,8 +928,8 @@ public:
   bool copy_node_notes_to(Node* dest, Node* source);
 
   // Workhorse function to sort out the blocked Node_Notes array:
-  inline Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
-                                       int idx, bool can_grow = false);
+  Node_Notes* locate_node_notes(GrowableArray<Node_Notes*>* arr,
+                                int idx, bool can_grow = false);
 
   void grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by);
 
@@ -1089,7 +1094,8 @@ public:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
+  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1108,6 +1114,7 @@ public:
   Matcher*          matcher()                   { return _matcher; }
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
+  ResourceArea*     regmask_arena()             { return &_regmask_arena; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
   DebugInformationRecorder* debug_info()        { return env()->debug_info(); }
@@ -1140,7 +1147,7 @@ public:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int is_fancy_jump, bool pass_tls,
+          StubId stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();
@@ -1309,6 +1316,28 @@ public:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+#ifndef PRODUCT
+private:
+  // getting rid of the template makes things easier
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
+                              Node* parm2 = nullptr, Node* parm3 = nullptr,
+                              Node* parm4 = nullptr, Node* parm5 = nullptr,
+                              Node* parm6 = nullptr) const;
+
+public:
+  // Creates a CallLeafNode for a runtime call that prints a static string and the values of the
+  // nodes passed as arguments.
+  // This function also takes care of doing the necessary wiring, including finding a suitable control
+  // based on the nodes that need to be printed. Note that passing nodes that have incompatible controls
+  // is undefined behavior.
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+    return make_debug_print_call(str, call_addr, gvn, in...);
+  }
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP

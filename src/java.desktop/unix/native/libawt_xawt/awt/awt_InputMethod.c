@@ -1618,14 +1618,14 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_setCompositionEnabled
     if (NULL != pX11IMData->statusWindow) {
         Window focus = 0;
         int revert_to;
-#if defined(_LP64) && !defined(_LITTLE_ENDIAN)
-        // The Window value which is used for XGetICValues must be 32bit on BigEndian XOrg's xlib
-        unsigned int w = 0;
-#else
         Window w = 0;
-#endif
         XGetInputFocus(awt_display, &focus, &revert_to);
         XGetICValues(pX11IMData->current_ic, XNFocusWindow, &w, NULL);
+#if defined(_LP64) && !defined(_LITTLE_ENDIAN)
+        // On 64bit BigEndian,
+        // Window value may be stored on high 32bit by XGetICValues via XIM
+        if (w > 0xffffffffUL) w = w >> 32;
+#endif
         if (RevertToPointerRoot == revert_to
                 && pX11IMData->ic_active != pX11IMData->ic_passive) {
             if (pX11IMData->current_ic == pX11IMData->ic_active) {
@@ -1674,12 +1674,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_isCompositionEnabledN
 {
     X11InputMethodData *pX11IMData = NULL;
     char * ret = NULL;
-#if defined(__linux__) && defined(_LP64) && !defined(_LITTLE_ENDIAN)
-    // XIMPreeditState value which is used for XGetICValues must be 32bit on BigEndian XOrg's xlib
-    unsigned int state = XIMPreeditUnKnown;
-#else
     XIMPreeditState state = XIMPreeditUnKnown;
-#endif
 
     XVaNestedList   pr_atrb;
 
@@ -1695,6 +1690,11 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_isCompositionEnabledN
     ret = XGetICValues(pX11IMData->current_ic, XNPreeditAttributes, pr_atrb, NULL);
     XFree((void *)pr_atrb);
     AWT_UNLOCK();
+#if defined(__linux__) && defined(_LP64) && !defined(_LITTLE_ENDIAN)
+    // On 64bit BigEndian,
+    // XIMPreeditState value may be stored on high 32bit by XGetICValues via XIM
+    if (state > 0xffffffffUL) state = state >> 32;
+#endif
 
     if ((ret != 0)
             && ((strcmp(ret, XNPreeditAttributes) == 0)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,9 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * fixed-width 16-bit entities. The Unicode Standard has since been
  * changed to allow for characters whose representation requires more
  * than 16 bits.  The range of legal <em>code point</em>s is now
- * U+0000 to U+10FFFF, known as <em>Unicode scalar value</em>.
- * (Refer to the <a
- * href="http://www.unicode.org/reports/tr27/#notation"><i>
- * definition</i></a> of the U+<i>n</i> notation in the Unicode
- * Standard.)
+ * U+0000 to U+10FFFF, known as
+ * <em><a href="https://www.unicode.org/glossary/#unicode_scalar_value">
+ * Unicode scalar value</a></em>.
  *
  * <p><a id="BMP">The set of characters from U+0000 to U+FFFF</a> is
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
@@ -173,7 +171,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
- * @spec https://www.unicode.org/reports/tr27 Unicode 3.1.0
+ * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka
@@ -9232,7 +9230,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * {@link #valueOf(char)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Character(char value) {
         this.value = value;
     }
@@ -11089,6 +11087,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji;
      *          {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isEmoji(int codePoint) {
@@ -11107,6 +11106,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character has the Emoji Presentation
      *          property; {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isEmojiPresentation(int codePoint) {
@@ -11125,6 +11125,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Modifier;
      *          {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isEmojiModifier(int codePoint) {
@@ -11143,6 +11144,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Modifier Base;
      *          {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isEmojiModifierBase(int codePoint) {
@@ -11161,6 +11163,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Emoji Component;
      *          {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isEmojiComponent(int codePoint) {
@@ -11179,6 +11182,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @param   codePoint the character (Unicode code point) to be tested.
      * @return  {@code true} if the character is an Extended Pictographic;
      *          {@code false} otherwise.
+     * @spec https://unicode.org/reports/tr51/ Unicode Emoji
      * @since   21
      */
     public static boolean isExtendedPictographic(int codePoint) {

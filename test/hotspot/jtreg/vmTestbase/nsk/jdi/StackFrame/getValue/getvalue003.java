@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,14 @@ public class getvalue003 {
         "nsk.jdi.StackFrame.getValue.getvalue003t";
 
     // names of debuggee threads
-    static final String DEBUGGEE_THRDNAMES[] = {
-        "getvalue003tMainThr", "getvalue003tAuxThr"
-    };
+    static final String DEBUGGEE_MAIN_THREAD_NAME = "getvalue003tMainThr";
+    static final String DEBUGGEE_AUX_THREAD_NAME  = "getvalue003tAuxThr";
 
     // debuggee local var used in testing
     static final String DEBUGGEE_LOCALVAR = "getvalue003tFindMe";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 69;
+    static final int DEBUGGEE_STOPATLINE = 72;
 
     static final int DELAY = 500; // in milliseconds
 
@@ -105,33 +104,30 @@ public class getvalue003 {
             return quitDebuggee();
         }
 
-        ThreadReference thrRef[] = new ThreadReference[2];
-        for (int i=0; i<2; i++)
-            if ((thrRef[i] =
-                    debuggee.threadByName(DEBUGGEE_THRDNAMES[i])) == null) {
-                log.complain("TEST FAILURE: method Debugee.threadByName() returned null for debuggee thread "
-                    + DEBUGGEE_THRDNAMES[i]);
-                tot_res = Consts.TEST_FAILED;
-                return quitDebuggee();
-            }
+        // debuggee main class
+        ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+        ThreadReference mainThread =
+            debuggee.threadByFieldNameOrThrow(rType, "mainThread",
+                                              DEBUGGEE_MAIN_THREAD_NAME);
+        ThreadReference auxThread =
+            debuggee.threadByFieldNameOrThrow(rType, "auxThr",
+                                              DEBUGGEE_AUX_THREAD_NAME);
 
         try {
-            // debuggee main class
-            ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
-
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
 
             // get a stack frame which belongs to the "getvalue003tMainThr" thread
-            StackFrame stFrame = findFrame(thrRef[0], DEBUGGEE_LOCALVAR, false);
+            StackFrame stFrame = findFrame(mainThread, DEBUGGEE_LOCALVAR, false);
 
             // store a LocalVariable which belongs to the "getvalue003tAuxThr" thread
-            findFrame(thrRef[1], DEBUGGEE_LOCALVAR, true);
+            findFrame(auxThread, DEBUGGEE_LOCALVAR, true);
 
             log.display("\nTrying to get value of local variable \""
                 + wrongLocVar
-                + "\"\n\tgotten from thread \"" + thrRef[1]
+                + "\"\n\tgotten from thread \"" + auxThread
                 + "\"\n\tusing stack frame \"" + stFrame
-                + "\"\n\tbelongs to thread \"" + thrRef[0]
+                + "\"\n\tbelongs to thread \"" + mainThread
                 + "\" ...");
 
 // Check the tested assersion
@@ -140,9 +136,9 @@ public class getvalue003 {
                 log.complain("TEST FAILED: expected IllegalArgumentException was not thrown"
                     + "\n\twhen attempted to get value of local variable \""
                     + wrongLocVar
-                    + "\"\n\tgotten from thread \"" + thrRef[1]
+                    + "\"\n\tgotten from thread \"" + auxThread
                     + "\"\n\tusing stack frame \"" + stFrame
-                    + "\"\n\tbelongs to thread \"" + thrRef[0] + "\"");
+                    + "\"\n\tbelongs to thread \"" + mainThread + "\"");
                 tot_res = Consts.TEST_FAILED;
             } catch(IllegalArgumentException ee) {
                 log.display("CHECK PASSED: caught expected " + ee);
@@ -152,9 +148,9 @@ public class getvalue003 {
                     + ue + "\n\tinstead of IllegalArgumentException"
                     + "\n\twhen attempted to get value of local variable \""
                     + wrongLocVar
-                    + "\"\n\tgotten from thread \"" + thrRef[1]
+                    + "\"\n\tgotten from thread \"" + auxThread
                     + "\"\n\tusing stack frame \"" + stFrame
-                    + "\"\n\tbelongs to thread \"" + thrRef[0] + "\"");
+                    + "\"\n\tbelongs to thread \"" + mainThread + "\"");
                 tot_res = Consts.TEST_FAILED;
             }
 

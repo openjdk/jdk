@@ -276,6 +276,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new TLSKeyInfo("TlsClientAppTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsClientHandshakeTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsEarlySecret"));
+        putKeyInfo(new TLSKeyInfo("TlsExporterMasterSecret"));
         putKeyInfo(new TLSKeyInfo("TlsFinishedSecret"));
         putKeyInfo(new TLSKeyInfo("TlsHandshakeSecret"));
         putKeyInfo(new TLSKeyInfo("TlsKey"));
@@ -284,6 +285,10 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         putKeyInfo(new TLSKeyInfo("TlsServerAppTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsServerHandshakeTrafficSecret"));
         putKeyInfo(new TLSKeyInfo("TlsUpdateNplus1"));
+        // QUIC-specific
+        putKeyInfo(new TLSKeyInfo("TlsInitialSecret"));
+        putKeyInfo(new TLSKeyInfo("TlsClientInitialTrafficSecret"));
+        putKeyInfo(new TLSKeyInfo("TlsServerInitialTrafficSecret"));
 
         putKeyInfo(new KeyInfo("Generic", CKK_GENERIC_SECRET,
                 CKM_GENERIC_SECRET_KEY_GEN));
@@ -403,20 +408,21 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (svcAlgo == null) {
             svcAlgo = keyAlgo;
         }
-        KeyInfo ki = null;
         KeyInfo si = getKeyInfo(svcAlgo);
         if (si == null) {
             throw new InvalidKeyException("Unknown algorithm " + svcAlgo);
         }
+
         // Check if the key can be used for the service.
-        // Any key can be used for a MAC service.
+        // Skip this check for Hmac as any key can be used for Mac.
         if (svcAlgo != keyAlgo && !(si instanceof HMACKeyInfo)) {
-            ki = getKeyInfo(keyAlgo);
+            KeyInfo ki = getKeyInfo(keyAlgo);
             if (ki == null || !KeyInfo.checkUse(ki, si)) {
                 throw new InvalidKeyException("Cannot use a " + keyAlgo +
                         " key for a " + svcAlgo + " service");
             }
         }
+
         if (key instanceof P11Key p11Key) {
             if (p11Key.token == token) {
                 if (extraAttrs != null) {
@@ -447,7 +453,8 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             return p11Key;
         }
         if (key instanceof PBEKey pbeKey) {
-            ki = ki == null ? getKeyInfo(keyAlgo) : ki;
+            // make sure key info matches key type
+            KeyInfo ki = (keyAlgo == svcAlgo ? si : getKeyInfo(keyAlgo));
             if (ki instanceof PBEKeyInfo pbeKi) {
                 PBEKeySpec keySpec = getPbeKeySpec(pbeKey);
                 try {
@@ -479,7 +486,9 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         return p11Key;
     }
 
-    static P11Key.P11PBEKey derivePBEKey(Token token, PBEKeySpec keySpec,
+    // utility method for deriving secret keys using PBKDF2 or the legacy
+    // PKCS#12 B.2 method.
+    static P11Key.P11PBKDFKey derivePBEKey(Token token, PBEKeySpec keySpec,
             PBEKeyInfo pbeKi) throws InvalidKeySpecException {
         token.ensureValid();
         if (keySpec == null) {
@@ -494,7 +503,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             password = keySpec.getPassword();
             byte[] salt = keySpec.getSalt();
             int itCount = keySpec.getIterationCount();
-            int keySize = keySpec.getKeyLength();
+            int keySize = keySpec.getKeyLength(); // in bits
             assert password != null :
                     "PBEKeySpec does not allow a null password";
             if (salt == null) {
@@ -560,7 +569,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             CK_ATTRIBUTE[] attr = token.getAttributes(
                     O_GENERATE, CKO_SECRET_KEY, pbeKi.keyType, attrs);
             long keyID = token.p11.C_GenerateKey(session.id(), ckMech, attr);
-            return (P11Key.P11PBEKey) P11Key.pbeKey(session, keyID, pbeKi.algo,
+            return (P11Key.P11PBKDFKey) P11Key.pbkdfKey(session, keyID, pbeKi.algo,
                     keySize, attr, password, salt, itCount);
         } catch (PKCS11Exception e) {
             throw new InvalidKeySpecException("Could not create key", e);

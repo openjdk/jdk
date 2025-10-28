@@ -26,8 +26,8 @@
 #define SHARE_GC_SHARED_GCHEAPSUMMARY_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceChunkFreeListSummary.hpp"
+#include "memory/metaspaceStats.hpp"
 
 class VirtualSpaceSummary : public StackObj {
   HeapWord* _start;

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,17 +33,17 @@ public:
   //  2 - saving a current state (javaCalls)
   //  3 - restoring an old state (javaCalls)
 
+  // No hardware barriers are necessary. All members are volatile and the profiler
+  // is run from a signal handler and only observers the thread its running on.
+
   inline void clear(void) {
     // clearing _last_Java_sp must be first
     _last_Java_sp = nullptr;
-    // fence?
-    OrderAccess::release();
     _last_Java_pc = nullptr;
   }
 
   inline void set(intptr_t* sp, address pc) {
     _last_Java_pc = pc;
-    OrderAccess::release();
     _last_Java_sp = sp;
   }
 
@@ -56,11 +56,9 @@ public:
     // unless the value is changing.
     if (_last_Java_sp != src->_last_Java_sp) {
       _last_Java_sp = nullptr;
-      OrderAccess::release();
     }
     _last_Java_pc = src->_last_Java_pc;
     // Must be last so profiler will always see valid frame if has_last_frame() is true.
-    OrderAccess::release();
     _last_Java_sp = src->_last_Java_sp;
   }
 
@@ -73,6 +71,8 @@ public:
 
   address last_Java_pc(void)          { return _last_Java_pc; }
 
-  void set_last_Java_sp(intptr_t* sp) { OrderAccess::release(); _last_Java_sp = sp; }
+  intptr_t* last_Java_fp() const      { return *(intptr_t**)_last_Java_sp; }
+
+  void set_last_Java_sp(intptr_t* sp) { _last_Java_sp = sp; }
 
 #endif // CPU_PPC_JAVAFRAMEANCHOR_PPC_HPP

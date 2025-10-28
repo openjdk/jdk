@@ -36,6 +36,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -99,7 +100,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   // you might need to fix the core library code, or fix the ADD_EXCL entries below.
   //
   //       class                                         field                     type
-  ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A
+  ADD_EXCL("java/lang/ClassLoader$Holder",               "scl");                   // A
   ADD_EXCL("java/lang/Module",                           "ALL_UNNAMED_MODULE",     // A
                                                          "ALL_UNNAMED_MODULE_SET", // A
                                                          "EVERYONE_MODULE",        // A
@@ -110,11 +111,13 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   ADD_EXCL("java/lang/System",                           "bootLayer");             // A
 
-  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");           // E
+  ADD_EXCL("java/util/Collections",                      "EMPTY_LIST");            // E
 
   // A dummy object used by HashSet. The value doesn't matter and it's never
   // tested for equality.
   ADD_EXCL("java/util/HashSet",                          "PRESENT");               // E
+
+  ADD_EXCL("jdk/internal/loader/BootLoader",             "UNNAMED_MODULE");        // A
   ADD_EXCL("jdk/internal/loader/BuiltinClassLoader",     "packageToModule");       // A
   ADD_EXCL("jdk/internal/loader/ClassLoaders",           "BOOT_LOADER",            // A
                                                          "APP_LOADER",             // A
@@ -138,11 +141,14 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                           "CD_Object_array",       // E same as <...>ConstantUtils.CD_Object_array::CD_Object
                                                           "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
 
-    ADD_EXCL("java/lang/invoke/MethodHandleImpl$ArrayAccessor",
-                                                          "OBJECT_ARRAY_GETTER",    // D
-                                                          "OBJECT_ARRAY_SETTER",    // D
-                                                          "OBJECT_ARRAY_LENGTH");   // D
+    ADD_EXCL("java/lang/runtime/ObjectMethods",           "CLASS_IS_INSTANCE",     // D
+                                                          "FALSE",                 // D
+                                                          "TRUE",                  // D
+                                                          "ZERO");                 // D
+  }
 
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    ADD_EXCL("java/lang/Package$VersionInfo",             "NULL_VERSION_INFO");    // D
   }
 
 # undef ADD_EXCL
@@ -152,11 +158,11 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_error(cds, heap)("Scanned %d objects. Found %d case(s) where "
+    log_error(aot, heap)("Scanned %d objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
-    log_error(cds, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
-    MetaspaceShared::unrecoverable_writing_error();
+    log_error(aot, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");
+    AOTMetaspace::unrecoverable_writing_error();
   }
 }
 
@@ -226,10 +232,16 @@ public:
           return;
         }
 
-        if (field_ik == vmClasses::internal_Unsafe_klass() && ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
-          // There's only a single instance of jdk/internal/misc/Unsafe, so all references will
-          // be pointing to this singleton, which has been archived.
-          return;
+        if (ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
+          if (field_ik == vmClasses::internal_Unsafe_klass()) {
+            // There's only a single instance of jdk/internal/misc/Unsafe, so all references will
+            // be pointing to this singleton, which has been archived.
+            return;
+          }
+          if (field_ik == vmClasses::Boolean_klass()) {
+            // TODO: check if is TRUE or FALSE
+            return;
+          }
         }
       }
 
@@ -272,7 +284,8 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
 
 // This function is called once for every archived heap object. Warn if this object is referenced by
 // a static field of a class that's not aot-initialized.
-inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
+inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, HeapShared::CachedOopInfo& value) {
+  oop orig_obj = orig_obj_handle.resolve();
   _archived_objs++;
 
   if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
@@ -286,7 +299,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();
-    LogStream ls(Log(cds, heap)::warning());
+    LogStream ls(Log(aot, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may hold a different value at runtime:");
     ls.print_cr("Field: %s::%s", class_name, field_name);
     ls.print("Value: ");
@@ -322,7 +335,7 @@ public:
 
 // Call this function (from gdb, etc) if you want to know why an object is archived.
 void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
-  HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(orig_obj);
+  HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(orig_obj);
   if (info != nullptr) {
     trace_to_root(st, orig_obj, nullptr, info);
   } else {
@@ -356,7 +369,7 @@ const char* static_field_name(oop mirror, oop field) {
 int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
   if (info->orig_referrer() != nullptr) {
-    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(info->orig_referrer());
+    HeapShared::CachedOopInfo* ref = HeapShared::get_cached_oop_info(info->orig_referrer());
     assert(ref != nullptr, "sanity");
     level = trace_to_root(st, info->orig_referrer(), orig_obj, ref) + 1;
   } else if (java_lang_String::is_instance(orig_obj)) {

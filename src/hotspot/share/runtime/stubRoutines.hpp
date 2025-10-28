@@ -31,8 +31,9 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -140,6 +141,10 @@ class UnsafeMemoryAccess : public CHeapObj<mtCode> {
   static bool    contains_pc(address pc);
   static address page_error_continue_pc(address pc);
   static void    create_table(int max_size);
+  // Append to entries arrray start, end and exit pcs of all table
+  // entries that identify a sub-interval of range (range_start,
+  // range_end). Append nullptr if the exit pc is not in the range.
+  static void collect_entries(address range_start, address range_end, GrowableArray<address>& entries);
 };
 
 class UnsafeMemoryAccessMark : public StackObj {
@@ -150,51 +155,6 @@ class UnsafeMemoryAccessMark : public StackObj {
   UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
   ~UnsafeMemoryAccessMark();
 };
-
-// declare stubgen blob id enum
-
-#define BLOB_ENUM_DECLARE(blob_name) \
-  STUB_ID_NAME(blob_name),
-
-enum StubGenBlobId : int {
-  NO_BLOBID = -1,
-  STUBGEN_BLOBS_DO(BLOB_ENUM_DECLARE)
-  NUM_BLOBIDS
-};
-
-#undef BLOB_ENUM_DECLARE
-
-// declare blob local stub id enums
-
-#define BLOB_LOCAL_ENUM_START(blob_name)        \
-  enum StubGenStubId_ ## blob_name {            \
-    NO_STUBID_ ## blob_name = -1,
-
-#define BLOB_LOCAL_ENUM_END(blob_name)   \
-    NUM_STUBIDS_ ## blob_name            \
-  };
-
-#define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
-  blob_name ## _ ## stub_name ## _id,
-
-STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE)
-
-#undef BLOB_LOCAL_ENUM_START
-#undef BLOB_LOCAL_ENUM_END
-#undef BLOB_LOCAL_STUB_ENUM_DECLARE
-
-// declare global stub id enum
-
-#define STUB_ENUM_DECLARE(blob_name, stub_name) \
-  STUB_ID_NAME(stub_name) ,
-
-enum StubGenStubId : int {
-  NO_STUBID = -1,
-  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-
-#undef STUB_ENUM_DECLARE
 
 class StubRoutines: AllStatic {
 
@@ -208,17 +168,8 @@ public:
 
 #include CPU_HEADER(stubRoutines)
 
-// declare blob and stub name storage and associated lookup methods
-
-private:
-  static bool _inited_names;
-  static const char* _blob_names[StubGenBlobId::NUM_BLOBIDS];
-  static const char* _stub_names[StubGenStubId::NUM_STUBIDS];
-
-public:
-  static bool init_names();
-  static const char* get_blob_name(StubGenBlobId id);
-  static const char* get_stub_name(StubGenStubId id);
+  static const char* get_blob_name(BlobId id);
+  static const char* get_stub_name(StubId id);
 
 // declare blob fields
 
@@ -305,10 +256,6 @@ public:
 
   /* special case: stub employs array of entries */
 
-  // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
-
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
   // generate code to implement method contains
@@ -333,8 +280,7 @@ public:
 #undef DEFINE_BLOB_GETTER
 
 #ifdef ASSERT
-  // provide a translation from stub id to its associated blob id
-  static StubGenBlobId stub_to_blob(StubGenStubId stubId);
+  static BlobId stub_to_blob(StubId id);
 #endif
 
   // Debugging
@@ -343,7 +289,7 @@ public:
   // a subroutine for debugging the GC
   static address verify_oop_subroutine_entry_address()     { return (address)&_verify_oop_subroutine_entry; }
 
-  static CallStub call_stub()                              { return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
+  static CallStub call_stub()                              { assert(_call_stub_entry != nullptr, ""); return CAST_TO_FN_PTR(CallStub, _call_stub_entry); }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
 
@@ -362,6 +308,12 @@ public:
   static address arrayof_oop_disjoint_arraycopy(bool dest_uninitialized = false) {
     return dest_uninitialized ? _arrayof_oop_disjoint_arraycopy_uninit : _arrayof_oop_disjoint_arraycopy;
   }
+
+  // These methods is implemented in architecture-specific code.
+  // Any table that is returned must be allocated once-only in
+  // foreign memory (or C heap) rather generated in the code cache.
+  static address crc_table_addr();
+  static address crc32c_table_addr();
 
   typedef void (*DataCacheWritebackStub)(void *);
   static DataCacheWritebackStub DataCacheWriteback_stub()         { return CAST_TO_FN_PTR(DataCacheWritebackStub,  _data_cache_writeback); }

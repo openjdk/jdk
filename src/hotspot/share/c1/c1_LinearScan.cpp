@@ -43,7 +43,7 @@
   static LinearScanTimers _total_timer;
 
   // helper macro for short definition of timer
-  #define TIME_LINEAR_SCAN(timer_name)  TraceTime _block_timer("", _total_timer.timer(LinearScanTimers::timer_name), TimeLinearScan || TimeEachLinearScan, Verbose);
+  #define TIME_LINEAR_SCAN(timer_name)  TraceTime _block_timer("", _total_timer.timer(LinearScanTimers::timer_name), TimeLinearScan, Verbose);
 
 #else
   #define TIME_LINEAR_SCAN(timer_name)
@@ -3016,8 +3016,6 @@ void LinearScan::assign_reg_num() {
 
 
 void LinearScan::do_linear_scan() {
-  NOT_PRODUCT(_total_timer.begin_method());
-
   number_instructions();
 
   NOT_PRODUCT(print_lir(1, "Before Register Allocation"));
@@ -3072,7 +3070,6 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_lir(1, "Before Code Generation", false));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_final));
-  NOT_PRODUCT(_total_timer.end_method(this));
 }
 
 
@@ -6724,45 +6721,6 @@ const char* LinearScanTimers::timer_name(int idx) {
     case timer_assign_reg_num:           return "Assign Reg Num";
     case timer_optimize_lir:             return "Optimize LIR";
     default: ShouldNotReachHere();       return "";
-  }
-}
-
-void LinearScanTimers::begin_method() {
-  if (TimeEachLinearScan) {
-    // reset all timers to measure only current method
-    for (int i = 0; i < number_of_timers; i++) {
-      timer(i)->reset();
-    }
-  }
-}
-
-void LinearScanTimers::end_method(LinearScan* allocator) {
-  if (TimeEachLinearScan) {
-
-    double c = timer(timer_do_nothing)->seconds();
-    double total = 0;
-    for (int i = 1; i < number_of_timers; i++) {
-      total += timer(i)->seconds() - c;
-    }
-
-    if (total >= 0.0005) {
-      // print all information in one line for automatic processing
-      tty->print("@"); allocator->compilation()->method()->print_name();
-
-      tty->print("@ %d ", allocator->compilation()->method()->code_size());
-      tty->print("@ %d ", allocator->block_at(allocator->block_count() - 1)->last_lir_instruction_id() / 2);
-      tty->print("@ %d ", allocator->block_count());
-      tty->print("@ %d ", allocator->num_virtual_regs());
-      tty->print("@ %d ", allocator->interval_count());
-      tty->print("@ %d ", allocator->_num_calls);
-      tty->print("@ %d ", allocator->num_loops());
-
-      tty->print("@ %6.6f ", total);
-      for (int i = 1; i < number_of_timers; i++) {
-        tty->print("@ %4.1f ", ((timer(i)->seconds() - c) / total) * 100);
-      }
-      tty->cr();
-    }
   }
 }
 

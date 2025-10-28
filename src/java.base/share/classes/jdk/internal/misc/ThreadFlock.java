@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,15 +272,8 @@ public class ThreadFlock implements AutoCloseable {
      * Shutdown this flock so that no new threads can be started, existing threads
      * in the flock will continue to run. This method is a no-op if the flock is
      * already shutdown or closed.
-     *
-     * <p> This method may only be invoked by the flock owner or threads {@linkplain
-     * #containsThread(Thread) contained} in the flock.
-     *
-     * @throws WrongThreadException if the current thread is not the owner or a thread
-     * contained in the flock
      */
     public void shutdown() {
-        ensureOwnerOrContainsThread();
         if (!shutdown) {
             shutdown = true;
         }
@@ -370,12 +363,8 @@ public class ThreadFlock implements AutoCloseable {
      * <p> If the owner is blocked in {@code awaitAll} then it will return immediately.
      * If the owner is not blocked in {@code awaitAll} then its next call to wait
      * will return immediately. The method does nothing when the flock is closed.
-     *
-     * @throws WrongThreadException if the current thread is not the owner or a thread
-     * contained in the flock
      */
     public void wakeup() {
-        ensureOwnerOrContainsThread();
         if (!getAndSetPermit(true) && Thread.currentThread() != owner()) {
             LockSupport.unpark(owner());
         }

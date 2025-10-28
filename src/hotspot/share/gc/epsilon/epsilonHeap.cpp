@@ -30,13 +30,13 @@
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/ostream.hpp"
 
 jint EpsilonHeap::initialize() {
   size_t align = HeapAlignment;
@@ -52,7 +52,7 @@ jint EpsilonHeap::initialize() {
   initialize_reserved_region(heap_rs);
 
   _space = new ContiguousSpace();
-  _space->initialize(committed_region, /* clear_space = */ true, /* mangle_space = */ true);
+  _space->initialize(committed_region, /* clear_space = */ true);
 
   // Precompute hot fields
   _max_tlab_size = MIN2(CollectedHeap::max_tlab_size(), align_object_size(EpsilonMaxTLABSize / HeapWordSize));
@@ -154,7 +154,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   // Allocation successful, update counters
   if (verbose) {
     size_t last = _last_counter_update;
-    if ((used - last >= _step_counter_update) && Atomic::cmpxchg(&_last_counter_update, last, used) == last) {
+    if ((used - last >= _step_counter_update) && AtomicAccess::cmpxchg(&_last_counter_update, last, used) == last) {
       _monitoring_support->update_counters();
     }
   }
@@ -162,7 +162,7 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
   // ...and print the occupancy line, if needed
   if (verbose) {
     size_t last = _last_heap_print;
-    if ((used - last >= _step_heap_print) && Atomic::cmpxchg(&_last_heap_print, last, used) == last) {
+    if ((used - last >= _step_heap_print) && AtomicAccess::cmpxchg(&_last_heap_print, last, used) == last) {
       print_heap_info(used);
       print_metaspace_info();
     }
@@ -260,8 +260,7 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   return res;
 }
 
-HeapWord* EpsilonHeap::mem_allocate(size_t size, bool *gc_overhead_limit_was_exceeded) {
-  *gc_overhead_limit_was_exceeded = false;
+HeapWord* EpsilonHeap::mem_allocate(size_t size) {
   return allocate_work(size);
 }
 
@@ -297,26 +296,18 @@ void EpsilonHeap::object_iterate(ObjectClosure *cl) {
   _space->object_iterate(cl);
 }
 
-void EpsilonHeap::print_on(outputStream *st) const {
+void EpsilonHeap::print_heap_on(outputStream *st) const {
   st->print_cr("Epsilon Heap");
+
+  StreamIndentor si(st, 1);
 
   _virtual_space.print_on(st);
 
   if (_space != nullptr) {
     st->print_cr("Allocation space:");
-    _space->print_on(st);
-  }
 
-  MetaspaceUtils::print_on(st);
-}
-
-void EpsilonHeap::print_on_error(outputStream *st) const {
-  print_on(st);
-  st->cr();
-
-  BarrierSet* bs = BarrierSet::barrier_set();
-  if (bs != nullptr) {
-    bs->print_on(st);
+    StreamIndentor si(st, 1);
+    _space->print_on(st, "");
   }
 }
 

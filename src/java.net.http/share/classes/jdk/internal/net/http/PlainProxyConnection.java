@@ -30,7 +30,9 @@ import java.net.InetSocketAddress;
 class PlainProxyConnection extends PlainHttpConnection {
 
     PlainProxyConnection(InetSocketAddress proxy, HttpClientImpl client, String label) {
-        super(proxy, client, label);
+        // we don't track the origin server for a plain proxy connection, since it
+        // can be used to serve requests against several different origin servers.
+        super(null, proxy, client, label);
     }
 
     @Override

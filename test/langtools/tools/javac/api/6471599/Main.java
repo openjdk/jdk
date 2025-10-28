@@ -25,7 +25,7 @@
  * @test
  * @bug     6471599
  * @summary Type of rhs cannot be obtained when assigning to erroneous symbol
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @compile Main.java
  * @run main Main

@@ -92,7 +92,7 @@ inline ZMarkStripe* ZMarkStripeSet::stripe_next(ZMarkStripe* stripe) {
 }
 
 inline ZMarkStripe* ZMarkStripeSet::stripe_for_addr(uintptr_t addr) {
-  const size_t index = (addr >> ZMarkStripeShift) & Atomic::load(&_nstripes_mask);
+  const size_t index = (addr >> ZMarkStripeShift) & AtomicAccess::load(&_nstripes_mask);
   assert(index < ZMarkStripesMax, "Invalid index");
   return &_stripes[index];
 }

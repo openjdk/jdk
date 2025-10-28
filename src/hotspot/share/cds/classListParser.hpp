@@ -29,7 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/istream.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class constantPoolHandle;
 class Thread;
@@ -77,7 +77,7 @@ public:
 
 private:
   // Must be C_HEAP allocated -- we don't want nested resource allocations.
-  typedef ResizeableResourceHashtable<int, InstanceKlass*,
+  typedef ResizeableHashTable<int, InstanceKlass*,
                                       AnyObj::C_HEAP, mtClassShared> ID2KlassTable;
 
   enum {
@@ -137,7 +137,8 @@ private:
   void print_diagnostic_info(outputStream* st, const char* msg, ...) ATTRIBUTE_PRINTF(3, 0);
   void constant_pool_resolution_warning(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
   void error(const char* msg, ...) ATTRIBUTE_PRINTF(2, 0);
-  objArrayOop get_specified_interfaces(TRAPS);
+  GrowableArray<InstanceKlass*> get_specified_interfaces();
+  void check_supertype_obstruction(int specified_supertype_id, const InstanceKlass* specified_supertype, TRAPS);
 
 public:
   static void parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS);

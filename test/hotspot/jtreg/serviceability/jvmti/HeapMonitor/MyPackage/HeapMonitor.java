@@ -277,6 +277,9 @@ public class HeapMonitor {
     if (diffPercentage >= acceptedErrorPercentage) {
       System.err.println("Unexpected high difference percentage: " + diffPercentage
           + " due to the count being " + actual + " instead of " + expected);
+    } else {
+      System.out.println("OK difference percentage: " + diffPercentage
+          + " due to the count being " + actual + " instead of " + expected);
     }
     return diffPercentage < acceptedErrorPercentage;
   }

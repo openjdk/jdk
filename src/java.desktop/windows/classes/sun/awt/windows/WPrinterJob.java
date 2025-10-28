@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public final class WPrinterJob extends RasterPrinterJob
     /* The HandleRecord holds the native resources that need to be freed
      * when this WPrinterJob is GC'd.
      */
-    static class HandleRecord implements DisposerRecord {
+    static final class HandleRecord implements DisposerRecord {
         /**
          * The Windows device context we will print into.
          * This variable is set after the Print dialog
@@ -1200,14 +1200,6 @@ public final class WPrinterJob extends RasterPrinterJob
                          (int) (rgb[1] * MAX_WCOLOR),
                          (int) (rgb[2] * MAX_WCOLOR));
         }
-    }
-
-    /**
-     * Remove control characters.
-     */
-    @Override
-    protected String removeControlChars(String str) {
-        return super.removeControlChars(str);
     }
 
     /**
@@ -2269,7 +2261,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 @SuppressWarnings("serial") // JDK-implementation class
-static class PrintToFileErrorDialog extends Dialog implements ActionListener {
+static final class PrintToFileErrorDialog extends Dialog implements ActionListener {
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);

@@ -78,6 +78,7 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - ML-KEM
  *
+ * - HKDF-SHA256, HKDF-SHA384, and HKDF-SHA512
  */
 
 public final class SunJCE extends Provider {
@@ -87,7 +88,7 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, and ML-KEM)";
+    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, ML-KEM, and HKDF)";
 
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
@@ -135,6 +136,12 @@ public final class SunJCE extends Provider {
     void putEntries() {
         // reuse attribute map and reset before each reuse
         HashMap<String, String> attrs = new HashMap<>(3);
+        attrs.put("SupportedKeyClasses",
+                "java.security.interfaces.RSAPublicKey" +
+                "|java.security.interfaces.RSAPrivateKey");
+        ps("Signature", "NONEwithRSA",
+                "com.sun.crypto.provider.RSACipherAdaptor", null, attrs);
+        // continue adding cipher specific attributes
         attrs.put("SupportedModes", "ECB");
         attrs.put("SupportedPaddings", "NOPADDING|PKCS1PADDING|OAEPPADDING"
                 + "|OAEPWITHMD5ANDMGF1PADDING"
@@ -146,9 +153,6 @@ public final class SunJCE extends Provider {
                 + "|OAEPWITHSHA-512ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/224ANDMGF1PADDING"
                 + "|OAEPWITHSHA-512/256ANDMGF1PADDING");
-        attrs.put("SupportedKeyClasses",
-                "java.security.interfaces.RSAPublicKey" +
-                "|java.security.interfaces.RSAPrivateKey");
         ps("Cipher", "RSA",
                 "com.sun.crypto.provider.RSACipher", null, attrs);
 

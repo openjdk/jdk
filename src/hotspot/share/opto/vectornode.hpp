@@ -95,7 +95,6 @@ class VectorNode : public TypeNode {
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
-  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   static int shift_count_opcode(int opc);
 
@@ -104,6 +103,7 @@ class VectorNode : public TypeNode {
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
+  static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
@@ -281,6 +281,8 @@ class ReductionNode : public Node {
   virtual bool requires_strict_order() const {
     return false;
   }
+
+  static bool auto_vectorization_requires_strict_order(int vopc);
 
 #ifndef PRODUCT
   void dump_spec(outputStream* st) const {
@@ -675,8 +677,11 @@ class UMinVNode : public VectorNode {
   UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
+
 
 //------------------------------MaxVNode--------------------------------------
 // Vector Max
@@ -691,6 +696,8 @@ class UMaxVNode : public VectorNode {
   UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -1007,6 +1014,7 @@ class XorVNode : public VectorNode {
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------XorReductionVNode--------------------------------------
@@ -1084,7 +1092,7 @@ class LoadVectorNode : public LoadNode {
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
-  virtual BasicType memory_type() const { return T_VOID; }
+  virtual BasicType value_basic_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
@@ -1112,25 +1120,18 @@ class LoadVectorNode : public LoadNode {
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
     add_req(indices);
     DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
     assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(is_subword || !offset, "");
     assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
-    if (offset) {
-      add_req(offset);
-    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const {
-     return idx == MemNode::Address ||
-            idx == MemNode::ValueIn ||
-            ((is_subword_type(vect_type()->element_basic_type())) &&
-              idx == MemNode::ValueIn + 1);
+     return idx == MemNode::Address || idx == MemNode::ValueIn;
   }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode to avoid folding when indices are used
@@ -1157,7 +1158,7 @@ class StoreVectorNode : public StoreNode {
   virtual int Opcode() const;
 
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
-  virtual BasicType memory_type() const { return T_VOID; }
+  virtual BasicType value_basic_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
@@ -1249,23 +1250,19 @@ class LoadVectorMaskedNode : public LoadVectorNode {
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
-    if (is_subword_type(vt->element_basic_type())) {
-      add_req(offset);
-    }
+    assert(is_subword_type(vt->element_basic_type()) || indices->bottom_type()->is_vect(), "indices must be in vector");
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1 ||
-                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
-                                                   idx == MemNode::ValueIn + 2); }
+                                                   idx == MemNode::ValueIn + 1; }
   virtual int store_Opcode() const {
     // Ensure it is different from any store opcode to avoid folding when indices and mask are used
     return -1;
@@ -1389,6 +1386,8 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   VectorMaskToLongNode(Node* mask, const Type* ty):
     VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
   virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_MaskAll(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
 };
@@ -1679,6 +1678,7 @@ class VectorMaskCmpNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && _predicate == ((VectorMaskCmpNode&)n)._predicate;
   }
+  bool predicate_can_be_negated();
   BoolTest::mask get_predicate() { return _predicate; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -1782,6 +1782,7 @@ class VectorLoadMaskNode : public VectorNode {
 
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 class VectorStoreMaskNode : public VectorNode {
@@ -1801,6 +1802,7 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
+  Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

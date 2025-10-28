@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,18 @@
  */
 package sun.security.ssl;
 
+import javax.crypto.KDF;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.HKDFParameterSpec;
 import javax.net.ssl.SSLHandshakeException;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.AlgorithmParameterSpec;
+import sun.security.util.KeyUtil;
 
 /**
  * A common class for creating various KeyDerivation types.
@@ -55,29 +58,26 @@ public class KAKeyDerivation implements SSLKeyDerivation {
     }
 
     @Override
-    public SecretKey deriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    public SecretKey deriveKey(String type) throws IOException {
         if (!context.negotiatedProtocol.useTLS13PlusSpec()) {
-            return t12DeriveKey(algorithm, params);
+            return t12DeriveKey();
         } else {
-            return t13DeriveKey(algorithm, params);
+            return t13DeriveKey(type);
         }
     }
 
     /**
      * Handle the TLSv1-1.2 objects, which don't use the HKDF algorithms.
      */
-    private SecretKey t12DeriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    private SecretKey t12DeriveKey() throws IOException {
+        SecretKey preMasterSecret = null;
         try {
             KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
             ka.init(localPrivateKey);
             ka.doPhase(peerPublicKey, true);
-            SecretKey preMasterSecret
-                    = ka.generateSecret("TlsPremasterSecret");
-            SSLMasterKeyDerivation mskd
-                    = SSLMasterKeyDerivation.valueOf(
-                            context.negotiatedProtocol);
+            preMasterSecret = ka.generateSecret("TlsPremasterSecret");
+            SSLMasterKeyDerivation mskd =
+                    SSLMasterKeyDerivation.valueOf(context.negotiatedProtocol);
             if (mskd == null) {
                 // unlikely
                 throw new SSLHandshakeException(
@@ -86,45 +86,55 @@ public class KAKeyDerivation implements SSLKeyDerivation {
             }
             SSLKeyDerivation kd = mskd.createKeyDerivation(
                     context, preMasterSecret);
-            return kd.deriveKey("MasterSecret", params);
+            return kd.deriveKey("MasterSecret");
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
+        } finally {
+            KeyUtil.destroySecretKeys(preMasterSecret);
         }
     }
 
     /**
      * Handle the TLSv1.3 objects, which use the HKDF algorithms.
      */
-    private SecretKey t13DeriveKey(String algorithm,
-            AlgorithmParameterSpec params) throws IOException {
+    private SecretKey t13DeriveKey(String type)
+            throws IOException {
+        SecretKey sharedSecret = null;
+        SecretKey earlySecret = null;
+        SecretKey saltSecret = null;
         try {
             KeyAgreement ka = KeyAgreement.getInstance(algorithmName);
             ka.init(localPrivateKey);
             ka.doPhase(peerPublicKey, true);
-            SecretKey sharedSecret
-                    = ka.generateSecret("TlsPremasterSecret");
+            sharedSecret = ka.generateSecret("TlsPremasterSecret");
 
             CipherSuite.HashAlg hashAlg = context.negotiatedCipherSuite.hashAlg;
             SSLKeyDerivation kd = context.handshakeKeyDerivation;
-            HKDF hkdf = new HKDF(hashAlg.name);
             if (kd == null) {   // No PSK is in use.
-                // If PSK is not in use Early Secret will still be
+                // If PSK is not in use, Early Secret will still be
                 // HKDF-Extract(0, 0).
                 byte[] zeros = new byte[hashAlg.hashLength];
-                SecretKeySpec ikm
-                        = new SecretKeySpec(zeros, "TlsPreSharedSecret");
-                SecretKey earlySecret
-                        = hkdf.extract(zeros, ikm, "TlsEarlySecret");
+                KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+                earlySecret = hkdf.deriveKey("TlsEarlySecret",
+                        HKDFParameterSpec.ofExtract().addSalt(zeros)
+                        .addIKM(zeros).extractOnly());
                 kd = new SSLSecretDerivation(context, earlySecret);
             }
 
             // derive salt secret
-            SecretKey saltSecret = kd.deriveKey("TlsSaltSecret", null);
+            saltSecret = kd.deriveKey("TlsSaltSecret");
 
             // derive handshake secret
-            return hkdf.extract(saltSecret, sharedSecret, algorithm);
+            // NOTE: do not reuse the HKDF object for "TlsEarlySecret" for
+            // the handshake secret key derivation (below) as it may not
+            // work with the "sharedSecret" obj.
+            KDF hkdf = KDF.getInstance(hashAlg.hkdfAlgorithm);
+            return hkdf.deriveKey(type, HKDFParameterSpec.ofExtract()
+                    .addSalt(saltSecret).addIKM(sharedSecret).extractOnly());
         } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not generate secret", gse);
+        } finally {
+            KeyUtil.destroySecretKeys(sharedSecret, earlySecret, saltSecret);
         }
     }
 }

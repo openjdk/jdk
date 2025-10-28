@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@ struct ABIDescriptor {
   GrowableArray<Register> _integer_return_registers;
   GrowableArray<FloatRegister> _float_argument_registers;
   GrowableArray<FloatRegister> _float_return_registers;
-
-  GrowableArray<Register> _integer_additional_volatile_registers;
-  GrowableArray<FloatRegister> _float_additional_volatile_registers;
 
   int32_t _stack_alignment_bytes;
   int32_t _shadow_space_bytes;

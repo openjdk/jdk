@@ -51,11 +51,27 @@ final class HotSpotJVMCICompilerConfig {
         DummyCompilerFactory(String reason, HotSpotJVMCIRuntime runtime) {
             this.reason = reason;
             this.runtime = runtime;
+            if (runtime.getConfig().getFlag("EagerJVMCI", Boolean.class)) {
+                if (runtime.getCompilerToVM().isCompilerThread()) {
+                    throw noCompilerError();
+                } else {
+                    // This path will be taken when initializing JVMCI on a non-JIT thread.
+                    // Such a usage of JVMCI might never request a compilation so delay the
+                    // noCompilerError until such a request is made.
+                }
+            }
+        }
+
+        /**
+         * Exits the VM due to unavailability of a JVMCI compiler.
+         */
+        Error noCompilerError() {
+            throw runtime.exitHotSpotWithMessage(1, "Cannot use JVMCI compiler: %s%n", reason);
         }
 
         @Override
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
-            throw runtime.exitHotSpotWithMessage(1, "Cannot use JVMCI compiler: %s%n", reason);
+            throw noCompilerError();
         }
 
         @Override

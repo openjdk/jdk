@@ -26,7 +26,7 @@
  * @bug 8074981
  * @summary Add C2 x86 Superword support for scalar product reduction optimizations : int test
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.ProdRed_Int
+ * @run driver/timeout=480 compiler.loopopts.superword.ProdRed_Int
  */
 
 package compiler.loopopts.superword;
@@ -85,8 +85,7 @@ public class ProdRed_Int {
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"rvv", "true"},
+    @IR(applyIfCPUFeature = {"rvv", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int prodReductionImplement(int[] a, int[] b, int total) {

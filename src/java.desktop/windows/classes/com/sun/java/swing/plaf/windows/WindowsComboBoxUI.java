@@ -75,7 +75,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
  * @author Tom Santos
  * @author Igor Kushnirskiy
  */
-public class WindowsComboBoxUI extends BasicComboBoxUI {
+public final class WindowsComboBoxUI extends BasicComboBoxUI {
 
     private static final MouseListener rolloverListener =
         new MouseAdapter() {
@@ -162,6 +162,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         return new WindowsComboBoxUI();
     }
 
+    @Override
     public void installUI( JComponent c ) {
         super.installUI( c );
         isRollover = false;
@@ -176,6 +177,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c ) {
         comboBox.removeMouseListener(rolloverListener);
         if(arrowButton != null) {
@@ -215,6 +217,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void configureEditor() {
         super.configureEditor();
         if (XPStyle.getXP() != null) {
@@ -226,6 +229,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     protected void unconfigureEditor() {
         super.unconfigureEditor();
         editor.removeMouseListener(rolloverListener);
@@ -235,6 +239,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     public void paint(Graphics g, JComponent c) {
         if (XPStyle.getXP() != null) {
             paintXPComboBoxBackground(g, c);
@@ -283,6 +288,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @throws NullPointerException if any of the arguments are null.
      * @since 1.5
      */
+    @Override
     public void paintCurrentValue(Graphics g, Rectangle bounds,
                                   boolean hasFocus) {
         XPStyle xp = XPStyle.getXP();
@@ -347,6 +353,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * {@inheritDoc}
      * @since 1.6
      */
+    @Override
     public void paintCurrentValueBackground(Graphics g, Rectangle bounds,
                                             boolean hasFocus) {
         if (XPStyle.getXP() == null) {
@@ -354,6 +361,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         }
     }
 
+    @Override
     public Dimension getMinimumSize( JComponent c ) {
         Dimension d = super.getMinimumSize(c);
         if (XPStyle.getXP() != null) {
@@ -380,6 +388,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      *
      * @return an instance of a layout manager
      */
+    @Override
     protected LayoutManager createLayoutManager() {
         return new BasicComboBoxUI.ComboBoxLayoutManager() {
             public void layoutContainer(Container parent) {
@@ -407,10 +416,12 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         };
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
     }
 
+    @Override
     protected ComboPopup createPopup() {
         return new WinComboPopUp(comboBox);
     }
@@ -423,6 +434,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @return a <code>ComboBoxEditor</code> used for the combo box
      * @see javax.swing.JComboBox#setEditor
      */
+    @Override
     protected ComboBoxEditor createEditor() {
         return new WindowsComboBoxEditor();
     }
@@ -447,6 +459,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      *
      * @return a button which represents the popup control
      */
+    @Override
     protected JButton createArrowButton() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null) {
@@ -457,7 +470,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPComboBoxButton extends XPStyle.GlyphButton {
+    private final class XPComboBoxButton extends XPStyle.GlyphButton {
         private State prevState = null;
 
         public XPComboBoxButton(XPStyle xp) {
@@ -504,6 +517,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             return rv;
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(17, 21);
         }
@@ -518,7 +532,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     }
 
     @SuppressWarnings("serial") // Same-version serialization only
-    protected class WinComboPopUp extends BasicComboPopup {
+    protected final class WinComboPopUp extends BasicComboPopup {
         private Skin listBoxBorder = null;
         private XPStyle xp;
 
@@ -531,16 +545,18 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             }
         }
 
+        @Override
         protected KeyListener createKeyListener() {
             return new InvocationKeyHandler();
         }
 
-        protected class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
+        protected final class InvocationKeyHandler extends BasicComboPopup.InvocationKeyHandler {
             protected InvocationKeyHandler() {
                 WinComboPopUp.this.super();
             }
         }
 
+        @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (this.listBoxBorder != null) {
@@ -554,13 +570,14 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     /**
      * Subclassed to highlight selected item in an editable combo box.
      */
-    public static class WindowsComboBoxEditor
+    public static final class WindowsComboBoxEditor
         extends BasicComboBoxEditor.UIResource {
 
         /**
          * {@inheritDoc}
          * @since 1.6
          */
+        @Override
         protected JTextField createEditorComponent() {
             JTextField editor = super.createEditorComponent();
             Border border = (Border)UIManager.get("ComboBox.editorBorder");
@@ -572,6 +589,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             return editor;
         }
 
+        @Override
         public void setItem(Object item) {
             super.setItem(item);
             Object focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
@@ -586,14 +604,14 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * and to show border for focused cells.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private static class WindowsComboBoxRenderer
+    private static final class WindowsComboBoxRenderer
           extends BasicComboBoxRenderer.UIResource {
         private static final Object BORDER_KEY
             = new StringUIClientPropertyKey("BORDER_KEY");
         private static final Border NULL_BORDER = new EmptyBorder(0, 0, 0, 0);
 
         // Create own version of DashedBorder with more space on left side
-        private static class WindowsComboBoxDashedBorder extends DashedBorder {
+        private static final class WindowsComboBoxDashedBorder extends DashedBorder {
 
             public WindowsComboBoxDashedBorder(Color color, int thickness) {
                 super(color, thickness);

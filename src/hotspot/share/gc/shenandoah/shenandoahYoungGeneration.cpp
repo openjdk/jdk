@@ -22,16 +22,16 @@
  *
  */
 
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 
-ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity) :
-  ShenandoahGeneration(YOUNG, max_queues, max_capacity, soft_max_capacity),
+ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity) :
+  ShenandoahGeneration(YOUNG, max_queues, max_capacity),
   _old_gen_task_queues(nullptr) {
 }
 

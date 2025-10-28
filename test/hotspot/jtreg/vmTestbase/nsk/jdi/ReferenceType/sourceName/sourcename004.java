@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class sourcename004 {
     static final String DEBUGGEE_METHOD = "sourcename004trunIt";
 
     // debuggee source line where it should be stopped
-    static final int DEBUGGEE_STOPATLINE = 57;
+    static final int DEBUGGEE_STOPATLINE = 60;
 
     static final int FLD_NUM = 24;
     // tested fields used to provoke the exception
@@ -135,15 +135,18 @@ public class sourcename004 {
         }
 
         try {
-            // debuggee main thread
-            ThreadReference thrRef = null;
-            if ((thrRef =
-                    debuggee.threadByName(DEBUGGEE_THRNAME)) == null)
-                throw new Failure("method Debugee.threadByName() returned null for debuggee thread "
-                    + DEBUGGEE_THRNAME);
-
             // debuggee main class
             ReferenceType rType = debuggee.classByName(DEBUGGEE_CLASS);
+
+            // debuggee main thread
+            ThreadReference thrRef =
+                debuggee.threadByFieldName(rType, "testThread", DEBUGGEE_THRNAME);
+            if (thrRef == null) {
+                throw new Failure("method Debugee.threadByFieldName() returned null for debuggee thread "
+                    + DEBUGGEE_THRNAME);
+            }
+
+            // debuggee main class
             Method meth = debuggee.methodByName(rType, DEBUGGEE_METHOD);
             suspendAtBP(rType, DEBUGGEE_STOPATLINE);
             ObjectReference objRef = findObjRef(thrRef, meth);

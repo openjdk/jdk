@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @test
  * @summary Test miscellanous functionality related to JVM running in docker container
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -110,9 +111,11 @@ public class TestMisc {
             "CPU Shares",
             "CPU Quota",
             "CPU Period",
+            "CPU Usage",
             "OSContainer::active_processor_count",
             "Memory Limit",
             "Memory Soft Limit",
+            "Memory Throttle Limit",
             "Memory Usage",
             "Maximum Memory Usage",
             "memory_max_usage_in_bytes",

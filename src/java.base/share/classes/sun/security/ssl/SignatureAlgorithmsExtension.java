@@ -25,14 +25,17 @@
 
 package sun.security.ssl;
 
+import static sun.security.ssl.SignatureScheme.CERTIFICATE_SCOPE;
 import static sun.security.ssl.SignatureScheme.HANDSHAKE_SCOPE;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -189,21 +192,9 @@ final class SignatureAlgorithmsExtension {
             // Produce the extension.
             SignatureScheme.updateHandshakeLocalSupportedAlgs(chc);
 
-            int vectorLen = SignatureScheme.sizeInRecord() *
-                    chc.localSupportedSignAlgs.size();
-            byte[] extData = new byte[vectorLen + 2];
-            ByteBuffer m = ByteBuffer.wrap(extData);
-            Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : chc.localSupportedSignAlgs) {
-                Record.putInt16(m, ss.id);
-            }
-
-            // Update the context.
-            chc.handshakeExtensions.put(
+            return produceNetworkLoad(chc,
                     SSLExtension.CH_SIGNATURE_ALGORITHMS,
-                    new SignatureSchemesSpec(chc.localSupportedSignAlgs));
-
-            return extData;
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT);
         }
     }
 
@@ -270,30 +261,8 @@ final class SignatureAlgorithmsExtension {
                 return;
             }
 
-            // update the context
-            List<SignatureScheme> sss =
-                    SignatureScheme.getSupportedAlgorithms(
-                            shc.sslConfig,
-                            shc.algorithmConstraints, shc.negotiatedProtocol,
-                            spec.signatureSchemes,
-                            HANDSHAKE_SCOPE);
-
-            if (sss == null || sss.isEmpty()) {
-                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature algorithm");
-            }
-            shc.peerRequestedSignatureSchemes = sss;
-
-            // If no "signature_algorithms_cert" extension is present, then
-            // the "signature_algorithms" extension also applies to
-            // signatures appearing in certificates.
-            SignatureSchemesSpec certSpec =
-                    (SignatureSchemesSpec)shc.handshakeExtensions.get(
-                            SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT);
-            if (certSpec == null) {
-                shc.peerRequestedCertSignSchemes = sss;
-                shc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
-            }
+            updateHandshakeContext(shc, spec.signatureSchemes,
+                    SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT);
 
             if (!shc.isResumption &&
                     shc.negotiatedProtocol.useTLS13PlusSpec()) {
@@ -411,23 +380,11 @@ final class SignatureAlgorithmsExtension {
             }
 
             // Produce the extension.
-            // localSupportedSignAlgs has been already updated when we
-            // set the negotiated protocol.
-            int vectorLen = SignatureScheme.sizeInRecord()
-                    * shc.localSupportedSignAlgs.size();
-            byte[] extData = new byte[vectorLen + 2];
-            ByteBuffer m = ByteBuffer.wrap(extData);
-            Record.putInt16(m, vectorLen);
-            for (SignatureScheme ss : shc.localSupportedSignAlgs) {
-                Record.putInt16(m, ss.id);
-            }
-
-            // Update the context.
-            shc.handshakeExtensions.put(
+            // localSupportedSignAlgs and localSupportedCertSignAlgs have been
+            // already updated when we set the negotiated protocol.
+            return produceNetworkLoad(shc,
                     SSLExtension.CR_SIGNATURE_ALGORITHMS,
-                    new SignatureSchemesSpec(shc.localSupportedSignAlgs));
-
-            return extData;
+                    SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
         }
     }
 
@@ -497,30 +454,8 @@ final class SignatureAlgorithmsExtension {
                 return;
             }
 
-            // update the context
-            List<SignatureScheme> sss =
-                    SignatureScheme.getSupportedAlgorithms(
-                            chc.sslConfig,
-                            chc.algorithmConstraints, chc.negotiatedProtocol,
-                            spec.signatureSchemes,
-                            HANDSHAKE_SCOPE);
-
-            if (sss == null || sss.isEmpty()) {
-                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
-                        "No supported signature algorithm");
-            }
-            chc.peerRequestedSignatureSchemes = sss;
-
-            // If no "signature_algorithms_cert" extension is present, then
-            // the "signature_algorithms" extension also applies to
-            // signatures appearing in certificates.
-            SignatureSchemesSpec certSpec =
-                    (SignatureSchemesSpec)chc.handshakeExtensions.get(
-                            SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
-            if (certSpec == null) {
-                chc.peerRequestedCertSignSchemes = sss;
-                chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
-            }
+            updateHandshakeContext(chc, spec.signatureSchemes,
+                    SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
         }
     }
 
@@ -542,5 +477,91 @@ final class SignatureAlgorithmsExtension {
                     "No mandatory signature_algorithms extension in the " +
                     "received CertificateRequest handshake message");
         }
+    }
+
+    // Updates given HandshakeContext with peer signature schemes.
+    private static void updateHandshakeContext(HandshakeContext hc,
+            int[] signatureSchemes, SSLExtension signatureAlgorithmsCertExt)
+            throws SSLException {
+        List<SignatureScheme> handshakeSS =
+                SignatureScheme.getSupportedAlgorithms(
+                        hc.sslConfig,
+                        hc.algorithmConstraints,
+                        hc.negotiatedProtocol,
+                        signatureSchemes,
+                        HANDSHAKE_SCOPE);
+
+        if (handshakeSS.isEmpty()) {
+            throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No supported signature algorithm");
+        }
+
+        hc.peerRequestedSignatureSchemes = handshakeSS;
+
+        // If no "signature_algorithms_cert" extension is present, then
+        // the "signature_algorithms" extension also applies to
+        // signatures appearing in certificates.
+        SignatureSchemesSpec certSpec =
+                (SignatureSchemesSpec) hc.handshakeExtensions.get(
+                        signatureAlgorithmsCertExt);
+
+        if (certSpec == null) {
+            List<SignatureScheme> certSS =
+                    SignatureScheme.getSupportedAlgorithms(
+                            hc.sslConfig,
+                            hc.algorithmConstraints,
+                            hc.negotiatedProtocol,
+                            signatureSchemes,
+                            CERTIFICATE_SCOPE);
+
+            if (certSS.isEmpty()) {
+                throw hc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
+
+            hc.peerRequestedCertSignSchemes = certSS;
+            hc.handshakeSession.setPeerSupportedSignatureAlgorithms(certSS);
+        }
+    }
+
+    /**
+     * Produce network load and update context.
+     *
+     * @param hc HandshakeContext
+     * @param signatureAlgorithmsExt "signature_algorithms" extension
+     * @param signatureAlgorithmsCertExt "signature_algorithms_cert"
+     *         extension
+     * @return network load as byte array
+     */
+    private static byte[] produceNetworkLoad(
+            HandshakeContext hc, SSLExtension signatureAlgorithmsExt,
+            SSLExtension signatureAlgorithmsCertExt) throws IOException {
+
+        List<SignatureScheme> sigAlgs;
+
+        // If we don't produce "signature_algorithms_cert" extension, then
+        // the "signature_algorithms" extension should contain signatures
+        // supported for both: handshake signatures and certificate signatures.
+        if (hc.sslConfig.isAvailable(signatureAlgorithmsCertExt)) {
+            sigAlgs = hc.localSupportedSignAlgs;
+        } else {
+            sigAlgs = new ArrayList<>(hc.localSupportedSignAlgs);
+            sigAlgs.retainAll(hc.localSupportedCertSignAlgs);
+        }
+
+        int vectorLen = SignatureScheme.sizeInRecord() * sigAlgs.size();
+        byte[] extData = new byte[vectorLen + 2];
+        ByteBuffer m = ByteBuffer.wrap(extData);
+        Record.putInt16(m, vectorLen);
+
+        for (SignatureScheme ss : sigAlgs) {
+            Record.putInt16(m, ss.id);
+        }
+
+        // Update the context.
+        hc.handshakeExtensions.put(
+                signatureAlgorithmsExt, new SignatureSchemesSpec(sigAlgs));
+
+        return extData;
     }
 }

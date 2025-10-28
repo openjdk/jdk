@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,10 @@
 // Useful if the function or method is known to do something special or even 'dangerous', for
 // example causing desired signals/crashes.
 #ifdef UNDEFINED_BEHAVIOR_SANITIZER
-#if defined(__clang__) || defined(__GNUC__)
+#if defined(__clang__)
+#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined","float-divide-by-zero")))
+#endif
+#if defined(__GNUC__) && !defined(__clang__)
 #define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
 #endif
 #endif

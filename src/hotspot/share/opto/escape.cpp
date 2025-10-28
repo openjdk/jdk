@@ -29,18 +29,18 @@
 #include "libadt/vectset.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "opto/c2compiler.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
-#include "opto/macro.hpp"
 #include "opto/locknode.hpp"
-#include "opto/phaseX.hpp"
+#include "opto/macro.hpp"
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
-#include "opto/castnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
 
@@ -201,7 +201,7 @@ bool ConnectionGraph::compute_escape() {
         if (!UseStoreStoreForCtor || n->req() > MemBarNode::Precedent) {
           storestore_worklist.append(n->as_MemBarStoreStore());
         }
-        break;
+        // If MemBarStoreStore has a precedent edge add it to the worklist (like MemBarRelease)
       case Op_MemBarRelease:
         if (n->req() > MemBarNode::Precedent) {
           record_for_optimizer(n);
@@ -1296,9 +1296,8 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
       castpps.push(use);
     } else if (use->is_AddP() || use->is_Cmp()) {
       others.push(use);
-    } else if (use->is_SafePoint()) {
-      // processed later
     } else {
+      // Safepoints to be processed later; other users aren't expected here
       assert(use->is_SafePoint(), "Unexpected user of reducible Phi %d -> %d:%s:%d", ophi->_idx, use->_idx, use->Name(), use->outcnt());
     }
   }
@@ -2260,14 +2259,10 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
             }
             PointsToNode* src_ptn = ptnode_adr(src->_idx);
             assert(src_ptn != nullptr, "should be registered");
-            if (arg_ptn != src_ptn) {
-              // Special arraycopy edge:
-              // A destination object's field can't have the source object
-              // as base since objects escape states are not related.
-              // Only escape state of destination object's fields affects
-              // escape state of fields in source object.
-              add_arraycopy(call, es, src_ptn, arg_ptn);
-            }
+            // Special arraycopy edge:
+            // Only escape state of destination object's fields affects
+            // escape state of fields in source object.
+            add_arraycopy(call, es, src_ptn, arg_ptn);
           }
         }
       }
@@ -2826,14 +2821,14 @@ int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* pha
         offsets_worklist.append(offset);
         Node* value = nullptr;
         if (ini != nullptr) {
-          // StoreP::memory_type() == T_ADDRESS
+          // StoreP::value_basic_type() == T_ADDRESS
           BasicType ft = UseCompressedOops ? T_NARROWOOP : T_ADDRESS;
           Node* store = ini->find_captured_store(offset, type2aelembytes(ft, true), phase);
           // Make sure initializing store has the same type as this AddP.
           // This AddP may reference non existing field because it is on a
           // dead branch of bimorphic call which is not eliminated yet.
           if (store != nullptr && store->is_Store() &&
-              store->as_Store()->memory_type() == ft) {
+              store->as_Store()->value_basic_type() == ft) {
             value = store->in(MemNode::ValueIn);
 #ifdef ASSERT
             if (VerifyConnectionGraph) {
@@ -3133,6 +3128,14 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               break;
             }
           }
+        } else if (use->is_LocalVar()) {
+          Node* phi = use->ideal_node();
+          if (phi->Opcode() == Op_Phi && reducible_merges.member(phi) && !can_reduce_phi(phi->as_Phi())) {
+            set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is merged in a non-reducible phi"));
+            reducible_merges.yank(phi);
+            found_nsr_alloc = true;
+            break;
+          }
         }
       }
     }
@@ -3276,10 +3279,12 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
 
 // Optimize objects compare.
 const TypeInt* ConnectionGraph::optimize_ptr_compare(Node* left, Node* right) {
-  assert(OptimizePtrCompare, "sanity");
+  const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
+  if (!OptimizePtrCompare) {
+    return UNKNOWN;
+  }
   const TypeInt* EQ = TypeInt::CC_EQ; // [0] == ZERO
   const TypeInt* NE = TypeInt::CC_GT; // [1] == ONE
-  const TypeInt* UNKNOWN = TypeInt::CC;    // [-1, 0,1]
 
   PointsToNode* ptn1 = ptnode_adr(left->_idx);
   PointsToNode* ptn2 = ptnode_adr(right->_idx);
@@ -4567,7 +4572,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       }
     } else {
-      debug_only(n->dump();)
+      DEBUG_ONLY(n->dump();)
       assert(false, "EA: unexpected node");
       continue;
     }
@@ -5069,7 +5074,7 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
 }
 
 void ConnectionGraph::print_statistics() {
-  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
+  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", AtomicAccess::load(&_no_escape_counter), AtomicAccess::load(&_arg_escape_counter), AtomicAccess::load(&_global_escape_counter));
 }
 
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
@@ -5080,11 +5085,11 @@ void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& ja
     JavaObjectNode* ptn = java_objects_worklist.at(next);
     if (ptn->ideal_node()->is_Allocate()) {
       if (ptn->escape_state() == PointsToNode::NoEscape) {
-        Atomic::inc(&ConnectionGraph::_no_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_no_escape_counter);
       } else if (ptn->escape_state() == PointsToNode::ArgEscape) {
-        Atomic::inc(&ConnectionGraph::_arg_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_arg_escape_counter);
       } else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
-        Atomic::inc(&ConnectionGraph::_global_escape_counter);
+        AtomicAccess::inc(&ConnectionGraph::_global_escape_counter);
       } else {
         assert(false, "Unexpected Escape State");
       }

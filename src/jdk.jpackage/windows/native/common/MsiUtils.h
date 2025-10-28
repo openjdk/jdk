@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <new>
 #include <map>
+#include <memory>
 
 #include "ErrorHandling.h"
 #include "Toolbox.h"

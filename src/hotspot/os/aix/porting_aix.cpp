@@ -39,6 +39,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
@@ -250,7 +251,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
+          permit_forbidden_function::free(demangled_name);
         }
       }
     } else {
@@ -935,7 +936,7 @@ static const char* rtv_linkedin_libpath() {
 
   // retrieve the path to the currently running executable binary
   // to open it
-  snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
+  os::snprintf_checked(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
   FILE* f = nullptr;
   struct xcoffhdr the_xcoff;
   struct scnhdr the_scn;
@@ -1081,7 +1082,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
       if (g_handletable_used == max_handletable) {
         // No place in array anymore; increase array.
         unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
-        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        struct handletableentry* new_tab = (struct handletableentry*) permit_forbidden_function::realloc(p_handletable, new_max * sizeof(struct handletableentry));
         assert(new_tab != nullptr, "no more memory for handletable");
         if (new_tab == nullptr) {
           *error_report = "dlopen: no more memory for handletable";
@@ -1153,7 +1154,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         error_report = "dlerror returned no error description";
       }
       if (ebuf != nullptr && ebuflen > 0) {
-        snprintf(ebuf, ebuflen - 1, "%s", error_report);
+        os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
       }
       assert(false, "os::pd_dll_unload() ::dlclose() failed");
     }
@@ -1188,4 +1189,3 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
   return res;
 } // end: os::pd_dll_unload()
-

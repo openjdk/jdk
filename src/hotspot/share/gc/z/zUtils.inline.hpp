@@ -86,11 +86,10 @@ inline void ZUtils::sort(T* array, size_t count, Comparator comparator) {
   using SortType = int(const void*, const void*);
   using ComparatorType = int(const T*, const T*);
 
-  static constexpr bool IsComparatorCompatible = std::is_assignable<ComparatorType*&, Comparator>::value;
-  static_assert(IsComparatorCompatible, "Incompatible Comparator, must decay to plain function pointer");
+  ComparatorType* const comparator_fn_ptr = comparator;
 
   // We rely on ABI compatibility between ComparatorType and SortType
-  qsort(array, count, sizeof(T), reinterpret_cast<SortType*>(static_cast<ComparatorType*>(comparator)));
+  qsort(array, count, sizeof(T), reinterpret_cast<SortType*>(comparator_fn_ptr));
 }
 
 template <typename T, typename Comparator>

@@ -38,7 +38,7 @@ import sun.util.logging.PlatformLogger;
 
 // TODO: some input actions should do nothing if Shift or Control are down
 
-class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
+final class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XListPeer");
 
@@ -135,6 +135,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     /**
      * Overridden from XWindow
      */
+    @Override
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
 
@@ -150,6 +151,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         fgColorSet = target.isForegroundSet();
     }
 
+    @Override
     public void postInit(XCreateWindowParams params) {
         super.postInit(params);
         initFontMetrics();
@@ -212,27 +214,33 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         hsb.setValues(0, 0, 0, 0, HORIZ_SCROLL_AMT, HORIZ_SCROLL_AMT);
     }
 
+    @Override
     public void add(String item, int index) {
         addItem(item, index);
     }
 
+    @Override
     public void removeAll() {
         clear();
         maxLength = 0;
     }
 
+    @Override
     public void setMultipleMode (boolean b) {
         setMultipleSelections(b);
     }
 
+    @Override
     public Dimension getMinimumSize() {
         return getMinimumSize(DEFAULT_VISIBLE_ROWS);
     }
 
+    @Override
     public Dimension getPreferredSize(int rows) {
         return getMinimumSize(rows);
     }
 
+    @Override
     public Dimension getMinimumSize(int rows) {
         FontMetrics fm = getFontMetrics(getFont());
         initFontMetrics();
@@ -281,11 +289,13 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         return fm.stringWidth(str);
     }
 
+    @Override
     public void setForeground(Color c) {
         fgColorSet = true;
         super.setForeground(c);
     }
 
+    @Override
     public void setBackground(Color c) {
         bgColorSet = true;
         super.setBackground(c);
@@ -341,6 +351,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             return Math.min(items.size()-1, itemsInWindow()-1);
         }
     }
+    @Override
     public void repaintScrollbarRequest(XScrollbar scrollbar) {
         if (scrollbar == hsb)  {
             repaint(PAINT_HSCROLL);
@@ -352,6 +363,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     /**
      * Overridden for performance
      */
+    @Override
     public void repaint() {
         repaint(getFirstVisibleItem(), getLastVisibleItem(), PAINT_ALL);
     }
@@ -397,14 +409,17 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     void paintPeer(final Graphics g) {
         painter.paint(g, getFirstVisibleItem(), getLastVisibleItem(), PAINT_ALL);
     }
+    @Override
     public boolean isFocusable() { return true; }
 
     // TODO: share/promote the Focus methods?
+    @Override
     public void focusGained(FocusEvent e) {
         super.focusGained(e);
         repaint(PAINT_FOCUS);
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         super.focusLost(e);
         repaint(PAINT_FOCUS);
@@ -414,6 +429,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * Layout the sub-components of the List - that is, the scrollbars and the
      * list of items.
      */
+    @Override
     public void layout() {
         int vis, maximum;
         boolean vsbWasVisible;
@@ -520,15 +536,18 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         return focusRect;
     }
 
+    @Override
     public void handleConfigureNotifyEvent(XEvent xev) {
         super.handleConfigureNotifyEvent(xev);
 
         // Update buffer
         painter.invalidate();
     }
+    @Override
     public boolean handlesWheelScrolling() { return true; }
 
     // FIXME: need to support MouseWheel scrolling, too
+    @Override
     void handleJavaMouseEvent(MouseEvent e) {
         super.handleJavaMouseEvent(e);
         int i = e.getID();
@@ -545,6 +564,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
     }
 
+    @Override
     void handleJavaMouseWheelEvent(MouseWheelEvent e) {
         if (ListHelper.doWheelScroll(vsbVis ? vsb : null,
                                      hsbVis ? hsb : null, e)) {
@@ -781,6 +801,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
         }
     }
 
+    @Override
     void handleJavaKeyEvent(KeyEvent e) {
         switch(e.getID()) {
           case KeyEvent.KEY_PRESSED:
@@ -978,6 +999,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     /**
      * return value from the scrollbar
      */
+    @Override
     public void notifyValue(XScrollbar obj, int type, int v, boolean isAdjusting) {
 
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
@@ -1097,6 +1119,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * if s < 0 then s = 0
      * if e >= items.size() then e = items.size() - 1
      */
+    @Override
     public void delItems(int s, int e) {
         // save the current state of the scrollbars
         boolean hsbWasVisible = hsbVis;
@@ -1208,6 +1231,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     /**
      * ListPeer method
      */
+    @Override
     public void select(int index) {
         // Programmatic select() should also set the focus index
         setFocusIndex(index);
@@ -1266,6 +1290,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * ListPeer method
      * focusedIndex isn't updated according to native (Window, Motif) behaviour
      */
+    @Override
     public void deselect(int index) {
         deselectItem(index);
     }
@@ -1301,6 +1326,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * if necessary, or doing nothing if the item is already visible.
      * The List must be repainted for changes to be visible.
      */
+    @Override
     public void makeVisible(int index) {
         if (index < 0 || index >= items.size()) {
             return;
@@ -1337,6 +1363,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
     /**
      * return the selected indexes
      */
+    @Override
     public int[] getSelectedIndexes() {
         return selected;
     }
@@ -1598,6 +1625,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * Returns true if the event has been handled and should not be
      * posted to Java
      */
+    @Override
     boolean prePostEvent(final AWTEvent e) {
         if (e instanceof MouseEvent) {
             return prePostMouseEvent((MouseEvent)e);
@@ -1662,6 +1690,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * The bug is due to incorrect caching of the list item size
      * So we should recalculate font metrics on setFont
      */
+    @Override
     public void setFont(Font f) {
         if (!Objects.equals(getFont(), f)) {
             super.setFont(f);
@@ -1678,7 +1707,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      *     Painter -> awtLock
      * Since we can't guarantee the sequence, use awtLock.
      */
-    class ListPainter {
+    final class ListPainter {
         VolatileImage buffer;
         Color[] colors;
 

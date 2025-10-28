@@ -35,8 +35,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
-#include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -1014,7 +1014,7 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
 }
 
 const RegMask &RegionNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 #ifndef PRODUCT
@@ -2233,7 +2233,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    debug_only(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = Identity(phase));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
@@ -2859,13 +2859,15 @@ bool PhiNode::is_tripcount(BasicType bt) const {
 
 //------------------------------out_RegMask------------------------------------
 const RegMask &PhiNode::in_RegMask(uint i) const {
-  return i ? out_RegMask() : RegMask::Empty;
+  return i ? out_RegMask() : RegMask::EMPTY;
 }
 
 const RegMask &PhiNode::out_RegMask() const {
   uint ideal_reg = _type->ideal_reg();
   assert( ideal_reg != Node::NotAMachineReg, "invalid type at Phi" );
-  if( ideal_reg == 0 ) return RegMask::Empty;
+  if (ideal_reg == 0) {
+    return RegMask::EMPTY;
+  }
   assert(ideal_reg != Op_RegFlags, "flags register is not spillable");
   return *(Compile::current()->matcher()->idealreg2spillmask[ideal_reg]);
 }
@@ -2892,22 +2894,22 @@ Node* GotoNode::Identity(PhaseGVN* phase) {
 }
 
 const RegMask &GotoNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JumpNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &JProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //=============================================================================
 const RegMask &CProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 

@@ -29,6 +29,7 @@
 #include "opto/node.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/deoptimization.hpp"
 
 // Walk over all Initialized Assertion Predicates and return the entry into the first Initialized Assertion Predicate
 // (i.e. not belonging to an Initialized Assertion Predicate anymore)
@@ -81,12 +82,11 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(const Node* parse_predi
   return nullptr;
 }
 
-ParsePredicate ParsePredicate::clone_to_unswitched_loop(Node* new_control, const bool is_false_path_loop,
-                                                        PhaseIdealLoop* phase) const {
+ParsePredicate ParsePredicate::clone_to_loop(Node* new_control, const bool rewire_uncommon_proj_phi_inputs,
+                                             PhaseIdealLoop* phase) const {
   ParsePredicateSuccessProj* success_proj = phase->create_new_if_for_predicate(_success_proj, new_control,
                                                                                _parse_predicate_node->deopt_reason(),
-                                                                               Op_ParsePredicate, is_false_path_loop);
-  NOT_PRODUCT(trace_cloned_parse_predicate(is_false_path_loop, success_proj));
+                                                                               Op_ParsePredicate, rewire_uncommon_proj_phi_inputs);
   return ParsePredicate(success_proj, _parse_predicate_node->deopt_reason());
 }
 
@@ -96,11 +96,10 @@ void ParsePredicate::kill(PhaseIterGVN& igvn) const {
 }
 
 #ifndef PRODUCT
-void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop,
-                                                  const ParsePredicateSuccessProj* success_proj) {
-  if (TraceLoopPredicate) {
+void ParsePredicate::trace_cloned_parse_predicate(const bool is_false_path_loop) const {
+  if (TraceLoopUnswitching) {
     tty->print("Parse Predicate cloned to %s path loop: ", is_false_path_loop ? "false" : "true");
-    success_proj->in(0)->dump();
+    head()->dump();
   }
 }
 #endif // NOT PRODUCT
@@ -125,6 +124,7 @@ bool RuntimePredicate::has_valid_uncommon_trap(const Node* success_proj) {
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_short_running_long_loop ||
           deopt_reason == Deoptimization::Reason_auto_vectorization_check ||
           deopt_reason == Deoptimization::Reason_predicate ||
           deopt_reason == Deoptimization::Reason_profile_predicate);
@@ -757,7 +757,7 @@ void AssertionPredicateIfCreator::create_halt_node(IfFalseNode* fail_proj, Ideal
 }
 
 OpaqueLoopInitNode* TemplateAssertionPredicateCreator::create_opaque_init(Node* new_control) const {
-  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->init_trip());
+  OpaqueLoopInitNode* opaque_init = new OpaqueLoopInitNode(_phase->C, _loop_head->uncasted_init_trip(_loop_head->is_main_loop()));
   _phase->register_new_node(opaque_init, new_control);
   return opaque_init;
 }
@@ -940,6 +940,8 @@ void Predicates::dump() const {
     _profiled_loop_predicate_block.dump("  ");
     tty->print_cr("- Loop Predicate Block:");
     _loop_predicate_block.dump("  ");
+    tty->print_cr("- Short Running Long Loop Predicate Block:");
+    _short_running_long_loop_predicate_block.dump("  ");
     tty->cr();
   } else {
     tty->print_cr("<no predicates>");
@@ -983,18 +985,23 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.
 InitializedAssertionPredicate CreateAssertionPredicatesVisitor::initialize_from_template(
-    const TemplateAssertionPredicate& template_assertion_predicate, Node* new_control) const {
+  const TemplateAssertionPredicate& template_assertion_predicate, IfTrueNode* cloned_template_predicate_tail) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
   InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
   InitializedAssertionPredicate initialized_assertion_predicate =
-      initialized_assertion_predicate_creator.create_from_template(template_head, new_control, _init, _stride);
+      initialized_assertion_predicate_creator.create_from_template(template_head, cloned_template_predicate_tail, _init,
+                                                                   _stride);
 
   DEBUG_ONLY(initialized_assertion_predicate.verify();)
-  template_assertion_predicate.rewire_loop_data_dependencies(initialized_assertion_predicate.tail(),
+  template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_predicate_tail,
                                                              _node_in_loop_body, _phase);
   rewire_to_old_predicate_chain_head(initialized_assertion_predicate.tail());
   return initialized_assertion_predicate;
+}
+
+bool NodeInSingleLoopBody::check_node_in_loop_body(Node* node) const {
+  return _phase->is_member(_ilt, _phase->get_ctrl(node));
 }
 
 // Clone the provided Template Assertion Predicate and set '_init' as new input for the OpaqueLoopInitNode.
@@ -1093,14 +1100,29 @@ CloneUnswitchedLoopPredicatesVisitor::CloneUnswitchedLoopPredicatesVisitor(
     PhaseIdealLoop* phase)
     : _clone_predicate_to_true_path_loop(true_path_loop_head, node_in_true_path_loop_body, phase),
       _clone_predicate_to_false_path_loop(false_path_loop_head, node_in_false_path_loop_body, phase),
-      _phase(phase) {}
+      _phase(phase),
+      _is_counted_loop(true_path_loop_head->is_CountedLoop()) {}
 
-// Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
+// Does not clone a Loop Limit Check Parse Predicate if a counted loop is unswitched, because it most likely will not be
+// used anymore (it could only be used when both unswitched loop versions die and the Loop Limit Check Parse Predicate
+// ends up at a LoopNode without Loop Limit Check Parse Predicate directly following the unswitched loop that can then
+// be speculatively converted to a counted loop - this is rather rare).
 void CloneUnswitchedLoopPredicatesVisitor::visit(const ParsePredicate& parse_predicate) {
-  _clone_predicate_to_true_path_loop.clone_parse_predicate(parse_predicate, false);
-  _clone_predicate_to_false_path_loop.clone_parse_predicate(parse_predicate, true);
+  Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+  if (_is_counted_loop && deopt_reason == Deoptimization::Reason_loop_limit_check) {
+    return;
+  }
+  clone_parse_predicate(parse_predicate, false);
+  clone_parse_predicate(parse_predicate, true);
   parse_predicate.kill(_phase->igvn());
+}
+
+void CloneUnswitchedLoopPredicatesVisitor::clone_parse_predicate(const ParsePredicate& parse_predicate,
+                                                                 const bool is_false_path_loop) {
+  ClonePredicateToTargetLoop& clone_predicate_to_loop = is_false_path_loop ? _clone_predicate_to_false_path_loop : _clone_predicate_to_true_path_loop;
+  const ParsePredicate cloned_parse_predicate = clone_predicate_to_loop.clone_parse_predicate(parse_predicate, is_false_path_loop);
+  NOT_PRODUCT(cloned_parse_predicate.trace_cloned_parse_predicate(is_false_path_loop);)
 }
 
 // Clone the Template Assertion Predicate, which is currently found before the newly added unswitched loop selector,

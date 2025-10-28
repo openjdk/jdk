@@ -45,7 +45,7 @@ void ZArguments::initialize_heap_flags_and_sizes() {
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.
     // When that is the case, we don't want the soft and hard limits to be the same
-    // as it can cause flakyness in the number of GC threads used, in order to keep
+    // as it can cause flakiness in the number of GC threads used, in order to keep
     // to a random number we just pulled out of thin air.
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
   }
@@ -143,6 +143,11 @@ void ZArguments::initialize() {
     FLAG_SET_ERGO_IF_DEFAULT(ZCollectionIntervalMajor, ZCollectionInterval);
   }
 
+  // Set an initial TLAB size to avoid depending on the current capacity
+  if (FLAG_IS_DEFAULT(TLABSize)) {
+    FLAG_SET_DEFAULT(TLABSize, 256*K);
+  }
+
   // Set medium page size here because MaxTenuringThreshold may use it.
   ZHeuristics::set_medium_page_size();
 
@@ -157,9 +162,8 @@ void ZArguments::initialize() {
     uint tenuring_threshold;
     for (tenuring_threshold = 0; tenuring_threshold < MaxTenuringThreshold; ++tenuring_threshold) {
       // Reduce the number of object ages, if the resulting garbage is too high
-      const size_t medium_page_overhead = ZPageSizeMedium * tenuring_threshold;
-      const size_t small_page_overhead = ZPageSizeSmall * ConcGCThreads * tenuring_threshold;
-      if (small_page_overhead + medium_page_overhead >= ZHeuristics::significant_young_overhead()) {
+      const size_t per_age_overhead = ZHeuristics::relocation_headroom();
+      if (per_age_overhead * tenuring_threshold >= ZHeuristics::significant_young_overhead()) {
         break;
       }
     }

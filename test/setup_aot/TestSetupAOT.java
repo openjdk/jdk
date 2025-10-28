@@ -23,12 +23,17 @@
  * questions.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
@@ -36,7 +41,12 @@ import static java.util.stream.Collectors.*;
 // This program is executed by make/RunTests.gmk to support running HotSpot tests
 // in the "AOT mode", for example:
 //
-//     make test JTREG=AOT_JDK=true TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//     make test JTREG=AOT_JDK=onestep TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//     make test JTREG=AOT_JDK=twostep TEST=open/test/hotspot/jtreg/runtime/invokedynamic
+//
+// The onestep and twostep options specify whether the AOT cache is created with
+// a single JVM command (java -XX:AOTMode=record -XX:AOTCacheOutput=jdk.aotcache ...) or
+// two JVM commands (java -XX:AOTMode=record ...; java -XX:AOTMode=create -XX:AOTCache=jdk.aotcache ...)
 //
 // All JDK classes touched by this program will be stored into a customized AOT cache.
 // This is a larger set of classes than those stored in the JDK's default CDS archive.
@@ -60,6 +70,42 @@ public class TestSetupAOT {
         LOGGER.log(Level.FINE, "Done");
     }
 
+    static class ToolOutput {
+        ByteArrayOutputStream baos;
+        PrintStream ps;
+        String output;
+
+        ToolOutput() throws Exception {
+            baos = new ByteArrayOutputStream();
+            ps = new PrintStream(baos, true, StandardCharsets.UTF_8.name());
+        }
+        void finish() throws Exception {
+            output = baos.toString(StandardCharsets.UTF_8.name());
+            System.out.println(output);
+        }
+
+        ToolOutput shouldContain(String... substrings) {
+            for (String s : substrings) {
+                if (!output.contains(s)) {
+                    throw new RuntimeException("\"" + s + "\" missing from tool output");
+                }
+            }
+
+            return this;
+        }
+
+        ToolOutput shouldMatch(String... regexps) {
+            for (String regexp : regexps) {
+                Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+                if (!pattern.matcher(output).find()) {
+                    throw new RuntimeException("Pattern \"" + regexp + "\" missing from tool output");
+                }
+            }
+
+            return this;
+        }
+    }
+
     static void runJDKTools(String[] args) throws Throwable {
         String tmpDir = args[0];
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
@@ -68,26 +114,33 @@ public class TestSetupAOT {
         // ------------------------------
         // javac
 
-        execTool("javac", "--help");
+        execTool("javac", "--help")
+            .shouldContain("Usage: javac <options> <source files>");
 
         JavacBenchApp.main(new String[] {"5"});
 
         // ------------------------------
         // javap
 
-        execTool("javap", "--help");
+        execTool("javap", "--help")
+            .shouldContain("Show package/protected/public classes");
         execTool("javap", "-c", "-private", "-v", "-verify",
                  "java.lang.System",
                  "java/util/stream/IntStream",
-                 "jdk.internal.module.ModuleBootstrap");
+                 "jdk.internal.module.ModuleBootstrap")
+            .shouldContain("Compiled from \"System.java\"",
+                           "public static java.io.Console console()");
 
         // ------------------------------
         // jlink
 
         String jlinkOutput = tmpDir + File.separator + "jlinkOutput";
 
-        execTool("jlink", "--help");
-        execTool("jlink", "--list-plugins");
+        execTool("jlink", "--help")
+            .shouldContain("Compression to use in compressing resources");
+        execTool("jlink", "--list-plugins")
+            .shouldContain("List of available plugins",
+                           "--generate-cds-archive ");
 
         deleteAll(jlinkOutput);
         execTool("jlink", "--add-modules", "java.base", "--strip-debug", "--output", jlinkOutput);
@@ -98,20 +151,27 @@ public class TestSetupAOT {
 
         String jarOutput = tmpDir + File.separator + "tmp.jar";
 
-        execTool("jar", "--help");
+        execTool("jar", "--help")
+            .shouldContain("--main-class=CLASSNAME");
 
         deleteAll(jarOutput);
-        execTool("jar", "cvf", jarOutput, "TestSetupAOT.class");
-        execTool("jar", "uvf", jarOutput, "TestSetupAOT.class");
-        execTool("jar", "tvf", jarOutput);
-        execTool("jar", "--describe-module", "--file=" + jarOutput);
+        execTool("jar", "cvf", jarOutput, "TestSetupAOT.class")
+            .shouldContain("adding: TestSetupAOT.class");
+        execTool("jar", "uvf", jarOutput, "TestSetupAOT.class")
+            .shouldContain("adding: TestSetupAOT.class");
+        execTool("jar", "tvf", jarOutput)
+            .shouldContain("META-INF/MANIFEST.MF");
+        execTool("jar", "--describe-module", "--file=" + jarOutput)
+            .shouldMatch("Unable to derive module descriptor for: .*tmp.jar");
         deleteAll(jarOutput);
 
         // ------------------------------
         // jdeps
 
-        execTool("jdeps", "--help");
-        execTool("jdeps", "-v", "TestSetupAOT.class");
+        execTool("jdeps", "--help")
+            .shouldContain("--ignore-missing-deps");
+        execTool("jdeps", "-v", "TestSetupAOT.class")
+            .shouldContain("-> JavacBenchApp");
     }
 
     static void deleteAll(String f) {
@@ -129,7 +189,7 @@ public class TestSetupAOT {
         f.delete();
     }
 
-    static void execTool(String tool, String... args) throws Throwable {
+    static ToolOutput execTool(String tool, String... args) throws Throwable {
         System.out.println("== Running tool ======================================================");
         System.out.print(tool);
         for (String s : args) {
@@ -138,9 +198,13 @@ public class TestSetupAOT {
         System.out.println();
         System.out.println("======================================================================");
 
+        ToolOutput output = new ToolOutput();
         ToolProvider t = ToolProvider.findFirst(tool)
             .orElseThrow(() -> new RuntimeException(tool + " not found"));
-        t.run(System.out, System.out, args);
+        t.run(output.ps, output.ps, args);
+
+        output.finish();
+        return output;
     }
 
 

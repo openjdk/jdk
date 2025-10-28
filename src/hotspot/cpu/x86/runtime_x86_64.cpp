@@ -25,6 +25,7 @@
 #ifdef COMPILER2
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"
 #include "opto/runtime.hpp"
@@ -56,11 +57,19 @@ class SimpleRuntimeFrame {
 
 //------------------------------generate_uncommon_trap_blob--------------------
 UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
+  if (blob != nullptr) {
+    return blob->as_uncommon_trap_blob();
+  }
+
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
@@ -225,8 +234,10 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  return UncommonTrapBlob::create(&buffer, oop_maps,
-                                                 SimpleRuntimeFrame::framesize >> 1);
+  UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
+                                                       SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
+  return ut_blob;
 }
 
 //------------------------------generate_exception_blob---------------------------
@@ -262,18 +273,26 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
+  if (blob != nullptr) {
+    return blob->as_exception_blob();
+  }
+
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
   CodeBuffer buffer(name, 2048, 1024);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
 
   address start = __ pc();
 
   // Exception pc is 'return address' for stack walker
-  __ push(rdx);
+  __ push_ppx(rdx);
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Prolog
 
   // Save callee-saved registers.  See x86_64.ad.
@@ -328,7 +347,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ movptr(rbp, Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt));
 
   __ addptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog
-  __ pop(rdx);                  // No need for exception pc anymore
+  __ pop_ppx(rdx);                  // No need for exception pc anymore
 
   // rax: exception handler
 
@@ -357,6 +376,8 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   masm->flush();
 
   // Set exception blob
-  return ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
+  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
+  return ex_blob;
 }
 #endif // COMPILER2

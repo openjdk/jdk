@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class CLIHelp {
             String pInstallDir;
             String pAppImageDescription;
             String pSignSampleUsage;
+            String pAppContentNote;
             switch (platform) {
                 case MACOS:
                     types = "{\"app-image\", \"dmg\", \"pkg\"}";
@@ -66,6 +67,8 @@ public class CLIHelp {
                             = I18N.getString("MSG_Help_mac_app_image");
                     pSignSampleUsage
                             = I18N.getString("MSG_Help_mac_sign_sample_usage");
+                    pAppContentNote
+                            = I18N.getString("MSG_Help_mac_app_content_note");
                     break;
                 case LINUX:
                     types = "{\"app-image\", \"rpm\", \"deb\"}";
@@ -76,6 +79,7 @@ public class CLIHelp {
                     pAppImageDescription
                             = I18N.getString("MSG_Help_default_app_image");
                     pSignSampleUsage = "";
+                    pAppContentNote = "";
                     break;
                 case WINDOWS:
                     types = "{\"app-image\", \"exe\", \"msi\"}";
@@ -86,6 +90,7 @@ public class CLIHelp {
                     pAppImageDescription
                             = I18N.getString("MSG_Help_default_app_image");
                     pSignSampleUsage = "";
+                    pAppContentNote = "";
                     break;
                 default:
                     types = "{\"app-image\", \"exe\", \"msi\", \"rpm\", \"deb\", \"pkg\", \"dmg\"}";
@@ -99,12 +104,13 @@ public class CLIHelp {
                     pAppImageDescription
                             = I18N.getString("MSG_Help_default_app_image");
                     pSignSampleUsage = "";
+                    pAppContentNote = "";
                     break;
             }
             Log.info(MessageFormat.format(I18N.getString("MSG_Help"),
                     File.pathSeparator, types, pLaunchOptions,
                     pInstallOptions, pInstallDir, pAppImageDescription,
-                    pSignSampleUsage));
+                    pSignSampleUsage, pAppContentNote));
         }
     }
 }

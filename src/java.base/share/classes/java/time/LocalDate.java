@@ -2133,10 +2133,7 @@ public final class LocalDate
      */
     @Override
     public int hashCode() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        return (yearValue & 0xFFFFF800) ^ ((yearValue << 11) + (monthValue << 6) + (dayValue));
+        return (year & 0xFFFFF800) ^ ((year << 11) + (month << 6) + day);
     }
 
     //-----------------------------------------------------------------------

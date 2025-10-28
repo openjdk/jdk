@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2025, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -249,7 +249,7 @@ void StubGenerator::generate_aes_stubs() {
 //   rax - number of processed bytes
 address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -279,14 +279,14 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #endif
   __ enter();
  // Save state before entering routine
-  __ push(r12);//holds pointer to avx512_subkeyHtbl
-  __ push(r14);//holds CTR_CHECK value to check for overflow
-  __ push(r15);//holds number of rounds
-  __ push(rbx);//scratch register
+  __ push_ppx(r12);//holds pointer to avx512_subkeyHtbl
+  __ push_ppx(r14);//holds CTR_CHECK value to check for overflow
+  __ push_ppx(r15);//holds number of rounds
+  __ push_ppx(rbx);//scratch register
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
   __ movptr(key, key_mem);
   __ movptr(state, state_mem);
 #endif
@@ -304,15 +304,15 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   // Restore state before leaving routine
 #ifdef _WIN64
   __ lea(rsp, Address(rbp, -6 * wordSize));
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
 #else
   __ lea(rsp, Address(rbp, -4 * wordSize));
 #endif
-  __ pop(rbx);
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r12);
+  __ pop_ppx(rbx);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -336,7 +336,7 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 //   rax - number of processed bytes
 address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::galoisCounterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_galoisCounterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -364,15 +364,15 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
  #endif
   __ enter();
   // Save state before entering routine
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-  __ push(rbx);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
+  __ push_ppx(rbx);
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
   __ movptr(key, key_mem);
   __ movptr(state, state_mem);
 #endif
@@ -390,14 +390,14 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   __ movq(rsp, r14);
   // Restore state before leaving routine
  #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
  #endif
-  __ pop(rbx);
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(rbx);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -408,7 +408,7 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
 // Vector AES Counter implementation
 address StubGenerator::generate_counterMode_VectorAESCrypt()  {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -434,10 +434,10 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 #endif
   __ enter();
  // Save state before entering routine
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
+  __ push_ppx(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r14);
+  __ push_ppx(r15);
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
   __ movl(len_reg, len_mem);
@@ -445,26 +445,26 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
   __ movptr(used_addr, used_mem);
   __ movl(used, Address(used_addr, 0));
 #else
-  __ push(len_reg); // Save
+  __ push_ppx(len_reg); // Save
   __ movptr(used_addr, used_mem);
   __ movl(used, Address(used_addr, 0));
 #endif
-  __ push(rbx);
+  __ push_ppx(rbx);
 
   aesctr_encrypt(from, to, key, counter, len_reg, used, used_addr, saved_encCounter_start);
 
   __ vzeroupper();
   // Restore state before leaving routine
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 #ifdef _WIN64
   __ movl(rax, len_mem); // return length
 #else
-  __ pop(rax); // return length
+  __ pop_ppx(rax); // return length
 #endif
-  __ pop(r15);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+  __ pop_ppx(r15);
+  __ pop_ppx(r14);
+  __ pop_ppx(r13);
+  __ pop_ppx(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -497,7 +497,7 @@ address StubGenerator::generate_counterMode_VectorAESCrypt()  {
 address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::counterMode_AESCrypt_id;
+  StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -576,12 +576,12 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   __ movptr(used_addr, used_mem);
   __ movl(used, Address(used_addr, 0));
 #else
-  __ push(len_reg); // Save
+  __ push_ppx(len_reg); // Save
   __ movptr(used_addr, used_mem);
   __ movl(used, Address(used_addr, 0));
 #endif
 
-  __ push(rbx); // Save RBX
+  __ push_ppx(rbx); // Save RBX
   __ movdqu(xmm_curr_counter, Address(counter, 0x00)); // initialize counter with initial counter
   __ movdqu(xmm_counter_shuf_mask, ExternalAddress(counter_shuffle_mask_addr()), pos /*rscratch*/);
   __ pshufb(xmm_curr_counter, xmm_counter_shuf_mask); //counter is shuffled
@@ -767,14 +767,14 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
   __ BIND(L_exit);
   __ pshufb(xmm_curr_counter, xmm_counter_shuf_mask); //counter is shuffled back.
   __ movdqu(Address(counter, 0), xmm_curr_counter); //save counter back
-  __ pop(rbx); // pop the saved RBX.
+  __ pop_ppx(rbx); // pop the saved RBX.
 #ifdef _WIN64
   __ movl(rax, len_mem);
   __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
   __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
   __ addptr(rsp, 2 * wordSize);
 #else
-  __ pop(rax); // return 'len'
+  __ pop_ppx(rax); // return 'len'
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -785,7 +785,7 @@ address StubGenerator::generate_counterMode_AESCrypt_Parallel() {
 address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
   assert(VM_Version::supports_avx512_vaes(), "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -810,9 +810,9 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 // on win64, fill len_reg from stack position
   __ movl(len_reg, len_mem);
 #else
-  __ push(len_reg); // Save
+  __ push_ppx(len_reg); // Save
 #endif
-  __ push(rbx);
+  __ push_ppx(rbx);
   __ vzeroupper();
 
   // Temporary variable declaration for swapping key bytes
@@ -1046,11 +1046,11 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 
   __ BIND(Lcbc_exit);
   __ vzeroupper();
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 #ifdef _WIN64
   __ movl(rax, len_mem);
 #else
-  __ pop(rax); // return length
+  __ pop_ppx(rax); // return length
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -1068,7 +1068,7 @@ address StubGenerator::generate_cipherBlockChaining_decryptVectorAESCrypt() {
 address StubGenerator::generate_aescrypt_encryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::aescrypt_encryptBlock_id;
+  StubId stub_id = StubId::stubgen_aescrypt_encryptBlock_id;
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
@@ -1163,7 +1163,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
 address StubGenerator::generate_aescrypt_decryptBlock() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::aescrypt_decryptBlock_id;
+  StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
   StubCodeMark mark(this, stub_id);
   Label L_doLast;
   address start = __ pc();
@@ -1265,7 +1265,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
 address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_encryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1301,7 +1301,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
   // on win64, fill len_reg from stack position
   __ movl(len_reg, len_mem);
 #else
-  __ push(len_reg); // Save
+  __ push_ppx(len_reg); // Save
 #endif
 
   const XMMRegister xmm_key_shuf_mask = xmm_temp;  // used temporarily to swap key bytes up front
@@ -1343,7 +1343,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 #ifdef _WIN64
   __ movl(rax, len_mem);
 #else
-  __ pop(rax); // return length
+  __ pop_ppx(rax); // return length
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -1417,7 +1417,7 @@ address StubGenerator::generate_cipherBlockChaining_encryptAESCrypt() {
 address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
   assert(UseAES, "need AES instructions and misaligned SSE support");
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::cipherBlockChaining_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1456,9 +1456,9 @@ address StubGenerator::generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
   // on win64, fill len_reg from stack position
   __ movl(len_reg, len_mem);
 #else
-  __ push(len_reg); // Save
+  __ push_ppx(len_reg); // Save
 #endif
-  __ push(rbx);
+  __ push_ppx(rbx);
   // the java expanded key ordering is rotated one position from what we want
   // so we start from 0x10 here and hit 0x00 last
   const XMMRegister xmm_key_shuf_mask = xmm1;  // used temporarily to swap key bytes up front
@@ -1646,11 +1646,11 @@ __ opc(xmm_result3, src_reg);         \
 
   __ BIND(L_exit);
   __ movdqu(Address(rvec, 0), xmm_prev_block_cipher);     // final value of r stored in rvec of CipherBlockChaining object
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 #ifdef _WIN64
   __ movl(rax, len_mem);
 #else
-  __ pop(rax); // return length
+  __ pop_ppx(rax); // return length
 #endif
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
@@ -1660,7 +1660,7 @@ __ opc(xmm_result3, src_reg);         \
 
 address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_encryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_electronicCodeBook_encryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1681,7 +1681,7 @@ address StubGenerator::generate_electronicCodeBook_encryptAESCrypt() {
 
 address StubGenerator::generate_electronicCodeBook_decryptAESCrypt() {
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = StubGenStubId::electronicCodeBook_decryptAESCrypt_id;
+  StubId stub_id = StubId::stubgen_electronicCodeBook_decryptAESCrypt_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -1801,8 +1801,8 @@ void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Regist
   const Register rounds = r12;
 
   Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
-  __ push(r13);
-  __ push(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r12);
 
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
@@ -1811,8 +1811,8 @@ void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Regist
     __ movl(rax, 0xffff);
     __ kmovql(k1, rax);
   }
-  __ push(len); // Save
-  __ push(rbx);
+  __ push_ppx(len); // Save
+  __ push_ppx(rbx);
 
   __ vzeroupper();
 
@@ -1999,10 +1999,10 @@ void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Regist
   __ evpxorq(xmm21, xmm21, xmm21, Assembler::AVX_512bit);
   __ evpxorq(xmm22, xmm22, xmm22, Assembler::AVX_512bit);
   __ bind(EXIT);
-  __ pop(rbx);
-  __ pop(rax); // return length
-  __ pop(r12);
-  __ pop(r13);
+  __ pop_ppx(rbx);
+  __ pop_ppx(rax); // return length
+  __ pop_ppx(r12);
+  __ pop_ppx(r13);
 }
 
 // AES-ECB Decrypt Operation
@@ -2011,8 +2011,8 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
   Label NO_PARTS, LOOP, Loop_start, LOOP2, AES192, END_LOOP, AES256, REMAINDER, LAST2, END, KEY_192, KEY_256, EXIT;
   const Register pos = rax;
   const Register rounds = r12;
-  __ push(r13);
-  __ push(r12);
+  __ push_ppx(r13);
+  __ push_ppx(r12);
 
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
@@ -2022,8 +2022,8 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
     __ kmovql(k1, rax);
   }
 
-  __ push(len); // Save
-  __ push(rbx);
+  __ push_ppx(len); // Save
+  __ push_ppx(rbx);
 
   __ vzeroupper();
 
@@ -2210,10 +2210,10 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
   __ evpxorq(xmm22, xmm22, xmm22, Assembler::AVX_512bit);
 
   __ bind(EXIT);
-  __ pop(rbx);
-  __ pop(rax); // return length
-  __ pop(r12);
-  __ pop(r13);
+  __ pop_ppx(rbx);
+  __ pop_ppx(rax); // return length
+  __ pop_ppx(r12);
+  __ pop_ppx(r13);
 }
 
 

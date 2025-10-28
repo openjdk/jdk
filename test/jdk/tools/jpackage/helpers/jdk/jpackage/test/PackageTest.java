@@ -30,19 +30,19 @@ import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.NATIVE;
 import static jdk.jpackage.test.PackageType.WINDOWS;
+import static jdk.jpackage.test.PackageType.WIN_MSI;
 
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,6 +54,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -127,8 +128,8 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public PackageTest setExpectedInstallExitCode(int v) {
-        expectedInstallExitCode = v;
+    public PackageTest setExpectedInstallExitCode(int... v) {
+        expectedInstallExitCodes = IntStream.of(v).mapToObj(Integer::valueOf).collect(Collectors.toSet());
         return this;
     }
 
@@ -270,8 +271,7 @@ public final class PackageTest extends RunnablePackageTest {
     PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
         Objects.requireNonNull(fa);
 
-        // Setup test app to have valid jpackage command line before
-        // running check of type of environment.
+        // Setup test app to have valid jpackage command line before running the check.
         addHelloAppInitializer(null);
 
         forTypes(LINUX, () -> {
@@ -296,13 +296,9 @@ public final class PackageTest extends RunnablePackageTest {
                 Files.deleteIfExists(appOutput);
 
                 List<String> expectedArgs = testRun.openFiles(testFiles);
-                TKit.waitForFileCreated(appOutput, 7);
+                TKit.waitForFileCreated(appOutput, Duration.ofSeconds(7), Duration.ofSeconds(3));
 
-                // Wait a little bit after file has been created to
-                // make sure there are no pending writes into it.
-                Thread.sleep(3000);
-                HelloApp.verifyOutputFile(appOutput, expectedArgs,
-                        Collections.emptyMap());
+                HelloApp.verifyOutputFile(appOutput, expectedArgs, Map.of());
             });
 
             if (isOfType(cmd, WINDOWS)) {
@@ -321,6 +317,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest mutate(Consumer<PackageTest> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
         final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
@@ -336,6 +337,14 @@ public final class PackageTest extends RunnablePackageTest {
         return forTypes(List.of(type), action);
     }
 
+    public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
+        return forTypes(List.of(type), action);
+    }
+
+    public PackageTest forTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return forTypes(types, () -> action.accept(this));
+    }
+
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
         Set<PackageType> workset = new HashSet<>(currentTypes);
         workset.removeAll(types);
@@ -346,46 +355,63 @@ public final class PackageTest extends RunnablePackageTest {
         return notForTypes(List.of(type), action);
     }
 
+    public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
+        return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return notForTypes(types, () -> action.accept(this));
+    }
+
     public PackageTest configureHelloApp() {
         return configureHelloApp(null);
     }
 
     public PackageTest configureHelloApp(String javaAppDesc) {
         addHelloAppInitializer(javaAppDesc);
-        addInstallVerifier(HelloApp::executeLauncherAndVerifyOutput);
+        addInstallVerifier(LauncherVerifier::executeMainLauncherAndVerifyOutput);
         return this;
     }
 
     public PackageTest addHelloAppInitializer(String javaAppDesc) {
-        addInitializer(
-                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
-                "HelloApp");
-        return this;
+        return addInitializer(cmd -> {
+            new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd);
+        }, "HelloApp");
     }
 
     public static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
-            handlers = Stream.of(tests)
-                    .map(PackageTest::createPackageTypeHandlers)
-                    .flatMap(List<Consumer<Action>>::stream)
-                    .collect(Collectors.toUnmodifiableList());
+            typeHandlers = Stream.of(PackageType.values()).map(type -> {
+                return Map.entry(type, Stream.of(tests).map(test -> {
+                    return test.createPackageTypeHandler(type);
+                }).filter(Optional::isPresent).map(Optional::orElseThrow).toList());
+            }).filter(e -> {
+                return !e.getValue().isEmpty();
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         @Override
         protected void runAction(Action... action) {
-            if (Set.of(action).contains(Action.UNINSTALL)) {
-                ListIterator<Consumer<Action>> listIterator = handlers.listIterator(
-                        handlers.size());
+            typeHandlers.entrySet().stream()
+                    .sorted(Comparator.comparing(Map.Entry::getKey))
+                    .map(Map.Entry::getValue).forEachOrdered(handlers -> {
+                        runAction(handlers, List.of(action));
+                    });
+        }
+
+        private static void runAction(List<Consumer<Action>> handlers, List<Action> actions) {
+            if (actions.contains(Action.UNINSTALL)) {
+                final var listIterator = handlers.listIterator(handlers.size());
                 while (listIterator.hasPrevious()) {
-                    var handler = listIterator.previous();
-                    List.of(action).forEach(handler::accept);
+                    final var handler = listIterator.previous();
+                    actions.forEach(handler::accept);
                 }
             } else {
-                handlers.forEach(handler -> List.of(action).forEach(handler::accept));
+                handlers.forEach(handler -> actions.forEach(handler::accept));
             }
         }
 
-        private final List<Consumer<Action>> handlers;
+        private final Map<PackageType, List<Consumer<Action>>> typeHandlers;
     }
 
     PackageTest packageHandlers(PackageHandlers v) {
@@ -455,24 +481,34 @@ public final class PackageTest extends RunnablePackageTest {
         throw new UnsupportedOperationException();
     }
 
+    private Optional<Consumer<Action>> createPackageTypeHandler(PackageType type) {
+        Objects.requireNonNull(type);
+        return Optional.ofNullable(handlers.get(type)).filter(Predicate.not(Handler::isVoid)).map(h -> {
+            return createPackageTypeHandler(type, h);
+        });
+    }
+
     private List<Consumer<Action>> createPackageTypeHandlers() {
         if (handlers.keySet().stream().noneMatch(isPackageTypeEnabled)) {
             PackageType.throwSkippedExceptionIfNativePackagingUnavailable();
         }
-        return handlers.entrySet().stream()
-                .filter(entry -> !entry.getValue().isVoid())
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .map(entry -> {
-                    return  createPackageTypeHandler(entry.getKey(), entry.getValue());
-                }).toList();
+        return Stream.of(PackageType.values()).sorted()
+                .map(this::createPackageTypeHandler)
+                .filter(Optional::isPresent)
+                .map(Optional::orElseThrow)
+                .toList();
     }
 
     private record PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-            int expectedInstallExitCode, PackageHandlers packageHandlers, Handler handler,
+            Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers, Handler handler,
             JPackageCommand cmd, State state) implements Consumer<Action> {
 
         PackageTypePipeline {
             Objects.requireNonNull(type);
+            Objects.requireNonNull(expectedInstallExitCodes);
+            if (expectedInstallExitCodes.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
             Objects.requireNonNull(packageHandlers);
             Objects.requireNonNull(handler);
             Objects.requireNonNull(cmd);
@@ -480,9 +516,9 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         PackageTypePipeline(PackageType type, int expectedJPackageExitCode,
-                int expectedInstallExitCode, PackageHandlers packageHandlers,
+                Set<Integer> expectedInstallExitCodes, PackageHandlers packageHandlers,
                 Handler handler, JPackageCommand cmd) {
-            this(type, expectedJPackageExitCode, expectedInstallExitCode,
+            this(type, expectedJPackageExitCode, expectedInstallExitCodes,
                     packageHandlers, handler, cmd, new State());
         }
 
@@ -517,9 +553,10 @@ public final class PackageTest extends RunnablePackageTest {
 
                 case INSTALL -> {
                     cmd.setUnpackedPackageLocation(null);
-                    final int installExitCode = packageHandlers.install(cmd);
-                    TKit.assertEquals(expectedInstallExitCode, installExitCode,
-                            String.format("Check installer exited with %d code", expectedInstallExitCode));
+                    final int actualInstallExitCode = packageHandlers.install(cmd);
+                    state.actualInstallExitCode = Optional.of(actualInstallExitCode);
+                    TKit.assertTrue(expectedInstallExitCodes.contains(actualInstallExitCode),
+                            String.format("Check installer exit code %d is one of %s", actualInstallExitCode, expectedInstallExitCodes));
                 }
 
                 case UNINSTALL -> {
@@ -582,11 +619,7 @@ public final class PackageTest extends RunnablePackageTest {
                     }
                 }
                 case VERIFY_INSTALL -> {
-                    if (unpackNotSupported()) {
-                        return ActionAction.SKIP;
-                    }
-
-                    if (installFailed()) {
+                    if (unpackNotSupported() || installFailed()) {
                         return ActionAction.SKIP;
                     }
                 }
@@ -609,7 +642,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private boolean installFailed() {
-            return processed(Action.INSTALL) && expectedInstallExitCode != 0;
+            return processed(Action.INSTALL) && state.actualInstallExitCode.orElseThrow() != 0;
         }
 
         private boolean jpackageFailed() {
@@ -621,6 +654,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
 
         private static final class State {
+            private Optional<Integer> actualInstallExitCode = Optional.empty();
             private final Set<Action> packageActions = new HashSet<>();
             private final List<Path> deleteUnpackDirs = new ArrayList<>();
         }
@@ -634,7 +668,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
         type.applyTo(cmd);
         return new PackageTypePipeline(type, expectedJPackageExitCode,
-                expectedInstallExitCode, getPackageHandlers(type), handler.copy(), cmd);
+                expectedInstallExitCodes, getPackageHandlers(type), handler.copy(), cmd);
     }
 
     private record Handler(List<Consumer<JPackageCommand>> initializers,
@@ -723,6 +757,8 @@ public final class PackageTest extends RunnablePackageTest {
             if (expectedJPackageExitCode == 0) {
                 if (isOfType(cmd, LINUX)) {
                     LinuxHelper.verifyPackageBundleEssential(cmd);
+                } else if (isOfType(cmd, WIN_MSI)) {
+                    WinShortcutVerifier.verifyBundleShortcuts(cmd);
                 }
             }
             bundleVerifiers.forEach(v -> v.accept(cmd, result));
@@ -744,12 +780,11 @@ public final class PackageTest extends RunnablePackageTest {
 
             if (!cmd.isRuntime()) {
                 if (isOfType(cmd, WINDOWS) && !cmd.isPackageUnpacked("Not verifying desktop integration")) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, true);
+                }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopFiles(cmd, true);
                 }
             }
 
@@ -757,7 +792,7 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            cmd.runStandardAsserts();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
@@ -826,12 +861,11 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(cmd.appLauncherPath(), false);
 
                 if (isOfType(cmd, WINDOWS)) {
-                    // Check main launcher
-                    WindowsHelper.verifyDesktopIntegration(cmd, null);
-                    // Check additional launchers
-                    cmd.addLauncherNames().forEach(name -> {
-                        WindowsHelper.verifyDesktopIntegration(cmd, name);
-                    });
+                    WindowsHelper.verifyDeployedDesktopIntegration(cmd, false);
+                }
+
+                if (isOfType(cmd, LINUX)) {
+                    LinuxHelper.verifyDesktopFiles(cmd, false);
                 }
             }
 
@@ -914,7 +948,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Collection<PackageType> currentTypes;
     private Set<PackageType> excludeTypes;
     private int expectedJPackageExitCode;
-    private int expectedInstallExitCode;
+    private Set<Integer> expectedInstallExitCodes;
     private final Map<PackageType, Handler> handlers;
     private final Set<String> namedInitializers;
     private final Map<PackageType, PackageHandlers> packageHandlers;

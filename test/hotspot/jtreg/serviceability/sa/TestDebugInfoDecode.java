@@ -38,6 +38,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @bug 8318682
  * @summary Test decoding debug info for all nmethods in the code cache
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.code

@@ -89,7 +89,9 @@ public class TwrSimpleClose {
              JFMImpl fm = new JFMImpl(sfm)) {
             Iterable<ToolBox.JavaSource> files = Arrays.asList(new ToolBox.JavaSource(code));
             JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
 
             if (fm.classBytes.size() != 1) {
                 throw new AssertionError();

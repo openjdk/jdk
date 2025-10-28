@@ -25,7 +25,7 @@
  * @test
  * @bug     4164450
  * @summary JSR 199: Standard interface for Java compilers
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          java.desktop
  *          jdk.compiler

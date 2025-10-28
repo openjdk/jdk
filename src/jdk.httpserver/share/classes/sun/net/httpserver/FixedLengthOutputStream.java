@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,7 @@
 package sun.net.httpserver;
 
 import java.io.*;
-import java.net.*;
 import java.util.Objects;
-
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 /**
  * a class which allows the caller to write up to a defined
@@ -98,7 +94,7 @@ class FixedLengthOutputStream extends FilterOutputStream
                 is.close();
             } catch (IOException e) {}
         }
-        WriteFinishedEvent e = new WriteFinishedEvent (t);
+        Event e = new Event.WriteFinished(t);
         t.getHttpContext().getServerImpl().addEvent (e);
     }
 

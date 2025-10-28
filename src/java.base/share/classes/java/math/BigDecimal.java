@@ -35,14 +35,14 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -105,8 +105,8 @@ import jdk.internal.util.DecimalDigits;
  * considers members of the same cohort to be equal to each other. In
  * contrast, the {@link equals equals} method requires both the
  * numerical value and representation to be the same for equality to
- * hold. The results of methods like {@link scale} and {@link
- * unscaledValue} will differ for numerically equal values with
+ * hold. The results of methods like {@link #scale()} and {@link
+ * #unscaledValue()} will differ for numerically equal values with
  * different representations.
  *
  * <p>In general the rounding modes and precision setting determine
@@ -327,10 +327,6 @@ import jdk.internal.util.DecimalDigits;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Josh Bloch
- * @author  Mike Cowlishaw
- * @author  Joseph D. Darcy
- * @author  Sergey V. Kuksenko
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
@@ -360,10 +356,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private final BigInteger intVal;
 
     /**
-     * The scale of this BigDecimal, as returned by {@link #scale}.
+     * The scale of this BigDecimal, as returned by {@link #scale()}.
      *
      * @serial
-     * @see #scale
+     * @see #scale()
      */
     private final int scale;  // Note: this may have any value, so
                               // calculations must be done in longs
@@ -408,6 +404,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final long serialVersionUID = 6108874887143696463L;
 
     // Cache of common small BigDecimal values.
+    @Stable
     private static final BigDecimal[] ZERO_THROUGH_TEN = {
         new BigDecimal(BigInteger.ZERO,       0,  0, 1),
         new BigDecimal(BigInteger.ONE,        1,  0, 1),
@@ -423,6 +420,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     };
 
     // Cache of zero scaled by 0 - 15
+    @Stable
     private static final BigDecimal[] ZERO_SCALED_BY = {
         ZERO_THROUGH_TEN[0],
         new BigDecimal(BigInteger.ZERO, 0, 1, 1),
@@ -478,16 +476,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public static final BigDecimal TEN =
         ZERO_THROUGH_TEN[10];
-
-    /**
-     * The value 0.1, with a scale of 1.
-     */
-    private static final BigDecimal ONE_TENTH = valueOf(1L, 1);
-
-    /**
-     * The value 0.5, with a scale of 1.
-     */
-    private static final BigDecimal ONE_HALF = valueOf(5L, 1);
 
     // Constructors
 
@@ -1381,10 +1369,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * by the {@link Double#toString(double)} method.
      *
      * @apiNote This is generally the preferred way to convert a
-     * {@code double} (or {@code float}) into a {@code BigDecimal}, as
+     * {@code double} into a {@code BigDecimal}, as
      * the value returned is equal to that resulting from constructing
      * a {@code BigDecimal} from the result of using {@link
      * Double#toString(double)}.
+     * <p>
+     * While a {@code float} argument {@code v} can be passed to this method,
+     * the result often contains many more trailing digits than the precision
+     * of a {@code float}.
+     * Consider using {@code new BigDecimal(Float.toString(v))} instead.
      *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is equal to or approximately
@@ -1393,11 +1386,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public static BigDecimal valueOf(double val) {
-        // Reminder: a zero double returns '0.0', so we cannot fastpath
-        // to use the constant ZERO.  This might be important enough to
-        // justify a factory approach, a cache, or a few private
-        // constants, later.
-        return new BigDecimal(Double.toString(val));
+        if (!Double.isFinite(val)) {
+            throw new NumberFormatException("Infinite or NaN");
+        }
+
+        var fmt = FormattedFPDecimal.valueForDoubleToString(Math.abs(val));
+        long s = fmt.getSignificand();
+        if (val < 0) {
+            // Original s is never negative, so no overflow
+            s = -s;
+        }
+
+        return valueOf(s, -fmt.getExp(), fmt.getPrecision());
     }
 
     // Arithmetic Operations
@@ -1775,7 +1775,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         terminating decimal expansion, including dividing by zero
      * @return {@code this / divisor}
      * @since 1.5
-     * @author Joseph D. Darcy
      */
     public BigDecimal divide(BigDecimal divisor) {
         /*
@@ -1944,7 +1943,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if {@code mc.precision} {@literal >} 0 and the result
      *         requires a precision of more than {@code mc.precision} digits.
      * @since  1.5
-     * @author Joseph D. Darcy
      */
     public BigDecimal divideToIntegralValue(BigDecimal divisor, MathContext mc) {
         if (mc.precision == 0 || // exact result
@@ -4081,6 +4079,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Powers of 10 which can be represented exactly in {@code
      * double}.
      */
+    @Stable
     private static final double[] DOUBLE_10_POW = {
         1.0e0,  1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,
         1.0e6,  1.0e7,  1.0e8,  1.0e9,  1.0e10, 1.0e11,
@@ -4092,6 +4091,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Powers of 10 which can be represented exactly in {@code
      * float}.
      */
+    @Stable
     private static final float[] FLOAT_10_POW = {
         1.0e0f, 1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
         1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
@@ -4138,14 +4138,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int highInt = (int)intCompact / 100;
             int highIntSize = DecimalDigits.stringSize(highInt);
             byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+            DecimalDigits.uncheckedGetCharsLatin1(highInt, highIntSize, buf);
             buf[highIntSize] = '.';
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
-            try {
-                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException cce) {
-                throw new AssertionError(cce);
-            }
+            DecimalDigits.uncheckedPutPairLatin1(buf, highIntSize + 1, lowInt);
+            return JLA.uncheckedNewStringWithLatin1Bytes(buf);
         }
 
         char[] coeff;
@@ -4288,6 +4284,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
+    @Stable
     private static final long[] LONG_TEN_POWERS_TABLE = {
         1,                     // 0 / 10^0
         10,                    // 1 / 10^1
@@ -4337,6 +4334,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final int BIG_TEN_POWERS_TABLE_MAX =
         16 * BIG_TEN_POWERS_TABLE_INITLEN;
 
+    @Stable
     private static final long[] THRESHOLDS_TABLE = {
         Long.MAX_VALUE,                     // 0
         Long.MAX_VALUE/10L,                 // 1
@@ -5088,6 +5086,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
      */
+    @Stable
     private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[16 + 1];
 
     static {
@@ -5886,6 +5885,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return null;
     }
 
+    @Stable
     private static final long[][] LONGLONG_TEN_POWERS_TABLE = {
         {   0L, 0x8AC7230489E80000L },  //10^19
         {       0x5L, 0x6bc75e2d63100000L },  //10^20

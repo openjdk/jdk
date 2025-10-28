@@ -234,6 +234,7 @@ class java_lang_String : AllStatic {
 class java_lang_Class : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class HeapShared;
 
  private:
 
@@ -258,6 +259,7 @@ class java_lang_Class : AllStatic {
   static int _reflectionData_offset;
   static int _modifiers_offset;
   static int _is_primitive_offset;
+  static int _raw_access_flags_offset;
 
   static bool _offsets_computed;
 
@@ -268,7 +270,7 @@ class java_lang_Class : AllStatic {
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
-  static void initialize_mirror_fields(Klass* k, Handle mirror, Handle protection_domain,
+  static void initialize_mirror_fields(InstanceKlass* ik, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
   static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
  public:
@@ -292,8 +294,10 @@ class java_lang_Class : AllStatic {
 
   static void fixup_module_field(Klass* k, Handle module);
 
-  // Conversion
+  // Conversion -- java_class must not be null. The return value is null only if java_class is a primitive type.
   static Klass* as_Klass(oop java_class);
+  static InstanceKlass* as_InstanceKlass(oop java_class);
+
   static void set_klass(oop java_class, Klass* klass);
   static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
@@ -341,6 +345,9 @@ class java_lang_Class : AllStatic {
 
   static int modifiers(oop java_class);
   static void set_modifiers(oop java_class, u2 value);
+
+  static int raw_access_flags(oop java_class);
+  static void set_raw_access_flags(oop java_class, u2 value);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);
@@ -459,7 +466,7 @@ class java_lang_Thread : AllStatic {
   static const char*  thread_status_name(oop java_thread_oop);
 
   // Fill in current stack trace, can cause GC
-  static oop async_get_stack_trace(oop java_thread, TRAPS);
+  static oop async_get_stack_trace(jobject jthread, TRAPS);
 
   JFR_ONLY(static u2 jfr_epoch(oop java_thread);)
   JFR_ONLY(static void set_jfr_epoch(oop java_thread, u2 epoch);)
@@ -930,12 +937,16 @@ class java_lang_Module {
   friend class JavaClasses;
 };
 
+#define CONSTANTPOOL_INJECTED_FIELDS(macro)                             \
+  macro(reflect_ConstantPool, vmholder, object_signature, false)
+
 // Interface to jdk.internal.reflect.ConstantPool objects
 class reflect_ConstantPool {
  private:
   // Note that to reduce dependencies on the JDK we compute these
-  // offsets at run-time.
-  static int _oop_offset;
+  // offsets at run-time. This field is the oop offset for the
+  // actual constant pool, previously called constantPoolOop.
+  static int _vmholder_offset;
 
   static void compute_offsets();
 
@@ -947,7 +958,6 @@ class reflect_ConstantPool {
 
   // Accessors
   static void set_cp(oop reflect, ConstantPool* value);
-  static int oop_offset() { CHECK_INIT(_oop_offset); }
 
   static ConstantPool* get_cp(oop reflect);
 
@@ -1891,11 +1901,11 @@ class InjectedField {
   const vmClassID klass_id;
   const vmSymbolID name_index;
   const vmSymbolID signature_index;
-  const bool           may_be_java;
+  const bool may_be_java;
 
 
-  Klass* klass() const      { return vmClasses::klass_at(klass_id); }
-  Symbol* name() const      { return lookup_symbol(name_index); }
+  InstanceKlass* klass() const { return vmClasses::klass_at(klass_id); }
+  Symbol* name() const { return lookup_symbol(name_index); }
   Symbol* signature() const { return lookup_symbol(signature_index); }
 
   int compute_offset();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 
 #import "MenuAccessibility.h"
+#import "ThreadUtilities.h"
+#import "sun_lwawt_macosx_CAccessibility.h"
+
+static jclass sjc_CAccessibility = NULL;
 
 /*
  * Implementing a protocol that represents menus both as submenu and as a
@@ -51,4 +55,31 @@
     return NULL;
 }
 
+/*
+ * Return all non-ignored children.
+ */
+- (NSArray *)accessibilityChildren {
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
+    DECLARE_STATIC_METHOD_RETURN(sjm_getCurrentAccessiblePopupMenu, sjc_CAccessibility,
+            "getCurrentAccessiblePopupMenu",
+             "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)Ljavax/accessibility/Accessible;", nil);
+    jobject axComponent = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility,
+                                                             sjm_getCurrentAccessiblePopupMenu,
+                                                             fAccessible, fComponent);
+
+    CommonComponentAccessibility *currentElement = [CommonComponentAccessibility createWithAccessible:axComponent
+                                                            withEnv:env withView:self->fView isCurrent:YES];
+
+    NSArray *children = [CommonComponentAccessibility childrenOfParent:currentElement
+                                withEnv:env
+                                withChildrenCode:sun_lwawt_macosx_CAccessibility_JAVA_AX_ALL_CHILDREN
+                                allowIgnored:NO];
+
+    if ([children count] == 0) {
+        return nil;
+    } else {
+        return children;
+    }
+}
 @end

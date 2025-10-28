@@ -34,6 +34,7 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+const char* Abstract_VM_Version::_cpu_info_string = "";
 uint64_t Abstract_VM_Version::_cpu_features = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -270,6 +271,18 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.7 (VS2022)"
       #elif _MSC_VER == 1938
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.8 (VS2022)"
+      #elif _MSC_VER == 1939
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.9 (VS2022)"
+      #elif _MSC_VER == 1940
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.10 (VS2022)"
+      #elif _MSC_VER == 1941
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.11 (VS2022)"
+      #elif _MSC_VER == 1942
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.12 (VS2022)"
+      #elif _MSC_VER == 1943
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.13 (VS2022)"
+      #elif _MSC_VER == 1944
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.14 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -322,22 +335,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          ((Abstract_VM_Version::vm_minor_version() & 0xFF) << 16) |
          ((Abstract_VM_Version::vm_security_version() & 0xFF) << 8) |
          (Abstract_VM_Version::vm_build_number() & 0xFF);
-}
-
-void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const char* features_names[]) {
-  uint64_t features = _features;
-  uint features_names_index = 0;
-
-  while (features != 0) {
-    if (features & 1) {
-      int res = jio_snprintf(buf, buflen, ", %s", features_names[features_names_index]);
-      assert(res > 0, "not enough temporary space allocated");
-      buf += res;
-      buflen -= res;
-    }
-    features >>= 1;
-    ++features_names_index;
-  }
 }
 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {

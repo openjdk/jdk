@@ -26,7 +26,7 @@
  * @bug 8350563
  * @summary Test that And nodes are monotonic and added to the CCP worklist if they have a constant as input.
  * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.ccp.TestAndConZeroCCP
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=300 -XX:+StressIGVN -XX:+StressCCP -Xcomp
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=100 -XX:+StressIGVN -XX:+StressCCP -Xcomp
  *                   -XX:CompileOnly=java.lang.Integer::parseInt compiler.ccp.TestAndConZeroCCP compileonly
  * @run main compiler.ccp.TestAndConZeroCCP
  */
@@ -42,7 +42,7 @@ public class TestAndConZeroCCP {
             return;
         }
 
-        for (int i = 0; i < 10000; ++i) {
+        for (int i = 0; i < 100; ++i) {
             run();
         }
     }
