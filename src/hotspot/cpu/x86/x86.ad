@@ -7664,8 +7664,11 @@ instruct vcastFtoD_reg(vec dst, vec src) %{
 
 
 instruct castFtoX_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n->in(1)) < 64 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) <= 4);
+  predicate(!VM_Version::supports_avx10_2() &&
+            !VM_Version::supports_avx512vl() &&
+            Matcher::vector_length_in_bytes(n->in(1)) < 64 &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) <= 4 &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, KILL cr);
   format %{ "vector_cast_f2x $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}
@@ -7687,7 +7690,8 @@ instruct castFtoX_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec
 %}
 
 instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
-  predicate((VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n->in(1)) == 64) &&
+  predicate(!VM_Version::supports_avx10_2() &&
+            (VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n->in(1)) == 64) &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, KILL cr);
@@ -7709,6 +7713,33 @@ instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
+instruct castFtoX_reg_avx10(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
+  match(Set dst (VectorCastF2X src));
+  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  ins_encode %{
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(this, $src);
+    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct castFtoX_mem_avx10(vec dst, memory src) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
+  match(Set dst (VectorCastF2X (LoadVector src)));
+  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(vlen * sizeof(jfloat));
+    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcastDtoF_reg(vec dst, vec src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (VectorCastD2X src));
@@ -7721,7 +7752,9 @@ instruct vcastDtoF_reg(vec dst, vec src) %{
 %}
 
 instruct castDtoX_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, vec xtmp5, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n->in(1)) < 64 &&
+  predicate(!VM_Version::supports_avx10_2() &&
+            !VM_Version::supports_avx512vl() &&
+            Matcher::vector_length_in_bytes(n->in(1)) < 64 &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP xtmp5, KILL cr);
@@ -7737,7 +7770,8 @@ instruct castDtoX_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec
 %}
 
 instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
-  predicate((VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n->in(1)) == 64) &&
+  predicate(!VM_Version::supports_avx10_2() &&
+            (VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n->in(1)) == 64) &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, KILL cr);
@@ -7749,6 +7783,33 @@ instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
                               ExternalAddress(vector_float_signflip());
     __ vector_castD2X_evex(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                            $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister, signflip, noreg, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct castDtoX_reg_avx10(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
+  match(Set dst (VectorCastD2X src));
+  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this, $src);
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct castDtoX_mem_avx10(vec dst, memory src) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            is_integral_type(Matcher::vector_element_basic_type(n)));
+  match(Set dst (VectorCastD2X (LoadVector src)));
+  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    int vlen_enc = vector_length_encoding(vlen * sizeof(jdouble));
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -45,7 +45,7 @@ void ZArguments::initialize_heap_flags_and_sizes() {
       !FLAG_IS_CMDLINE(SoftMaxHeapSize)) {
     // We are really just guessing how much memory the program needs.
     // When that is the case, we don't want the soft and hard limits to be the same
-    // as it can cause flakyness in the number of GC threads used, in order to keep
+    // as it can cause flakiness in the number of GC threads used, in order to keep
     // to a random number we just pulled out of thin air.
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize * 90 / 100);
   }

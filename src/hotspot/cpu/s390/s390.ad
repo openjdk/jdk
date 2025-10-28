@@ -1947,6 +1947,7 @@ bool Matcher::is_spillable_arg(int reg) {
 uint Matcher::int_pressure_limit()
 {
   // Medium size register set, 6 special purpose regs, 3 SOE regs.
+  // 10 prevents spill-split-recycle sanity check in JVM2008.xml.transform.
   return (INTPRESSURE == -1) ? 10 : INTPRESSURE;
 }
 
@@ -1977,11 +1978,6 @@ RegMask Matcher::divL_proj_mask() {
 // Register for MODL projection of divmodL
 RegMask Matcher::modL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
-}
-
-// Copied from sparc.
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
 }
 
 // Should the matcher clone input 'm' of node 'n'?

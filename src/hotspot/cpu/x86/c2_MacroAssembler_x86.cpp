@@ -5053,12 +5053,12 @@ void C2_MacroAssembler::vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegi
       }
       vpackuswb(dst, dst, zero, vec_enc);
       break;
-    default: assert(false, "%s", type2name(to_elem_bt));
+    default: assert(false, "Unexpected basic type for target of vector cast int to subword: %s", type2name(to_elem_bt));
   }
 }
 
 /*
- * Algorithm for vector D2L and F2I conversions:-
+ * Algorithm for vector D2L and F2I conversions (AVX 10.2 unsupported):-
  * a) Perform vector D2L/F2I cast.
  * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
  *    It signifies that source value could be any of the special floating point
@@ -5096,7 +5096,7 @@ void C2_MacroAssembler::vector_castF2X_evex(BasicType to_elem_bt, XMMRegister ds
     case T_BYTE:
       evpmovdb(dst, dst, vec_enc);
       break;
-    default: assert(false, "%s", type2name(to_elem_bt));
+    default: assert(false, "Unexpected basic type for target of vector castF2X EVEX: %s", type2name(to_elem_bt));
   }
 }
 
@@ -5143,7 +5143,7 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
         evpmovsqd(dst, dst, vec_enc);
         evpmovdb(dst, dst, vec_enc);
         break;
-      default: assert(false, "%s", type2name(to_elem_bt));
+      default: assert(false, "Unexpected basic type for target of vector castD2X AVX512DQ EVEX: %s", type2name(to_elem_bt));
     }
   } else {
     assert(type2aelembytes(to_elem_bt) <= 4, "");
@@ -5158,8 +5158,88 @@ void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister ds
       case T_BYTE:
         evpmovdb(dst, dst, vec_enc);
         break;
-      default: assert(false, "%s", type2name(to_elem_bt));
+      default: assert(false, "Unexpected basic type for target of vector castD2X EVEX: %s", type2name(to_elem_bt));
     }
+  }
+}
+
+void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttps2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttps2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "Unexpected basic type for target of vector castF2X AVX10 (reg src): %s", type2name(to_elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_castF2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttps2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttps2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttps2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "Unexpected basic type for target of vector castF2X AVX10 (mem src): %s", type2name(to_elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttpd2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "Unexpected basic type for target of vector castD2X AVX10 (reg src): %s", type2name(to_elem_bt));
+  }
+}
+
+void C2_MacroAssembler::vector_castD2X_avx10(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc) {
+  switch(to_elem_bt) {
+    case T_LONG:
+      evcvttpd2qqs(dst, src, vec_enc);
+      break;
+    case T_INT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      break;
+    case T_SHORT:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdw(dst, dst, vec_enc);
+      break;
+    case T_BYTE:
+      evcvttpd2dqs(dst, src, vec_enc);
+      evpmovdb(dst, dst, vec_enc);
+      break;
+    default: assert(false, "Unexpected basic type for target of vector castD2X AVX10 (mem src): %s", type2name(to_elem_bt));
   }
 }
 

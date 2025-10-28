@@ -49,8 +49,7 @@ ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, Shenandoa
   ShenandoahGC(),
   _degen_point(degen_point),
   _generation(generation),
-  _abbreviated(false),
-  _consecutive_degen_with_bad_progress(0) {
+  _abbreviated(false) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
@@ -95,7 +94,7 @@ void ShenandoahDegenGC::op_degenerated() {
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
-  heap->clear_cancelled_gc(true /* clear oom handler */);
+  heap->clear_cancelled_gc();
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
@@ -116,8 +115,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 #endif
 
-  ShenandoahMetricsSnapshot metrics;
-  metrics.snap_before();
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   switch (_degen_point) {
     // The cases below form the Duff's-like device: it describes the actual GC cycle,
@@ -247,7 +245,6 @@ void ShenandoahDegenGC::op_degenerated() {
           ShenandoahHeapRegion* r;
           while ((r = heap->collection_set()->next()) != nullptr) {
             if (r->is_pinned()) {
-              heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
               op_degenerated_fail();
               return;
             }
@@ -310,32 +307,14 @@ void ShenandoahDegenGC::op_degenerated() {
     Universe::verify();
   }
 
-  metrics.snap_after();
-
-  // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
-  // garbage during the most recently aborted concurrent GC effort.  With generational GC, it is far more effective to
-  // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require
-  // a pause of 200 ms) rather than a full GC cycle (which may require over 2 seconds with a 10 GB old generation).
-  //
-  // In generational mode, we'll only upgrade to full GC if we've done two degen cycles in a row and both indicated
-  // bad progress.  In non-generational mode, we'll preserve the original behavior, which is to upgrade to full
-  // immediately following a degenerated cycle with bad progress.  This preserves original behavior of non-generational
-  // Shenandoah so as to avoid introducing "surprising new behavior."  It also makes less sense with non-generational
-  // Shenandoah to replace a full GC with a degenerated GC, because both have similar pause times in non-generational
-  // mode.
-  if (!metrics.is_good_progress(_generation)) {
-    _consecutive_degen_with_bad_progress++;
-  } else {
-    _consecutive_degen_with_bad_progress = 0;
-  }
-  if (!heap->mode()->is_generational() ||
-      ((heap->shenandoah_policy()->consecutive_degenerated_gc_count() > 1) && (_consecutive_degen_with_bad_progress >= 2))) {
-    heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
-    op_degenerated_futile();
-  } else {
+  // Decide if this cycle made good progress, and, if not, should it upgrade to a full GC.
+  const bool progress = metrics.is_good_progress();
+  ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
+  if (progress) {
     heap->notify_gc_progress();
-    heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
-    _generation->heuristics()->record_success_degenerated();
+  } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+    op_degenerated_futile();
   }
 }
 
@@ -483,6 +462,7 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 void ShenandoahDegenGC::upgrade_to_full() {
   log_info(gc)("Degenerated GC upgrading to Full GC");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
   heap->increment_total_collections(true);
   heap->shenandoah_policy()->record_degenerated_upgrade_to_full();
   ShenandoahFullGC full_gc;

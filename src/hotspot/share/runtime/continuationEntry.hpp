@@ -79,11 +79,6 @@ class ContinuationEntry {
   // The caller (if there is one) is the still frozen top frame in the StackChunk.
   int _argsize;
   intptr_t* _parent_cont_fastpath;
-#ifdef _LP64
-  int64_t   _parent_held_monitor_count;
-#else
-  int32_t   _parent_held_monitor_count;
-#endif
   uint32_t _pin_count;
 
  public:
@@ -94,7 +89,6 @@ class ContinuationEntry {
   static ByteSize argsize_offset()  { return byte_offset_of(ContinuationEntry, _argsize); }
   static ByteSize pin_count_offset(){ return byte_offset_of(ContinuationEntry, _pin_count); }
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
-  static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
 
   static address return_pc() { return _return_pc; }
   static address return_pc_address() { return (address)&_return_pc; }
@@ -103,7 +97,6 @@ class ContinuationEntry {
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
-  int64_t parent_held_monitor_count() const { return (int64_t)_parent_held_monitor_count; }
 
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }

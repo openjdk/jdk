@@ -3814,7 +3814,11 @@ private:
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
-    if (imm8 <= 127 && imm8 >= -128) {
+    if (isFloat) {
+      assert(T != B, "invalid size");
+      assert((imm8 >> 8) == 0, "invalid immediate");
+      sh = 0;
+    } else if (imm8 <= 127 && imm8 >= -128) {
       sh = 0;
     } else if (T != B && imm8 <= 32512 && imm8 >= -32768 && (imm8 & 0xff) == 0) {
       sh = 1;
@@ -3824,7 +3828,7 @@ private:
     }
     int m = isMerge ? 1 : 0;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
-    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), f(imm8 & 0xff, 12, 5), rf(Zd, 0);
   }
 
 public:
@@ -3834,7 +3838,7 @@ public:
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<int8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
@@ -4063,6 +4067,13 @@ public:
   INSN(sve_brka, 0b00); // Break after first true condition
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
+
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
 
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \

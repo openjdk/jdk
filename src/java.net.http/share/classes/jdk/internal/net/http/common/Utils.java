@@ -37,33 +37,50 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.ConnectException;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HexFormat;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -152,6 +169,10 @@ public final class Utils {
         return prop.isEmpty() ? true : Boolean.parseBoolean(prop);
     }
 
+    // A threshold to decide whether to slice or copy.
+    // see sliceOrCopy
+    public static final int SLICE_THRESHOLD = 32;
+
     /**
      * Allocated buffer size. Must never be higher than 16K. But can be lower
      * if smaller allocation units preferred. HTTP/2 mandates that all
@@ -169,7 +190,8 @@ public final class Utils {
 
     private static Set<String> getDisallowedHeaders() {
         Set<String> headers = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        headers.addAll(Set.of("connection", "content-length", "expect", "host", "upgrade"));
+        headers.addAll(Set.of("connection", "content-length", "expect", "host", "upgrade",
+                "alt-used"));
 
         String v = getNetProperty("jdk.httpclient.allowRestrictedHeaders");
         if (v != null) {
@@ -214,6 +236,56 @@ public final class Utils {
                 }
                 return true;
             };
+
+    public static <T extends Throwable> T addSuppressed(T x, Throwable suppressed) {
+        if (x != suppressed && suppressed != null) {
+            var sup = x.getSuppressed();
+            if (sup != null && sup.length > 0) {
+                if (Arrays.asList(sup).contains(suppressed)) {
+                    return x;
+                }
+            }
+            sup = suppressed.getSuppressed();
+            if (sup != null && sup.length > 0) {
+                if (Arrays.asList(sup).contains(x)) {
+                    return x;
+                }
+            }
+            x.addSuppressed(suppressed);
+        }
+        return x;
+    }
+
+    /**
+     * {@return a string comparing the given deadline with now, typically
+     *  something like "due since Nms" or "due in Nms"}
+     *
+     * @apiNote
+     * This method recognize deadlines set to Instant.MIN
+     * and Instant.MAX as special cases meaning "due" and
+     * "not scheduled".
+     *
+     * @param now       now
+     * @param deadline  the deadline
+     */
+    public static String debugDeadline(Deadline now, Deadline deadline) {
+        boolean isDue = deadline.compareTo(now) <= 0;
+        try {
+            if (isDue) {
+                if (deadline.equals(Deadline.MIN)) {
+                    return "due (Deadline.MIN)";
+                } else {
+                    return "due since " + deadline.until(now, ChronoUnit.MILLIS) + "ms";
+                }
+            } else if (deadline.equals(Deadline.MAX)) {
+                return "not scheduled (Deadline.MAX)";
+            } else {
+                return "due in " + now.until(deadline, ChronoUnit.MILLIS) + "ms";
+            }
+        } catch (ArithmeticException x) {
+            return isDue ? "due since too long" : "due in the far future";
+        }
+    }
 
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
@@ -346,6 +418,7 @@ public final class Utils {
     }
 
     public static String interestOps(SelectionKey key) {
+        if (key == null) return "null-key";
         try {
             return describeOps(key.interestOps());
         } catch (CancelledKeyException x) {
@@ -354,6 +427,7 @@ public final class Utils {
     }
 
     public static String readyOps(SelectionKey key) {
+        if (key == null) return "null-key";
         try {
             return describeOps(key.readyOps());
         } catch (CancelledKeyException x) {
@@ -436,6 +510,21 @@ public final class Utils {
             cause = cause.getCause();
         }
         return cause;
+    }
+
+    public static IOException toIOException(Throwable cause) {
+        if (cause == null) return null;
+        if (cause instanceof CompletionException ce) {
+            cause = ce.getCause();
+        } else if (cause instanceof ExecutionException ee) {
+            cause = ee.getCause();
+        }
+        if (cause instanceof IOException io) {
+            return io;
+        } else if (cause instanceof UncheckedIOException uio) {
+            return uio.getCause();
+        }
+        return new IOException(cause.getMessage(), cause);
     }
 
     public static IOException getIOException(Throwable t) {
@@ -575,6 +664,10 @@ public final class Utils {
         return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
     }
 
+    public static long getLongProperty(String name, long defaultValue) {
+        return Long.parseLong(System.getProperty(name, String.valueOf(defaultValue)));
+    }
+
     public static int getIntegerNetProperty(String property, int min, int max, int defaultValue, boolean log) {
         int value =  Utils.getIntegerNetProperty(property, defaultValue);
         // use default value if misconfigured
@@ -610,6 +703,8 @@ public final class Utils {
         p1.setSNIMatchers(p.getSNIMatchers());
         p1.setServerNames(p.getServerNames());
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
+        p1.setSignatureSchemes(p.getSignatureSchemes());
+        p1.setNamedGroups(p.getNamedGroups());
         return p1;
     }
 
@@ -753,6 +848,91 @@ public final class Utils {
         return remain;
     }
 
+    //
+
+    /**
+     * Reads as much bytes as possible from the buffer list, and
+     * write them in the provided {@code data} byte array.
+     * Returns the number of bytes read and written to the byte array.
+     * This method advances the position in the byte buffers it reads
+     * @param bufs A list of byte buffer
+     * @param data A byte array to write into
+     * @param offset Where to start writing in the byte array
+     * @return the amount of bytes read and written to the byte array
+     */
+    public static int read(List<ByteBuffer> bufs, byte[] data, int offset) {
+        int pos = offset;
+        for (ByteBuffer buf : bufs) {
+            if (pos >= data.length) break;
+            int read = Math.min(buf.remaining(), data.length - pos);
+            if (read <= 0) continue;
+            buf.get(data, pos, read);
+            pos += read;
+        }
+        return pos - offset;
+    }
+
+    /**
+     * Returns the next buffer that has remaining bytes, or null.
+     * @param iterator an iterator
+     * @return the next buffer that has remaining bytes, or null
+     */
+    public static ByteBuffer next(Iterator<ByteBuffer> iterator) {
+        ByteBuffer next = null;
+        while (iterator.hasNext() && !(next = iterator.next()).hasRemaining());
+        return next == null || !next.hasRemaining() ? null : next;
+    }
+
+    /**
+     * Compute the relative consolidated position in bytes at which the two
+     * input mismatch, or -1 if there is no mismatch.
+     * @apiNote This method behaves as {@link ByteBuffer#mismatch(ByteBuffer)}.
+     * @param these a first list of byte buffers
+     * @param those a second list of byte buffers
+     * @return  the relative consolidated position in bytes at which the two
+     *          input mismatch, or -1L if there is no mismatch.
+     */
+    public static long mismatch(List<ByteBuffer> these, List<ByteBuffer> those) {
+        if (these.isEmpty()) return those.isEmpty() ? -1 : 0;
+        if (those.isEmpty()) return 0;
+        Iterator<ByteBuffer> lefti = these.iterator(), righti = those.iterator();
+        ByteBuffer left = next(lefti), right = next(righti);
+        long parsed = 0;
+        while (left != null || right != null) {
+            int m = left == null || right == null ? 0 : left.mismatch(right);
+            if (m == -1) {
+                parsed = parsed + left.remaining();
+                assert right.remaining() == left.remaining();
+                if ((left = next(lefti)) != null) {
+                    if ((right = next(righti)) != null) {
+                        continue;
+                    }
+                    return parsed;
+                }
+                return (right = next(righti)) != null ? parsed : -1;
+            }
+            if (m == 0) return parsed;
+            parsed = parsed + m;
+            if (m < left.remaining()) {
+                if (m < right.remaining()) {
+                    return parsed;
+                }
+                if ((right = next(righti)) != null) {
+                    left = left.slice(m, left.remaining() - m);
+                    continue;
+                }
+                return parsed;
+            }
+            assert m < right.remaining();
+            if ((left = next(lefti)) != null) {
+                right = right.slice(m, right.remaining() - m);
+                continue;
+            }
+            return parsed;
+        }
+        return -1L;
+    }
+
     public static long synchronizedRemaining(List<ByteBuffer> bufs) {
         if (bufs == null) return 0L;
         synchronized (bufs) {
@@ -764,12 +944,13 @@ public final class Utils {
         if (bufs == null) return 0;
         long remain = 0;
         for (ByteBuffer buf : bufs) {
-            remain += buf.remaining();
-            if (remain > max) {
+            int size = buf.remaining();
+            if (max - remain < size) {
                 throw new IllegalArgumentException("too many bytes");
             }
+            remain += size;
         }
-        return (int) remain;
+        return remain;
     }
 
     public static int remaining(List<ByteBuffer> bufs, int max) {
@@ -781,12 +962,13 @@ public final class Utils {
         if (refs == null) return 0;
         long remain = 0;
         for (ByteBuffer b : refs) {
-            remain += b.remaining();
-            if (remain > max) {
+            int size = b.remaining();
+            if (max - remain < size) {
                 throw new IllegalArgumentException("too many bytes");
             }
+            remain += size;
         }
-        return (int) remain;
+        return remain;
     }
 
     public static int remaining(ByteBuffer[] refs, int max) {
@@ -833,6 +1015,50 @@ public final class Utils {
     }
 
     /**
+     * Creates a slice of a buffer, possibly copying the data instead
+     * of slicing.
+     * If the buffer capacity is less than the {@linkplain #SLICE_THRESHOLD
+     * default slice threshold}, or if the capacity minus the length to slice
+     * is less than the {@linkplain #SLICE_THRESHOLD threshold}, returns a slice.
+     * Otherwise, copy so as not to retain a reference to a big buffer
+     * for a small slice.
+     * @param src the original buffer
+     * @param start where to start copying/slicing from src
+     * @param len   how many byte to slice/copy
+     * @return a new ByteBuffer for the given slice
+     */
+    public static ByteBuffer sliceOrCopy(ByteBuffer src, int start, int len) {
+        return sliceOrCopy(src, start, len, SLICE_THRESHOLD);
+    }
+
+    /**
+     * Creates a slice of a buffer, possibly copying the data instead
+     * of slicing.
+     * If the buffer capacity minus the length to slice is less than the threshold,
+     * returns a slice.
+     * Otherwise, copy so as not to retain a reference to a buffer
+     * that contains more bytes than needed.
+     * @param src the original buffer
+     * @param start where to start copying/slicing from src
+     * @param len   how many byte to slice/copy
+     * @param threshold a threshold to decide whether to slice or copy
+     * @return a new ByteBuffer for the given slice
+     */
+    public static ByteBuffer sliceOrCopy(ByteBuffer src, int start, int len, int threshold) {
+        assert src.hasArray();
+        int cap = src.array().length;
+        if (cap - len < threshold) {
+            return src.slice(start, len);
+        } else {
+            byte[] b = new byte[len];
+            if (len > 0) {
+                src.get(start, b, 0, len);
+            }
+            return ByteBuffer.wrap(b);
+        }
+    }
+
+    /**
      * Get the Charset from the Content-encoding header. Defaults to
      * UTF_8
      */
@@ -847,7 +1073,9 @@ public final class Utils {
             if (value == null) return StandardCharsets.UTF_8;
             return Charset.forName(value);
         } catch (Throwable x) {
-            Log.logTrace("Can't find charset in \"{0}\" ({1})", type, x);
+            if (Log.trace()) {
+                Log.logTrace("Can't find charset in \"{0}\" ({1})", type, x);
+            }
             return StandardCharsets.UTF_8;
         }
     }
@@ -1076,6 +1304,40 @@ public final class Utils {
         }
     }
 
+    /**
+     * Creates HTTP/2 HTTP/3 pseudo headers for the given request.
+     * @param request the request
+     * @return pseudo headers for that request
+     */
+    public static HttpHeaders createPseudoHeaders(HttpRequest request) {
+        HttpHeadersBuilder hdrs = new HttpHeadersBuilder();
+        String method = request.method();
+        hdrs.setHeader(":method", method);
+        URI uri = request.uri();
+        hdrs.setHeader(":scheme", uri.getScheme());
+        String host = uri.getHost();
+        int port = uri.getPort();
+        assert host != null;
+        if (port != -1) {
+            hdrs.setHeader(":authority", host + ":" + port);
+        } else {
+            hdrs.setHeader(":authority", host);
+        }
+        String query = uri.getRawQuery();
+        String path = uri.getRawPath();
+        if (path == null || path.isEmpty()) {
+            if (method.equalsIgnoreCase("OPTIONS")) {
+                path = "*";
+            } else {
+                path = "/";
+            }
+        }
+        if (query != null) {
+            path += "?" + query;
+        }
+        hdrs.setHeader(":path", Utils.encode(path));
+        return hdrs.build();
+    }
     // -- toAsciiString-like support to encode path and query URI segments
 
     // Encodes all characters >= \u0080 into escaped, normalized UTF-8 octets,
@@ -1117,6 +1379,302 @@ public final class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * {@return the content of the buffer as an hexadecimal string}
+     * This method doesn't move the buffer position or limit.
+     * @param buffer a byte buffer
+     */
+    public static String asHexString(ByteBuffer buffer) {
+        if (!buffer.hasRemaining()) return "";
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(buffer.position(), bytes);
+        return HexFormat.of().formatHex(bytes);
+    }
+
+    /**
+     * Converts a ByteBuffer containing bytes encoded using
+     * the given {@linkplain Charset charset} into a
+     * string. This method does not throw but will replace
+     * unrecognized sequences with the replacement character.
+     * The bytes in the buffer are consumed.
+     *
+     * @apiNote
+     * This method is intended for debugging purposes only,
+     * since buffers are not guaranteed to be split at character
+     * boundaries.
+     *
+     * @param buffer a buffer containing bytes encoded using
+     *               a charset
+     * @param charset the charset to use to decode the bytes
+     *                into a string
+     *
+     * @return a string built from the bytes contained
+     * in the buffer decoded using the given charset
+     */
+    public static String asString(ByteBuffer buffer, Charset charset) {
+        var decoded = charset.decode(buffer);
+        char[] chars = new char[decoded.length()];
+        decoded.get(chars);
+        return new String(chars);
+    }
+
+    /**
+     * Converts a ByteBuffer containing UTF-8 bytes into a
+     * string. This method does not throw but will replace
+     * unrecognized sequences with the replacement character.
+     * The bytes in the buffer are consumed.
+     *
+     * @apiNote
+     * This method is intended for debugging purposes only,
+     * since buffers are not guaranteed to be split at character
+     * boundaries.
+     *
+     * @param buffer a buffer containing UTF-8 bytes
+     *
+     * @return a string built from the decoded UTF-8 bytes contained
+     * in the buffer
+     */
+    public static String asString(ByteBuffer buffer) {
+       return asString(buffer, StandardCharsets.UTF_8);
+    }
+
+    public static String millis(Instant now, Instant deadline) {
+        if (Instant.MAX.equals(deadline)) return "not scheduled";
+        try {
+            long delay = now.until(deadline, ChronoUnit.MILLIS);
+            return delay + " ms";
+        } catch (ArithmeticException a) {
+            return "too far away";
+        }
+    }
+
+    public static String millis(Deadline now, Deadline deadline) {
+        return millis(now.asInstant(), deadline.asInstant());
+    }
+
+    public static ExecutorService safeExecutor(ExecutorService delegate,
+                                 BiConsumer<Runnable, Throwable> errorHandler) {
+        Executor overflow =  new CompletableFuture<Void>().defaultExecutor();
+        return new SafeExecutorService(delegate, overflow, errorHandler);
+    }
+
+    public static sealed class SafeExecutor<E extends Executor> implements Executor
+            permits SafeExecutorService {
+        final E delegate;
+        final BiConsumer<Runnable, Throwable> errorHandler;
+        final Executor overflow;
+
+        public SafeExecutor(E delegate, Executor overflow, BiConsumer<Runnable, Throwable> errorHandler) {
+            this.delegate = delegate;
+            this.overflow = overflow;
+            this.errorHandler = errorHandler;
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            ensureExecutedAsync(command);
+        }
+
+        private void ensureExecutedAsync(Runnable command) {
+            try {
+                delegate.execute(command);
+            } catch (RejectedExecutionException t) {
+                errorHandler.accept(command, t);
+                overflow.execute(command);
+            }
+        }
+
+    }
+
+    public static final class SafeExecutorService extends SafeExecutor<ExecutorService>
+            implements ExecutorService {
+
+        public SafeExecutorService(ExecutorService delegate,
+                            Executor overflow,
+                            BiConsumer<Runnable, Throwable> errorHandler) {
+            super(delegate, overflow, errorHandler);
+        }
+
+        @Override
+        public void shutdown() {
+            delegate.shutdown();
+        }
+
+        @Override
+        public List<Runnable> shutdownNow() {
+            return delegate.shutdownNow();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return delegate.isShutdown();
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return delegate.isTerminated();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            return delegate.awaitTermination(timeout, unit);
+        }
+
+        @Override
+        public <T> Future<T> submit(Callable<T> task) {
+            return delegate.submit(task);
+        }
+
+        @Override
+        public <T> Future<T> submit(Runnable task, T result) {
+            return delegate.submit(task, result);
+        }
+
+        @Override
+        public Future<?> submit(Runnable task) {
+            return delegate.submit(task);
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException {
+            return delegate.invokeAll(tasks);
+        }
+
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                                             long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return delegate.invokeAll(tasks, timeout, unit);
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException, ExecutionException {
+            return delegate.invokeAny(tasks);
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
+                               long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return delegate.invokeAny(tasks);
+        }
+    }
+
+    public static <T extends NetworkChannel> T configureChannelBuffers(Consumer<String> logSink, T chan,
+                                                                int receiveBufSize, int sendBufSize) {
+
+        if (logSink != null) {
+            int bufsize = getSoReceiveBufferSize(logSink, chan);
+            logSink.accept("Initial receive buffer size is: %d".formatted(bufsize));
+            bufsize = getSoSendBufferSize(logSink, chan);
+            logSink.accept("Initial send buffer size is: %d".formatted(bufsize));
+        }
+        if (trySetReceiveBufferSize(logSink, chan, receiveBufSize)) {
+            if (logSink != null) {
+                int bufsize = getSoReceiveBufferSize(logSink, chan);
+                logSink.accept("Receive buffer size configured: %d".formatted(bufsize));
+            }
+        }
+        if (trySetSendBufferSize(logSink, chan, sendBufSize)) {
+            if (logSink != null) {
+                int bufsize = getSoSendBufferSize(logSink, chan);
+                logSink.accept("Send buffer size configured: %d".formatted(bufsize));
+            }
+        }
+        return chan;
+    }
+
+    public static boolean trySetReceiveBufferSize(Consumer<String> logSink, NetworkChannel chan, int bufsize) {
+        try {
+            if (bufsize > 0) {
+                chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+                return true;
+            }
+        } catch (IOException x) {
+            if (logSink != null)
+                logSink.accept("Failed to set receive buffer size to %d on %s"
+                        .formatted(bufsize, chan));
+        }
+        return false;
+    }
+
+    public static boolean trySetSendBufferSize(Consumer<String> logSink, NetworkChannel chan, int bufsize) {
+        try {
+            if (bufsize > 0) {
+                chan.setOption(StandardSocketOptions.SO_SNDBUF, bufsize);
+                return true;
+            }
+        } catch (IOException x) {
+            if (logSink != null)
+                logSink.accept("Failed to set send buffer size to %d on %s"
+                        .formatted(bufsize, chan));
+        }
+        return false;
+    }
+
+    public static int getSoReceiveBufferSize(Consumer<String> logSink, NetworkChannel chan) {
+        try {
+            return chan.getOption(StandardSocketOptions.SO_RCVBUF);
+        } catch (IOException x) {
+            if (logSink != null)
+                logSink.accept("Failed to get initial receive buffer size on %s".formatted(chan));
+        }
+        return 0;
+    }
+
+    public static int getSoSendBufferSize(Consumer<String> logSink, NetworkChannel chan) {
+        try {
+            return chan.getOption(StandardSocketOptions.SO_SNDBUF);
+        } catch (IOException x) {
+            if (logSink!= null)
+                logSink.accept("Failed to get initial receive buffer size on %s".formatted(chan));
+        }
+        return 0;
+    }
+
+
+    /**
+     * Try to figure out whether local and remote addresses are compatible.
+     * Used to diagnose potential communication issues early.
+     * This is a best effort, and there is no guarantee that all potential
+     * conflicts will be detected.
+     * @param local local address
+     * @param peer  peer address
+     * @return a message describing the conflict, if any, or {@code null} if no
+     *         conflict was detected.
+     */
+    public static String addressConflict(SocketAddress local, SocketAddress peer) {
+        if (local == null || peer == null) return null;
+        if (local.equals(peer)) {
+            return "local endpoint and remote endpoint are bound to the same IP address and port";
+        }
+        if (!(local instanceof InetSocketAddress li) || !(peer instanceof InetSocketAddress pi)) {
+            return null;
+        }
+        var laddr = li.getAddress();
+        var paddr = pi.getAddress();
+        if (!laddr.isAnyLocalAddress() && !paddr.isAnyLocalAddress()) {
+            if (laddr.getClass() != paddr.getClass()) { // IPv4 vs IPv6
+                if ((laddr instanceof Inet6Address laddr6 && !laddr6.isIPv4CompatibleAddress())
+                    || (paddr instanceof Inet6Address paddr6 && !paddr6.isIPv4CompatibleAddress())) {
+                    return "local endpoint IP (%s) and remote endpoint IP (%s) don't match"
+                            .formatted(laddr.getClass().getSimpleName(),
+                                    paddr.getClass().getSimpleName());
+                }
+            }
+        }
+        if (li.getPort() != pi.getPort()) return null;
+        if (li.getAddress().isAnyLocalAddress() && pi.getAddress().isLoopbackAddress()) {
+            return "local endpoint (wildcard) and remote endpoint (loopback) ports conflict";
+        }
+        if (pi.getAddress().isAnyLocalAddress() && li.getAddress().isLoopbackAddress()) {
+            return "local endpoint (loopback) and remote endpoint (wildcard) ports conflict";
+        }
+        return null;
     }
 
     /**

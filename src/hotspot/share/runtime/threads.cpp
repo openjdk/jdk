@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
@@ -447,6 +446,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
+  // Deferred "static" initialization
+  NonJavaThread::init();
+
   // Initialize library-based TLS
   ThreadLocalStorage::init();
 
@@ -772,7 +774,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
-    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
+    AOTLinkedClassBulkLoader::link_or_init_javabase_classes(THREAD);
   }
 
   // Start string deduplication thread if requested.
@@ -791,7 +793,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   call_initPhase2(CHECK_JNI_ERR);
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::load_non_javabase_classes(THREAD);
+    AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes(THREAD);
   }
 #ifndef PRODUCT
   HeapShared::initialize_test_class_from_archive(THREAD);
@@ -889,10 +891,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
-    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
-    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {

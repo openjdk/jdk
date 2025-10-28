@@ -59,7 +59,9 @@ class RunTimeClassInfo {
     u4 _name;
     u4 _from_name;
     Symbol* name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
-    Symbol* from_name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name); }
+    Symbol* from_name() {
+      return (_from_name == 0) ? nullptr : ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name);
+    }
   };
 
   struct RTLoaderConstraint {

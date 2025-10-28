@@ -11,12 +11,13 @@ var typeSearchIndex;
 var memberSearchIndex;
 var tagSearchIndex;
 
-var oddRowColor = "odd-row-color";
-var evenRowColor = "even-row-color";
-var sortAsc = "sort-asc";
-var sortDesc = "sort-desc";
-var tableTab = "table-tab";
-var activeTableTab = "active-table-tab";
+const oddRowColor = "odd-row-color";
+const evenRowColor = "even-row-color";
+const sortAsc = "sort-asc";
+const sortDesc = "sort-desc";
+const tableTab = "table-tab";
+const activeTableTab = "active-table-tab";
+const THEMES = Object.freeze(["theme-light", "theme-dark", "theme-os"]);
 
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
@@ -30,21 +31,20 @@ if (typeof hljs !== "undefined") {
     }
 }
 
-function loadScripts(doc, tag) {
-    createElem(doc, tag, 'script-files/search.js');
-
-    createElem(doc, tag, 'module-search-index.js');
-    createElem(doc, tag, 'package-search-index.js');
-    createElem(doc, tag, 'type-search-index.js');
-    createElem(doc, tag, 'member-search-index.js');
-    createElem(doc, tag, 'tag-search-index.js');
+function loadScripts() {
+    createScript('script-files/search.js');
+    createScript('module-search-index.js');
+    createScript('package-search-index.js');
+    createScript('type-search-index.js');
+    createScript('member-search-index.js');
+    createScript('tag-search-index.js');
 }
 
-function createElem(doc, tag, path) {
-    var script = doc.createElement(tag);
-    var scriptElement = doc.getElementsByTagName(tag)[0];
+function createScript(path) {
+    var script = document.createElement("script");
     script.src = pathtoroot + path;
-    scriptElement.parentNode.insertBefore(script, scriptElement);
+    var firstScript = document.getElementsByTagName("script")[0];
+    firstScript.parentNode.insertBefore(script, firstScript);
 }
 
 // Helper for  making content containing release names comparable lexicographically
@@ -312,21 +312,31 @@ function makeFilterWidget(sidebar, updateToc) {
     return sidebar;
 }
 
+function getTheme() {
+    return localStorage.getItem('theme') || THEMES[0];
+}
+
+function initTheme() {
+    document.body.classList.add(getTheme());
+}
+
 function setTopMargin() {
     // Dynamically set scroll margin to accomodate for draft header
     var headerHeight = Math.ceil(document.querySelector("header").offsetHeight);
     document.querySelector(":root")
         .style.setProperty("--nav-height", headerHeight + "px");
 }
+
 document.addEventListener("readystatechange", (e) => {
     if (document.readyState === "interactive") {
         setTopMargin();
-    }
-    if (sessionStorage.getItem("sidebar") === "hidden") {
-        const sidebar = document.querySelector(".main-grid nav.toc");
-        if (sidebar) sidebar.classList.add("hide-sidebar");
+        if (sessionStorage.getItem("sidebar") === "hidden") {
+            const sidebar = document.querySelector(".main-grid nav.toc");
+            if (sidebar) sidebar.classList.add("hide-sidebar");
+        }
     }
 });
+
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
     const subnav = document.querySelector("ol.sub-nav-list");
@@ -375,13 +385,16 @@ document.addEventListener("DOMContentLoaded", function(e) {
             themePanelVisible = false;
         }
     }
+    var currentTheme = getTheme();
     themePanel.querySelectorAll("input").forEach(input => {
         input.removeAttribute("disabled");
+        if (input.id === currentTheme) {
+            input.checked = true;
+        }
         input.addEventListener("change", e => {
             setTheme(e.target.value);
         })
     });
-    const THEMES = ["theme-light", "theme-dark", "theme-os"];
     function setTheme(theme) {
         THEMES.forEach(t => {
             if (t !== theme) document.body.classList.remove(t);
@@ -390,7 +403,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
         localStorage.setItem("theme", theme);
         document.getElementById(theme).checked = true;
     }
-    setTheme(localStorage.getItem("theme") || THEMES[0]);
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);

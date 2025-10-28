@@ -67,11 +67,10 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
                 // There currently only 2 variants in use that differ only by the presence of a
                 // dmb instruction
                 int stw = getConstant("NMethodPatchingType::stw_instruction_and_data_patch", Integer.class);
-                int conc1 = getConstant("NMethodPatchingType::conc_data_patch", Integer.class);
-                int conc2 = getConstant("NMethodPatchingType::conc_instruction_and_data_patch", Integer.class);
+                int conc = getConstant("NMethodPatchingType::conc_instruction_and_data_patch", Integer.class);
                 if (patchingType == stw) {
                     patchConcurrent = false;
-                } else if (patchingType == conc1 || patchingType == conc2) {
+                } else if (patchingType == conc) {
                     patchConcurrent = true;
                 } else {
                     throw new IllegalArgumentException("unsupported barrier sequence " + patchingType);

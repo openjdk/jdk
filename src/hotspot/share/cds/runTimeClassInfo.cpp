@@ -40,12 +40,18 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   _num_verifier_constraints = info.num_verifier_constraints();
   _num_loader_constraints   = info.num_loader_constraints();
   int i;
+
+  if (CDSConfig::is_preserving_verification_constraints() && CDSConfig::is_dumping_final_static_archive()) {
+    // The production run doesn't need the verifier constraints, as we can guarantee that all classes checked by
+    // the verifier during AOT training/assembly phases cannot be replaced in the production run.
+    _num_verifier_constraints = 0;
+  }
   if (_num_verifier_constraints > 0) {
     RTVerifierConstraint* vf_constraints = verifier_constraints();
     char* flags = verifier_constraint_flags();
     for (i = 0; i < _num_verifier_constraints; i++) {
-      vf_constraints[i]._name      = builder->any_to_offset_u4(info._verifier_constraints->at(i).name());
-      vf_constraints[i]._from_name = builder->any_to_offset_u4(info._verifier_constraints->at(i).from_name());
+      vf_constraints[i]._name = builder->any_to_offset_u4(info._verifier_constraints->at(i).name());
+      vf_constraints[i]._from_name = builder->any_or_null_to_offset_u4(info._verifier_constraints->at(i).from_name());
     }
     for (i = 0; i < _num_verifier_constraints; i++) {
       flags[i] = info._verifier_constraint_flags->at(i);

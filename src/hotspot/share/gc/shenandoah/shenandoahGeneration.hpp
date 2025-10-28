@@ -128,7 +128,7 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return Atomic::load(&_used); }
+  size_t used() const override { return AtomicAccess::load(&_used); }
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {
@@ -142,7 +142,7 @@ private:
   size_t soft_available() const override;
 
   size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start();
+  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
   void increase_allocated(size_t bytes);
 
   // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current

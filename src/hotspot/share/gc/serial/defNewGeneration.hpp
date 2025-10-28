@@ -187,7 +187,7 @@ class DefNewGeneration: public Generation {
   HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
 
-  void gc_epilogue(bool full);
+  void gc_epilogue();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.

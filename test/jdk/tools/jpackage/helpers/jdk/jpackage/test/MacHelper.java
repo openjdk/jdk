@@ -23,21 +23,41 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.PListWriter.writeArray;
+import static jdk.jpackage.internal.util.PListWriter.writeBoolean;
+import static jdk.jpackage.internal.util.PListWriter.writeBooleanOptional;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writeKey;
+import static jdk.jpackage.internal.util.PListWriter.writeString;
+import static jdk.jpackage.internal.util.PListWriter.writeStringArray;
+import static jdk.jpackage.internal.util.PListWriter.writeStringOptional;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.RetryExecutor;
@@ -74,9 +94,23 @@ public final class MacHelper {
 
         Path mountPoint = null;
         try {
-            var plist = readPList(attachExecutor.getOutput());
-            mountPoint = Path.of(plist.queryValue("mount-point"));
+            // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
+            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
+                try {
+                    return dict.queryValue("mount-point");
+                } catch (NoSuchElementException ex) {
+                    return (String)null;
+                }
+            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+        } finally {
+            if (mountPoint == null) {
+                TKit.trace("Unexpected plist file missing `system-entities` array:");
+                attachExecutor.getOutput().forEach(TKit::trace);
+                TKit.trace("Done");
+            }
+        }
 
+        try {
             // code here used to copy just <runtime name> or <app name>.app
             // We now have option to include arbitrary content, so we copy
             // everything in the mounted image.
@@ -128,6 +162,10 @@ public final class MacHelper {
         return readPList(appImage.resolve("Contents/Info.plist"));
     }
 
+    public static PListReader readPListFromEmbeddedRuntime(Path appImage) {
+        return readPList(appImage.resolve("Contents/runtime/Contents/Info.plist"));
+    }
+
     public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
         return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
@@ -143,6 +181,52 @@ public final class MacHelper {
                 // Skip leading lines before xml declaration
                 .dropWhile(Pattern.compile("\\s?<\\?xml\\b.+\\?>").asPredicate().negate())
                 .collect(Collectors.joining()).getBytes(StandardCharsets.UTF_8))).get();
+    }
+
+    public static Map<String, String> flatMapPList(PListReader plistReader) {
+        return Collections.unmodifiableMap(expandPListDist(new HashMap<>(), "", plistReader.toMap(true)));
+    }
+
+    private static Map<String, String> expandPListDist(Map<String, String> accumulator, String root, Map<String, Object> plistDict) {
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(plistDict);
+        Objects.requireNonNull(root);
+        for (var e : plistDict.entrySet()) {
+            collectPListProperty(accumulator, root + "/" + e.getKey(), e.getValue());
+        }
+        return accumulator;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void collectPListProperty(Map<String, String> accumulator, String key, Object value) {
+        Objects.requireNonNull(accumulator);
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        switch (value) {
+            case PListReader.Raw raw -> {
+                accumulator.put(key, raw.value());
+            }
+            case List<?> array -> {
+                if (array.isEmpty()) {
+                    accumulator.put(key + "[]", "");
+                } else {
+                    for (int i = 0; i != array.size(); i++) {
+                        collectPListProperty(accumulator, String.format("%s[%d]", key, i), array.get(i));
+                    }
+                }
+            }
+            case Map<?, ?> map -> {
+                if (map.isEmpty()) {
+                    accumulator.put(key + "{}", "");
+                } else {
+                    expandPListDist(accumulator, key, (Map<String, Object>)map);
+                }
+            }
+            default -> {
+                throw new IllegalArgumentException(String.format(
+                        "Unexpected value type [%s] of property [%s]", value.getClass(), key));
+            }
+        }
     }
 
     public static boolean signPredefinedAppImage(JPackageCommand cmd) {
@@ -169,6 +253,83 @@ public final class MacHelper {
         }
 
         return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
+    }
+
+    public static void writeFaPListFragment(JPackageCommand cmd, XMLStreamWriter xml) {
+        toRunnable(() -> {
+            var allProps = Stream.of(cmd.getAllArgumentValues("--file-associations")).map(Path::of).map(propFile -> {
+                try (var propFileReader = Files.newBufferedReader(propFile)) {
+                    var props = new Properties();
+                    props.load(propFileReader);
+                    return props;
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            }).toList();
+
+            if (!allProps.isEmpty()) {
+                var bundleId = getPackageId(cmd);
+
+                Function<Properties, String> contentType = fa -> {
+                    return String.format("%s.%s", bundleId, Objects.requireNonNull(fa.getProperty("extension")));
+                };
+
+                Function<Properties, Optional<String>> icon = fa -> {
+                    return Optional.ofNullable(fa.getProperty("icon")).map(Path::of).map(Path::getFileName).map(Path::toString);
+                };
+
+                BiFunction<Properties, String, Optional<Boolean>> asBoolean = (fa, key) -> {
+                    return Optional.ofNullable(fa.getProperty(key)).map(Boolean::parseBoolean);
+                };
+
+                BiFunction<Properties, String, List<String>> asList = (fa, key) -> {
+                    return Optional.ofNullable(fa.getProperty(key)).map(str -> {
+                        return List.of(str.split("[ ,]+"));
+                    }).orElseGet(List::of);
+                };
+
+                writeKey(xml, "CFBundleDocumentTypes");
+                writeArray(xml, toXmlConsumer(() -> {
+                    for (var fa : allProps) {
+                        writeDict(xml, toXmlConsumer(() -> {
+                            writeStringArray(xml, "LSItemContentTypes", List.of(contentType.apply(fa)));
+                            writeStringOptional(xml, "CFBundleTypeName", Optional.ofNullable(fa.getProperty("description")));
+                            writeString(xml, "LSHandlerRank", Optional.ofNullable(fa.getProperty("mac.LSHandlerRank")).orElse("Owner"));
+                            writeString(xml, "CFBundleTypeRole", Optional.ofNullable(fa.getProperty("mac.CFBundleTypeRole")).orElse("Editor"));
+                            writeStringOptional(xml, "NSPersistentStoreTypeKey", Optional.ofNullable(fa.getProperty("mac.NSPersistentStoreTypeKey")));
+                            writeStringOptional(xml, "NSDocumentClass", Optional.ofNullable(fa.getProperty("mac.NSDocumentClass")));
+                            writeBoolean(xml, "LSIsAppleDefaultForType", true);
+                            writeBooleanOptional(xml, "LSTypeIsPackage", asBoolean.apply(fa, "mac.LSTypeIsPackage"));
+                            writeBooleanOptional(xml, "LSSupportsOpeningDocumentsInPlace", asBoolean.apply(fa, "mac.LSSupportsOpeningDocumentsInPlace"));
+                            writeBooleanOptional(xml, "UISupportsDocumentBrowser", asBoolean.apply(fa, "mac.UISupportsDocumentBrowser"));
+                            writeStringOptional(xml, "CFBundleTypeIconFile", icon.apply(fa));
+                        }));
+                    }
+                }));
+
+                writeKey(xml, "UTExportedTypeDeclarations");
+                writeArray(xml, toXmlConsumer(() -> {
+                    for (var fa : allProps) {
+                        writeDict(xml, toXmlConsumer(() -> {
+                            writeString(xml, "UTTypeIdentifier", contentType.apply(fa));
+                            writeStringOptional(xml, "UTTypeDescription", Optional.ofNullable(fa.getProperty("description")));
+                            if (fa.containsKey("mac.UTTypeConformsTo")) {
+                                writeStringArray(xml, "UTTypeConformsTo", asList.apply(fa, "mac.UTTypeConformsTo"));
+                            } else {
+                                writeStringArray(xml, "UTTypeConformsTo", List.of("public.data"));
+                            }
+                            writeStringOptional(xml, "UTTypeIconFile", icon.apply(fa));
+                            writeKey(xml, "UTTypeTagSpecification");
+                            writeDict(xml, toXmlConsumer(() -> {
+                                writeStringArray(xml, "public.filename-extension", List.of(fa.getProperty("extension")));
+                                writeStringArray(xml, "public.mime-type", List.of(fa.getProperty("mime-type")));
+                                writeStringArray(xml, "NSExportableTypes", asList.apply(fa, "mac.NSExportableTypes"));
+                            }));
+                        }));
+                    }
+                }));
+            }
+        }).run();
     }
 
     static PackageHandlers createDmgPackageHandlers() {
@@ -360,7 +521,12 @@ public final class MacHelper {
     private static String getPackageId(JPackageCommand cmd) {
         return cmd.getArgumentValue("--mac-package-identifier", () -> {
             return cmd.getArgumentValue("--main-class", cmd::name, className -> {
-                return JavaAppDesc.parse(className).packageName();
+                var packageName = ClassDesc.of(className).packageName();
+                if (packageName.isEmpty()) {
+                    return className;
+                } else {
+                    return packageName;
+                }
             });
         });
     }

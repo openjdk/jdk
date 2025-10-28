@@ -28,7 +28,7 @@
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.inline.hpp"
 
 JvmtiAgent* JvmtiAgentList::_head = nullptr;
@@ -102,10 +102,10 @@ void JvmtiAgentList::add(JvmtiAgent* agent) {
   // address of the pointer to add new agent (&_head when the list is empty or &agent->_next of the last agent in the list)
   JvmtiAgent** tail_ptr = &_head;
   while (true) {
-    JvmtiAgent* next = Atomic::load(tail_ptr);
+    JvmtiAgent* next = AtomicAccess::load(tail_ptr);
     if (next == nullptr) {
       // *tail_ptr == nullptr here
-      if (Atomic::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
+      if (AtomicAccess::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
         // another thread added an agent, reload next from tail_ptr
         continue;
       }
@@ -135,7 +135,7 @@ static void assert_initialized(JvmtiAgentList::Iterator& it) {
 #endif
 
 JvmtiAgent* JvmtiAgentList::head() {
-  return Atomic::load_acquire(&_head);
+  return AtomicAccess::load_acquire(&_head);
 }
 
 // In case an agent did not enable the VMInit callback, or if it is an -Xrun agent,

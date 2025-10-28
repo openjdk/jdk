@@ -369,7 +369,7 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   if (_index >= _total_chunks) {
     return false;
   }
-  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
   if (new_index > _total_chunks) {
     // First worker that hits new_index == _total_chunks continues, other
     // contending workers return false.

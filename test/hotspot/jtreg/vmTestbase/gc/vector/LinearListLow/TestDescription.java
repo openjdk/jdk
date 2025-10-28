@@ -31,5 +31,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @requires vm.gc != "Serial"
  * @run main/othervm gc.vector.SimpleGC.SimpleGC -ms low -gp linearList(low)
  */

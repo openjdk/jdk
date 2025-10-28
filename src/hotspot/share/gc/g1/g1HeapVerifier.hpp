@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,16 @@ public:
   // Do sanity check on the contents of the in-cset fast test table.
   bool check_region_attr_table() PRODUCT_RETURN_( return true; );
 
-  void verify_card_table_cleanup() PRODUCT_RETURN;
+  void verify_card_table_cleanup();
+  void verify_card_tables_clean(bool both_card_tables);
 
-  void verify_not_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_young_regions() PRODUCT_RETURN;
+  void verify_ct_clean_region(G1HeapRegion* hr);
+  void verify_rt_dirty_to_dummy_top(G1HeapRegion* hr);
+  void verify_rt_clean_from_top(G1HeapRegion* hr);
+  void verify_rt_clean_region(G1HeapRegion* hr);
+
+  // Verify that the global card table and the thread's card tables are in sync.
+  void verify_card_tables_in_sync() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_G1_G1HEAPVERIFIER_HPP
