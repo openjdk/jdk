@@ -313,7 +313,7 @@ public final class FileServerHandler implements HttpHandler {
         return true;
     }
 
-    private String createETag( Path path) throws IOException {
+    private String createETag(Path path) throws IOException {
         var attrs = Files.readAttributes(path, BasicFileAttributes.class);
         long size = attrs.size();
         long lastModified = attrs.lastModifiedTime().toMillis();
