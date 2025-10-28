@@ -856,7 +856,8 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 #ifdef ASSERT
     const Type* t = field_val->bottom_type();
     if (t != field_type->filter(t) &&
-        t->basic_type() != field_type->basic_type()) {
+        t->basic_type() != field_type->basic_type() &&
+        !(t->isa_oopptr() != nullptr && field_type->isa_narrowoop())) {
       tty->print_cr("field_val does not fit field_type: %s vs %s",
                     type2name(t->basic_type()),
                     type2name(field_type->basic_type()));
@@ -868,7 +869,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
       tty->print("field_type: ");
       field_type->dump();
       tty->cr();
-      assert(!UseNewCode, "field_val does not fit field_type");
+      assert(false, "field_val does not fit field_type");
     }
 #endif
     sfpt->add_req(field_val);
