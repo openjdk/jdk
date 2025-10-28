@@ -509,6 +509,14 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
+WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
+#if defined(HAS_STRIPPED_DEBUGINFO)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
 #if INCLUDE_G1GC
 
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
@@ -2813,6 +2821,7 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
+  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
