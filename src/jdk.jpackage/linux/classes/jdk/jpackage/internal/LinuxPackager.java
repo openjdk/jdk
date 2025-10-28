@@ -40,7 +40,6 @@ import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.PackagerException;
 
 abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<PackagingPipeline.Builder> {
 
@@ -95,7 +94,7 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
 
     protected abstract void initLibProvidersLookup(LibProvidersLookup libProvidersLookup);
 
-    private void buildConfigFiles() throws PackagerException, IOException {
+    private void buildConfigFiles() throws IOException {
 
         final var data = createDefaultReplacementData();
 

@@ -75,7 +75,6 @@ import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackageType;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -268,7 +267,7 @@ final class MacPackagingPipeline {
         static <T extends AppImageLayout> AppImageTaskAction<MacApplication, T> withBundleLayout(AppImageTaskAction<MacApplication, T> action) {
             return new AppImageTaskAction<>() {
                 @Override
-                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException, PackagerException {
+                public void execute(AppImageBuildEnv<MacApplication, T> env) throws IOException {
                     if (!env.envLayout().runtimeDirectory().getName(0).equals(Path.of("Contents"))) {
                         env = LayoutUtils.fromPackagerLayout(env);
                     }
@@ -595,7 +594,7 @@ final class MacPackagingPipeline {
         }
 
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             delegate.execute(taskAction);
         }
     }
