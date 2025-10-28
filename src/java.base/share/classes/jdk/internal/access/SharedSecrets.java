@@ -59,10 +59,19 @@ import javax.security.auth.x500.X500Principal;
  * increased complexity and lack of sustainability.
  * Use this only as a last resort!
  * </strong>
+ *
+ * <p> Notes on the @AOTSafeClassInitializer annotation:
+ *
+ * <p>All static fields in SharedSecrets that are initialized in the AOT
+ * assembly phase must be stateless (as checked by the HotSpot C++ class
+ * CDSHeapVerifier::SharedSecretsAccessorFinder) so they can be safely
+ * stored in the AOT cache.
+ *
+ * <p>Static fields such as javaObjectInputFilterAccess point to a Lambda
+ * which is not stateless. The AOT assembly phase must not execute any Java
+ * code that would lead to the initialization of such fields, or else the AOT
+ * cache creation will fail.
  */
-
-// Static fields in this class are stateless, so the values initialized in the
-// AOT assembly phase can be safely cached.
 @AOTSafeClassInitializer
 public class SharedSecrets {
     // This field is not necessarily stable
