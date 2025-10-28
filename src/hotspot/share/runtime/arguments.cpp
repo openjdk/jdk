@@ -1521,6 +1521,12 @@ void Arguments::set_heap_size() {
                        !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MaxRAM);
 
+  if (CompilerConfig::should_set_client_emulation_mode_flags() &&
+      FLAG_IS_DEFAULT(MaxRAM)) {
+    // Reduce the maximum available memory if client emulation mode is enabled.
+    FLAG_SET_DEFAULT(MaxRAM, 1ULL*G);
+  }
+
   if (has_ram_limit) {
     if (!FLAG_IS_DEFAULT(MaxRAM)) {
       // The user has configured MaxRAM, use that instead of physical memory
