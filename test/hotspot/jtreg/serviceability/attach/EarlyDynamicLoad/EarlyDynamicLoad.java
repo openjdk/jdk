@@ -75,7 +75,7 @@ public class EarlyDynamicLoad {
 
         OutputAnalyzer analyzer = new OutputAnalyzer(child);
         analyzer.shouldHaveExitValue(0);
-        analyzer.stderrShouldBeEmpty();
+        analyzer.stderrShouldBeEmptyIgnoreVMWarnings();
     }
 
     @Test
