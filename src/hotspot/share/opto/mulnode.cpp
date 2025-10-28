@@ -1097,7 +1097,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     if (t11 != nullptr && t11->is_con()) {
       // Compute X << con0
       Node* lsh = phase->transform(LShiftNode::make(add1->in(2), in(2), bt));
-      // Compute X<<con0 - (con1<<con0)
+      // Compute (con1<<con0) - (X<<con0)
       return SubNode::make(phase->integercon(java_shift_left(t11->get_con_as_long(bt), con, bt), bt), lsh, bt);
     }
   }
