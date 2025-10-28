@@ -106,5 +106,48 @@ public class TestRematerializeObjects {
         return 1 * arr[0] + 2 * arr[1] + 3 * arr[2] + 4 * arr[3];
     }
 
+    @Run(test = "test2", mode = RunMode.STANDALONE)
+    public void runTest2() {
+        // Capture interpreter result.
+        int gold = test2(false);
+        // Repeat until we get compilation.
+        for (int i = 0; i < 10_000; i++) {
+            test2(false);
+        }
+        // Capture compiled results.
+        int res0 = test2(false);
+        int res1 = test2(true);
+        if (res0 != gold || res1 != gold) {
+            throw new RuntimeException("Unexpected result: " + Integer.toHexString(res0) + " and " +
+                                       Integer.toHexString(res1) + ", should be: " + Integer.toHexString(gold));
+        }
+    }
 
+    @Test
+    @IR(counts = {IRNode.ALLOC_ARRAY, "1",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.STORE_I_OF_CLASS, "short\\[int:4\\]", "1",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},
+        applyIf = {"EliminateAllocations", "false"})
+    @IR(counts = {IRNode.ALLOC_ARRAY, "0",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.STORE_I_OF_CLASS, "short\\[int:4\\]", "0",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "2"},
+        applyIf = {"EliminateAllocations", "true"})
+    static int test2(boolean flag) {
+        short[] arr = new short[4];
+        arr[0] = 1;
+        arr[1] = 2;
+        arr[2] = 4;
+        arr[3] = 8;
+        dontinline();
+        arr[0] = 16;
+        arr[1] = 32;
+        if (flag) {
+            // unstable if -> deopt -> rematerialized array (if was eliminated)
+            System.out.println("unstable if: " + arr.length);
+        }
+        arr[3] = 64;
+        return 0x1 * arr[0] + 0x100 * arr[1] + 0x1_0000 * arr[2] + 0x100_0000 * arr[3];
+    }
 }
