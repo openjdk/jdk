@@ -58,7 +58,7 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        *
        * <blockquote>
        *       The JVM will record optimization information about the current application
-       *       into the AOT cache file app.aot. In a future execution of this application,
+       *       that will be used to generate the AOT cache file app.aot. In a future execution of this application,
        *       -XX:AOTCache=app.aot can be provided to improve the application's
        *       start-up and warm-up performance.
        * </blockquote>
