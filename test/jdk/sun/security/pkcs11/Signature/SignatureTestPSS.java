@@ -32,6 +32,9 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.util.ArrayList;
+import java.util.List;
+
 import jtreg.SkippedException;
 
 /**
@@ -78,10 +81,11 @@ public class SignatureTestPSS extends PKCS11Test {
      */
     private static final int UPDATE_TIMES_HUNDRED = 100;
 
-    private static boolean skipTest = true;
+    private static final List<String> skippedAlgs = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
-        DIGESTS = (args.length > 0 && "sha3".equals(args[0]))? SHA3_DIGESTS : SHA_DIGESTS;
+        DIGESTS = (args.length > 0 && "sha3".equals(args[0])) ?
+                SHA3_DIGESTS : SHA_DIGESTS;
 
         main(new SignatureTestPSS(), args);
     }
@@ -105,6 +109,8 @@ public class SignatureTestPSS extends PKCS11Test {
                             PSSUtil.isHashSupported(p, hash, mgfHash);
                     if (s == PSSUtil.AlgoSupport.NO) {
                         System.out.println("    => Skip; no support");
+                        skippedAlgs.add("[Hash  = " + hash +
+                                        ", MGF1 Hash = " + mgfHash + "]");
                         continue;
                     }
                     checkSignature(p, DATA, pubKey, privKey, hash, mgfHash, s);
@@ -112,9 +118,8 @@ public class SignatureTestPSS extends PKCS11Test {
             };
         }
 
-        // start testing below
-        if (skipTest) {
-            throw new SkippedException("Test Skipped");
+        if (!skippedAlgs.isEmpty()) {
+            throw new SkippedException("Test Skipped :" + skippedAlgs);
         }
     }
 
@@ -143,14 +148,20 @@ public class SignatureTestPSS extends PKCS11Test {
                         hash,
                         mgfHash,
                         s);
-                skipTest = true;
+                skippedAlgs.add(String.format(
+                        "[public key: %s, private key: %s, " +
+                        "hash: %s, mgf hash: %s, Algo Support: %s]",
+                        pub,
+                        priv,
+                        hash,
+                        mgfHash,
+                        s)
+                );
                 return;
             } else {
                 throw new RuntimeException("Unexpected Exception", iape);
             }
         }
-        // start testing below
-        skipTest = false;
 
         for (int i = 0; i < UPDATE_TIMES_HUNDRED; i++) {
             sig.update(data);
