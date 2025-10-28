@@ -35,18 +35,6 @@ static bool is_vector(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorPayload_klass());
 }
 
-static const char* get_opertype_string(int operType) {
-  switch(operType) {
-    case VectorSupport::VECTOR_TYPE_PRIM:
-      return "VECTOR_TYPE_PRIM";
-    case VectorSupport::VECTOR_TYPE_FP16:
-      return "VECTOR_TYPE_FP16";
-    default:
-      ShouldNotReachHere();
-      return nullptr;
-  }
-}
-
 static bool check_vbox(const TypeInstPtr* vbox_type) {
   assert(vbox_type->klass_is_exact(), "");
 
@@ -80,6 +68,18 @@ static bool check_vbox(const TypeInstPtr* vbox_type) {
 #else
 #define non_product_log_if_needed(...)
 #endif
+
+static const char* get_opertype_string(int operType) {
+  switch(operType) {
+    case VectorSupport::VECTOR_TYPE_PRIM:
+      return "VECTOR_TYPE_PRIM";
+    case VectorSupport::VECTOR_TYPE_FP16:
+      return "VECTOR_TYPE_FP16";
+    default:
+      ShouldNotReachHere();
+      return nullptr;
+  }
+}
 
 static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
