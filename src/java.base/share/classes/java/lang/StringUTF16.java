@@ -642,8 +642,9 @@ final class StringUTF16 {
     public static int compareToFC(byte[] value, byte[] other) {
         int tlast = length(value);
         int olast = length(other);
+        int lim = Math.min(tlast, olast);
         int k = 0;
-        while (k < tlast && k < olast) {
+        while (k < lim) {
             int cp1 = codePointAt(value, k, tlast, true);
             int cp2 = codePointAt(other, k, olast, true);
             if (cp1 == cp2) {

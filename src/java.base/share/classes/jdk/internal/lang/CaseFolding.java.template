@@ -71,24 +71,6 @@ public final class CaseFolding {
     }
 
    /**
-    * Returns the case-folded form of the specified code point, if there
-    * is a 1:1 mapping defined by the Unicode case folding mappings.
-    * <p>
-    * If the code point has no case folding mapping defined, or if it has
-    * a 1:M (one-to-many) mapping, this method returns {@code -1}.
-    * Otherwise, it returns the single mapped code point.
-    *
-    * @param  cp
-    *         the Unicode code point to fold
-    * @return the case-folded code point, or {@code -1} if no 1:1 mapping
-    *         is defined
-    */
-    public static int foldIfDefined11(int cp) {
-        var folding = getDefined(cp);
-        return folding != null && folding.length == 1 ? folding[0] : -1;
-    }
-
-   /**
     * Returns an expansion set to "close" a given regex Unicode character class range for case-sensitive
     * matching, according to the
     * <a href="https://www.unicode.org/reports/tr18/#Simple_Loose_Matches">Simple Loose Matches</a>
