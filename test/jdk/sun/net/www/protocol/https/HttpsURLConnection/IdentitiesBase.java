@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,9 @@ public abstract class IdentitiesBase {
          CertificateBuilder builder = CertificateBuilder.newCertificateBuilder(
                         getServerDname(),
                         serverKeys.getPublic(), caKeys.getPublic(),
-                        CertificateBuilder.KeyUsage.DIGITAL_SIGNATURE, CertificateBuilder.KeyUsage.NONREPUDIATION, CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
+                        CertificateBuilder.KeyUsage.DIGITAL_SIGNATURE,
+                        CertificateBuilder.KeyUsage.NONREPUDIATION,
+                        CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
                 .addBasicConstraintsExt(false, false, -1)
                 .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
                 .setOneHourValidity();
@@ -111,7 +113,9 @@ public abstract class IdentitiesBase {
          builder = CertificateBuilder.newCertificateBuilder(
                         getClientDname(),
                         clientKeys.getPublic(), caKeys.getPublic(),
-                        CertificateBuilder.KeyUsage.DIGITAL_SIGNATURE, CertificateBuilder.KeyUsage.NONREPUDIATION, CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
+                        CertificateBuilder.KeyUsage.DIGITAL_SIGNATURE,
+                        CertificateBuilder.KeyUsage.NONREPUDIATION,
+                        CertificateBuilder.KeyUsage.KEY_ENCIPHERMENT)
                 .addExtension(CertificateBuilder.createIPSubjectAltNameExt(true, "127.0.0.1"))
                 .addBasicConstraintsExt(false, false, -1)
                 .setOneHourValidity();
@@ -152,7 +156,8 @@ public abstract class IdentitiesBase {
 
     // get the ssl context
     protected SSLContext getSSLContext(X509Certificate trustedCert,
-                                       X509Certificate keyCert, KeyPair key, char[] passphrase) throws Exception {
+                   X509Certificate keyCert, KeyPair key, char[] passphrase)
+            throws Exception {
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("PKCS12");
