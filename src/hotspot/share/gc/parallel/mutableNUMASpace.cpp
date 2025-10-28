@@ -25,6 +25,7 @@
 #include "gc/parallel/mutableNUMASpace.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.inline.hpp"
@@ -387,6 +388,14 @@ void MutableNUMASpace::initialize(MemRegion mr,
     // we reshape the heap.
     bias_region(bottom_region, ls->lgrp_id());
     bias_region(top_region, ls->lgrp_id());
+
+    if (AlwaysPreTouch) {
+      PretouchTask::pretouch("ParallelGC PreTouch bottom_region", (char*)bottom_region.start(), (char*)bottom_region.end(),
+                             page_size(), pretouch_workers);
+
+      PretouchTask::pretouch("ParallelGC PreTouch top_region", (char*)top_region.start(), (char*)top_region.end(),
+                             page_size(), pretouch_workers);
+    }
 
     // Clear space (set top = bottom) but never mangle.
     s->initialize(new_region, SpaceDecorator::Clear, SpaceDecorator::DontMangle, MutableSpace::DontSetupPages);
