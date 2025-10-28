@@ -257,11 +257,8 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     @Override
     public String getDisplayName() {
-        if (isDiffGraph) {
-            return firstGraph.getDisplayName() + " Δ " + secondGraph.getDisplayName();
-        } else {
-            return getIndex()+1 + ". " + getName();
-        }
+        assert false : "Use EditorTopComponent::getGraphDisplayName() instead";
+        return "";
     }
 
     public int getIndex() {

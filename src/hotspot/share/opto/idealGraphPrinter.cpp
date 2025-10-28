@@ -399,6 +399,14 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
+const Parse* IdealGraphPrinter::parse() {
+  return _parse;
+}
+
+void IdealGraphPrinter::set_parse(const Parse* parse) {
+  _parse = parse;
+}
+
 void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
   if (edges) {
@@ -996,6 +1004,17 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 
   head(PROPERTIES_ELEMENT);
   print_stack(fr, nullptr);
+  if (_parse != nullptr) {
+    if (_parse->map() == nullptr) {
+      print_prop("map", "-");
+    } else {
+      print_prop("map", _parse->map()->_idx);
+    }
+    print_prop("block", _parse->block()->rpo());
+    stringStream shortStr;
+    _parse->flow()->method()->print_short_name(&shortStr);
+    print_prop("method", shortStr.freeze());
+  }
   tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);
