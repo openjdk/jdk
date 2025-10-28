@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -76,17 +77,8 @@ public class TestStringEncoding {
                     try (arena) {
                         MemorySegment text = arena.allocateFrom(testString, charset);
 
-                        int terminatorSize = "\0".getBytes(charset).length;
-                        if (charset == StandardCharsets.UTF_16) {
-                            terminatorSize -= 2; // drop BOM
-                        }
-                        // Note that the JDK's UTF_32 encoder doesn't add a BOM.
-                        // This is legal under the Unicode standard, and means the byte order is BE.
-                        // See: https://unicode.org/faq/utf_bom.html#gen7
-
                         int expectedByteLength =
-                                testString.getBytes(charset).length +
-                                        terminatorSize;
+                                testString.getBytes(charset).length + terminatorSize(charset);
 
                         assertEquals(text.byteSize(), expectedByteLength);
 
@@ -99,6 +91,37 @@ public class TestStringEncoding {
             } else {
                 assertThrows(IllegalArgumentException.class, () -> Arena.global().allocateFrom(testString, charset));
             }
+        }
+    }
+
+    @Test(dataProvider = "strings")
+    public void testStringsLength(String testString) {
+        Set<String> excluded = Set.of("yen", "snowman", "rainbow");
+        // This test only works for certain strings where the last character is not special
+        if (!testString.isEmpty() && excluded.stream().noneMatch(testString::startsWith)) {
+            for (Charset charset : Charset.availableCharsets().values()) {
+                if (isStandard(charset)) {
+                    for (Arena arena : arenas()) {
+                        try (arena) {
+                            MemorySegment text = arena.allocateFrom(testString, charset);
+
+                            String roundTrip = text.getString(0,
+                                    (int) text.byteSize() - terminatorSize(charset) * 2, charset);
+                            if (charset.newEncoder().canEncode(testString)) {
+                                assertEquals(roundTrip, testString.substring(0, testString.length() - 1));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testStringsLengthNegative() {
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocateFrom("abc");
+            assertThrows(IllegalArgumentException.class, () -> segment.getString(0, -1, StandardCharsets.UTF_8));
         }
     }
 
@@ -540,4 +563,16 @@ public class TestStringEncoding {
         }
         return values.toArray(Object[][]::new);
     }
+
+    static int terminatorSize(Charset charset) {
+        int terminatorSize = "\0".getBytes(charset).length;
+        if (charset == StandardCharsets.UTF_16) {
+            terminatorSize -= 2; // drop BOM
+        }
+        // Note that the JDK's UTF_32 encoder doesn't add a BOM.
+        // This is legal under the Unicode standard, and means the byte order is BE.
+        // See: https://unicode.org/faq/utf_bom.html#gen7
+        return terminatorSize;
+    }
+
 }

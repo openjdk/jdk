@@ -536,6 +536,15 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
+    public String getString(long offset, int length, Charset charset) {
+        if (length < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(charset);
+        return StringSupport.read(this, offset, length, charset);
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(
                 unsafeGetOffset(),

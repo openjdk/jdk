@@ -1296,12 +1296,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * over the decoding process is required.
      * <p>
      * Getting a string from a segment with a known byte offset and
-     * known byte length can be done like so:
-     * {@snippet lang=java :
-     *     byte[] bytes = new byte[length];
-     *     MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, length);
-     *     return new String(bytes, charset);
-     * }
+     * known byte length can be done using {@link #getString(long, int, Charset)}.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -1327,6 +1322,44 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@linkplain StandardCharsets standard charset}
      */
     String getString(long offset, Charset charset);
+
+    /**
+     * Reads a string using the given byte length from this segment at the given offset,
+     * using the provided charset.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string. The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     *
+     * @param offset  offset in bytes (relative to this segment address) at which this
+     *                access operation will occur
+     * @param length  byte length to be used for string conversion (not including any
+     *                null termination)
+     * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
+     *                string bytes
+     * @return a Java string constructed from the bytes read from the given starting
+     *         address reading the given length of characters
+     * @throws IllegalArgumentException  if the size of the string is greater than the
+     *         largest string supported by the platform
+     * @throws IndexOutOfBoundsException if {@code offset < 0}
+     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
+     *         <ul>
+     *             <li>{@code B} is the size, in bytes, of the string encoded using the
+     *             provided charset (e.g. {@code str.getBytes(charset).length});</li>
+     *             <li>{@code N} is the size (in bytes) of the terminator char according
+     *             to the provided charset. For instance, this is 1 for
+     *             {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
+     *         </ul>
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         this segment is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code isAccessibleBy(T) == false}
+     * @throws IllegalArgumentException if {@code charset} is not a
+     *         {@linkplain StandardCharsets standard charset}
+     * @throws IllegalArgumentException if {@code length < 0}
+     */
+    String getString(long offset, int length, Charset charset);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to
