@@ -825,9 +825,8 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
        SystemDictionary::class_name_symbol(name, vmSymbols::java_lang_ClassNotFoundException(),
                                            CHECK_NULL);
   oop from_class_oop = JNIHandles::resolve(from);
-  Klass* from_class = (from_class_oop == nullptr)
-                           ? (Klass*)nullptr
-                           : java_lang_Class::as_Klass(from_class_oop);
+  assert(from_class_oop != nullptr, "must be");
+  Klass* from_class = java_lang_Class::as_Klass(from_class_oop);
   assert(from_class != nullptr, "must be");
   oop class_loader = from_class->class_loader();
 
