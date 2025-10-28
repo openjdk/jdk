@@ -250,6 +250,12 @@ void PSYoungGen::space_invariants() {
 bool PSYoungGen::try_expand_to_hold(size_t word_size) {
   assert(eden_space()->free_in_words() < word_size, "precondition");
 
+  if (UseNUMA && !_eden_space->is_empty()) {
+    // Eden expansion is not supported with NUMA, when eden is not empty.
+    // See also MutableNUMASpace::initialize.
+    return false;
+  }
+
   // For logging purpose
   size_t original_committed_size = virtual_space()->committed_size();
 

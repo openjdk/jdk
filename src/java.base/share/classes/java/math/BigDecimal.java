@@ -327,10 +327,6 @@ import jdk.internal.vm.annotation.Stable;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Josh Bloch
- * @author  Mike Cowlishaw
- * @author  Joseph D. Darcy
- * @author  Sergey V. Kuksenko
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
@@ -1779,7 +1775,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         terminating decimal expansion, including dividing by zero
      * @return {@code this / divisor}
      * @since 1.5
-     * @author Joseph D. Darcy
      */
     public BigDecimal divide(BigDecimal divisor) {
         /*
@@ -1948,7 +1943,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if {@code mc.precision} {@literal >} 0 and the result
      *         requires a precision of more than {@code mc.precision} digits.
      * @since  1.5
-     * @author Joseph D. Darcy
      */
     public BigDecimal divideToIntegralValue(BigDecimal divisor, MathContext mc) {
         if (mc.precision == 0 || // exact result

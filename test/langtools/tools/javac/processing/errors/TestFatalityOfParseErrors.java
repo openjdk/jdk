@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 6403459
  * @summary Test that generating programs with syntax errors is a fatal condition
- * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

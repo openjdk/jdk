@@ -1980,11 +1980,6 @@ RegMask Matcher::modL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
 }
 
-// Copied from sparc.
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
-}
-
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_encode_and_store_pattern(n, m)) {

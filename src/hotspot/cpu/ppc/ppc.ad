@@ -2473,10 +2473,6 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
-}
-
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -3434,7 +3430,6 @@ encode %{
 
     // Create the call node.
     CallDynamicJavaDirectSchedNode *call = new CallDynamicJavaDirectSchedNode();
-    call->_method_handle_invoke = _method_handle_invoke;
     call->_vtable_index      = _vtable_index;
     call->_method            = _method;
     call->_optimized_virtual = _optimized_virtual;

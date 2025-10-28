@@ -201,7 +201,7 @@ bool ConnectionGraph::compute_escape() {
         if (!UseStoreStoreForCtor || n->req() > MemBarNode::Precedent) {
           storestore_worklist.append(n->as_MemBarStoreStore());
         }
-        break;
+        // If MemBarStoreStore has a precedent edge add it to the worklist (like MemBarRelease)
       case Op_MemBarRelease:
         if (n->req() > MemBarNode::Precedent) {
           record_for_optimizer(n);

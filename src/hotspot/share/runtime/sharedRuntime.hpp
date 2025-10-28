@@ -32,6 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
@@ -404,9 +405,6 @@ class SharedRuntime: AllStatic {
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
-  // Issue UL warning for unlocked JNI monitor on virtual thread termination
-  static void log_jni_monitor_still_held();
-
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
   static Handle find_callee_info_helper(vframeStream& vfst, Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -638,6 +636,39 @@ class SharedRuntime: AllStatic {
   static void print_call_statistics(uint64_t comp_total);
   static void print_ic_miss_histogram();
 
+#ifdef COMPILER2
+  // Runtime methods for printf-style debug nodes
+  static void debug_print_value(jboolean x);
+  static void debug_print_value(jbyte x);
+  static void debug_print_value(jshort x);
+  static void debug_print_value(jchar x);
+  static void debug_print_value(jint x);
+  static void debug_print_value(jlong x);
+  static void debug_print_value(jfloat x);
+  static void debug_print_value(jdouble x);
+  static void debug_print_value(oopDesc* x);
+
+  template <typename T, typename... Rest>
+  static void debug_print_rec(T arg, Rest... args) {
+    debug_print_value(arg);
+    debug_print_rec(args...);
+  }
+
+  static void debug_print_rec() {}
+
+  // template is required here as we need to know the exact signature at compile-time
+  template <typename... TT>
+  static void debug_print(const char *str, TT... args) {
+    // these three lines are the manual expansion of JRT_LEAF ... JRT_END, does not work well with templates
+    DEBUG_ONLY(NoHandleMark __hm;)
+    os::verify_stack_alignment();
+    DEBUG_ONLY(NoSafepointVerifier __nsv;)
+
+    tty->print_cr("%s", str);
+    debug_print_rec(args...);
+  }
+#endif // COMPILER2
+
 #endif // PRODUCT
 
   static void print_statistics() PRODUCT_RETURN;
@@ -686,6 +717,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
  private:
   AdapterFingerPrint* _fingerprint;
   AdapterBlob* _adapter_blob;
+  uint _id;
   bool _linked;
 
   static const char *_entry_names[];
@@ -697,9 +729,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
   int            _saved_code_length;
 #endif
 
-  AdapterHandlerEntry(AdapterFingerPrint* fingerprint) :
+  AdapterHandlerEntry(int id, AdapterFingerPrint* fingerprint) :
     _fingerprint(fingerprint),
     _adapter_blob(nullptr),
+    _id(id),
     _linked(false)
 #ifdef ASSERT
     , _saved_code(nullptr),
@@ -720,8 +753,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
   }
 
  public:
-  static AdapterHandlerEntry* allocate(AdapterFingerPrint* fingerprint) {
-    return new(0) AdapterHandlerEntry(fingerprint);
+  static AdapterHandlerEntry* allocate(uint id, AdapterFingerPrint* fingerprint) {
+    return new(0) AdapterHandlerEntry(id, fingerprint);
   }
 
   static void deallocate(AdapterHandlerEntry *handler) {
@@ -772,6 +805,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }
 
+  uint id() const { return _id; }
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
 
 #ifdef ASSERT
@@ -798,6 +832,7 @@ class ArchivedAdapterTable;
 class AdapterHandlerLibrary: public AllStatic {
   friend class SharedRuntime;
  private:
+  static volatile uint _id_counter; // counter for generating unique adapter ids, range = [1,UINT_MAX]
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static AdapterHandlerEntry* _no_arg_handler;
   static AdapterHandlerEntry* _int_arg_handler;
@@ -837,8 +872,8 @@ class AdapterHandlerLibrary: public AllStatic {
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
   static bool contains(const CodeBlob* b);
-  static const char* name(AdapterFingerPrint* fingerprint);
-  static uint32_t id(AdapterFingerPrint* fingerprint);
+  static const char* name(AdapterHandlerEntry* handler);
+  static uint32_t id(AdapterHandlerEntry* handler);
 #ifndef PRODUCT
   static void print_statistics();
 #endif // PRODUCT

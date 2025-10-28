@@ -983,9 +983,6 @@ public:
   void push_cont_fastpath(Register java_thread = rthread);
   void pop_cont_fastpath(Register java_thread = rthread);
 
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
-
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 

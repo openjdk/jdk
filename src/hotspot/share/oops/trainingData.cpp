@@ -25,7 +25,6 @@
 #include "cds/cdsConfig.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -312,7 +311,6 @@ void CompileTrainingData::notice_jit_observation(ciEnv* env, ciBaseObject* what)
   CompileTask* task = env->task();
   assert(task != nullptr, "");
   Method* method = task->method();
-  InstanceKlass* compiling_klass = method->method_holder();
   if (what->is_metadata()) {
     ciMetadata* md = what->as_metadata();
     if (md->is_loaded() && md->is_instance_klass()) {
@@ -341,13 +339,7 @@ void KlassTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  ClassLoaderData* loader_data = nullptr;
-  if (_holder != nullptr) {
-    loader_data = _holder->class_loader_data();
-  } else {
-    loader_data = java_lang_ClassLoader::loader_data(SystemDictionary::java_system_loader()); // default CLD
-  }
-  _comp_deps.prepare(loader_data);
+  _comp_deps.prepare();
 }
 
 void MethodTrainingData::prepare(Visitor& visitor) {
@@ -375,9 +367,8 @@ void CompileTrainingData::prepare(Visitor& visitor) {
   }
   visitor.visit(this);
   method()->prepare(visitor);
-  ClassLoaderData* loader_data = _method->klass()->class_loader_data();
-  _init_deps.prepare(loader_data);
-  _ci_records.prepare(loader_data);
+  _init_deps.prepare();
+  _ci_records.prepare();
 }
 
 KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_not_found) {
@@ -480,7 +471,6 @@ void TrainingData::init_dumptime_table(TRAPS) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
     TrainingDataLocker::snapshot();
-
     ResourceMark rm;
     Visitor visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
@@ -769,7 +759,7 @@ void CompileTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 template <typename T>
-void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
+void TrainingData::DepList<T>::prepare() {
   if (_deps == nullptr && _deps_dyn != nullptr) {
     int len = _deps_dyn->length();
     _deps = MetadataFactory::new_array_from_c_heap<T>(len, mtClassShared);
