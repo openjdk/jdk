@@ -1809,6 +1809,11 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ std(R0, dst_offset+8, R1_SP);
       }
       size += 16;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s [R1_SP + #%d] -> [R1_SP + #%d] \t// vector spill copy", "SPILL", src_offset, dst_offset);
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->Memory Spill.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_stack) {
@@ -1825,6 +1830,16 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
+        } else {
+          st->print("%-7s %s, R1_SP, %d \t// vector spill copy", "ADDI", Matcher::regName[src_lo], dst_offset);
+          st->print("%-7s %s, [R1_SP] \t// vector spill copy", "STXVD2X", Matcher::regName[src_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // Memory->VectorRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
@@ -1841,6 +1856,16 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (st != nullptr) {
+        if (PowerArchitecturePPC64 >= 9) {
+          st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
+        } else {
+          st->print("%-7s %s, R1_SP, %d \t// vector spill copy", "ADDI", Matcher::regName[src_lo], src_offset);
+          st->print("%-7s %s, [R1_SP] \t// vector spill copy", "LXVD2X", Matcher::regName[dst_lo]);
+        }
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->VectorRegister.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_vec) {
@@ -1850,6 +1875,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ xxlor(Rdst, Rsrc, Rsrc);
       }
       size += 4;
+#ifndef PRODUCT
+      if (st != nullptr) {
+        st->print("%-7s %s, %s, %s\t// vector spill copy",
+                  "XXLOR", Matcher::regName[dst_lo], Matcher::regName[src_lo], Matcher::regName[src_lo]);
+      }
+#endif // !PRODUCT
     }
     else {
       ShouldNotReachHere(); // No VR spill.
