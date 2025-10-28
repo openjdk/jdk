@@ -5467,15 +5467,15 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
 }
 
-template <class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
+template <class Callback> NarrowMemProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
   DUIterator_Fast imax, i = fast_outs(imax);
   return apply_to_narrow_mem_projs_any_iterator(UsesIteratorFast(imax, i, this), callback);
 }
 
 
-template<class Callback> ProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
+template<class Callback> NarrowMemProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
   auto filter = [&](NarrowMemProjNode* proj) {
-    if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj())) {
+    if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj()) == BREAK_AND_RETURN_CURRENT_PROJ) {
       return BREAK_AND_RETURN_CURRENT_PROJ;
     }
     return CONTINUE;

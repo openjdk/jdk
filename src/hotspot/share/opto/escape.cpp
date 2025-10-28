@@ -4456,12 +4456,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         // Add a new NarrowMem projection for each existing NarrowMem projection with new adr type
         InitializeNode* init = alloc->as_Allocate()->initialization();
         assert(init != nullptr, "can't find Initialization node for this Allocate node");
-        DUIterator i = init->outs();
         auto process_narrow_proj = [&](NarrowMemProjNode* proj) {
           const TypePtr* adr_type = proj->adr_type();
           const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
-          bool already_has_narrow_mem_proj_with_adr_type = init->already_has_narrow_mem_proj_with_adr_type(new_adr_type);
-          if (adr_type != new_adr_type && !already_has_narrow_mem_proj_with_adr_type) {
+          if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
             DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
             assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
             NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
@@ -4469,9 +4467,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             record_for_optimizer(new_proj);
             set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
           }
-          return MultiNode::CONTINUE;
         };
-        init->apply_to_narrow_mem_projs(i, process_narrow_proj);
+        init->for_each_narrow_mem_proj_with_new_uses(process_narrow_proj);
 
         // First, put on the worklist all Field edges from Connection Graph
         // which is more accurate than putting immediate users from Ideal Graph.

@@ -2594,13 +2594,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
-    return MultiNode::CONTINUE;
   };
   // If changed initialization activity, check dependent Stores
   if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
     InitializeNode* init = use->as_Allocate()->initialization();
     if (init != nullptr) {
-      init->apply_to_projs(enqueue_init_mem_projs, TypeFunc::Memory);
+      init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
     }
   }
   // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
@@ -2615,7 +2614,7 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
 
   if (use_op == Op_Initialize) {
     InitializeNode* init = use->as_Initialize();
-    init->apply_to_projs(enqueue_init_mem_projs, TypeFunc::Memory);
+    init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
   }
   // Loading the java mirror from a Klass requires two loads and the type
   // of the mirror load depends on the type of 'n'. See LoadNode::Value().

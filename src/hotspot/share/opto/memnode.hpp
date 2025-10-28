@@ -1403,28 +1403,43 @@ private:
   intptr_t find_next_fullword_store(uint i, PhaseGVN* phase);
 
   // Iterate with i over all NarrowMemProj uses calling callback
-  template <class Callback, class Iterator> ProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
+  template <class Callback, class Iterator> NarrowMemProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
     auto filter = [&](ProjNode* proj) {
-      if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
+      if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj()) == BREAK_AND_RETURN_CURRENT_PROJ) {
         return BREAK_AND_RETURN_CURRENT_PROJ;
       }
       return CONTINUE;
     };
-    return apply_to_projs_any_iterator(i, filter);
+    ProjNode* res = apply_to_projs_any_iterator(i, filter);
+    if (res == nullptr) {
+      return nullptr;
+    }
+    return res->as_NarrowMemProj();
   }
 
   // Same but with default iterator
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback) const;
+  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(Callback callback) const;
   // Same but only for NarrowMem proj whose adr_type matches
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
-public:
+  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
+
   // Run callback on all NarrowMem proj uses using passed iterator
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
+  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
     return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
   }
 
-  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs_with_new_uses(Callback callback) const {
+    DUIterator i = outs();
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
+  }
+
+public:
+
+  template <class Callback> void for_each_narrow_mem_proj_with_new_uses(Callback callback) const {
+    auto callback_always_continue = [&](NarrowMemProjNode* proj) {
+      callback(proj);
+      return MultiNode::CONTINUE;
+    };
+    apply_to_narrow_mem_projs_with_new_uses(callback_always_continue);
   }
 };
 

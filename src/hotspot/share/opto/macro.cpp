@@ -1603,8 +1603,14 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       // No InitializeNode or no stores captured by zeroing
       // elimination. Simply add the MemBarStoreStore after object
       // initialization.
-      // See comment below in this if's other branch that explains why a raw memory MemBar is good enough. If init is
-      // null, this allocation does have an InitializeNode but this logic can't locate it (see comment in
+      // What we want is to prevent the compiler and the CPU from re-ordering the stores that initialize this object
+      // with subsequent stores to any slice. As a consequence, this MemBar should capture the entire memory state at
+      // this point in the IR and produce a new memory state that should cover all slices. However, the Initialize node
+      // only captures/produces a partial memory state making it complicated to insert such a MemBar. Because
+      // re-ordering by the compiler can't happen by construction (a later Store that publishes the just allocated
+      // object reference is indirectly control dependent on the Initialize node), preventing reordering by the CPU is
+      // sufficient. For that a MemBar on the raw memory slice is good enough.
+      // If init is null, this allocation does have an InitializeNode but this logic can't locate it (see comment in
       // PhaseMacroExpand::initialize_object()).
       MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxRaw);
       transform_later(mb);
@@ -1623,28 +1629,21 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
 
       Node* init_ctrl = init->proj_out_or_null(TypeFunc::Control);
 
-      // What we want is to prevent the compiler and the CPU from re-ordering the stores that initialize this object
-      // with subsequent stores to any slice. As a consequence, this MemBar should capture the entire memory state at
-      // this point in the IR and produce a new memory state that should cover all slices. However, the Initialize node
-      // only captures/produces a partial memory state making it complicated to insert such a MemBar. Because
-      // re-ordering by the compiler can't happen by construction (a later Store that publishes the just allocated
-      // object reference is indirectly control dependent on the Initialize node), preventing reordering by the CPU is
-      // sufficient. For that a MemBar on the raw memory slice is good enough.
+      // See comment above that explains why a raw memory MemBar is good enough.
       MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxRaw);
       transform_later(mb);
 
       Node* ctrl = new ProjNode(init, TypeFunc::Control);
       transform_later(ctrl);
-      Node* existing_raw_mem_proj = nullptr;
+      Node* old_raw_mem_proj = nullptr;
       auto find_raw_mem = [&](ProjNode* proj) {
         if (C->get_alias_index(proj->adr_type()) == Compile::AliasIdxRaw) {
-          assert(existing_raw_mem_proj == nullptr, "only one expected");
-          existing_raw_mem_proj = proj;
+          assert(old_raw_mem_proj == nullptr, "only one expected");
+          old_raw_mem_proj = proj;
         }
-        return MultiNode::CONTINUE;
       };
-      init->apply_to_projs(find_raw_mem, TypeFunc::Memory);
-      assert(existing_raw_mem_proj != nullptr, "should have found raw mem Proj");
+      init->for_each_proj(find_raw_mem, TypeFunc::Memory);
+      assert(old_raw_mem_proj != nullptr, "should have found raw mem Proj");
       Node* raw_mem_proj = new ProjNode(init, TypeFunc::Memory);
       transform_later(raw_mem_proj);
 
@@ -1664,7 +1663,7 @@ void PhaseMacroExpand::expand_initialize_membar(AllocateNode* alloc, InitializeN
       if (init_ctrl != nullptr) {
         _igvn.replace_node(init_ctrl, ctrl);
       }
-      _igvn.replace_node(existing_raw_mem_proj, mem);
+      _igvn.replace_node(old_raw_mem_proj, mem);
     }
   }
 }

@@ -139,6 +139,25 @@ public:
 
   // Same but for matching _con and _is_io_use
   template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
+
+  template<class Callback> void for_each_proj(Callback callback, uint which_proj) const {
+    auto callback_always_continue = [&](ProjNode* proj) {
+      callback(proj);
+      return MultiNode::CONTINUE;
+    };
+    apply_to_projs(callback_always_continue, which_proj);
+  }
+
+  template <class Callback> void for_each_proj(Callback callback, uint which_proj, bool is_io_use) const {
+    auto callback_always_continue = [&](ProjNode* proj) {
+      callback(proj);
+      return MultiNode::CONTINUE;
+    };
+    apply_to_projs(callback_always_continue, which_proj, is_io_use);
+  }
+
+  ProjNode* find_first(uint which_proj) const;
+  ProjNode* find_first(uint which_proj, bool is_io_use) const;
 };
 
 //------------------------------ProjNode---------------------------------------
@@ -222,16 +241,11 @@ public:
   }
 
   virtual int Opcode() const;
-
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-  virtual void dump_compact_spec(outputStream *st) const;
-#endif
 };
 
 template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const {
   auto filter = [&](ProjNode* proj) {
-    if (proj->_con == which_proj && callback(proj)) {
+    if (proj->_con == which_proj && callback(proj) == BREAK_AND_RETURN_CURRENT_PROJ) {
       return BREAK_AND_RETURN_CURRENT_PROJ;
     }
     return CONTINUE;
