@@ -1041,7 +1041,7 @@ public sealed interface StructuredTaskScope<T, R>
      * <p> This method first <a href="#Cancallation">cancels</a> the scope, if not
      * already cancelled. This interrupts the threads executing unfinished subtasks. This
      * method then waits for all threads to finish. If interrupted while waiting then it
-     * will continue to wait until the threads finish, before completing with the interrupted
+     * will continue to wait until the threads finish, before completing with the interrupt
      * status set.
      *
      * <p> This method may only be invoked by the scope owner. If the scope
