@@ -63,7 +63,7 @@ import jdk.internal.util.ByteArrayLittleEndian;
  *
  * <p> See <a href="https://www.rfc-editor.org/rfc/rfc9562.html">
  * <i>RFC 9562: Universally Unique Identifiers (UUIDs)</i></a> for the complete specification,
- * including algorithms used to create {@code UUID}s.
+ * including the UUID format, layouts, and algorithms for creating {@code UUID}s.
  *
  * <p> There are eight defined types of UUIDs, each identified by a version number:
  * time-based (version 1), DCE security (version 2), name-based with MD5 (version 3),
@@ -181,7 +181,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
-     * Creates a {@code UUIDv7} {@code UUID} from the given Unix Epoch timestamp.
+     * Creates a type 7 UUID (UUIDv7) {@code UUID} from the given Unix Epoch timestamp.
      *
      * The returned {@code UUID} will have the given {@code timestamp} in
      * the first 6 bytes, followed by the version and variant bits representing {@code UUIDv7},
@@ -189,8 +189,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * pseudo-random number generator.
      *
      * @apiNote {@code UUIDv7} values are created by allocating a Unix timestamp in milliseconds
-     * in the most significant 48 bits and filling the remaining 74 bits, excluding the required
-     * version and variant bits, with random bits. As such, this method rejects {@code timestamp}
+     * in the most significant 48 bits, allocating the required version and variant bits,
+     * and filling the remaining 74 bits with random bits. As such, this method rejects {@code timestamp}
      * values that do not fit into 48 bits.
      * <p>
      * Monotonicity (each subsequent value being greater than the last) is a primary characteristic
