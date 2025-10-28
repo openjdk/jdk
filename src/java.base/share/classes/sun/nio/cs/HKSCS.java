@@ -352,10 +352,9 @@ public class HKSCS {
                 return encodeBufferLoop(src, dst);
         }
 
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        @Override
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
-            int dl = dst.length;
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);
                 int bb = encodeChar(c);

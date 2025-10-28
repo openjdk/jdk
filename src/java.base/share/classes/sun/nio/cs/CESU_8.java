@@ -394,8 +394,7 @@ class CESU_8 extends Unicode
         }
     }
 
-    private static class Encoder extends CharsetEncoder
-                                 implements ArrayEncoder {
+    private static class Encoder extends CharsetEncoder {
 
         private Encoder(Charset cs) {
             super(cs, 1.1f, 3.0f);

@@ -291,8 +291,7 @@ public class SingleByte
         }
 
         @Override
-        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = (char)(src[sp++] & 0xff);
@@ -307,8 +306,7 @@ public class SingleByte
         }
 
         @Override
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);

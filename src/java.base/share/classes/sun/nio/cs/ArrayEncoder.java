@@ -32,15 +32,10 @@ package sun.nio.cs;
  */
 public interface ArrayEncoder {
 
-    default int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-        return -1;
-    }
+    int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp);
 
-    default int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-        return -1;
-    }
+    int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp);
 
-    default boolean isASCIICompatible() {
-        return false;
-    }
+    boolean isASCIICompatible();
+
 }
