@@ -859,8 +859,8 @@ static void hide_strip_mined_loop(OuterStripMinedLoopNode* outer, CountedLoopNod
   phase->register_control(new_outer, phase->get_loop(outer), outer->in(LoopNode::EntryControl));
   Node* new_le = new IfNode(le->in(0), le->in(1), le->_prob, le->_fcnt);
   phase->register_control(new_le, phase->get_loop(le), le->in(0));
-  phase->lazy_replace(outer, new_outer);
-  phase->lazy_replace(le, new_le);
+  phase->replace_node_and_forward_ctrl(outer, new_outer);
+  phase->replace_node_and_forward_ctrl(le, new_le);
   inner->clear_strip_mined();
 }
 
@@ -1324,7 +1324,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       Node* backedge = head->in(LoopNode::LoopBackControl);
       Node* new_head = new LoopNode(entry, backedge);
       phase->register_control(new_head, phase->get_loop(entry), entry);
-      phase->lazy_replace(head, new_head);
+      phase->replace_node_and_forward_ctrl(head, new_head);
     }
   }
 
@@ -1777,7 +1777,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
           if (u->adr_type() == TypePtr::BOTTOM) {
             fix_memory_uses(u, n, n, c);
           } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
-            _phase->lazy_replace(u, n);
+            _phase->igvn().replace_node(u, n);
             --i; --imax;
           }
         }
