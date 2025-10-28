@@ -133,7 +133,7 @@ containers/docker/TestJcmdWithSideCar.java 8341518 linux-x64
 # :hotspot_serviceability
 
 # 8239062 and 8270326 only affects macosx-x64,macosx-aarch64
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326,8344261 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 generic-all
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
@@ -152,10 +152,6 @@ serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
-
-serviceability/sa/JhsdbThreadInfoTest.java              8344261 generic-all
-serviceability/sa/TestJhsdbJstackLock.java              8344261 generic-all
-serviceability/attach/RemovingUnixDomainSocketTest.java 8344261 generic-all
 
 #############################################################################
 
