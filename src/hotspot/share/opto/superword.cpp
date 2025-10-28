@@ -1745,7 +1745,6 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       is_negated = true;
     }
     break;
-  }
   case Op_CmpU:
   case Op_CmpUL:
     // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
