@@ -2440,12 +2440,12 @@ encode %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
-      Label CHECK_PASSED;
+      Label stack_ok;
       __ ld(t1, Address(sp, framesize));
       __ mv(t2, MAJIK_DWORD);
-      __ beq(t2, t1, CHECK_PASSED);
+      __ beq(t2, t1, stack_ok);
       __ stop("MAJIK_DWORD not found");
-      __ bind(CHECK_PASSED);
+      __ bind(stack_ok);
     }
   %}
 
