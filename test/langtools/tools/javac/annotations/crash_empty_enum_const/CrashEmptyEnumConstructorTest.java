@@ -92,7 +92,7 @@ public class CrashEmptyEnumConstructorTest extends TestRunner {
                 """);
 
         List<String> expected = List.of(
-            "E.java:3: error: missing method body, or declare abstract",
+            "E.java:3: error: method E(String) in E is missing a method body, or should be declared abstract",
             "    E(String one);",
             "    ^",
             "1 error");

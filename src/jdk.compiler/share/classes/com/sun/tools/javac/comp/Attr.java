@@ -1183,7 +1183,7 @@ public class Attr extends JCTree.Visitor {
                                   Errors.DefaultAllowedInIntfAnnotationMember);
                 }
                 if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0)
-                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract);
+                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract(tree.sym, owner));
             } else {
                 if ((tree.sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                     if ((owner.flags() & INTERFACE) != 0) {
