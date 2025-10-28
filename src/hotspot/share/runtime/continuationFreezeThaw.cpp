@@ -1793,7 +1793,7 @@ static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kin
   }
 }
 
-static void log_preempt_after_freeze(ContinuationWrapper& cont) {
+static void log_preempt_after_freeze(const ContinuationWrapper& cont) {
   JavaThread* current = cont.thread();
   int64_t tid = current->monitor_owner_id();
 
@@ -2108,7 +2108,7 @@ private:
   void recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_native_frame(const frame& hf, frame& caller, int num_frames);
 
-  void push_return_frame(frame& f);
+  void push_return_frame(const frame& f);
   inline frame new_entry_frame();
   template<typename FKind> frame new_stack_frame(const frame& hf, frame& caller, bool bottom);
   inline void patch_pd(frame& f, const frame& sender);
@@ -3018,7 +3018,7 @@ void ThawBase::finish_thaw(frame& f) {
   }
 }
 
-void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
+void ThawBase::push_return_frame(const frame& f) { // see generate_cont_thaw
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == f.cb()->as_nmethod()->is_deopt_pc(f.raw_pc()), "");
   assert(!f.is_compiled_frame() || f.is_deoptimized_frame() == (f.pc() != f.raw_pc()), "");
 
