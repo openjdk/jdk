@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -51,12 +52,14 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     @Override
     public Path execute(Map<String, ? super Object> params, Path outputParentDir) throws PackagerException {
 
+        var pkg = LinuxFromParams.DEB_PACKAGE.fetchFrom(params);
+
         return Packager.<LinuxDebPackage>build().outputDir(outputParentDir)
-                .pkg(LinuxFromParams.DEB_PACKAGE.fetchFrom(params))
+                .pkg(pkg)
                 .env(BuildEnvFromParams.BUILD_ENV.fetchFrom(params))
-                .pipelineBuilderMutatorFactory((env, pkg, outputDir) -> {
+                .pipelineBuilderMutatorFactory((env, _, outputDir) -> {
                     return new LinuxDebPackager(env, pkg, outputDir, sysEnv.orElseThrow());
-                }).execute(LinuxPackagingPipeline.build());
+                }).execute(LinuxPackagingPipeline.build(Optional.of(pkg)));
     }
 
     @Override

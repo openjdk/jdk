@@ -784,7 +784,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, true);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, true);
                 }
             }
 
@@ -865,7 +865,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, false);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, false);
                 }
             }
 
