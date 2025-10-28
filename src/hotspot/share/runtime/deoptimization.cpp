@@ -1387,6 +1387,11 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
         } else if (sv->field_at(i)->is_constant_int()) {
           ScopeValue* next_scope_field = sv->field_at(i + 1);
           if (next_scope_field->is_constant_long() || next_scope_field->is_constant_double()) {
+#ifdef ASSERT
+            tty->print_cr("Deopt rematerialization found [int, long] in a int/flat array.");
+            sv->print_fields_on(tty);
+            assert(false, "never hit this case in testing, seems to be a strange case");
+#endif
             big_value = true;
           }
         }
