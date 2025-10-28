@@ -3486,6 +3486,7 @@ public:
   INSN(sve_smaxv, 0b00000100, 0b001000001); // signed maximum reduction to scalar
   INSN(sve_smin,  0b00000100, 0b001010000); // signed minimum vectors
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
+  INSN(sve_splice,0b00000101, 0b101100100); // splice two vectors under predicate control, destructive
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
   INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
@@ -4067,6 +4068,13 @@ public:
   INSN(sve_brka, 0b00); // Break after first true condition
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
+
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
 
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \

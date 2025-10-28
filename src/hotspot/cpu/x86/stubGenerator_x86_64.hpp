@@ -393,6 +393,8 @@ class StubGenerator: public StubCodeGenerator {
                                      XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, XMMRegister xmm8);
   void ghash_last_8_avx2(Register subkeyHtbl);
 
+  void check_key_offset(Register key, int offset, int load_size);
+
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);

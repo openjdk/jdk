@@ -331,13 +331,10 @@ bool NativeInstruction::is_safepoint_poll() {
   return MacroAssembler::is_lwu_to_zr(address(this));
 }
 
-void NativeIllegalInstruction::insert(address code_pos) {
-  assert_cond(code_pos != nullptr);
-  Assembler::sd_instr(code_pos, 0xffffffff);   // all bits ones is permanently reserved as an illegal instruction
-}
-
 bool NativeInstruction::is_stop() {
-  return uint_at(0) == 0xc0101073; // an illegal instruction, 'csrrw x0, time, x0'
+  // an illegal instruction, 'csrrw x0, time, x0'
+  uint32_t encoded = Assembler::encode_csrrw(x0, Assembler::time, x0);
+  return uint_at(0) == encoded;
 }
 
 //-------------------------------------------------------------------
@@ -346,6 +343,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   CodeBuffer cb(code_pos, instruction_size);
   MacroAssembler a(&cb);
   Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::get_instruction_size()
+
+  MacroAssembler::assert_alignment(code_pos);
 
   int32_t offset = 0;
   a.movptr(t1, entry, offset, t0); // lui, lui, slli, add
@@ -378,6 +377,7 @@ bool NativePostCallNop::decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
 }
 
 bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  MacroAssembler::assert_alignment(addr_at(4));
   if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
     return false; // cannot encode
   }
@@ -389,14 +389,17 @@ bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   return true; // successfully encoded
 }
 
-void NativeDeoptInstruction::verify() {
+bool NativeDeoptInstruction::is_deopt_at(address instr) {
+  assert(instr != nullptr, "Must be");
+  uint32_t value = Assembler::ld_instr(instr);
+  uint32_t encoded = Assembler::encode_csrrw(x0, Assembler::instret, x0);
+  return value == encoded;
 }
 
 // Inserts an undefined instruction at a given pc
 void NativeDeoptInstruction::insert(address code_pos) {
-  // 0xc0201073 encodes CSRRW x0, instret, x0
-  uint32_t insn = 0xc0201073;
-  uint32_t *pos = (uint32_t *) code_pos;
-  *pos = insn;
+  MacroAssembler::assert_alignment(code_pos);
+  uint32_t encoded = Assembler::encode_csrrw(x0, Assembler::instret, x0);
+  Assembler::sd_instr(code_pos, encoded);
   ICache::invalidate_range(code_pos, 4);
 }

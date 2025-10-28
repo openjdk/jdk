@@ -40,8 +40,6 @@ class G1CSetCandidateGroup;
 class outputStream;
 
 class G1HeapRegionRemSet : public CHeapObj<mtGC> {
-  friend class VMStructs;
-
   // A set of nmethods whose code contains pointers into
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;

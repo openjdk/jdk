@@ -154,13 +154,12 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-size_t os::Linux::_physical_memory = 0;
+physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = nullptr;
-int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = nullptr;
 pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
@@ -214,32 +213,19 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::Linux::available_memory_in_container() {
-  julong avail_mem = static_cast<julong>(-1L);
-  if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-    }
-    if (mem_limit > 0 && mem_usage > 0) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-    }
+bool os::available_memory(physical_memory_size_type& value) {
+  julong avail_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(avail_mem)) {
+    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+    value = static_cast<physical_memory_size_type>(avail_mem);
+    return true;
   }
-  return avail_mem;
-}
 
-bool os::available_memory(size_t& value) {
   return Linux::available_memory(value);
 }
 
-bool os::Linux::available_memory(size_t& value) {
-  julong avail_mem = available_memory_in_container();
-  if (avail_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    value = static_cast<size_t>(avail_mem);
-    return true;
-  }
+bool os::Linux::available_memory(physical_memory_size_type& value) {
+  julong avail_mem = static_cast<julong>(-1L);
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp != nullptr) {
@@ -253,47 +239,48 @@ bool os::Linux::available_memory(size_t& value) {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    size_t free_mem = 0;
+    physical_memory_size_type free_mem = 0;
     if (!free_memory(free_mem)) {
       return false;
     }
     avail_mem = static_cast<julong>(free_mem);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  value = static_cast<size_t>(avail_mem);
+  value = static_cast<physical_memory_size_type>(avail_mem);
   return true;
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
+  julong free_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(free_mem)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    value = static_cast<physical_memory_size_type>(free_mem);
+    return true;
+  }
+
   return Linux::free_memory(value);
 }
 
-bool os::Linux::free_memory(size_t& value) {
+bool os::Linux::free_memory(physical_memory_size_type& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem = available_memory_in_container();
-  if (free_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<size_t>(free_mem);
-    return true;
-  }
 
   int ret = sysinfo(&si);
   if (ret != 0) {
     return false;
   }
-  free_mem = (julong)si.freeram * si.mem_unit;
+  julong free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  value = static_cast<size_t>(free_mem);
+  value = static_cast<physical_memory_size_type>(free_mem);
   return true;
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   if (OSContainer::is_containerized()) {
     jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
     jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
     if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
-      value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
+      value = static_cast<physical_memory_size_type>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
     }
   } // fallback to the host swap space if the container did return the unbound value of -1
@@ -303,30 +290,30 @@ bool os::total_swap_space(size_t& value) {
     assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<size_t>(si.totalswap * si.mem_unit);
+  value = static_cast<physical_memory_size_type>(si.totalswap) * si.mem_unit;
   return true;
 }
 
-static bool host_free_swap_f(size_t& value) {
+static bool host_free_swap_f(physical_memory_size_type& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
     assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<size_t>(si.freeswap * si.mem_unit);
+  value = static_cast<physical_memory_size_type>(si.freeswap) * si.mem_unit;
   return true;
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  size_t total_swap_space = 0;
-  size_t host_free_swap = 0;
+  physical_memory_size_type total_swap_space = 0;
+  physical_memory_size_type host_free_swap = 0;
   if (!os::total_swap_space(total_swap_space) || !host_free_swap_f(host_free_swap)) {
     return false;
   }
-  size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
+  physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -342,31 +329,31 @@ bool os::free_swap_space(size_t& value) {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
+          value = free_swap >= 0 ? static_cast<physical_memory_size_type>(free_swap) : 0;
           return true;
         }
       }
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " PHYS_MEM_TYPE_FORMAT,
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
   value = host_free_swap_val;
   return true;
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return static_cast<size_t>(mem_limit);
+      return static_cast<physical_memory_size_type>(mem_limit);
     }
   }
 
-  size_t phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: %zu", phys_mem);
+  physical_memory_size_type phys_mem = Linux::physical_memory();
+  log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
 }
 
@@ -550,7 +537,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
+  _physical_memory = static_cast<physical_memory_size_type>(sysconf(_SC_PHYS_PAGES)) * static_cast<physical_memory_size_type>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
@@ -860,11 +847,9 @@ static void *thread_native_entry(Thread *thread) {
   osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
   if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
+    thread->update_lgrp_id();
   }
+
   // initialize signal mask for this thread
   PosixSignals::hotspot_sigmask(thread);
 
@@ -1191,10 +1176,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
+    thread->update_lgrp_id();
   }
 
   if (os::is_primordial_thread()) {
@@ -2609,12 +2591,12 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   sysinfo(&si);
-  size_t phys_mem = physical_memory();
-  st->print(", physical %zuk",
+  physical_memory_size_type phys_mem = physical_memory();
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
-  size_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(%zuk free)",
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
@@ -4376,10 +4358,6 @@ void os::init(void) {
   // _main_thread points to the thread that created/loaded the JVM.
   Linux::_main_thread = pthread_self();
 
-  // retrieve entry point for pthread_setname_np
-  Linux::_pthread_setname_np =
-    (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
-
   check_pax();
 
   // Check the availability of MADV_POPULATE_WRITE.
@@ -4856,14 +4834,24 @@ uint os::processor_id() {
 }
 
 void os::set_native_thread_name(const char *name) {
-  if (Linux::_pthread_setname_np) {
-    char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    (void) os::snprintf(buf, sizeof(buf), "%s", name);
-    buf[sizeof(buf) - 1] = '\0';
-    const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
-    // ERANGE should not happen; all other errors should just be ignored.
-    assert(rc != ERANGE, "pthread_setname_np failed");
+  char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
+  // We may need to truncate the thread name. Since a common pattern
+  // for thread names is to be both longer than 15 chars and have a
+  // trailing number ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc),
+  // we preserve the end of the thread name by truncating the middle
+  // (e.g. "Dispatc..read21").
+  const size_t len = strlen(name);
+  if (len < sizeof(buf)) {
+    strcpy(buf, name);
+  } else {
+    (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
   }
+  // Note: we use the system call here instead of calling pthread_setname_np
+  // since this is the only way to make ASAN aware of our thread names. Even
+  // though ASAN intercepts both prctl and pthread_setname_np, it only processes
+  // the thread name given to the former.
+  int rc = prctl(PR_SET_NAME, buf);
+  assert(rc == 0, "prctl(PR_SET_NAME) failed");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
