@@ -1700,7 +1700,7 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
 
   switch (cmp0->Opcode()) {
   case Op_CmpF:
-  case Op_CmpD: {
+  case Op_CmpD:
     // If we have a Float or Double comparison, we must be careful with
     // handling NaN's correctly. CmpF and CmpD have a return code, as
     // they are based on the java bytecodes fcmpl/dcmpl:
