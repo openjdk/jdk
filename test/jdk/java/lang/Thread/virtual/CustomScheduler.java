@@ -204,7 +204,7 @@ class CustomScheduler {
     }
 
     /**
-     * Test running task with the carrier interrupted status set.
+     * Test running task with the carrier's interrupted status set.
      */
     @Test
     void testRunWithInterruptSet() throws Exception {
