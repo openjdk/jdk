@@ -79,9 +79,11 @@ const size_t      ZMarkStripesMax               = 16; // Must be a power of two
 const size_t      ZMarkCacheSize                = 1024; // Must be a power of two
 
 // Partial array minimum size
-const size_t      ZMarkPartialArrayMinSizeShift = 12; // 4K
-const size_t      ZMarkPartialArrayMinSize      = (size_t)1 << ZMarkPartialArrayMinSizeShift;
-const size_t      ZMarkPartialArrayMinLength    = ZMarkPartialArrayMinSize / oopSize;
+const size_t      ZMarkPartialArrayEntryOffsetBits     = 32;
+const size_t      ZMarkPartialArrayMinimumMinSizeShift = 12; // 4K
+extern size_t     ZMarkPartialArrayMinSizeShift;
+extern size_t     ZMarkPartialArrayMinSize;
+extern size_t     ZMarkPartialArrayMinLength;
 
 // Max number of proactive/terminate flush attempts
 const size_t      ZMarkProactiveFlushMax        = 10;

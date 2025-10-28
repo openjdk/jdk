@@ -124,6 +124,12 @@ void ZGlobalsPointers::set_heap_base(size_t heap_base_shift) {
   ZAddressOffsetBits = ZAddressHeapBaseShift;
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
   ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+
+  // Larger heap bases requires partial array mark entries
+  const size_t required_shift = heap_base_shift - ZMarkPartialArrayEntryOffsetBits;
+  ZMarkPartialArrayMinSizeShift = MAX2(required_shift, ZMarkPartialArrayMinSizeShift);
+  ZMarkPartialArrayMinSize = (size_t)1 << ZMarkPartialArrayMinSizeShift;
+  ZMarkPartialArrayMinLength = ZMarkPartialArrayMinSize / oopSize;
 }
 
 size_t ZGlobalsPointers::ZAddressPlatformHeapBaseMaxShift;

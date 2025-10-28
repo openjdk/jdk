@@ -166,7 +166,7 @@ public class TestLinuxVirtualAddressSpace {
     }
 
     public static class ScenarioBlockLower extends ScenarioBase {
-        static final long top = 1L << 42;
+        static final long top = 1L << 45;
         static final long bottom = 1L << 34;
 
         public ScenarioBlockLower() {
