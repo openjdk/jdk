@@ -37,7 +37,7 @@ import jdk.jfr.Recording;
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestReturnsOopSetForJFRWriteCheckpoint
  */
-public class TestReturnsOopSetForJFRWriteCheckpoint {
+public class TestReturnOopSetForJFRWriteCheckpoint {
 
     private static class TestEvent extends Event {
     }
