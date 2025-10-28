@@ -148,10 +148,13 @@ lastErrorReportable()
 }
 
 //
-// Get the final path of 'path' placing the result in 'finalPath'.
-// Zero is returned on success, non-zero on error.
+// Return the final path of 'path'. If 'finalPath' is long enough, the final
+// path is placed in it. If not, a new character array is allocated for the
+// return value. If the return value does not equal the original 'finalPath'
+// value, then the calling code might need to free the memory of the
+// parameter. Non-NULL is returned on success, NULL on error.
 //
-int getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
+WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
 {
     HANDLE h = CreateFileW(path,
                            FILE_READ_ATTRIBUTES,
@@ -164,8 +167,13 @@ int getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
 
     if (h != INVALID_HANDLE_VALUE) {
         DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
+        if (len >= size) {
+            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL)
+                return NULL;
+            len = GetFinalPathNameByHandleW(h, finalPath, len, 0);
+        }
         CloseHandle(h);
-        if (len > 0 && len <= size) {
+        if (len != 0) {
             if (finalPath[0] == L'\\' && finalPath[1] == L'\\' &&
                 finalPath[2] == L'?' && finalPath[3] == L'\\')
             {
@@ -179,18 +187,18 @@ int getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
                 wmemmove(finalPath, finalPath + prefixLen, amountToCopy);
             }
 
-            return 0;
+            return finalPath;
         }
     }
 
-    return -1;
+    return NULL;
 }
 
 /* Convert a pathname to canonical form.  The input orig_path is assumed to
    have been converted to native form already, via JVM_NativePath().  This is
    necessary because _fullpath() rejects duplicate separator characters on
    Win95, though it accepts them on NT. */
-int
+WCHAR*
 wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
 {
     WIN32_FIND_DATAW fd;
@@ -201,11 +209,11 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     /* Reject paths that contain wildcards */
     if (wwild(orig_path)) {
         errno = EINVAL;
-        return -1;
+        return NULL;
     }
 
     if ((path = (WCHAR*)malloc(size * sizeof(WCHAR))) == NULL)
-        return -1;
+        return NULL;
 
     /* Collapse instances of "foo\.." and ensure absoluteness.  Note that
        contrary to the documentation, the _fullpath procedure does not require
@@ -280,10 +288,11 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
 
             // If a reparse point is encountered, get the final path.
             if ((fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
-                if (getFinalPath(path, result, size) != 0)
+                WCHAR* fp = NULL;
+                if ((fp = getFinalPath(path, result, size)) == NULL)
                     goto err;
                 free(path);
-                return 0;
+                return fp;
             }
 
             if (!(dst = wcp(dst, dend, L'\\', fd.cFileName,
@@ -310,11 +319,11 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     }
     *dst = L'\0';
     free(path);
-    return 0;
+    return result;
 
  err:
     free(path);
-    return -1;
+    return NULL;
 }
 
 /* Non-Wide character version of canonicalize.
