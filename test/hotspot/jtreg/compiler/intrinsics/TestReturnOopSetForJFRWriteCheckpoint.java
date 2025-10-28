@@ -46,10 +46,10 @@ public class TestReturnsOopSetForJFRWriteCheckpoint {
         TestFramework.run();
     }
 
-    // Crash was due to the returns_oop field not being set
+    // Crash was due to the return_oop field not being set
     // for the write_checkpoint call. Instead of explicitly checking for
     // it, we look for an non-void return type (which comes hand-in-hand
-    // with the returns_oop information).
+    // with the return_oop information).
     @Test
     @IR(failOn = { IRNode.STATIC_CALL_OF_METHOD, "write_checkpoint.*void"})
     public void testWriteCheckpointReturnType() {
