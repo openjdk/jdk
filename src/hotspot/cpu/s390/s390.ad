@@ -1809,8 +1809,8 @@ bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen
   return false;
 }
 
-bool Matcher::mask_op_uses_packed_vector(int opcode, const TypeVect* vt) {
-  return vt->isa_vectmask() == nullptr;
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+  return false;
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {

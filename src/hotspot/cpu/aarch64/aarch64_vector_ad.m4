@@ -377,26 +377,31 @@ source %{
     return false;
   }
 
-  // Return true if the input/output mask of the operation must be a packed
-  // boolean vector represented as bytes with 0x00/0x01 as element values.
-  //
-  // By default, all the mask query operations without predicate support
-  // requires the mask to be saved in a boolean vector.
-  bool Matcher::mask_op_uses_packed_vector(int opcode, const TypeVect* vt) {
+  bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+    // Only SVE supports the predicate feature.
+    if (UseSVE == 0) {
+      // On architectures that do not support the predicate feature, vector
+      // mask is stored in a normal vector with the type of "TypeVect" varing
+      // from "TypeVectA" to "TypeVectZ" based on the vector length in bytes.
+      // It cannot be a "TypeVectMask".
+      assert(vt->isa_vectmask() == nullptr, "mask type not match");
+      return false;
+    }
+
+    assert(vt->isa_vectmask(), "The mask type must be a TypeVectMask on SVE");
     switch (opcode) {
-      case Op_VectorMaskFirstTrue:
-      case Op_VectorMaskLastTrue:
-      case Op_VectorMaskTrueCount:
-        // These ops are implemented with predicate instructions if input
-        // mask is a predciate.
-        return vt->isa_vectmask() == nullptr;
       case Op_VectorMaskToLong:
       case Op_VectorLongToMask:
-        // These two ops are implemented with vector instructions on all
-        // architectures. SVE does not have native predicate instructions.
+        // SVE does not have native predicate instructions for these two ops.
+        // Instead, they are implemented with vector instructions. Hence, to
+        // improve the performance, we prefer saving the mask in a vector as
+        // the input/output of these IRs.
+        return false;
+      default:
+        // By default, all the mask operations are implemented with predicate
+        // instructions with a predicate input/output.
         return true;
     }
-    return false;
   }
 
   // Assert that the given node is not a variable shift.

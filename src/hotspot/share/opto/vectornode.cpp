@@ -1904,7 +1904,7 @@ Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
     Node* mask = in1->in(1);
-    assert(Matcher::mask_op_uses_packed_vector(Opcode(), mask->bottom_type()->is_vect()), "sanity");
+    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
     in1 = mask;
   }
   if (VectorNode::is_all_ones_vector(in1)) {
