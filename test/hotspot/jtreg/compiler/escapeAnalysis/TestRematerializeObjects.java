@@ -26,7 +26,13 @@
  * @bug 8370405
  * @summary Test elimination of array allocation, and the rematerialization.
  * @library /test/lib /
- * @run driver compiler.escapeAnalysis.TestRematerializeObjects xxxx
+ * @run driver compiler.escapeAnalysis.TestRematerializeObjects yEA
+ */
+
+/*
+ * @test
+ * @library /test/lib /
+ * @run driver compiler.escapeAnalysis.TestRematerializeObjects nEA
  */
 
 package compiler.escapeAnalysis;
@@ -43,26 +49,62 @@ public class TestRematerializeObjects {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestRematerializeObjects.class);
+        //framework.addFlags("-XX:-TieredCompilation", "-Xbatch", "-XX:-CICompileOSR");
         switch (args[0]) {
-            case "xxxx" -> { framework.addFlags("-XX:+MergeStores"); }
+            case "yEA" -> { framework.addFlags("-XX:+EliminateAllocations"); }
+            case "nEA" -> { framework.addFlags("-XX:-EliminateAllocations"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
     }
 
-    @Warmup(100)
-    @Run(test = {"test"})
-    public void runTests() {
+    @DontInline
+    static void dontinline() {}
+
+    @Run(test = "test1", mode = RunMode.STANDALONE)
+    public void runTest1() {
+        // Capture interpreter result.
+        int gold = test1(false);
+        // Repeat until we get compilation.
+        for (int i = 0; i < 10_000; i++) {
+            test1(false);
+        }
+        // Capture compiled results.
+        int res0 = test1(false);
+        int res1 = test1(true);
+        if (res0 != gold || res1 != gold) {
+            throw new RuntimeException("Unexpected result: " + Integer.toHexString(res0) + " and " +
+                                       Integer.toHexString(res1) + ", should be: " + Integer.toHexString(gold));
+        }
     }
 
     @Test
-    // @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-    //               IRNode.STORE_VECTOR, "> 0",
-    //               ".*multiversion.*", "= 0"},
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // // Should always vectorize, no speculative runtime check required.
-    static void test() {
+    @IR(counts = {IRNode.ALLOC_ARRAY, "1",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.STORE_L_OF_CLASS, "int\\[int:4\\]", "1",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},
+        applyIf = {"EliminateAllocations", "false"})
+    @IR(counts = {IRNode.ALLOC_ARRAY, "0",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.STORE_L_OF_CLASS, "int\\[int:4\\]", "0",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "2"},
+        applyIf = {"EliminateAllocations", "true"})
+    static int test1(boolean flag) {
+        int[] arr = new int[4];
+        arr[0] = 0x0001_0000; // these slip into Initialize
+        arr[1] = 0x0010_0000;
+        arr[2] = 0x0000_0100;
+        arr[3] = 0x0100_0000;
+        dontinline();
+        arr[0] = 0x0000_0001; // MergeStores -> StoreL
+        arr[1] = 0x0000_0010;
+        if (flag) {
+            // unstable if -> deopt -> rematerialized array (if was eliminated)
+            System.out.println("unstable if: " + arr.length);
+        }
+        arr[3] = 0x0000_1000;
+        return 1 * arr[0] + 2 * arr[1] + 3 * arr[2] + 4 * arr[3];
     }
+
+
 }
