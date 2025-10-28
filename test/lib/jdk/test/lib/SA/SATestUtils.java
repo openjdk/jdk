@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,13 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SATestUtils {
     /**
@@ -77,60 +70,6 @@ public class SATestUtils {
             }
         } catch (IOException e) {
             throw new RuntimeException("skipIfCannotAttach() failed due to IOException.", e);
-        }
-    }
-
-    /**
-     * Checks whether the test runs on older glibc or not.
-     * On Linux, check glibc version before the test and throws SkipException
-     * if its version is 2.38 or earlier.
-     * The problem is not to unwind all of call stacks the process is running on
-     * older glibc. It happens Debian 12, Ubuntu 22.04 (glibc 2.35) and
-     * Ubuntu 23.04 (glibc 2.37) at least. It works on Ubuntu 24.04 (glibc 2.39).
-     * The problem happenes both AMD64 and AArch64.
-     *
-     * @throws SkippedException if the test runs on older glibc (2.38 or earlier).
-     */
-    @SuppressWarnings("restricted")
-    public static void skipIfRunsOnOlderGLIBC() {
-        var linker = Linker.nativeLinker();
-        var lookup = linker.defaultLookup();
-        var sym = lookup.find("gnu_get_libc_version");
-        if (sym.isEmpty()) {
-            // Maybe the platform is not on glibc (Windows, Mac, musl on Alpine).
-            // Go ahead.
-            return;
-        }
-
-        // Call gnu_get_libc_version()
-        var desc = FunctionDescriptor.of(ValueLayout.ADDRESS);
-        var func = linker.downcallHandle(sym.get(), desc);
-        MemorySegment result;
-        try {
-            result = (MemorySegment)func.invoke();
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-
-        // Set the length of glibc version because FFM does not know memory size
-        // returned by gnu_get_libc_version().
-        var strlenSym = lookup.find("strlen");
-        var strlenDesc = FunctionDescriptor.of(linker.canonicalLayouts().get("size_t"), ValueLayout.ADDRESS);
-        var strlenFunc = linker.downcallHandle(strlenSym.get(), strlenDesc);
-        long len;
-        try {
-            len = (long)strlenFunc.invoke(result);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-
-        result = result.reinterpret(len + 1); // includes NUL
-        String[] ver = result.getString(0, StandardCharsets.US_ASCII).split("\\.");
-        int major = Integer.parseInt(ver[0]);
-        int minor = Integer.parseInt(ver[1]);
-
-        if (!(major > 2 || (major == 2 && minor >= 39))) {
-            throw new SkippedException("Older glibc version.");
         }
     }
 

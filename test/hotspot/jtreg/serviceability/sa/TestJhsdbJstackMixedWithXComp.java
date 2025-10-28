@@ -86,8 +86,6 @@ public class TestJhsdbJstackMixedWithXComp {
 
     public static void main(String... args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
-        SATestUtils.skipIfRunsOnOlderGLIBC(); // throws SkippedException if this test runs on older GLIBC.
-
         LingeredApp app = null;
 
         try {
