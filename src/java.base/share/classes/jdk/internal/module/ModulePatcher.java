@@ -467,8 +467,8 @@ public final class ModulePatcher {
                 }
                 @Override
                 public ByteBuffer getByteBuffer() throws IOException {
-                    try (InputStream is = getInputStream()) {
-                        byte[] bytes = is.readAllBytes();
+                    try (InputStream in = getInputStream()) {
+                        byte[] bytes = in.readAllBytes();
                         return ByteBuffer.wrap(bytes);
                     }
                 }
