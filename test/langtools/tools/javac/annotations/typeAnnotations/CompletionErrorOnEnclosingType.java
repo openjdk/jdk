@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337998
+ * @bug 8337998 8370800
  * @summary CompletionFailure in getEnclosingType attaching type annotations
  * @library /tools/javac/lib /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -74,13 +74,14 @@ public class CompletionErrorOnEnclosingType {
         tb.createDirectories(out);
         new JavacTask(tb).outdir(out).files(tb.findJavaFiles(src)).run();
 
-        // now if we remove A.class there will be an error but javac should not crash
+        // now if we remove A.class javac should not crash
         tb.deleteFiles(out.resolve("A.class"));
+
         List<String> log =
                 new JavacTask(tb)
                         .outdir(out)
                         .classpath(out)
-                        .options("-XDrawDiagnostics")
+                        .options("-Werror", "-XDrawDiagnostics")
                         .files(src.resolve("C.java"))
                         .run(Expect.FAIL)
                         .writeAll()
@@ -88,9 +89,11 @@ public class CompletionErrorOnEnclosingType {
 
         var expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, a,"
-                            + " (compiler.misc.class.file.not.found: A)",
-                        "1 error");
+                        "B.class:-:-: compiler.warn.cant.attach.type.annotations: @Anno, B, a,"
+                                + " (compiler.misc.class.file.not.found: A)",
+                        "- compiler.err.warnings.and.werror",
+                        "1 error",
+                        "1 warning");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
         }
