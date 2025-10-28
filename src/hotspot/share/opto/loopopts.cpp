@@ -236,13 +236,27 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   if (region->is_Loop() && region_loop->_child == nullptr) {
     region_loop->_body.yank(n);
     for (uint j = 1; j < n->req(); j++) {
-      Node* in = n->in(j);
-      // Check that in is a phi, and n was its only use.
-      if (in->is_Phi() && in->in(0) == region &&
-          in->outcnt() == 1 && in->unique_out() == n) {
-        assert(get_ctrl(in) == region, "sanity");
-        assert(get_ctrl(n) == region, "sanity");
-        region_loop->_body.yank(in);
+      PhiNode* phi = n->in(j)->isa_Phi();
+      // Check that phi belongs to the region and only has n as a use.
+      if (phi != nullptr && phi->in(0) == region) {
+        bool found_n = false;
+        bool found_other = false;
+        for (DUIterator_Fast kmax, k = phi->fast_outs(kmax); k < kmax; k++) {
+          Node* u = phi->fast_out(k);
+          if (u == n) {
+            // Single and multiple use are allowed:
+            //   n = ConvF2I(phi)
+            //   n = AddI(phi, phi)
+            found_n = true;
+          } else {
+            found_other = true;
+          }
+        }
+        if (found_n && !found_other) {
+          assert(get_ctrl(phi) == region, "sanity");
+          assert(get_ctrl(n) == region, "sanity");
+          region_loop->_body.yank(phi);
+        }
       }
     }
   }
