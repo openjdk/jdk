@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,34 +768,20 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
 }
 
 int getLocaleInfoWrapper(const jchar *langtag, LCTYPE type, LPWSTR data, int buflen) {
-    if (pGetLocaleInfoEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pGetLocaleInfoEx(L"en", type, data, buflen);
-        } else {
-            return pGetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return pGetLocaleInfoEx(L"en", type, data, buflen);
     } else {
-        // If we ever wanted to support WinXP, we will need extra module from
-        // MS...
-        // return GetLocaleInfo(DownlevelLocaleNameToLCID(langtag, 0), type, data, buflen);
-        return 0;
+        return pGetLocaleInfoEx((LPWSTR)langtag, type, data, buflen);
     }
 }
 
 int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CALTYPE type, LPWSTR data, int buflen, LPDWORD val) {
-    if (pGetCalendarInfoEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pGetCalendarInfoEx(L"en", id, reserved, type, data, buflen, val);
-        } else {
-            return pGetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return pGetCalendarInfoEx(L"en", id, reserved, type, data, buflen, val);
     } else {
-        // If we ever wanted to support WinXP, we will need extra module from
-        // MS...
-        // return GetCalendarInfo(DownlevelLocaleNameToLCID(langtag, 0), ...);
-        return 0;
+        return pGetCalendarInfoEx((LPWSTR)langtag, id, reserved, type, data, buflen, val);
     }
 }
 
@@ -1000,17 +986,13 @@ void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BO
 }
 
 int enumCalendarInfoWrapper(const jchar *langtag, CALID calid, CALTYPE type, LPWSTR buf, int buflen) {
-    if (pEnumCalendarInfoExEx) {
-        if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
-            // defaults to "en"
-            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, L"en",
-                calid, NULL, type, (LPARAM)buf);
-        } else {
-            return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, langtag,
-                calid, NULL, type, (LPARAM)buf);
-        }
+    if (wcscmp(L"und", (LPWSTR)langtag) == 0) {
+        // defaults to "en"
+        return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, L"en",
+            calid, NULL, type, (LPARAM)buf);
     } else {
-        return 0;
+        return pEnumCalendarInfoExEx(&EnumCalendarInfoProc, langtag,
+            calid, NULL, type, (LPARAM)buf);
     }
 }
 
