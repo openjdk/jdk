@@ -97,6 +97,7 @@
 #include "runtime/trimNativeHeap.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
+#include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
@@ -343,6 +344,11 @@ static void call_initPhase3(TRAPS) {
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
+  // This is before the execution of the very first Java bytecode.
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::link_classes(THREAD);
+  }
+
   initialize_class(vmSymbols::java_lang_String(), CHECK);
 
   // Inject CompactStrings value after the static initializers for String ran.
@@ -445,6 +451,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
+
+  // Deferred "static" initialization
+  NonJavaThread::init();
 
   // Initialize library-based TLS
   ThreadLocalStorage::init();
@@ -694,6 +703,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
 
+#ifdef ADDRESS_SANITIZER
+  Asan::initialize();
+#endif
+
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
@@ -739,6 +752,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
 
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    nmethod::post_delayed_compiled_method_load_events();
+  }
+
   // Start the monitor deflation thread:
   MonitorDeflationThread::initialize();
 
@@ -771,7 +788,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
-    AOTLinkedClassBulkLoader::link_or_init_javabase_classes(THREAD);
+    AOTLinkedClassBulkLoader::init_javabase_classes(THREAD);
   }
 
   // Start string deduplication thread if requested.
@@ -790,7 +807,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   call_initPhase2(CHECK_JNI_ERR);
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes(THREAD);
+    AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
 #ifndef PRODUCT
   HeapShared::initialize_test_class_from_archive(THREAD);

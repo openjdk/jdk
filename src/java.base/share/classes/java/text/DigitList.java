@@ -356,6 +356,11 @@ final class DigitList implements Cloneable {
         }
         decimalAt = count + exp;
 
+        // Eliminate trailing zeros.
+        while (count > 1 && digits[count - 1] == '0') {
+            --count;
+        }
+
         if (fixedPoint) {
             // The negative of the exponent represents the number of leading
             // zeros between the decimal and the first non-zero digit, for
@@ -380,11 +385,6 @@ final class DigitList implements Cloneable {
                 return;
             }
             // else fall through
-        }
-
-        // Eliminate trailing zeros.
-        while (count > 1 && digits[count - 1] == '0') {
-            --count;
         }
 
         // Eliminate digits beyond maximum digits to be displayed.

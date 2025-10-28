@@ -254,7 +254,6 @@ template <
   bool (*EQUALS)(V value, K key, int len)
   >
 class CompactHashtable : public SimpleCompactHashtable {
-  friend class VMStructs;
 
   V decode(u4 encoded_value) const {
     return DECODE(_base_address, encoded_value);

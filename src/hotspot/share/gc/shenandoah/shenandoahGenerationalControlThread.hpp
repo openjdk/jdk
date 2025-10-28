@@ -38,8 +38,6 @@ class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
 
 class ShenandoahGenerationalControlThread: public ShenandoahController {
-  friend class VMStructs;
-
 public:
   typedef enum {
     none,
