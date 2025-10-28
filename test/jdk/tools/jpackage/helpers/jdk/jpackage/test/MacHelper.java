@@ -54,6 +54,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -368,6 +369,16 @@ public final class MacHelper {
                 }));
             }
         }).run();
+    }
+
+    public static Consumer<JPackageCommand> useKeychain(MacSign.ResolvedKeychain keychain) {
+        return useKeychain(keychain.spec().keychain());
+    }
+
+    public static Consumer<JPackageCommand> useKeychain(MacSign.Keychain keychain) {
+        return cmd -> {
+            useKeychain(cmd, keychain);
+        };
     }
 
     public static JPackageCommand useKeychain(JPackageCommand cmd, MacSign.ResolvedKeychain keychain) {
