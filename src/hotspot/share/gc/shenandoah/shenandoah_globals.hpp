@@ -34,6 +34,20 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
+  product(uintx, ShenandoahGenerationalMinPIPUsage, 30, EXPERIMENTAL,       \
+          "(Generational mode only) What percent of a heap region "         \
+          "should be used before we consider promoting a region in "        \
+          "place?  Regions with less than this amount of used will "        \
+          "promoted by evacuation.  A benefit of promoting in place "       \
+          "is that less work is required by the GC at the time the "        \
+          "region is promoted.  A disadvantage of promoting in place "      \
+          "is that this introduces fragmentation of old-gen memory, "       \
+          "with old-gen regions scattered throughout the heap.  Regions "   \
+          "that have been promoted in place may need to be evacuated at "   \
+          "a later time in order to compact old-gen memory to enable "      \
+          "future humongous allocations.")                                  \
+          range(0,100)                                                      \
+                                                                            \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \
           "reserved for humongous objects if possible.  Old-generation "    \
@@ -69,10 +83,6 @@
           "trigger an old-generation mark if old has grown and this "       \
           "many consecutive young-gen collections have been "               \
           "completed following the preceding old-gen collection.")          \
-                                                                            \
-  product(bool, ShenandoahGenerationalCensusAtEvac, false, EXPERIMENTAL,    \
-          "(Generational mode only) Object age census at evacuation, "      \
-          "rather than during marking.")                                    \
                                                                             \
   product(bool, ShenandoahGenerationalAdaptiveTenuring, true, EXPERIMENTAL, \
           "(Generational mode only) Dynamically adapt tenuring age.")       \
@@ -169,7 +179,7 @@
           "collector accepts. In percents of heap region size.")            \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahOldGarbageThreshold, 15, EXPERIMENTAL,           \
+  product(uintx, ShenandoahOldGarbageThreshold, 25, EXPERIMENTAL,           \
           "How much garbage an old region has to contain before it would "  \
           "be taken for collection.")                                       \
           range(0,100)                                                      \
@@ -397,6 +407,13 @@
           "promotion failures and triggering of stop-the-world full GC "    \
           "events.")                                                        \
           range(0,100)                                                      \
+                                                                            \
+  product(bool, ShenandoahEvacTracking, false, DIAGNOSTIC,                  \
+          "Collect additional metrics about evacuations. Enabling this "    \
+          "tracks how many objects and how many bytes were evacuated, and " \
+          "how many were abandoned. The information will be categorized "   \
+          "by thread type (worker or mutator) and evacuation type (young, " \
+          "old, or promotion.")                                             \
                                                                             \
   product(uintx, ShenandoahMinYoungPercentage, 20, EXPERIMENTAL,            \
           "The minimum percentage of the heap to use for the young "        \

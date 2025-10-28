@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import jdk.test.lib.Asserts;
  * @summary Test that CompileThreshold flag is ignored when passed as Java/VM option to the framework.
  *          Normally, the framework should be called with driver.
  * @library /test/lib /testlibrary_tests /
- * @run main/othervm -XX:CompileThreshold=12 -XX:+UseG1GC ir_framework.tests.TestCompileThreshold
+ * @run main/othervm -XX:CompileThreshold=3000 -XX:+UseG1GC ir_framework.tests.TestCompileThreshold
  */
 
 public class TestCompileThreshold {
@@ -42,10 +42,10 @@ public class TestCompileThreshold {
 
     public static void main(String[] args) throws Exception {
         try {
-            // CompileThreshold=12 passed to the JTreg test is ignored even though we prefer command line flags.
-            // CompileThreshold=10 is user defined and passed directly to the framework and thus not ignored.
-            // InterpreterProfilePercentage=0 ensures that we compile exactly after 10 invocations.
-            TestFramework.runWithFlags("-XX:CompileThreshold=10", "-XX:InterpreterProfilePercentage=0",
+            // CompileThreshold=3000 passed to the JTreg test is ignored even though we prefer command line flags.
+            // CompileThreshold=2000 is user defined and passed directly to the framework and thus not ignored.
+            // InterpreterProfilePercentage=0 ensures that we compile exactly after 2000 invocations.
+            TestFramework.runWithFlags("-XX:CompileThreshold=2000", "-XX:InterpreterProfilePercentage=0",
                                        "-XX:-TieredCompilation", "-DTest=testWithCompileThreshold",
                                        "-DPreferCommandLineFlags=true");
         } catch (IRViolationException e) {
@@ -71,12 +71,12 @@ public class TestCompileThreshold {
     }
 
     @Run(test = "testWithCompileThreshold")
-    @Warmup(20)
+    @Warmup(2010)
     public void runTestWithCompileThreshold(RunInfo info) {
-        if (iFld == 10) {
+        if (iFld == 2000) {
             TestFramework.assertNotCompiled(info.getTest());
-        } else if (iFld == 11) {
-            // CompileThreshold=10 is passed directly as a flag to the framework.
+        } else if (iFld == 2001) {
+            // CompileThreshold=2000 is passed directly as a flag to the framework.
             // Therefore, testWithCompileThreshold() must be compiled by now.
             TestFramework.assertCompiled(info.getTest());
         }
@@ -91,12 +91,12 @@ public class TestCompileThreshold {
     }
 
     @Run(test = "testWithoutCompileThreshold")
-    @Warmup(20)
+    @Warmup(2010)
     public void runTestWithoutCompileThreshold(RunInfo info) {
         testWithCompileThreshold();
         if (info.isWarmUp()) {
-            // CompileThreshold=12 is passed to the JTreg test but not directly to the framework.
-            // Therefore, it is ignored and we do not trigger a compilation until the framework does.
+            // CompileThreshold=3000 is passed to the JTreg test but not directly to the framework.
+            // Therefore, it is ignored, and we do not trigger a compilation until the framework does.
             TestFramework.assertNotCompiled(info.getTest());
         }
     }

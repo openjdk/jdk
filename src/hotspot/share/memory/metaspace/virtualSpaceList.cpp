@@ -33,7 +33,7 @@
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -98,7 +98,7 @@ void VirtualSpaceList::create_new_node() {
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
-  Atomic::release_store(&_first_node, vsn);
+  AtomicAccess::release_store(&_first_node, vsn);
   _nodes_counter.increment();
 }
 
@@ -189,7 +189,7 @@ void VirtualSpaceList::verify() const {
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
   // Note: needs to work without locks.
-  const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
+  const VirtualSpaceNode* vsn = AtomicAccess::load_acquire(&_first_node);
   while (vsn != nullptr) {
     if (vsn->contains(p)) {
       return true;

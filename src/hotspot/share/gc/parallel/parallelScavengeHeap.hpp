@@ -76,6 +76,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static GCPolicyCounters*           _gc_policy_counters;
 
+  // At startup, calculate the desired OS page-size based on heap size and large-page flags.
+  static size_t _desired_page_size;
+
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -85,7 +88,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
-  uint _gc_overhead_counter;
+  uintx _gc_overhead_counter;
 
   bool _is_heap_almost_full;
 
@@ -96,12 +99,11 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void update_parallel_worker_threads_cpu_time();
 
-  bool must_clear_all_soft_refs();
-
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
@@ -128,6 +130,18 @@ public:
     _workers("GC Thread", ParallelGCThreads),
     _gc_overhead_counter(0),
     _is_heap_almost_full(false) {}
+
+  // The alignment used for spaces in young gen and old gen
+  constexpr static size_t default_space_alignment() {
+    constexpr size_t alignment = 64 * K * HeapWordSize;
+    static_assert(is_power_of_2(alignment), "inv");
+    return alignment;
+  }
+
+  static void set_desired_page_size(size_t page_size) {
+    assert(is_power_of_2(page_size), "precondition");
+    _desired_page_size = page_size;
+  }
 
   Name kind() const override {
     return CollectedHeap::Parallel;
@@ -159,9 +173,6 @@ public:
 
   // Returns JNI_OK on success
   jint initialize() override;
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   void post_initialize() override;
   void update_counters();

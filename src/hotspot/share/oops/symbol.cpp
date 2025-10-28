@@ -33,7 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
@@ -295,7 +295,7 @@ bool Symbol::try_increment_refcount() {
     } else if (refc == 0) {
       return false; // dead, can't revive.
     } else {
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value + 1);
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, old_value + 1);
       if (found == old_value) {
         return true; // successfully updated.
       }
@@ -314,7 +314,7 @@ void Symbol::increment_refcount() {
   }
 #ifndef PRODUCT
   if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
-    NOT_PRODUCT(Atomic::inc(&_total_count);)
+    NOT_PRODUCT(AtomicAccess::inc(&_total_count);)
   }
 #endif
 }
@@ -334,7 +334,7 @@ void Symbol::decrement_refcount() {
       fatal("refcount underflow");
       return;
     } else {
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
       if (found == old_value) {
         return;  // successfully updated.
       }
@@ -356,7 +356,7 @@ void Symbol::make_permanent() {
       return;
     } else {
       short hash = extract_hash(old_value);
-      found = Atomic::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
+      found = AtomicAccess::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
       }
