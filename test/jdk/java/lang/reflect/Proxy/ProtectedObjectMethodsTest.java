@@ -36,9 +36,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @bug 8370839
  * @summary Behavior of protected methods in java.lang.Object
  * @modules java.base/java.lang:+open
- * @run junit ProtectedObjectMethods
+ * @run junit ProtectedObjectMethodsTest
  */
-public class ProtectedObjectMethods {
+public class ProtectedObjectMethodsTest {
 
     static final MethodHandle OBJECT_CLONE;
     static final MethodHandle OBJECT_FINALIZE;

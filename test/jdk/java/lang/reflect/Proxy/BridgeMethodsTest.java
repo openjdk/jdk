@@ -37,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @test
  * @bug 8370839
  * @summary Behavior of bridge methods in interfaces
- * @run junit BridgeMethods
+ * @run junit BridgeMethodsTest
  */
-public class BridgeMethods {
+public class BridgeMethodsTest {
 
     interface StringCallable extends Callable<String> {
         @Override
