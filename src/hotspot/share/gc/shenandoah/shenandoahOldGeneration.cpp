@@ -204,6 +204,8 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
+    _promotion_failure_count(0),
+    _promotion_failure_words(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -240,7 +242,9 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  AtomicAccess::store(&_promoted_expended, (size_t) 0);
+  AtomicAccess::store(&_promoted_expended, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_count, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_words, static_cast<size_t>(0));
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
@@ -669,38 +673,42 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
+  AtomicAccess::inc(&_promotion_failure_count);
+  AtomicAccess::add(&_promotion_failure_words, size);
+
+  LogTarget(Debug, gc, plab) lt;
+  LogStream ls(lt);
+  if (lt.is_enabled()) {
+    log_failed_promotion(ls, thread, size);
+  }
+}
+
+void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const {
   // We squelch excessive reports to reduce noise in logs.
-  const size_t MaxReportsPerEpoch = 4;
+  constexpr size_t MaxReportsPerEpoch = 4;
   static size_t last_report_epoch = 0;
   static size_t epoch_report_count = 0;
-  auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t promotion_reserve;
-  size_t promotion_expended;
-
+  const auto heap = ShenandoahGenerationalHeap::heap();
   const size_t gc_id = heap->control_thread()->get_gc_id();
-
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
-    {
-      // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
-      ShenandoahHeapLocker locker(heap->lock());
-      promotion_reserve = get_promoted_reserve();
-      promotion_expended = get_promoted_expended();
-    }
+    // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
     PLAB* const plab = ShenandoahThreadLocalData::plab(thread);
     const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
     const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
 
-    log_info(gc, ergo)("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
-                       ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
-                       ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
-                       size * HeapWordSize, plab == nullptr? "no": "yes",
-                       words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
-                       max_capacity(), used(), free_unaffiliated_regions());
+    // Promoted reserve is only changed by vm or control thread. Promoted expended is always accessed atomically.
+    const size_t promotion_reserve = get_promoted_reserve();
+    const size_t promotion_expended = get_promoted_expended();
 
-    if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
-      log_debug(gc, ergo)("Squelching additional promotion failure reports for current epoch");
-    } else if (gc_id != last_report_epoch) {
+    ls.print_cr("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+                ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
+                ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
+                size * HeapWordSize, plab == nullptr? "no": "yes",
+                words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
+                max_capacity(), used(), free_unaffiliated_regions());
+
+    if (gc_id != last_report_epoch) {
       last_report_epoch = gc_id;
       epoch_report_count = 1;
     }

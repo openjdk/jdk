@@ -1738,8 +1738,8 @@ LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, BaseCountedLoop
   set_loop(new_inner_exit, loop);
   set_idom(new_inner_head, idom(head), dom_depth(head));
   set_idom(new_inner_exit, idom(exit_test), dom_depth(exit_test));
-  lazy_replace(head, new_inner_head);
-  lazy_replace(exit_test, new_inner_exit);
+  replace_node_and_forward_ctrl(head, new_inner_head);
+  replace_node_and_forward_ctrl(exit_test, new_inner_exit);
   loop->_head = new_inner_head;
   return new_inner_head;
 }
@@ -2411,7 +2411,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       return false;
     }
     if (is_deleteable_safept(backedge_sfpt)) {
-      lazy_replace(backedge_sfpt, iftrue);
+      replace_node_and_forward_ctrl(backedge_sfpt, iftrue);
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(backedge_sfpt);
       }
@@ -2512,8 +2512,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     set_loop(iff2, get_loop(iffalse));
 
     // Lazy update of 'get_ctrl' mechanism.
-    lazy_replace(iffalse, iff2);
-    lazy_replace(iftrue,  ift2);
+    replace_node_and_forward_ctrl(iffalse, iff2);
+    replace_node_and_forward_ctrl(iftrue,  ift2);
 
     // Swap names
     iffalse = iff2;
@@ -2528,7 +2528,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   set_idom(iftrue,  le, dd+1);
   set_idom(iffalse, le, dd+1);
   assert(iff->outcnt() == 0, "should be dead now");
-  lazy_replace( iff, le ); // fix 'get_ctrl'
+  replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
 
   Node* entry_control = init_control;
   bool strip_mine_loop = iv_bt == T_INT &&
@@ -2554,7 +2554,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  lazy_replace( x, l );
+  replace_node_and_forward_ctrl(x, l);
   set_idom(l, entry_control, dom_depth(entry_control) + 1);
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
@@ -2580,7 +2580,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
         set_idom(outer_le, sfpt_clone, dom_depth(sfpt_clone));
       }
-      lazy_replace(sfpt, sfpt->in(TypeFunc::Control));
+      replace_node_and_forward_ctrl(sfpt, sfpt->in(TypeFunc::Control));
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(sfpt);
       }
@@ -3545,7 +3545,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   if (iloop == nullptr) {
     igvn->replace_node(outer_le, new_end);
   } else {
-    iloop->lazy_replace(outer_le, new_end);
+    iloop->replace_node_and_forward_ctrl(outer_le, new_end);
   }
   // the backedge of the inner loop must be rewired to the new loop end
   Node* backedge = cle->proj_out(true);
@@ -4516,7 +4516,7 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
       Node* n = sfpts->at(i);
       assert(phase->get_loop(n) == this, "");
       if (n != keep && phase->is_deleteable_safept(n)) {
-        phase->lazy_replace(n, n->in(TypeFunc::Control));
+        phase->replace_node_and_forward_ctrl(n, n->in(TypeFunc::Control));
       }
     }
   }
@@ -5205,21 +5205,20 @@ void PhaseIdealLoop::build_and_optimize() {
         continue;
       }
       Node* head = lpt->_head;
-      if (!head->is_BaseCountedLoop() || !lpt->is_innermost()) continue;
+      if (!lpt->is_innermost()) continue;
 
       // check for vectorized loops, any reassociation of invariants was already done
-      if (head->is_CountedLoop()) {
-        if (head->as_CountedLoop()->is_unroll_only()) {
-          continue;
-        } else {
-          AutoNodeBudget node_budget(this);
-          lpt->reassociate_invariants(this);
-        }
+      if (head->is_CountedLoop() && head->as_CountedLoop()->is_unroll_only()) {
+        continue;
+      } else {
+        AutoNodeBudget node_budget(this);
+        lpt->reassociate_invariants(this);
       }
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
       if (SplitIfBlocks && do_split_ifs &&
+          head->is_BaseCountedLoop() &&
           head->as_BaseCountedLoop()->is_valid_counted_loop(head->as_BaseCountedLoop()->bt()) &&
           (lpt->policy_range_check(this, true, T_LONG) ||
            (head->is_CountedLoop() && lpt->policy_range_check(this, true, T_INT)))) {
@@ -5312,16 +5311,6 @@ void PhaseIdealLoop::build_and_optimize() {
           cl->set_notpassed_slp();
           cl->mark_do_unroll_only();
         }
-      }
-    }
-  }
-
-  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
-  if (C->has_loops() && !C->major_progress()) {
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted() && lpt->is_innermost()) {
-        move_unordered_reduction_out_of_loop(lpt);
       }
     }
   }
@@ -6185,7 +6174,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
           if( !_verify_only && !_verify_me && ilt->_has_sfpt && n->Opcode() == Op_SafePoint &&
               is_deleteable_safept(n)) {
             Node *in = n->in(TypeFunc::Control);
-            lazy_replace(n,in);       // Pull safepoint now
+            replace_node_and_forward_ctrl(n, in); // Pull safepoint now
             if (ilt->_safepts != nullptr) {
               ilt->_safepts->yank(n);
             }
