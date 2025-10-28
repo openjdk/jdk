@@ -55,7 +55,7 @@ class TwoThreadsTarg implements Runnable {
 
         t1.start();
         t2.start();
-        // The threads might be virutal and daemon, so wait until completion.
+        // The threads might be virtual and daemon, so wait until completion.
         try {
             t1.join();
             t2.join();
