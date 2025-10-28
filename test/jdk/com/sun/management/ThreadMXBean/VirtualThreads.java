@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test id=default
  * @bug 8284161 8303242
  * @summary Test com.sun.management.ThreadMXBean with virtual threads
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
  * @run junit/othervm VirtualThreads
  */
@@ -32,6 +33,7 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
+ * @requires test.thread.factory != "Virtual"
  * @library /test/lib
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
  */
