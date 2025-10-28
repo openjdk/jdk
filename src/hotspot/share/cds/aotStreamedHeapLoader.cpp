@@ -72,6 +72,7 @@ bool AOTStreamedHeapLoader::_objects_are_handles;
 size_t AOTStreamedHeapLoader::_num_archived_objects;
 int AOTStreamedHeapLoader::_num_roots;
 size_t AOTStreamedHeapLoader::_heap_region_used;
+bool AOTStreamedHeapLoader::_loading_all_objects;
 
 size_t* AOTStreamedHeapLoader::_object_index_to_buffer_offset_table;
 void** AOTStreamedHeapLoader::_object_index_to_heap_object_table;
@@ -806,7 +807,7 @@ void AOTStreamedHeapLoader::cleanup() {
 
 void AOTStreamedHeapLoader::log_statistics() {
   uint64_t total_duration_us = (Ticks::now() - _materialization_start_ticks).microseconds();
-  const bool is_async = CDSConfig::is_using_full_module_graph() && !AOTEagerlyLoadObjects;
+  const bool is_async = _loading_all_objects && !AOTEagerlyLoadObjects;
   const char* const async_or_sync = is_async ? "async" : "sync";
   log_info(aot, heap)("start to finish materialization time: " UINT64_FORMAT "us",
                       total_duration_us);
@@ -937,7 +938,7 @@ void AOTStreamedHeapLoader::materialize_thread_object() {
 void AOTStreamedHeapLoader::finish_materialize_objects() {
   Ticks start = Ticks::now();
 
-  if (CDSConfig::is_using_full_module_graph()) {
+  if (_loading_all_objects) {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
     // Wait for the AOT thread to finish
     while (IterativeObjectLoader::has_more()) {
@@ -1010,7 +1011,11 @@ void AOTStreamedHeapLoader::initialize() {
     FLAG_SET_ERGO(AOTEagerlyLoadObjects, os::initial_active_processor_count() <= 1);
   }
 
-  if (!CDSConfig::is_using_full_module_graph()) {
+  // If the full module graph is not available or the JVMTI class file load hook is on, we
+  // will prune the object graph to not include cached objects in subgraphs that are not intended
+  // to be loaded.
+  _loading_all_objects = CDSConfig::is_using_full_module_graph() && !JvmtiExport::should_post_class_file_load_hook();
+  if (!_loading_all_objects) {
     // When not using FMG, fall back to tracing materialization
     FLAG_SET_ERGO(AOTEagerlyLoadObjects, false);
     return;

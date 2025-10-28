@@ -146,6 +146,7 @@ private:
   static size_t _num_archived_objects;
   static int _num_roots;
   static size_t _heap_region_used;
+  static bool _loading_all_objects;
 
   static size_t* _object_index_to_buffer_offset_table;
   static void** _object_index_to_heap_object_table;
