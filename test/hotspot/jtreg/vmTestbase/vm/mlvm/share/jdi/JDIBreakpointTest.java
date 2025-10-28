@@ -442,7 +442,7 @@ public abstract class JDIBreakpointTest extends MlvmTest {
             try {
                 sourcePath = l.sourcePath();
             } catch (AbsentInformationException aie) {
-               // Test Thread Factory support has generated methods.
+               // Test Thread Factory support has generated methods in MainWrapper class.
                if (TestThreadFactory.isTestThreadFactorySet()) {
                    sourcePath = "unknown";
                } else {
