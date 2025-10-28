@@ -35,7 +35,7 @@ import jdk.jfr.Recording;
  * @bug 8347463
  * @requires vm.hasJFR
  * @library /test/lib /
- * @run driver compiler.intrinsics.TestReturnsOopSetForJFRWriteCheckpoint
+ * @run driver compiler.intrinsics.TestReturnOopSetForJFRWriteCheckpoint
  */
 public class TestReturnOopSetForJFRWriteCheckpoint {
 
