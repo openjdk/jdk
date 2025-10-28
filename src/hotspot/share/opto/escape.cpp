@@ -128,6 +128,8 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+
+  C->print_method(PHASE_AFTER_EA, 2);
 }
 
 bool ConnectionGraph::compute_escape() {
@@ -408,7 +410,6 @@ bool ConnectionGraph::compute_escape() {
       NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
       return false;
     }
-    C->print_method(PHASE_AFTER_EA, 2);
 
 #ifdef ASSERT
   } else if (Verbose && (PrintEscapeAnalysis || PrintEliminateAllocations)) {
