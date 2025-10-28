@@ -249,6 +249,12 @@ intptr_t* os::fetch_bcp_from_context(const void* ucVoid) {
 
 // Returns the current stack pointer. Accurate value needed for
 // os::verify_stack_alignment().
+// The function is intentionally not inlined. This way, the transfer of control
+// into this method must be made with a call instruction. The MSVC
+// _AddressOfReturnAddress() intrinsic returns the address of the return PC
+// saved by that call instruction. Therefore, the stack pointer of the caller
+// just before the call instruction, is acquired by skipping over the return PC
+// slot in the stack.
 __declspec(noinline)
 address os::current_stack_pointer() {
   return ((address)_AddressOfReturnAddress()) + sizeof(void*);
@@ -408,11 +414,7 @@ void os::setup_fpu() {
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
-  // The current_stack_pointer() calls generated get_previous_sp stub routine.
-  // Only enable the assert after the routine becomes available.
-  if (StubRoutines::initial_stubs_code() != nullptr) {
-    assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
-  }
+  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
 }
 #endif
 
