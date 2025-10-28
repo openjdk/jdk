@@ -54,15 +54,9 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
 
-    Symbol* module_name = m->method_holder()->module()->name();
     if (!agents_loaded &&
-      (module_name != vmSymbols::java_base()
-       // whitelist jdk.jfr as well, because java.base can call into it to report JFR events
-       && module_name != vmSymbols::jdk_jfr())) {
+      (m->method_holder()->module()->name() != vmSymbols::java_base())) {
       // Stop walking if we see a frame outside of java.base.
-      // Note that there is exactly 1 handshake that calls into Java (see HandshakeState::handle_unsafe_access_error)
-      // This may add extra Java frames to the stack during a @Scoped method.
-      // These are all in java.base though, so we just keep walking.
 
       // If any JVMTI agents are loaded, we also have to keep walking, since
       // agents can add arbitrary Java frames to the stack inside a @Scoped method.
@@ -97,6 +91,12 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 }
 
 static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
+  if (jt->is_throwing_unsafe_access_error()) {
+    // Ignore this thread. It is in the process of throwing another exception
+    // already.
+    return false;
+  }
+
   bool is_accessing_session = false;
   for_scoped_methods(jt, [&](vframeStream& stream){
     in_scoped = true;
