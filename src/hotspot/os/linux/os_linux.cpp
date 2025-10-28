@@ -3067,6 +3067,18 @@ int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;
   long retval = -1;
 
+#if defined(AMD64)
+  // Unfortunately we have to bring all these macros here from vsyscall.h
+  // to be able to compile on old linuxes.
+  #define __NR_vgetcpu 2
+  #define VSYSCALL_START (-10UL << 20)
+  #define VSYSCALL_SIZE 1024
+  #define VSYSCALL_ADDR(vsyscall_nr) (VSYSCALL_START+VSYSCALL_SIZE*(vsyscall_nr))
+  typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
+  vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
+  retval = vgetcpu(&cpu, nullptr, nullptr);
+#endif
+
   return (retval == -1) ? -1 : cpu;
 }
 
