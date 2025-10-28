@@ -1370,6 +1370,11 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
 
+  if (VerifyStackAtCalls) {
+    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
+    st->print("sd  t2, [sp, #%d]\n\t", - 3 * wordSize);
+  }
+
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
@@ -1411,7 +1416,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   __ build_frame(framesize);
 
   if (VerifyStackAtCalls) {
-    __ li(t2, MAJIK_DWORD);
+    __ mv(t2, MAJIK_DWORD);
     __ sd(t2, Address(sp, framesize - 3 * wordSize));
   }
 
@@ -2434,10 +2439,10 @@ encode %{
   enc_class riscv_enc_call_epilog() %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
       Label CHECK_PASSED;
       __ ld(t1, Address(sp, framesize));
-      __ li(t2, MAJIK_DWORD);
+      __ mv(t2, MAJIK_DWORD);
       __ beq(t2, t1, CHECK_PASSED);
       __ stop("MAJIK_DWORD not found");
       __ bind(CHECK_PASSED);
