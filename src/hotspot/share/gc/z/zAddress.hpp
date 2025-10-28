@@ -27,11 +27,24 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include CPU_HEADER(gc/z/zAddress)
+#include OS_HEADER(gc/z/zAddress)
 
 // One bit that denotes where the heap start. All uncolored
 // oops have this bit set, plus an offset within the heap.
 extern uintptr_t ZAddressHeapBase;
 extern size_t    ZAddressHeapBaseShift;
+
+// The min and max shift allowed for the heap base. The max is
+// the limit that our ZForwardingEntry encoding can handle.
+// The recommended initial min shift is the largest shift which
+// allows the smallest ZMarkPartialArrayMinSize.
+const size_t     ZAddressHeapBaseMaxShift = 44; // 16TB
+const size_t     ZAddressHeapBaseRecommendInitalMinShift = 42; // 4TB
+const size_t     ZAddressHeapBaseMinShift = 34; // 16GB
+
+// Max size limits for MaxHeapSize and the platforms available address space.
+const size_t     ZAddressMaxCapacityLimit = size_t(1) << 44; // 16TB
+extern size_t    ZAddressPlatformMaxAddressSpace;
 
 // Describes the maximal offset inside the heap.
 extern size_t    ZAddressOffsetBits;
@@ -312,18 +325,23 @@ class ZGlobalsPointers : public AllStatic {
   friend class ZAddressTest;
 
 private:
+  static size_t ZAddressPlatformHeapBaseMaxShift;
+  static size_t ZAddressMaxHeapRequiredHeapBaseShift;
+  static size_t ZAddressMaxHeapRecommendedHeapBaseShift;
+  static size_t ZAddressInitialHeapBaseShift;
+
   static void set_good_masks();
   static void pd_set_good_masks();
+  static void set_heap_base(size_t heap_base_shift);
 
 public:
   static void initialize();
+  static bool set_next_heap_base();
 
   static void flip_young_mark_start();
   static void flip_young_relocate_start();
   static void flip_old_mark_start();
   static void flip_old_relocate_start();
-
-  static size_t min_address_offset_request();
 };
 
 #endif // SHARE_GC_Z_ZADDRESS_HPP

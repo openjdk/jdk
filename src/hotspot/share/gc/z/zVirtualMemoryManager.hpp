@@ -53,13 +53,14 @@ private:
   size_t reserve_discontiguous(zoffset start, size_t size, size_t min_range);
   size_t reserve_discontiguous(size_t size);
 
-  size_t reserve(size_t size);
+  size_t reserve(size_t required_size, size_t desired_size);
   void unreserve(const ZVirtualMemory& vmem);
 
   DEBUG_ONLY(size_t force_reserve_discontiguous(size_t size);)
 
 public:
   ZVirtualMemoryReserver(size_t size);
+  ZVirtualMemoryReserver(size_t required_size, size_t desired_size);
 
   void initialize_partition_registry(ZVirtualMemoryRegistry* partition_registry, size_t size);
 

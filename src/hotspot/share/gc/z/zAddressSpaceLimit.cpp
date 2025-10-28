@@ -23,6 +23,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
+#include "gc/z/zAddress.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/os.hpp"
@@ -31,7 +32,7 @@
 size_t ZAddressSpaceLimit::heap() {
   // Allow the heap to occupy 50% of the address space
   const size_t limit = os::reserve_memory_limit() / MaxVirtMemFraction;
-  return align_up(limit, ZGranuleSize);
+  return MIN2(align_up(limit, ZGranuleSize), ZAddressPlatformMaxAddressSpace);
 }
 
 void ZAddressSpaceLimit::print_limits() {

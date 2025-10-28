@@ -35,10 +35,16 @@
 #include "gc/z/zVirtualMemoryManager.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <cstdint>
 
 ZVirtualMemoryReserver::ZVirtualMemoryReserver(size_t size)
+  : ZVirtualMemoryReserver(size, size) {}
+
+ZVirtualMemoryReserver::ZVirtualMemoryReserver(size_t required_size, size_t desired_size)
   : _registry(),
-    _reserved(reserve(size)) {}
+    _reserved(reserve(required_size, desired_size)) {}
 
 void ZVirtualMemoryReserver::initialize_partition_registry(ZVirtualMemoryRegistry* partition_registry, size_t size) {
   assert(partition_registry->is_empty(), "Should be empty when initializing");
@@ -204,25 +210,60 @@ bool ZVirtualMemoryReserver::reserve_contiguous(size_t size) {
   return false;
 }
 
-size_t ZVirtualMemoryReserver::reserve(size_t size) {
+size_t ZVirtualMemoryReserver::reserve(size_t required_size, size_t desired_size) {
+  assert(required_size <= desired_size, "0x%zx <= 0x%zx", required_size, desired_size);
+
   // Register Windows callbacks
   pd_register_callbacks(&_registry);
 
   // Reserve address space
-
+  const auto do_reserve = [&](size_t size) {
 #ifdef ASSERT
-  if (ZForceDiscontiguousHeapReservations > 0) {
-    return force_reserve_discontiguous(size);
-  }
+    if (ZForceDiscontiguousHeapReservations > 0) {
+      return force_reserve_discontiguous(size);
+    }
 #endif
 
-  // Prefer a contiguous address space
-  if (reserve_contiguous(size)) {
-    return size;
+    // Prefer a contiguous address space
+    if (reserve_contiguous(size)) {
+      return size;
+    }
+
+    // Fall back to a discontiguous address space
+    return reserve_discontiguous(size);
+  };
+
+  size_t reserved = 0;
+  const auto unreserve_all = [&]() {
+    this->unreserve_all();
+    reserved = 0;
+    return true;
+  };
+
+  // First attempt to get the desired size
+  do {
+    if (ZAddressHeapBase >= desired_size) {
+      // Only attempt to reserve if the current heap base can accommodate the desired size
+      reserved = do_reserve(desired_size);
+    }
+  } while (reserved < desired_size && unreserve_all() && ZGlobalsPointers::set_next_heap_base());
+
+  assert(reserved <= desired_size, "Should not reserve more than desired");
+
+  if (reserved == desired_size) {
+    // The desired size reservation was successful
+    return reserved;
   }
 
-  // Fall back to a discontiguous address space
-  return reserve_discontiguous(size);
+  // Second attempt to get at least the required size
+  do {
+    assert(ZAddressHeapBase >= required_size, "Should not have attempted this heap base: "
+          PTR_FORMAT " >= " PTR_FORMAT, ZAddressHeapBase, (intptr_t)required_size);
+    size_t to_reserve = MIN2<size_t>(ZAddressHeapBase, desired_size);
+    reserved = do_reserve(to_reserve);
+  } while (reserved < required_size && unreserve_all() && ZGlobalsPointers::set_next_heap_base());
+
+  return reserved;
 }
 
 ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
@@ -231,11 +272,15 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
     _is_multi_partition_enabled(false),
     _initialized(false) {
 
-  assert(max_capacity <= ZAddressOffsetMax, "Too large max_capacity");
-
   ZAddressSpaceLimit::print_limits();
 
-  const size_t limit = MIN2(ZAddressOffsetMax, ZAddressSpaceLimit::heap());
+  const size_t limit = ZAddressSpaceLimit::heap();
+
+  if (max_capacity > limit) {
+    // Cannot fit the heap within the limit
+    ZInitialize::error_d("Java heap exceeds address space limits (" EXACTFMT ")", EXACTFMTARGS(limit));
+    return;
+  }
 
   const size_t desired_for_partitions = max_capacity * ZVirtualToPhysicalRatio;
   const size_t desired_for_multi_partition = ZNUMA::count() > 1 ? desired_for_partitions : 0;
@@ -244,15 +289,16 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   const size_t requested = desired <= limit
       ? desired
       : MIN2(desired_for_partitions, limit);
+  const size_t required = max_capacity;
 
   // Reserve virtual memory for the heap
-  ZVirtualMemoryReserver reserver(requested);
+  ZVirtualMemoryReserver reserver(required, requested);
 
   const size_t reserved = reserver.reserved();
   const bool is_contiguous = reserver.is_contiguous();
 
-  log_debug_p(gc, init)("Reserved Space: limit " EXACTFMT ", desired " EXACTFMT ", requested " EXACTFMT,
-                        EXACTFMTARGS(limit), EXACTFMTARGS(desired), EXACTFMTARGS(requested));
+  log_debug_p(gc, init)("Reserved Space: limit " EXACTFMT ", required " EXACTFMT ", desired " EXACTFMT ", requested " EXACTFMT,
+                        EXACTFMTARGS(limit), EXACTFMTARGS(required), EXACTFMTARGS(desired), EXACTFMTARGS(requested));
 
   if (reserved < max_capacity) {
     ZInitialize::error_d("Failed to reserve " EXACTFMT " address space for Java heap", EXACTFMTARGS(max_capacity));
@@ -283,15 +329,16 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
 
   assert(reserver.is_empty(), "Must have handled all reserved memory");
 
+  const double heap_ratio = static_cast<double>(reserved) / static_cast<double>(max_capacity);
+  const uintptr_t lowest_offset = untype(lowest_available_address(0));
+
   log_info_p(gc, init)("Reserved Space Type: %s/%s/%s",
                        (is_contiguous ? "Contiguous" : "Discontiguous"),
                        (requested == desired ? "Unrestricted" : "Restricted"),
                        (reserved == desired ? "Complete" : ((reserved < desired_for_partitions) ? "Degraded"  : "NUMA-Degraded")));
-  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT, EXACTFMTARGS(reserved - unreserved));
-  log_debug_p(gc, init)("Reserved Space Span: " RANGE2EXACTFMT,
-                        untype(lowest_available_address(0)) | ZAddressHeapBase,
-                        ZAddressOffsetMax | ZAddressHeapBase,
-                        EXACTFMTARGS(ZAddressOffsetMax - untype(lowest_available_address(0))));
+  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT " (x%.2f Heap Ratio)", EXACTFMTARGS(reserved - unreserved), heap_ratio);
+  log_debug_p(gc, init)("Reserved Space Span: " RANGE2EXACTFMT, ZAddressHeapBase + lowest_offset, ZAddressHeapBase + ZAddressOffsetMax,
+                        EXACTFMTARGS(ZAddressOffsetMax - lowest_offset));
 
   // Successfully initialized
   _initialized = true;
