@@ -3150,7 +3150,6 @@ void os::large_page_init() {
   _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
-#if !defined(IA32)
     if (EnableAllLargePageSizesForWindows) {
       size_t min_size = GetLargePageMinimum();
 
@@ -3159,7 +3158,6 @@ void os::large_page_init() {
         _page_sizes.add(page_size);
       }
     }
-#endif
 
     _page_sizes.add(_large_page_size);
   }
