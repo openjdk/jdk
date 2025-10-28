@@ -95,12 +95,16 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
 
-#ifdef ASSERT
   if (heap->mode()->is_generational()) {
-    ShenandoahOldGeneration* old_generation = heap->old_generation();
+    const ShenandoahOldGeneration* old_generation = heap->old_generation();
     if (!heap->is_concurrent_old_mark_in_progress()) {
       // If we are not marking the old generation, there should be nothing in the old mark queues
       assert(old_generation->task_queues()->is_empty(), "Old gen task queues should be empty");
+    } else {
+      // This is still necessary for degenerated cycles because the degeneration point may occur
+      // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
+      // a more detailed explanation.
+      old_generation->transfer_pointers_from_satb();
     }
 
     if (_generation->is_global()) {
@@ -112,7 +116,6 @@ void ShenandoahDegenGC::op_degenerated() {
              "Old generation cannot be in state: %s", old_generation->state_name());
     }
   }
-#endif
 
   ShenandoahMetricsSnapshot metrics(heap->free_set());
 

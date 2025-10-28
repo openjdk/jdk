@@ -1053,12 +1053,6 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
-  if (is_concurrent_old_mark_in_progress()) {
-    // This is still necessary for degenerated cycles because the degeneration point may occur
-    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
-    // a more detailed explanation.
-    old_generation()->transfer_pointers_from_satb();
-  }
 
   // We defer generation resizing actions until after cset regions have been recycled.
   TransferResult result = balance_generations();
