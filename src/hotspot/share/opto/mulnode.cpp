@@ -1088,6 +1088,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       }
     }
   }
+  // Check for "(con0 - X) << con1" 
   // Transform is legal, but check for profit.  Avoid breaking 'i2s'
   // and 'i2b' patterns which typically fold into 'StoreC/StoreB'.
   if (add1_op == Op_Sub(bt) && (bt != T_INT || con < 16)) {    // Left input is a sub?
