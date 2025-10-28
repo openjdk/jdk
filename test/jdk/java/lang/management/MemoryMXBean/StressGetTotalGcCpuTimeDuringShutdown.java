@@ -22,6 +22,24 @@
  */
 
 /*
+ * @test id=Epsilon
+ * @requires vm.gc.Epsilon
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC StressGetTotalGcCpuTimeDuringShutdown
+ */
+
+/*
+ * @test id=Serial
+ * @requires vm.gc.Serial
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseSerialGC StressGetTotalGcCpuTimeDuringShutdown
+ */
+
+/*
  * @test id=Parallel
  * @requires vm.gc.Parallel
  * @bug     8368527
