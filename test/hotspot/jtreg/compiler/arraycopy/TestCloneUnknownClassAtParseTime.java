@@ -25,9 +25,11 @@
  * @test
  * @bug 8339526
  * @summary C2: store incorrectly removed for clone() transformed to series of loads/stores
- * @run main/othervm -XX:-BackgroundCompilation TestCloneUnknownClassAtParseTime
- * @run main TestCloneUnknownClassAtParseTime
+ * @run main/othervm -XX:-BackgroundCompilation compiler.arraycopy.TestCloneUnknownClassAtParseTime
+ * @run main compiler.arraycopy.TestCloneUnknownClassAtParseTime
  */
+
+package compiler.arraycopy;
 
 public class TestCloneUnknownClassAtParseTime {
     private static volatile int volatileField;
