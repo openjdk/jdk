@@ -522,7 +522,9 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
 
   // Hook region into slow_path, in stead of the multiversion_slow_proj.
   // This also moves all other dependencies of the multiversion_slow_proj to the region.
-  _igvn.replace_node(multiversion_slow_proj, region);
+  // The lazy_replace ensures that any get_ctrl that used to have multiversion_slow_proj
+  // as their control are forwarded to the new region node as their control.
+  lazy_replace(multiversion_slow_proj, region);
 
   return new_if_true;
 }
