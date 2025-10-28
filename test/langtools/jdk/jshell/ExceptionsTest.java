@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Tests for exceptions
- * @bug 8198801 8212167 8210527
+ * @bug 8198801 8212167 8210527 8370175
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
