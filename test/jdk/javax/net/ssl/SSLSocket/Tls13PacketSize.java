@@ -36,7 +36,6 @@
  */
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLSocket;
 
 public class Tls13PacketSize extends SSLSocketTemplate {
