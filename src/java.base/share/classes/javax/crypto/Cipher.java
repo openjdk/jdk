@@ -2630,7 +2630,7 @@ public class Cipher {
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
-     * @since 25
+     * @since 26
      */
     public SecretKey exportKey(String algorithm, byte[] context, int length) {
         chooseFirstProvider();
@@ -2660,13 +2660,14 @@ public class Cipher {
      * @return the derived data
      *
      * @throws UnsupportedOperationException if the corresponding method in the
-     *          {@code CipherSpi} is not supported
+     *          {@code CipherSpi} is not supported or the derived data is not
+     *          extractable
      * @throws IllegalArgumentException if one or more of the input arguments
      *          are invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
      *
-     * @since 25
+     * @since 26
      */
     public byte[] exportData(byte[] context, int length) {
         chooseFirstProvider();

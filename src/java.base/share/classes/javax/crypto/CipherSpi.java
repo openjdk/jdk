@@ -987,7 +987,7 @@ public abstract class CipherSpi {
      * @implSpec The default implementation throws an
      * {@code UnsupportedOperationException}.
      *
-     * @since 25
+     * @since 26
      */
     protected SecretKey engineExportKey(String algorithm, byte[] context, int length) {
         throw new UnsupportedOperationException(
@@ -1017,7 +1017,8 @@ public abstract class CipherSpi {
      * @return the derived data
      *
      * @throws UnsupportedOperationException if this method has not been
-     *          overridden by an implementation
+     *          overridden by an implementation or the derived data is not
+     *          extractable
      * @throws IllegalArgumentException if one or more of the input arguments
      *          are invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
@@ -1026,7 +1027,7 @@ public abstract class CipherSpi {
      * @implSpec The default implementation throws an
      * {@code UnsupportedOperationException}.
      *
-     * @since 25
+     * @since 26
      */
     protected byte[] engineExportData(byte[] context, int length) {
         throw new UnsupportedOperationException(
