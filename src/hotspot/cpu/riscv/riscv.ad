@@ -1365,10 +1365,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
   }
 
-  st->print("sd  fp, [sp, #%d]\n\t", - 2 * wordSize);
-  st->print("sd  ra, [sp, #%d]\n\t", - wordSize);
-  if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
+  st->print("sd  fp, [sp, #%d]\n\t", framesize - 2 * wordSize);
+  st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
+  if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
 
   if (VerifyStackAtCalls) {
     st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
