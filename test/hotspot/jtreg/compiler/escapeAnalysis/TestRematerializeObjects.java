@@ -141,8 +141,54 @@ public class TestRematerializeObjects {
         arr[2] = 4;
         arr[3] = 8;
         dontinline();
+        // Seems we detect that this is a short value passed into the short field.
         arr[0] = 16;
         arr[1] = 32;
+        if (flag) {
+            // unstable if -> deopt -> rematerialized array (if was eliminated)
+            System.out.println("unstable if: " + arr.length);
+        }
+        arr[3] = 64;
+        return 0x1 * arr[0] + 0x100 * arr[1] + 0x1_0000 * arr[2] + 0x100_0000 * arr[3];
+    }
+
+    @Run(test = "test3", mode = RunMode.STANDALONE)
+    public void runTest3() {
+        // Capture interpreter result.
+        int gold = test3(false, 42);
+        // Repeat until we get compilation.
+        for (int i = 0; i < 10_000; i++) {
+            test3(false, 42);
+        }
+        // Capture compiled results.
+        int res0 = test3(false, 42);
+        int res1 = test3(true, 42);
+        if (res0 != gold || res1 != gold) {
+            throw new RuntimeException("Unexpected result: " + Integer.toHexString(res0) + " and " +
+                                       Integer.toHexString(res1) + ", should be: " + Integer.toHexString(gold));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ALLOC_ARRAY, "1",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},
+        applyIf = {"EliminateAllocations", "false"})
+    @IR(counts = {IRNode.ALLOC_ARRAY, "0",
+                  IRNode.UNSTABLE_IF_TRAP, "1",
+                  IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "2"},
+        applyIf = {"EliminateAllocations", "true"})
+    static int test3(boolean flag, int x) {
+        short[] arr = new short[4];
+        arr[0] = 1;
+        arr[1] = 2;
+        arr[2] = 4;
+        arr[3] = 8;
+        dontinline();
+        // Here, we don't get ConI, but instead AddI, which means we are
+        // serializing an int value, for a short slot.
+        arr[0] = (short)(x + 1);
+        arr[1] = (short)(x + 2);
         if (flag) {
             // unstable if -> deopt -> rematerialized array (if was eliminated)
             System.out.println("unstable if: " + arr.length);
