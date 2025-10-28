@@ -63,11 +63,9 @@ define SetupCompileFileFlags
     endif
   endif
 
-  ifneq (, $$($1_LINK_TIME_OPTIMIZATION))
-    ifeq ($$($1_LINK_TIME_OPTIMIZATION), YES)
-      $1_OPT_CFLAGS += $(C_O_FLAG_LTO)
-      $1_OPT_CXXFLAGS += $(CXX_O_FLAG_LTO)
-    endif
+  ifeq ($$($1_LINK_TIME_OPTIMIZATION), true)
+    $1_OPT_CFLAGS += $(C_O_FLAG_LTO)
+    $1_OPT_CXXFLAGS += $(CXX_O_FLAG_LTO)
   endif
 
   ifneq ($$($2_PRECOMPILED_HEADER), )
@@ -223,11 +221,9 @@ define SetupCompilerFlags
     $$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
   endif
 
-  ifneq (, $$($1_LINK_TIME_OPTIMIZATION))
-    ifeq (YES, $$($1_LINK_TIME_OPTIMIZATION))
-      $1_OPT_CFLAGS += $(C_O_FLAG_LTO)
-      $1_OPT_CXXFLAGS += $(CXX_O_FLAG_LTO)
-    endif
+  ifeq (true, $$($1_LINK_TIME_OPTIMIZATION))
+    $1_OPT_CFLAGS += $(C_O_FLAG_LTO)
+    $1_OPT_CXXFLAGS += $(CXX_O_FLAG_LTO)
   endif
 endef
 
@@ -241,10 +237,8 @@ define SetupLinkerFlags
   $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \
       $$($1_LIBS_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
 
-  ifneq (, $$($1_LINK_TIME_OPTIMIZATION))
-    ifeq ($$($1_LINK_TIME_OPTIMIZATION), YES)
-      $1_EXTRA_LDFLAGS += $(LDFLAGS_LTO)
-    endif
+  ifeq ($$($1_LINK_TIME_OPTIMIZATION), true)
+    $1_EXTRA_LDFLAGS += $(LDFLAGS_LTO)
   endif
 endef
 
