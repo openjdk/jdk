@@ -452,7 +452,7 @@ int LIR_Assembler::emit_deopt_handler() {
   Label start;
   __ bind(start);
 
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
   int entry_offset = __ offset();
   __ b(start);
