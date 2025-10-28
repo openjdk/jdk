@@ -228,31 +228,17 @@ extern void trace_class_resolution(Klass* to_class) {
 
 // java.lang.System //////////////////////////////////////////////////////////////////////
 
-JVM_LEAF(jboolean, JVM_AOTIsRecording(JNIEnv *env))
-#if INCLUDE_CDS
-  return AOTMetaspace::is_recording_preimage_static_archive();
-#else
-  return JNI_FALSE;
-#endif // INCLUDE_CDS
-JVM_END
-
 JVM_ENTRY(jboolean, JVM_AOTEndRecording(JNIEnv *env))
 #if INCLUDE_CDS
-  if (AOTMetaspace::is_recording_preimage_static_archive()) {
-    AOTMetaspace::dump_static_archive(THREAD);
-    return JNI_TRUE;
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    if (AOTMetaspace::is_recording_preimage_static_archive()) {
+      AOTMetaspace::dump_static_archive(THREAD);
+      return JNI_TRUE;
+    }
   }
   return JNI_FALSE;
 #else
   return JNI_FALSE;
-#endif // INCLUDE_CDS
-JVM_END
-
-JVM_LEAF(jlong, JVM_AOTGetRecordingDuration(JNIEnv *env))
-#if INCLUDE_CDS
-  return AOTMetaspace::get_preimage_static_archive_recording_duration();
-#else
-  return 0;
 #endif // INCLUDE_CDS
 JVM_END
 

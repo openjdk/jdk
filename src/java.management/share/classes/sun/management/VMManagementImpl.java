@@ -118,8 +118,6 @@ class VMManagementImpl implements VMManagement {
     public native boolean isThreadAllocatedMemoryEnabled();
 
     // AOT Subsystem
-    public native boolean isAOTRecording();
-    public native long    getAOTRecordingDuration();
     public native boolean endAOTRecording();
 
     // Class Loading Subsystem

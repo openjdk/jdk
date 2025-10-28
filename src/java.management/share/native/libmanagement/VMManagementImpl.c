@@ -102,20 +102,6 @@ Java_sun_management_VMManagementImpl_getVmArguments0
 }
 
 JNIEXPORT jboolean JNICALL
-Java_sun_management_VMManagementImpl_isAOTRecording
-  (JNIEnv *env, jobject dummy)
-{
-    return JVM_AOTIsRecording(env);
-}
-
-JNIEXPORT jlong JNICALL
-Java_sun_management_VMManagementImpl_getAOTRecordingDuration
-  (JNIEnv *env, jobject dummy)
-{
-    return JVM_AOTGetRecordingDuration(env);
-}
-
-JNIEXPORT jboolean JNICALL
 Java_sun_management_VMManagementImpl_endAOTRecording
   (JNIEnv *env, jobject dummy)
 {
