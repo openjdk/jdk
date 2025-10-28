@@ -1147,12 +1147,12 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
     + align_up(speculations_len                  , oopSize)
 #endif
-    + align_up(debug_info->data_size()           , oopSize)
-    + ImmutableDataReferencesCounterSize;
+    + align_up(debug_info->data_size()           , oopSize);
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
   if (immutable_data_size > 0) {
+    immutable_data_size += ImmutableDataRefCountSize;
     immutable_data = (address)os::malloc(immutable_data_size, mtCode);
     if (immutable_data == nullptr) {
       vm_exit_out_of_memory(immutable_data_size, OOM_MALLOC_ERROR, "nmethod: no space for immutable data");
@@ -1323,7 +1323,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
-    _immutable_data_reference_counter_offset = 0;
+    _immutable_data_ref_count_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1456,12 +1456,12 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 #if INCLUDE_JVMCI
   _speculations_offset          = nm._speculations_offset;
 #endif
-  _immutable_data_reference_counter_offset = nm._immutable_data_reference_counter_offset;
+  _immutable_data_ref_count_offset = nm._immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
   if (_immutable_data_size > 0) {
     _immutable_data             = nm._immutable_data;
-    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
+    inc_immutable_data_ref_count();
   } else {
     _immutable_data             = blob_end();
   }
@@ -1754,12 +1754,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    _immutable_data_reference_counter_offset = _speculations_offset + align_up(speculations_len, oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _speculations_offset + align_up(speculations_len, oopSize);
 #else
-    _immutable_data_reference_counter_offset =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
+    _immutable_data_ref_count_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
 #endif
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_ref_count_offset + ImmutableDataRefCountSize; )
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
 
@@ -1791,7 +1790,7 @@ nmethod::nmethod(
       memcpy(speculations_begin(), speculations, speculations_len);
     }
 #endif
-    set_immutable_data_references_counter(1);
+    init_immutable_data_ref_count();
 
     post_init();
 
@@ -2424,14 +2423,8 @@ void nmethod::purge(bool unregister_nmethod) {
   delete[] _compiled_ic_data;
 
   if (_immutable_data != blob_end()) {
-    int reference_count = get_immutable_data_references_counter();
-    assert(reference_count > 0, "immutable data has no references");
-
-    set_immutable_data_references_counter(reference_count - 1);
-
     // Free memory if this was the last nmethod referencing immutable data
-    reference_count = get_immutable_data_references_counter();
-    if (reference_count == 0) {
+    if (dec_immutable_data_ref_count() == 0) {
       os::free(_immutable_data);
     }
 
