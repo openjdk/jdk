@@ -100,8 +100,23 @@ class BaseBytecodeStream: StackObj {
   void            set_next_bci(int bci)          { assert(0 <= bci && bci <= method()->code_size(), "illegal bci"); _next_bci = bci; }
 
   // Bytecode-specific attributes
-  int             dest() const                   { return bci() + bytecode().get_offset_s2(raw_code()); }
-  int             dest_w() const                 { return bci() + bytecode().get_offset_s4(raw_code()); }
+  int get_offset_s2() const { return bytecode().get_offset_s2(raw_code()); }
+  int get_offset_s4() const { return bytecode().get_offset_s4(raw_code()); }
+
+  // These methods are not safe to use before or during verification as they may
+  // have large offsets and cause overflows
+  int dest() const {
+    int min_offset = -1 * max_method_code_size;
+    int offset = bytecode().get_offset_s2(raw_code());
+    guarantee(offset >= min_offset && offset <= max_method_code_size, "must be");
+    return bci() + offset;
+  }
+  int dest_w() const {
+    int min_offset = -1 * max_method_code_size;
+    int offset = bytecode().get_offset_s4(raw_code());
+    guarantee(offset >= min_offset && offset <= max_method_code_size, "must be");
+    return bci() + offset;
+  }
 
   // One-byte indices.
   u1              get_index_u1() const           { assert_raw_index_size(1); return *(jubyte*)(bcp()+1); }
