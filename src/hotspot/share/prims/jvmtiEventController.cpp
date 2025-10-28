@@ -1228,7 +1228,7 @@ JvmtiEventController::vm_death() {
   // Some events might be still in callback for daemons and VM internal threads.
   const double start = os::elapsedTime();
   const double max_wait_time = 60;
-  // The first time we see the callback count reaches zero we know all actual
+  // The first time we see the callback count reach zero we know all actual
   // callbacks are complete. The count could rise again, but those "callbacks"
   // will immediately see `execution_finished()` and return (dropping the count).
   while (in_callback_count() > 0) {
