@@ -438,8 +438,17 @@ public abstract class JDIBreakpointTest extends MlvmTest {
         for (StackFrame f : frames) {
             Location l = f.location();
 
-            String sourcePath = TestThreadFactory.isTestThreadFactorySet()
-                ? "unknown" : l.sourcePath();
+            String sourcePath;
+            try {
+                sourcePath = l.sourcePath();
+            } catch (AbsentInformationException aie) {
+               // Test Thread Factory support has generated methods.
+               if (TestThreadFactory.isTestThreadFactorySet()) {
+                   sourcePath = "unknown";
+               } else {
+                   throw aie;
+               }
+            }
 
             buf.append(String.format("#%-4d", frameNum))
                .append(l.method())
