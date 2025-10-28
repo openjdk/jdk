@@ -666,7 +666,7 @@ public:
 
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
-  void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
+  void verify_region_attr_is_remset_tracked() PRODUCT_RETURN;
 
   void clear_bitmap_for_region(G1HeapRegion* hr);
 
