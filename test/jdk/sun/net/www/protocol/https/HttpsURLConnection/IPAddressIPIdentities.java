@@ -49,8 +49,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
-import java.security.Security;
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.security.SecurityUtils;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -201,10 +202,9 @@ public class IPAddressIPIdentities extends IdentitiesBase {
     public static void main(String args[]) throws Exception {
         if (args[1].contains("MD5")) {
             // MD5 is used in this test case, don't disable MD5 algorithm.
-            Security.setProperty("jdk.certpath.disabledAlgorithms",
-                    "MD2, RSA keySize < 1024");
-            Security.setProperty("jdk.tls.disabledAlgorithms",
-                    "SSLv3, RC4, DH keySize < 768");
+            SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
+                    List.of("MD5"));
+            SecurityUtils.removeFromDisabledTlsAlgs("MD5");
         }
 
         if (debug)

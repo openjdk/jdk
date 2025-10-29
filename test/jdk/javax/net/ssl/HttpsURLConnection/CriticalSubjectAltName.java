@@ -74,11 +74,13 @@ import java.net.URL;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+
+import jdk.test.lib.security.SecurityUtils;
 
 public class CriticalSubjectAltName implements HostnameVerifier {
     /*
@@ -216,10 +218,9 @@ public class CriticalSubjectAltName implements HostnameVerifier {
     public static void main(String[] args) throws Exception {
         if (args[1].contains("MD5")) {
             // MD5 is used in this test case, don't disable MD5 algorithm.
-            Security.setProperty("jdk.certpath.disabledAlgorithms",
-                    "MD2, RSA keySize < 1024");
-            Security.setProperty("jdk.tls.disabledAlgorithms",
-                    "SSLv3, RC4, DH keySize < 768");
+            SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
+                    List.of("MD5"));
+            SecurityUtils.removeFromDisabledTlsAlgs("MD5");
         }
 
         if (debug) {
