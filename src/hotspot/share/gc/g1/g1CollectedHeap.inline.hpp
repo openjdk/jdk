@@ -205,6 +205,7 @@ void G1CollectedHeap::update_region_attr(G1HeapRegion* r) {
 }
 
 void G1CollectedHeap::register_old_collection_set_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
   assert(r->is_old(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
   _region_attr.set_in_old(r->hrm_index(), true, r->has_pinned_objects());
