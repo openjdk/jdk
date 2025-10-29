@@ -50,14 +50,14 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        * after the AOT artifacts have been completely written.
        *
        * <p>The JVM will start recording AOT artifacts upon start-up if certain JVM options are
-       *  given in the command-line. The recording will stop when the JVM exits, or when
+       *  supplied on the command-line. The recording will stop when the JVM exits, or when
        * the {@code endRecording} method is called. Examples:
        *
        * <p> java -XX:AOTCacheOutput=app.aot ....
        *
        * <blockquote>
        *       The JVM will record optimization information about the current application
-       *       into the AOT cache file app.aot. In a future execution of this application,
+       *       that will be used to generate the AOT cache file app.aot. In a future execution of this application,
        *       -XX:AOTCache=app.aot can be provided to improve the application's
        *       start-up and warm-up performance.
        * </blockquote>
