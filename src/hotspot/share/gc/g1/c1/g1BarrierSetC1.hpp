@@ -91,40 +91,11 @@ class G1PreBarrierStub: public CodeStub {
 #endif // PRODUCT
 };
 
-class G1PostBarrierStub: public CodeStub {
-  friend class G1BarrierSetC1;
- private:
-  LIR_Opr _addr;
-  LIR_Opr _new_val;
-
- public:
-  // addr (the address of the object head) and new_val must be registers.
-  G1PostBarrierStub(LIR_Opr addr, LIR_Opr new_val): _addr(addr), _new_val(new_val) {
-    FrameMap* f = Compilation::current()->frame_map();
-    f->update_reserved_argument_area_size(2 * BytesPerWord);
-  }
-
-  LIR_Opr addr() const { return _addr; }
-  LIR_Opr new_val() const { return _new_val; }
-
-  virtual void emit_code(LIR_Assembler* e);
-  virtual void visit(LIR_OpVisitState* visitor) {
-    // don't pass in the code emit info since it's processed in the fast path
-    visitor->do_slow_case();
-    visitor->do_input(_addr);
-    visitor->do_input(_new_val);
-  }
-#ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("G1PostBarrierStub"); }
-#endif // PRODUCT
-};
-
 class CodeBlob;
 
 class G1BarrierSetC1 : public ModRefBarrierSetC1 {
  protected:
   CodeBlob* _pre_barrier_c1_runtime_code_blob;
-  CodeBlob* _post_barrier_c1_runtime_code_blob;
 
   virtual void pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
                            LIR_Opr pre_val, CodeEmitInfo* info);
@@ -134,11 +105,9 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
 
  public:
   G1BarrierSetC1()
-    : _pre_barrier_c1_runtime_code_blob(nullptr),
-      _post_barrier_c1_runtime_code_blob(nullptr) {}
+    : _pre_barrier_c1_runtime_code_blob(nullptr) {}
 
   CodeBlob* pre_barrier_c1_runtime_code_blob() { return _pre_barrier_c1_runtime_code_blob; }
-  CodeBlob* post_barrier_c1_runtime_code_blob() { return _post_barrier_c1_runtime_code_blob; }
 
   virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };

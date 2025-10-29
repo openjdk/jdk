@@ -837,7 +837,7 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
       CallingConvention* cc = frame_map()->c_calling_convention(&signature);
       const LIR_Opr result_reg = result_register_for(x->type());
 
-      LIR_Opr addr = new_pointer_register();
+      LIR_Opr addr = new_register(T_ADDRESS);
       __ leal(LIR_OprFact::address(a), addr);
 
       crc.load_item_force(cc->at(0));

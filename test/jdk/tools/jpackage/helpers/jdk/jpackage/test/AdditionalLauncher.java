@@ -54,6 +54,10 @@ public final class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
+    public String name() {
+        return name;
+    }
+
     public AdditionalLauncher withVerifyActions(Action... actions) {
         verifyActions.addAll(List.of(actions));
         return this;
@@ -194,7 +198,7 @@ public final class AdditionalLauncher {
         }
     }
 
-    static PropertyFile getAdditionalLauncherProperties(
+    public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {

@@ -30,18 +30,10 @@ import java.util.Optional;
 /**
  * Native application package.
  *
- * The interface specifies the source app image layout with two transformations:
- * package app image layout and installed app image layout.
+ * The interface specifies the source app image and the installed app image layouts.
  * <p>
  * Use {@link #appImageLayout()} or {@link #asApplicationLayout()} to get the
  * unresolved source app image layout.
- * <p>
- * Package app image layout is the source app image layout resolved at the
- * relative installation directory of the package. Additionally, to resolve the
- * source layout, some packages may transform the source layout.
- * <p>
- * Use {@link #packageLayout()} or {@link #asPackageApplicationLayout()} to get
- * the package app image layout.
  * <p>
  * Installed app image layout is the layout of the installed app image.
  * <p>
@@ -55,25 +47,21 @@ import java.util.Optional;
  * <tr>
  * <th></th>
  * <th>Source app image layout</th>
- * <th>Package app image layout</th>
  * <th>Installed app image layout</th>
  * </tr>
  * <tr>
  * <th>Windows</th>
  * <td>bin/foo.exe app/foo.jar</td>
  * <td>Duke/bin/foo.exe Duke/app/foo.jar</td>
- * <td>Duke/bin/foo.exe Duke/app/foo.jar</td>
  * </tr>
  * <tr>
  * <th>Linux</th>
  * <td>bin/foo lib/app/foo.jar</td>
- * <td>opt/duke/bin/foo opt/duke/lib/app/foo.jar</td>
  * <td>/opt/duke/bin/foo /opt/duke/lib/app/foo.jar</td>
  * </tr>
  * <tr>
  * <th>OSX</th>
  * <td>Contents/MacOS/foo Contents/app/foo.jar</td>
- * <td>Applications/Duke.app/Contents/MacOS/foo Applications/Duke.app/Contents/app/foo.jar</td>
  * <td>/Applications/Duke.app/Contents/MacOS/foo /Applications/Duke.app/Contents/app/foo.jar</td>
  * </tr>
  * </table>
@@ -169,7 +157,6 @@ public interface Package extends BundleSpec {
      *
      * @return the unresolved app image layout of the application of this package
      *
-     * @see #packageLayout
      * @see #installedPackageLayout
      */
     default AppImageLayout appImageLayout() {
@@ -194,67 +181,13 @@ public interface Package extends BundleSpec {
     }
 
     /**
-     * Gets the layout of the installed app image of the application resolved at the
-     * relative installation directory of this package.
-     *
-     * @return the layout of the installed app image of the application resolved at
-     *         the relative installation directory of this package
-     *
-     * @see #relativeInstallDir
-     * @see #appImageLayout
-     * @see #installedPackageLayout
-     */
-    default AppImageLayout packageLayout() {
-        return appImageLayout().resolveAt(relativeInstallDir());
-    }
-
-    /**
-     * Returns the layout of the installed app image of the application resolved at
-     * the relative installation directory of this package as
-     * {@link ApplicationLayout} type or an empty {@link Optional} instance if the
-     * layout object is of incompatible type.
-     * <p>
-     * Returns an empty {@link Optional} instance if {@link #isRuntimeInstaller()}
-     * returns <code>true</code>.
-     *
-     * @return the layout of the installed app image of the application resolved at
-     *         the relative installation directory of this package as
-     *         {@link ApplicationLayout} type
-     *
-     * @see #packageLayout
-     */
-    default Optional<ApplicationLayout> asPackageApplicationLayout() {
-        if (packageLayout() instanceof ApplicationLayout layout) {
-            return Optional.of(layout);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    /**
      * Gets the layout of the installed app image of this package.
      *
      * @return the layout of the installed app image of this package
      *
      * @see #appImageLayout
-     * @see #packageLayout
      */
-    default AppImageLayout installedPackageLayout() {
-        return asStandardPackageType().map(stdType -> {
-            switch (stdType) {
-                case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
-                    return packageLayout().resolveAt(Path.of("/"));
-                }
-                case WIN_EXE, WIN_MSI -> {
-                    return packageLayout();
-                }
-                default -> {
-                    // Should never get here
-                    throw new IllegalStateException();
-                }
-            }
-        }).orElseThrow(UnsupportedOperationException::new);
-    }
+    AppImageLayout installedPackageLayout();
 
     /**
      * Returns the layout of the installed app image of this package as
@@ -334,6 +267,6 @@ public interface Package extends BundleSpec {
      */
     record Stub(Application app, PackageType type, String packageName, String description, String version,
             Optional<String> aboutURL, Optional<Path> licenseFile, Optional<Path> predefinedAppImage,
-            Path relativeInstallDir) implements Package {
+            AppImageLayout installedPackageLayout, Path relativeInstallDir) implements Package {
     }
 }

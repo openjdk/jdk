@@ -51,7 +51,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -437,8 +437,8 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 
 jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
-  ResourceHashtable<jlong, JVMCIObject> longs;
-  ResourceHashtable<const char*, JVMCIObject,
+  HashTable<jlong, JVMCIObject> longs;
+  HashTable<const char*, JVMCIObject,
                     256, AnyObj::RESOURCE_AREA, mtInternal,
                     &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 

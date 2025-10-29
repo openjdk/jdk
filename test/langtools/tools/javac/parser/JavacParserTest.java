@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -3011,6 +3011,69 @@ public class JavacParserTest extends TestCase {
                              return true;
                          }
                      }""");
+    }
+
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotations() throws IOException {
+        String code = """
+                      package tests;
+                      class ListUtilsTest {
+                          void test(List<@AlphaChars <@StringLength(int value = 5)String> s){
+                          }
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testVeryBrokenTypeWithAnnotations: " + codes,
+                     List.of("3:32:compiler.err.illegal.start.of.type",
+                             "3:51:compiler.err.dot.class.expected",
+                             "3:57:compiler.err.expected2",
+                             "3:60:compiler.err.expected2",
+                             "3:61:compiler.err.expected2",
+                             "3:67:compiler.err.not.stmt",
+                             "3:70:compiler.err.expected",
+                             "5:2:compiler.err.premature.eof"),
+                     codes);
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     class ListUtilsTest {
+                         \n\
+                         void test(List<@AlphaChars (ERROR: (ERROR)<@StringLength(int) value, (ERROR)> = 5), (ERROR: )> <error>) {
+                             (ERROR: String > s);
+                             {
+                             }
+                         }
+                     }""");
+    }
+
+    @Test //JDK-8351260
+    void testVeryBrokenTypeWithAnnotationsMinimal() throws IOException {
+        String code = """
+                      B<@C<@D(e f=
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        //no exceptions:
+        ct.parse().iterator().next();
     }
 
     void run(String[] args) throws Exception {

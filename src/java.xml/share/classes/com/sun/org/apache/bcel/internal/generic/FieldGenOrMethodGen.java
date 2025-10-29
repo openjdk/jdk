@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.classfile.Attribute;
 /**
  * Super class for FieldGen and MethodGen objects, since they have some methods in common!
  *
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAndTyped, Cloneable {
 
@@ -67,8 +67,10 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
         super(accessFlags);
     }
 
-    protected void addAll(final Attribute[] attrs) {
-        Collections.addAll(attributeList, attrs);
+    protected void addAll(final Attribute[] attributes) {
+        if (attributes != null) {
+            Collections.addAll(attributeList, attributes);
+        }
     }
 
     /**
@@ -93,7 +95,7 @@ public abstract class FieldGenOrMethodGen extends AccessFlags implements NamedAn
         try {
             return super.clone();
         } catch (final CloneNotSupportedException e) {
-            throw new Error("Clone Not Supported"); // never happens
+            throw new UnsupportedOperationException("Clone Not Supported", e); // never happens
         }
     }
 

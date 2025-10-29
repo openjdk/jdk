@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/logStream.hpp"
