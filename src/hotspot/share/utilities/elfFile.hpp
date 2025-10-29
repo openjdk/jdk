@@ -482,7 +482,7 @@ class DwarfFile : public ElfFile {
     bool add_entry(const AddressDescriptor& descriptor, uint32_t debug_info_offset);
     void sort();
 
-    private:
+   private:
     static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
     bool grow();
     void free() {
