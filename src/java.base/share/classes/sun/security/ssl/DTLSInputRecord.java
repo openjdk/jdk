@@ -1622,11 +1622,10 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 }
             }
 
-            return hasCCS && hasFin
-                    // NewSessionTicket message presence in the finished flight
-                    // should only be expected on the client side, and only
-                    // if stateless resumption is enabled.
-                    && (!tc.sslConfig.isClientMode
+            // NewSessionTicket message presence in the Finished flight
+            // should only be expected on the client side, and only
+            // if stateless resumption is enabled.
+            return hasCCS && hasFin && (!tc.sslConfig.isClientMode
                     || !tc.handshakeContext.statelessResumption
                     || hasCompleted(SSLHandshake.NEW_SESSION_TICKET.id));
         }
