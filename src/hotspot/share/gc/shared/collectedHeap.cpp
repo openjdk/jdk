@@ -607,50 +607,7 @@ bool CollectedHeap::is_shutting_down() {
   return _is_shutting_down;
 }
 
-static void log_cpu_time() {
-  LogTarget(Info, cpu) cpuLog;
-  if (!cpuLog.is_enabled()) {
-    return;
-  }
-
-  const double process_cpu_time = os::elapsed_process_cpu_time();
-  if (process_cpu_time == 0 || process_cpu_time == -1) {
-    // 0 can happen e.g. for short running processes with
-    // low CPU utilization
-    return;
-  }
-
-  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
-  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
-  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
-  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
-
-  const double elasped_time = os::elapsedTime();
-  const bool has_error = CPUTimeUsage::Error::has_error();
-
-  if (gc_cpu_time < process_cpu_time) {
-    cpuLog.print("=== CPU time Statistics =============================================================");
-    if (has_error) {
-      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
-    }
-    cpuLog.print("                                                                            CPUs");
-    cpuLog.print("                                                               s       %%  utilized");
-    cpuLog.print("   Process");
-    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
-    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
-    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
-    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
-
-    if (UseStringDeduplication) {
-      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
-    }
-    cpuLog.print("=====================================================================================");
-  }
-}
-
-void CollectedHeap::before_exit() {
-  print_tracing_info();
-
+void CollectedHeap::initiate_shutdown() {
   {
     // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
     // which may depend on the value of _is_shutting_down flag.
@@ -658,10 +615,7 @@ void CollectedHeap::before_exit() {
     _is_shutting_down = true;
   }
 
-  log_cpu_time();
-
-  // Stop any on-going concurrent work and prepare for exit.
-  stop();
+  print_tracing_info();
 }
 
 size_t CollectedHeap::bootstrap_max_memory() const {
