@@ -317,11 +317,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_field_entry(Register cache, Register index, int bcp_offset = 1);
   void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 
-#ifdef ASSERT
+  void verify_field_offset(Register reg) NOT_DEBUG_RETURN;
   void verify_access_flags(Register access_flags, uint32_t flag,
-                           const char* msg, bool stop_by_hit = true);
-  void verify_frame_setup();
-#endif
+                           const char* msg, bool stop_by_hit = true) NOT_DEBUG_RETURN;
+  void verify_frame_setup() NOT_DEBUG_RETURN;
 };
 
 #endif // CPU_RISCV_INTERP_MASM_RISCV_HPP

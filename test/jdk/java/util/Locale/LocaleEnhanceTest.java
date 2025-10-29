@@ -31,9 +31,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.IllformedLocaleException;
 import java.util.List;
@@ -47,25 +46,23 @@ import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-/**
+/*
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
+ *      8369590
  * @summary test API changes to Locale
  * @modules jdk.localedata
- * @compile LocaleEnhanceTest.java
  * @run junit/othervm -esa LocaleEnhanceTest
  */
 public class LocaleEnhanceTest {
-
-    public LocaleEnhanceTest() {
-    }
-
-    ///
-    /// Generic sanity tests
-    ///
 
     /** A canonical language code. */
     private static final String l = "en";
@@ -78,6 +75,10 @@ public class LocaleEnhanceTest {
 
     /** A canonical variant code. */
     private static final String v = "NewYork";
+
+    ///
+    /// Generic sanity tests
+    ///
 
     /**
      * Ensure that Builder builds locales that have the expected
@@ -124,12 +125,12 @@ public class LocaleEnhanceTest {
                     .setRegion(idc)
                     .setVariant(idv)
                     .build();
-                assertEquals(msg + "language", idl, l.getLanguage());
-                assertEquals(msg + "script", ids, l.getScript());
-                assertEquals(msg + "country", idc, l.getCountry());
-                assertEquals(msg + "variant", idv, l.getVariant());
-                assertEquals(msg + "tag", tag, l.toLanguageTag());
-                assertEquals(msg + "id", id, l.toString());
+                assertEquals(idl, l.getLanguage(), msg + "language");
+                assertEquals(ids, l.getScript(), msg + "script");
+                assertEquals(idc, l.getCountry(), msg + "country");
+                assertEquals(idv, l.getVariant(), msg + "variant");
+                assertEquals(tag, l.toLanguageTag(), msg + "tag");
+                assertEquals(id, l.toString(), msg + "id");
             }
             catch (IllegalArgumentException e) {
                 fail(msg + e.getMessage());
@@ -181,13 +182,13 @@ public class LocaleEnhanceTest {
                     .setVariant(idv)
                     .build();
 
-                assertEquals(msg + " language", idl, l.getLanguage());
-                assertEquals(msg + " script", ids, l.getScript());
-                assertEquals(msg + " country", idc, l.getCountry());
-                assertEquals(msg + " variant", idv, l.getVariant());
+                assertEquals(idl, l.getLanguage(), msg + " language");
+                assertEquals(ids, l.getScript(), msg + " script");
+                assertEquals(idc, l.getCountry(), msg + " country");
+                assertEquals(idv, l.getVariant(), msg + " variant");
 
-                assertEquals(msg + "tag", tag, l.toLanguageTag());
-                assertEquals(msg + "id", id, l.toString());
+                assertEquals(tag, l.toLanguageTag(), msg + "tag");
+                assertEquals(id, l.toString(), msg + "id");
             }
             catch (IllegalArgumentException e) {
                 fail(msg + e.getMessage());
@@ -235,7 +236,7 @@ public class LocaleEnhanceTest {
         for (int i = 0; i < invalids.length; ++i) {
             String id = invalids[i];
             Locale l = Locale.forLanguageTag(id);
-            assertEquals(id, "und", l.toLanguageTag());
+            assertEquals("und", l.toLanguageTag(), id);
         }
     }
 
@@ -255,14 +256,14 @@ public class LocaleEnhanceTest {
             // except no_NO_NY
             Locale tagResult = Locale.forLanguageTag(tag);
             if (!target.getVariant().equals("NY")) {
-                assertEquals("tagResult", target, tagResult);
+                assertEquals(target, tagResult, "tagResult");
             }
 
             // the builder also recreates the original locale,
             // except ja_JP_JP, th_TH_TH and no_NO_NY
             Locale builderResult = builder.setLocale(target).build();
             if (target.getVariant().length() != 2) {
-                assertEquals("builderResult", target, builderResult);
+                assertEquals(target, builderResult, "builderResult");
             }
         }
     }
@@ -275,11 +276,11 @@ public class LocaleEnhanceTest {
         BufferedReader br = new BufferedReader(
             new InputStreamReader(
                 LocaleEnhanceTest.class.getResourceAsStream("icuLocales.txt"),
-                "UTF-8"));
+                    StandardCharsets.UTF_8));
         String id = null;
         while (null != (id = br.readLine())) {
             Locale result = Locale.forLanguageTag(id);
-            assertEquals("ulocale", id, result.toLanguageTag());
+            assertEquals(id, result.toLanguageTag(), "ulocale");
         }
     }
 
@@ -291,163 +292,151 @@ public class LocaleEnhanceTest {
     public void testConstructor() {
         // all the old weirdness still holds, no new weirdness
         String[][] tests = {
-            // language to lower case, region to upper, variant unchanged
-            // short
-            { "X", "y", "z", "x", "Y" },
-            // long
-            { "xXxXxXxXxXxX", "yYyYyYyYyYyYyYyY", "zZzZzZzZzZzZzZzZ",
-              "xxxxxxxxxxxx", "YYYYYYYYYYYYYYYY" },
-            // mapped language ids
-            { "he", "IL", "", "he" },
-            { "iw", "IL", "", "he" },
-            { "yi", "DE", "", "yi" },
-            { "ji", "DE", "", "yi" },
-            { "id", "ID", "", "id" },
-            { "in", "ID", "", "id" },
-            // special variants
-            { "ja", "JP", "JP" },
-            { "th", "TH", "TH" },
-            { "no", "NO", "NY" },
-            { "no", "NO", "NY" },
-            // no canonicalization of 3-letter language codes
-            { "eng", "US", "" }
+                // language to lower case, region to upper, variant unchanged
+                // short
+                {"X", "y", "z", "x", "Y"},
+                // long
+                {"xXxXxXxXxXxX", "yYyYyYyYyYyYyYyY", "zZzZzZzZzZzZzZzZ",
+                        "xxxxxxxxxxxx", "YYYYYYYYYYYYYYYY"},
+                // mapped language ids
+                {"he", "IL", "", "he"},
+                {"iw", "IL", "", "he"},
+                {"yi", "DE", "", "yi"},
+                {"ji", "DE", "", "yi"},
+                {"id", "ID", "", "id"},
+                {"in", "ID", "", "id"},
+                // special variants
+                {"ja", "JP", "JP"},
+                {"th", "TH", "TH"},
+                {"no", "NO", "NY"},
+                {"no", "NO", "NY"},
+                // no canonicalization of 3-letter language codes
+                {"eng", "US", ""}
         };
-        for (int i = 0; i < tests.length; ++ i) {
+        for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
             String id = String.valueOf(i);
             Locale locale = Locale.of(test[0], test[1], test[2]);
-            assertEquals(id + " lang", test.length > 3 ? test[3] : test[0], locale.getLanguage());
-            assertEquals(id + " region", test.length > 4 ? test[4] : test[1], locale.getCountry());
-            assertEquals(id + " variant", test.length > 5 ? test[5] : test[2], locale.getVariant());
+            assertEquals(test.length > 3 ? test[3] : test[0], locale.getLanguage(), id + " lang");
+            assertEquals(test.length > 4 ? test[4] : test[1], locale.getCountry(), id + " region");
+            assertEquals(test.length > 5 ? test[5] : test[2], locale.getVariant(), id + " variant");
         }
     }
 
     ///
-    /// Locale API tests.
+    /// Locale API Tests
     ///
 
     @Test
     public void testGetScript() {
         // forLanguageTag normalizes case
         Locale locale = Locale.forLanguageTag("und-latn");
-        assertEquals("forLanguageTag", "Latn", locale.getScript());
+        assertEquals("Latn", locale.getScript(), "forLanguageTag");
 
         // Builder normalizes case
         locale = new Builder().setScript("LATN").build();
-        assertEquals("builder", "Latn", locale.getScript());
+        assertEquals("Latn", locale.getScript(), "builder");
 
         // empty string is returned, not null, if there is no script
         locale = Locale.forLanguageTag("und");
-        assertEquals("script is empty string", "", locale.getScript());
+        assertEquals("", locale.getScript(), "script is empty string");
     }
 
     @Test
     public void testGetExtension() {
         // forLanguageTag does NOT normalize to hyphen
         Locale locale = Locale.forLanguageTag("und-a-some_ex-tension");
-        assertEquals("some_ex-tension", null, locale.getExtension('a'));
+        assertNull(locale.getExtension('a'), "some_ex-tension");
 
         // regular extension
         locale = new Builder().setExtension('a', "some-ex-tension").build();
-        assertEquals("builder", "some-ex-tension", locale.getExtension('a'));
+        assertEquals("some-ex-tension", locale.getExtension('a'), "builder");
 
         // returns null if extension is not present
-        assertEquals("empty b", null, locale.getExtension('b'));
+        assertNull(locale.getExtension('b'), "empty b");
 
         // throws exception if extension tag is illegal
-        new ExpectIAE() { public void call() { Locale.forLanguageTag("").getExtension('\uD800'); }};
+        assertThrows(IllegalArgumentException.class, () -> Locale.forLanguageTag("").getExtension('\uD800'));
 
         // 'x' is not an extension, it's a private use tag, but it's accessed through this API
         locale = Locale.forLanguageTag("x-y-z-blork");
-        assertEquals("x", "y-z-blork", locale.getExtension('x'));
+        assertEquals("y-z-blork", locale.getExtension('x'), "x");
     }
 
     @Test
     public void testGetExtensionKeys() {
         Locale locale = Locale.forLanguageTag("und-a-xx-yy-b-zz-ww");
         Set<Character> result = locale.getExtensionKeys();
-        assertEquals("result size", 2, result.size());
-        assertTrue("'a','b'", result.contains('a') && result.contains('b'));
+        assertEquals(2, result.size(), "result size");
+        assertTrue(result.contains('a') && result.contains('b'), "'a','b'");
 
         // result is not mutable
-        try {
-            result.add('x');
-            fail("expected exception on add to extension key set");
-        }
-        catch (UnsupportedOperationException e) {
-            // ok
-        }
+        assertThrows(UnsupportedOperationException.class, () -> result.add('x'));
 
         // returns empty set if no extensions
         locale = Locale.forLanguageTag("und");
-        assertTrue("empty result", locale.getExtensionKeys().isEmpty());
+        assertTrue(locale.getExtensionKeys().isEmpty(), "empty result");
     }
 
     @Test
     public void testGetUnicodeLocaleAttributes() {
         Locale locale = Locale.forLanguageTag("en-US-u-abc-def");
         Set<String> attributes = locale.getUnicodeLocaleAttributes();
-        assertEquals("number of attributes", 2, attributes.size());
-        assertTrue("attribute abc", attributes.contains("abc"));
-        assertTrue("attribute def", attributes.contains("def"));
+        assertEquals(2, attributes.size(), "number of attributes");
+        assertTrue(attributes.contains("abc"), "attribute abc");
+        assertTrue(attributes.contains("def"), "attribute def");
 
         locale = Locale.forLanguageTag("en-US-u-ca-gregory");
         attributes = locale.getUnicodeLocaleAttributes();
-        assertTrue("empty attributes", attributes.isEmpty());
+        assertTrue(attributes.isEmpty(), "empty attributes");
     }
 
     @Test
     public void testGetUnicodeLocaleType() {
         Locale locale = Locale.forLanguageTag("und-u-co-japanese-nu-thai");
-        assertEquals("collation", "japanese", locale.getUnicodeLocaleType("co"));
-        assertEquals("numbers", "thai", locale.getUnicodeLocaleType("nu"));
+        assertEquals("japanese", locale.getUnicodeLocaleType("co"), "collation");
+        assertEquals("thai", locale.getUnicodeLocaleType("nu"), "numbers");
 
         // Unicode locale extension key is case insensitive
-        assertEquals("key case", "japanese", locale.getUnicodeLocaleType("Co"));
+        assertEquals("japanese", locale.getUnicodeLocaleType("Co"), "key case");
 
         // if keyword is not present, returns null
-        assertEquals("locale keyword not present", null, locale.getUnicodeLocaleType("xx"));
+        assertNull(locale.getUnicodeLocaleType("xx"), "locale keyword not present");
 
         // if no locale extension is set, returns null
         locale = Locale.forLanguageTag("und");
-        assertEquals("locale extension not present", null, locale.getUnicodeLocaleType("co"));
+        assertNull(locale.getUnicodeLocaleType("co"), "locale extension not present");
 
         // typeless keyword
         locale = Locale.forLanguageTag("und-u-kn");
-        assertEquals("typeless keyword", "", locale.getUnicodeLocaleType("kn"));
+        assertEquals("", locale.getUnicodeLocaleType("kn"), "typeless keyword");
 
         // invalid keys throw exception
-        new ExpectIAE() { public void call() { Locale.forLanguageTag("").getUnicodeLocaleType("q"); }};
-        new ExpectIAE() { public void call() { Locale.forLanguageTag("").getUnicodeLocaleType("abcdefghi"); }};
+        assertThrows(IllegalArgumentException.class, () -> Locale.forLanguageTag("").getUnicodeLocaleType("q"));
+        assertThrows(IllegalArgumentException.class, () -> Locale.forLanguageTag("").getUnicodeLocaleType("abcdefghi"));
 
         // null argument throws exception
-        new ExpectNPE() { public void call() { Locale.forLanguageTag("").getUnicodeLocaleType(null); }};
+        assertThrows(NullPointerException.class, () -> Locale.forLanguageTag("").getUnicodeLocaleType(null));
     }
 
     @Test
     public void testGetUnicodeLocaleKeys() {
         Locale locale = Locale.forLanguageTag("und-u-co-japanese-nu-thai");
         Set<String> result = locale.getUnicodeLocaleKeys();
-        assertEquals("two keys", 2, result.size());
-        assertTrue("co and nu", result.contains("co") && result.contains("nu"));
+        assertEquals(2, result.size(), "two keys");
+        assertTrue(result.contains("co") && result.contains("nu"), "co and nu");
 
         // result is not modifiable
-        try {
-            result.add("frobozz");
-            fail("expected exception when add to locale key set");
-        }
-        catch (UnsupportedOperationException e) {
-            // ok
-        }
+        assertThrows(UnsupportedOperationException.class, () -> result.add("frobozz"));
     }
 
     @Test
     public void testPrivateUseExtension() {
         Locale locale = Locale.forLanguageTag("x-y-x-blork-");
-        assertEquals("blork", "y-x-blork", locale.getExtension(Locale.PRIVATE_USE_EXTENSION));
+        assertEquals("y-x-blork", locale.getExtension(Locale.PRIVATE_USE_EXTENSION), "blork");
 
         locale = Locale.forLanguageTag("und");
-        assertEquals("no privateuse", null, locale.getExtension(Locale.PRIVATE_USE_EXTENSION));
+        assertNull(locale.getExtension(Locale.PRIVATE_USE_EXTENSION), "no privateuse");
     }
 
     @Test
@@ -455,63 +444,63 @@ public class LocaleEnhanceTest {
         // lots of normalization to test here
         // test locales created using the constructor
         String[][] tests = {
-            // empty locale canonicalizes to 'und'
-            { "", "", "", "und" },
-            // variant alone is not a valid Locale, but has a valid language tag
-            { "", "", "NewYork", "und-NewYork" },
-            // standard valid locales
-            { "", "Us", "", "und-US" },
-            { "", "US", "NewYork", "und-US-NewYork" },
-            { "EN", "", "", "en" },
-            { "EN", "", "NewYork", "en-NewYork" },
-            { "EN", "US", "", "en-US" },
-            { "EN", "US", "NewYork", "en-US-NewYork" },
-            // underscore in variant will be emitted as multiple variant subtags
-            { "en", "US", "Newer_Yorker", "en-US-Newer-Yorker" },
-            // invalid variant subtags are appended as private use
-            { "en", "US", "new_yorker", "en-US-x-lvariant-new-yorker" },
-            // the first invalid variant subtags and following variant subtags are appended as private use
-            { "en", "US", "Windows_XP_Home", "en-US-Windows-x-lvariant-XP-Home" },
-            // too long variant and following variant subtags disappear
-            { "en", "US", "WindowsVista_SP2", "en-US" },
-            // invalid region subtag disappears
-            { "en", "USA", "", "en" },
-            // invalid language tag disappears
-            { "e", "US", "", "und-US" },
-            // three-letter language tags are not canonicalized
-            { "Eng", "", "", "eng" },
-            // legacy languages canonicalize to modern equivalents
-            { "he", "IL", "", "he-IL" },
-            { "iw", "IL", "", "he-IL" },
-            { "yi", "DE", "", "yi-DE" },
-            { "ji", "DE", "", "yi-DE" },
-            { "id", "ID", "", "id-ID" },
-            { "in", "ID", "", "id-ID" },
-            // special values are converted on output
-            { "ja", "JP", "JP", "ja-JP-u-ca-japanese-x-lvariant-JP" },
-            { "th", "TH", "TH", "th-TH-u-nu-thai-x-lvariant-TH" },
-            { "no", "NO", "NY", "nn-NO" }
+                // empty locale canonicalizes to 'und'
+                {"", "", "", "und"},
+                // variant alone is not a valid Locale, but has a valid language tag
+                {"", "", "NewYork", "und-NewYork"},
+                // standard valid locales
+                {"", "Us", "", "und-US"},
+                {"", "US", "NewYork", "und-US-NewYork"},
+                {"EN", "", "", "en"},
+                {"EN", "", "NewYork", "en-NewYork"},
+                {"EN", "US", "", "en-US"},
+                {"EN", "US", "NewYork", "en-US-NewYork"},
+                // underscore in variant will be emitted as multiple variant subtags
+                {"en", "US", "Newer_Yorker", "en-US-Newer-Yorker"},
+                // invalid variant subtags are appended as private use
+                {"en", "US", "new_yorker", "en-US-x-lvariant-new-yorker"},
+                // the first invalid variant subtags and following variant subtags are appended as private use
+                {"en", "US", "Windows_XP_Home", "en-US-Windows-x-lvariant-XP-Home"},
+                // too long variant and following variant subtags disappear
+                {"en", "US", "WindowsVista_SP2", "en-US"},
+                // invalid region subtag disappears
+                {"en", "USA", "", "en"},
+                // invalid language tag disappears
+                {"e", "US", "", "und-US"},
+                // three-letter language tags are not canonicalized
+                {"Eng", "", "", "eng"},
+                // legacy languages canonicalize to modern equivalents
+                {"he", "IL", "", "he-IL"},
+                {"iw", "IL", "", "he-IL"},
+                {"yi", "DE", "", "yi-DE"},
+                {"ji", "DE", "", "yi-DE"},
+                {"id", "ID", "", "id-ID"},
+                {"in", "ID", "", "id-ID"},
+                // special values are converted on output
+                {"ja", "JP", "JP", "ja-JP-u-ca-japanese-x-lvariant-JP"},
+                {"th", "TH", "TH", "th-TH-u-nu-thai-x-lvariant-TH"},
+                {"no", "NO", "NY", "nn-NO"}
         };
         for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
             Locale locale = Locale.of(test[0], test[1], test[2]);
-            assertEquals("case " + i, test[3], locale.toLanguageTag());
+            assertEquals(test[3], locale.toLanguageTag(), "case " + i);
         }
 
         // test locales created from forLanguageTag
         String[][] tests1 = {
-            // case is normalized during the round trip
-            { "EN-us", "en-US" },
-            { "en-Latn-US", "en-Latn-US" },
-            // reordering Unicode locale extensions
-            { "de-u-co-phonebk-ca-gregory", "de-u-ca-gregory-co-phonebk" },
-            // private use only language tag is preserved (no extra "und")
-            { "x-elmer", "x-elmer" },
-            { "x-lvariant-JP", "x-lvariant-JP" },
+                // case is normalized during the round trip
+                {"EN-us", "en-US"},
+                {"en-Latn-US", "en-Latn-US"},
+                // reordering Unicode locale extensions
+                {"de-u-co-phonebk-ca-gregory", "de-u-ca-gregory-co-phonebk"},
+                // private use only language tag is preserved (no extra "und")
+                {"x-elmer", "x-elmer"},
+                {"x-lvariant-JP", "x-lvariant-JP"},
         };
         for (String[] test : tests1) {
             Locale locale = Locale.forLanguageTag(test[0]);
-            assertEquals("case " + test[0], test[1], locale.toLanguageTag());
+            assertEquals(test[1], locale.toLanguageTag(), "case " + test[0]);
         }
 
     }
@@ -524,102 +513,101 @@ public class LocaleEnhanceTest {
         // sample private use tags) come from 4646bis Feb 29, 2009.
 
         String[][] tests = {
-            // private use tags only
-            { "x-abc", "x-abc" },
-            { "x-a-b-c", "x-a-b-c" },
-            { "x-a-12345678", "x-a-12345678" },
+                // private use tags only
+                {"x-abc", "x-abc"},
+                {"x-a-b-c", "x-a-b-c"},
+                {"x-a-12345678", "x-a-12345678"},
 
-            // legacy language tags with preferred mappings
-            { "i-ami", "ami" },
-            { "i-bnn", "bnn" },
-            { "i-hak", "hak" },
-            { "i-klingon", "tlh" },
-            { "i-lux", "lb" }, // two-letter tag
-            { "i-navajo", "nv" }, // two-letter tag
-            { "i-pwn", "pwn" },
-            { "i-tao", "tao" },
-            { "i-tay", "tay" },
-            { "i-tsu", "tsu" },
-            { "art-lojban", "jbo" },
-            { "no-bok", "nb" },
-            { "no-nyn", "nn" },
-            { "sgn-BE-FR", "sfb" },
-            { "sgn-BE-NL", "vgt" },
-            { "sgn-CH-DE", "sgg" },
-            { "zh-guoyu", "cmn" },
-            { "zh-hakka", "hak" },
-            { "zh-min-nan", "nan" },
-            { "zh-xiang", "hsn" },
+                // legacy language tags with preferred mappings
+                {"i-ami", "ami"},
+                {"i-bnn", "bnn"},
+                {"i-hak", "hak"},
+                {"i-klingon", "tlh"},
+                {"i-lux", "lb"}, // two-letter tag
+                {"i-navajo", "nv"}, // two-letter tag
+                {"i-pwn", "pwn"},
+                {"i-tao", "tao"},
+                {"i-tay", "tay"},
+                {"i-tsu", "tsu"},
+                {"art-lojban", "jbo"},
+                {"no-bok", "nb"},
+                {"no-nyn", "nn"},
+                {"sgn-BE-FR", "sfb"},
+                {"sgn-BE-NL", "vgt"},
+                {"sgn-CH-DE", "sgg"},
+                {"zh-guoyu", "cmn"},
+                {"zh-hakka", "hak"},
+                {"zh-min-nan", "nan"},
+                {"zh-xiang", "hsn"},
 
-            // irregular legacy language tags, no preferred mappings, drop illegal fields
-            // from end.  If no subtag is mappable, fallback to 'und'
-            { "i-default", "en-x-i-default" },
-            { "i-enochian", "x-i-enochian" },
-            { "i-mingo", "see-x-i-mingo" },
-            { "en-GB-oed", "en-GB-x-oed" },
-            { "zh-min", "nan-x-zh-min" },
-            { "cel-gaulish", "xtg-x-cel-gaulish" },
+                // irregular legacy language tags, no preferred mappings, drop illegal fields
+                // from end.  If no subtag is mappable, fallback to 'und'
+                {"i-default", "en-x-i-default"},
+                {"i-enochian", "x-i-enochian"},
+                {"i-mingo", "see-x-i-mingo"},
+                {"en-GB-oed", "en-GB-x-oed"},
+                {"zh-min", "nan-x-zh-min"},
+                {"cel-gaulish", "xtg-x-cel-gaulish"},
         };
         for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
             Locale locale = Locale.forLanguageTag(test[0]);
-            assertEquals("legacy language tag case " + i, test[1], locale.toLanguageTag());
+            assertEquals(test[1], locale.toLanguageTag(), "legacy language tag case " + i);
         }
 
         // forLanguageTag ignores everything past the first place it encounters
         // a syntax error
-        tests = new String[][] {
-            { "valid",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-12345678-z" },
-            { "segment of private use tag too long",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-123456789-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y" },
-            { "segment of private use tag is empty",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y--12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y" },
-            { "first segment of private use tag is empty",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x--y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def" },
-            { "illegal extension tag",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-\uD800-y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def" },
-            { "locale subtag with no value",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-x-y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-x-y-12345678-z" },
-            { "locale key subtag invalid",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-123456789-def-x-y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc" },
-            // locale key subtag invalid in earlier position, all following subtags
-            // dropped (and so the locale extension dropped as well)
-            { "locale key subtag invalid in earlier position",
-              "en-US-Newer-Yorker-a-bb-cc-dd-u-123456789-abc-bb-def-x-y-12345678-z",
-              "en-US-Newer-Yorker-a-bb-cc-dd" },
+        tests = new String[][]{
+                {"valid",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-12345678-z"},
+                {"segment of private use tag too long",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y-123456789-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y"},
+                {"segment of private use tag is empty",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y--12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x-y"},
+                {"first segment of private use tag is empty",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-x--y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def"},
+                {"illegal extension tag",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def-\uD800-y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-def"},
+                {"locale subtag with no value",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-x-y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-bb-x-y-12345678-z"},
+                {"locale key subtag invalid",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc-123456789-def-x-y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-aa-abc"},
+                // locale key subtag invalid in earlier position, all following subtags
+                // dropped (and so the locale extension dropped as well)
+                {"locale key subtag invalid in earlier position",
+                        "en-US-Newer-Yorker-a-bb-cc-dd-u-123456789-abc-bb-def-x-y-12345678-z",
+                        "en-US-Newer-Yorker-a-bb-cc-dd"},
         };
         for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
             String msg = "syntax error case " + i + " " + test[0];
             try {
                 Locale locale = Locale.forLanguageTag(test[1]);
-                assertEquals(msg, test[2], locale.toLanguageTag());
-            }
-            catch (IllegalArgumentException e) {
+                assertEquals(test[2], locale.toLanguageTag(), msg);
+            } catch (IllegalArgumentException e) {
                 fail(msg + " caught exception: " + e);
             }
         }
 
         // duplicated extension are just ignored
         Locale locale = Locale.forLanguageTag("und-d-aa-00-bb-01-D-AA-10-cc-11-c-1234");
-        assertEquals("extension", "aa-00-bb-01", locale.getExtension('d'));
-        assertEquals("extension c", "1234", locale.getExtension('c'));
+        assertEquals("aa-00-bb-01", locale.getExtension('d'), "extension");
+        assertEquals("1234", locale.getExtension('c'), "extension c");
 
         locale = Locale.forLanguageTag("und-U-ca-gregory-u-ca-japanese");
-        assertEquals("Unicode extension", "ca-gregory", locale.getExtension(Locale.UNICODE_LOCALE_EXTENSION));
+        assertEquals("ca-gregory", locale.getExtension(Locale.UNICODE_LOCALE_EXTENSION), "Unicode extension");
 
         // redundant Unicode locale keys in an extension are ignored
         locale = Locale.forLanguageTag("und-u-aa-000-bb-001-bB-002-cc-003-c-1234");
-        assertEquals("Unicode keywords", "aa-000-bb-001-cc-003", locale.getExtension(Locale.UNICODE_LOCALE_EXTENSION));
-        assertEquals("Duplicated Unicode locake key followed by an extension", "1234", locale.getExtension('c'));
+        assertEquals("aa-000-bb-001-cc-003", locale.getExtension(Locale.UNICODE_LOCALE_EXTENSION), "Unicode keywords");
+        assertEquals("1234", locale.getExtension('c'), "Duplicated Unicode locake key followed by an extension");
     }
 
     @Test
@@ -630,12 +618,12 @@ public class LocaleEnhanceTest {
         Locale oldLocale = Locale.getDefault();
 
         Locale.setDefault(Locale.US);
-        assertEquals("latn US", "Latin", latnLocale.getDisplayScript());
-        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript());
+        assertEquals("Latin", latnLocale.getDisplayScript(), "latn US");
+        assertEquals("Simplified", hansLocale.getDisplayScript(), "hans US");
 
         Locale.setDefault(Locale.GERMANY);
-        assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript());
-        assertEquals("hans DE", "Vereinfacht", hansLocale.getDisplayScript());
+        assertEquals("Lateinisch", latnLocale.getDisplayScript(), "latn DE");
+        assertEquals("Vereinfacht", hansLocale.getDisplayScript(), "hans DE");
 
         Locale.setDefault(oldLocale);
     }
@@ -645,11 +633,11 @@ public class LocaleEnhanceTest {
         Locale latnLocale = Locale.forLanguageTag("und-latn");
         Locale hansLocale = Locale.forLanguageTag("und-hans");
 
-        assertEquals("latn US", "Latin", latnLocale.getDisplayScript(Locale.US));
-        assertEquals("hans US", "Simplified", hansLocale.getDisplayScript(Locale.US));
+        assertEquals("Latin", latnLocale.getDisplayScript(Locale.US), "latn US");
+        assertEquals("Simplified", hansLocale.getDisplayScript(Locale.US), "hans US");
 
-        assertEquals("latn DE", "Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY));
-        assertEquals("hans DE", "Vereinfacht", hansLocale.getDisplayScript(Locale.GERMANY));
+        assertEquals("Lateinisch", latnLocale.getDisplayScript(Locale.GERMANY), "latn DE");
+        assertEquals("Vereinfacht", hansLocale.getDisplayScript(Locale.GERMANY), "hans DE");
     }
 
     @Test
@@ -695,10 +683,10 @@ public class LocaleEnhanceTest {
 
         for (int i = 0; i < testLocales.length; i++) {
             Locale loc = testLocales[i];
-            assertEquals("English display name for " + loc.toLanguageTag(),
-                    displayNameEnglish[i], loc.getDisplayName(Locale.ENGLISH));
-            assertEquals("Simplified Chinese display name for " + loc.toLanguageTag(),
-                    displayNameSimplifiedChinese[i], loc.getDisplayName(Locale.CHINA));
+            assertEquals(displayNameEnglish[i], loc.getDisplayName(Locale.ENGLISH),
+                    "English display name for " + loc.toLanguageTag());
+            assertEquals(displayNameSimplifiedChinese[i], loc.getDisplayName(Locale.CHINA),
+                    "Simplified Chinese display name for " + loc.toLanguageTag());
         }
     }
 
@@ -716,37 +704,33 @@ public class LocaleEnhanceTest {
 
         Locale locale = Locale.forLanguageTag(languageTag);
         Locale result = lenientBuilder
-            .setLocale(locale)
-            .build();
-        assertEquals("long tag", target, result.toLanguageTag());
-        assertEquals("long tag", locale, result);
+                .setLocale(locale)
+                .build();
+        assertEquals(target, result.toLanguageTag(), "long tag");
+        assertEquals(locale, result, "long tag");
 
         // null is illegal
-        new BuilderNPE("locale") {
-            public void call() { b.setLocale(null); }
-        };
+        assertThrows(NullPointerException.class, () -> builder.setLocale(null),
+                "Setting null locale should throw NPE");
 
         // builder canonicalizes the three legacy locales:
         // ja_JP_JP, th_TH_TH, no_NY_NO.
         locale = builder.setLocale(Locale.of("ja", "JP", "JP")).build();
-        assertEquals("ja_JP_JP languagetag", "ja-JP-u-ca-japanese", locale.toLanguageTag());
-        assertEquals("ja_JP_JP variant", "", locale.getVariant());
+        assertEquals("ja-JP-u-ca-japanese", locale.toLanguageTag(), "ja_JP_JP languagetag");
+        assertEquals("", locale.getVariant(), "ja_JP_JP variant");
 
         locale = builder.setLocale(Locale.of("th", "TH", "TH")).build();
-        assertEquals("th_TH_TH languagetag", "th-TH-u-nu-thai", locale.toLanguageTag());
-        assertEquals("th_TH_TH variant", "", locale.getVariant());
+        assertEquals("th-TH-u-nu-thai", locale.toLanguageTag(), "th_TH_TH languagetag");
+        assertEquals("", locale.getVariant(), "th_TH_TH variant");
 
         locale = builder.setLocale(Locale.of("no", "NO", "NY")).build();
-        assertEquals("no_NO_NY languagetag", "nn-NO", locale.toLanguageTag());
-        assertEquals("no_NO_NY language", "nn", locale.getLanguage());
-        assertEquals("no_NO_NY variant", "", locale.getVariant());
+        assertEquals("nn-NO", locale.toLanguageTag(), "no_NO_NY languagetag");
+        assertEquals("nn", locale.getLanguage(), "no_NO_NY language");
+        assertEquals("", locale.getVariant(), "no_NO_NY variant");
 
         // non-canonical, non-legacy locales are invalid
-        new BuilderILE("123_4567_89") {
-            public void call() {
-                b.setLocale(Locale.of("123", "4567", "89"));
-            }
-        };
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.of("123", "4567", "89")), "123_4567_89");
     }
 
     @Test
@@ -755,16 +739,20 @@ public class LocaleEnhanceTest {
         String target = "en-Latn-US-NewYork-a-xx-b-yy-x-1-2-3";
         Builder builder = new Builder();
         String result = builder
-            .setLanguageTag(source)
-            .build()
-            .toLanguageTag();
-        assertEquals("language", target, result);
+                .setLanguageTag(source)
+                .build()
+                .toLanguageTag();
+        assertEquals(target, result, "language");
 
-        // redundant extensions cause a failure
-        new BuilderILE() { public void call() { b.setLanguageTag("und-a-xx-yy-b-ww-A-00-11-c-vv"); }};
-
-        // redundant Unicode locale extension keys within an Unicode locale extension cause a failure
-        new BuilderILE() { public void call() { b.setLanguageTag("und-u-nu-thai-NU-chinese-xx-1234"); }};
+        // redundant extensions are ignored
+        assertEquals("und-a-xx-yy-b-ww-c-vv",
+                new Builder().setLanguageTag("und-a-xx-yy-b-ww-A-00-11-c-vv").build().toLanguageTag());
+        // redundant Unicode locale extension keys are ignored
+        assertEquals("und-u-cu-usd-nu-thai-xx-1234",
+                new Builder().setLanguageTag("und-u-nu-thai-cu-usd-NU-chinese-xx-1234").build().toLanguageTag());
+        // redundant Unicode locale extension attributes are ignored
+        assertEquals("und-u-bar-foo",
+                new Builder().setLanguageTag("und-u-foo-bar-FOO").build().toLanguageTag());
     }
 
     // Test the values that should clear the builder
@@ -776,9 +764,9 @@ public class LocaleEnhanceTest {
         var bldr = new Builder();
         bldr.setLanguageTag("en-US");
         assertDoesNotThrow(() -> bldr.setLanguageTag(tag));
-        assertEquals("Setting a %s language tag did not clear the builder"
-                .formatted(tag == null ? "null" : "empty"),
-                empty.build(), bldr.build());
+        assertEquals(empty.build(), bldr.build(),
+                "Setting a %s language tag did not clear the builder"
+                .formatted(tag == null ? "null" : "empty"));
     }
 
     @Test
@@ -789,18 +777,18 @@ public class LocaleEnhanceTest {
         String defaulted = "";
         Builder builder = new Builder();
         String result = builder
-            .setLanguage(source)
-            .build()
-            .getLanguage();
-        assertEquals("en", target, result);
+                .setLanguage(source)
+                .build()
+                .getLanguage();
+        assertEquals(target, result, "en");
 
         // setting with empty resets
         result = builder
-            .setLanguage(target)
-            .setLanguage("")
-            .build()
-            .getLanguage();
-        assertEquals("empty", defaulted, result);
+                .setLanguage(target)
+                .setLanguage("")
+                .build()
+                .getLanguage();
+        assertEquals(defaulted, result, "empty");
 
         // setting with null resets too
         result = builder
@@ -808,23 +796,25 @@ public class LocaleEnhanceTest {
                 .setLanguage(null)
                 .build()
                 .getLanguage();
-        assertEquals("null", defaulted, result);
+        assertEquals(defaulted, result, "null");
 
         // language codes must be 2-8 alpha
         // for forwards compatibility, 4-alpha and 5-8 alpha (registered)
         // languages are accepted syntax
-        new BuilderILE("q", "abcdefghi", "13") { public void call() { b.setLanguage(arg); }};
+        for (String arg : List.of("q", "abcdefghi", "13")) {
+            assertThrows(IllformedLocaleException.class, () -> new Builder().setLanguage(arg));
+        }
 
         // language code validation is NOT performed, any 2-8-alpha passes
-        assertNotNull("2alpha", builder.setLanguage("zz").build());
-        assertNotNull("8alpha", builder.setLanguage("abcdefgh").build());
+        assertNotNull(builder.setLanguage("zz").build(), "2alpha");
+        assertNotNull(builder.setLanguage("abcdefgh").build(), "8alpha");
 
         // three-letter language codes are NOT canonicalized to two-letter
         result = builder
-            .setLanguage("eng")
-            .build()
-            .getLanguage();
-        assertEquals("eng", "eng", result);
+                .setLanguage("eng")
+                .build()
+                .getLanguage();
+        assertEquals("eng", result, "eng");
     }
 
     @Test
@@ -835,18 +825,18 @@ public class LocaleEnhanceTest {
         String defaulted = "";
         Builder builder = new Builder();
         String result = builder
-            .setScript(source)
-            .build()
-            .getScript();
-        assertEquals("script", target, result);
+                .setScript(source)
+                .build()
+                .getScript();
+        assertEquals(target, result, "script");
 
         // setting with empty resets
         result = builder
-            .setScript(target)
-            .setScript("")
-            .build()
-            .getScript();
-        assertEquals("empty", defaulted, result);
+                .setScript(target)
+                .setScript("")
+                .build()
+                .getScript();
+        assertEquals(defaulted, result, "empty");
 
         // settting with null also resets
         result = builder
@@ -854,14 +844,17 @@ public class LocaleEnhanceTest {
                 .setScript(null)
                 .build()
                 .getScript();
-        assertEquals("null", defaulted, result);
+        assertEquals(defaulted, result, "null");
 
         // ill-formed script codes throw IAE
         // must be 4alpha
-        new BuilderILE("abc", "abcde", "l3tn") { public void call() { b.setScript(arg); }};
+        for (String arg : List.of("abc", "abcde", "l3tn")) {
+            assertThrows(IllformedLocaleException.class, () -> new Builder().setScript(arg));
+        }
+
 
         // script code validation is NOT performed, any 4-alpha passes
-        assertEquals("4alpha", "Wxyz", builder.setScript("wxyz").build().getScript());
+        assertEquals("Wxyz", builder.setScript("wxyz").build().getScript(), "4alpha");
     }
 
     @Test
@@ -872,18 +865,18 @@ public class LocaleEnhanceTest {
         String defaulted = "";
         Builder builder = new Builder();
         String result = builder
-            .setRegion(source)
-            .build()
-            .getCountry();
-        assertEquals("us", target, result);
+                .setRegion(source)
+                .build()
+                .getCountry();
+        assertEquals(target, result, "us");
 
         // setting with empty resets
         result = builder
-            .setRegion(target)
-            .setRegion("")
-            .build()
-            .getCountry();
-        assertEquals("empty", defaulted, result);
+                .setRegion(target)
+                .setRegion("")
+                .build()
+                .getCountry();
+        assertEquals(defaulted, result, "empty");
 
         // setting with null also resets
         result = builder
@@ -891,15 +884,17 @@ public class LocaleEnhanceTest {
                 .setRegion(null)
                 .build()
                 .getCountry();
-        assertEquals("null", defaulted, result);
+        assertEquals(defaulted, result, "null");
 
         // ill-formed region codes throw IAE
         // 2 alpha or 3 numeric
-        new BuilderILE("q", "abc", "12", "1234", "a3", "12a") { public void call() { b.setRegion(arg); }};
+        for (String arg : List.of("q", "abc", "12", "1234", "a3", "12a")) {
+            assertThrows(IllformedLocaleException.class, () -> new Builder().setRegion(arg));
+        }
 
         // region code validation is NOT performed, any 2-alpha or 3-digit passes
-        assertEquals("2alpha", "ZZ", builder.setRegion("ZZ").build().getCountry());
-        assertEquals("3digit", "000", builder.setRegion("000").build().getCountry());
+        assertEquals("ZZ", builder.setRegion("ZZ").build().getCountry(), "2alpha");
+        assertEquals("000", builder.setRegion("000").build().getCountry(), "3digit");
     }
 
     @Test
@@ -910,31 +905,31 @@ public class LocaleEnhanceTest {
         String defaulted = "";
         Builder builder = new Builder();
         String result = builder
-            .setVariant(source)
-            .build()
-            .getVariant();
-        assertEquals("NewYork", target, result);
+                .setVariant(source)
+                .build()
+                .getVariant();
+        assertEquals(target, result, "NewYork");
 
         result = builder
-            .setVariant("NeWeR_YoRkEr")
-            .build()
-            .toLanguageTag();
-        assertEquals("newer yorker", "und-NeWeR-YoRkEr", result);
+                .setVariant("NeWeR_YoRkEr")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-NeWeR-YoRkEr", result, "newer yorker");
 
         // subtags of variant are NOT reordered
         result = builder
-            .setVariant("zzzzz_yyyyy_xxxxx")
-            .build()
-            .getVariant();
-        assertEquals("zyx", "zzzzz_yyyyy_xxxxx", result);
+                .setVariant("zzzzz_yyyyy_xxxxx")
+                .build()
+                .getVariant();
+        assertEquals("zzzzz_yyyyy_xxxxx", result, "zyx");
 
         // setting to empty resets
         result = builder
-            .setVariant(target)
-            .setVariant("")
-            .build()
-            .getVariant();
-        assertEquals("empty", defaulted, result);
+                .setVariant(target)
+                .setVariant("")
+                .build()
+                .getVariant();
+        assertEquals(defaulted, result, "empty");
 
         // setting to null also resets
         result = builder
@@ -942,17 +937,21 @@ public class LocaleEnhanceTest {
                 .setVariant(null)
                 .build()
                 .getVariant();
-        assertEquals("null", defaulted, result);
+        assertEquals(defaulted, result, "null");
 
         // ill-formed variants throw IAE
         // digit followed by 3-7 characters, or alpha followed by 4-8 characters.
-        new BuilderILE("abcd", "abcdefghi", "1ab", "1abcdefgh") { public void call() { b.setVariant(arg); }};
+        for (String arg : List.of("abcd", "abcdefghi", "1ab", "1abcdefgh")) {
+            assertThrows(IllformedLocaleException.class, () -> new Builder().setVariant(arg));
+        }
+
 
         // 4 characters is ok as long as the first is a digit
-        assertEquals("digit+3alpha", "1abc", builder.setVariant("1abc").build().getVariant());
+        assertEquals("1abc", builder.setVariant("1abc").build().getVariant(), "digit+3alpha");
 
         // all subfields must conform
-        new BuilderILE("abcde-fg") { public void call() { b.setVariant(arg); }};
+        assertThrows(IllformedLocaleException.class, () -> new Builder().setVariant("abcde-fg"));
+
     }
 
     @Test
@@ -963,18 +962,18 @@ public class LocaleEnhanceTest {
         String target = "ab-abcdefgh-12-12345678";
         Builder builder = new Builder();
         String result = builder
-            .setExtension(sourceKey, sourceValue)
-            .build()
-            .getExtension(sourceKey);
-        assertEquals("extension", target, result);
+                .setExtension(sourceKey, sourceValue)
+                .build()
+                .getExtension(sourceKey);
+        assertEquals(target, result, "extension");
 
         // setting with empty resets
         result = builder
-            .setExtension(sourceKey, sourceValue)
-            .setExtension(sourceKey, "")
-            .build()
-            .getExtension(sourceKey);
-        assertEquals("empty", null, result);
+                .setExtension(sourceKey, sourceValue)
+                .setExtension(sourceKey, "")
+                .build()
+                .getExtension(sourceKey);
+        assertNull(result, "empty");
 
         // setting with null also resets
         result = builder
@@ -982,100 +981,120 @@ public class LocaleEnhanceTest {
                 .setExtension(sourceKey, null)
                 .build()
                 .getExtension(sourceKey);
-        assertEquals("null", null, result);
+        assertNull(result, "null");
 
         // ill-formed extension keys throw IAE
         // must be in [0-9a-ZA-Z]
-        new BuilderILE("$") { public void call() { b.setExtension('$', sourceValue); }};
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setExtension('$', sourceValue));
+
 
         // each segment of value must be 2-8 alphanum
-        new BuilderILE("ab-cd-123456789") { public void call() { b.setExtension(sourceKey, arg); }};
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setExtension(sourceKey, "ab-cd-123456789"));
+
 
         // no multiple hyphens.
-        new BuilderILE("ab--cd") { public void call() { b.setExtension(sourceKey, arg); }};
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setExtension(sourceKey, "ab--cd"));
+
 
         // locale extension key has special handling
         Locale locale = builder
-            .setExtension('u', "co-japanese")
-            .build();
-        assertEquals("locale extension", "japanese", locale.getUnicodeLocaleType("co"));
+                .setExtension('u', "co-japanese")
+                .build();
+        assertEquals("japanese", locale.getUnicodeLocaleType("co"), "locale extension");
 
         // locale extension has same behavior with set locale keyword
         Locale locale2 = builder
-            .setUnicodeLocaleKeyword("co", "japanese")
-            .build();
-        assertEquals("locales with extension", locale, locale2);
+                .setUnicodeLocaleKeyword("co", "japanese")
+                .build();
+        assertEquals(locale, locale2, "locales with extension");
 
         // setting locale extension overrides all previous calls to setLocaleKeyword
         Locale locale3 = builder
-            .setExtension('u', "xxx-nu-thai")
-            .build();
-        assertEquals("remove co", null, locale3.getUnicodeLocaleType("co"));
-        assertEquals("override thai", "thai", locale3.getUnicodeLocaleType("nu"));
-        assertEquals("override attribute", 1, locale3.getUnicodeLocaleAttributes().size());
+                .setExtension('u', "xxx-nu-thai")
+                .build();
+        assertNull(locale3.getUnicodeLocaleType("co"), "remove co");
+        assertEquals("thai", locale3.getUnicodeLocaleType("nu"), "override thai");
+        assertEquals(1, locale3.getUnicodeLocaleAttributes().size(), "override attribute");
 
         // setting locale keyword extends values already set by the locale extension
         Locale locale4 = builder
-            .setUnicodeLocaleKeyword("co", "japanese")
-            .build();
-        assertEquals("extend", "japanese", locale4.getUnicodeLocaleType("co"));
-        assertEquals("extend", "thai", locale4.getUnicodeLocaleType("nu"));
+                .setUnicodeLocaleKeyword("co", "japanese")
+                .build();
+        assertEquals("japanese", locale4.getUnicodeLocaleType("co"), "extend");
+        assertEquals("thai", locale4.getUnicodeLocaleType("nu"), "extend");
 
         // locale extension subtags are reordered
         result = builder
-            .clear()
-            .setExtension('u', "456-123-zz-123-yy-456-xx-789")
-            .build()
-            .toLanguageTag();
-        assertEquals("reorder", "und-u-123-456-xx-789-yy-456-zz-123", result);
+                .clear()
+                .setExtension('u', "456-123-zz-123-yy-456-xx-789")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-123-456-xx-789-yy-456-zz-123", result, "reorder");
 
         // multiple keyword types
         result = builder
-            .clear()
-            .setExtension('u', "nu-thai-foobar")
-            .build()
-            .getUnicodeLocaleType("nu");
-        assertEquals("multiple types", "thai-foobar", result);
+                .clear()
+                .setExtension('u', "nu-thai-foobar")
+                .build()
+                .getUnicodeLocaleType("nu");
+        assertEquals("thai-foobar", result, "multiple types");
 
         // redundant locale extensions are ignored
         result = builder
-            .clear()
-            .setExtension('u', "nu-thai-NU-chinese-xx-1234")
-            .build()
-            .toLanguageTag();
-        assertEquals("duplicate keys", "und-u-nu-thai-xx-1234", result);
+                .clear()
+                .setExtension('u', "nu-thai-NU-chinese-xx-1234")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-nu-thai-xx-1234", result, "duplicate keys");
+
+        // redundant locale attributes are ignored
+        result = builder
+                .clear()
+                .setExtension('u', "posix-posix")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-posix", result, "duplicate attributes");
     }
 
     @Test
     public void testBuilderAddUnicodeLocaleAttribute() {
         Builder builder = new Builder();
         Locale locale = builder
-            .addUnicodeLocaleAttribute("def")
-            .addUnicodeLocaleAttribute("abc")
-            .build();
+                .addUnicodeLocaleAttribute("def")
+                .addUnicodeLocaleAttribute("abc")
+                .build();
 
         Set<String> uattrs = locale.getUnicodeLocaleAttributes();
-        assertEquals("number of attributes", 2, uattrs.size());
-        assertTrue("attribute abc", uattrs.contains("abc"));
-        assertTrue("attribute def", uattrs.contains("def"));
+        assertEquals(2, uattrs.size(), "number of attributes");
+        assertTrue(uattrs.contains("abc"), "attribute abc");
+        assertTrue(uattrs.contains("def"), "attribute def");
 
         // remove attribute
         locale = builder.removeUnicodeLocaleAttribute("xxx")
-            .build();
+                .build();
 
-        assertEquals("remove bogus", 2, uattrs.size());
+        uattrs = locale.getUnicodeLocaleAttributes();
+        assertEquals(2, uattrs.size(), "remove bogus");
 
         // add duplicate
         locale = builder.addUnicodeLocaleAttribute("abc")
-            .build();
-        assertEquals("add duplicate", 2, uattrs.size());
+                .build();
+        uattrs = locale.getUnicodeLocaleAttributes();
+        assertEquals(2, uattrs.size(), "add duplicate");
 
         // null attribute throws NPE
-        new BuilderNPE("null attribute") { public void call() { b.addUnicodeLocaleAttribute(null); }};
-        new BuilderNPE("null attribute removal") { public void call() { b.removeUnicodeLocaleAttribute(null); }};
+        assertThrows(NullPointerException.class,
+                () ->  new Builder().addUnicodeLocaleAttribute(null), "null attribute");
+
+        assertThrows(NullPointerException.class,
+                () -> new Builder().removeUnicodeLocaleAttribute(null), "null attribute removal");
 
         // illformed attribute throws IllformedLocaleException
-        new BuilderILE("invalid attribute") { public void call() { b.addUnicodeLocaleAttribute("ca"); }};
+        assertThrows(IllformedLocaleException.class,
+                     () -> new Builder().addUnicodeLocaleAttribute("ca"), "invalid attribute");
     }
 
     @Test
@@ -1083,43 +1102,51 @@ public class LocaleEnhanceTest {
         // Note: most behavior is tested in testBuilderSetExtension
         Builder builder = new Builder();
         Locale locale = builder
-            .setUnicodeLocaleKeyword("co", "japanese")
-            .setUnicodeLocaleKeyword("nu", "thai")
-            .build();
-        assertEquals("co", "japanese", locale.getUnicodeLocaleType("co"));
-        assertEquals("nu", "thai", locale.getUnicodeLocaleType("nu"));
-        assertEquals("keys", 2, locale.getUnicodeLocaleKeys().size());
+                .setUnicodeLocaleKeyword("co", "japanese")
+                .setUnicodeLocaleKeyword("nu", "thai")
+                .build();
+        assertEquals("japanese", locale.getUnicodeLocaleType("co"), "co");
+        assertEquals("thai", locale.getUnicodeLocaleType("nu"), "nu");
+        assertEquals(2, locale.getUnicodeLocaleKeys().size(), "keys");
 
         // can clear a keyword by setting to null, others remain
         String result = builder
-            .setUnicodeLocaleKeyword("co", null)
-            .build()
-            .toLanguageTag();
-        assertEquals("empty co", "und-u-nu-thai", result);
+                .setUnicodeLocaleKeyword("co", null)
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-nu-thai", result, "empty co");
 
         // locale keyword extension goes when all keywords are gone
         result = builder
-            .setUnicodeLocaleKeyword("nu", null)
-            .build()
-            .toLanguageTag();
-        assertEquals("empty nu", "und", result);
+                .setUnicodeLocaleKeyword("nu", null)
+                .build()
+                .toLanguageTag();
+        assertEquals("und", result, "empty nu");
 
         // locale keywords are ordered independent of order of addition
         result = builder
-            .setUnicodeLocaleKeyword("zz", "012")
-            .setUnicodeLocaleKeyword("aa", "345")
-            .build()
-            .toLanguageTag();
-        assertEquals("reordered", "und-u-aa-345-zz-012", result);
+                .setUnicodeLocaleKeyword("zz", "012")
+                .setUnicodeLocaleKeyword("aa", "345")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-aa-345-zz-012", result, "reordered");
 
         // null keyword throws NPE
-        new BuilderNPE("keyword") { public void call() { b.setUnicodeLocaleKeyword(null, "thai"); }};
+        assertThrows(NullPointerException.class,
+                () -> new Builder().setUnicodeLocaleKeyword(null, "thai"), "keyword");
+
 
         // well-formed keywords are two alphanum
-        new BuilderILE("a", "abc") { public void call() { b.setUnicodeLocaleKeyword(arg, "value"); }};
+        for (String arg : List.of("a", "abc")) {
+            assertThrows(IllformedLocaleException.class,
+                    () -> new Builder().setUnicodeLocaleKeyword(arg, "value"));
+        }
 
         // well-formed values are 3-8 alphanum
-        new BuilderILE("ab", "abcdefghi") { public void call() { b.setUnicodeLocaleKeyword("ab", arg); }};
+        for (String arg : List.of("ab", "abcdefghi")) {
+            assertThrows(IllformedLocaleException.class,
+                    () -> new Builder().setUnicodeLocaleKeyword("ab", arg));
+        }
     }
 
     @Test
@@ -1129,13 +1156,15 @@ public class LocaleEnhanceTest {
         String target = "c-b-a";
         Builder builder = new Builder();
         String result = builder
-            .setExtension(Locale.PRIVATE_USE_EXTENSION, source)
-            .build()
-            .getExtension(Locale.PRIVATE_USE_EXTENSION);
-        assertEquals("abc", target, result);
+                .setExtension(Locale.PRIVATE_USE_EXTENSION, source)
+                .build()
+                .getExtension(Locale.PRIVATE_USE_EXTENSION);
+        assertEquals(target, result, "abc");
 
         // multiple hyphens are ill-formed
-        new BuilderILE("a--b") { public void call() { b.setExtension(Locale.PRIVATE_USE_EXTENSION, arg); }};
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setExtension(Locale.PRIVATE_USE_EXTENSION, "a--b"),
+                "multiple-hyphens should throw IAE");
     }
 
     @Test
@@ -1144,11 +1173,11 @@ public class LocaleEnhanceTest {
         Builder builder = new Builder();
         Locale locale = Locale.forLanguageTag(monster);
         String result = builder
-            .setLocale(locale)
-            .clear()
-            .build()
-            .toLanguageTag();
-        assertEquals("clear", "und", result);
+                .setLocale(locale)
+                .clear()
+                .build()
+                .toLanguageTag();
+        assertEquals("und", result, "clear");
     }
 
     @Test
@@ -1164,33 +1193,33 @@ public class LocaleEnhanceTest {
     @Test
     public void testSerialize() {
         final Locale[] testLocales = {
-            Locale.ROOT,
-            Locale.ENGLISH,
-            Locale.US,
-            Locale.of("en", "US", "Win"),
-            Locale.of("en", "US", "Win_XP"),
-            Locale.JAPAN,
-            Locale.of("ja", "JP", "JP"),
-            Locale.of("th", "TH"),
-            Locale.of("th", "TH", "TH"),
-            Locale.of("no", "NO"),
-            Locale.of("nb", "NO"),
-            Locale.of("nn", "NO"),
-            Locale.of("no", "NO", "NY"),
-            Locale.of("nn", "NO", "NY"),
-            Locale.of("he", "IL"),
-            Locale.of("he", "IL", "var"),
-            Locale.of("Language", "Country", "Variant"),
-            Locale.of("", "US"),
-            Locale.of("", "", "Java"),
-            Locale.forLanguageTag("en-Latn-US"),
-            Locale.forLanguageTag("zh-Hans"),
-            Locale.forLanguageTag("zh-Hant-TW"),
-            Locale.forLanguageTag("ja-JP-u-ca-japanese"),
-            Locale.forLanguageTag("und-Hant"),
-            Locale.forLanguageTag("und-a-123-456"),
-            Locale.forLanguageTag("en-x-java"),
-            Locale.forLanguageTag("th-TH-u-ca-buddist-nu-thai-x-lvariant-TH"),
+                Locale.ROOT,
+                Locale.ENGLISH,
+                Locale.US,
+                Locale.of("en", "US", "Win"),
+                Locale.of("en", "US", "Win_XP"),
+                Locale.JAPAN,
+                Locale.of("ja", "JP", "JP"),
+                Locale.of("th", "TH"),
+                Locale.of("th", "TH", "TH"),
+                Locale.of("no", "NO"),
+                Locale.of("nb", "NO"),
+                Locale.of("nn", "NO"),
+                Locale.of("no", "NO", "NY"),
+                Locale.of("nn", "NO", "NY"),
+                Locale.of("he", "IL"),
+                Locale.of("he", "IL", "var"),
+                Locale.of("Language", "Country", "Variant"),
+                Locale.of("", "US"),
+                Locale.of("", "", "Java"),
+                Locale.forLanguageTag("en-Latn-US"),
+                Locale.forLanguageTag("zh-Hans"),
+                Locale.forLanguageTag("zh-Hant-TW"),
+                Locale.forLanguageTag("ja-JP-u-ca-japanese"),
+                Locale.forLanguageTag("und-Hant"),
+                Locale.forLanguageTag("und-a-123-456"),
+                Locale.forLanguageTag("en-x-java"),
+                Locale.forLanguageTag("th-TH-u-ca-buddist-nu-thai-x-lvariant-TH"),
         };
 
         for (Locale locale : testLocales) {
@@ -1205,7 +1234,7 @@ public class LocaleEnhanceTest {
                 ObjectInputStream ois = new ObjectInputStream(bis);
                 Object o = ois.readObject();
 
-                assertEquals("roundtrip " + locale, locale, o);
+                assertEquals(locale, o, "roundtrip " + locale);
             } catch (Exception e) {
                 fail(locale + " encountered exception:" + e.getLocalizedMessage());
             }
@@ -1231,11 +1260,9 @@ public class LocaleEnhanceTest {
         }
 
         if (dataDir == null) {
-            fail("'dataDir' is null. serialized.data.dir Property value is "+dataDirName);
-            return;
+            fail("'dataDir' is null. serialized.data.dir Property value is " + dataDirName);
         } else if (!dataDir.isDirectory()) {
-            fail("'dataDir' is not a directory. dataDir: "+dataDir.toString());
-            return;
+            fail("'dataDir' is not a directory. dataDir: " + dataDir.toString());
         }
 
         File[] files = dataDir.listFiles();
@@ -1261,10 +1288,9 @@ public class LocaleEnhanceTest {
 
             // deserialize
             try (FileInputStream fis = new FileInputStream(testfile);
-                 ObjectInputStream ois = new ObjectInputStream(fis))
-            {
+                 ObjectInputStream ois = new ObjectInputStream(fis)) {
                 Object o = ois.readObject();
-                assertEquals("Deserialize Java 6 Locale " + locale, o, locale);
+                assertEquals(o, locale, "Deserialize Java 6 Locale " + locale);
             } catch (Exception e) {
                 fail("Exception while reading " + testfile.getAbsolutePath() + " - " + e.getMessage());
             }
@@ -1284,15 +1310,15 @@ public class LocaleEnhanceTest {
         //    extension "nu-thai".
         //
         String[][] testdata = {
-            {"ja-JP-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"},   // special case 1
-            {"ja-JP-x-lvariant-JP-XXX"},
-            {"ja-JP-u-ca-japanese-x-lvariant-JP"},
-            {"ja-JP-u-ca-gregory-x-lvariant-JP"},
-            {"ja-JP-u-cu-jpy-x-lvariant-JP"},
-            {"ja-x-lvariant-JP"},
-            {"th-TH-x-lvariant-TH", "th-TH-u-nu-thai-x-lvariant-TH"},   // special case 2
-            {"th-TH-u-nu-thai-x-lvariant-TH"},
-            {"en-US-x-lvariant-JP"},
+                {"ja-JP-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"},   // special case 1
+                {"ja-JP-x-lvariant-JP-XXX"},
+                {"ja-JP-u-ca-japanese-x-lvariant-JP"},
+                {"ja-JP-u-ca-gregory-x-lvariant-JP"},
+                {"ja-JP-u-cu-jpy-x-lvariant-JP"},
+                {"ja-x-lvariant-JP"},
+                {"th-TH-x-lvariant-TH", "th-TH-u-nu-thai-x-lvariant-TH"},   // special case 2
+                {"th-TH-u-nu-thai-x-lvariant-TH"},
+                {"en-US-x-lvariant-JP"},
         };
 
         Builder bldr = new Builder();
@@ -1304,22 +1330,22 @@ public class LocaleEnhanceTest {
             // forLanguageTag
             Locale loc = Locale.forLanguageTag(in);
             String out = loc.toLanguageTag();
-            assertEquals("Language tag roundtrip by forLanguageTag with input: " + in, expected, out);
+            assertEquals(expected, out, "Language tag roundtrip by forLanguageTag with input: " + in);
 
             // setLanguageTag
             bldr.clear();
             bldr.setLanguageTag(in);
             loc = bldr.build();
             out = loc.toLanguageTag();
-            assertEquals("Language tag roundtrip by Builder.setLanguageTag with input: " + in, expected, out);
+            assertEquals(expected, out, "Language tag roundtrip by Builder.setLanguageTag with input: " + in);
         }
     }
 
     @Test
     public void testBug7023613() {
         String[][] testdata = {
-            {"en-Latn", "en__#Latn"},
-            {"en-u-ca-japanese", "en__#u-ca-japanese"},
+                {"en-Latn", "en__#Latn"},
+                {"en-u-ca-japanese", "en__#u-ca-japanese"},
         };
 
         for (String[] data : testdata) {
@@ -1328,7 +1354,7 @@ public class LocaleEnhanceTest {
 
             Locale loc = Locale.forLanguageTag(in);
             String out = loc.toString();
-            assertEquals("Empty country field with non-empty script/extension with input: " + in, expected, out);
+            assertEquals(expected, out, "Empty country field with non-empty script/extension with input: " + in);
         }
     }
 
@@ -1342,7 +1368,7 @@ public class LocaleEnhanceTest {
         checkCalendar(Locale.of("ja", "JP", "JP"), "java.util.JapaneseImperialCalendar");
         checkCalendar(Locale.of("ja", "jp", "JP"), "java.util.JapaneseImperialCalendar");
         checkCalendar(Locale.forLanguageTag("en-u-ca-japanese"),
-                      "java.util.JapaneseImperialCalendar");
+                "java.util.JapaneseImperialCalendar");
 
         checkDigit(Locale.of("th", "TH", "th"), '0');
         checkDigit(Locale.of("th", "th", "th"), '0');
@@ -1353,151 +1379,12 @@ public class LocaleEnhanceTest {
 
     private void checkCalendar(Locale loc, String expected) {
         Calendar cal = Calendar.getInstance(loc);
-        assertEquals("Wrong calendar", expected, cal.getClass().getName());
+        assertEquals(expected, cal.getClass().getName(), "Wrong calendar");
     }
 
     private void checkDigit(Locale loc, Character expected) {
         DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(loc);
         Character zero = dfs.getZeroDigit();
-        assertEquals("Wrong digit zero char", expected, zero);
-    }
-
-    ///
-    /// utility asserts
-    ///
-
-    private void assertTrue(String msg, boolean v) {
-        if (!v) {
-            fail(msg + ": expected true");
-        }
-    }
-
-    private void assertFalse(String msg, boolean v) {
-        if (v) {
-            fail(msg + ": expected false");
-        }
-    }
-
-    private void assertEquals(String msg, Object e, Object v) {
-        if (e == null ? v != null : !e.equals(v)) {
-            if (e != null) {
-                e = "'" + e + "'";
-            }
-            if (v != null) {
-                v = "'" + v + "'";
-            }
-            fail(msg + ": expected " + e + " but got " + v);
-        }
-    }
-
-    private void assertNotEquals(String msg, Object e, Object v) {
-        if (e == null ? v == null : e.equals(v)) {
-            if (e != null) {
-                e = "'" + e + "'";
-            }
-            fail(msg + ": expected not equal " + e);
-        }
-    }
-
-    private void assertNull(String msg, Object o) {
-        if (o != null) {
-            fail(msg + ": expected null but got '" + o + "'");
-        }
-    }
-
-    private void assertNotNull(String msg, Object o) {
-        if (o == null) {
-            fail(msg + ": expected non null");
-        }
-    }
-
-    // not currently used, might get rid of exceptions from the API
-    private abstract class ExceptionTest {
-        private final Class<? extends Exception> exceptionClass;
-
-        ExceptionTest(Class<? extends Exception> exceptionClass) {
-            this.exceptionClass = exceptionClass;
-        }
-
-        public void run() {
-            String failMsg = null;
-            try {
-                call();
-                failMsg = "expected " + exceptionClass.getName() + "  but no exception thrown.";
-            }
-            catch (Exception e) {
-                if (!exceptionClass.isAssignableFrom(e.getClass())) {
-                    failMsg = "expected " + exceptionClass.getName() + " but caught " + e;
-                }
-            }
-            if (failMsg != null) {
-                String msg = message();
-                msg = msg == null ? "" : msg + " ";
-                fail(msg + failMsg);
-            }
-        }
-
-        public String message() {
-            return null;
-        }
-
-        public abstract void call();
-    }
-
-    private abstract class ExpectNPE extends ExceptionTest {
-        ExpectNPE() {
-            super(NullPointerException.class);
-            run();
-        }
-    }
-
-    private abstract class BuilderNPE extends ExceptionTest {
-        protected final String msg;
-        protected final Builder b = new Builder();
-
-        BuilderNPE(String msg) {
-            super(NullPointerException.class);
-
-            this.msg = msg;
-
-            run();
-        }
-
-        public String message() {
-            return msg;
-        }
-    }
-
-    private abstract class ExpectIAE extends ExceptionTest {
-        ExpectIAE() {
-            super(IllegalArgumentException.class);
-            run();
-        }
-    }
-
-    private abstract class BuilderILE extends ExceptionTest {
-        protected final String[] args;
-        protected final Builder b = new Builder();
-
-        protected String arg; // mutates during call
-
-        BuilderILE(String... args) {
-            super(IllformedLocaleException.class);
-
-            this.args = args;
-
-            run();
-        }
-
-        public void run() {
-            for (String arg : args) {
-                this.arg = arg;
-                super.run();
-            }
-        }
-
-        public String message() {
-            return "arg: '" + arg + "'";
-        }
+        assertEquals(expected, zero, "Wrong digit zero char");
     }
 }

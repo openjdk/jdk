@@ -912,6 +912,7 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
     switch (bytecode) {
       case Bytecodes::_invokevirtual:   LinkResolver::cds_resolve_virtual_call  (call_info, link_info, CHECK); break;
       case Bytecodes::_invokeinterface: LinkResolver::cds_resolve_interface_call(call_info, link_info, CHECK); break;
+      case Bytecodes::_invokestatic:    LinkResolver::cds_resolve_static_call   (call_info, link_info, CHECK); break;
       case Bytecodes::_invokespecial:   LinkResolver::cds_resolve_special_call  (call_info, link_info, CHECK); break;
 
       default: fatal("Unimplemented: %s", Bytecodes::name(bytecode));
@@ -1461,7 +1462,7 @@ JRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* current, Met
   // preparing the same method will be sure to see non-null entry & mirror.
 JRT_END
 
-#if defined(IA32) || defined(AMD64) || defined(ARM)
+#if defined(AMD64) || defined(ARM)
 JRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address))
   assert(current == JavaThread::current(), "pre-condition");
   if (src_address == dest_address) {

@@ -539,7 +539,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   set_requires_cross_modify_fence(false);
 
   pd_initialize();
-  assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
 JavaThread* JavaThread::create_attaching_thread() {
@@ -1363,9 +1362,6 @@ void JavaThread::pop_jni_handle_block() {
 }
 
 void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
-  // Verify that the deferred card marks have been flushed.
-  assert(deferred_card_mark().is_empty(), "Should be empty during GC");
-
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 

@@ -1134,6 +1134,10 @@ void LinkResolver::resolve_static_call(CallInfo& result,
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
+void LinkResolver::cds_resolve_static_call(CallInfo& result, const LinkInfo& link_info, TRAPS) {
+  resolve_static_call(result, link_info, ClassInitMode::dont_init, CHECK);
+}
+
 // throws linktime exceptions
 Method* LinkResolver::linktime_resolve_static_method(const LinkInfo& link_info, TRAPS) {
 
