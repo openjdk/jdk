@@ -775,14 +775,15 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator, Shenandoa
       if (result != nullptr) {
         return result;
       }
-    } else if (empty_region == nullptr && alloc_capacity(r) == ShenandoahHeapRegion::region_size_bytes()) {
+    } else if (empty_region == nullptr && r->affiliation() == FREE &&
+               (!_heap->is_concurrent_weak_root_in_progress() || !r->is_trash())) {
       empty_region = r;
     }
   }
   // Failed to allocate within any affiliated region, try the first free region in the partition.
   if (empty_region != nullptr) {
     HeapWord* result = try_allocate_in(empty_region, req, in_new_region);
-    assert(result != nullptr, "Allocate in free region in the paritition must succeed.");
+    assert(result != nullptr, "Allocate in free region in the partition must succeed.");
     return result;
   }
   log_debug(gc, free)("Could not allocate collector region with affiliation: %s for request " PTR_FORMAT,
