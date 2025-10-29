@@ -194,10 +194,9 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
     return NULL;
 }
 
-/* Convert a pathname to canonical form.  The input orig_path is assumed to
-   have been converted to native form already, via JVM_NativePath().  If a
-   reparse point is encountered while traversing the path, then the final path
-   is derived from the full path and returned as the canonical form.
+/* Convert a pathname to canonical form.  If a reparse point is encountered
+   while traversing the path, then the final path is derived from the full path
+   and returned as the canonical pathname.
  */
 WCHAR*
 wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
