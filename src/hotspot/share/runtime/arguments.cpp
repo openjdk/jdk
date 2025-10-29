@@ -545,8 +545,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseOprofile",                  JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #endif
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
-  { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
   { "G1UpdateBufferSize",           JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   { "ShenandoahPacing",             JDK_Version::jdk(25), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #if defined(AARCH64)
@@ -1520,6 +1518,12 @@ void Arguments::set_heap_size() {
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
                        !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MaxRAM);
+
+  if (CompilerConfig::should_set_client_emulation_mode_flags() &&
+      FLAG_IS_DEFAULT(MaxRAM)) {
+    // Reduce the maximum available memory if client emulation mode is enabled.
+    FLAG_SET_DEFAULT(MaxRAM, 1ULL*G);
+  }
 
   if (has_ram_limit) {
     if (!FLAG_IS_DEFAULT(MaxRAM)) {

@@ -47,7 +47,6 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
 
 protected:
   ShenandoahConcurrentMark    _mark;
-  ShenandoahGeneration* const _generation;
 
 private:
   ShenandoahDegenPoint        _degen_point;
