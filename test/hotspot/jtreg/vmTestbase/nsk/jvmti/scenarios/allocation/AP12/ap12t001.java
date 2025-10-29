@@ -31,8 +31,6 @@ import nsk.share.jvmti.*;
 import jdk.test.whitebox.WhiteBox;
 
 public class ap12t001 extends DebugeeClass {
-    /* number of interations to provoke garbage collecting */
-    final static int GC_TRYS = 1;
 
     public static void main(String[] argv) {
         argv = nsk.share.jvmti.JVMTITest.commonInit(argv);
@@ -71,9 +69,8 @@ public class ap12t001 extends DebugeeClass {
         log.display("References are ready for garbage collection");
         status = checkStatus(status);
 
-        // Provoke OutOfMemoryError in order to clear all soft references
-        for (int i= 0; i < GC_TRYS; i++)
-            WhiteBox.getWhiteBox().fullGC();
+        // Provoke fullgc in order to clear all soft references
+        WhiteBox.getWhiteBox().fullGC();
         log.display("GC called");
         flushObjectFreeEvents();
 

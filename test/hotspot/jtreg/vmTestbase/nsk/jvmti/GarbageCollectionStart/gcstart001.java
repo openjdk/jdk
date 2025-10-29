@@ -64,13 +64,7 @@ public class gcstart001 {
     }
 
     private int runThis(String argv[], PrintStream out) {
-        try {
-            for (int i=0; i<ITERATIONS; i++)
-                WhiteBox.getWhiteBox().fullGC(); // provoke garbage collecting
-        } catch (OutOfMemoryError e) {
-            // ignoring
-        }
-
+        WhiteBox.getWhiteBox().fullGC(); // provoke garbage collecting
         return Consts.TEST_PASSED;
     }
 }
