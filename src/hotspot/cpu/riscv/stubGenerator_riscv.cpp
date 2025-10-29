@@ -2660,9 +2660,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register keylen              = x31;
     const Register used                = x30;
     const Register len                 = x29;
-    const Register len32               = x28;
-    const Register vl                  = t1;
-    const Register ctr                 = t2;
 
     const unsigned char block_size = 16;
 
