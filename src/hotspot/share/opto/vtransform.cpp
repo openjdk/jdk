@@ -1243,9 +1243,9 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   const int ropc     = vector_reduction_opcode();
   const int vopc     = VectorNode::opcode(sopc, bt);
   if (!Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt)) {
-    DEBUG_ONLY( this->print(); )
-    assert(false, "do not have normal vector op for this reduction");
-    return false; // not implemented
+    // The element-wise vector operation needed for the vector accumulator
+    // is not implemented / supported.
+    return false;
   }
 
   // Traverse up the chain of non strict order reductions, checking that it loops
