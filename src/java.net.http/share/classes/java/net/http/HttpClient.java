@@ -933,7 +933,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> If interrupted while waiting, this method may attempt to stop all
      * operations by calling {@link #shutdownNow()}. It then continues to wait
      * until all actively executing operations have completed.
-     * The interrupt status will be re-asserted before this method returns.
+     * The interrupted status will be re-asserted before this method returns.
      *
      * <p> If already terminated, invoking this method has no effect.
      *

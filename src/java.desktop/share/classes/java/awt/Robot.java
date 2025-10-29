@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -717,8 +717,8 @@ public class Robot {
      * Sleeps for the specified time.
      * <p>
      * If the invoking thread is interrupted while waiting, then it will return
-     * immediately with the interrupt status set. If the interrupted status is
-     * already set, this method returns immediately with the interrupt status
+     * immediately with the interrupted status set. If the interrupted status is
+     * already set, this method returns immediately with the interrupted status
      * set.
      *
      * @apiNote It is recommended to avoid calling this method on
@@ -736,7 +736,7 @@ public class Robot {
             try {
                 Thread.sleep(ms);
             } catch (final InterruptedException ignored) {
-                thread.interrupt(); // Preserve interrupt status
+                thread.interrupt(); // Preserve interrupted status
             }
         }
     }

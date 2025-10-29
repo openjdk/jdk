@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,9 +144,9 @@ public class ClosedByInterrupt {
             } catch (ClosedByInterruptException e) {
                 if (interruptible) {
                     if (Thread.interrupted()) {
-                        expected(e + " thrown and interrupt status set");
+                        expected(e + " thrown and interrupted status set");
                     } else {
-                        unexpected(e + " thrown but interrupt status not set");
+                        unexpected(e + " thrown but interrupted status not set");
                     }
                 } else {
                     unexpected(e);
