@@ -1331,10 +1331,12 @@ public:
   // - relocInfo::opt_virtual_call_type
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
-  // Trampolines may be emitted immediately or deferred until stub finalization,
-  // enabling reuse across call sites to reduce code size.
-  // Runtime call trampolines are shared based on the entry value.
-  // Static call trampolines are shared by callee if it's not nullptr.
+  // Trampolines may be emitted immediately or deferred until CodeBuffer
+  // finalization, enabling reuse across call sites to reduce code size.
+  // Runtime call trampolines are shared based on the value of entry.target()
+  // while callee remains unused and must be omitted.
+  // Static call trampolines are shared based on the callee value which must be
+  // provided.
   //
   // Return: the call PC or null if CodeCache is full.
   // Clobbers: rscratch1
