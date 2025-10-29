@@ -288,7 +288,6 @@ ifeq ($(FREETYPE_TO_USE), bundled)
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
-      LINK_TIME_OPTIMIZATION := true, \
       CFLAGS := -DFT2_BUILD_LIBRARY, \
       CFLAGS_windows := -DDLL_EXPORT, \
       EXTRA_HEADER_DIRS := java.base:libjava libfreetype/include, \
@@ -399,7 +398,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := HIGHEST, \
-    LINK_TIME_OPTIMIZATION := true, \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     EXTRA_SRC := $(LIBFONTMANAGER_EXTRA_SRC), \
