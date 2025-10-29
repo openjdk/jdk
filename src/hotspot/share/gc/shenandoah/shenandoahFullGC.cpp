@@ -1172,10 +1172,5 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     result = ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-
-  // passive mode with ShenandoahCardBarrier turned on, clean the write table without swapping the tables
-  if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
-    heap->old_generation()->card_scan()->mark_write_table_as_clean();
-  }
   return result;
 }

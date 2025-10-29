@@ -95,6 +95,12 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
 
+  // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
+  // without swapping the tables since no scan happens in passive mode anyway
+  if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_write_table_as_clean();
+  }
+
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
     ShenandoahOldGeneration* old_generation = heap->old_generation();
