@@ -541,7 +541,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(charset);
-        return StringSupport.read(this, offset, length, charset);
+        return StringSupport.read(this, offset, charset, length);
     }
 
     @Override
