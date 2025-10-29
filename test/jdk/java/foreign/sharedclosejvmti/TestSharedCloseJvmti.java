@@ -74,6 +74,7 @@ public class TestSharedCloseJvmti {
 
         static final CountDownLatch MAIN_LATCH = new CountDownLatch(1);
         static final CountDownLatch TARGET_LATCH = new CountDownLatch(1);
+        static final MemorySegment OTHER_SEGMENT = Arena.global().allocate(4);
 
         static volatile int SINK;
 
@@ -92,6 +93,8 @@ public class TestSharedCloseJvmti {
             TARGET_LATCH.countDown();
         }
 
+        static boolean reentrant = false;
+
         // called by jvmti agent
         // we get here after checking arena liveness
         private static void target() {
@@ -101,8 +104,14 @@ public class TestSharedCloseJvmti {
                 return;
             }
 
-            // put some frames on the stack, so stack walk does not see @Scoped method
-            addFrames(0);
+            if (reentrant) {
+                // put some frames on the stack, so stack walk does not see @Scoped method
+                addFrames(0);
+            } else {
+                reentrant = true;
+                SINK = OTHER_SEGMENT.get(ValueLayout.JAVA_INT, 0);
+                reentrant = false;
+            }
         }
 
         private static void addFrames(int depth) {
