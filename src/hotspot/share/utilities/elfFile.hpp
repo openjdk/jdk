@@ -95,10 +95,10 @@ typedef Elf32_Sym       Elf_Sym;
 #define DWARF_LOG_TRACE(format, ...)
 #endif
 
+class DwarfFile;
+class ElfFuncDescTable;
 class ElfStringTable;
 class ElfSymbolTable;
-class ElfFuncDescTable;
-class DwarfFile;
 
 // ELF section, may or may not have cached data
 class ElfSection {
@@ -202,9 +202,7 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
-#ifdef ASSERT
-  const char* filepath() const { return _filepath; }
-#endif
+  DEBUG_ONLY(const char* filepath() const { return _filepath; })
  private:
   // sanity check, if the file is a real elf file
   static bool is_elf_file(Elf_Ehdr&);
@@ -401,7 +399,6 @@ class ElfFile: public CHeapObj<mtInternal> {
  *    - Complete information about intermediate states/results when parsing the DWARF file.
  */
 class DwarfFile : public ElfFile {
-
   static constexpr uint8_t ADDRESS_SIZE = NOT_LP64(4) LP64_ONLY(8);
   // We only support 32-bit DWARF (emitted by GCC) which uses 32-bit values for DWARF section lengths and offsets
   // relative to the beginning of a section.
@@ -439,6 +436,14 @@ class DwarfFile : public ElfFile {
     bool read_non_null_char(char* result);
   };
 
+  // Address descriptor defining a range that is covered by a compilation unit. It is defined in section 6.1.2 after
+  // the set header in the DWARF 4 spec.
+  struct AddressDescriptor {
+    uintptr_t beginning_address = 0;
+    uintptr_t range_length = 0;
+  };
+
+  // Entry in ArangesCache, corresponding to an entry in .debug_aranges section.
   struct ArangesEntry {
     uintptr_t beginning_address;
     uintptr_t end_address;
@@ -449,21 +454,16 @@ class DwarfFile : public ElfFile {
     : beginning_address(begin), end_address(end), debug_info_offset(offset) {}
   };
 
-  class DebugAranges;
-
   // Cache for .debug_aranges to enable binary search for address lookup.
   // DebugAranges uses this cache to resolve the compilation_unit_offset, rather than doing a linear scan on the files
-  // in each invocation of DebugAranges::find_compilation_unit_offset
+  // in each invocation of DebugAranges::find_compilation_unit_offset.
   struct ArangesCache {
-    friend DebugAranges;
-
     ArangesEntry* _entries;
     size_t _count;
     size_t _capacity;
     bool _initialized;
     bool _failed;
 
-   public:
     ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
     ArangesCache(const ArangesCache&) = delete;
     ArangesCache& operator=(const ArangesCache&) = delete;
@@ -479,9 +479,12 @@ class DwarfFile : public ElfFile {
     }
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
     bool valid() const { return _initialized && !_failed; }
+    bool add_entry(const AddressDescriptor& descriptor, uint32_t debug_info_offset);
+    void sort();
 
-   private:
+    private:
     static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
+    bool grow();
     void free() {
       if (_entries != nullptr) {
         FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
@@ -530,13 +533,6 @@ class DwarfFile : public ElfFile {
       uint8_t _segment_size;
     };
 
-    // Address descriptor defining a range that is covered by a compilation unit. It is defined in section 6.1.2 after
-    // the set header in the DWARF 4 spec.
-    struct AddressDescriptor {
-      uintptr_t beginning_address = 0;
-      uintptr_t range_length = 0;
-    };
-
     enum class CacheHint {
       // Do not retry as linear scan won't be able to read this either.
       FAILED,
@@ -544,7 +540,7 @@ class DwarfFile : public ElfFile {
       // Cache is usable, no need to fallback to linear scan.
       VALID,
 
-      // Cache is unusable, fallback to linear scan.
+      // Cache is unusable, possible reasons are C heap allocation failures. Fall back to linear scan.
       TRY_LINEAR_SCAN,
     };
 
@@ -552,6 +548,7 @@ class DwarfFile : public ElfFile {
     ArangesCache _cache;
     MarkedDwarfFileReader _reader;
     uintptr_t _section_start_address;
+    uintptr_t _size_bytes;
 
     // a calculated end position
     long _entry_end;
@@ -565,11 +562,9 @@ class DwarfFile : public ElfFile {
     bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                               const AddressDescriptor& descriptor);
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _cache(), _reader(dwarf_file->fd()),
-                                          _section_start_address(0), _entry_end(0) {}
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
+                                          _section_start_address(0), _size_bytes(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
-
-    // Build cache of all address ranges for binary search in a single pass
     CacheHint ensure_cached();
   };
 
