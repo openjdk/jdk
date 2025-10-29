@@ -198,29 +198,16 @@ public final class KeyUsageMatters {
     private static CertStore generateCertificateStore() throws Exception {
         Collection<DEREncodable> entries = new HashSet<>();
 
-        // generate certificate from certificate string
-        DEREncodable cert = PEM_DECODER.decode(targetCertStr, X509Certificate.class);
-        entries.add(cert);
+        // Decode and add certificates
+        entries.add(PEM_DECODER.decode(targetCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCaCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(topCrlIssuerCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCrlIssuerCertStr, X509Certificate.class));
 
-        cert = PEM_DECODER.decode(subCaCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(topCrlIssuerCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(subCrlIssuerCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        // generate CRL from CRL string
-        DEREncodable mixes = PEM_DECODER.decode(topCrlStr, X509CRL.class);
-        entries.add(mixes);
-
-        mixes = PEM_DECODER.decode(subCrlStr, X509CRL.class);
-        entries.add(mixes);
-
+        // Decode and add CRLs
+        entries.add(PEM_DECODER.decode(topCrlStr, X509CRL.class));
+        entries.add(PEM_DECODER.decode(subCrlStr, X509CRL.class));
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(entries));
     }

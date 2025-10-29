@@ -207,10 +207,9 @@ public class FailoverToCRL {
         ByteArrayInputStream is =
                 new ByteArrayInputStream(targetCertStr.getBytes());
 
-        Certificate targetCert = PEM_DECODER.decode(is, X509Certificate.class);
-
         // generate certification path
-        List<Certificate> list = Collections.singletonList(targetCert);
+        List<Certificate> list = Collections.singletonList(PEM_DECODER.decode
+                (is, X509Certificate.class));
 
         return cf.generateCertPath(list);
     }
@@ -235,8 +234,7 @@ public class FailoverToCRL {
         // generate a cert store
         Collection<DEREncodable> crls = new HashSet<>();
 
-        DEREncodable crl  = PEM_DECODER.decode(crlStr, X509CRL.class);
-        crls.add(crl);
+        crls.add(PEM_DECODER.decode(crlStr, X509CRL.class));
 
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(crls));

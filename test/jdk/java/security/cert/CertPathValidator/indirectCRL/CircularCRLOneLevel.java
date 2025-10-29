@@ -142,13 +142,9 @@ public class CircularCRLOneLevel {
     private static CertStore generateCertificateStore() throws Exception {
 
         // generate a cert store
-        DEREncodable crls = PEM_DECODER.decode(crlStr, X509CRL.class);
-
-        DEREncodable certs = PEM_DECODER.decode(crlIssuerCertStr, X509Certificate.class);
-
         Collection<DEREncodable> entries = new HashSet<>();
-        entries.add(crls);
-        entries.add(certs);
+        entries.add(PEM_DECODER.decode(crlStr, X509CRL.class));
+        entries.add(PEM_DECODER.decode(crlIssuerCertStr, X509Certificate.class));
 
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(entries));

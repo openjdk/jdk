@@ -164,20 +164,11 @@ public final class DisableRevocation {
         Collection<DEREncodable> entries = new HashSet<>();
 
         // generate certificate from certificate string
-        DEREncodable cert = PEM_DECODER.decode(targetCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(subCaCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(topCrlIssuerCertStr, X509Certificate.class);
-        entries.add(cert);
-
-        cert = PEM_DECODER.decode(subCrlIssuerCertStr, X509Certificate.class);
-        entries.add(cert);
+        entries.add(PEM_DECODER.decode(targetCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCaCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(selfSignedCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(topCrlIssuerCertStr, X509Certificate.class));
+        entries.add(PEM_DECODER.decode(subCrlIssuerCertStr, X509Certificate.class));
 
         return CertStore.getInstance("Collection",
                             new CollectionCertStoreParameters(entries));

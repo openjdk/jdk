@@ -124,16 +124,16 @@ public class WriteP12Test {
     private final Certificate testLeadCert;
     private final Certificate caCert;
 
-    WriteP12Test() throws CertificateException {
+    WriteP12Test() {
         PEMDecoder pemDecoder = PEMDecoder.of();
         caCert = pemDecoder.decode(CA_CERT_STR, X509Certificate.class);
         testLeadCert = pemDecoder.decode(LEAD_CERT, X509Certificate.class);
         testerCert = pemDecoder.decode(END_CERT, X509Certificate.class);
     }
 
-    public static void main(String[] args) throws CertificateException,
-            UnrecoverableKeyException, KeyStoreException,
-            NoSuchProviderException, NoSuchAlgorithmException, IOException {
+    public static void main(String[] args) throws UnrecoverableKeyException,
+            KeyStoreException, NoSuchProviderException,
+            NoSuchAlgorithmException, IOException {
         WriteP12Test jstest = new WriteP12Test();
         out.println("test WriteP12CertChain");
         /*
