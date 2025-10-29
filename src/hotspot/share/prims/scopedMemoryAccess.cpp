@@ -78,8 +78,8 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 
     if (is_scoped) {
       assert(!would_have_bailed, "would have missed scoped method on release build");
-      func(stream);
-      if (!agents_loaded) {
+      bool done = func(stream);
+      if (done || !agents_loaded) {
         // We may also have to keep walking after finding a @Scoped method,
         // since there may be multiple @Scoped methods active on the stack
         // if a JVMTI agent callback runs during a scoped access and calls
@@ -106,10 +106,11 @@ static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
       if (var->type() == T_OBJECT) {
         if (var->get_obj() == session) {
           is_accessing_session = true;
-          return;
+          return true;
         }
       }
     }
+    return false;
   });
   return is_accessing_session;
 }
