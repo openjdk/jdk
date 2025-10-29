@@ -34,11 +34,13 @@
  * @run driver HotSpotAOTCacheMXBeanTest
  */
 
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import javax.management.MBeanServer;
+import jdk.management.HotSpotAOTCacheMXBean;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
-import java.lang.management.ManagementFactory;
-import jdk.management.HotSpotAOTCacheMXBean;
 
 public class HotSpotAOTCacheMXBeanTest {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
@@ -87,6 +89,7 @@ public class HotSpotAOTCacheMXBeanTest {
                     out.shouldContain("Failed to stop recording");
                 }
                 out.shouldNotContain("HotSpotAOTCacheMXBean is not available");
+                out.shouldNotContain("IOException occurred!");
             }
         }
     }
@@ -95,15 +98,22 @@ public class HotSpotAOTCacheMXBeanTest {
 class HotSpotAOTCacheMXBeanApp {
     public static void main(String[] args) {
         System.out.println("Hello Leyden " + args[0]);
-        var aotBean = ManagementFactory.getPlatformMXBean(HotSpotAOTCacheMXBean.class);
-        if (aotBean == null) {
-            System.out.println("HotSpotAOTCacheMXBean is not available");
-            return;
-        }
-        if (aotBean.endRecording()) {
-            System.out.println("Successfully stopped recording");
-        } else {
-            System.out.println("Failed to stop recording");
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            HotSpotAOTCacheMXBean aotBean = ManagementFactory.newPlatformMXBeanProxy(server,
+                    "jdk.management:type=HotSpotAOTCache",
+                    HotSpotAOTCacheMXBean.class);
+            if (aotBean == null) {
+                System.out.println("HotSpotAOTCacheMXBean is not available");
+                return;
+            }
+            if (aotBean.endRecording()) {
+                System.out.println("Successfully stopped recording");
+            } else {
+                System.out.println("Failed to stop recording");
+            }
+        } catch (IOException e) {
+            System.out.println("IOException occurred!");
         }
     }
 }
