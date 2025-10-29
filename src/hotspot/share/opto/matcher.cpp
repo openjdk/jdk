@@ -195,7 +195,7 @@ void Matcher::match( ) {
     OptoRegPair regs = return_value(ireg);
 
     // And mask for same
-    _return_value_mask = RegMask(regs.first());
+    _return_value_mask.assignFrom(RegMask(regs.first()));
     if( OptoReg::is_valid(regs.second()) )
       _return_value_mask.insert(regs.second());
   }
@@ -422,11 +422,11 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
     new (rms + i) RegMask(Compile::current()->comp_arena());
   }
   // Do all the pre-defined register masks
-  rms[TypeFunc::Control  ] = RegMask::EMPTY;
-  rms[TypeFunc::I_O      ] = RegMask::EMPTY;
-  rms[TypeFunc::Memory   ] = RegMask::EMPTY;
-  rms[TypeFunc::ReturnAdr] = ret_adr;
-  rms[TypeFunc::FramePtr ] = fp;
+  rms[TypeFunc::Control  ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::I_O      ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::Memory   ].assignFrom(RegMask::EMPTY);
+  rms[TypeFunc::ReturnAdr].assignFrom(ret_adr);
+  rms[TypeFunc::FramePtr ].assignFrom(fp);
   return rms;
 }
 
@@ -488,44 +488,44 @@ void Matcher::init_first_stack_mask() {
   assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
   RegMask scalable_stack_mask(aligned_stack_mask, C->comp_arena());
 
-  *idealreg2spillmask[Op_RegP] = *idealreg2regmask[Op_RegP];
+  idealreg2spillmask[Op_RegP]->assignFrom(*idealreg2regmask[Op_RegP]);
 #ifdef _LP64
-  *idealreg2spillmask[Op_RegN] = *idealreg2regmask[Op_RegN];
-   idealreg2spillmask[Op_RegN]->or_with(C->FIRST_STACK_mask());
-   idealreg2spillmask[Op_RegP]->or_with(aligned_stack_mask);
+  idealreg2spillmask[Op_RegN]->assignFrom(*idealreg2regmask[Op_RegN]);
+  idealreg2spillmask[Op_RegN]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegP]->or_with(aligned_stack_mask);
 #else
    idealreg2spillmask[Op_RegP]->or_with(C->FIRST_STACK_mask());
 #endif
-  *idealreg2spillmask[Op_RegI] = *idealreg2regmask[Op_RegI];
-   idealreg2spillmask[Op_RegI]->or_with(C->FIRST_STACK_mask());
-  *idealreg2spillmask[Op_RegL] = *idealreg2regmask[Op_RegL];
-   idealreg2spillmask[Op_RegL]->or_with(aligned_stack_mask);
-  *idealreg2spillmask[Op_RegF] = *idealreg2regmask[Op_RegF];
-   idealreg2spillmask[Op_RegF]->or_with(C->FIRST_STACK_mask());
-  *idealreg2spillmask[Op_RegD] = *idealreg2regmask[Op_RegD];
-   idealreg2spillmask[Op_RegD]->or_with(aligned_stack_mask);
+  idealreg2spillmask[Op_RegI]->assignFrom(*idealreg2regmask[Op_RegI]);
+  idealreg2spillmask[Op_RegI]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegL]->assignFrom(*idealreg2regmask[Op_RegL]);
+  idealreg2spillmask[Op_RegL]->or_with(aligned_stack_mask);
+  idealreg2spillmask[Op_RegF]->assignFrom(*idealreg2regmask[Op_RegF]);
+  idealreg2spillmask[Op_RegF]->or_with(C->FIRST_STACK_mask());
+  idealreg2spillmask[Op_RegD]->assignFrom(*idealreg2regmask[Op_RegD]);
+  idealreg2spillmask[Op_RegD]->or_with(aligned_stack_mask);
 
   if (Matcher::has_predicated_vectors()) {
-    *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
-     idealreg2spillmask[Op_RegVectMask]->or_with(aligned_stack_mask);
+    idealreg2spillmask[Op_RegVectMask]->assignFrom(*idealreg2regmask[Op_RegVectMask]);
+    idealreg2spillmask[Op_RegVectMask]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_RegVectMask] = RegMask::EMPTY;
+    idealreg2spillmask[Op_RegVectMask]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
-    *idealreg2spillmask[Op_VecS] = *idealreg2regmask[Op_VecS];
-     idealreg2spillmask[Op_VecS]->or_with(C->FIRST_STACK_mask());
+    idealreg2spillmask[Op_VecS]->assignFrom(*idealreg2regmask[Op_VecS]);
+    idealreg2spillmask[Op_VecS]->or_with(C->FIRST_STACK_mask());
   } else {
-    *idealreg2spillmask[Op_VecS] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecS]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,2)) {
     // For VecD we need dual alignment and 8 bytes (2 slots) for spills.
     // RA guarantees such alignment since it is needed for Double and Long values.
-    *idealreg2spillmask[Op_VecD] = *idealreg2regmask[Op_VecD];
-     idealreg2spillmask[Op_VecD]->or_with(aligned_stack_mask);
+    idealreg2spillmask[Op_VecD]->assignFrom(*idealreg2regmask[Op_VecD]);
+    idealreg2spillmask[Op_VecD]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecD] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecD]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,4)) {
@@ -541,12 +541,12 @@ void Matcher::init_first_stack_mask() {
       aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecX] = *idealreg2regmask[Op_VecX];
-     idealreg2spillmask[Op_VecX]->or_with(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecX);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecX]->assignFrom(*idealreg2regmask[Op_VecX]);
+    idealreg2spillmask[Op_VecX]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecX] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecX]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,8)) {
@@ -556,12 +556,12 @@ void Matcher::init_first_stack_mask() {
       aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecY] = *idealreg2regmask[Op_VecY];
-     idealreg2spillmask[Op_VecY]->or_with(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecY);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecY]->assignFrom(*idealreg2regmask[Op_VecY]);
+    idealreg2spillmask[Op_VecY]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecY] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecY]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
@@ -571,12 +571,12 @@ void Matcher::init_first_stack_mask() {
       aligned_stack_mask.remove(in);
       in = OptoReg::add(in, -1);
     }
-     aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecZ);
-     assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecZ] = *idealreg2regmask[Op_VecZ];
-     idealreg2spillmask[Op_VecZ]->or_with(aligned_stack_mask);
+    aligned_stack_mask.clear_to_sets(RegMask::SlotsPerVecZ);
+    assert(aligned_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecZ]->assignFrom(*idealreg2regmask[Op_VecZ]);
+    idealreg2spillmask[Op_VecZ]->or_with(aligned_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecZ] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecZ]->assignFrom(RegMask::EMPTY);
   }
 
   if (Matcher::supports_scalable_vector()) {
@@ -593,7 +593,7 @@ void Matcher::init_first_stack_mask() {
       // For RegVectMask
       scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
       assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
-      *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+      idealreg2spillmask[Op_RegVectMask]->assignFrom(*idealreg2regmask[Op_RegVectMask]);
       idealreg2spillmask[Op_RegVectMask]->or_with(scalable_stack_mask);
     }
 
@@ -605,12 +605,12 @@ void Matcher::init_first_stack_mask() {
     }
 
     // For VecA
-     scalable_stack_mask.clear_to_sets(RegMask::SlotsPerVecA);
-     assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
-    *idealreg2spillmask[Op_VecA] = *idealreg2regmask[Op_VecA];
-     idealreg2spillmask[Op_VecA]->or_with(scalable_stack_mask);
+    scalable_stack_mask.clear_to_sets(RegMask::SlotsPerVecA);
+    assert(scalable_stack_mask.is_infinite_stack(), "should be infinite stack");
+    idealreg2spillmask[Op_VecA]->assignFrom(*idealreg2regmask[Op_VecA]);
+    idealreg2spillmask[Op_VecA]->or_with(scalable_stack_mask);
   } else {
-    *idealreg2spillmask[Op_VecA] = RegMask::EMPTY;
+    idealreg2spillmask[Op_VecA]->assignFrom(RegMask::EMPTY);
   }
 
   if (UseFPUForSpilling) {
@@ -639,20 +639,20 @@ void Matcher::init_first_stack_mask() {
   // Make up debug masks.  Any spill slot plus callee-save (SOE) registers.
   // Caller-save (SOC, AS) registers are assumed to be trashable by the various
   // inline-cache fixup routines.
-  *idealreg2debugmask  [Op_RegN] = *idealreg2spillmask[Op_RegN];
-  *idealreg2debugmask  [Op_RegI] = *idealreg2spillmask[Op_RegI];
-  *idealreg2debugmask  [Op_RegL] = *idealreg2spillmask[Op_RegL];
-  *idealreg2debugmask  [Op_RegF] = *idealreg2spillmask[Op_RegF];
-  *idealreg2debugmask  [Op_RegD] = *idealreg2spillmask[Op_RegD];
-  *idealreg2debugmask  [Op_RegP] = *idealreg2spillmask[Op_RegP];
-  *idealreg2debugmask  [Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
+  idealreg2debugmask[Op_RegN]->assignFrom(*idealreg2spillmask[Op_RegN]);
+  idealreg2debugmask[Op_RegI]->assignFrom(*idealreg2spillmask[Op_RegI]);
+  idealreg2debugmask[Op_RegL]->assignFrom(*idealreg2spillmask[Op_RegL]);
+  idealreg2debugmask[Op_RegF]->assignFrom(*idealreg2spillmask[Op_RegF]);
+  idealreg2debugmask[Op_RegD]->assignFrom(*idealreg2spillmask[Op_RegD]);
+  idealreg2debugmask[Op_RegP]->assignFrom(*idealreg2spillmask[Op_RegP]);
+  idealreg2debugmask[Op_RegVectMask]->assignFrom(*idealreg2spillmask[Op_RegVectMask]);
 
-  *idealreg2debugmask  [Op_VecA] = *idealreg2spillmask[Op_VecA];
-  *idealreg2debugmask  [Op_VecS] = *idealreg2spillmask[Op_VecS];
-  *idealreg2debugmask  [Op_VecD] = *idealreg2spillmask[Op_VecD];
-  *idealreg2debugmask  [Op_VecX] = *idealreg2spillmask[Op_VecX];
-  *idealreg2debugmask  [Op_VecY] = *idealreg2spillmask[Op_VecY];
-  *idealreg2debugmask  [Op_VecZ] = *idealreg2spillmask[Op_VecZ];
+  idealreg2debugmask[Op_VecA]->assignFrom(*idealreg2spillmask[Op_VecA]);
+  idealreg2debugmask[Op_VecS]->assignFrom(*idealreg2spillmask[Op_VecS]);
+  idealreg2debugmask[Op_VecD]->assignFrom(*idealreg2spillmask[Op_VecD]);
+  idealreg2debugmask[Op_VecX]->assignFrom(*idealreg2spillmask[Op_VecX]);
+  idealreg2debugmask[Op_VecY]->assignFrom(*idealreg2spillmask[Op_VecY]);
+  idealreg2debugmask[Op_VecZ]->assignFrom(*idealreg2spillmask[Op_VecZ]);
 
   // Prevent stub compilations from attempting to reference
   // callee-saved (SOE) registers from debug info
@@ -702,8 +702,9 @@ void Matcher::Fixup_Save_On_Entry( ) {
   RegMask *ret_rms  = init_input_masks( ret_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
   // Returns have 0 or 1 returned values depending on call signature.
   // Return register is specified by return_value in the AD file.
-  if (ret_edge_cnt > TypeFunc::Parms)
-    ret_rms[TypeFunc::Parms+0] = _return_value_mask;
+  if (ret_edge_cnt > TypeFunc::Parms) {
+    ret_rms[TypeFunc::Parms + 0].assignFrom(_return_value_mask);
+  }
 
   // Input RegMask array shared by all ForwardExceptions
   uint forw_exc_edge_cnt = TypeFunc::Parms;
@@ -715,7 +716,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Rethrow takes exception oop only, but in the argument 0 slot.
   OptoReg::Name reg = find_receiver();
   if (reg >= 0) {
-    reth_rms[TypeFunc::Parms] = mreg2regmask[reg];
+    reth_rms[TypeFunc::Parms].assignFrom(mreg2regmask[reg]);
 #ifdef _LP64
     // Need two slots for ptrs in 64-bit land
     reth_rms[TypeFunc::Parms].insert(OptoReg::add(OptoReg::Name(reg), 1));
@@ -737,8 +738,8 @@ void Matcher::Fixup_Save_On_Entry( ) {
   for( i=1; i < root->req(); i++ ) {
     MachReturnNode *m = root->in(i)->as_MachReturn();
     if( m->ideal_Opcode() == Op_TailCall ) {
-      tail_call_rms[TypeFunc::Parms+0] = m->MachNode::in_RegMask(TypeFunc::Parms+0);
-      tail_call_rms[TypeFunc::Parms+1] = m->MachNode::in_RegMask(TypeFunc::Parms+1);
+      tail_call_rms[TypeFunc::Parms + 0].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 0));
+      tail_call_rms[TypeFunc::Parms + 1].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 1));
       break;
     }
   }
@@ -750,8 +751,8 @@ void Matcher::Fixup_Save_On_Entry( ) {
   for( i=1; i < root->req(); i++ ) {
     MachReturnNode *m = root->in(i)->as_MachReturn();
     if( m->ideal_Opcode() == Op_TailJump ) {
-      tail_jump_rms[TypeFunc::Parms+0] = m->MachNode::in_RegMask(TypeFunc::Parms+0);
-      tail_jump_rms[TypeFunc::Parms+1] = m->MachNode::in_RegMask(TypeFunc::Parms+1);
+      tail_jump_rms[TypeFunc::Parms + 0].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 0));
+      tail_jump_rms[TypeFunc::Parms + 1].assignFrom(m->MachNode::in_RegMask(TypeFunc::Parms + 1));
       break;
     }
   }
@@ -784,14 +785,14 @@ void Matcher::Fixup_Save_On_Entry( ) {
     if( is_save_on_entry(i) ) {
 
       // Add the save-on-entry to the mask array
-      ret_rms      [      ret_edge_cnt] = mreg2regmask[i];
-      reth_rms     [     reth_edge_cnt] = mreg2regmask[i];
-      tail_call_rms[tail_call_edge_cnt] = mreg2regmask[i];
-      tail_jump_rms[tail_jump_edge_cnt] = mreg2regmask[i];
-      forw_exc_rms [ forw_exc_edge_cnt] = mreg2regmask[i];
+      ret_rms      [      ret_edge_cnt].assignFrom(mreg2regmask[i]);
+      reth_rms     [     reth_edge_cnt].assignFrom(mreg2regmask[i]);
+      tail_call_rms[tail_call_edge_cnt].assignFrom(mreg2regmask[i]);
+      tail_jump_rms[tail_jump_edge_cnt].assignFrom(mreg2regmask[i]);
+      forw_exc_rms [ forw_exc_edge_cnt].assignFrom(mreg2regmask[i]);
       // Halts need the SOE registers, but only in the stack as debug info.
       // A just-prior uncommon-trap or deoptimization will use the SOE regs.
-      halt_rms     [     halt_edge_cnt] = *idealreg2spillmask[_register_save_type[i]];
+      halt_rms     [     halt_edge_cnt].assignFrom(*idealreg2spillmask[_register_save_type[i]]);
 
       Node *mproj;
 
@@ -815,12 +816,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
                _register_save_type[i-1] == Op_RegF &&
                _register_save_type[i  ] == Op_RegF &&
                is_save_on_entry(i-1) ) {
-        ret_rms      [      ret_edge_cnt] = RegMask::EMPTY;
-        reth_rms     [     reth_edge_cnt] = RegMask::EMPTY;
-        tail_call_rms[tail_call_edge_cnt] = RegMask::EMPTY;
-        tail_jump_rms[tail_jump_edge_cnt] = RegMask::EMPTY;
-        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::EMPTY;
-        halt_rms     [     halt_edge_cnt] = RegMask::EMPTY;
+        ret_rms      [      ret_edge_cnt].assignFrom(RegMask::EMPTY);
+        reth_rms     [     reth_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_call_rms[tail_call_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_jump_rms[tail_jump_edge_cnt].assignFrom(RegMask::EMPTY);
+        forw_exc_rms [ forw_exc_edge_cnt].assignFrom(RegMask::EMPTY);
+        halt_rms     [     halt_edge_cnt].assignFrom(RegMask::EMPTY);
         mproj = C->top();
       }
       // Is this a RegI low half of a RegL?  Double up 2 adjacent RegI's
@@ -843,12 +844,12 @@ void Matcher::Fixup_Save_On_Entry( ) {
                _register_save_type[i-1] == Op_RegI &&
                _register_save_type[i  ] == Op_RegI &&
                is_save_on_entry(i-1) ) {
-        ret_rms      [      ret_edge_cnt] = RegMask::EMPTY;
-        reth_rms     [     reth_edge_cnt] = RegMask::EMPTY;
-        tail_call_rms[tail_call_edge_cnt] = RegMask::EMPTY;
-        tail_jump_rms[tail_jump_edge_cnt] = RegMask::EMPTY;
-        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::EMPTY;
-        halt_rms     [     halt_edge_cnt] = RegMask::EMPTY;
+        ret_rms      [      ret_edge_cnt].assignFrom(RegMask::EMPTY);
+        reth_rms     [     reth_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_call_rms[tail_call_edge_cnt].assignFrom(RegMask::EMPTY);
+        tail_jump_rms[tail_jump_edge_cnt].assignFrom(RegMask::EMPTY);
+        forw_exc_rms [ forw_exc_edge_cnt].assignFrom(RegMask::EMPTY);
+        halt_rms     [     halt_edge_cnt].assignFrom(RegMask::EMPTY);
         mproj = C->top();
       } else {
         // Make a projection for it off the Start
@@ -875,7 +876,7 @@ void Matcher::init_spill_mask( Node *ret ) {
   if( idealreg2regmask[Op_RegI] ) return; // One time only init
 
   OptoReg::c_frame_pointer = c_frame_pointer();
-  c_frame_ptr_mask = RegMask(c_frame_pointer());
+  c_frame_ptr_mask.assignFrom(RegMask(c_frame_pointer()));
 #ifdef _LP64
   // pointers are twice as big
   c_frame_ptr_mask.insert(OptoReg::add(c_frame_pointer(), 1));
@@ -1240,8 +1241,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   }
 
   // Do all the pre-defined non-Empty register masks
-  msfpt->_in_rms[TypeFunc::ReturnAdr] = _return_addr_mask;
-  msfpt->_in_rms[TypeFunc::FramePtr ] = c_frame_ptr_mask;
+  msfpt->_in_rms[TypeFunc::ReturnAdr].assignFrom(_return_addr_mask);
+  msfpt->_in_rms[TypeFunc::FramePtr ].assignFrom(c_frame_ptr_mask);
 
   // Place first outgoing argument can possibly be put.
   OptoReg::Name begin_out_arg_area = OptoReg::add(_new_SP, C->out_preserve_stack_slots());
