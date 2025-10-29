@@ -541,6 +541,8 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
   NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
   constexpr NativeType min_val = std::numeric_limits<NativeType>::min();
   static_assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
+  constexpr NativeType max_val = std::numeric_limits<NativeType>::max();
+  static_assert(max_val == max_jint || max_val == max_jlong, "max has to be either max_jint or max_jlong");
 
   // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
   // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
@@ -550,16 +552,19 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
     // compute new_hi depending on whether divisor or dividend is non-constant.
     // i2 is purely in the negative domain here (as i2_hi is -1)
     // which means the maximum value this division can yield is either
-    // a) (min_val + 1) / -1 (which is the same as max_val) for non-constant dividend or
-    // b) (min_val)     / -2 for constant dividend and non-constant divisor or
-    // c) min_val            for constant dividend and constant divisor
+    // a) max_val           for non-constant dividend or
+    // b) (max_val / 2) + 1 for constant dividend and non-constant divisor or
+    // c) min_val           for constant dividend and constant divisor
     if (!i1->is_con()) {
-      new_hi = (min_val + 1) / -1;
+      new_hi = max_val;
+      assert((min_val + 1) / -1 == new_hi, "new_hi should be max_val");
     } else if (i2_lo != i2_hi) {
-      new_hi = min_val / -2;
+      new_hi = (max_val / 2) + 1;
+      assert(min_val / -2 == new_hi, "new_hi should be (max_val / 2) + 1)");
     } else {
       new_hi = min_val;
     }
+
 #ifdef ASSERT
     // validate new_hi for non-constant divisor
     if (i2_lo != i2_hi) {
@@ -579,6 +584,7 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
 
     return IntegerType::make(new_lo, new_hi, widen);
   }
+  assert((i1->_lo != min_val && i1->_hi != min_val) || (i2_hi != -1 && i2_lo != -1), "should have filtered out before");
 
   // Special case not possible here, calculate all corners normally
   NativeType corner1 = i1->_lo / i2_lo;
