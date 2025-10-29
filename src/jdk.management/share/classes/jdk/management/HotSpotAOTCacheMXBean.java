@@ -26,14 +26,13 @@ package jdk.management;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.PlatformManagedObject;
-import java.util.concurrent.ForkJoinPool;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 /**
- * Management interface for the JDK's Ahead of Time (AOT) optimizations.
+ * Management interface for the JDK's Ahead of Time (AOT) Cache.
  *
- * Currently, {@code HotSpotAOTCacheMXBean} defines one operation at this time to end the AOT recording.
+ * {@code HotSpotAOTCacheMXBean} defines one operation at this time to end the AOT recording.
  * More operations and/or properties may be added in a future release.
  *
  * <p> The management interface is registered with the platform {@link MBeanServer
@@ -71,7 +70,7 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        *       file can be created with the command:
        *
        *       <p>java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig  -XX:AOTCache=app.aot ...
-       * <blockquote>
+       * </blockquote>
        *
        * <p>For more information about creating and using the AOT artifacts, and detailed
        *  specification of the corresponding JVM command-line options, please refer
@@ -91,7 +90,6 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        *    to access the AOT cache file using regular file I/O APIs after the endRecording() function
        *    has returned {@code true}.
        * <pre>
-       * {@code
        * HotSpotAOTCacheMXBean bean = ....;
        * String aotCache = System.getProperty("myapp.cache.output");
        * if (aotCache != null) {
@@ -100,8 +98,8 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        *     if (bean.endRecording()) {
        *          System.out.println("Recording is successfully finished: " + aotCache);
        *     }
-       * }</pre>
-       * </blockquote>
+       * }
+       * </pre></blockquote>
        *
        * @return {@code true} if a recording was in progress and has been ended successfully; {@code false} otherwise.
        */
