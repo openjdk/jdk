@@ -276,7 +276,6 @@ public final class FileServerHandler implements HttpHandler {
         respHdrs.set("Content-Type", mediaType(path.toString()));
         respHdrs.set("Last-Modified", getLastModified(path));
         respHdrs.set("Accept-Ranges", "bytes");
-        respHdrs.set("ETag", createETag(path));
         if (!writeBody) {
             respHdrs.set("Content-Length", Long.toString(Files.size(path)));
             exchange.sendResponseHeaders(200, -1);
@@ -298,8 +297,8 @@ public final class FileServerHandler implements HttpHandler {
     {
         var reqHdrs = exchange.getRequestHeaders();
         String ifRange = reqHdrs.getFirst("If-Range");
-        if (!(ifRange == null || ifRange.equals(createETag(path)) || ifRange.equals(getLastModified(path)))) {
-            return false; // etag or last-modified do not match with the resource, send the entire file
+        if (!(ifRange == null || ifRange.equals(getLastModified(path)))) {
+            return false; // last-modified does not match with the resource, send the entire file
         }
         long fileSize = Files.size(path);
         List<RangeEntry> ranges = parseRangeHeader(rangeHeader, fileSize);
@@ -311,13 +310,6 @@ public final class FileServerHandler implements HttpHandler {
         }
         servePartialContents(exchange, path, ranges);
         return true;
-    }
-
-    private String createETag(Path path) throws IOException {
-        var attrs = Files.readAttributes(path, BasicFileAttributes.class);
-        long size = attrs.size();
-        long lastModified = attrs.lastModifiedTime().toMillis();
-        return "\"%x-%x\"".formatted(size, lastModified);
     }
 
     private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
