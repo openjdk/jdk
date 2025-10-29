@@ -1827,12 +1827,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load %s-bit .dll on a %s-bit platform",
                          lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                          lib_arch, running_arch_str);
   }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1154,7 +1155,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         error_report = "dlerror returned no error description";
       }
       if (ebuf != nullptr && ebuflen > 0) {
-        os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
+        os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
       }
       assert(false, "os::pd_dll_unload() ::dlclose() failed");
     }
