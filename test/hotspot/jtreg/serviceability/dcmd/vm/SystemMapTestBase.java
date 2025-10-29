@@ -188,7 +188,7 @@ public class SystemMapTestBase {
         static final String shouldMatchUnconditionally_macOS[] = {
             // java launcher
             macOSbase + macow + space + someNumber + space + "/.*/bin/java",
-            /* 
+            /*
              * We should see the hs-perf data file, and it should appear as shared as well as committed.
              * In the jtreg tests this segment appears private.
              */
