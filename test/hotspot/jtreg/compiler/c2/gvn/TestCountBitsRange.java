@@ -25,6 +25,7 @@ package compiler.c2.gvn;
 
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import compiler.lib.ir_framework.*;
 import java.util.function.Function;
 import jdk.test.lib.Asserts;
@@ -40,49 +41,29 @@ public class TestCountBitsRange {
     private static final Generator<Integer> INTS = Generators.G.ints();
     private static final Generator<Long> LONGS = Generators.G.longs();
 
-    private static final int LIMITS_32_0;
-    private static final int LIMITS_32_1;
-    private static final int LIMITS_32_2;
-    private static final int LIMITS_32_3;
-    private static final int LIMITS_32_4;
-    private static final int LIMITS_32_5;
-    private static final int LIMITS_32_6;
-    private static final int LIMITS_32_7;
+    private static final RestrictableGenerator<Integer> INTS_32 = Generators.G.ints().restricted(0, 32);
+    private static final RestrictableGenerator<Integer> INTS_64 = Generators.G.ints().restricted(0, 64);
 
-    private static final int LIMITS_64_0;
-    private static final int LIMITS_64_1;
-    private static final int LIMITS_64_2;
-    private static final int LIMITS_64_3;
-    private static final int LIMITS_64_4;
-    private static final int LIMITS_64_5;
-    private static final int LIMITS_64_6;
-    private static final int LIMITS_64_7;
+    private static final int LIMITS_32_0 = INTS_32.next();
+    private static final int LIMITS_32_1 = INTS_32.next();
+    private static final int LIMITS_32_2 = INTS_32.next();
+    private static final int LIMITS_32_3 = INTS_32.next();
+    private static final int LIMITS_32_4 = INTS_32.next();
+    private static final int LIMITS_32_5 = INTS_32.next();
+    private static final int LIMITS_32_6 = INTS_32.next();
+    private static final int LIMITS_32_7 = INTS_32.next();
+
+    private static final int LIMITS_64_0 = INTS_64.next();
+    private static final int LIMITS_64_1 = INTS_64.next();
+    private static final int LIMITS_64_2 = INTS_64.next();
+    private static final int LIMITS_64_3 = INTS_64.next();
+    private static final int LIMITS_64_4 = INTS_64.next();
+    private static final int LIMITS_64_5 = INTS_64.next();
+    private static final int LIMITS_64_6 = INTS_64.next();
+    private static final int LIMITS_64_7 = INTS_64.next();
 
     private static final IntRange RANGE_INT = IntRange.generate(INTS);
     private static final LongRange RANGE_LONG = LongRange.generate(LONGS);
-
-    static {
-        var INTS_32 = Generators.G.ints().restricted(0, 32);
-        var INTS_64 = Generators.G.ints().restricted(0, 64);
-
-        LIMITS_32_0 = INTS_32.next();
-        LIMITS_32_1 = INTS_32.next();
-        LIMITS_32_2 = INTS_32.next();
-        LIMITS_32_3 = INTS_32.next();
-        LIMITS_32_4 = INTS_32.next();
-        LIMITS_32_5 = INTS_32.next();
-        LIMITS_32_6 = INTS_32.next();
-        LIMITS_32_7 = INTS_32.next();
-
-        LIMITS_64_0 = INTS_64.next();
-        LIMITS_64_1 = INTS_64.next();
-        LIMITS_64_2 = INTS_64.next();
-        LIMITS_64_3 = INTS_64.next();
-        LIMITS_64_4 = INTS_64.next();
-        LIMITS_64_5 = INTS_64.next();
-        LIMITS_64_6 = INTS_64.next();
-        LIMITS_64_7 = INTS_64.next();
-    }
 
     public static void main(String[] args) {
         TestFramework.run();
