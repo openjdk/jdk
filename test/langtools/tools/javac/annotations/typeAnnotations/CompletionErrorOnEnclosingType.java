@@ -56,13 +56,16 @@ public class CompletionErrorOnEnclosingType {
                 class A<E> {}
 
                 class B {
-                  private @Anno A<String> a;
+                  public @Anno A<String> a;
                 }
                 """;
         String cSrc =
                 """
                 class C {
                   B b;
+                  public void test() {
+                    b.a.toString();
+                  }
                 }
                 """;
 
@@ -81,7 +84,8 @@ public class CompletionErrorOnEnclosingType {
                 new JavacTask(tb)
                         .outdir(out)
                         .classpath(out)
-                        .options("-Werror", "-XDrawDiagnostics")
+                        // DO NOT SUBMIT - this is a draft, see discussion in PR
+                        .options(/*"-Werror",*/ "-XDrawDiagnostics")
                         .files(src.resolve("C.java"))
                         .run(Expect.FAIL)
                         .writeAll()
@@ -89,11 +93,10 @@ public class CompletionErrorOnEnclosingType {
 
         var expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.warn.cant.attach.type.annotations: @Anno, B, a,"
-                                + " (compiler.misc.class.file.not.found: A)",
-                        "- compiler.err.warnings.and.werror",
-                        "1 error",
-                        "1 warning");
+"B.class:-:-: compiler.warn.cant.attach.type.annotations: @Anno, B, a, (compiler.misc.class.file.not.found: A)",
+"C.java:4:8: compiler.err.cant.access: A, (compiler.misc.class.file.not.found: A)",
+"1 error",
+"1 warning");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
         }
