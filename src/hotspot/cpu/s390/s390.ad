@@ -860,8 +860,6 @@ source %{
 
 #define Z_DISP_SIZE Immediate::is_uimm12((long)opnd_array(1)->disp(ra_,this,2)) ?  4 : 6
 #define Z_DISP3_SIZE 6
-#define Z_DISP2_SIZE 4
-#define Z_DISP1_SIZE 2
 
 // Tertiary op of a LoadP or StoreP encoding.
 #define REGP_OP true
@@ -4755,8 +4753,14 @@ instruct memInitB(memoryRSY mem, immI8 src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
   size(6);
-  format %{ "MVIY     $mem,$src\t # direct mem init 1" %}
-  ins_encode %{__ z_mviy($mem$$Address, $src$$constant); %}
+  format %{ "MVI     $mem,$src\t # direct mem init 1" %}
+  ins_encode %{
+    if (Immediate::is_uimm12((long)$mem$$disp)) {
+      __ z_mvi($mem$$Address, $src$$constant);
+    } else {
+      __ z_mviy($mem$$Address, $src$$constant);
+    }
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -4948,7 +4952,7 @@ instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   effect(KILL cr);
   predicate(CompressedOops::base() == nullptr || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
-  size(40);
+  size(30);
   format %{ "decodeN  $dst,$src\t # (decode cOop)" %}
   ins_encode %{  __ oop_decoder($dst$$Register, $src$$Register, true); %}
   ins_pipe(pipe_class_dummy);
@@ -4972,7 +4976,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
             (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
-  size(40);
+  size(30);
   format %{ "decodeN  $dst,$src\t # (decode cOop NN)" %}
   ins_encode %{ __ oop_decoder($dst$$Register, $src$$Register, false); %}
   ins_pipe(pipe_class_dummy);
@@ -4995,7 +4999,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     // dst==base.
     effect(KILL cr);
     predicate(false);
-    size(40);
+    size(30);
     format %{ "decodeN  $dst = ($src == 0) ? nullptr : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
@@ -5009,7 +5013,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     match(Set dst (DecodeN src base));
     effect(KILL cr);
     predicate(false);
-    size(40);
+    size(30);
     format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, false, $base$$Register,
@@ -5023,7 +5027,7 @@ instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   predicate(CompressedOops::base() != nullptr && ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
-  size(56);
+  size(46);
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
@@ -5039,7 +5043,27 @@ instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
-  size(40);
+  size(46);
+  expand %{
+    immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
+    iRegL base;
+    loadBase(base, baseImm);
+    decodeN_NN_base(dst, src, base, cr);
+  %}
+%}
+
+//  Encode Compressed Pointer
+
+// General encoder
+instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
+  match(Set dst (EncodeP src));
+  effect(KILL cr);
+  predicate((n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull) &&
+            (CompressedOops::base() == nullptr ||
+             CompressedOops::base_disjoint() ||
+             !ExpandLoadingBaseEncode));
+  ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
+  size(30);
   format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, true, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
@@ -5074,7 +5098,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     effect(TEMP_DEF dst);
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
-    size(40); 
+    size(30); 
     format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t # (encode cOop)" %}
     ins_encode %{
       jlong offset = -(jlong)MacroAssembler::get_oop_base_pow2_offset
@@ -5090,7 +5114,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     effect(USE pow2_offset);
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
-    size(40); 
+    size(30); 
     format %{ "encodeP  $dst = ($src>>3) +$base + $pow2_offset\t # (encode cOop)" %}
     ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, $base$$Register, $pow2_offset$$constant); %}
     ins_pipe(pipe_class_dummy);
@@ -5103,7 +5127,7 @@ instruct encodeP_Ex(iRegN dst, iRegP src, flagsReg cr) %{
   predicate((n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull) &&
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
-  size(60); 
+  size(50); 
   expand %{
     immL baseImm %{ ((jlong)(intptr_t)CompressedOops::base()) >> CompressedOops::shift() %}
     immL_0 zero %{ (0) %}
@@ -5123,7 +5147,7 @@ instruct encodeP_NN_Ex(iRegN dst, iRegP src, flagsReg cr) %{
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull) &&
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
-  size(60); 
+  size(50); 
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     immL pow2_offset %{ -(jlong)MacroAssembler::get_oop_base_pow2_offset(((uint64_t)(intptr_t)CompressedOops::base())) %}
