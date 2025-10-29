@@ -26,6 +26,7 @@
 package jdk.internal.math;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.Arrays;
 
@@ -34,14 +35,17 @@ import java.util.Arrays;
  */
 final class FDBigInteger {
 
+    @Stable
     static final int[] SMALL_5_POW;
 
+    @Stable
     static final long[] LONG_5_POW;
 
     // Size of full cache of powers of 5 as FDBigIntegers.
     private static final int MAX_FIVE_POW = 340;
 
     // Cache of big powers of 5 as FDBigIntegers.
+    @Stable
     private static final FDBigInteger[] POW_5_CACHE;
 
     // Archive proxy
@@ -52,53 +56,17 @@ final class FDBigInteger {
         CDS.initializeFromArchive(FDBigInteger.class);
         Object[] caches = archivedCaches;
         if (caches == null) {
-            long[] long5pow = {
-                    1L,
-                    5L,
-                    25L,
-                    25L * 5,
-                    25L * 25,
-                    25L * 25 * 5,
-                    25L * 25 * 25,
-                    25L * 25 * 25 * 5,
-                    25L * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,  // 5^27
-                };
+            int[] small5pow = new int[13 + 1];  // 5^13 fits in an int, 5^14 does not
+            small5pow[0] = 1;
+            for (int i = 1; i < small5pow.length; ++i) {
+                small5pow[i] = 5 * small5pow[i - 1];
+            }
 
-            int[] small5pow = {
-                    1,
-                    5,
-                    25,
-                    25 * 5,
-                    25 * 25,
-                    25 * 25 * 5,
-                    25 * 25 * 25,
-                    25 * 25 * 25 * 5,
-                    25 * 25 * 25 * 25,
-                    25 * 25 * 25 * 25 * 5,
-                    25 * 25 * 25 * 25 * 25,
-                    25 * 25 * 25 * 25 * 25 * 5,
-                    25 * 25 * 25 * 25 * 25 * 25,
-                    25 * 25 * 25 * 25 * 25 * 25 * 5,  // 5^13
-                };
+            long[] long5pow = new long[27 + 1];  // 5^27 fits in a long, 5^28 does not
+            long5pow[0] = 1;
+            for (int i = 1; i < long5pow.length; ++i) {
+                long5pow[i] = 5 * long5pow[i - 1];
+            }
 
             FDBigInteger[] pow5cache = new FDBigInteger[MAX_FIVE_POW];
             int i = 0;
@@ -959,8 +927,10 @@ final class FDBigInteger {
      * It is filled lazily, except for the entries with exponent
      * 2 (MAX_FIVE_POW - 1) and 3 (MAX_FIVE_POW - 1).
      *
-     * Access must be synchronized for thread-safety.
+     * Access needs not be synchronized for thread-safety, since races would
+     * produce the same non-null value (although not the same instance).
      */
+    @Stable
     private static final FDBigInteger[] LARGE_POW_5_CACHE;
 
     /**
@@ -977,18 +947,16 @@ final class FDBigInteger {
         if (e > 2 - DoubleToDecimal.Q_MIN) {
             throw new IllegalArgumentException("exponent too large: " + e);
         }
-        synchronized (LARGE_POW_5_CACHE) {
-            FDBigInteger p5 = LARGE_POW_5_CACHE[e - MAX_FIVE_POW];
-            if (p5 == null) {
-                int ep = (e - 1) - (e - 1) % (MAX_FIVE_POW - 1);
-                p5 = (ep < MAX_FIVE_POW
-                        ? POW_5_CACHE[ep]
-                        : LARGE_POW_5_CACHE[ep - MAX_FIVE_POW])
-                        .mult(POW_5_CACHE[e - ep]);
-                LARGE_POW_5_CACHE[e - MAX_FIVE_POW] = p5.makeImmutable();
-            }
-            return p5;
+        FDBigInteger p5 = LARGE_POW_5_CACHE[e - MAX_FIVE_POW];
+        if (p5 == null) {
+            int ep = (e - 1) - (e - 1) % (MAX_FIVE_POW - 1);
+            p5 = (ep < MAX_FIVE_POW
+                    ? POW_5_CACHE[ep]
+                    : LARGE_POW_5_CACHE[ep - MAX_FIVE_POW])
+                    .mult(POW_5_CACHE[e - ep]);
+            LARGE_POW_5_CACHE[e - MAX_FIVE_POW] = p5.makeImmutable();
         }
+        return p5;
     }
 
     // for debugging ...
