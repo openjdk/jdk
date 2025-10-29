@@ -1824,7 +1824,7 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
-                Type lub = types.lub(t1, t2);
+                Type lub = types.lub(true, t1, t2);
 
                 if (lub.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +

@@ -3837,27 +3837,27 @@ public class Types {
     /**
      * Intersect two closures
      */
-    public List<Type> intersect(List<Type> cl1, List<Type> cl2) {
+    public List<Type> intersect(List<Type> cl1, List<Type> cl2, boolean eraseResult) {
         if (cl1 == cl2)
             return cl1;
         if (cl1.isEmpty() || cl2.isEmpty())
             return List.nil();
         if (cl1.head.tsym.precedes(cl2.head.tsym, this))
-            return intersect(cl1.tail, cl2);
+            return intersect(cl1.tail, cl2, eraseResult);
         if (cl2.head.tsym.precedes(cl1.head.tsym, this))
-            return intersect(cl1, cl2.tail);
+            return intersect(cl1, cl2.tail, eraseResult);
         if (isSameType(cl1.head, cl2.head))
-            return intersect(cl1.tail, cl2.tail).prepend(cl1.head);
+            return intersect(cl1.tail, cl2.tail, eraseResult).prepend(cl1.head);
         if (cl1.head.tsym == cl2.head.tsym &&
             cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
             if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
-                Type merge = merge(cl1.head,cl2.head);
-                return intersect(cl1.tail, cl2.tail).prepend(merge);
+                Type merge = merge(cl1.head,cl2.head, eraseResult);
+                return intersect(cl1.tail, cl2.tail, eraseResult).prepend(merge);
             }
             if (cl1.head.isRaw() || cl2.head.isRaw())
-                return intersect(cl1.tail, cl2.tail).prepend(erasure(cl1.head));
+                return intersect(cl1.tail, cl2.tail, eraseResult).prepend(erasure(cl1.head));
         }
-        return intersect(cl1.tail, cl2.tail);
+        return intersect(cl1.tail, cl2.tail, eraseResult);
     }
     // where
         class TypePair {
@@ -3880,7 +3880,7 @@ public class Types {
             }
         }
         Set<TypePair> mergeCache = new HashSet<>();
-        private Type merge(Type c1, Type c2) {
+        private Type merge(Type c1, Type c2, boolean eraseResult) {
             ClassType class1 = (ClassType) c1;
             List<Type> act1 = class1.getTypeArguments();
             ClassType class2 = (ClassType) c2;
@@ -3897,7 +3897,7 @@ public class Types {
                     TypePair pair = new TypePair(c1, c2);
                     Type m;
                     if (mergeCache.add(pair)) {
-                        m = new WildcardType(lub(wildUpperBound(act1.head),
+                        m = new WildcardType(lub(eraseResult, wildUpperBound(act1.head),
                                                  wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
                                              syms.boundClass);
@@ -3976,7 +3976,11 @@ public class Types {
      * not exist return null.
      */
     public Type lub(List<Type> ts) {
-        return lub(ts.toArray(new Type[ts.length()]));
+        return lub(false, ts);
+    }
+
+    public Type lub(boolean eraseResult, List<Type> ts) {
+        return lub(eraseResult, ts.toArray(new Type[ts.length()]));
     }
 
     /**
@@ -3984,6 +3988,10 @@ public class Types {
      * does not exist return the type of null (bottom).
      */
     public Type lub(Type... ts) {
+        return lub(false, ts);
+    }
+
+    public Type lub(boolean willBeErased, Type... ts) {
         final int UNKNOWN_BOUND = 0;
         final int ARRAY_BOUND = 1;
         final int CLASS_BOUND = 2;
@@ -4042,7 +4050,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lub(elements), syms.arrayClass);
+            return new ArrayType(lub(willBeErased, elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -4061,17 +4069,23 @@ public class Types {
             for (int i = startIdx + 1 ; i < ts.length ; i++) {
                 Type t = ts[i];
                 if (t.hasTag(CLASS) || t.hasTag(TYPEVAR))
-                    cl = intersect(cl, erasedSupertypes(t));
+                    cl = intersect(cl, erasedSupertypes(t), willBeErased);
             }
             //step 2 - compute minimal erased candidate set (MEC)
-            List<Type> mec = closureMin(cl);
+            List<Type> mec = null;
+            if (willBeErased && !cl.isEmpty()) {
+                cl = List.of(cl.head);
+                mec = cl;
+            } else {
+                mec = closureMin(cl);
+            }
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
                 List<Type> lci = List.of(asSuper(ts[startIdx], erasedSupertype.tsym));
                 for (int i = startIdx + 1 ; i < ts.length ; i++) {
                     Type superType = asSuper(ts[i], erasedSupertype.tsym);
-                    lci = intersect(lci, superType != null ? List.of(superType) : List.nil());
+                    lci = intersect(lci, superType != null ? List.of(superType) : List.nil(), willBeErased);
                 }
                 candidates = candidates.appendList(lci);
             }
@@ -4087,7 +4101,7 @@ public class Types {
                     classes = classes.prepend(ts[i]);
             }
             // lub(A, B[]) is lub(A, arraySuperType)
-            return lub(classes);
+            return lub(willBeErased, classes);
         }
     }
     // where
