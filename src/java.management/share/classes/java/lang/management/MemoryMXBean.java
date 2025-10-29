@@ -284,7 +284,7 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * for calculating the GC's usage of CPU time as a whole.
      *
      * @implNote The specifics on what constitutes the time spent
-     * in GC is highly implementation dependent. In the HotSpot
+     * in GC are highly implementation dependent. In the HotSpot
      * Virtual Machine, this time includes relevant
      * implementation-specific details such as driver threads,
      * workers, VM Operations and string deduplication (if
@@ -292,7 +292,7 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * orchestrate its work. The return value can be -1 if called
      * when measurement is not possible, such as during shutdown.
      *
-     * @implSpec The default implementation return {@code -1}.
+     * @implSpec The default implementation returns {@code -1}.
      *
      * @return the total accumulated CPU time for GC in
      * nanoseconds, or {@code -1}.
