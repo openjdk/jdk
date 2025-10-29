@@ -367,7 +367,8 @@ private:
   // Handle allocation for collector (for evacuation).
   HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // Search for allocation in region with same affiliation as request, using given iterator.
+  // Search for allocation in region with same affiliation as request, using given iterator,
+  // or affiliate the first usable FREE region with given affiliation and allocate in.
   template<typename Iter>
   HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
 
