@@ -806,7 +806,8 @@ void CodeCache::gc_on_allocation() {
   if (used_ratio > threshold) {
     // After threshold is reached, scale it by free_ratio so that more aggressive
     // GC is triggered as we approach code cache exhaustion
-    threshold *= free_ratio;
+    // But not more aggressive than 0.9
+    threshold *= 0.9;
   }
   // If code cache has been allocated without any GC at all, let's make sure
   // it is eventually invoked to avoid trouble.
