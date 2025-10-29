@@ -2553,7 +2553,7 @@ void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
   public:
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      bool const is_remset_tracked = g1h->region_attr(r->bottom()).is_remset_tracked();
+      const bool is_remset_tracked = g1h->region_attr(r->bottom()).is_remset_tracked();
       assert(r->rem_set()->is_tracked() == is_remset_tracked,
              "Region %u remset tracking status (%s) different to region attribute (%s)",
              r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
