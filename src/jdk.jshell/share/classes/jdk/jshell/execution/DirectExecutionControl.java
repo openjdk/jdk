@@ -355,17 +355,13 @@ public class DirectExecutionControl implements ExecutionControl {
                     ex.getClass().getName(),
                     ex.getStackTrace());
             Throwable cause = ex.getCause();
-            if (cause == null) {
-                return ue;
-            }
-            if (dejaVu.contains(cause)) {
-                UserException ue2 = new UserException("CIRCULAR REFERENCE!",
-                        cause.getClass().getName(),
-                        cause.getStackTrace());
-                ue.initCause(ue2);
-            } else {
-                dejaVu.add(cause);
-                ue.initCause(asRunException(cause, dejaVu));
+            if (cause != null) {
+                Throwable throwable = dejaVu.add(cause)
+                        ? asRunException(cause, dejaVu)
+                        : new UserException("CIRCULAR REFERENCE!",
+                            cause.getClass().getName(),
+                            cause.getStackTrace());
+                ue.initCause(throwable);
             }
             return ue;
         }

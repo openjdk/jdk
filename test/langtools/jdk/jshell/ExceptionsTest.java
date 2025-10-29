@@ -320,6 +320,16 @@ public class ExceptionsTest extends KullaTesting {
         assertExecuteException("f();", StackOverflowError.class);
     }
 
+    @Test
+    public void recursiveCauses() {
+        assertEval("var one = new Throwable();");
+        assertEval("var two = new Error();");
+        assertEval("one.initCause(two);");
+        assertEval("two.initCause(one);");
+        assertExecuteException("throw one;", Throwable.class);
+        assertExecuteException("throw two;", Error.class);
+    }
+
     private StackTraceElement newStackTraceElement(String className, String methodName, Snippet key, int lineNumber) {
         return new StackTraceElement(className, methodName, "#" + key.id(), lineNumber);
     }
