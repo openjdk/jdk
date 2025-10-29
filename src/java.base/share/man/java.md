@@ -2566,25 +2566,6 @@ Java HotSpot VM.
 :   Sets the maximum size (in bytes) of the heap for the young generation
     (nursery). The default value is set ergonomically.
 
-`-XX:MaxRAM=`*size*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the maximum
-    amount of available memory to the JVM process or 128 GB, whichever is lower.
-
-    The maximum amount of available memory to the JVM process is the minimum
-    of the machine's physical memory and any constraints set by the environment
-    (e.g. container).
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    The following example shows how to set the maximum amount of available
-    memory for sizing the Java heap to 2 GB:
-
-    >   `-XX:MaxRAM=2G`
-
 `-XX:MaxRAMPercentage=`*percent*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
     before applying ergonomics heuristics as a percentage of the maximum amount
@@ -2950,6 +2931,25 @@ they're used.
     The option is available only when the throughput or G1 garbage collector is used
     (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
     threads always perform reference processing in parallel.
+
+`-XX:MaxRAM=`*size*
+:   Sets the maximum amount of memory that the JVM may use for the Java heap
+    before applying ergonomics heuristics. The default value is the amount of
+    available memory to the JVM process.
+
+    The maximum amount of available memory to the JVM process is the minimum
+    of the machine's physical memory and any constraints set by the environment
+    (e.g. container).
+
+    Specifying this option disables automatic use of compressed oops if
+    the combined result of this and other options influencing the maximum amount
+    of memory is larger than the range of memory addressable by compressed oops.
+    See `-XX:UseCompressedOops` for further information about compressed oops.
+
+    The following example shows how to set the maximum amount of available
+    memory for sizing the Java heap to 2 GB:
+
+    >   `-XX:MaxRAM=2G`
 
 ## Obsolete Java Options
 

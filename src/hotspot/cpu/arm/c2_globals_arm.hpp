@@ -80,9 +80,6 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    21*M);
 define_pd_global(size_t, ProfiledCodeHeapSize,       22*M);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
 define_pd_global(size_t, CodeCacheExpansionSize,     64*K);
-
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   128ULL*G);
 #else
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(size_t, InitialCodeCacheSize,       1536*K); // Integral multiple of CodeCacheExpansionSize
@@ -91,8 +88,6 @@ define_pd_global(size_t, NonProfiledCodeHeapSize,    13*M);
 define_pd_global(size_t, ProfiledCodeHeapSize,       14*M);
 define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
 define_pd_global(size_t, CodeCacheExpansionSize,     32*K);
-// Ergonomics related flags
-define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
 #endif
 define_pd_global(size_t, CodeCacheMinBlockLength,    6);
 define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
