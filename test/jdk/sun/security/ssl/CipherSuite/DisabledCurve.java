@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8246330 8366364
+ * @bug 8246330
  * @library /javax/net/ssl/templates /test/lib
  * @run main/othervm -Djdk.tls.namedGroups="secp384r1"
         DisabledCurve DISABLE_NONE PASS
@@ -35,6 +35,7 @@ import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 
 import jdk.test.lib.security.SecurityUtils;
 
@@ -110,7 +111,7 @@ public class DisabledCurve extends SSLSocketTemplate {
                     throw new RuntimeException(
                             "Expected test to fail, but it passed");
                 }
-            } catch (NoClassDefFoundError | ExceptionInInitializerError ssle) {
+            } catch (SSLException | IllegalStateException ssle) {
                 if (expected.equals("FAIL") && disabled) {
                     System.out.println(
                             "Expected exception was thrown: TEST PASSED");
