@@ -43,6 +43,7 @@ import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxLauncherMixin;
 import jdk.jpackage.internal.model.LinuxRpmPackage;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxFromParams {
@@ -55,7 +56,9 @@ final class LinuxFromParams {
             final var launcher = launcherFromParams.create(launcherParams);
             final var shortcut = findLauncherShortcut(LINUX_SHORTCUT_HINT, params, launcherParams);
             return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(shortcut));
-        }), APPLICATION_LAYOUT).create();
+        }), (LinuxLauncher linuxLauncher, Launcher launcher) -> {
+            return LinuxLauncher.create(launcher, linuxLauncher);
+        }, APPLICATION_LAYOUT).create();
         return LinuxApplication.create(app);
     }
 
