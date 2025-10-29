@@ -1587,17 +1587,25 @@ public class TestReductions {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_L,    "> 0",
                   IRNode.MUL_REDUCTION_VL, "> 0",
-                  IRNode.MUL_VL,           "> 0"},
-        applyIfCPUFeatureOr = {"avx512dq", "true", "asimd", "true"},
+                  IRNode.MUL_VL,           "> 0"}, // vector accumulator
+        applyIfCPUFeature = {"avx512dq", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512dq", "false", "sse4.1", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370673
+    @IR(counts = {IRNode.LOAD_VECTOR_L,    "> 0",
+                  IRNode.MUL_REDUCTION_VL, "> 0",
+                  IRNode.MUL_VL,           "= 0"}, // Reduction NOT moved out of loop
+        applyIfCPUFeatureOr = {"asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    // Note: NEON does not support MulVL for auto vectorization. There is
+    //       a scalarized implementation, but that is not profitable for
+    //       auto vectorization in almost all cases, and would not be
+    //       profitable here at any rate.
+    //       Hence, we have to keep the reduction inside the loop, and
+    //       cannot use the MulVL as the vector accumulator.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
-    // Note: we get a performance regression for NEON, because it uses a
-    // scalar implementation for the reduction.
-    // Filed: JDK-8370686
     private static long longMulSimple() {
         long acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
