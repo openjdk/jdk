@@ -789,10 +789,10 @@ public class Robot {
     }
 
     /**
-     * A convenience method that simulates clicking a mouse button by calling {@code mousePress}, {@code mouseRelease},
-     * and {@code waitForIdle}. Invokes {@code waitForIdle} with a default delay of {@value #DEFAULT_DELAY} milliseconds after
-     * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs see
-     * {@link java.awt.Robot#mousePress(int)}.
+     * A convenience method that simulates clicking a mouse button by calling {@code mousePress},
+     * {@code mouseRelease} and {@code waitForIdle}. Invokes {@code waitForIdle} with a default
+     * delay of {@value #DEFAULT_DELAY} milliseconds after {@code mousePress} and {@code mouseRelease}
+     * calls. For specifics on valid inputs see {@link java.awt.Robot#mousePress(int)}.
      *
      * @param   buttons The button mask; a combination of one or more mouse button masks.
      * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
@@ -958,8 +958,8 @@ public class Robot {
 
     /**
      * A convenience method that simulates typing a key by calling {@code keyPress}
-     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of {@value #DEFAULT_DELAY} milliseconds
-     * after {@code keyPress} and {@code keyRelease} calls.
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of {@value #DEFAULT_DELAY}
+     * milliseconds after {@code keyPress} and {@code keyRelease} calls.
      * <p>
      * Key codes that have more than one physical key associated with them
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
