@@ -37,7 +37,7 @@
  *     Test scenario:
  *         - during initialization (from function Agent_OnAttach) agent starts auxiliary thread waiting on
  *         raw monitor and enables GarbageCollectionStart and GarbageCollectionFinish events
- *         - target application provokes garbage collection (calls System.gc())
+ *         - target application provokes garbage collection (calls WhiteBox.getWhiteBox().fullGC())
  *         - agent receives event GarbageCollectionStart
  *         - agent receives event GarbageCollectionFinish event and notifies waiting auxiliary thread
  *         - notified auxiliary thread notifies target application that agent finished its work
