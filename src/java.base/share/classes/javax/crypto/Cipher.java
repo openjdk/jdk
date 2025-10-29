@@ -2595,7 +2595,9 @@ public class Cipher {
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
      *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived key in bytes
+     *          (must be greater than 0)
      *
      * @return the derived key
      *
@@ -2605,10 +2607,16 @@ public class Cipher {
      *          are invalid
      * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      *          state (e.g., has not been initialized)
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @since 26
      */
     public SecretKey exportKey(String algorithm, byte[] context, int length) {
+        Objects.requireNonNull(algorithm);
+        if (length <= 0) {
+            throw new IllegalArgumentException("length cannot be negative");
+        }
+        checkCipherState();
         chooseFirstProvider();
         return spi.engineExportKey(algorithm, context, length);
     }
@@ -2631,7 +2639,9 @@ public class Cipher {
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
      *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived data
+     *          (must be greater than 0)
      *
      * @return the derived data
      *
@@ -2646,6 +2656,10 @@ public class Cipher {
      * @since 26
      */
     public byte[] exportData(byte[] context, int length) {
+        if (length <= 0) {
+            throw new IllegalArgumentException("length cannot be negative");
+        }
+        checkCipherState();
         chooseFirstProvider();
         return spi.engineExportData(context, length);
     }

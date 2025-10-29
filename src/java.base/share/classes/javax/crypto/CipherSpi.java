@@ -973,6 +973,7 @@ public abstract class CipherSpi {
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
      *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived key in bytes
      *
      * @return the derived key
@@ -1012,6 +1013,7 @@ public abstract class CipherSpi {
      * @param context a byte array representing additional data or context
      *          information that influences the key derivation process.
      *          The derived key should be unique to the given context.
+     *          A cipher implementation may accept a {@code null} value.
      * @param length the desired length of the derived data
      *
      * @return the derived data
