@@ -143,8 +143,8 @@ public class NMethod extends CodeBlob {
   public Address scopesDataBegin()            { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
   public Address scopesDataEnd()              { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsBegin()             { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
-  public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(immutableDataRefCountOffset()); }
-  public Address immutableDataRefCountBegin() { return immutableDataBegin().addOffsetTo(immutableDataRefCountOffset()); }
+  public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
+  public Address immutableDataRefCountBegin() { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
 
   public Address metadataBegin()              { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
   public Address metadataEnd()                { return mutableDataEnd();                                      }
@@ -488,14 +488,14 @@ public class NMethod extends CodeBlob {
   // Internals only below this point
   //
 
-  private int getEntryBCI()                 { return (int) entryBCIField                    .getValue(addr); }
-  private int getExceptionOffset()          { return (int) exceptionOffsetField             .getValue(addr); }
-  private int getDeoptHandlerOffset()       { return (int) deoptHandlerOffsetField          .getValue(addr); }
-  private int getStubOffset()               { return (int) stubOffsetField                  .getValue(addr); }
-  private int getScopesDataOffset()         { return (int) scopesDataOffsetField            .getValue(addr); }
-  private int getScopesPCsOffset()          { return (int) scopesPCsOffsetField             .getValue(addr); }
-  private int getHandlerTableOffset()       { return (int) handlerTableOffsetField          .getValue(addr); }
-  private int getNulChkTableOffset()        { return (int) nulChkTableOffsetField           .getValue(addr); }
-  private int getCompLevel()                { return (int) compLevelField                   .getValue(addr); }
-  private int immutableDataRefCountOffset() { return (int) immutableDataRefCountOffsetField .getValue(addr); }
+  private int getEntryBCI()                     { return (int) entryBCIField                    .getValue(addr); }
+  private int getExceptionOffset()              { return (int) exceptionOffsetField             .getValue(addr); }
+  private int getDeoptHandlerOffset()           { return (int) deoptHandlerOffsetField          .getValue(addr); }
+  private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(addr); }
+  private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(addr); }
+  private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(addr); }
+  private int getHandlerTableOffset()           { return (int) handlerTableOffsetField          .getValue(addr); }
+  private int getNulChkTableOffset()            { return (int) nulChkTableOffsetField           .getValue(addr); }
+  private int getCompLevel()                    { return (int) compLevelField                   .getValue(addr); }
+  private int getImmutableDataRefCountOffset()  { return (int) immutableDataRefCountOffsetField .getValue(addr); }
 }
