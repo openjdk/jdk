@@ -62,6 +62,8 @@
 
 class ClassLoaderData;
 
+bool CollectedHeap::_is_shutting_down = false;
+
 size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
@@ -386,11 +388,6 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
       return op.result();
     }
 
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
-    }
-
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
@@ -605,27 +602,63 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-bool CollectedHeap::is_shutting_down() const {
-  return Universe::is_shutting_down();
+bool CollectedHeap::is_shutting_down() {
+  assert(Heap_lock->owned_by_self(), "Protected by this lock");
+  return _is_shutting_down;
 }
 
-void CollectedHeap::stall_for_vm_shutdown() {
-  assert(is_shutting_down(), "Precondition");
-  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
-  // if the VM shutdown triggers a GC.
-  // The 2-seconds sleep is:
-  //   - long enough to keep daemon threads stalled, while the shutdown
-  //     sequence completes in the common case.
-  //   - short enough to avoid excessive stall time if the shutdown itself
-  //     triggers a GC.
-  JavaThread::current()->sleep(2 * MILLIUNITS);
+static void log_cpu_time() {
+  LogTarget(Info, cpu) cpuLog;
+  if (!cpuLog.is_enabled()) {
+    return;
+  }
 
-  ResourceMark rm;
-  log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
+  const double process_cpu_time = os::elapsed_process_cpu_time();
+  if (process_cpu_time == 0 || process_cpu_time == -1) {
+    // 0 can happen e.g. for short running processes with
+    // low CPU utilization
+    return;
+  }
+
+  const double gc_threads_cpu_time = (double) CPUTimeUsage::GC::gc_threads() / NANOSECS_PER_SEC;
+  const double gc_vm_thread_cpu_time = (double) CPUTimeUsage::GC::vm_thread() / NANOSECS_PER_SEC;
+  const double gc_string_dedup_cpu_time = (double) CPUTimeUsage::GC::stringdedup() / NANOSECS_PER_SEC;
+  const double gc_cpu_time = (double) gc_threads_cpu_time + gc_vm_thread_cpu_time + gc_string_dedup_cpu_time;
+
+  const double elasped_time = os::elapsedTime();
+  const bool has_error = CPUTimeUsage::Error::has_error();
+
+  if (gc_cpu_time < process_cpu_time) {
+    cpuLog.print("=== CPU time Statistics =============================================================");
+    if (has_error) {
+      cpuLog.print("WARNING: CPU time sampling reported errors, numbers may be unreliable");
+    }
+    cpuLog.print("                                                                            CPUs");
+    cpuLog.print("                                                               s       %%  utilized");
+    cpuLog.print("   Process");
+    cpuLog.print("     Total                        %30.4f  %6.2f  %8.1f", process_cpu_time, 100.0, process_cpu_time / elasped_time);
+    cpuLog.print("     Garbage Collection           %30.4f  %6.2f  %8.1f", gc_cpu_time, percent_of(gc_cpu_time, process_cpu_time), gc_cpu_time / elasped_time);
+    cpuLog.print("       GC Threads                 %30.4f  %6.2f  %8.1f", gc_threads_cpu_time, percent_of(gc_threads_cpu_time, process_cpu_time), gc_threads_cpu_time / elasped_time);
+    cpuLog.print("       VM Thread                  %30.4f  %6.2f  %8.1f", gc_vm_thread_cpu_time, percent_of(gc_vm_thread_cpu_time, process_cpu_time), gc_vm_thread_cpu_time / elasped_time);
+
+    if (UseStringDeduplication) {
+      cpuLog.print("       String Deduplication       %30.4f  %6.2f  %8.1f", gc_string_dedup_cpu_time, percent_of(gc_string_dedup_cpu_time, process_cpu_time), gc_string_dedup_cpu_time / elasped_time);
+    }
+    cpuLog.print("=====================================================================================");
+  }
 }
 
 void CollectedHeap::before_exit() {
   print_tracing_info();
+
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    _is_shutting_down = true;
+  }
+
+  log_cpu_time();
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();

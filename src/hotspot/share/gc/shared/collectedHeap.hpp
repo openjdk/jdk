@@ -96,6 +96,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class MemAllocator;
 
  private:
+  static bool _is_shutting_down;
+
   GCHeapLog*      _heap_log;
   GCMetaspaceLog* _metaspace_log;
 
@@ -245,12 +247,7 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  bool is_shutting_down() const;
-
-  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
-  // In this case, stall the allocation request briefly in the hope that
-  // the VM shutdown completes before the allocation request returns.
-  void stall_for_vm_shutdown();
+  static bool is_shutting_down();
 
   void before_exit();
 

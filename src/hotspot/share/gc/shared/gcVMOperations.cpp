@@ -110,8 +110,13 @@ bool VM_GC_Operation::doit_prologue() {
   }
   VM_Heap_Sync_Operation::doit_prologue();
 
+  // Block forever if we are shutting down
+  while (CollectedHeap::is_shutting_down()) {
+    Heap_lock->wait();
+  }
+
   // Check invocations
-  if (skip_operation() || Universe::is_shutting_down()) {
+  if (skip_operation()) {
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {
