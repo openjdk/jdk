@@ -11,15 +11,17 @@ var typeSearchIndex;
 var memberSearchIndex;
 var tagSearchIndex;
 
-var oddRowColor = "odd-row-color";
-var evenRowColor = "even-row-color";
-var sortAsc = "sort-asc";
-var sortDesc = "sort-desc";
-var tableTab = "table-tab";
-var activeTableTab = "active-table-tab";
+const oddRowColor = "odd-row-color";
+const evenRowColor = "even-row-color";
+const sortAsc = "sort-asc";
+const sortDesc = "sort-desc";
+const tableTab = "table-tab";
+const activeTableTab = "active-table-tab";
+const THEMES = Object.freeze(["theme-light", "theme-dark", "theme-os"]);
 
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
+const toggleMemberListing = "##REPLACE:doclet.Toggle_member_listing##";
 
 if (typeof hljs !== "undefined") {
     try {
@@ -29,21 +31,20 @@ if (typeof hljs !== "undefined") {
     }
 }
 
-function loadScripts(doc, tag) {
-    createElem(doc, tag, 'script-files/search.js');
-
-    createElem(doc, tag, 'module-search-index.js');
-    createElem(doc, tag, 'package-search-index.js');
-    createElem(doc, tag, 'type-search-index.js');
-    createElem(doc, tag, 'member-search-index.js');
-    createElem(doc, tag, 'tag-search-index.js');
+function loadScripts() {
+    createScript('script-files/search.js');
+    createScript('module-search-index.js');
+    createScript('package-search-index.js');
+    createScript('type-search-index.js');
+    createScript('member-search-index.js');
+    createScript('tag-search-index.js');
 }
 
-function createElem(doc, tag, path) {
-    var script = doc.createElement(tag);
-    var scriptElement = doc.getElementsByTagName(tag)[0];
+function createScript(path) {
+    var script = document.createElement("script");
     script.src = pathtoroot + path;
-    scriptElement.parentNode.insertBefore(script, scriptElement);
+    var firstScript = document.getElementsByTagName("script")[0];
+    firstScript.parentNode.insertBefore(script, firstScript);
 }
 
 // Helper for  making content containing release names comparable lexicographically
@@ -311,28 +312,34 @@ function makeFilterWidget(sidebar, updateToc) {
     return sidebar;
 }
 
+function getTheme() {
+    return localStorage.getItem('theme') || THEMES[0];
+}
+
+function initTheme() {
+    document.body.classList.add(getTheme());
+}
+
 function setTopMargin() {
     // Dynamically set scroll margin to accomodate for draft header
     var headerHeight = Math.ceil(document.querySelector("header").offsetHeight);
     document.querySelector(":root")
         .style.setProperty("--nav-height", headerHeight + "px");
 }
+
 document.addEventListener("readystatechange", (e) => {
     if (document.readyState === "interactive") {
         setTopMargin();
-    }
-    if (sessionStorage.getItem("sidebar") === "hidden") {
-        const sidebar = document.querySelector(".main-grid nav.toc");
-        if (sidebar) sidebar.classList.add("hide-sidebar");
+        if (sessionStorage.getItem("sidebar") === "hidden") {
+            const sidebar = document.querySelector(".main-grid nav.toc");
+            if (sidebar) sidebar.classList.add("hide-sidebar");
+        }
     }
 });
+
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    // Make sure current element is visible in breadcrumb navigation on small displays
     const subnav = document.querySelector("ol.sub-nav-list");
-    if (subnav && subnav.lastElementChild) {
-        subnav.lastElementChild.scrollIntoView({ behavior: "instant", inline: "start", block: "nearest" });
-    }
     const keymap = new Map();
     const searchInput = document.getElementById("search-input")
                    || document.getElementById("page-search-input");
@@ -351,6 +358,51 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const mainnav = navbar.querySelector("ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
+    const themeButton = document.querySelector("button#theme-button");
+    const themePanel = document.querySelector("div#theme-panel");
+    var themePanelVisible = false;
+    themeButton.addEventListener("click", e => {
+        if (!themePanelVisible) {
+            let {x, y} = themeButton.getBoundingClientRect();
+            themePanel.style.display = "block";
+            if (window.innerHeight - 85 < y) {
+                themePanel.style.top = "";
+                themePanel.style.bottom = "4px";
+            } else {
+                themePanel.style.top = y + (expanded ? 0 : 36) + "px";
+                themePanel.style.bottom = "";
+            }
+            themePanel.style.left = x + (expanded ? 36 : 0) + "px";
+            themeButton.setAttribute("aria-expanded", "true");
+            themePanelVisible = true;
+            e.stopPropagation();
+        }
+    });
+    function closeThemePanel(e) {
+        if (themePanelVisible && (!e || !themePanel.contains(e.target))) {
+            themePanel.style.removeProperty("display");
+            themeButton.setAttribute("aria-expanded", "false");
+            themePanelVisible = false;
+        }
+    }
+    var currentTheme = getTheme();
+    themePanel.querySelectorAll("input").forEach(input => {
+        input.removeAttribute("disabled");
+        if (input.id === currentTheme) {
+            input.checked = true;
+        }
+        input.addEventListener("change", e => {
+            setTheme(e.target.value);
+        })
+    });
+    function setTheme(theme) {
+        THEMES.forEach(t => {
+            if (t !== theme) document.body.classList.remove(t);
+        });
+        document.body.classList.add(theme);
+        localStorage.setItem("theme", theme);
+        document.getElementById(theme).checked = true;
+    }
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
@@ -362,6 +414,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             return;
         }
         if (!isInput(e.target) && keymap.has(e.key)) {
+            closeThemePanel();
             var elem = keymap.get(e.key);
             if (elem === filterInput && !elem.offsetParent) {
                 elem = getVisibleFilterInput(true);
@@ -370,6 +423,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             elem.select();
             e.preventDefault();
         } else if (e.key === "Escape") {
+            closeThemePanel();
             if (expanded) {
                 collapse();
                 e.preventDefault();
@@ -389,6 +443,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
+        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
@@ -403,6 +458,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
     }
     function expand() {
+        closeThemePanel();
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");
@@ -457,6 +513,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         });
     }
     document.querySelector("main").addEventListener("click", collapse);
+    document.querySelector("body").addEventListener("click", closeThemePanel);
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
@@ -464,27 +521,44 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
             if (id) {
                 var template = document.createElement('template');
-                template.innerHTML =" <a href='#" + encodeURI(id) + "' class='anchor-link' aria-label='" + linkToSection
-                    + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='" + linkIcon +"' tabindex='0'"
-                    + " width='16' height='16'></a>";
+                template.innerHTML =" <a href='#" + encodeURI(id) + "' class='anchor-link' aria-label='"
+                    + linkToSection + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='"
+                    + linkIcon + "' width='16' height='16'></a>";
                 hdr.append(...template.content.childNodes);
             }
         });
+    document.querySelectorAll("div.inherited-list:has( > div.summary-table) > h3").forEach(h => {
+        const button = document.createElement("button");
+        const p = h.parentElement;
+        button.addEventListener("click", e => {
+            toggleStyle(p.classList, p.classList.contains("expanded"), "collapsed", "expanded");
+        });
+        button.addEventListener("keydown", e => {
+            if (e.key === " " || e.key === "Enter") {
+                toggleStyle(p.classList, p.classList.contains("expanded"), "collapsed", "expanded");
+                e.preventDefault();
+            }
+        });
+        button.setAttribute("aria-label", toggleMemberListing);
+        h.insertAdjacentElement("afterbegin", button);
+    });
     var sections;
     var scrollTimeout;
     var prevHash;
     function initSectionData() {
         bodyHeight = document.body.offsetHeight;
-        sections = [{ id: "", top: 0 }].concat(Array.from(main.querySelectorAll(
-                "section[id], h2[id], h2 a[id], h3[id], h3 a[id], div[id]"))
-            .filter((e) => {
-                return sidebar.querySelector("a[href=\"#" + encodeURI(e.getAttribute("id")) + "\"]") !== null
-            }).map((e) => {
-                return {
-                    id: e.getAttribute("id"),
-                    top: e.offsetTop
-                };
-            }));
+        sections = [{ id: "", top: 0 }].concat(
+            Array.from(main.querySelectorAll("section[id], h2[id], h2 a[id], h3[id], h3 a[id], div[id]"))
+                .filter((e) => {
+                    var id = encodeURI(e.getAttribute("id"));
+                    return sidebar.querySelector("a[href=\"#" + id + "\"]") !== null
+                }).map((e) => {
+                    return {
+                        id: e.getAttribute("id"),
+                       top: e.offsetTop
+                    };
+                })
+        );
     }
     function setScrollTimeout() {
         if (scrollTimeout) {

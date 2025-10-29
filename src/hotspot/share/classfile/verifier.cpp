@@ -140,7 +140,7 @@ static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verif
     // Shared classes shouldn't have stackmaps either.
     // However, bytecodes for shared old classes can be verified because
     // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
+    !(klass->in_aot_cache() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -237,7 +237,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       // Exclude any classes that are verified with the old verifier, as the old verifier
       // doesn't call SystemDictionaryShared::add_verification_constraint()
       if (CDSConfig::is_dumping_archive()) {
-        SystemDictionaryShared::warn_excluded(klass, "Verified with old verifier");
+        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
 #endif

@@ -225,36 +225,6 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bind(done);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  addi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count overflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  subi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
 int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleScope scope(this);
   intptr_t before = offset();
@@ -355,14 +325,15 @@ void MacroAssembler::call_VM(Register oop_result,
 }
 
 void MacroAssembler::post_call_nop() {
+  assert(!in_compressible_scope(), "Must be");
+  assert_alignment(pc());
   if (!Continuations::enabled()) {
     return;
   }
-  relocate(post_call_nop_Relocation::spec(), [&] {
-    InlineSkippedInstructionsCounter skipCounter(this);
-    nop();
-    li32(zr, 0);
-  });
+  relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
+  nop();
+  li32(zr, 0);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -2679,7 +2650,7 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
+    os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);
   }
 #endif
@@ -3402,6 +3373,8 @@ void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3412,18 +3385,13 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
     return;
   }
 
-  Register xbase = dst;
-  if (dst == src) {
-    xbase = tmp;
-  }
+  Register xbase = tmp;
 
-  assert_different_registers(src, xbase);
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    Register t = src == dst ? dst : t0;
-    assert_different_registers(t, xbase);
-    shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
+    // dst = (src << shift) + xbase
+    shadd(dst, src, xbase, dst /* temporary, dst != xbase */, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
@@ -5016,7 +4984,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleScope scope(this); // relocations
+  assert(!in_compressible_scope(), "Must be");
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -5874,13 +5842,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= CacheLineSize.
+// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
+  int zicboz_block_size = VM_Version::zicboz_block_size.value();
   Label initial_table_end, loop;
 
   // Align base with cache line size.
   neg(tmp1, base);
-  andi(tmp1, tmp1, CacheLineSize - 1);
+  andi(tmp1, tmp1, zicboz_block_size - 1);
 
   // tmp1: the number of bytes to be filled to align the base with cache line size.
   add(base, base, tmp1);
@@ -5890,16 +5859,16 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   la(tmp1, initial_table_end);
   sub(tmp2, tmp1, tmp2);
   jr(tmp2);
-  for (int i = -CacheLineSize + wordSize; i < 0; i += wordSize) {
+  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  mv(tmp1, CacheLineSize / wordSize);
+  mv(tmp1, zicboz_block_size / wordSize);
   bind(loop);
   cbo_zero(base);
   sub(cnt, cnt, tmp1);
-  addi(base, base, CacheLineSize);
+  addi(base, base, zicboz_block_size);
   bge(cnt, tmp1, loop);
 }
 
@@ -5952,6 +5921,62 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
+}
+
+// Helper routine processing the slow path of NaN when converting float to float16
+void MacroAssembler::float_to_float16_NaN(Register dst, FloatRegister src,
+                                          Register tmp1, Register tmp2) {
+  fmv_x_w(dst, src);
+
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
+  const int fp_sign_bits = 1;
+  const int fp32_bits = 32;
+  const int fp32_exponent_bits = 8;
+  const int fp32_mantissa_1st_part_bits = 10;
+  const int fp32_mantissa_2nd_part_bits = 9;
+  const int fp32_mantissa_3rd_part_bits = 4;
+  const int fp16_exponent_bits = 5;
+  const int fp16_mantissa_bits = 10;
+
+  // preserve the sign bit and exponent, clear mantissa.
+  srai(tmp2, dst, fp32_bits - fp_sign_bits - fp16_exponent_bits);
+  slli(tmp2, tmp2, fp16_mantissa_bits);
+
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //   | (doppel & 0x007f_e000) >> 13 // 10 bits
+  //   | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+  //   | (doppel & 0x0000_000f));     //  4 bits
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  int left_shift = fp_sign_bits + fp32_exponent_bits + 32;
+  int right_shift = left_shift + fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 9 bits
+  left_shift += fp32_mantissa_1st_part_bits;
+  right_shift = left_shift + fp32_mantissa_3rd_part_bits;
+  slli(tmp1, dst, left_shift);
+  srli(tmp1, tmp1, right_shift);
+  orr(tmp2, tmp2, tmp1);
+  // 4 bits
+  andi(tmp1, dst, 0xf);
+  orr(dst, tmp2, tmp1);
 }
 
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \

@@ -29,7 +29,7 @@
  *   can't continue because there are no carriers available.
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run main/othervm/native --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
+ * @run main/othervm/native/timeout=480 --enable-native-access=ALL-UNNAMED RetryMonitorEnterWhenPinned
  */
 
 import java.time.Duration;

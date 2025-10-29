@@ -152,7 +152,7 @@ private:
   };
   static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
 
-  typedef ResizeableHashTable<size_t, oop,
+  typedef ResizeableHashTable<size_t, OopHandle,
       AnyObj::C_HEAP,
       mtClassShared> BufferOffsetToSourceObjectTable;
   static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;
@@ -227,6 +227,7 @@ private:
 
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
+  static void delete_tables_with_raw_oops();
   static void add_source_obj(oop src_obj);
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
@@ -236,11 +237,11 @@ public:
   static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
-  static bool is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset);
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
-
+  static Klass* real_klass_of_buffered_oop(address buffered_addr);
+  static size_t size_of_buffered_oop(address buffered_addr);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP

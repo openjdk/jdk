@@ -30,7 +30,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/oopStorage.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "interpreter/interpreter.hpp"
@@ -41,7 +40,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
@@ -306,7 +305,7 @@ void SafepointSynchronize::arm_safepoint() {
 
   assert((_safepoint_counter & 0x1) == 0, "must be even");
   // The store to _safepoint_counter must happen after any stores in arming.
-  Atomic::release_store(&_safepoint_counter, _safepoint_counter + 1);
+  AtomicAccess::release_store(&_safepoint_counter, _safepoint_counter + 1);
 
   // We are synchronizing
   OrderAccess::storestore(); // Ordered with _safepoint_counter
@@ -441,7 +440,7 @@ void SafepointSynchronize::disarm_safepoint() {
 
     // Set the next dormant (even) safepoint id.
     assert((_safepoint_counter & 0x1) == 1, "must be odd");
-    Atomic::release_store(&_safepoint_counter, _safepoint_counter + 1);
+    AtomicAccess::release_store(&_safepoint_counter, _safepoint_counter + 1);
 
     OrderAccess::fence(); // Keep the local state from floating up.
 
@@ -609,7 +608,7 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   if (log_is_enabled(Info, safepoint, stats)) {
-    Atomic::inc(&_nof_threads_hit_polling_page);
+    AtomicAccess::inc(&_nof_threads_hit_polling_page);
   }
 
   ThreadSafepointState* state = thread->safepoint_state();
@@ -651,7 +650,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
     // Send the blocking thread a signal to terminate and write an error file.
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
       if (cur_thread->safepoint_state()->is_running()) {
-        VMError::set_safepoint_timed_out_thread(p2i(cur_thread));
+        VMError::set_safepoint_timed_out_thread(cur_thread);
         if (!os::signal_thread(cur_thread, SIGILL, "blocking a safepoint")) {
           break; // Could not send signal. Report fatal error.
         }
@@ -685,15 +684,15 @@ void ThreadSafepointState::destroy(JavaThread *thread) {
 }
 
 uint64_t ThreadSafepointState::get_safepoint_id() const {
-  return Atomic::load_acquire(&_safepoint_id);
+  return AtomicAccess::load_acquire(&_safepoint_id);
 }
 
 void ThreadSafepointState::reset_safepoint_id() {
-  Atomic::release_store(&_safepoint_id, SafepointSynchronize::InactiveSafepointCounter);
+  AtomicAccess::release_store(&_safepoint_id, SafepointSynchronize::InactiveSafepointCounter);
 }
 
 void ThreadSafepointState::set_safepoint_id(uint64_t safepoint_id) {
-  Atomic::release_store(&_safepoint_id, safepoint_id);
+  AtomicAccess::release_store(&_safepoint_id, safepoint_id);
 }
 
 void ThreadSafepointState::examine_state_of_thread(uint64_t safepoint_count) {

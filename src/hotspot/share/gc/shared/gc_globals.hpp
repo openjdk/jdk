@@ -289,7 +289,7 @@
           "size on systems with small physical memory size")                \
           range(0.0, 100.0)                                                 \
                                                                             \
-  product(double, InitialRAMPercentage, 1.5625,                             \
+  product(double, InitialRAMPercentage, 0.2,                                \
           "Percentage of real memory used for initial heap size")           \
           range(0.0, 100.0)                                                 \
                                                                             \
@@ -483,11 +483,6 @@
   product_pd(size_t, HeapBaseMinAddress,                                    \
           "OS specific low limit for heap base address")                    \
           constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
-                                                                            \
-  product(size_t, PretenureSizeThreshold, 0,                                \
-          "Maximum size in bytes of objects allocated in DefNew "           \
-          "generation; zero means no maximum")                              \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \

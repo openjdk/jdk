@@ -644,58 +644,58 @@ JNIEXPORT jobject JNICALL
 JVM_GetClassConstantPool(JNIEnv *env, jclass cls);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetSize
-(JNIEnv *env, jobject unused, jobject jcpool);
+(JNIEnv *env, jobject jcpool);
 
 JNIEXPORT jclass JNICALL JVM_ConstantPoolGetClassAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jclass JNICALL JVM_ConstantPoolGetClassAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetClassRefIndexAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetMethodAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetMethodAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetFieldAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobject JNICALL JVM_ConstantPoolGetFieldAtIfLoaded
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetNameAndTypeRefIndexAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetNameAndTypeRefInfoAt
-(JNIEnv *env, jobject obj, jobject unused, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetIntAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jlong JNICALL JVM_ConstantPoolGetLongAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jfloat JNICALL JVM_ConstantPoolGetFloatAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jdouble JNICALL JVM_ConstantPoolGetDoubleAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetStringAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 JNIEXPORT jbyte JNICALL JVM_ConstantPoolGetTagAt
-(JNIEnv *env, jobject unused, jobject jcpool, jint index);
+(JNIEnv *env, jobject jcpool, jint index);
 
 /*
  * Parameter reflection

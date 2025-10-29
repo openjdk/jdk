@@ -368,6 +368,36 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  the end position of the tree node. Otherwise, just returns the
          *  same as getPreferredPosition(). */
         int getEndPosition(EndPosTable endPosTable);
+        /** Get the position that determines which Lint configuration applies. */
+        default int getLintPosition() {
+            return getStartPosition();
+        }
+        /** Create a new instance from this instance and the given lint position. */
+        default DiagnosticPosition withLintPosition(int lintPos) {
+            DiagnosticPosition orig = this;
+            return new DiagnosticPosition() {
+                @Override
+                public JCTree getTree() {
+                    return orig.getTree();
+                }
+                @Override
+                public int getStartPosition() {
+                    return orig.getStartPosition();
+                }
+                @Override
+                public int getPreferredPosition() {
+                    return orig.getPreferredPosition();
+                }
+                @Override
+                public int getEndPosition(EndPosTable endPosTable) {
+                    return orig.getEndPosition(endPosTable);
+                }
+                @Override
+                public int getLintPosition() {
+                    return lintPos;
+                }
+            };
+        }
     }
 
     /**
@@ -405,6 +435,10 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         RECOVERABLE,
         NON_DEFERRABLE,
         COMPRESSED,
+        /** Flag for lint diagnostics that should be emitted even when their category
+         *  is not explicitly enabled, as long as it is not explicitly suppressed.
+         */
+        DEFAULT_ENABLED,
         /** Flags mandatory warnings that should pass through a mandatory warning aggregator.
          */
         AGGREGATE,

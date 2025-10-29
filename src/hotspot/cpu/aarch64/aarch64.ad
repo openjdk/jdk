@@ -2569,10 +2569,6 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
-}
-
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
@@ -4413,10 +4409,9 @@ operand immI8()
 %}
 
 // 8 bit signed value (simm8), or #simm8 LSL 8.
-operand immI8_shift8()
+operand immIDupV()
 %{
-  predicate((n->get_int() <= 127 && n->get_int() >= -128) ||
-            (n->get_int() <= 32512 && n->get_int() >= -32768 && (n->get_int() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4425,11 +4420,21 @@ operand immI8_shift8()
 %}
 
 // 8 bit signed value (simm8), or #simm8 LSL 8.
-operand immL8_shift8()
+operand immLDupV()
 %{
-  predicate((n->get_long() <= 127 && n->get_long() >= -128) ||
-            (n->get_long() <= 32512 && n->get_long() >= -32768 && (n->get_long() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate(n->get_long()));
   match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 8 bit signed value (simm8), or #simm8 LSL 8.
+operand immHDupV()
+%{
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->geth()));
+  match(ConH);
 
   op_cost(0);
   format %{ %}
@@ -5957,9 +5962,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 64 bytes
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources
@@ -7078,18 +7080,16 @@ instruct loadConD(vRegD dst, immD con) %{
 %}
 
 // Load Half Float Constant
-// The "ldr" instruction loads a 32-bit word from the constant pool into a
-// 32-bit register but only the bottom half will be populated and the top
-// 16 bits are zero.
 instruct loadConH(vRegF dst, immH con) %{
   match(Set dst con);
-  format %{
-    "ldrs $dst, [$constantaddress]\t# load from constant table: half float=$con\n\t"
-  %}
+  format %{ "mov    rscratch1, $con\n\t"
+            "fmov   $dst, rscratch1"
+         %}
   ins_encode %{
-    __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
+    __ movw(rscratch1, (uint32_t)$con$$constant);
+    __ fmovs($dst$$FloatRegister, rscratch1);
   %}
-  ins_pipe(fp_load_constant_s);
+  ins_pipe(pipe_class_default);
 %}
 
 // Store Instructions

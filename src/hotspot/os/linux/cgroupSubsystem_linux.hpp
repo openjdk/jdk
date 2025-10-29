@@ -25,12 +25,12 @@
 #ifndef CGROUP_SUBSYSTEM_LINUX_HPP
 #define CGROUP_SUBSYSTEM_LINUX_HPP
 
-#include "memory/allocation.hpp"
-#include "runtime/os.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "osContainer_linux.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "osContainer_linux.hpp"
 
 // Shared cgroups code (used by cgroup version 1 and version 2)
 
@@ -233,14 +233,14 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
   public:
     virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
     virtual jlong memory_usage_in_bytes() = 0;
-    virtual jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) = 0;
-    virtual jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) = 0;
+    virtual jlong memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) = 0;
+    virtual jlong memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) = 0;
     virtual jlong memory_soft_limit_in_bytes(julong upper_bound) = 0;
     virtual jlong memory_throttle_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
-    virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
+    virtual void print_version_specific_info(outputStream* st, julong upper_mem_bound) = 0;
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
     virtual const char* subsystem_path() = 0;
@@ -251,7 +251,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
-    jlong memory_limit_in_bytes();
+    jlong memory_limit_in_bytes(julong upper_bound);
     int active_processor_count();
 
     virtual jlong pids_max() = 0;
@@ -272,14 +272,14 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     jlong cpu_usage_in_micros();
 
     jlong memory_usage_in_bytes();
-    jlong memory_and_swap_limit_in_bytes();
-    jlong memory_and_swap_usage_in_bytes();
-    jlong memory_soft_limit_in_bytes();
+    jlong memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound);
+    jlong memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound);
+    jlong memory_soft_limit_in_bytes(julong upper_bound);
     jlong memory_throttle_limit_in_bytes();
     jlong memory_max_usage_in_bytes();
     jlong rss_usage_in_bytes();
     jlong cache_usage_in_bytes();
-    void print_version_specific_info(outputStream* st);
+    void print_version_specific_info(outputStream* st, julong upper_mem_bound);
 };
 
 // Utility class for storing info retrieved from /proc/cgroups,

@@ -38,18 +38,18 @@ class os::win32 {
   friend class os;
 
  protected:
-  static int    _processor_type;
-  static int    _processor_level;
-  static julong _physical_memory;
-  static bool   _is_windows_server;
-  static bool   _has_exit_bug;
-  static bool   _processor_group_warning_displayed;
-  static bool   _job_object_processor_group_warning_displayed;
+  static int                       _processor_type;
+  static int                       _processor_level;
+  static physical_memory_size_type _physical_memory;
+  static bool                      _is_windows_server;
+  static bool                      _has_exit_bug;
+  static bool                      _processor_group_warning_displayed;
+  static bool                      _job_object_processor_group_warning_displayed;
 
-  static int    _major_version;
-  static int    _minor_version;
-  static int    _build_number;
-  static int    _build_minor;
+  static int                       _major_version;
+  static int                       _minor_version;
+  static int                       _build_number;
+  static int                       _build_minor;
 
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
@@ -102,9 +102,9 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static julong available_memory();
-  static julong free_memory();
-  static julong physical_memory() { return _physical_memory; }
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);

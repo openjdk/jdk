@@ -41,6 +41,7 @@
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -66,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitThruPhiWins wins(region);
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -119,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -134,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -142,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -165,12 +166,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
@@ -226,6 +227,13 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         new_loop->_body.push(x);  // Collect body info
     }
   }
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print_cr("Split %d %s through %d Phi in %d %s",
+                  n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
+  }
+#endif // !PRODUCT
 
   return phi;
 }
@@ -1702,18 +1710,20 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
         Node* maybe_pinned_n = n;
         Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
-        if (n->depends_only_on_test()) {
-          Node* pinned_clone = n->pin_array_access_node();
-          if (pinned_clone != nullptr) {
-            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
-            // range check for that access. If that condition is replaced by an identical dominating one, then an
-            // unpinned load would risk floating above its range check.
-            register_new_node(pinned_clone, n_ctrl);
-            maybe_pinned_n = pinned_clone;
-            _igvn.replace_node(n, pinned_clone);
+        if (!would_sink_below_pre_loop_exit(loop_ctrl, outside_ctrl)) {
+          if (n->depends_only_on_test()) {
+            Node* pinned_clone = n->pin_array_access_node();
+            if (pinned_clone != nullptr) {
+              // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+              // range check for that access. If that condition is replaced by an identical dominating one, then an
+              // unpinned load would risk floating above its range check.
+              register_new_node(pinned_clone, n_ctrl);
+              maybe_pinned_n = pinned_clone;
+              _igvn.replace_node(n, pinned_clone);
+            }
           }
+          _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
         }
-        _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
@@ -1921,6 +1931,21 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
   return true;
 }
 
+// Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
+// to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
+// test of the pre loop above the point in the graph where it's pinned. This results in a broken graph. One way to avoid
+// it would be to not eliminate the check in the main loop. Instead, we prevent sinking of the node here so better code
+// is generated for the main loop.
+bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node* ctrl) {
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
+    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl) {
   if (n->is_Load()) {
     ctrl = get_late_ctrl_with_anti_dep(n->as_Load(), n_ctrl, ctrl);
@@ -1932,14 +1957,8 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   if (n_loop->is_member(u_loop)) {
     return false; // Found use in inner loop
   }
-  // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
-  // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
-  // test of the pre loop above the point in the graph where it's pinned.
-  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
-    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
-    if (is_dominator(pre_loop->loopexit(), ctrl)) {
-      return false;
-    }
+  if (would_sink_below_pre_loop_exit(n_loop, ctrl)) {
+    return false;
   }
   return true;
 }

@@ -72,11 +72,9 @@ id="toc-notes-for-specific-tests">Notes for Specific Tests</a>
 <li><a href="#non-us-locale" id="toc-non-us-locale">Non-US
 locale</a></li>
 <li><a href="#pkcs11-tests" id="toc-pkcs11-tests">PKCS11 Tests</a></li>
-</ul></li>
 <li><a href="#testing-ahead-of-time-optimizations"
-id="toc-testing-ahead-of-time-optimizations">### Testing Ahead-of-time
-Optimizations</a>
-<ul>
+id="toc-testing-ahead-of-time-optimizations">Testing Ahead-of-time
+Optimizations</a></li>
 <li><a href="#testing-with-alternative-security-providers"
 id="toc-testing-with-alternative-security-providers">Testing with
 alternative security providers</a></li>
@@ -400,7 +398,8 @@ TEST_OPTS keywords.</p>
 <h4 id="jobs">JOBS</h4>
 <p>Currently only applies to JTReg.</p>
 <h4 id="timeout_factor">TIMEOUT_FACTOR</h4>
-<p>Currently only applies to JTReg.</p>
+<p>Currently only applies to <a href="#timeout_factor-1">JTReg
+-timeoutFactor</a>.</p>
 <h4 id="java_options">JAVA_OPTIONS</h4>
 <p>Applies to JTReg, GTest and Micro.</p>
 <h4 id="vm_options">VM_OPTIONS</h4>
@@ -435,6 +434,9 @@ the diff between the specified revision and the repository tip.</p>
 <p>The report is stored in
 <code>build/$BUILD/test-results/jcov-output/diff_coverage_report</code>
 file.</p>
+<h4 id="aot_jdk">AOT_JDK</h4>
+<p>See <a href="#testing-ahead-of-time-optimizations">Testing
+Ahead-of-time optimizations</a>.</p>
 <h3 id="jtreg-keywords">JTReg keywords</h3>
 <h4 id="jobs-1">JOBS</h4>
 <p>The test concurrency (<code>-concurrency</code>).</p>
@@ -443,8 +445,12 @@ otherwise it defaults to JOBS, except for Hotspot, where the default is
 <em>number of CPU cores/2</em>, but never more than <em>memory size in
 GB/2</em>.</p>
 <h4 id="timeout_factor-1">TIMEOUT_FACTOR</h4>
-<p>The timeout factor (<code>-timeoutFactor</code>).</p>
-<p>Defaults to 4.</p>
+<p>The <code>TIMEOUT_FACTOR</code> is forwarded to JTReg framework
+itself (<code>-timeoutFactor</code>). Also, some test cases that
+programmatically wait a certain amount of time will apply this factor.
+If we run in forced compilation mode (<code>-Xcomp</code>), the build
+system will automatically adjust this factor to compensate for less
+performance. Defaults to 1.</p>
 <h4 id="failure_handler_timeout">FAILURE_HANDLER_TIMEOUT</h4>
 <p>Sets the argument <code>-timeoutHandlerTimeout</code> for JTReg. The
 default value is 0. This is only valid if the failure handler is
@@ -457,6 +463,12 @@ class, named Virtual, is currently part of the JDK build in the
 <code>test/jtreg_test_thread_factory/</code> directory. This class gets
 compiled during the test image build. The implementation of the Virtual
 class creates a new virtual thread for executing each test class.</p>
+<h4 id="jvmti_stress_agent">JVMTI_STRESS_AGENT</h4>
+<p>Executes JTReg tests with JVM TI stress agent. The stress agent is
+the part of test library and located in
+<code>test/lib/jdk/test/lib/jvmti/libJvmtiStressAgent.cpp</code>. The
+value of this argument is set as JVM TI agent options. This mode uses
+ProblemList-jvmti-stress-agent.txt as an additional exclude list.</p>
 <h4 id="test_mode">TEST_MODE</h4>
 <p>The test mode (<code>agentvm</code> or <code>othervm</code>).</p>
 <p>Defaults to <code>agentvm</code>.</p>
@@ -556,6 +568,12 @@ each fork. Same as specifying <code>-wi &lt;num&gt;</code>.</p>
 same values as <code>-rff</code>, i.e., <code>text</code>,
 <code>csv</code>, <code>scsv</code>, <code>json</code>, or
 <code>latex</code>.</p>
+<h4 id="test_jdk">TEST_JDK</h4>
+<p>The path to the JDK that will be used to run the benchmarks.</p>
+<p>Defaults to <code>build/&lt;CONF-NAME&gt;/jdk</code>.</p>
+<h4 id="benchmarks_jar">BENCHMARKS_JAR</h4>
+<p>The path to the JAR containing the benchmarks.</p>
+<p>Defaults to <code>test/micro/benchmarks.jar</code>.</p>
 <h4 id="vm_options-2">VM_OPTIONS</h4>
 <p>Additional VM arguments to provide to forked off VMs. Same as
 <code>-jvmArgs &lt;args&gt;</code></p>
@@ -601,8 +619,8 @@ element of the appropriate <code>@Artifact</code> class. (See
     JTREG=&quot;JAVA_OPTIONS=-Djdk.test.lib.artifacts.nsslib-linux_aarch64=/path/to/NSS-libs&quot;</code></pre>
 <p>For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.</p>
-<h2 id="testing-ahead-of-time-optimizations">### Testing Ahead-of-time
-Optimizations</h2>
+<h3 id="testing-ahead-of-time-optimizations">Testing Ahead-of-time
+Optimizations</h3>
 <p>One way to improve test coverage of ahead-of-time (AOT) optimizations
 in the JDK is to run existing jtreg test cases in a special "AOT_JDK"
 mode. Example:</p>

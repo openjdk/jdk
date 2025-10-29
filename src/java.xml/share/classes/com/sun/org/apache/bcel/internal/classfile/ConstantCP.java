@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,11 +28,11 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Abstract super class for Fieldref, Methodref, InterfaceMethodref and InvokeDynamic constants.
  *
- * @see     ConstantFieldref
- * @see     ConstantMethodref
- * @see     ConstantInterfaceMethodref
- * @see     ConstantInvokeDynamic
- * @LastModified: Jun 2019
+ * @see ConstantFieldref
+ * @see ConstantMethodref
+ * @see ConstantInterfaceMethodref
+ * @see ConstantInvokeDynamic
+ * @LastModified: Sept 2025
  */
 public abstract class ConstantCP extends Constant {
 

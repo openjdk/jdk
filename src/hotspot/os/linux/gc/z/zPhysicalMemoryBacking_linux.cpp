@@ -204,7 +204,7 @@ int ZPhysicalMemoryBacking::create_mem_fd(const char* name) const {
 
   // Create file name
   char filename[PATH_MAX];
-  snprintf(filename, sizeof(filename), "%s%s", name, ZLargePages::is_explicit() ? ".hugetlb" : "");
+  os::snprintf_checked(filename, sizeof(filename), "%s%s", name, ZLargePages::is_explicit() ? ".hugetlb" : "");
 
   // Create file
   const int extra_flags = ZLargePages::is_explicit() ? (MFD_HUGETLB | MFD_HUGE_2MB) : 0;
@@ -262,7 +262,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
 
   // Create file name
   char filename[PATH_MAX];
-  snprintf(filename, sizeof(filename), "%s/%s.%d", mountpoint.get(), name, os::current_process_id());
+  os::snprintf_checked(filename, sizeof(filename), "%s/%s.%d", mountpoint.get(), name, os::current_process_id());
 
   // Create file
   const int fd = os::open(filename, O_CREAT|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);

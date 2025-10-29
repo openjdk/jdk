@@ -26,7 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -154,7 +154,7 @@ void PerfMemory::initialize() {
   _prologue->overflow = 0;
   _prologue->mod_time_stamp = 0;
 
-  Atomic::release_store(&_initialized, 1);
+  AtomicAccess::release_store(&_initialized, 1);
 }
 
 void PerfMemory::destroy() {
@@ -267,5 +267,5 @@ char* PerfMemory::get_perfdata_file_path() {
 }
 
 bool PerfMemory::is_initialized() {
-  return Atomic::load_acquire(&_initialized) != 0;
+  return AtomicAccess::load_acquire(&_initialized) != 0;
 }

@@ -139,7 +139,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_486 = (4 << CPU_FAMILY_SHIFT);
     bool use_evex = FLAG_IS_DEFAULT(UseAVX) || (UseAVX > 2);
 
-    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24;
+    Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4, std_cpuid24, std_cpuid29;
     Label sef_cpuid, sefsl1_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7;
     Label ext_cpuid8, done, wrapup, vector_save_restore, apx_save_restore_warning;
     Label legacy_setup, save_restore_except, legacy_save_restore, start_simd_check;
@@ -337,6 +337,16 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sefsl1_cpuid7_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rdx);
+
+    //
+    // cpuid(0x29) APX NCI NDD NF (EAX = 29H, ECX = 0).
+    //
+    __ bind(std_cpuid29);
+    __ movl(rax, 0x29);
+    __ movl(rcx, 0);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::std_cpuid29_offset())));
+    __ movl(Address(rsi, 0), rbx);
 
     //
     // cpuid(0x24) Converged Vector ISA Main Leaf (EAX = 24H, ECX = 0).
@@ -1016,16 +1026,6 @@ void VM_Version::get_processor_features() {
     _features.clear_feature(CPU_AVX10_2);
   }
 
-  // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
-  if (UseAPX && !apx_supported) {
-    warning("UseAPX is not supported on this CPU, setting it to false");
-    FLAG_SET_DEFAULT(UseAPX, false);
-  }
-
-  if (!UseAPX) {
-    _features.clear_feature(CPU_APX_F);
-  }
 
   if (UseAVX < 2) {
     _features.clear_feature(CPU_AVX2);
@@ -1049,6 +1049,7 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_VZEROUPPER);
       _features.clear_feature(CPU_AVX512BW);
       _features.clear_feature(CPU_AVX512VL);
+      _features.clear_feature(CPU_APX_F);
       _features.clear_feature(CPU_AVX512DQ);
       _features.clear_feature(CPU_AVX512_VNNI);
       _features.clear_feature(CPU_AVX512_VAES);
@@ -1066,6 +1067,17 @@ void VM_Version::get_processor_features() {
       _features.clear_feature(CPU_AVX10_1);
       _features.clear_feature(CPU_AVX10_2);
     }
+  }
+
+    // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  bool apx_supported = os_supports_apx_egprs() && supports_apx_f() && supports_avx512vl();
+  if (UseAPX && !apx_supported) {
+    warning("UseAPX is not supported on this CPU, setting it to false");
+    FLAG_SET_DEFAULT(UseAPX, false);
+  }
+
+  if (!UseAPX) {
+    _features.clear_feature(CPU_APX_F);
   }
 
   if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
@@ -1099,8 +1111,12 @@ void VM_Version::get_processor_features() {
   }
 
   stringStream ss(2048);
-  ss.print("(%u cores per cpu, %u threads per core) family %d model %d stepping %d microcode 0x%x",
-           cores_per_cpu(), threads_per_core(),
+  if (supports_hybrid()) {
+    ss.print("(hybrid)");
+  } else {
+    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+  }
+  ss.print(" family %d model %d stepping %d microcode 0x%x",
            cpu_family(), _model, _stepping, os::cpu_microcode_revision());
   ss.print(", ");
   int features_offset = (int)ss.size();
@@ -1661,7 +1677,7 @@ void VM_Version::get_processor_features() {
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || !VM_Version::supports_avx512vlbw()) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
       OptimizeFill = false;
     }
   }
@@ -2075,6 +2091,10 @@ bool VM_Version::is_default_intel_cascade_lake() {
 
 bool VM_Version::is_intel_cascade_lake() {
   return is_intel_skylake() && _stepping >= 5;
+}
+
+bool VM_Version::is_intel_darkmont() {
+  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
 }
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
@@ -2908,7 +2928,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (std_cpuid1_ecx.bits.popcnt != 0)
     vm_features.set_feature(CPU_POPCNT);
   if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
-      xem_xcr0_eax.bits.apx_f != 0) {
+      xem_xcr0_eax.bits.apx_f != 0 &&
+      std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0) {
     vm_features.set_feature(CPU_APX_F);
   }
   if (std_cpuid1_ecx.bits.avx != 0 &&
@@ -3043,6 +3064,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (is_intel()) {
     if (sef_cpuid7_edx.bits.serialize != 0)
       vm_features.set_feature(CPU_SERIALIZE);
+    if (sef_cpuid7_edx.bits.hybrid != 0)
+      vm_features.set_feature(CPU_HYBRID);
     if (_cpuid_info.sef_cpuid7_edx.bits.avx512_fp16 != 0)
       vm_features.set_feature(CPU_AVX512_FP16);
   }
@@ -3142,7 +3165,10 @@ uint VM_Version::cores_per_cpu() {
       result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
     }
   } else if (is_amd_family()) {
-    result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+    result = _cpuid_info.ext_cpuid8_ecx.bits.threads_per_cpu + 1;
+    if (cpu_family() >= 0x17) { // Zen or later
+      result /= _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+    }
   } else if (is_zx()) {
     bool supports_topology = supports_processor_topology();
     if (supports_topology) {

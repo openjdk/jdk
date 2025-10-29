@@ -23,10 +23,8 @@
  */
 
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciMetadata.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -83,7 +81,7 @@ static void verify_archived_entry(TrainingData* td, const TrainingData::Key* k) 
 }
 
 void TrainingData::verify() {
-  if (TrainingData::have_data()) {
+  if (TrainingData::have_data() && !TrainingData::assembling_data()) {
     archived_training_data_dictionary()->iterate([&](TrainingData* td) {
       if (td->is_KlassTrainingData()) {
         KlassTrainingData* ktd = td->as_KlassTrainingData();
@@ -98,9 +96,21 @@ void TrainingData::verify() {
           Key k(mtd->holder());
           verify_archived_entry(td, &k);
         }
-        mtd->verify();
-      } else if (td->is_CompileTrainingData()) {
-        td->as_CompileTrainingData()->verify();
+        mtd->verify(/*verify_dep_counter*/true);
+      }
+    });
+  }
+  if (TrainingData::need_data()) {
+    TrainingDataLocker l;
+    training_data_set()->iterate([&](TrainingData* td) {
+      if (td->is_KlassTrainingData()) {
+        KlassTrainingData* ktd = td->as_KlassTrainingData();
+        ktd->verify();
+      } else if (td->is_MethodTrainingData()) {
+        MethodTrainingData* mtd = td->as_MethodTrainingData();
+        // During the training run init deps tracking is not setup yet,
+        // don't verify it.
+        mtd->verify(/*verify_dep_counter*/false);
       }
     });
   }
@@ -229,7 +239,7 @@ CompileTrainingData* CompileTrainingData::make(CompileTask* task) {
 }
 
 
-void CompileTrainingData::dec_init_deps_left(KlassTrainingData* ktd) {
+void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
   LogStreamHandle(Trace, training) log;
   if (log.is_enabled()) {
     log.print("CTD "); print_on(&log); log.cr();
@@ -239,7 +249,7 @@ void CompileTrainingData::dec_init_deps_left(KlassTrainingData* ktd) {
   assert(_init_deps.contains(ktd), "");
   assert(_init_deps_left > 0, "");
 
-  uint init_deps_left1 = Atomic::sub(&_init_deps_left, 1);
+  uint init_deps_left1 = AtomicAccess::sub(&_init_deps_left, 1);
 
   if (log.is_enabled()) {
     uint init_deps_left2 = compute_init_deps_left();
@@ -301,7 +311,6 @@ void CompileTrainingData::notice_jit_observation(ciEnv* env, ciBaseObject* what)
   CompileTask* task = env->task();
   assert(task != nullptr, "");
   Method* method = task->method();
-  InstanceKlass* compiling_klass = method->method_holder();
   if (what->is_metadata()) {
     ciMetadata* md = what->as_metadata();
     if (md->is_loaded() && md->is_instance_klass()) {
@@ -317,7 +326,9 @@ void CompileTrainingData::notice_jit_observation(ciEnv* env, ciBaseObject* what)
         // This JIT task is (probably) requesting that ik be initialized,
         // so add him to my _init_deps list.
         TrainingDataLocker l;
-        add_init_dep(ktd);
+        if (l.can_add()) {
+          add_init_dep(ktd);
+        }
       }
     }
   }
@@ -328,13 +339,7 @@ void KlassTrainingData::prepare(Visitor& visitor) {
     return;
   }
   visitor.visit(this);
-  ClassLoaderData* loader_data = nullptr;
-  if (_holder != nullptr) {
-    loader_data = _holder->class_loader_data();
-  } else {
-    loader_data = java_lang_ClassLoader::loader_data(SystemDictionary::java_system_loader()); // default CLD
-  }
-  _comp_deps.prepare(loader_data);
+  _comp_deps.prepare();
 }
 
 void MethodTrainingData::prepare(Visitor& visitor) {
@@ -362,9 +367,8 @@ void CompileTrainingData::prepare(Visitor& visitor) {
   }
   visitor.visit(this);
   method()->prepare(visitor);
-  ClassLoaderData* loader_data = _method->klass()->class_loader_data();
-  _init_deps.prepare(loader_data);
-  _ci_records.prepare(loader_data);
+  _init_deps.prepare();
+  _ci_records.prepare();
 }
 
 KlassTrainingData* KlassTrainingData::make(InstanceKlass* holder, bool null_if_not_found) {
@@ -450,7 +454,7 @@ void KlassTrainingData::notice_fully_initialized() {
   TrainingDataLocker l; // Not a real lock if we don't collect the data,
                         // that's why we need the atomic decrement below.
   for (int i = 0; i < comp_dep_count(); i++) {
-    comp_dep(i)->dec_init_deps_left(this);
+    comp_dep(i)->dec_init_deps_left_release(this);
   }
   holder()->set_has_init_deps_processed();
 }
@@ -476,10 +480,10 @@ void TrainingData::init_dumptime_table(TRAPS) {
         _dumptime_training_data_dictionary->append(td);
       }
     });
+  }
 
-    if (AOTVerifyTrainingData) {
-      training_data_set()->verify();
-    }
+  if (AOTVerifyTrainingData) {
+    TrainingData::verify();
   }
 }
 
@@ -543,7 +547,11 @@ void KlassTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    bool is_excluded = !holder()->is_loaded() || SystemDictionaryShared::check_for_exclusion(holder(), nullptr);
+    bool is_excluded = !holder()->is_loaded();
+    if (CDSConfig::is_at_aot_safepoint()) {
+      // Check for AOT exclusion only at AOT safe point.
+      is_excluded |= SystemDictionaryShared::should_be_excluded(holder());
+    }
     if (is_excluded) {
       ResourceMark rm;
       log_debug(aot, training)("Cleanup KTD %s", name()->as_klass_external_name());
@@ -562,7 +570,8 @@ void MethodTrainingData::cleanup(Visitor& visitor) {
   }
   visitor.visit(this);
   if (has_holder()) {
-    if (SystemDictionaryShared::check_for_exclusion(holder()->method_holder(), nullptr)) {
+    if (CDSConfig::is_at_aot_safepoint() && SystemDictionaryShared::should_be_excluded(holder()->method_holder())) {
+      // Check for AOT exclusion only at AOT safe point.
       log_debug(aot, training)("Cleanup MTD %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
       if (_final_profile != nullptr && _final_profile->method() != _holder) {
         log_warning(aot, training)("Stale MDO for  %s::%s", name()->as_klass_external_name(), signature()->as_utf8());
@@ -592,26 +601,17 @@ void KlassTrainingData::verify() {
   }
 }
 
-void MethodTrainingData::verify() {
-  iterate_compiles([](CompileTrainingData* ctd) {
-    ctd->verify();
-
-    int init_deps_left1 = ctd->init_deps_left();
-    int init_deps_left2 = ctd->compute_init_deps_left();
-
-    if (init_deps_left1 != init_deps_left2) {
-      ctd->print_on(tty); tty->cr();
-    }
-    guarantee(init_deps_left1 == init_deps_left2, "mismatch: %d %d %d",
-              init_deps_left1, init_deps_left2, ctd->init_deps_left());
+void MethodTrainingData::verify(bool verify_dep_counter) {
+  iterate_compiles([&](CompileTrainingData* ctd) {
+    ctd->verify(verify_dep_counter);
   });
 }
 
-void CompileTrainingData::verify() {
+void CompileTrainingData::verify(bool verify_dep_counter) {
   for (int i = 0; i < init_dep_count(); i++) {
     KlassTrainingData* ktd = init_dep(i);
     if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
-      LogStreamHandle(Warning, training) log;
+      LogStreamHandle(Info, training) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         log.print("CTD "); print_value_on(&log);
@@ -623,6 +623,18 @@ void CompileTrainingData::verify() {
       ktd->print_on(tty); tty->cr();
     }
     guarantee(ktd->_comp_deps.contains(this), "");
+  }
+
+  if (verify_dep_counter) {
+    int init_deps_left1 = init_deps_left_acquire();
+    int init_deps_left2 = compute_init_deps_left();
+
+    bool invariant = (init_deps_left1 >= init_deps_left2);
+    if (!invariant) {
+      print_on(tty);
+      tty->cr();
+    }
+    guarantee(invariant, "init deps invariant violation: %d >= %d", init_deps_left1, init_deps_left2);
   }
 }
 
@@ -690,7 +702,7 @@ void TrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 bool TrainingData::Key::can_compute_cds_hash(const Key* const& k) {
-  return k->meta() == nullptr || MetaspaceObj::is_shared(k->meta());
+  return k->meta() == nullptr || MetaspaceObj::in_aot_cache(k->meta());
 }
 
 uint TrainingData::Key::cds_hash(const Key* const& k) {
@@ -748,7 +760,7 @@ void CompileTrainingData::metaspace_pointers_do(MetaspaceClosure* iter) {
 }
 
 template <typename T>
-void TrainingData::DepList<T>::prepare(ClassLoaderData* loader_data) {
+void TrainingData::DepList<T>::prepare() {
   if (_deps == nullptr && _deps_dyn != nullptr) {
     int len = _deps_dyn->length();
     _deps = MetadataFactory::new_array_from_c_heap<T>(len, mtClassShared);

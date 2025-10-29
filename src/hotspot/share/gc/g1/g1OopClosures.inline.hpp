@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
   // stall. We'll try to prefetch the object (for write, given that
   // we might need to install the forwarding reference) and we'll
   // get back to it when pop it from the queue
-  Prefetch::write(obj->mark_addr(), 0);
-  Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
+  Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
+  Prefetch::read(obj->base_addr(), oopDesc::mark_offset_in_bytes() + (HeapWordSize*2));
 
   // slightly paranoid test; I'm trying to catch potential
   // problems before we go into push_on_queue to know where the
@@ -90,11 +90,11 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
     prefetch_and_push(p, obj);
   } else if (!G1HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
-    assert(_skip_card_enqueue != Uninitialized, "Scan location has not been initialized.");
-    if (_skip_card_enqueue == True) {
+    assert(_skip_card_mark != Uninitialized, "Scan location has not been initialized.");
+    if (_skip_card_mark == True) {
       return;
     }
-    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
+    _par_scan_state->mark_card_if_tracked(region_attr, p, obj);
   }
 }
 
@@ -127,6 +127,11 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
 template <class T>
 inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
+  // Early out if we already found a to-young reference.
+  if (_has_ref_to_cset) {
+    return;
+  }
+
   T o = RawAccess<MO_RELAXED>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
@@ -146,7 +151,12 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
     return;
   }
 
-  G1HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
+  G1HeapRegion* to_region = _g1h->heap_region_containing(obj);
+  if (to_region->is_young()) {
+    _has_ref_to_cset = true;
+    return;
+  }
+  G1HeapRegionRemSet* to_rem_set = to_region->rem_set();
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
@@ -154,6 +164,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
     if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
       to_rem_set->add_reference(p, _worker_id);
+      _has_ref_to_old = true;
     }
   }
 }
@@ -180,7 +191,7 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
     _heap_roots_found++;
   } else if (!G1HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
-    _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
+    _par_scan_state->mark_card_if_tracked(region_attr, p, obj);
   }
 }
 
@@ -272,10 +283,14 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    G1HeapRegion* from = _g1h->heap_region_containing(p);
+    if (to->is_young()) {
+      G1BarrierSet::g1_barrier_set()->write_ref_field_post(p);
+    } else {
+      G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->cset_group() != rem_set->cset_group()) {
-      rem_set->add_reference(p, _worker_id);
+      if (from->rem_set()->cset_group() != rem_set->cset_group()) {
+        rem_set->add_reference(p, _worker_id);
+      }
     }
   }
 }

@@ -481,6 +481,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 
 ################################################################################
 #
+# Static analyzer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
+[
+  UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
+      DESC: [enable the GCC static analyzer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if static analyzer is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        STATIC_ANALYZER_CFLAGS="-fanalyzer -Wno-analyzer-fd-leak"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $STATIC_ANALYZER_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $STATIC_ANALYZER_CFLAGS"
+      ])
+  AC_SUBST(STATIC_ANALYZER_ENABLED)
+])
+
+################################################################################
+#
 # LeakSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
@@ -540,9 +565,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # with an additional define LLVM_SYMBOLIZER, which we set here.
   # To calculate the correct llvm_symbolizer path we can use the location of the compiler, because
   # their relation is fixed.
+  # In the ubsan case we have to link every binary with the C++-compiler as linker, because inherently
+  # the C-Compiler and the C++-compiler used as linker provide a different set of ubsan exports.
+  # Linking an executable with the C-compiler and one of its shared libraries with the C++-compiler
+  # leeds to unresolved symbols.
   if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
-      UBSAN_CFLAGS="$UBSAN_CFLAGS -fno-sanitize=function,vptr -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
-      UBSAN_LDFLAGS="$UBSAN_LDFLAGS -fno-sanitize=function,vptr -Wl,-bbigtoc"
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+    UBSAN_LDFLAGS="$UBSAN_LDFLAGS -Wl,-bbigtoc"
+    LD="$LDCXX"
   fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],

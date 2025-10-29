@@ -67,18 +67,16 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
      * The instance of {@code PropertyChangeListener}.
      */
     private PropertyChangeListener changeListener;
-    private static Color disabledForeground;
-    private static Color acceleratorSelectionForeground;
-    private static Color acceleratorForeground;
 
     final WindowsMenuItemUIAccessor accessor =
-        new  WindowsMenuItemUIAccessor() {
+        new WindowsMenuItemUIAccessor() {
 
             @Override
             public JMenuItem getMenuItem() {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menuItem) {
                 return WindowsMenuItemUI.getState(this, menuItem);
             }
@@ -167,36 +165,6 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         changeListener = null;
     }
 
-    private static void applyInsets(Rectangle rect, Insets insets) {
-        SwingUtilities3.applyInsets(rect, insets);
-    }
-
-    private static void paintCheckIcon(Graphics g, MenuItemLayoutHelper lh,
-                                MenuItemLayoutHelper.LayoutResult lr,
-                                Color holdc, Color foreground) {
-        SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
-    }
-
-    private static void paintIcon(Graphics g, MenuItemLayoutHelper lh,
-                           MenuItemLayoutHelper.LayoutResult lr, Color holdc) {
-        SwingUtilities3.paintIcon(g, lh, lr, holdc);
-    }
-
-    private static void paintAccText(Graphics g, MenuItemLayoutHelper lh,
-                              MenuItemLayoutHelper.LayoutResult lr) {
-        SwingUtilities3.setDisabledForeground(disabledForeground);
-        SwingUtilities3.setAcceleratorSelectionForeground(
-                        acceleratorSelectionForeground);
-        SwingUtilities3.setAcceleratorForeground(acceleratorForeground);
-        SwingUtilities3.paintAccText(g, lh, lr);
-    }
-
-    private static void paintArrowIcon(Graphics g, MenuItemLayoutHelper lh,
-                                MenuItemLayoutHelper.LayoutResult lr,
-                                Color foreground) {
-        SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
-    }
-
     protected void paintMenuItem(Graphics g, JComponent c,
                                  Icon checkIcon, Icon arrowIcon,
                                  Color background, Color foreground,
@@ -204,7 +172,8 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         if (WindowsMenuItemUI.isVistaPainting()) {
             WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon,
                                             arrowIcon, background, foreground,
-                                            defaultTextIconGap, menuItem,
+                                            disabledForeground, acceleratorSelectionForeground,
+                                            acceleratorForeground, defaultTextIconGap, menuItem,
                                             getPropertyPrefix());
             return;
         }
@@ -215,6 +184,9 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
     static void paintMenuItem(WindowsMenuItemUIAccessor accessor, Graphics g,
                               JComponent c, Icon checkIcon, Icon arrowIcon,
                               Color background, Color foreground,
+                              Color disabledForeground,
+                              Color acceleratorSelectionForeground,
+                              Color acceleratorForeground,
                               int defaultTextIconGap, JMenuItem menuItem, String prefix) {
         // Save original graphics font and color
         Font holdf = g.getFont();
@@ -224,7 +196,7 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         g.setFont(mi.getFont());
 
         Rectangle viewRect = new Rectangle(0, 0, mi.getWidth(), mi.getHeight());
-        applyInsets(viewRect, mi.getInsets());
+        SwingUtilities3.applyInsets(viewRect, mi.getInsets());
 
         String acceleratorDelimiter =
                 UIManager.getString("MenuItem.acceleratorDelimiter");
@@ -242,8 +214,8 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         MenuItemLayoutHelper.LayoutResult lr = lh.layoutMenuItem();
 
         paintBackground(accessor, g, mi, background);
-        paintCheckIcon(g, lh, lr, holdc, foreground);
-        paintIcon(g, lh, lr, holdc);
+        SwingUtilities3.paintCheckIcon(g, lh, lr, holdc, foreground);
+        SwingUtilities3.paintIcon(g, lh, lr, holdc);
 
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
@@ -267,8 +239,10 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
             rect.x += lh.getAfterCheckIconGap();
             lr.setAccRect(rect);
         }
-        paintAccText(g, lh, lr);
-        paintArrowIcon(g, lh, lr, foreground);
+        SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,
+                                     acceleratorSelectionForeground,
+                                     acceleratorForeground);
+        SwingUtilities3.paintArrowIcon(g, lh, lr, foreground);
 
         // Restore original graphics font and color
         g.setColor(holdc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -106,30 +106,11 @@ public class AARCH64Frame extends Frame {
   private AARCH64Frame() {
   }
 
-  private void adjustForDeopt() {
-    if ( pc != null) {
-      // Look for a deopt pc and if it is deopted convert to original pc
-      CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
-      if (cb != null && cb.isJavaMethod()) {
-        NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerBegin())) {
-          if (Assert.ASSERTS_ENABLED) {
-            Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
-          }
-          // adjust pc if frame is deoptimized.
-          pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
-          deoptimized = true;
-        }
-      }
-    }
-  }
-
   public AARCH64Frame(Address raw_sp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
     this.raw_fp = raw_fp;
     this.pc = pc;
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -153,8 +134,6 @@ public class AARCH64Frame extends Frame {
       this.pc = savedPC;
     }
 
-    adjustUnextendedSP();
-
     // Frame must be fully constructed before this call
     adjustForDeopt();
 
@@ -169,7 +148,6 @@ public class AARCH64Frame extends Frame {
     this.raw_unextendedSP = raw_unextendedSp;
     this.raw_fp = raw_fp;
     this.pc = pc;
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -353,24 +331,6 @@ public class AARCH64Frame extends Frame {
       Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
     }
     return fr;
-  }
-
-  //------------------------------------------------------------------------------
-  // frame::adjust_unextended_sp
-  private void adjustUnextendedSP() {
-    // Sites calling method handle intrinsics and lambda forms are
-    // treated as any other call site. Therefore, no special action is
-    // needed when we are returning to any of these call sites.
-
-    CodeBlob cb = cb();
-    NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
-    if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original PC.
-      if (senderNm.isDeoptEntry(getPC()) ||
-          senderNm.isDeoptMhEntry(getPC())) {
-        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
-      }
-    }
   }
 
   private Frame senderForInterpreterFrame(AARCH64RegisterMap map) {

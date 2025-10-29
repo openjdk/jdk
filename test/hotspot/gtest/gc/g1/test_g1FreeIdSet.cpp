@@ -24,7 +24,7 @@
 
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
@@ -43,7 +43,7 @@ struct G1FreeIdSet::TestSupport : AllStatic {
   static uint start(const G1FreeIdSet& set) { return set._start; }
   static uint size(const G1FreeIdSet& set) { return set._size; }
   static uintx mask(const G1FreeIdSet& set) { return set._head_index_mask; }
-  static uintx head(const G1FreeIdSet& set) { return Atomic::load(&set._head); }
+  static uintx head(const G1FreeIdSet& set) { return AtomicAccess::load(&set._head); }
 
   static uint head_index(const G1FreeIdSet& set, uintx head) {
     return set.head_index(head);
@@ -106,14 +106,14 @@ public:
   {}
 
   virtual void main_run() {
-    while (Atomic::load_acquire(_continue_running)) {
+    while (AtomicAccess::load_acquire(_continue_running)) {
       uint id = _set->claim_par_id();
       _set->release_par_id(id);
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
     tty->print_cr("%u allocations: %zu", _thread_number, _allocations);
-    Atomic::add(_total_allocations, _allocations);
+    AtomicAccess::add(_total_allocations, _allocations);
   }
 };
 
@@ -145,7 +145,7 @@ TEST_VM(G1FreeIdSetTest, stress) {
     ThreadInVMfromNative invm(this_thread);
     this_thread->sleep(milliseconds_to_run);
   }
-  Atomic::release_store(&continue_running, false);
+  AtomicAccess::release_store(&continue_running, false);
   for (uint i = 0; i < nthreads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);

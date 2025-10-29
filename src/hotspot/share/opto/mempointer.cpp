@@ -41,13 +41,22 @@ MemPointer::MemPointer(const MemNode* mem,
 MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
                                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
   assert(_worklist.is_empty(), "no prior parsing");
+  assert(_raw_summands.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
   const jint size = _mem->memory_size();
 
+#ifndef PRODUCT
+  if (trace.is_trace_parsing()) {
+    tty->print_cr("MemPointerParser::parse: size=%d", size);
+    tty->print("  mem:     "); _mem->dump();
+    tty->print("  pointer: "); pointer->dump();
+  }
+#endif
+
   // Start with the trivial summand.
-  _worklist.push(MemPointerSummand(pointer, NoOverflowInt(1)));
+  _worklist.push(MemPointerRawSummand::make_trivial(pointer));
 
   // Decompose the summands until only terminal summands remain. This effectively
   // parses the pointer expression recursively.
@@ -60,11 +69,71 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
     parse_sub_expression(_worklist.pop(), callback);
   }
 
-  // Bail out if there is a constant overflow.
-  if (_con.is_NaN()) {
-    return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-  }
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
+  canonicalize_raw_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerRawSummand::print_on(tty, _raw_summands); } )
 
+  create_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerSummand::print_on(tty, _con, _summands); } )
+  canonicalize_summands();
+  NOT_PRODUCT( if (trace.is_trace_parsing()) { MemPointerSummand::print_on(tty, _con, _summands); } )
+
+  return MemPointer::make(pointer, _raw_summands, _con, _summands, size NOT_PRODUCT(COMMA trace));
+}
+
+void MemPointerParser::canonicalize_raw_summands() {
+  // We sort by:
+  //  - int group id
+  //  - variable idx
+  // This means that summands of the same int group with the same variable are consecutive.
+  // This simplifies the combining of summands below.
+  _raw_summands.sort(MemPointerRawSummand::cmp_by_int_group_and_variable_idx);
+
+  // Combine summands of the same int group with the same variable, adding up the scales.
+  int pos_put = 0;
+  int pos_get = 0;
+  while (pos_get < _raw_summands.length()) {
+    const MemPointerRawSummand& summand = _raw_summands.at(pos_get++);
+    Node* variable      = summand.variable();
+    NoOverflowInt scaleI = summand.scaleI();
+    NoOverflowInt scaleL = summand.scaleL();
+    int int_group = summand.int_group();
+    // Add up scale of all summands with the same variable.
+    while (pos_get < _raw_summands.length() &&
+           _raw_summands.at(pos_get).int_group() == int_group &&
+           _raw_summands.at(pos_get).variable() == variable) {
+      MemPointerRawSummand s = _raw_summands.at(pos_get++);
+      if (int_group == 0) {
+        assert(scaleI.is_one() && s.scaleI().is_one(), "no ConvI2L");
+        scaleL = scaleL + s.scaleL();
+      } else {
+        assert(scaleL.value() == s.scaleL().value(), "same ConvI2L, same scaleL");
+        scaleI = scaleI + s.scaleI();
+      }
+    }
+    // Keep summands with non-zero scale.
+    if (!scaleI.is_zero() && !scaleL.is_NaN()) {
+      _raw_summands.at_put(pos_put++, MemPointerRawSummand(variable, scaleI, scaleL, int_group));
+    }
+  }
+  _raw_summands.trunc_to(pos_put);
+}
+
+void MemPointerParser::create_summands() {
+  assert(_con.is_zero(), "no prior parsing");
+  assert(_summands.is_empty(), "no prior parsing");
+
+  for (int i = 0; i < _raw_summands.length(); i++) {
+    const MemPointerRawSummand& raw_summand = _raw_summands.at(i);
+    if (raw_summand.is_con()) {
+      _con = _con + raw_summand.to_con();
+    } else {
+      _summands.push(raw_summand.to_summand());
+    }
+  }
+}
+
+void MemPointerParser::canonicalize_summands() {
   // Sorting by variable idx means that all summands with the same variable are consecutive.
   // This simplifies the combining of summands with the same variable below.
   _summands.sort(MemPointerSummand::cmp_by_variable_idx);
@@ -81,38 +150,36 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
       MemPointerSummand s = _summands.at(pos_get++);
       scale = scale + s.scale();
     }
-    // Bail out if scale is NaN.
-    if (scale.is_NaN()) {
-      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
-    }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
       _summands.at_put(pos_put++, MemPointerSummand(variable, scale));
     }
   }
   _summands.trunc_to(pos_put);
-
-  return MemPointer::make(pointer, _summands, _con, size NOT_PRODUCT(COMMA trace));
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
 // current node, and see if it can be decomposed into further summands, or if the current
 // summand is terminal.
-void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback) {
+void MemPointerParser::parse_sub_expression(const MemPointerRawSummand& summand, MemPointerParserCallback& callback) {
   Node* n = summand.variable();
-  const NoOverflowInt scale = summand.scale();
+  const NoOverflowInt scaleI = summand.scaleI();
+  const NoOverflowInt scaleL = summand.scaleL();
+  const int int_group = summand.int_group();
   const NoOverflowInt one(1);
 
   int opc = n->Opcode();
-  if (is_safe_to_decompose_op(opc, scale)) {
+  if (is_safe_to_decompose_op(opc, scaleI * scaleL)) {
     switch (opc) {
       case Op_ConI:
       case Op_ConL:
       {
-        // Terminal: add to constant.
+        // Terminal summand.
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
-        _con = _con + scale * con;
+        NoOverflowInt conI = (int_group == 0) ? scaleI : scaleI * con;
+        NoOverflowInt conL = (int_group == 0) ? scaleL * con : scaleL;
+        _raw_summands.push(MemPointerRawSummand::make_con(conI, conL, int_group));
         return;
       }
       case Op_AddP:
@@ -122,8 +189,8 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
         // Decompose addition.
         Node* a = n->in((opc == Op_AddP) ? 2 : 1);
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-        _worklist.push(MemPointerSummand(a, scale));
-        _worklist.push(MemPointerSummand(b, scale));
+        _worklist.push(MemPointerRawSummand(a, scaleI, scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(b, scaleI, scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -134,10 +201,15 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
         Node* a = n->in(1);
         Node* b = n->in(2);
 
-        NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
+        //                   int_group  x.scaleI  x.scaleL  y.scaleI  y.scaleL
+        // 2L * (x - y)      0          1         2         1         -2
+        // ConvI2L(x - y)    1          1         1         -1        1
 
-        _worklist.push(MemPointerSummand(a, scale));
-        _worklist.push(MemPointerSummand(b, sub_scale));
+        NoOverflowInt sub_scaleI = (int_group == 0) ? scaleI : scaleI * NoOverflowInt(-1);
+        NoOverflowInt sub_scaleL = (int_group == 0) ? scaleL * NoOverflowInt(-1) : scaleL;
+
+        _worklist.push(MemPointerRawSummand(a,     scaleI,     scaleL, int_group));
+        _worklist.push(MemPointerRawSummand(b, sub_scaleI, sub_scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -169,10 +241,14 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
             break;
         }
 
-        // Accumulate scale.
-        NoOverflowInt new_scale = scale * factor;
+        //                         int_group  x.scaleI  x.scaleL
+        // 2L * (4L * x)           0          1         8
+        // 2L * ConvI2L(4 * x)     1          4         2
 
-        _worklist.push(MemPointerSummand(variable, new_scale));
+        NoOverflowInt mul_scaleI = (int_group == 0) ? scaleI : scaleI * factor;
+        NoOverflowInt mul_scaleL = (int_group == 0) ? scaleL * factor : scaleL;
+
+        _worklist.push(MemPointerRawSummand(variable, mul_scaleI, mul_scaleL, int_group));
         callback.callback(n);
         return;
       }
@@ -200,7 +276,16 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
         {
           // Decompose: look through.
           Node* a = n->in(1);
-          _worklist.push(MemPointerSummand(a, scale));
+
+          int cast_int_group = int_group;
+#ifdef _LP64
+          if (opc == Op_ConvI2L) {
+            assert(int_group == 0, "only find ConvI2L once");
+            // We just discovered a new ConvI2L, and this creates a new "int group".
+            cast_int_group = _next_int_group++;
+          }
+#endif
+          _worklist.push(MemPointerRawSummand(a, scaleI, scaleL, cast_int_group));
           callback.callback(n);
           return;
         }
@@ -212,7 +297,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
   }
 
   // Default: we could not parse the "summand" further, i.e. it is terminal.
-  _summands.push(summand);
+  _raw_summands.push(summand);
 }
 
 bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
@@ -618,3 +703,55 @@ bool MemPointer::never_overlaps_with(const MemPointer& other) const {
   return is_never_overlap;
 }
 
+// Examples:
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 17]
+//   -> Always at distance 1
+//   -> Can never overlap -> return false
+//
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 16]
+//   -> Always at distance 0
+//   -> Always have exact overlap -> return true
+//
+//   p1 = MemPointer[size=4, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=4, x + y + z + 4L * i + 56]
+//   -> Always at distance 40
+//   -> Can never overlap -> return false
+//
+//   p1 = MemPointer[size=8, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=8, x + y + z + 4L * i + 20]
+//   -> Always at distance 4
+//   -> Always have partial overlap -> return true
+//
+//   p1 = MemPointer[size=4, base1 + 4L * i1 + 16]
+//   p2 = MemPointer[size=4, base2 + 4L * i2 + 20]
+//   -> Have differing summands, distance is unknown
+//   -> Unknown if overlap at runtime -> return false
+bool MemPointer::always_overlaps_with(const MemPointer& other) const {
+  const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
+
+  // The aliasing tries to compute:
+  //   distance = other - this
+  //
+  // We know that we have an overlap if we can prove:
+  //   this < other + other.size       &&  this + this.size > other
+  //
+  // Which we can restate as:
+  //   distance > -other.size          &&  this.size > distance
+  //
+  const jint distance_lo = -other.size();
+  const jint distance_hi = size();
+  bool is_always_overlap = aliasing.is_always_in_distance_range(distance_lo, distance_hi);
+
+#ifndef PRODUCT
+  if (_trace.is_trace_overlap()) {
+    tty->print("Always Overlap: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
+               is_always_overlap ? "true" : "false", distance_lo, distance_hi);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_always_overlap;
+}

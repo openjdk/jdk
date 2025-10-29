@@ -111,7 +111,7 @@ else ifeq ($(call isTargetOs, aix), true)
       INFO := Generating export list for $(notdir $(lib)), \
       DEPS :=  $(lib), \
       OUTPUT_FILE := $(lib).exp, \
-      COMMAND := ( $(AR) $(ARFLAGS) -w $(lib) | $(GREP) -v '^\.' | $(AWK) '{print $$1}' | $(SORT) -u > $(lib).exp ), \
+      COMMAND := $(AR) $(ARFLAGS) -w $(lib) | $(GREP) -v '^\.' | $(AWK) '{print $$1}' | $(SORT) -u > $(lib).exp, \
     )) \
     $(eval STATIC_LIB_EXPORT_FILES += $(lib).exp) \
   )

@@ -46,7 +46,7 @@ import jdk.jpackage.test.JPackageCommand;
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror MultiNameTwoPhaseTest.java
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=2160 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=MultiNameTwoPhaseTest
  */
 

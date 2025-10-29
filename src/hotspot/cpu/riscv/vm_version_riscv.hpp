@@ -46,31 +46,59 @@ class VM_Version : public Abstract_VM_Version {
     RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
   };
 
+  class RVExtFeatures;
+
   class RVFeatureValue {
     const char* const _pretty;
     const bool        _feature_string;
-    const uint64_t    _feature_bit;
-    bool              _enabled;
+    const uint64_t    _linux_feature_bit;
     int64_t           _value;
    public:
-    RVFeatureValue(const char* pretty, int bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _feature_bit(nth_bit(bit_num)),
-      _enabled(false), _value(-1) {
+    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
+      _value(-1) {
     }
-    void enable_feature(int64_t value = 0) {
-      _enabled = true;
+    virtual void enable_feature(int64_t value = 0) {
       _value = value;
     }
-    void disable_feature() {
-      _enabled = false;
+    virtual void disable_feature() {
       _value = -1;
     }
     const char* pretty()         { return _pretty; }
-    uint64_t feature_bit()       { return _feature_bit; }
+    uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    bool enabled()               { return _enabled; }
     int64_t value()              { return _value; }
+    virtual bool enabled() = 0;
     virtual void update_flag() = 0;
+
+   protected:
+    bool deps_all_enabled(RVFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+
+      va_list va;
+      va_start(va, dep0);
+      RVFeatureValue* next = dep0;
+      bool enabled = true;
+      while (next != nullptr && enabled) {
+        enabled = next->enabled();
+        next = va_arg(va, RVFeatureValue*);
+      }
+      va_end(va);
+      return enabled;
+    }
+
+    void deps_string(stringStream& ss, RVFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
+
+      va_list va;
+      va_start(va, dep0);
+      RVFeatureValue* next = nullptr;
+      while ((next = va_arg(va, RVFeatureValue*)) != nullptr) {
+        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
+      }
+      va_end(va);
+    }
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -86,28 +114,76 @@ class VM_Version : public Abstract_VM_Version {
     }                                    \
   }                                      \
 
-  #define UPDATE_DEFAULT_DEP(flag, dep)    \
-  void update_flag() {                     \
-      assert(enabled(), "Must be.");       \
-      /* dep must be declared before */    \
-      assert((uintptr_t)(this) >           \
-             (uintptr_t)(&dep), "Invalid");\
-      if (FLAG_IS_DEFAULT(flag)) {         \
-        if (dep.enabled()) {               \
-          FLAG_SET_DEFAULT(flag, true);    \
-        } else {                           \
-          FLAG_SET_DEFAULT(flag, false);   \
-        }                                  \
-      } else {                             \
-        /* Sync CPU features with flags */ \
-        if (!flag) {                       \
-          disable_feature();               \
-        }                                  \
-      }                                    \
-  }                                        \
+  #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
+  void update_flag() {                                                                                      \
+      assert(enabled(), "Must be.");                                                                        \
+      if (FLAG_IS_DEFAULT(flag)) {                                                                          \
+        if (this->deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                  \
+          FLAG_SET_DEFAULT(flag, true);                                                                     \
+        } else {                                                                                            \
+          FLAG_SET_DEFAULT(flag, false);                                                                    \
+          stringStream ss;                                                                                  \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
+          /* Sync CPU features with flags */                                                                \
+          disable_feature();                                                                                \
+        }                                                                                                   \
+      } else {                                                                                              \
+        /* Sync CPU features with flags */                                                                  \
+        if (!flag) {                                                                                        \
+          disable_feature();                                                                                \
+        } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
+          FLAG_SET_DEFAULT(flag, false);                                                                    \
+          stringStream ss;                                                                                  \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
+          /* Sync CPU features with flags */                                                                \
+          disable_feature();                                                                                \
+        }                                                                                                   \
+      }                                                                                                     \
+  }                                                                                                         \
 
   #define NO_UPDATE_DEFAULT                \
   void update_flag() {}                    \
+
+
+  class RVExtFeatureValue : public RVFeatureValue {
+    const uint32_t _cpu_feature_index;
+   public:
+    RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _cpu_feature_index(cpu_feature_index) {
+    }
+    bool enabled() {
+      return RVExtFeatures::current()->support_feature(_cpu_feature_index);
+    }
+    void enable_feature(int64_t value = 0) {
+      RVFeatureValue::enable_feature(value);
+      RVExtFeatures::current()->set_feature(_cpu_feature_index);
+    }
+    void disable_feature() {
+      RVFeatureValue::disable_feature();
+      RVExtFeatures::current()->clear_feature(_cpu_feature_index);
+    }
+  };
+
+  class RVNonExtFeatureValue : public RVFeatureValue {
+    bool _enabled;
+   public:
+    RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+      RVFeatureValue(pretty, linux_bit_num, fstring),
+      _enabled(false) {
+    }
+    bool enabled()               { return _enabled; }
+    void enable_feature(int64_t value = 0) {
+      RVFeatureValue::enable_feature(value);
+      _enabled = true;
+    }
+    void disable_feature() {
+      RVFeatureValue::disable_feature();
+      _enabled = false;
+    }
+  };
 
   // Frozen standard extensions
   // I RV64I
@@ -151,7 +227,8 @@ class VM_Version : public Abstract_VM_Version {
   // mvendorid Manufactory JEDEC id encoded, ISA vol 2 3.1.2..
   // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
   // mimpid    A unique encoding of the version of the processor implementation.
-  // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
+  // unaligned_scalar Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported)
+  // unaligned_vector Performance of misaligned vector accesses (unknown, unspported, slow, fast)
   // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
 
  public:
@@ -159,57 +236,141 @@ class VM_Version : public Abstract_VM_Version {
   #define RV_NO_FLAG_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
 
   // Note: the order matters, depender should be after their dependee. E.g. ext_V before ext_Zvbb.
-  // declaration name  , extension name, bit pos       ,in str, mapped flag)
-  #define RV_FEATURE_FLAGS(decl)                                                                    \
-  decl(ext_I           , "i"           ,    ('I' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_M           , "m"           ,    ('M' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_A           , "a"           ,    ('A' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_F           , "f"           ,    ('F' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_D           , "d"           ,    ('D' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_C           , "c"           ,    ('C' - 'A'), true , UPDATE_DEFAULT(UseRVC))             \
-  decl(ext_Q           , "q"           ,    ('Q' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_H           , "h"           ,    ('H' - 'A'), true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_V           , "v"           ,    ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))             \
-  decl(ext_Zicbom      , "Zicbom"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbom))          \
-  decl(ext_Zicboz      , "Zicboz"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicboz))          \
-  decl(ext_Zicbop      , "Zicbop"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbop))          \
-  decl(ext_Zba         , "Zba"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZba))             \
-  decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))             \
-  decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))             \
-  decl(ext_Zbkb        , "Zbkb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbkb))            \
-  decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZcb))             \
-  decl(ext_Zfa         , "Zfa"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfa))             \
-  decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))             \
-  decl(ext_Zfhmin      , "Zfhmin"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfhmin))          \
-  decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_Zicntr      , "Zicntr"      , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)                  \
-  decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))          \
-  decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))            \
-  decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause))     \
-  decl(ext_Zacas       , "Zacas"       , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZacas))           \
-  decl(ext_Zvbb        , "Zvbb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT_DEP(UseZvbb, ext_V)) \
-  decl(ext_Zvbc        , "Zvbc"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT_DEP(UseZvbc, ext_V)) \
-  decl(ext_Zvfh        , "Zvfh"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT_DEP(UseZvfh, ext_V)) \
-  decl(ext_Zvkn        , "Zvkn"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT_DEP(UseZvkn, ext_V)) \
-  decl(ext_Zicond      , "Zicond"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicond))          \
-  decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                  \
-  decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                  \
-  decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                  \
-  decl(unaligned_access, "Unaligned"   , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                  \
-  decl(satp_mode       , "SATP"        , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)                  \
+  //
+  // Fields description in `decl`:
+  //    declaration name, extension name, bit value from linux, feature string?, mapped flag)
+  #define RV_EXT_FEATURE_FLAGS(decl)                                                                                       \
+  decl(ext_I            ,  i           ,     ('I' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_M            ,  m           ,     ('M' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_A            ,  a           ,     ('A' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_F            ,  f           ,     ('F' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_D            ,  d           ,     ('D' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_C            ,  c           ,     ('C' - 'A'),  true ,  UPDATE_DEFAULT(UseRVC))                                 \
+  decl(ext_Q            ,  q           ,     ('Q' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_H            ,  h           ,     ('H' - 'A'),  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_V            ,  v           ,     ('V' - 'A'),  true ,  UPDATE_DEFAULT(UseRVV))                                 \
+  decl(ext_Zicbom       ,  Zicbom      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbom))                              \
+  decl(ext_Zicboz       ,  Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                              \
+  decl(ext_Zicbop       ,  Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                              \
+  decl(ext_Zba          ,  Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                 \
+  decl(ext_Zbb          ,  Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                 \
+  decl(ext_Zbc          ,  Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_Zbs          ,  Zbs         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbs))                                 \
+  decl(ext_Zbkb         ,  Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                \
+  decl(ext_Zcb          ,  Zcb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZcb))                                 \
+  decl(ext_Zfa          ,  Zfa         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfa))                                 \
+  decl(ext_Zfh          ,  Zfh         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfh))                                 \
+  decl(ext_Zfhmin       ,  Zfhmin      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZfhmin))                              \
+  decl(ext_Zicsr        ,  Zicsr       ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_Zicntr       ,  Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_Zifencei     ,  Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                      \
+  decl(ext_Zic64b       ,  Zic64b      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZic64b))                              \
+  decl(ext_Ztso         ,  Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                \
+  decl(ext_Zihintpause  ,  Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                         \
+  decl(ext_Zacas        ,  Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                               \
+  decl(ext_Zvbb         ,  Zvbb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbb, &ext_V, nullptr))           \
+  decl(ext_Zvbc         ,  Zvbc        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvbc, &ext_V, nullptr))           \
+  decl(ext_Zvfh         ,  Zvfh        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvfh, &ext_V, &ext_Zfh, nullptr)) \
+  decl(ext_Zvkn         ,  Zvkn        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZvkn, &ext_V, nullptr))           \
+  decl(ext_Zicond       ,  Zicond      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicond))                              \
 
-  #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)        \
-  struct NAME##RVFeatureValue : public RVFeatureValue {                \
-    NAME##RVFeatureValue(const char* pretty, int bit, bool fstring) :  \
-      RVFeatureValue(pretty, bit, fstring) {}                          \
-    FLAGF;                                                             \
-  };                                                                   \
-  static NAME##RVFeatureValue NAME;                                    \
+  #define DECLARE_RV_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)               \
+  struct NAME##RVExtFeatureValue : public RVExtFeatureValue {                           \
+    NAME##RVExtFeatureValue() :                                                         \
+      RVExtFeatureValue(#PRETTY, LINUX_BIT, RVExtFeatures::CPU_##NAME, FSTRING) {}      \
+    FLAGF;                                                                              \
+  };                                                                                    \
+  static NAME##RVExtFeatureValue NAME;                                                  \
 
-  RV_FEATURE_FLAGS(DECLARE_RV_FEATURE)
-  #undef DECLARE_RV_FEATURE
+  RV_EXT_FEATURE_FLAGS(DECLARE_RV_EXT_FEATURE)
+  #undef DECLARE_RV_EXT_FEATURE
+
+  // Non-extension features
+  //
+  #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
+  decl(mvendorid        ,  VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(marchid          ,  ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(mimpid           ,  ImpId           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(satp_mode        ,  SATP            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(unaligned_scalar ,  UnalignedScalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(unaligned_vector ,  UnalignedVector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(zicboz_block_size,  ZicbozBlockSize ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+
+  #define DECLARE_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)      \
+  struct NAME##RVNonExtFeatureValue : public RVNonExtFeatureValue {                \
+    NAME##RVNonExtFeatureValue() :                                                 \
+      RVNonExtFeatureValue(#PRETTY, LINUX_BIT, FSTRING) {}                         \
+    FLAGF;                                                                         \
+  };                                                                               \
+  static NAME##RVNonExtFeatureValue NAME;                                          \
+
+  RV_NON_EXT_FEATURE_FLAGS(DECLARE_RV_NON_EXT_FEATURE)
+  #undef DECLARE_RV_NON_EXT_FEATURE
+
+private:
+  // Utility for AOT CPU feature store/check.
+  class RVExtFeatures : public CHeapObj<mtCode> {
+   public:
+    enum RVFeatureIndex {
+      #define DECLARE_RV_FEATURE_ENUM(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) CPU_##NAME,
+
+      RV_EXT_FEATURE_FLAGS(DECLARE_RV_FEATURE_ENUM)
+      MAX_CPU_FEATURE_INDEX
+      #undef DECLARE_RV_FEATURE_ENUM
+    };
+   private:
+    uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
+    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+
+    // Number of 8-byte elements in _features_bitmap.
+    constexpr static int element_count() {
+      return sizeof(_features_bitmap) / sizeof(uint64_t);
+    }
+
+    static int element_index(RVFeatureIndex feature) {
+      int idx = feature / BitsPerLong;
+      assert(idx < element_count(), "Features array index out of bounds");
+      return idx;
+    }
+
+    static uint64_t feature_bit(RVFeatureIndex feature) {
+      return (1ULL << (feature % BitsPerLong));
+    }
+
+    static RVFeatureIndex convert(uint32_t index) {
+      assert(index < MAX_CPU_FEATURE_INDEX, "must");
+      return (RVFeatureIndex)index;
+    }
+
+   public:
+    static RVExtFeatures* current() {
+      return _rv_ext_features;
+    }
+
+    RVExtFeatures() {
+      for (int i = 0; i < element_count(); i++) {
+        _features_bitmap[i] = 0;
+      }
+    }
+
+    void set_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      _features_bitmap[idx] |= feature_bit(f);
+    }
+
+    void clear_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      _features_bitmap[idx] &= ~feature_bit(f);
+    }
+
+    bool support_feature(uint32_t feature) {
+      RVFeatureIndex f = convert(feature);
+      int idx = element_index(f);
+      return (_features_bitmap[idx] & feature_bit(f)) != 0;
+    }
+  };
 
   // enable extensions based on profile, current supported profiles:
   //  RVA20U64
@@ -273,16 +434,24 @@ class VM_Version : public Abstract_VM_Version {
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
-  enum UNALIGNED_ACCESS : int {
-    MISALIGNED_UNKNOWN     = 0,
-    MISALIGNED_EMULATED    = 1,
-    MISALIGNED_SLOW        = 2,
-    MISALIGNED_FAST        = 3,
-    MISALIGNED_UNSUPPORTED = 4
+  enum UNALIGNED_SCALAR_ACCESS : int {
+    MISALIGNED_SCALAR_UNKNOWN     = 0,
+    MISALIGNED_SCALAR_EMULATED    = 1,
+    MISALIGNED_SCALAR_SLOW        = 2,
+    MISALIGNED_SCALAR_FAST        = 3,
+    MISALIGNED_SCALAR_UNSUPPORTED = 4
+  };
+
+  enum UNALIGNED_VECTOR_ACCESS : int {
+    MISALIGNED_VECTOR_UNKNOWN     = 0,
+    MISALIGNED_VECTOR_SLOW        = 2,
+    MISALIGNED_VECTOR_FAST        = 3,
+    MISALIGNED_VECTOR_UNSUPPORTED = 4
   };
 
   // Null terminated list
   static RVFeatureValue* _feature_list[];
+  static RVExtFeatures* _rv_ext_features;
 
   // Enables features in _feature_list
   static void setup_cpu_available_features();
