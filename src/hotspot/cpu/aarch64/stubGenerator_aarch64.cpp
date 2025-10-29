@@ -7181,7 +7181,7 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister tmp = v29;
 
     int shift1 = 12;
-    int shift2 = 52;
+    int shift2 = 52; //bits per limb
 
     // Push callee saved registers on to the stack
     RegSet callee_saved = RegSet::range(r19, r28);
@@ -7195,10 +7195,8 @@ class StubGenerator: public StubCodeGenerator {
       __ str(a_i, Address(sp, i * 8));
     }
 
-    // Calculate limb mask = -1L >>> (64 - BITS_PER_LIMB);
-    __ mov(limb_mask_scalar, 1);
-    __ neg(limb_mask_scalar, limb_mask_scalar);
-    __ lsr(limb_mask_scalar, limb_mask_scalar, 12);
+    // Calculate limb mask
+    __ mov(limb_mask_scalar, -UCONST64(1) >> (64 - shift2));
     __ dup(limb_mask, __ T2D, limb_mask_scalar);
 
     // Get pointer for modulus
@@ -7226,7 +7224,7 @@ class StubGenerator: public StubCodeGenerator {
       
       __ shl(high_01, __ T2D, high_01, shift1);
       __ ushr(tmp, __ T2D, low_01, shift2);
-      __ orr(high_01, __ T2D, high_01, tmp);
+      __ orr(high_01, __ T16B, high_01, tmp);
       __ andr(low_01, __ T2D, low_01, limb_mask);
         
       __ ldr(b_j, Address(b, 16));
@@ -7243,7 +7241,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ shl(high_23, __ T2D, high_23, shift1);
       __ ushr(tmp, __ T2D, low_23, shift2);
-      __ orr(high_23, __ T2D, high_23, tmp);
+      __ orr(high_23, __ T16B, high_23, tmp);
       __ andr(low_23, __ T2D, low_23, limb_mask);
 
       __ ldr(b_j, Address(b, 32));
@@ -7254,7 +7252,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ shl(high_4x, __ T2D, high_4x, shift1);
       __ ushr(tmp, __ T2D, low_4x, shift2);
-      __ orr(high_4x, __ T2D, high_4x, tmp);
+      __ orr(high_4x, __ T16B, high_4x, tmp);
       __ andr(low_4x, __ T2D, low_4x, limb_mask);
         
       // Load c_i and perform
@@ -7284,7 +7282,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
-      __ orr(modmul_high, __ T2D, modmul_high, tmp);
+      __ orr(modmul_high, __ T16B, modmul_high, tmp);
       __ addv(high_01, __ T2D, high_01, modmul_high);
       __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
       __ addv(low_01, __ T2D, low_01, modmul_low);
@@ -7303,7 +7301,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
-      __ orr(modmul_high, __ T2D, modmul_high, tmp);
+      __ orr(modmul_high, __ T16B, modmul_high, tmp);
       __ addv(high_23, __ T2D, high_23, modmul_high);
       __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
       __ addv(low_23, __ T2D, low_23, modmul_low);
@@ -7316,7 +7314,7 @@ class StubGenerator: public StubCodeGenerator {
 
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
-      __ orr(modmul_high, __ T2D, modmul_high, tmp);
+      __ orr(modmul_high, __ T16B, modmul_high, tmp);
       __ addv(high_4x, __ T2D, high_4x, modmul_high);
       __ andr(modmul_low, __ T2D, modmul_low, limb_mask);
       __ addv(low_4x, __ T2D, low_4x, modmul_low);
@@ -7400,24 +7398,24 @@ class StubGenerator: public StubCodeGenerator {
     // c4 = c9 - modulus[4] + (c3 >> BITS_PER_LIMB);
     // c3 &= LIMB_MASK;
 
-    __ ldr(mod_j, __ post(mod_ptr, 8));
+    __ ldr(mod_j, Address(mod_ptr));
     __ sub(c0, c5, mod_j);
 
-    __ ldr(mod_j, __ post(mod_ptr, 8));
+    __ ldr(mod_j, Address(mod_ptr, 8));
     __ sub(c1, c6, mod_j);
     __ asr(tmp_0, c0, shift2);
     __ add(c1, c1, tmp_0);
 
-    __ ldr(mod_j, __ post(mod_ptr, 8));
+    __ ldr(mod_j, Address(mod_ptr, 16));
     __ asr(c2, c1, shift2);
     __ add(c2, c2, c7);
 
-    __ ldr(mod_j, __ post(mod_ptr, 8));
+    __ ldr(mod_j, Address(mod_ptr, 24));
     __ sub(c3, c8, mod_j);
     __ asr(tmp_0, c2, shift2);
     __ add(c3, c3, tmp_0);
 
-    __ ldr(mod_j, __ post(mod_ptr, 8));
+    __ ldr(mod_j, Address(mod_ptr, 32));
     __ sub(c4, c9, mod_j);
     __ asr(tmp_0, c3, shift2);
     __ add(c4, c4, tmp_0);
