@@ -167,11 +167,6 @@ public class CustomInfoPListTest {
                 cmd.setArgumentValue("--file-associations", propFile);
             }
 
-            if (customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN)) {
-                cmd.addArguments("--jlink-options",
-                        "--strip-debug --no-man-pages --no-header-files");
-            }
-
             cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
             for (var customPList : customPLists) {
                 customPList.createInputPListFile(cmd);
@@ -297,7 +292,7 @@ public class CustomInfoPListTest {
         }
 
         PListRole role() {
-            if (this == EMBEDDED_RUNTIME) {
+            if (this == EMBEDDED_RUNTIME || this == EMBEDDED_RUNTIME_WITH_BIN) {
                 return PListRole.EMBEDDED_RUNTIME;
             } else {
                 return PListRole.MAIN;
