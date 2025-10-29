@@ -192,10 +192,12 @@ void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint 
 }
 
 void G1CollectedHeap::register_young_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
   _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
 }
 
 void G1CollectedHeap::register_new_survivor_region_with_region_attr(G1HeapRegion* r) {
+  assert(!is_in_cset(r), "should not already be registered as in collection set");
   _region_attr.set_new_survivor_region(r->hrm_index(), r->has_pinned_objects());
 }
 
