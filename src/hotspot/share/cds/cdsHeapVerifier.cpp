@@ -28,6 +28,8 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -153,7 +155,101 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
 # undef ADD_EXCL
 
+  if (CDSConfig::is_initing_classes_at_dump_time()) {
+    add_shared_secret_accessors();
+  }
   ClassLoaderDataGraph::classes_do(this);
+}
+
+// We allow only "stateless" accessors in the SharedSecrets class to be AOT-initialized, for example,
+// in the following pattern:
+//
+// class URL {
+//     static {
+//         SharedSecrets.setJavaNetURLAccess(
+//              new JavaNetURLAccess() { ... });
+//     }
+//
+// This initializes the field SharedSecrets::javaNetUriAccess, whose type (the inner case in the
+// above example) has no fields (static or otherwise) and is not a hidden class, so it cannot possibly
+// capture any transient state from the assembly phase that might become invalid in the production run.
+//
+class CDSHeapVerifier::SharedSecretsAccessorFinder : public FieldClosure {
+  CDSHeapVerifier* _verifier;
+  InstanceKlass* _ik;
+public:
+  SharedSecretsAccessorFinder(CDSHeapVerifier* verifier, InstanceKlass* ik)
+    : _verifier(verifier), _ik(ik) {}
+
+  void do_field(fieldDescriptor* fd) {
+    if (fd->field_type() == T_OBJECT) {
+      oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
+      if (static_obj_field != nullptr) {
+        Klass* field_type = static_obj_field->klass();
+
+        if (!field_type->is_instance_klass()) {
+          ResourceMark rm;
+          log_error(aot, heap)("jdk.internal.access.SharedSecrets::%s must not be an array",
+                               fd->name()->as_C_string());
+          AOTMetaspace::unrecoverable_writing_error();
+        }
+
+        InstanceKlass* field_type_ik = InstanceKlass::cast(field_type);
+        if (has_any_fields(field_type_ik) || field_type_ik->is_hidden()) {
+          // If field_type_ik is a hidden class, the accessor is probably initialized using a
+          // Lambda, which may contain transient states.
+          ResourceMark rm;
+          log_error(aot, heap)("jdk.internal.access.SharedSecrets::%s (%s) must be stateless",
+                               fd->name()->as_C_string(), field_type_ik->external_name());
+          AOTMetaspace::unrecoverable_writing_error();
+        }
+
+        _verifier->add_shared_secret_accessor(static_obj_field);
+      }
+    }
+  }
+
+  // Does k (or any of its supertypes) have at least one (static or non-static) field?
+  static bool has_any_fields(InstanceKlass* k) {
+    if (k->static_field_size() != 0 || k->nonstatic_field_size() != 0) {
+      return true;
+    }
+
+    if (k->super() != nullptr && has_any_fields(k->super())) {
+      return true;
+    }
+
+    Array<InstanceKlass*>* interfaces = k->local_interfaces();
+    int num_interfaces = interfaces->length();
+    for (int index = 0; index < num_interfaces; index++) {
+      if (has_any_fields(interfaces->at(index))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+};
+
+// This function is for allowing the following pattern in the core libraries:
+//
+//     public class URLClassPath {
+//          private static final JavaNetURLAccess JNUA = SharedSecrets.getJavaNetURLAccess();
+//
+// SharedSecrets::javaNetUriAccess has no states so it can be safely AOT-initialized. During
+// the production run, even if URLClassPath.<clinit> is re-executed, it will get back the same
+// instance of javaNetUriAccess as it did during the assembly phase.
+//
+// Note: this will forbid complex accessors such as SharedSecrets::javaObjectInputFilterAccess
+// to be initialized during the AOT assembly phase.
+void CDSHeapVerifier::add_shared_secret_accessors() {
+  TempNewSymbol klass_name = SymbolTable::new_symbol("jdk/internal/access/SharedSecrets");
+  InstanceKlass* ik = SystemDictionary::find_instance_klass(Thread::current(), klass_name,
+                                                           Handle());
+  assert(ik != nullptr, "must have been loaded");
+
+  SharedSecretsAccessorFinder finder(this, ik);
+  ik->do_local_static_fields(&finder);
 }
 
 CDSHeapVerifier::~CDSHeapVerifier() {
@@ -181,13 +277,12 @@ public:
       return;
     }
 
-    if (fd->signature()->equals("Ljdk/internal/access/JavaLangAccess;")) {
-      // A few classes have static fields that point to SharedSecrets.getJavaLangAccess().
-      // This object carries no state and we can create a new one in the production run.
-      return;
-    }
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
+      if (_verifier->is_shared_secret_accessor(static_obj_field)) {
+        return;
+      }
+
       Klass* field_type = static_obj_field->klass();
       if (_exclusions != nullptr) {
         for (const char** p = _exclusions; *p != nullptr; p++) {
