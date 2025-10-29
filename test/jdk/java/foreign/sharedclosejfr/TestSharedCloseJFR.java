@@ -26,7 +26,6 @@
  * @bug 8351032
  * @requires os.family != "windows"
  * @requires vm.flavor != "zero"
- * @requires vm.debug
  * @requires vm.hasJFR
  * @summary Test closing a shared scope during faulting access
  *
