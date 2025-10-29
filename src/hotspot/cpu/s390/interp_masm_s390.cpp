@@ -1918,6 +1918,11 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
   // Adjust stack pointer for additional monitor entry.
   resize_frame(RegisterOrConstant((intptr_t) delta), Z_fp, false);
 
+  // Rtemp3 is free at this point, use it to store top_frame_sp
+  z_sgrk(Rtemp3, Z_SP, Z_fp);
+  z_srag(Rtemp3, Rtemp3, Interpreter::logStackElementSize);
+  reg2mem_opt(Rtemp3, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+
   if (!stack_is_empty) {
     // Must copy stack contents down.
     NearLabel next, done;

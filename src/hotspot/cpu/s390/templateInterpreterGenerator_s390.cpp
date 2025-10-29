@@ -1100,6 +1100,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // ... and push the new frame F0.
   __ push_frame(top_frame_size, fp, true /*copy_sp*/, false);
+
+  __ z_lcgr(top_frame_size);  // negate
+  __ z_srag(top_frame_size, top_frame_size, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
+  __ z_stg(top_frame_size, _z_ijava_state_neg(top_frame_sp), fp);
   }
 
   //=============================================================================
