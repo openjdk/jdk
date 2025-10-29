@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @interface A {}
 
-/** {@link List<@Nullable String>}
+/** {@link List<@A String>}
  */
 class CrashInTypeAnnotateTest {
 }
