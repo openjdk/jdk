@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@
  *          /test/lib
  * @run main/othervm/native
  *      -agentlib:em02t006=-waittime=5
- *      -XX:-UseGCOverheadLimit
+ *      -XX:-UseGCOverheadLimit -Xmx128M
  *      nsk.jvmti.scenarios.events.EM02.em02t006
  */
 
