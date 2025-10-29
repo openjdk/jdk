@@ -110,6 +110,7 @@ class ArchiveHeapWriter : AllStatic {
   // ----------------------------------------------------------------------
 
 public:
+  static const intptr_t COOPS_REQUESTED_BASE   = 0x100000000;
   static const intptr_t NOCOOPS_REQUESTED_BASE = 0x10000000;
 
   // The minimum region size of all collectors that are supported by CDS.
@@ -117,6 +118,7 @@ public:
   // Shenandoah heap region size can never be smaller than 256K.
   static constexpr int MIN_GC_REGION_ALIGNMENT = 256 * K;
 
+  static bool is_writing_deterministic_heap() { return _is_writing_deterministic_heap; }
 private:
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
@@ -124,6 +126,7 @@ private:
     int _field_offset;
   };
 
+  static bool _is_writing_deterministic_heap;
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).

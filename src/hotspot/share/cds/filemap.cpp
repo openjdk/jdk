@@ -217,9 +217,15 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
   if (CDSConfig::is_dumping_heap()) {
-    _narrow_oop_mode = CompressedOops::mode();
-    _narrow_oop_base = CompressedOops::base();
-    _narrow_oop_shift = CompressedOops::shift();
+    if (ArchiveHeapWriter::is_writing_deterministic_heap()) {
+      _narrow_oop_mode = CompressedOops::UnscaledNarrowOop;
+      _narrow_oop_base = (address)0;
+      _narrow_oop_shift = 0;
+    } else {
+      _narrow_oop_mode = CompressedOops::mode();
+      _narrow_oop_base = CompressedOops::base();
+      _narrow_oop_shift = CompressedOops::shift();
+    }
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
@@ -898,7 +904,11 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
     requested_base = (char*)ArchiveHeapWriter::requested_address();
     if (UseCompressedOops) {
-      mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
+      if (ArchiveHeapWriter::is_writing_deterministic_heap()) {
+        mapping_offset = (size_t)((address)requested_base);
+      } else {
+        mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
+      }
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
       mapping_offset = 0; // not used with !UseCompressedOops

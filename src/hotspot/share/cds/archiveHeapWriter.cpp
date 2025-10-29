@@ -53,6 +53,7 @@
 
 GrowableArrayCHeap<u1, mtClassShared>* ArchiveHeapWriter::_buffer = nullptr;
 
+bool ArchiveHeapWriter::_is_writing_deterministic_heap = false;
 // The following are offsets from buffer_bottom()
 size_t ArchiveHeapWriter::_buffer_used;
 
@@ -92,6 +93,9 @@ void ArchiveHeapWriter::init() {
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
     guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+    if (CDSConfig::old_cds_flags_used() && !CDSConfig::is_dumping_aot_linked_classes()) {
+      _is_writing_deterministic_heap = true;
+    }
   }
 }
 
@@ -517,14 +521,25 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   assert(heap_region_byte_size > 0, "must archived at least one object!");
 
   if (UseCompressedOops) {
-    if (UseG1GC) {
-      address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-      log_info(aot, heap)("Heap end = %p", heap_end);
-      _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
-      _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
-      assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+    if (_is_writing_deterministic_heap) {
+      if (align_up(heap_region_byte_size, MIN_GC_REGION_ALIGNMENT) >= COOPS_REQUESTED_BASE) {
+        log_error(aot, heap)("cached heap space is too large: %zu bytes", heap_region_byte_size);
+        AOTMetaspace::unrecoverable_writing_error();
+      }
+      _requested_bottom = align_down((address)COOPS_REQUESTED_BASE - heap_region_byte_size, MIN_GC_REGION_ALIGNMENT);
+      if (UseG1GC) {
+        _requested_bottom = align_down(_requested_bottom, G1HeapRegion::GrainBytes);
+      }
     } else {
-      _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
+      if (UseG1GC) {
+        address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+        log_info(aot, heap)("Heap end = %p", heap_end);
+        _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+        _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
+        assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+      } else {
+        _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
+      }
     }
   } else {
     // We always write the objects as if the heap started at this address. This
@@ -599,7 +614,13 @@ template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_
       assert(source_referent != nullptr, "must be");
     }
     oop request_referent = source_obj_to_requested_obj(source_referent);
-    store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+    if (UseCompressedOops && _is_writing_deterministic_heap) {
+      intptr_t offset = cast_from_oop<intptr_t>(request_referent);
+      assert(offset > 0 && offset < COOPS_REQUESTED_BASE, "???");
+      *((narrowOop*)field_addr_in_buffer) = checked_cast<narrowOop>(offset);
+    } else {
+      store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+    }
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
   }
 }
