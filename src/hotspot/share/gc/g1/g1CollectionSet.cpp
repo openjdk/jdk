@@ -126,7 +126,8 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
-  assert(!hr->in_collection_set(), "should not already be in the collection set");
+  assert(!hr->in_collection_set(),
+         "should not already be registered as in collection set in the attribute table");
   _g1h->register_old_collection_set_region_with_region_attr(hr);
 
   assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
