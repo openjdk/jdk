@@ -66,7 +66,7 @@ public class HiddenClassesTest {
         } catch (ClassFormatError cfe) {
             String message = cfe.getMessage();
             if (message == null || !message.contains("Overflow in constant pool size for hidden class")) {
-                throw new RuntimeException("Test Failed: wrong ClassFormatError " + cfe.getMessage());
+                throw new RuntimeException("Test Failed: wrong ClassFormatError " + message);
             }
             System.out.println("ClassFormatError thrown as expected. Message: " + cfe.getMessage());
         }
