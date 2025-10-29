@@ -2504,8 +2504,8 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
   return res;
 } // end: os::pd_dll_unload()
 
-#ifdef __APPLE__
 void os::print_open_file_descriptors(outputStream* st) {
+#ifdef __APPLE__
   const int MAX_SAFE_FDS = 1024;
   struct proc_fdinfo fds[MAX_SAFE_FDS];
   struct proc_bsdinfo bsdinfo;
@@ -2534,11 +2534,7 @@ void os::print_open_file_descriptors(outputStream* st) {
   }
 
   st->print_cr("OpenFileDescriptorCount = %d", nfiles);
-}
-#endif // __APPLE__
-
-#if defined(_ALLBSD_SOURCE) && !defined(__APPLE__)
-long os::get_open_file_descriptor_count() {
+#else
     st->print_cr("OpenFileDescriptorCount = unknown");
-}
 #endif
+}

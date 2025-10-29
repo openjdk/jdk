@@ -1227,6 +1227,12 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->cr();
     }
 
+#ifndef _WIN32
+  STEP_IF("printing open file descriptor count", _verbose)
+      os::print_open_file_descriptors(st);
+      st->cr();
+#endif
+
   STEP_IF("printing GC information", _verbose)
     if (Universe::heap() != nullptr) {
       Universe::heap()->print_gc_on(st);
