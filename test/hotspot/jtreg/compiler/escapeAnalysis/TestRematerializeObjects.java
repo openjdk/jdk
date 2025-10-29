@@ -42,14 +42,10 @@ import jdk.test.lib.Utils;
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 
-/**
- * More complicated test cases can be found in {@link TestRematerializeObjectsFuzzing}.
- */
 public class TestRematerializeObjects {
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestRematerializeObjects.class);
-        //framework.addFlags("-XX:-TieredCompilation", "-Xbatch", "-XX:-CICompileOSR");
         switch (args[0]) {
             case "yEA" -> { framework.addFlags("-XX:+EliminateAllocations"); }
             case "nEA" -> { framework.addFlags("-XX:-EliminateAllocations"); }
