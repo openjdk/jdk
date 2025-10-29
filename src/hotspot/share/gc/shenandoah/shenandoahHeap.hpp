@@ -530,7 +530,7 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
+    assert(ShenandoahCardBarrier, "Card mark barrier should be on");
     return _old_generation;
   }
 

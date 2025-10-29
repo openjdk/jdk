@@ -248,6 +248,13 @@ jint ShenandoahHeap::initialize() {
   // Now we know the number of regions and heap sizes, initialize the heuristics.
   initialize_heuristics();
 
+  // If ShenandoahCardBarrier is enabled but it's not generational mode
+  // it means we're under passive mode and we have to initialize old gen
+  // for the purpose of having card table.
+  if (ShenandoahCardBarrier && !(mode()->is_generational())) {
+    _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity());
+  }
+
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
   //

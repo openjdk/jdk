@@ -48,11 +48,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
-
-  // Final configuration checks
-  // Passive mode does not instantiate the machinery to support the card table.
-  // Exit if the flag has been explicitly set.
-  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
 }
 
 ShenandoahHeuristics* ShenandoahPassiveMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {
