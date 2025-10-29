@@ -202,8 +202,14 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
 
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
-            if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
-                rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
+                    rect.x += lh.getAfterCheckIconGap();
+                }
+            } else {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
+                    rect.x -= lh.getAfterCheckIconGap();
+                }
             }
 
             lr.setTextRect(rect);
@@ -220,7 +226,11 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         }
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getAccRect();
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getComponentOrientation().isLeftToRight()) {
+                rect.x += lh.getAfterCheckIconGap();
+            } else {
+                rect.x -= lh.getAfterCheckIconGap();
+            }
             lr.setAccRect(rect);
         }
         SwingUtilities3.paintAccText(g, lh, lr, disabledForeground,

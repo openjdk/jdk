@@ -918,7 +918,8 @@ public final class WindowsIconFactory implements Serializable
                         icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
                                        y + OFFSET);
                     } else {
-                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
+                        icon.paintIcon(c, g, x - VistaMenuItemCheckIconFactory.getIconWidth() + OFFSET,
+                                       y + OFFSET);
                     }
                 }
             }
