@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.ref.*;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
+import jdk.test.whitebox.WhiteBox;
 
 public class ap12t001 extends DebugeeClass {
     /* number of interations to provoke garbage collecting */
@@ -72,7 +73,7 @@ public class ap12t001 extends DebugeeClass {
 
         // Provoke OutOfMemoryError in order to clear all soft references
         for (int i= 0; i < GC_TRYS; i++)
-            ClassUnloader.eatMemory();
+            WhiteBox.getWhiteBox().fullGC();
         log.display("GC called");
         flushObjectFreeEvents();
 

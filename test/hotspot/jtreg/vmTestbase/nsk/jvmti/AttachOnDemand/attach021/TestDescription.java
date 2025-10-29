@@ -44,11 +44,13 @@
  *          /test/lib
  * @build nsk.share.aod.AODTestRunner
  *        nsk.jvmti.AttachOnDemand.attach021.attach021Target
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach021.attach021Target
- *      -javaOpts="-XX:+UsePerfData -Xmx128M ${test.vm.opts} ${test.java.opts}"
+ *      -javaOpts="-XX:+UsePerfData -Xmx128M ${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
  *      -na attach021Agent00
  */
 

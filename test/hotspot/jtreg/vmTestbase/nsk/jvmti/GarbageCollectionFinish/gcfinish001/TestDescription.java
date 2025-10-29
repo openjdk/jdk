@@ -40,8 +40,11 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *      -XX:-UseGCOverheadLimit -Xmx128M
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -agentlib:gcfinish001=-waittime=5
  *      nsk.jvmti.GarbageCollectionFinish.gcfinish001
  */
