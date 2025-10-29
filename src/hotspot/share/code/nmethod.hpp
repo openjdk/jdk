@@ -29,6 +29,7 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
 class CompiledDirectCall;
