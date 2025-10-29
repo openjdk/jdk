@@ -58,6 +58,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
 
   auto emit = [&](address key, const CodeBuffer::SharedTrampolineRequestsValue &value) {
     assert(cb->stubs()->remaining() >= MacroAssembler::max_trampoline_stub_size(), "pre-allocated trampolines");
+    assert(!value.offsets.is_empty(), "missing call sites offsets");
     address dest = value.dest;
     LinkedListIterator<int> it(value.offsets.head());
     int offset = *it.next();
