@@ -917,7 +917,7 @@ public final class WindowsIconFactory implements Serializable
                 if (icon != null) {
                     if (WindowsGraphicsUtils.isLeftToRight(c)) {
                         icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                y + OFFSET);
+                                       y + OFFSET);
                     } else {
                         icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     }
