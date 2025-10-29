@@ -598,8 +598,11 @@ float VLoopAnalyzer::cost() const {
   return sum;
 }
 
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
 float VLoopAnalyzer::cost_for_scalar(int opcode) const {
-  float c = Matcher::cost_for_scalar(opcode);
+  float c = 1;
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
     tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
@@ -608,8 +611,11 @@ float VLoopAnalyzer::cost_for_scalar(int opcode) const {
   return c;
 }
 
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
 float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
-  float c = Matcher::cost_for_vector(opcode, vlen, bt);
+  float c = 1;
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
     tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
@@ -619,8 +625,13 @@ float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
   return c;
 }
 
+// For now, we use unit cost. We might refine that in the future.
+// If needed, we could also use platform specific costs, if the
+// default here is not accurate enough.
 float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
-  float c = Matcher::cost_for_vector_reduction(opcode, vlen, bt, requires_strict_order);
+  // Each reduction is composed of multiple instructions, each estimated with a unit cost.
+  //                                Linear: shuffle and reduce    Recursive: shuffle and reduce
+  float c = requires_strict_order ? 2 * vlen                    : 2 * exact_log2(vlen);
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
     tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",

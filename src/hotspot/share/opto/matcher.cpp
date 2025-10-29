@@ -2678,33 +2678,6 @@ void Matcher::specialize_generic_vector_operands() {
   }
 }
 
-// For now, we use unit cost. We might refine that in the future.
-// If needed, we could also use platform specific costs, if the
-// default here is not accurate enough.
-float Matcher::cost_for_scalar(int opcode) {
-  return 1;
-}
-
-// For now, we use unit cost. We might refine that in the future.
-// If needed, we could also use platform specific costs, if the
-// default here is not accurate enough.
-float Matcher::cost_for_vector(int opcode, int vlen, BasicType bt) {
-  return 1;
-}
-
-// For now, we use unit cost. We might refine that in the future.
-// If needed, we could also use platform specific costs, if the
-// default here is not accurate enough.
-float Matcher::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) {
-  if (requires_strict_order) {
-    // Linear: shuffle and reduce
-    return 2 * vlen;
-  } else {
-    // Recursive: shuffle and reduce
-    return 2 * exact_log2(vlen);
-  }
-}
-
 uint Matcher::vector_length(const Node* n) {
   const TypeVect* vt = n->bottom_type()->is_vect();
   return vt->length();
