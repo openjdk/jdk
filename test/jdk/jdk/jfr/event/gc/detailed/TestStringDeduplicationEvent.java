@@ -125,11 +125,6 @@ import jdk.test.whitebox.WhiteBox;
 public class TestStringDeduplicationEvent {
     private static Field valueField;
 
-    // Whether jdk.StringDeduplicationStatistics has been observed
-    private static volatile boolean statisticsEventSeen = false;
-    // Whether jdk.StringDeduplicationTimes has been observed
-    private static volatile boolean timesEventSeen = false;
-
     static {
         try {
             valueField = String.class.getDeclaredField("value");
@@ -144,15 +139,7 @@ public class TestStringDeduplicationEvent {
 
         try (RecordingStream recording = new RecordingStream()) {
             recording.enable(EventNames.StringDeduplicationStatistics);
-            recording.enable(EventNames.StringDeduplicationTimes);
-            recording.onEvent(EventNames.StringDeduplicationStatistics, e -> {
-                statisticsEventSeen = true;
-                if (timesEventSeen) recording.close();
-            });
-            recording.onEvent(EventNames.StringDeduplicationTimes, e -> {
-                timesEventSeen = true;
-                if (statisticsEventSeen) recording.close();
-            });
+            recording.onEvent(EventNames.StringDeduplicationStatistics, e -> recording.close());
             recording.startAsync();
 
             String base = TestStringDeduplicationEvent.class.getSimpleName();
@@ -168,8 +155,6 @@ public class TestStringDeduplicationEvent {
 
             recording.awaitTermination();
         }
-        assert statisticsEventSeen;
-        assert timesEventSeen;
     }
 
     private static Object getValue(String string) {

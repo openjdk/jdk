@@ -202,27 +202,6 @@ void StringDedup::Stat::log_times(const char* prefix) const {
   }
 }
 
-void StringDedup::Stat::emit_times(bool total) const {
-  if (log_is_enabled(Debug, stringdedup)) {
-    log_times(total ? "Total" : "Last");
-  }
-
-  if (total) {
-    // Send only JFR events about the last stats
-    return;
-  }
-
-  EventStringDeduplicationTimes e;
-  if (e.should_commit()) {
-    e.set_activeElapsed(_active_elapsed);
-    e.set_processElapsed(_process_elapsed);
-    e.set_idleElapsed(_idle_elapsed);
-    e.set_resizeTableElapsed(_resize_table_elapsed);
-    e.set_cleanupTableElapsed(_cleanup_table_elapsed);
-    e.commit();
-  }
-}
-
 void StringDedup::Stat::log_statistics() const {
   double known_percent               = percent_of(_known, _inspected);
   double known_shared_percent        = percent_of(_known_shared, _inspected);
@@ -245,8 +224,8 @@ void StringDedup::Stat::log_statistics() const {
 }
 
 void StringDedup::Stat::emit_statistics(bool total) const {
-  emit_times(total);
   if (log_is_enabled(Debug, stringdedup)) {
+    log_times(total ? "Total" : "Last");
     log_statistics();
   }
 
@@ -269,6 +248,11 @@ void StringDedup::Stat::emit_statistics(bool total) const {
     e.set_skippedDead(_skipped_dead);
     e.set_skippedIncomplete(_skipped_incomplete);
     e.set_skippedShared(_skipped_shared);
+    e.set_activeElapsed(_active_elapsed);
+    e.set_processElapsed(_process_elapsed);
+    e.set_idleElapsed(_idle_elapsed);
+    e.set_resizeTableElapsed(_resize_table_elapsed);
+    e.set_cleanupTableElapsed(_cleanup_table_elapsed);
     e.commit();
   }
 }

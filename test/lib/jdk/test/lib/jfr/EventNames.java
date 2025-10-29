@@ -161,7 +161,6 @@ public class EventNames {
     public static final String SystemGC = PREFIX + "SystemGC";
     public static final String GCCPUTime = PREFIX + "GCCPUTime";
     public static final String StringDeduplicationStatistics = PREFIX + "StringDeduplicationStatistics";
-    public static final String StringDeduplicationTimes = PREFIX + "StringDeduplicationTimes";
 
     // Compiler
     public static final String Compilation = PREFIX + "Compilation";

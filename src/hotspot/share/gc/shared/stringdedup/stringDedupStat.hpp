@@ -71,7 +71,6 @@ private:
   void report_phase_end(const char* phase, Tickspan* elapsed);
 
   void log_times(const char* prefix) const;
-  void emit_times(bool total) const;
   void log_statistics() const;
 
 public:

@@ -1297,9 +1297,6 @@
     <Field type="ulong" name="skippedDead" label="Skipped Dead" />
     <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
     <Field type="ulong" name="skippedShared" label="Skipped Shared" />
-  </Event>
-
-  <Event name="StringDeduplicationTimes" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Times" stackTrace="false">
     <Field type="Tickspan" name="activeElapsed" label="Active Elapsed" />
     <Field type="Tickspan" name="processElapsed" label="Process Elapsed" />
     <Field type="Tickspan" name="idleElapsed" label="Idle Elapsed" />

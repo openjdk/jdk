@@ -28,6 +28,8 @@
 all = \
     :jdk_all
 
+x = jdk/jfr/event/gc/detailed/TestStringDeduplicationEvent.java
+
 jdk_all = \
     /
 
