@@ -59,7 +59,7 @@ public class StrictMathExtraBench {
         public void setup() {
             for (int i = 0; i < values.length; i++) {
                 values[i] = rnd.nextDouble(min, max);
-                if (rnd.nextBoolean()) {
+                if (signed & rnd.nextBoolean()) {
                     values[i] = -values[i];
                 }
             }
@@ -374,15 +374,17 @@ public class StrictMathExtraBench {
         }
     }
 
+    private static final double LN2 = Math.log(2)/Math.log(Math.E);
+
     public static class RangeHalfLn2 extends RangeState {
         public RangeHalfLn2() {
-            super(Double.MIN_NORMAL, 0.34657359);
+            super(Double.MIN_NORMAL, LN2 / 2);
         }
     }
 
     public static class RangeBeyondHalfLn2 extends RangeState {
         public RangeBeyondHalfLn2() {
-            super(0.34657359, Double.MAX_VALUE);
+            super(LN2 / 2, Double.MAX_VALUE);
         }
     }
 
@@ -617,19 +619,19 @@ public class StrictMathExtraBench {
 
     public static class RangeTwoNeg54ToHalfLn2 extends RangeState {
         public RangeTwoNeg54ToHalfLn2() {
-            super(0x1.0p-54, 0.34657359);
+            super(0x1.0p-54, LN2 / 2);
         }
     }
 
     public static class RangeHalfLn2To56Ln2 extends RangeState {
         public RangeHalfLn2To56Ln2() {
-            super(0.34657359, 38.8162421);
+            super(LN2 / 2, 56 * LN2);
         }
     }
 
     public static class RangeBeyond56Ln2 extends RangeState {
         public RangeBeyond56Ln2() {
-            super(38.8162421, Double.MAX_VALUE);
+            super(56 * LN2, Double.MAX_VALUE);
         }
     }
 
