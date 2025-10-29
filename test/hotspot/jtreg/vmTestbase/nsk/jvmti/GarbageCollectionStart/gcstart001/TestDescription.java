@@ -43,7 +43,7 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
- *      -XX:-UseGCOverheadLimit -Xmx128M
+ *      -XX:-UseGCOverheadLimit
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -agentlib:gcstart001=-waittime=5
  *      nsk.jvmti.GarbageCollectionStart.gcstart001

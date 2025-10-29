@@ -54,7 +54,7 @@
  *      nsk.share.aod.AODTestRunner
  *      -jdk ${test.jdk}
  *      -target nsk.jvmti.AttachOnDemand.attach020.attach020Target
- *      -javaOpts="-XX:+UsePerfData -Xmx128M ${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
+ *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts} -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI"
  *      -na attach020Agent00
  */
 

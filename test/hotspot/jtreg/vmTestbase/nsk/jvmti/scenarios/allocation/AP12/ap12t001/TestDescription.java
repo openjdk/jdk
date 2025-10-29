@@ -43,7 +43,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *      -agentlib:ap12t001=-waittime=5,-verbose
- *      -XX:-UseGCOverheadLimit -Xmx128M
+ *      -XX:-UseGCOverheadLimit
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      nsk.jvmti.scenarios.allocation.AP12.ap12t001
  */

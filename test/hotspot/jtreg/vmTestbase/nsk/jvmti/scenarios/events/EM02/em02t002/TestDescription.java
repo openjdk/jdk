@@ -75,7 +75,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native
  *      -agentlib:em02t002=-waittime=5
- *      -XX:-UseGCOverheadLimit -Xmx128M
+ *      -XX:-UseGCOverheadLimit
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      nsk.jvmti.scenarios.events.EM02.em02t002
  */
