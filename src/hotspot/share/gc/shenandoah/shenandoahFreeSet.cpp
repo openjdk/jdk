@@ -908,7 +908,8 @@ HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req,
     return nullptr;
   }
 
-  if (_heap->young_generation()->free_unaffiliated_regions() > 0) {
+  if (!_heap->mode()->is_generational() ||
+      (req.is_old() && _heap->young_generation()->free_unaffiliated_regions() > 0)) {
     // Try to steal an empty region from the mutator view.
     result = try_allocate_from_mutator(req, in_new_region);
   }
