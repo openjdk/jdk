@@ -468,33 +468,33 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   add(cache, cache, index);
 }
 
-void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+void InterpreterMacroAssembler::load_field_or_method_entry(bool is_method, Register cache, Register index, int bcp_offset, bool for_fast_bytecode) {
+  const int entry_size     = is_method ? sizeof(ResolvedMethodEntry) : sizeof(ResolvedFieldEntry),
+            base_offset    = is_method ? Array<ResolvedMethodEntry>::base_offset_in_bytes() : Array<ResolvedFieldEntry>::base_offset_in_bytes(),
+            entries_offset = is_method ? in_bytes(ConstantPoolCache::method_entries_offset()) : in_bytes(ConstantPoolCache::field_entries_offset());
+
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
   // Take shortcut if the size is a power of 2
-  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+  if (is_power_of_2(entry_size)) {
     // Scale index by power of 2
-    sldi(index, index, log2i_exact(sizeof(ResolvedFieldEntry)));
+    sldi(index, index, log2i_exact(entry_size));
   } else {
     // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
-    mulli(index, index, sizeof(ResolvedFieldEntry));
+    mulli(index, index, entry_size);
   }
   // Get address of field entries array
-  ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+  ld_ptr(cache, entries_offset, R27_constPoolCache);
+  addi(cache, cache, base_offset);
   add(cache, cache, index);
-}
 
-void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
-  // Get index out of bytecode pointer
-  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
-  mulli(index, index, sizeof(ResolvedMethodEntry));
-
-  // Get address of field entries array
-  ld_ptr(cache, ConstantPoolCache::method_entries_offset(), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
-  add(cache, cache, index); // method_entries + base_offset + scaled index
+  if (for_fast_bytecode) {
+    // Prevent speculative loading from ResolvedFieldEntry/ResolvedMethodEntry as it can miss the info written by another thread.
+    // TemplateTable::patch_bytecode uses release-store.
+    // We reached here via control dependency (Bytecode dispatch has used the rewritten Bytecode).
+    // So, we can use control-isync based ordering.
+    isync();
+  }
 }
 
 // Load object from cpool->resolved_references(index).
