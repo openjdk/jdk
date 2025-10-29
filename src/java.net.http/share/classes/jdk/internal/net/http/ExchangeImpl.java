@@ -589,40 +589,24 @@ abstract class ExchangeImpl<T> {
     abstract CompletableFuture<ExchangeImpl<T>> sendBodyAsync();
 
     abstract CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
-                                                Runnable preTerminationCallback,
                                                 boolean returnConnectionToPool,
                                                 Executor executor);
 
     /**
-     * {@return a new {@code HttpBodySubscriberWrapper} decorating the
-     * {@link HttpResponse.BodySubscriber} obtained using the given {@link
-     * HttpResponse.BodyHandler} and the {@link ResponseInfo}}
-     *
-     * <p>An {@code HttpBodySubscriberWrapper} decorates a response body
-     * subscriber such that:
-     * <ul>
-     * <li>It is ensured that {@code onComplete}/{@code onError} are called
-     * only once
-     * <li>It is ensured that {@code onSubscribe} is called before {@code
-     * onError}. This is useful when errors occur asynchronously, and most
-     * typically when the error occurs before the {@code BodySubscriber} has
+     * Creates and wraps an {@link HttpResponse.BodySubscriber} from a {@link
+     * HttpResponse.BodyHandler} for the given {@link ResponseInfo}.
+     * An {@code HttpBodySubscriberWrapper} wraps a response body subscriber and makes
+     * sure its completed/onError methods are called only once, and that its onSusbscribe
+     * is called before onError. This is useful when errors occur asynchronously, and
+     * most typically when the error occurs before the {@code BodySubscriber} has
      * subscribed.
-     * <li>A pre-termination callback is invoked before
-     * {@code onComplete}/{@code onError}
-     * </ul>
-     *
-     * @param handler  a response body handler to wrap
-     * @param responseInfo a response info to create the subscriber from
-     * @param preTerminationCallback a callback to be invoked before
-     *                               completion with either success or failure
+     * @param handler  a body handler
+     * @param response a response info
      * @return a new {@code HttpBodySubscriberWrapper} to handle the response
      */
     HttpBodySubscriberWrapper<T> createResponseSubscriber(
-            HttpResponse.BodyHandler<T> handler,
-            ResponseInfo responseInfo,
-            Runnable preTerminationCallback) {
-        var subscriber = handler.apply(responseInfo);
-        return new HttpBodySubscriberWrapper<>(subscriber, preTerminationCallback);
+            HttpResponse.BodyHandler<T> handler, ResponseInfo response) {
+        return new HttpBodySubscriberWrapper<>(handler.apply(response));
     }
 
     /**

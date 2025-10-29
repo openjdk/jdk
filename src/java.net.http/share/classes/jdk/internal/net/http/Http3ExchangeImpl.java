@@ -554,8 +554,8 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     final class Http3StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber, Runnable preTerminationCallback) {
-            super(subscriber, preTerminationCallback);
+        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+            super(subscriber);
         }
 
         @Override
@@ -566,6 +566,11 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         @Override
         protected void register() {
             registerResponseSubscriber(this);
+        }
+
+        @Override
+        protected void onTermination() {
+            exchange.multi.cancelTimer();
         }
 
         @Override
@@ -585,17 +590,18 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
     }
 
+
     @Override
     Http3StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,
-                                                              ResponseInfo response,
-                                                              Runnable preTerminationCallback) {
+                                                              ResponseInfo response) {
         if (debug.on()) debug.log("Creating body subscriber");
-        return new Http3StreamResponseSubscriber<>(handler.apply(response), preTerminationCallback);
+        Http3StreamResponseSubscriber<T> subscriber =
+                new Http3StreamResponseSubscriber<>(handler.apply(response));
+        return subscriber;
     }
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
-                                       Runnable preTerminationCallback,
                                        boolean returnConnectionToPool,
                                        Executor executor) {
         try {
@@ -604,7 +610,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             }
             if (debug.on()) debug.log("Getting BodySubscriber for: " + response);
             Http3StreamResponseSubscriber<T> bodySubscriber =
-                    createResponseSubscriber(handler, new ResponseInfoImpl(response), preTerminationCallback);
+                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
             CompletableFuture<T> cf = receiveResponseBody(bodySubscriber, executor);
 
             PushGroup<?> pg = exchange.getPushGroup();

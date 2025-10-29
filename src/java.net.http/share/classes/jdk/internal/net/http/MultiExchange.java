@@ -253,7 +253,7 @@ class MultiExchange<T> implements Cancelable {
                 .map(ConnectTimeoutTracker::getRemaining);
     }
 
-    private void cancelTimer() {
+    public void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
             responseTimerEvent = null;
@@ -411,7 +411,7 @@ class MultiExchange<T> implements Cancelable {
                             } else
                                 return handleNoBody(r, exch);
                         }
-                        return exch.readBodyAsync(responseHandler, this::cancelTimer)
+                        return exch.readBodyAsync(responseHandler)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));
                     }).exceptionallyCompose(this::whenCancelled);
     }

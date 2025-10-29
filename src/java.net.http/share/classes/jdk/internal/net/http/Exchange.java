@@ -27,9 +27,11 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.ProtocolException;
+import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -219,9 +221,7 @@ final class Exchange<T> {
         exchImpl.nullBody(resp, t);
     }
 
-    public CompletableFuture<T> readBodyAsync(
-            HttpResponse.BodyHandler<T> handler,
-            Runnable preTerminationCallback) {
+    public CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler) {
         // If we received a 407 while establishing the exchange
         // there will be no body to read: bodyIgnored will be true,
         // and exchImpl will be null (if we were trying to establish
@@ -229,7 +229,7 @@ final class Exchange<T> {
         if (bodyIgnored != null) return MinimalFuture.completedFuture(null);
 
         // The connection will not be returned to the pool in the case of WebSocket
-        return exchImpl.readBodyAsync(handler, preTerminationCallback, !request.isWebSocket(), parentExecutor)
+        return exchImpl.readBodyAsync(handler, !request.isWebSocket(), parentExecutor)
                 .whenComplete((r,t) -> exchImpl.completed());
     }
 
@@ -687,7 +687,7 @@ final class Exchange<T> {
             // 101 responses are not supposed to contain a body.
             //    => should we fail if there is one?
             if (debug.on()) debug.log("Upgrading async %s", e.connection());
-            return e.readBodyAsync(this::ignoreBody, null, false, parentExecutor)
+            return e.readBodyAsync(this::ignoreBody, false, parentExecutor)
                 .thenCompose((T v) -> {// v is null
                     debug.log("Ignored body");
                     // we pass e::getBuffer to allow the ByteBuffers to accumulate

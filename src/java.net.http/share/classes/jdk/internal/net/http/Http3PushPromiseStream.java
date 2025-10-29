@@ -229,8 +229,8 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
     }
 
     final class Http3PushStreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http3PushStreamResponseSubscriber(BodySubscriber<U> subscriber, Runnable preTerminationCallback) {
-            super(subscriber, preTerminationCallback);
+        Http3PushStreamResponseSubscriber(BodySubscriber<U> subscriber) {
+            super(subscriber);
         }
 
         @Override
@@ -242,14 +242,18 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
         protected void register() {
             registerResponseSubscriber(this);
         }
+
+        @Override
+        protected void onTermination() {
+            exchange.multi.cancelTimer();
+        }
+
     }
 
-    Http3PushStreamResponseSubscriber<T> createResponseSubscriber(
-            BodyHandler<T> handler,
-            Runnable preTerminationCallback,
-            ResponseInfo response) {
+    Http3PushStreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,
+                                                              ResponseInfo response) {
         debug.log("Creating body subscriber");
-        return new Http3PushStreamResponseSubscriber<>(handler.apply(response), preTerminationCallback);
+        return new Http3PushStreamResponseSubscriber<>(handler.apply(response));
     }
 
     @Override
@@ -371,7 +375,7 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
         pushCF.complete(r); // not strictly required for push API
         // start reading the body using the obtained BodySubscriber
         CompletableFuture<Void> start = new MinimalFuture<>();
-        start.thenCompose( v -> readBodyAsync(getPushHandler(), null, false, getExchange().executor()))
+        start.thenCompose( v -> readBodyAsync(getPushHandler(), false, getExchange().executor()))
                 .whenComplete((T body, Throwable t) -> {
                     if (t != null) {
                         responseCF.completeExceptionally(t);
@@ -446,14 +450,13 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
-                                       Runnable preTerminationCallback,
                                        boolean returnConnectionToPool,
                                        Executor executor) {
         try {
             Log.logTrace("Reading body on stream {0}", streamId());
             debug.log("Getting BodySubscriber for: " + response);
             Http3PushStreamResponseSubscriber<T> bodySubscriber =
-                    createResponseSubscriber(handler, preTerminationCallback, new ResponseInfoImpl(response));
+                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
             CompletableFuture<T> cf = receiveResponseBody(bodySubscriber, executor);
 
             PushGroup<?> pg = parent.exchange.getPushGroup();

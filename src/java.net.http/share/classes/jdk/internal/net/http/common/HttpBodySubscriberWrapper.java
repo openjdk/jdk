@@ -65,22 +65,21 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     static final AtomicLong IDS = new AtomicLong();
     final long id = IDS.incrementAndGet();
     final BodySubscriber<T> userSubscriber;
-    private final Runnable preTerminationCallback;
     private volatile int state;
     final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
     volatile Throwable withError;
+    public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
+        this.userSubscriber = userSubscriber;
+    }
 
     /**
-     * Creates a new instance using provided details.
-     *
-     * @param userSubscriber a subscriber to wrap and delegate to
-     * @param preTerminationCallback a callback to be invoked before completion
-     *                              with either success or failure, can be null
+     * A callback to be invoked before termination, whether due to the
+     * completion or failure of the subscriber, or cancellation of the
+     * subscription.
      */
-    public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber, Runnable preTerminationCallback) {
-        this.userSubscriber = Objects.requireNonNull(userSubscriber);
-        this.preTerminationCallback = preTerminationCallback;
+    protected void onTermination() {
+        // Do nothing
     }
 
     private class SubscriptionWrapper implements Subscription {
@@ -100,9 +99,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                     subscription.cancel();
                 } finally {
                     if (markCancelled()) {
-                        if (preTerminationCallback != null) {
-                            preTerminationCallback.run();
-                        }
+                        onTermination();
                         onCancel();
                     }
                 }
@@ -295,9 +292,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      */
     public final void complete(Throwable t) {
         if (markCompleted()) {
-            if (preTerminationCallback != null) {
-                preTerminationCallback.run();
-            }
+            onTermination();
             logComplete(t);
             tryUnregister();
             t  = withError = Utils.getCompletionCause(t);
@@ -410,7 +405,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
             userSubscriber.onNext(item);
         }
     }
-
     @Override
     public void onError(Throwable throwable) {
         complete(throwable);
@@ -420,5 +414,4 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     public void onComplete() {
         complete(null);
     }
-
 }
