@@ -195,9 +195,10 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
 }
 
 /* Convert a pathname to canonical form.  The input orig_path is assumed to
-   have been converted to native form already, via JVM_NativePath().  This is
-   necessary because _fullpath() rejects duplicate separator characters on
-   Win95, though it accepts them on NT. */
+   have been converted to native form already, via JVM_NativePath().  If a
+   reparse point is encountered while traversing the path, then the final path
+   is derived from the full path and returned as the canonical form.
+ */
 WCHAR*
 wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
 {
