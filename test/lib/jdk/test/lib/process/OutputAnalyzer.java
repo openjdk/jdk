@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,6 +352,27 @@ public final class OutputAnalyzer {
             throw new RuntimeException("'" + notExpectedString + "' found in stderr");
         }
         return this;
+    }
+
+    /**
+     * Returns true if stdout matches the given pattern
+     */
+    public boolean stdoutMatches(String regexp) {
+        return getStdout().matches(regexp);
+    }
+
+    /**
+     * Returns true if stderr matches the given pattern
+     */
+    public boolean stderrMatches(String regexp) {
+        return getStderr().matches(regexp);
+    }
+
+    /**
+     * Returns true if either stdout or stderr matches the given pattern
+     */
+    public boolean matches(String regexp) {
+        return stdoutMatches(regexp) || stderrMatches(regexp);
     }
 
     /**
