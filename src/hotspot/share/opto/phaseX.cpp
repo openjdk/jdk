@@ -780,7 +780,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump_bfs(100,nullptr,"#");
+    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -2645,7 +2645,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
-  if (use->Opcode() == Op_AddX) {
+
+  // From CastX2PNode::Ideal
+  // CastX2P(AddX(x, y))
+  // CastX2P(SubX(x, y))
+  if (use->Opcode() == Op_AddX || use->Opcode() == Op_SubX) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->Opcode() == Op_CastX2P) {

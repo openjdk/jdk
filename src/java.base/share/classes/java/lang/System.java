@@ -2185,18 +2185,6 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatInitialCoder() {
-                return StringConcatHelper.initialCoder();
-            }
-
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
-            }
-
             public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
             }

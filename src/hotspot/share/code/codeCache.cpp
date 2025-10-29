@@ -51,7 +51,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -580,7 +580,7 @@ void CodeCache::free(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() - 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      Atomic::dec(&_number_of_nmethods_with_dependencies);
+      AtomicAccess::dec(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -616,7 +616,7 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_nmethod()) {
     heap->set_nmethod_count(heap->nmethod_count() + 1);
     if (((nmethod *)cb)->has_dependencies()) {
-      Atomic::inc(&_number_of_nmethods_with_dependencies);
+      AtomicAccess::inc(&_number_of_nmethods_with_dependencies);
     }
   }
   if (cb->is_adapter_blob()) {
@@ -786,7 +786,7 @@ void CodeCache::gc_on_allocation() {
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
@@ -812,7 +812,7 @@ void CodeCache::gc_on_allocation() {
   // it is eventually invoked to avoid trouble.
   if (allocated_since_last_ratio > threshold) {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
+    if (AtomicAccess::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
       log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
                           threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_threshold);
@@ -899,9 +899,9 @@ void CodeCache::release_exception_cache(ExceptionCache* entry) {
     delete entry;
   } else {
     for (;;) {
-      ExceptionCache* purge_list_head = Atomic::load(&_exception_cache_purge_list);
+      ExceptionCache* purge_list_head = AtomicAccess::load(&_exception_cache_purge_list);
       entry->set_purge_list_next(purge_list_head);
-      if (Atomic::cmpxchg(&_exception_cache_purge_list, purge_list_head, entry) == purge_list_head) {
+      if (AtomicAccess::cmpxchg(&_exception_cache_purge_list, purge_list_head, entry) == purge_list_head) {
         break;
       }
     }
@@ -1152,7 +1152,7 @@ void codeCache_init() {
 //------------------------------------------------------------------------------------------------
 
 bool CodeCache::has_nmethods_with_dependencies() {
-  return Atomic::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
+  return AtomicAccess::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
 }
 
 void CodeCache::clear_inline_caches() {

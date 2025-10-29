@@ -47,7 +47,7 @@ size_t DumpTimeClassInfo::runtime_info_bytesize() const {
                                      num_enum_klass_static_fields());
 }
 
-void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
+void DumpTimeClassInfo::add_verification_constraint(Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == nullptr) {
     _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
@@ -73,9 +73,14 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
 
   if (log_is_enabled(Trace, aot, verification)) {
     ResourceMark rm;
-    log_trace(aot, verification)("add_verification_constraint: %s: %s must be subclass of %s [0x%x] array len %d flags len %d",
-                                 k->external_name(), from_name->as_klass_external_name(),
-                                 name->as_klass_external_name(), c, vc_array->length(), vcflags_array->length());
+    if (from_name != nullptr) {
+      log_trace(aot, verification)("add verification constraint: %s: %s must be subclass of %s [0x%x]",
+                                   _klass->external_name(), from_name->as_klass_external_name(),
+                                   name->as_klass_external_name(), c);
+    } else {
+      log_trace(aot, verification)("added old verification constraint: %s: %s", _klass->external_name(),
+                                   name->as_klass_external_name());
+    }
   }
 }
 

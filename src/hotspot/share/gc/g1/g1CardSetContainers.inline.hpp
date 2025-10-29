@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
       return Overflow;
     }
     ContainerPtr new_value = merge(_value, card_idx, num_cards, bits_per_card);
-    ContainerPtr old_value = Atomic::cmpxchg(_value_addr, _value, new_value, memory_order_relaxed);
+    ContainerPtr old_value = AtomicAccess::cmpxchg(_value_addr, _value, new_value, memory_order_relaxed);
     if (_value == old_value) {
       return Added;
     }
@@ -126,7 +126,7 @@ inline bool G1CardSetContainer::try_increment_refcount() {
     }
 
     uintptr_t new_value = old_value + 2;
-    uintptr_t ref_count = Atomic::cmpxchg(&_ref_count, old_value, new_value);
+    uintptr_t ref_count = AtomicAccess::cmpxchg(&_ref_count, old_value, new_value);
     if (ref_count == old_value) {
       return true;
     }
@@ -137,7 +137,7 @@ inline bool G1CardSetContainer::try_increment_refcount() {
 inline uintptr_t G1CardSetContainer::decrement_refcount() {
   uintptr_t old_value = refcount();
   assert((old_value & 0x1) != 0 && old_value >= 3, "precondition");
-  return Atomic::sub(&_ref_count, 2u);
+  return AtomicAccess::sub(&_ref_count, 2u);
 }
 
 inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_cards) :
@@ -152,11 +152,11 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
   _num_entries_addr(num_entries_addr) {
   SpinYield s;
-  EntryCountType num_entries = Atomic::load(_num_entries_addr) & EntryMask;
+  EntryCountType num_entries = AtomicAccess::load(_num_entries_addr) & EntryMask;
   while (true) {
-    EntryCountType old_value = Atomic::cmpxchg(_num_entries_addr,
-                                               num_entries,
-                                               (EntryCountType)(num_entries | LockBitMask));
+    EntryCountType old_value = AtomicAccess::cmpxchg(_num_entries_addr,
+                                                     num_entries,
+                                                     (EntryCountType)(num_entries | LockBitMask));
     if (old_value == num_entries) {
       // Succeeded locking the array.
       _local_num_entries = num_entries;
@@ -189,7 +189,7 @@ inline G1CardSetArray::EntryDataType G1CardSetArray::at(EntryCountType index) co
 inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
   assert(card_idx < (1u << (sizeof(EntryDataType) * BitsPerByte)),
          "Card index %u does not fit allowed card value range.", card_idx);
-  EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
+  EntryCountType num_entries = AtomicAccess::load_acquire(&_num_entries) & EntryMask;
   EntryCountType idx = 0;
   for (; idx < num_entries; idx++) {
     if (at(idx) == card_idx) {
@@ -223,7 +223,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
 }
 
 inline bool G1CardSetArray::contains(uint card_idx) {
-  EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
+  EntryCountType num_entries = AtomicAccess::load_acquire(&_num_entries) & EntryMask;
 
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
     if (at(idx) == card_idx) {
@@ -235,7 +235,7 @@ inline bool G1CardSetArray::contains(uint card_idx) {
 
 template <class CardVisitor>
 void G1CardSetArray::iterate(CardVisitor& found) {
-  EntryCountType num_entries = Atomic::load_acquire(&_num_entries) & EntryMask;
+  EntryCountType num_entries = AtomicAccess::load_acquire(&_num_entries) & EntryMask;
   for (EntryCountType idx = 0; idx < num_entries; idx++) {
     found(at(idx));
   }
@@ -260,7 +260,7 @@ inline G1AddCardResult G1CardSetBitMap::add(uint card_idx, size_t threshold, siz
     return bm.at(card_idx) ? Found : Overflow;
   }
   if (bm.par_set_bit(card_idx)) {
-    Atomic::inc(&_num_bits_set, memory_order_relaxed);
+    AtomicAccess::inc(&_num_bits_set, memory_order_relaxed);
     return Added;
   }
   return Found;
@@ -311,7 +311,7 @@ inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConf
 inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* config) {
   EntryCountType bucket = config->howl_bucket_index(card_idx);
   ContainerPtr* array_entry = container_addr(bucket);
-  ContainerPtr container = Atomic::load_acquire(array_entry);
+  ContainerPtr container = AtomicAccess::load_acquire(array_entry);
 
   switch (G1CardSet::container_type(container)) {
     case G1CardSet::ContainerArrayOfCards: {
