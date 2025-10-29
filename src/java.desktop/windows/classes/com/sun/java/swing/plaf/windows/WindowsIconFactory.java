@@ -915,12 +915,11 @@ public final class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    if (!c.getComponentOrientation().equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+                    if (WindowsGraphicsUtils.isLeftToRight(c)) {
                         icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
                                 y + OFFSET);
                     } else {
-                        icon.paintIcon(c, g, x + OFFSET,
-                                y + OFFSET);
+                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     }
                 }
             }
