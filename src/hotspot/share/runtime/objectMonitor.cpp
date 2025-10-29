@@ -117,6 +117,8 @@ OopStorage* ObjectMonitor::_oop_storage = nullptr;
 OopHandle ObjectMonitor::_vthread_list_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
+static const jlong MAX_RECHECK_INTERVAL = 1000;
+
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
@@ -294,6 +296,7 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _succ(NO_OWNER),
   _SpinDuration(ObjectMonitor::Knob_SpinLimit),
   _contentions(0),
+  _unmounted_vthreads(0),
   _wait_set(nullptr),
   _waiters(0),
   _wait_set_lock(0)
@@ -983,19 +986,18 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  // For virtual threads that are pinned, do a timed-park instead to
-  // alleviate some deadlocks cases where the succesor is an unmounted
-  // virtual thread that cannot run. This can happen in particular when
-  // this virtual thread is currently loading/initializing a class, and
-  // all other carriers have a vthread pinned to it waiting for said class
-  // to be loaded/initialized.
-  static int MAX_RECHECK_INTERVAL = 1000;
-  int recheck_interval = 1;
-  bool do_timed_parked = false;
-  ContinuationEntry* ce = current->last_continuation();
-  if (ce != nullptr && ce->is_virtual_thread()) {
-    do_timed_parked = true;
-  }
+  // If there are unmounted virtual threads ahead in the _entry_list we want
+  // to do a timed-park instead to alleviate some deadlock cases where one
+  // of them is picked as the successor but cannot run due to having run out
+  // of carriers. This can happen, for example, if this is a pinned virtual
+  // thread currently loading or initializining a class, and all other carriers
+  // have a pinned vthread waiting for said class to be loaded/initialized.
+  // Read counter *after* adding this thread to the _entry_list. Adding to
+  // _entry_list uses Atomic::cmpxchg() which already provides a fence that
+  // prevents this load from floating up previous store.
+  // Note that we can have false positives where timed-park is not necessary.
+  bool do_timed_parked = has_unmounted_vthreads();
+  jlong recheck_interval = 1;
 
   for (;;) {
 
@@ -1006,7 +1008,7 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
 
     // park self
     if (do_timed_parked) {
-      current->_ParkEvent->park((jlong) recheck_interval);
+      current->_ParkEvent->park(recheck_interval);
       // Increase the recheck_interval, but clamp the value.
       recheck_interval *= 8;
       if (recheck_interval > MAX_RECHECK_INTERVAL) {
@@ -1090,6 +1092,22 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
   assert(_waiters > 0, "invariant");
   assert_mark_word_consistency();
 
+  // If there are unmounted virtual threads ahead in the _entry_list we want
+  // to do a timed-park instead to alleviate some deadlock cases where one
+  // of them is picked as the successor but cannot run due to having run out
+  // of carriers. This can happen, for example, if a mixed of unmounted and
+  // pinned vthreads taking up all the carriers are waiting for a class to be
+  // initialized, and the selected successor is one of the unmounted vthreads.
+  // Although this method is used for the "notification" case, it could be
+  // that this thread reached here without been added to the _entry_list yet.
+  // This can happen if it was interrupted or the wait timed-out at the same
+  // time. In that case we rely on currentNode->_do_timed_park, which will be
+  // read on the next loop iteration, after consuming the park permit set by
+  // the notifier in notify_internal.
+  // Note that we can have false positives where timed-park is not necessary.
+  bool do_timed_parked = has_unmounted_vthreads();
+  jlong recheck_interval = 1;
+
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
     guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
@@ -1114,7 +1132,16 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
       {
         ClearSuccOnSuspend csos(this);
         ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
-        current->_ParkEvent->park();
+        if (do_timed_parked) {
+          current->_ParkEvent->park(recheck_interval);
+          // Increase the recheck_interval, but clamp the value.
+          recheck_interval *= 8;
+          if (recheck_interval > MAX_RECHECK_INTERVAL) {
+            recheck_interval = MAX_RECHECK_INTERVAL;
+          }
+        } else {
+          current->_ParkEvent->park();
+        }
       }
     }
 
@@ -1134,6 +1161,9 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
     // Invariant: after clearing _succ a contending thread
     // *must* retry  _owner before parking.
     OrderAccess::fence();
+
+    // See comment in notify_internal
+    do_timed_parked |= currentNode->_do_timed_park;
   }
 
   // Current has acquired the lock -- Unlink current from the _entry_list.
@@ -1161,9 +1191,16 @@ bool ObjectMonitor::vthread_monitor_enter(JavaThread* current, ObjectWaiter* wai
 
   oop vthread = current->vthread();
   ObjectWaiter* node = waiter != nullptr ? waiter : new ObjectWaiter(vthread, this);
+
+  // Increment counter *before* adding the vthread to the _entry_list.
+  // Adding to _entry_list uses Atomic::cmpxchg() which already provides
+  // a fence that prevents reordering of the stores.
+  inc_unmounted_vthreads();
+
   if (try_lock_or_add_to_entry_list(current, node)) {
     // We got the lock.
     if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
+    dec_unmounted_vthreads();
     return true;
   }
   // This thread is now added to the entry_list.
@@ -1175,6 +1212,7 @@ bool ObjectMonitor::vthread_monitor_enter(JavaThread* current, ObjectWaiter* wai
     unlink_after_acquire(current, node);
     if (has_successor(current)) clear_successor();
     if (waiter == nullptr) delete node;  // for Object.wait() don't delete yet
+    dec_unmounted_vthreads();
     return true;
   }
 
@@ -1230,6 +1268,7 @@ bool ObjectMonitor::resume_operation(JavaThread* current, ObjectWaiter* node, Co
 void ObjectMonitor::vthread_epilog(JavaThread* current, ObjectWaiter* node) {
   assert(has_owner(current), "invariant");
   add_to_contentions(-1);
+  dec_unmounted_vthreads();
 
   if (has_successor(current)) clear_successor();
 
@@ -1824,10 +1863,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // could be profitable.
   //
   // TODO-FIXME: change the following logic to a loop of the form
-  //   while (!timeout && !interrupted && _notified == 0) park()
+  //   while (!timeout && !interrupted && node.TState == TS_WAIT) park()
 
   int ret = OS_OK;
-  int WasNotified = 0;
+  bool was_notified = false;
 
   // Need to check interrupt state whilst still _thread_in_vm
   bool interrupted = interruptible && current->is_interrupted(false);
@@ -1843,7 +1882,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
-      } else if (!node._notified) {
+      } else if (node.TState == ObjectWaiter::TS_WAIT) {
         if (millis <= 0) {
           current->_ParkEvent->park();
         } else {
@@ -1871,7 +1910,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       Thread::SpinAcquire(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
         dequeue_specific_waiter(&node);       // unlink from wait_set
-        assert(!node._notified, "invariant");
         node.TState = ObjectWaiter::TS_RUN;
       }
       Thread::SpinRelease(&_wait_set_lock);
@@ -1884,7 +1922,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     guarantee(node.TState != ObjectWaiter::TS_WAIT, "invariant");
     OrderAccess::loadload();
     if (has_successor(current)) clear_successor();
-    WasNotified = node._notified;
+    was_notified = node.TState == ObjectWaiter::TS_ENTER;
 
     // Reentry phase -- reacquire the monitor.
     // re-enter contended monitor after object.wait().
@@ -1897,7 +1935,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     if (JvmtiExport::should_post_monitor_waited()) {
       JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
 
-      if (node._notified && has_successor(current)) {
+      if (was_notified && has_successor(current)) {
         // In this part of the monitor wait-notify-reenter protocol it
         // is possible (and normal) for another thread to do a fastpath
         // monitor enter-exit while this thread is still trying to get
@@ -1964,7 +2002,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   }
 
   // check if the notification happened
-  if (!WasNotified) {
+  if (!was_notified) {
     // no, it could be timeout or Thread.interrupt() or both
     // check for interrupt event, otherwise it is timeout
     if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
@@ -1987,7 +2025,6 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
   ObjectWaiter* iterator = dequeue_waiter();
   if (iterator != nullptr) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
-    guarantee(!iterator->_notified, "invariant");
 
     if (iterator->is_vthread()) {
       oop vthread = iterator->vthread();
@@ -2003,9 +2040,12 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
           old_state == java_lang_VirtualThread::TIMED_WAIT) {
         java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
       }
+      // Increment counter *before* adding the vthread to the _entry_list.
+      // Adding to _entry_list uses Atomic::cmpxchg() which already provides
+      // a fence that prevents reordering of the stores.
+      inc_unmounted_vthreads();
     }
 
-    iterator->_notified = true;
     iterator->_notifier_tid = JFR_THREAD_ID(current);
     did_notify = true;
     add_to_entry_list(current, iterator);
@@ -2020,6 +2060,24 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
 
     if (!iterator->is_vthread()) {
       iterator->wait_reenter_begin(this);
+
+      // Read counter *after* adding the thread to the _entry_list.
+      // Adding to _entry_list uses Atomic::cmpxchg() which already provides
+      // a fence that prevents this load from floating up previous store.
+      if (has_unmounted_vthreads()) {
+        // Wake up the thread to alleviate some deadlock cases where the successor
+        // that will be picked up when this thread releases the monitor is an unmounted
+        // virtual thread that cannot run due to having run out of carriers. Upon waking
+        // up, the thread will call reenter_internal() which will use timed-park in case
+        // there is contention and there are still vthreads in the _entry_list.
+        // If the target was interrupted or the wait timed-out at the same time, it could
+        // have reached reenter_internal and read a false value of has_unmounted_vthreads()
+        // before we added it to the _entry_list above. To deal with that case, we set _do_timed_park
+        // which will be read by the target on the next loop iteration in reenter_internal.
+        iterator->_do_timed_park = true;
+        JavaThread* t = iterator->thread();
+        t->_ParkEvent->unpark();
+      }
     }
   }
   Thread::SpinRelease(&_wait_set_lock);
@@ -2149,7 +2207,6 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
     Thread::SpinAcquire(&_wait_set_lock);
     if (node->TState == ObjectWaiter::TS_WAIT) {
       dequeue_specific_waiter(node);       // unlink from wait_set
-      assert(!node->_notified, "invariant");
       node->TState = ObjectWaiter::TS_RUN;
     }
     Thread::SpinRelease(&_wait_set_lock);
@@ -2455,10 +2512,10 @@ ObjectWaiter::ObjectWaiter(JavaThread* current) {
   _notifier_tid = 0;
   _recursions = 0;
   TState    = TS_RUN;
-  _notified = false;
   _is_wait  = false;
   _at_reenter = false;
   _interrupted = false;
+  _do_timed_park = false;
   _active   = false;
 }
 
@@ -2631,6 +2688,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _succ = " INT64_FORMAT, successor());
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());
+  st->print_cr("  _unmounted_vthreads = " INT64_FORMAT, _unmounted_vthreads);
   st->print_cr("  _wait_set = " INTPTR_FORMAT, p2i(_wait_set));
   st->print_cr("  _waiters = %d", _waiters);
   st->print_cr("  _wait_set_lock = %d", _wait_set_lock);

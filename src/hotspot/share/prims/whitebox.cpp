@@ -509,6 +509,14 @@ WB_ENTRY(jboolean, WB_ConcurrentGCRunTo(JNIEnv* env, jobject o, jobject at))
   return ConcurrentGCBreakpoints::run_to(c_name);
 WB_END
 
+WB_ENTRY(jboolean, WB_HasExternalSymbolsStripped(JNIEnv* env, jobject o))
+#if defined(HAS_STRIPPED_DEBUGINFO)
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
 #if INCLUDE_G1GC
 
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
@@ -2710,7 +2718,7 @@ WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
     os::naked_short_sleep(time);
 WB_END
 
-WB_ENTRY(void, WB_BusyWait(JNIEnv* env, jobject wb, jint time))
+WB_ENTRY(void, WB_BusyWaitCPUTime(JNIEnv* env, jobject wb, jint time))
   ThreadToNativeFromVM  ttn(thread);
   u8 start = os::current_thread_cpu_time();
   u8 target_duration = time * (u8)1000000;
@@ -2721,18 +2729,9 @@ WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
   #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE);
-    return JNI_TRUE;
+    return JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
   #else
     return JNI_FALSE;
-  #endif
-WB_END
-
-WB_ENTRY(jlong, WB_CPUSamplerOutOfStackWalkingIterations(JNIEnv* env, jobject wb))
-  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    return (jlong)JfrCPUTimeThreadSampling::out_of_stack_walking_iterations();
-  #else
-    return 0;
   #endif
 WB_END
 
@@ -2822,6 +2821,7 @@ static JNINativeMethod methods[] = {
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
   {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"getHeapAlignment",                 CC"()J",                   (void*)&WB_GetHeapAlignment},
+  {CC"hasExternalSymbolsStripped",       CC"()Z",                   (void*)&WB_HasExternalSymbolsStripped},
   {CC"countAliveClasses0",               CC"(Ljava/lang/String;)I", (void*)&WB_CountAliveClasses },
   {CC"getSymbolRefcount",                CC"(Ljava/lang/String;)I", (void*)&WB_GetSymbolRefcount },
   {CC"parseCommandLine0",
@@ -3092,9 +3092,8 @@ static JNINativeMethod methods[] = {
 
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
-  {CC"busyWait", CC"(I)V",                            (void*)&WB_BusyWait},
+  {CC"busyWaitCPUTime", CC"(I)V",                     (void*)&WB_BusyWaitCPUTime},
   {CC"cpuSamplerSetOutOfStackWalking", CC"(Z)Z",      (void*)&WB_CPUSamplerSetOutOfStackWalking},
-  {CC"cpuSamplerOutOfStackWalkingIterations", CC"()J",(void*)&WB_CPUSamplerOutOfStackWalkingIterations},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},

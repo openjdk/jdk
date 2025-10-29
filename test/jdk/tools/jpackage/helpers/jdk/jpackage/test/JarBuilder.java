@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 /**
@@ -48,6 +49,11 @@ public final class JarBuilder {
         return this;
     }
 
+    public JarBuilder setRelease(int v) {
+        release = v;
+        return this;
+    }
+
     public JarBuilder addSourceFile(Path v) {
         sourceFiles.add(v);
         return this;
@@ -61,11 +67,15 @@ public final class JarBuilder {
     public void create() {
         TKit.withTempDirectory("jar-workdir", workDir -> {
             if (!sourceFiles.isEmpty()) {
-                new Executor()
+                var exec = new Executor()
                         .setToolProvider(JavaTool.JAVAC)
-                        .addArguments("-d", workDir.toString())
-                        .addPathArguments(sourceFiles)
-                        .execute();
+                        .addArguments("-d", workDir.toString());
+
+                Optional.ofNullable(release).ifPresent(r -> {
+                    exec.addArguments("--release", r.toString());
+                });
+
+                exec.addPathArguments(sourceFiles).execute();
             }
 
             Files.createDirectories(outputJar.getParent());
@@ -92,4 +102,5 @@ public final class JarBuilder {
     private Path outputJar;
     private String mainClass;
     private String moduleVersion;
+    private Integer release;
 }

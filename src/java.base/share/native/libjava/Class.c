@@ -95,7 +95,7 @@ Java_java_lang_Class_registerNatives(JNIEnv *env, jclass cls)
 
 JNIEXPORT jclass JNICALL
 Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
-                              jboolean initialize, jobject loader, jclass caller)
+                              jboolean initialize, jobject loader)
 {
     char *clname;
     jclass cls = 0;
@@ -133,7 +133,7 @@ Java_java_lang_Class_forName0(JNIEnv *env, jclass this, jstring classname,
         goto done;
     }
 
-    cls = JVM_FindClassFromCaller(env, clname, initialize, loader, caller);
+    cls = JVM_FindClassFromLoader(env, clname, initialize, loader);
 
  done:
     if (clname != buf) {

@@ -357,7 +357,7 @@
           "Initial ratio of young generation/survivor space size")          \
           range(3, max_uintx)                                               \
                                                                             \
-  product(bool, UseGCOverheadLimit, true,                                   \
+  product(bool, UseGCOverheadLimit, falseInDebug,                           \
           "Use policy to limit of proportion of time spent in GC "          \
           "before an OutOfMemory error is thrown")                          \
                                                                             \
@@ -417,10 +417,6 @@
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
           "codecache_oops, resolved_method_table, stringdedup")             \
-                                                                            \
-  product(bool, DeferInitialCardMark, false, DIAGNOSTIC,                    \
-          "When +ReduceInitialCardMarks, explicitly defer any that "        \
-          "may arise from new_pre_store_barrier")                           \
                                                                             \
   product(bool, UseCondCardMark, false,                                     \
           "Check for already marked card before updating card table")       \
