@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  * @test
  * @bug 4904082 4917089 6337226 6378503
  * @summary Tests that integral division and related methods return the proper result and scale.
- * @author Joseph D. Darcy
  */
 import java.math.*;
 public class IntegralDivisionTests {
