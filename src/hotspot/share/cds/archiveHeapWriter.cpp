@@ -522,14 +522,13 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
 
   if (UseCompressedOops) {
     if (_is_writing_deterministic_heap) {
-      if (align_up(heap_region_byte_size, MIN_GC_REGION_ALIGNMENT) >= COOPS_REQUESTED_BASE) {
+      size_t alignment = UseG1GC ? G1HeapRegion::GrainBytes : MIN_GC_REGION_ALIGNMENT;
+
+      if (align_up(heap_region_byte_size, alignment) >= COOPS_REQUESTED_BASE) {
         log_error(aot, heap)("cached heap space is too large: %zu bytes", heap_region_byte_size);
         AOTMetaspace::unrecoverable_writing_error();
       }
-      _requested_bottom = align_down((address)COOPS_REQUESTED_BASE - heap_region_byte_size, MIN_GC_REGION_ALIGNMENT);
-      if (UseG1GC) {
-        _requested_bottom = align_down(_requested_bottom, G1HeapRegion::GrainBytes);
-      }
+      _requested_bottom = align_down((address)COOPS_REQUESTED_BASE - heap_region_byte_size, alignment);
     } else {
       if (UseG1GC) {
         address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
