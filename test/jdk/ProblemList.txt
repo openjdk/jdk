@@ -152,7 +152,7 @@ java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
@@ -587,6 +587,7 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 # jdk_nio
 
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
+java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
@@ -635,6 +636,8 @@ sun/security/smartcardio/TestPresent.java                       8039280 generic-
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
+
+sun/security/ssl/SSLLogger/DebugPropertyValuesTest.java         8370852 generic-all
 
 ############################################################################
 

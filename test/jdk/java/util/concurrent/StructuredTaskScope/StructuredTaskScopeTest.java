@@ -501,7 +501,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test join with interrupt status set.
+     * Test join with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -520,7 +520,7 @@ class StructuredTaskScopeTest {
                 scope.join();
                 fail("join did not throw");
             } catch (InterruptedException expected) {
-                assertFalse(Thread.interrupted());   // interrupt status should be cleared
+                assertFalse(Thread.interrupted());   // interrupted status should be cleared
             }
         }
     }
@@ -544,7 +544,7 @@ class StructuredTaskScopeTest {
                 scope.join();
                 fail("join did not throw");
             } catch (InterruptedException expected) {
-                assertFalse(Thread.interrupted());   // interrupt status should be clear
+                assertFalse(Thread.interrupted());   // interrupted status should be clear
             }
         }
     }
@@ -819,7 +819,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test close with interrupt status set.
+     * Test close with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -850,12 +850,12 @@ class StructuredTaskScopeTest {
 
             scope.join();
 
-            // invoke close with interrupt status set
+            // invoke close with interrupted status set
             Thread.currentThread().interrupt();
             try {
                 scope.close();
             } finally {
-                assertTrue(Thread.interrupted());   // clear interrupt status
+                assertTrue(Thread.interrupted());   // clear interrupted status
                 assertTrue(done.get());
             }
         }
@@ -903,7 +903,7 @@ class StructuredTaskScopeTest {
             try {
                 scope.close();
             } finally {
-                assertTrue(Thread.interrupted());   // clear interrupt status
+                assertTrue(Thread.interrupted());   // clear interrupted status
                 assertTrue(done.get());
             }
         }
