@@ -260,13 +260,31 @@ class WindowsLinkSupport {
                 if (resolveLinks &&
                     WindowsFileAttributes.isReparsePoint(fileData.attributes()))
                 {
-                    String result = getFinalPath(input);
-                    if (result == null) {
+                    String result = null;
+                    IOException suppressed = null;
+                    try {
+                        result = getFinalPath(input);
+                    } catch (IOException e) {
+                        suppressed = e;
+                    }
+                    if (result == null ||
+                        (Character.isLetter(input.toString().charAt(0)) &&
+                        result.charAt(0) == '\\' &&
+                        input.toString().charAt(1) == ':' &&
+                        result.charAt(1) == '\\' &&
+                        input.toString().charAt(2) == '\\')) {
                         // Fallback to slow path, usually because there is a sym
-                        // link to a file system that doesn't support sym links.
-                        WindowsPath resolved = resolveAllLinks(
-                            WindowsPath.createFromNormalizedPath(fs, path));
-                        result = getRealPath(resolved, false);
+                        // link to a file system that doesn't support sym links,
+                        // or a drive path was converted to a UNC path.
+                        try {
+                            WindowsPath resolved = resolveAllLinks(
+                                WindowsPath.createFromNormalizedPath(fs, path));
+                            result = getRealPath(resolved, false);
+                        } catch (IOException e) {
+                            if (suppressed != null)
+                                e.addSuppressed(suppressed);
+                            throw e;
+                        }
                     }
                     return result;
                 }
