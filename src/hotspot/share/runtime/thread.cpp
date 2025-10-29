@@ -574,10 +574,6 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
 // short-duration critical sections where we're concerned
 // about native mutex_t or HotSpot Mutex:: latency.
 
-bool Thread::TrySpinAcquire(volatile int * adr) {
-  return AtomicAccess::cmpxchg(adr, 0, 1) == 0;
-}
-
 void Thread::SpinAcquire(volatile int * adr) {
   if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return

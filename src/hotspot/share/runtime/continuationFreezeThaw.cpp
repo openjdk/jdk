@@ -1727,7 +1727,8 @@ static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kin
   const char* code_name;
   int bci;
   if (preempt_kind == Continuation::monitorenter) {
-    assert(top.is_interpreted_frame() || top.is_runtime_frame(), "");
+    assert(top.is_interpreted_frame() || top.is_runtime_frame(), "unexpected %sframe",
+      top.is_compiled_frame() ? "compiled " : top.is_native_frame() ? "native " : "");
     bool at_sync_method;
     if (top.is_interpreted_frame()) {
       m = top.interpreter_frame_method();
@@ -2736,7 +2737,6 @@ void ThawBase::throw_interrupted_exception(JavaThread* current, frame& top) {
   JRT_BLOCK
     THROW(vmSymbols::java_lang_InterruptedException());
   JRT_BLOCK_END
-  clear_anchor(current);
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames, bool is_top) {

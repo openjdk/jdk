@@ -609,7 +609,6 @@ protected:
   // Not for general synchronization use.
   static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
-  static bool TrySpinAcquire(volatile int * adr);
 
 #if defined(__APPLE__) && defined(AARCH64)
  private:

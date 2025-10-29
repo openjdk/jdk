@@ -316,12 +316,12 @@ oop ObjectMonitor::object() const {
 void ObjectMonitor::set_object_strong() {
   check_object_context();
   if (_object_strong.is_empty()) {
-    if (Thread::TrySpinAcquire(&_object_strong_lock)) {
+    if (AtomicAccess::cmpxchg(&_object_strong_lock, 0, 1) == 0) {
       if (_object_strong.is_empty()) {
         assert(_object.resolve() != nullptr, "");
         _object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
       }
-      Thread::SpinRelease(&_object_strong_lock);
+      AtomicAccess::release_store(&_object_strong_lock, 0);
     }
   }
 }
