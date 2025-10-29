@@ -4160,11 +4160,6 @@ void os::win32::initialize_system_info() {
   }
   _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
 
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Adjust MaxRAM according to the maximum virtual address space available.
-    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
-  }
-
   _is_windows_server = IsWindowsServer();
 
   initialize_performance_counter();
