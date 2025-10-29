@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -416,22 +415,19 @@ enum SignatureScheme {
         List<SignatureScheme> schemesToCheck;
 
         // No need to look up the names of the default signature schemes.
-        if (config.signatureSchemes == SupportedSigSchemes.DEFAULT
-                || config.signatureSchemes == null) {
+        if (config.signatureSchemes == SupportedSigSchemes.DEFAULT) {
             schemesToCheck = Arrays.asList(SignatureScheme.values());
         } else {
-            schemesToCheck = Arrays.stream(config.signatureSchemes)
-                    .map(name -> {
-                        var ss = SignatureScheme.nameOf(name);
-                        if (ss == null && SSLLogger.isOn
-                                && SSLLogger.isOn("ssl,handshake")) {
-                            SSLLogger.warning("Unavailable configured "
-                                    + "signature scheme: " + name);
-                        }
-                        return ss;
-                    })
-                    .filter(Objects::nonNull)
-                    .toList();
+            schemesToCheck = new ArrayList<>();
+            for (String name : config.signatureSchemes) {
+                var ss = SignatureScheme.nameOf(name);
+                if (ss != null) {
+                    schemesToCheck.add(ss);
+                } else {
+                    SSLLogger.logWarning("ssl,handshake", "Unavailable "
+                            + "configured signature scheme: " + name);
+                }
+            }
         }
 
         for (SignatureScheme ss: schemesToCheck) {
@@ -485,8 +481,7 @@ enum SignatureScheme {
                             "Unsupported signature scheme: " +
                             SignatureScheme.nameOf(ssid));
                 }
-            } else if ((config.signatureSchemes == null
-                    || config.signatureSchemes == SupportedSigSchemes.DEFAULT
+            } else if ((config.signatureSchemes == SupportedSigSchemes.DEFAULT
                     || Utilities.contains(config.signatureSchemes, ss.name))
                     && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
