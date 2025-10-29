@@ -1372,7 +1372,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (VerifyStackAtCalls) {
     st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
-    st->print("sd  t2, [sp, #%d]\n\t", - 3 * wordSize);
+    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
   }
 
   if (C->stub_function() == nullptr) {
