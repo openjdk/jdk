@@ -148,7 +148,6 @@ define CreateCDSArchive
   $1_$2_DUMP_EXTRA_ARG := $$($1_$2_COOPS_OPTION) $$($1_$2_COH_OPTION)
   $1_$2_DUMP_TYPE      := $(if $(findstring _nocoops, $2),-NOCOOPS,)$(if $(findstring _coh, $2),-COH,)
 
-  # Only G1 supports dumping the shared heap, so explicitly use G1 if the JVM supports it.
   $1_$2_CDS_DUMP_FLAGS := $(CDS_DUMP_FLAGS) $(if $(filter g1gc, $(JVM_FEATURES_$1)), -XX:+UseG1GC)
 
   ifeq ($(OPENJDK_TARGET_OS), windows)

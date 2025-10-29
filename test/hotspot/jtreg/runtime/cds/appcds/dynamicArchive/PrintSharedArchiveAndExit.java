@@ -43,8 +43,11 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
+import jdk.test.whitebox.WhiteBox;
+
 public class PrintSharedArchiveAndExit extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("top.jsa");
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String... args) throws Exception {
         runTest(PrintSharedArchiveAndExit::testPrtNExit);
@@ -92,8 +95,11 @@ public class PrintSharedArchiveAndExit extends DynamicArchiveTestBase {
                       .shouldContain("Shared Builtin Dictionary")
                       .shouldContain("Shared Unregistered Dictionary")
                       .shouldMatch("Number of shared symbols: \\d+")
-                      .shouldMatch("Number of shared strings: \\d+")
                       .shouldMatch("VM version: .*");
-                });
+                if (WB.canWriteMappedJavaHeapArchive()) {
+                      // With the mapping object archiving mechanism, the string table is dumped
+                      output.shouldMatch("Number of shared strings: \\d+");
+                }
+            });
     }
 }

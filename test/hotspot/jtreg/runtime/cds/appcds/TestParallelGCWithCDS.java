@@ -121,24 +121,23 @@ public class TestParallelGCWithCDS {
         out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
 
-        if (!dumpWithParallel && execWithParallel) {
-            // We dumped with G1, so we have an archived heap. At exec time, try to load them into
-            // a small ParallelGC heap that may be too small.
-            System.out.println("2. Exec with " + execGC);
-            out = TestCommon.exec(helloJar,
-                                    execGC,
-                                    small1,
-                                    small2,
-                                    "-Xmx4m",
-                                    coops,
-                                    "-Xlog:cds",
-                                    "Hello");
-            if (out.getExitValue() == 0) {
-                out.shouldContain(HELLO);
-                out.shouldNotContain(errMsg);
-            } else {
-                out.shouldNotHaveFatalError();
-            }
+        // Regardless of which GC dumped the heap, there will be an object archive, either
+        // created with mapping if dumped with G1, or streaming if dumped with parallel GC.
+        // At exec time, try to load them into a small ParallelGC heap that may be too small.
+        System.out.println("2. Exec with " + execGC);
+        out = TestCommon.exec(helloJar,
+                              execGC,
+                              small1,
+                              small2,
+                              "-Xmx4m",
+                              coops,
+                              "-Xlog:cds",
+                              "Hello");
+        if (out.getExitValue() == 0) {
+            out.shouldContain(HELLO);
+            out.shouldNotContain(errMsg);
+        } else {
+            out.shouldNotHaveFatalError();
         }
     }
 }

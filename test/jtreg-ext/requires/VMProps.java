@@ -126,6 +126,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
+        map.put("vm.cds.write.mapped.java.heap", this::vmCDSCanWriteMappedArchivedJavaHeap);
+        map.put("vm.cds.write.streamed.java.heap", this::vmCDSCanWriteStreamedArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
@@ -485,11 +487,28 @@ public class VMProps implements Callable<Map<String, String>> {
     /**
      * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
      *         with the current set of jtreg VM options. For example, false will be returned
-     *         if -XX:-UseCompressedClassPointers is specified,
+     *         if -XX:-UseCompressedClassPointers is specified.
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
-                     && isCDSRuntimeOptionsCompatible());
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
+    }
+
+    /**
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified.
+     */
+    protected String vmCDSCanWriteMappedArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteMappedJavaHeapArchive());
+    }
+
+    /**
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified.
+     */
+    protected String vmCDSCanWriteStreamedArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteStreamedJavaHeapArchive());
     }
 
     /**
@@ -512,31 +531,6 @@ public class VMProps implements Callable<Map<String, String>> {
       } else {
         return "false";
       }
-    }
-
-    /**
-     * @return true if the VM options specified via the "test.cds.runtime.options"
-     * property is compatible with writing Java heap objects into the CDS archive
-     */
-    protected boolean isCDSRuntimeOptionsCompatible() {
-        String jtropts = System.getProperty("test.cds.runtime.options");
-        if (jtropts == null) {
-            return true;
-        }
-        String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
-        String G1GC_ENABLED = "-XX:+UseG1GC";
-        String PARALLELGC_ENABLED = "-XX:+UseParallelGC";
-        String SERIALGC_ENABLED = "-XX:+UseSerialGC";
-        for (String opt : jtropts.split(",")) {
-            if (opt.equals(CCP_DISABLED)) {
-                return false;
-            }
-            if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
-                !opt.equals(G1GC_ENABLED) && !opt.equals(PARALLELGC_ENABLED) && !opt.equals(SERIALGC_ENABLED)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

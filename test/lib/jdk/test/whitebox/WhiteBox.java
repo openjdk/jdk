@@ -799,6 +799,8 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
+  public native boolean canWriteMappedJavaHeapArchive();
+  public native boolean canWriteStreamedJavaHeapArchive();
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
