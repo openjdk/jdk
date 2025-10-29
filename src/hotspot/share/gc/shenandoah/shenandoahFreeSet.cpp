@@ -767,7 +767,8 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
 
 template<typename Iter>
 HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region) {
-  ShenandoahHeapRegion* empty_region = nullptr;
+  assert(affiliation != ShenandoahAffiliation::FREE, "Must not");
+  ShenandoahHeapRegion* free_region = nullptr;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (r->affiliation() == affiliation) {
@@ -775,15 +776,15 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator, Shenandoa
       if (result != nullptr) {
         return result;
       }
-    } else if (empty_region == nullptr && r->affiliation() == FREE &&
+    } else if (free_region == nullptr && r->affiliation() == FREE &&
                (!_heap->is_concurrent_weak_root_in_progress() || !r->is_trash())) {
-      empty_region = r;
+      free_region = r;
     }
   }
   // Failed to allocate within any affiliated region, try the first free region in the partition.
-  if (empty_region != nullptr) {
-    HeapWord* result = try_allocate_in(empty_region, req, in_new_region);
-    assert(result != nullptr, "Allocate in free region in the partition must succeed.");
+  if (free_region != nullptr) {
+    HeapWord* result = try_allocate_in(free_region, req, in_new_region);
+    assert(result != nullptr, "Allocate in free region in the partition always succeed.");
     return result;
   }
   log_debug(gc, free)("Could not allocate collector region with affiliation: %s for request " PTR_FORMAT,
@@ -887,6 +888,7 @@ HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAll
 }
 
 HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req, bool &in_new_region) {
+  shenandoah_assert_heaplocked();
   ShenandoahFreeSetPartitionId which_partition = req.is_old()? ShenandoahFreeSetPartitionId::OldCollector: ShenandoahFreeSetPartitionId::Collector;
   HeapWord* result = nullptr;
   if (_partitions.alloc_from_left_bias(which_partition)) {
@@ -906,14 +908,9 @@ HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req,
     return nullptr;
   }
 
-  // We should expand old-gen if this can prevent an old-gen evacuation failure.  We don't care so much about
-  // promotion failures since they can be mitigated in a subsequent GC pass.  Would be nice to know if this
-  // allocation request is for evacuation or promotion.  Individual threads limit their use of PLAB memory for
-  // promotions, so we already have an assurance that any additional memory set aside for old-gen will be used
-  // only for old-gen evacuations.
-  if (req.is_old() && (_heap->young_generation()->free_unaffiliated_regions() > 0)) {
+  if (_heap->young_generation()->free_unaffiliated_regions() > 0) {
     // Try to steal an empty region from the mutator view.
-    return try_allocate_from_mutator(req, in_new_region);
+    result = try_allocate_from_mutator(req, in_new_region);
   }
 
   // This is it. Do not try to mix mutator and GC allocations, because adjusting region UWM
