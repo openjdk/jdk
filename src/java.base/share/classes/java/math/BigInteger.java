@@ -2904,7 +2904,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Calculate bitlength of the magnitude of this {@code BigInteger}.
      */
-    int magBitLength() {
+    int magBitLength() { /* package */
         int n = magBitLengthPlusOne - 1;
         if (n == -1) { // not initialized
             n = mag.length == 0 ? 0
