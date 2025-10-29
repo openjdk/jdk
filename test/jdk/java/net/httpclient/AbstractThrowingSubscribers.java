@@ -679,8 +679,8 @@ public abstract class AbstractThrowingSubscribers implements HttpServerAdapters 
 
         @Override
         public boolean test(Throwable throwable) {
-            // `UncheckedIOException` is peeled off by `HttpClientImpl::translateSendAsyncExecFailure`
-            return throwable instanceof CustomIOException;
+            return UncheckedIOException.class.isInstance(throwable)
+                    && CustomIOException.class.isInstance(throwable.getCause());
         }
 
         @Override
