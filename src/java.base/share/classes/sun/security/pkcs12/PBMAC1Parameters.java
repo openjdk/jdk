@@ -63,7 +63,7 @@ import sun.security.x509.AlgorithmId;
 final class PBMAC1Parameters {
 
     static final ObjectIdentifier pkcs5PBKDF2_OID =
-            ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
+            ObjectIdentifier.of(KnownOIDs.PBKDF2);
 
     private final String hmacAlgo;
     private final PBKDF2Parameters kdfParams;
@@ -116,37 +116,16 @@ final class PBMAC1Parameters {
      * Encode PBMAC1 parameters from components.
      */
     static byte[] encode(byte[] salt, int iterationCount, int keyLength,
-            String kdfHmac, String hmac, byte[] digest)
-            throws IOException, NoSuchAlgorithmException {
+            String kdfHmac, String hmac) throws NoSuchAlgorithmException {
 
         DerOutputStream out = new DerOutputStream();
-        DerOutputStream tmp0 = new DerOutputStream();
-        DerOutputStream tmp1 = new DerOutputStream();
-        DerOutputStream tmp2 = new DerOutputStream();
-        DerOutputStream tmp3 = new DerOutputStream();
 
         // keyDerivationFunc AlgorithmIdentifier {{PBMAC1-KDFs}}
-        tmp3.writeBytes(PBKDF2Parameters.encode(salt,
+        out.writeBytes(PBKDF2Parameters.encode(salt,
                 iterationCount, keyLength, kdfHmac));
 
         // messageAuthScheme AlgorithmIdentifier {{PBMAC1-MACs}}
-        tmp3.write(AlgorithmId.get(hmac));
-
-        // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
-        tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
-        tmp2.write(DerValue.tag_Sequence, tmp3);
-
-        tmp1.write(DerValue.tag_Sequence, tmp2);
-        tmp1.putOctetString(digest);
-
-        tmp0.write(DerValue.tag_Sequence, tmp1);
-        tmp0.putOctetString(
-                new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' });
-        // Unused, but must have non-zero positive value.
-        tmp0.putInteger(1);
-
-        // wrap everything into a SEQUENCE
-        out.write(DerValue.tag_Sequence, tmp0);
+        out.write(AlgorithmId.get(hmac));
         return out.toByteArray();
     }
 

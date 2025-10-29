@@ -27,6 +27,7 @@ package sun.security.util;
 
 import java.io.IOException;
 
+import sun.security.util.KnownOIDs;
 import sun.security.x509.AlgorithmId;
 
 /**
@@ -149,6 +150,7 @@ public final class PBKDF2Parameters {
 
     /*
      * Encode PBKDF2 parameters from components.
+     * The outer algorithm ID is also encoded in addition to the parameters.
      */
     public static byte[] encode(byte[] salt, int iterationCount,
             int keyLength, ObjectIdentifier prf) {
@@ -156,7 +158,6 @@ public final class PBKDF2Parameters {
 
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp0 = new DerOutputStream();
-        DerOutputStream tmp1 = new DerOutputStream();
 
         tmp0.putOctetString(salt);
         tmp0.putInteger(iterationCount);
@@ -166,7 +167,7 @@ public final class PBKDF2Parameters {
         tmp0.write(new AlgorithmId(prf));
 
         // id-PBKDF2 OBJECT IDENTIFIER ::= {pkcs-5 12}
-        out.putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1));
+        out.putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2));
         out.write(DerValue.tag_Sequence, tmp0);
 
         return new DerOutputStream().write(DerValue.tag_Sequence, out)

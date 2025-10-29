@@ -307,16 +307,35 @@ class MacData {
     static byte[] encode(String algName, byte[] digest, PBEParameterSpec p,
             String kdfHmac, String hmac, int keyLength)
             throws IOException, NoSuchAlgorithmException {
+
         final int iterations = p.getIterationCount();
         final byte[] macSalt = p.getSalt();
 
+        DerOutputStream tmp = new DerOutputStream();
+        DerOutputStream out = new DerOutputStream();
+
         if (algName.equals("PBMAC1")) {
-            return PBMAC1Parameters.encode(macSalt, iterations,
-                    keyLength, kdfHmac, hmac, digest);
+            DerOutputStream tmp1 = new DerOutputStream();
+            DerOutputStream tmp2 = new DerOutputStream();
+            DerOutputStream tmp3 = new DerOutputStream();
+
+            tmp3.writeBytes(PBMAC1Parameters.encode(macSalt, iterations,
+                    keyLength, kdfHmac, hmac));
+
+            // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
+            tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
+            tmp2.write(DerValue.tag_Sequence, tmp3);
+
+            tmp1.write(DerValue.tag_Sequence, tmp2);
+            tmp1.putOctetString(digest);
+
+            tmp.write(DerValue.tag_Sequence, tmp1);
+            tmp.putOctetString(
+                    new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' });
+            // Unused, but must have non-zero positive value.
+            tmp.putInteger(1);
         } else {
             final AlgorithmId digestAlgorithm = AlgorithmId.get(algName);
-            DerOutputStream out = new DerOutputStream();
-            DerOutputStream tmp = new DerOutputStream();
             DerOutputStream tmp2 = new DerOutputStream();
 
             tmp2.write(digestAlgorithm);
@@ -326,11 +345,10 @@ class MacData {
             tmp.write(DerValue.tag_Sequence, tmp2);
             tmp.putOctetString(macSalt);
             tmp.putInteger(iterations);
-
-            // wrap everything into a SEQUENCE
-            out.write(DerValue.tag_Sequence, tmp);
-            return out.toByteArray();
         }
+        // wrap everything into a SEQUENCE
+        out.write(DerValue.tag_Sequence, tmp);
+        return out.toByteArray();
     }
 
     private static String parseKdfHmac(String text) {

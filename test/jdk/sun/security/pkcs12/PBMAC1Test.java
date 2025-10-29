@@ -58,7 +58,7 @@ public class PBMAC1Test {
     //0020:000B  [2000]                 OID 1.2.840.113549.1.5.14 (PBMAC1)
     //002B:004A  [2001]                 SEQUENCE
     //002D:003A  [20010]                     SEQUENCE
-    //002F:000B  [200100]                         OID 1.2.840.113549.1.5.12 (PBKDF2WithHmacSHA1)
+    //002F:000B  [200100]                         OID 1.2.840.113549.1.5.12 (PBKDF2)
     //003A:002D  [200101]                         SEQUENCE
     //003C:0016  [2001010]                             OCTET STRING (20 bytes of salt)
     //0052:0004  [2001011]                             INTEGER 10000
@@ -76,7 +76,7 @@ public class PBMAC1Test {
         System.setProperty("keystore.pkcs12.macAlgorithm", "pbewithhmacsha256");
         var der = emptyP12();
         DerUtils.checkAlg(der, "2000", KnownOIDs.PBMAC1);
-        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2WithHmacSHA1);
+        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA256);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA256);
         DerUtils.checkInt(der, "2001011", 10000);
@@ -85,7 +85,7 @@ public class PBMAC1Test {
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWITHHMACSHA512");
         der = emptyP12();
         DerUtils.checkAlg(der, "2000", KnownOIDs.PBMAC1);
-        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2WithHmacSHA1);
+        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA512);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA512);
         DerUtils.checkInt(der, "2001011", 10000);
@@ -94,7 +94,7 @@ public class PBMAC1Test {
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWiThHmAcSHA512/224");
         der = emptyP12();
         DerUtils.checkAlg(der, "2000", KnownOIDs.PBMAC1);
-        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2WithHmacSHA1);
+        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA512$224);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA512$224);
         DerUtils.checkInt(der, "2001011", 10000);
@@ -105,7 +105,7 @@ public class PBMAC1Test {
                 "PBEWithHmacSHA512/224AndHmacSHA3-384");
         der = emptyP12();
         DerUtils.checkAlg(der, "2000", KnownOIDs.PBMAC1);
-        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2WithHmacSHA1);
+        DerUtils.checkAlg(der, "200100", KnownOIDs.PBKDF2);
         DerUtils.checkAlg(der, "20010130", KnownOIDs.HmacSHA512$224);
         DerUtils.checkAlg(der, "200110", KnownOIDs.HmacSHA3_384);
         DerUtils.checkInt(der, "2001011", 10000);
