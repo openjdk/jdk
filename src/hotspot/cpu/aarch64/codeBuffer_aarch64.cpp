@@ -29,6 +29,7 @@
 #include "runtime/sharedRuntime.hpp"
 
 void CodeBuffer::share_trampoline_for(address key, address dest, int caller_offset) {
+  assert(_finalize_stubs || _shared_trampoline_requests == nullptr, "stubs have been finalized already");
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
