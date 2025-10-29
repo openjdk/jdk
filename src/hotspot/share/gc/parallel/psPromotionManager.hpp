@@ -102,8 +102,6 @@ class PSPromotionManager {
   void process_array_chunk(PartialArrayState* state, bool stolen);
   void push_objArray(oop old_obj, oop new_obj);
 
-  void push_depth(ScannerTask task);
-
   inline void promotion_trace_event(oop new_obj, Klass* klass, size_t obj_size,
                                     uint age, bool tenured,
                                     const PSPromotionLAB* lab);
@@ -150,16 +148,12 @@ class PSPromotionManager {
   void flush_labs();
   void flush_string_dedup_requests() { _string_dedup_requests.flush(); }
 
-  void drain_stacks(bool totally_drain) {
-    drain_stacks_depth(totally_drain);
-  }
- public:
   void drain_stacks_cond_depth() {
     if (claimed_stack_depth()->size() > _target_stack_size) {
-      drain_stacks_depth(false);
+      drain_stacks(false);
     }
   }
-  void drain_stacks_depth(bool totally_drain);
+  void drain_stacks(bool totally_drain);
 
   bool stacks_empty() {
     return claimed_stack_depth()->is_empty();

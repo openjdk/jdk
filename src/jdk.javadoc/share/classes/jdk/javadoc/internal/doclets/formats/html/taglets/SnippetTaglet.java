@@ -462,6 +462,7 @@ public class SnippetTaglet extends BaseTaglet {
                %s
                ----------------- external -----------------
                %s
+               --------------------------------------------
                """.formatted(inline, external);
     }
 

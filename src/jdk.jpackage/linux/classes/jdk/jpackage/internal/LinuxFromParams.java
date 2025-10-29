@@ -39,9 +39,11 @@ import java.io.IOException;
 import java.util.Map;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
+import jdk.jpackage.internal.model.LinuxDebPackage;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxLauncherMixin;
-import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.LinuxRpmPackage;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.StandardPackageType;
 
 final class LinuxFromParams {
@@ -54,7 +56,9 @@ final class LinuxFromParams {
             final var launcher = launcherFromParams.create(launcherParams);
             final var shortcut = findLauncherShortcut(LINUX_SHORTCUT_HINT, params, launcherParams);
             return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(shortcut));
-        }), APPLICATION_LAYOUT).create();
+        }), (LinuxLauncher linuxLauncher, Launcher launcher) -> {
+            return LinuxLauncher.create(launcher, linuxLauncher);
+        }, APPLICATION_LAYOUT).create();
         return LinuxApplication.create(app);
     }
 
@@ -76,7 +80,7 @@ final class LinuxFromParams {
         return pkgBuilder;
     }
 
-    private static LinuxPackage createLinuxRpmPackage(
+    private static LinuxRpmPackage createLinuxRpmPackage(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var superPkgBuilder = createLinuxPackageBuilder(params, LINUX_RPM);
@@ -88,7 +92,7 @@ final class LinuxFromParams {
         return pkgBuilder.create();
     }
 
-    private static LinuxPackage createLinuxDebPackage(
+    private static LinuxDebPackage createLinuxDebPackage(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var superPkgBuilder = createLinuxPackageBuilder(params, LINUX_DEB);
@@ -97,16 +101,23 @@ final class LinuxFromParams {
 
         MAINTAINER_EMAIL.copyInto(params, pkgBuilder::maintainerEmail);
 
-        return pkgBuilder.create();
+        final var pkg = pkgBuilder.create();
+
+        // Show warning if license file is missing
+        if (pkg.licenseFile().isEmpty()) {
+            Log.verbose(I18N.getString("message.debs-like-licenses"));
+        }
+
+        return pkg;
     }
 
     static final BundlerParamInfo<LinuxApplication> APPLICATION = createApplicationBundlerParam(
             LinuxFromParams::createLinuxApplication);
 
-    static final BundlerParamInfo<LinuxPackage> RPM_PACKAGE = createPackageBundlerParam(
+    static final BundlerParamInfo<LinuxRpmPackage> RPM_PACKAGE = createPackageBundlerParam(
             LinuxFromParams::createLinuxRpmPackage);
 
-    static final BundlerParamInfo<LinuxPackage> DEB_PACKAGE = createPackageBundlerParam(
+    static final BundlerParamInfo<LinuxDebPackage> DEB_PACKAGE = createPackageBundlerParam(
             LinuxFromParams::createLinuxDebPackage);
 
     private static final BundlerParamInfo<String> LINUX_SHORTCUT_HINT = createStringBundlerParam(

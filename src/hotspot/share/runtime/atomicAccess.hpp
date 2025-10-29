@@ -859,7 +859,7 @@ class ScopedFence : public ScopedFenceGeneral<T> {
 
 // platform specific in-line definitions - must come before shared definitions
 
-#include OS_CPU_HEADER(atomic)
+#include OS_CPU_HEADER(atomicAccess)
 
 // shared in-line definitions
 

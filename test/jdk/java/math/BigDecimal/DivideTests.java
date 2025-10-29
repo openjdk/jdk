@@ -25,7 +25,6 @@
  * @test
  * @bug 4851776 4907265 6177836 6876282 8066842 8367603
  * @summary Some tests for the divide methods.
- * @author Joseph D. Darcy
  */
 
 import java.math.*;

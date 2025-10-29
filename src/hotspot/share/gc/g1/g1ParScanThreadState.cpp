@@ -57,22 +57,21 @@
 #define MAYBE_INLINE_EVACUATION NOT_DEBUG(inline) DEBUG_ONLY(NOINLINE)
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
-                                           G1RedirtyCardsQueueSet* rdcqs,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
                                            G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
-    _rdc_local_qset(rdcqs),
-    _ct(g1h->card_table()),
+    _ct(g1h->refinement_table()),
     _closures(nullptr),
     _plab_allocator(nullptr),
     _age_table(false),
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
     _worker_id(worker_id),
-    _last_enqueued_card(SIZE_MAX),
+    _num_cards_marked_dirty(0),
+    _num_cards_marked_to_cset(0),
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
@@ -88,7 +87,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
-    _evac_failure_enqueued_cards(0)
+    _num_cards_from_evac_failure(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -112,8 +111,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   initialize_numa_stats();
 }
 
-size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* rdc_buffers) {
-  *rdc_buffers = _rdc_local_qset.flush();
+size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num_workers) {
   flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats(num_workers);
@@ -147,8 +145,16 @@ size_t G1ParScanThreadState::lab_undo_waste_words() const {
   return _plab_allocator->undo_waste();
 }
 
-size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
-  return _evac_failure_enqueued_cards;
+size_t G1ParScanThreadState::num_cards_pending() const {
+  return _num_cards_marked_dirty + _num_cards_from_evac_failure;
+}
+
+size_t G1ParScanThreadState::num_cards_marked() const {
+  return num_cards_pending() + _num_cards_marked_to_cset;
+}
+
+size_t G1ParScanThreadState::num_cards_from_evac_failure() const {
+  return _num_cards_from_evac_failure;
 }
 
 #ifdef ASSERT
@@ -230,7 +236,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+  G1SkipCardMarkSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
   to_array->oop_iterate_range(&_scanner,
                               checked_cast<int>(claim._start),
@@ -250,7 +256,7 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
     // The source array is unused when processing states.
     _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
 
-  assert(_scanner.skip_card_enqueue_set(), "must be");
+  assert(_scanner.skip_card_mark_set(), "must be");
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
@@ -451,7 +457,7 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
       _string_dedup_requests.add(old);
     }
 
-    assert(_scanner.skip_card_enqueue_set(), "must be");
+    assert(_scanner.skip_card_mark_set(), "must be");
     obj->oop_iterate_backwards(&_scanner, klass);
 }
 
@@ -546,7 +552,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       // Instead, we use dest_attr.is_young() because the two values are always
       // equal: successfully allocated young regions must be survivor regions.
       assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
-      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+      G1SkipCardMarkSetter x(&_scanner, dest_attr.is_young());
       do_iterate_object(obj, old, klass, region_attr, dest_attr, age);
     }
 
@@ -569,7 +575,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
   assert(worker_id < _num_workers, "out of bounds access");
   if (_states[worker_id] == nullptr) {
     _states[worker_id] =
-      new G1ParScanThreadState(_g1h, rdcqs(),
+      new G1ParScanThreadState(_g1h,
                                worker_id,
                                _num_workers,
                                _collection_set,
@@ -595,21 +601,23 @@ void G1ParScanThreadStateSet::flush_stats() {
     // because it resets the PLAB allocator where we get this info from.
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
-    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers, &_rdc_buffers[worker_id]) * HeapWordSize;
-    size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
+    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
+    size_t pending_cards = pss->num_cards_pending();
+    size_t to_young_gen_cards = pss->num_cards_marked() - pss->num_cards_pending();
+    size_t evac_failure_cards = pss->num_cards_from_evac_failure();
+    size_t marked_cards = pss->num_cards_marked();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_enqueued_cards, G1GCPhaseTimes::MergePSSEvacFailExtra);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, pending_cards, G1GCPhaseTimes::MergePSSPendingCards);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, to_young_gen_cards, G1GCPhaseTimes::MergePSSToYoungGenCards);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_failure_cards, G1GCPhaseTimes::MergePSSEvacFail);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, marked_cards, G1GCPhaseTimes::MergePSSMarked);
 
     delete pss;
     _states[worker_id] = nullptr;
   }
-
-  G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-  dcq.merge_bufferlists(rdcqs());
-  rdcqs()->verify_empty();
 
   _flushed = true;
 }
@@ -652,7 +660,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, Kla
       // existing closure to scan evacuated objects; since we are iterating from a
       // collection set region (i.e. never a Survivor region), we always need to
       // gather cards for this case.
-      G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
+      G1SkipCardMarkSetter x(&_scanner, false /* skip_card_mark */);
       do_iterate_object(old, old, klass, attr, attr, m.age());
     }
 
@@ -709,9 +717,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                                                  G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
     _collection_set(collection_set),
-    _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
-    _rdc_buffers(NEW_C_HEAP_ARRAY(BufferNodeList, num_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
@@ -719,7 +725,6 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
 {
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
-    _rdc_buffers[i] = BufferNodeList();
   }
   memset(_surviving_young_words_total, 0, (collection_set->young_region_length() + 1) * sizeof(size_t));
 }
@@ -728,7 +733,6 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
-  FREE_C_HEAP_ARRAY(BufferNodeList, _rdc_buffers);
 }
 
 #if TASKQUEUE_STATS

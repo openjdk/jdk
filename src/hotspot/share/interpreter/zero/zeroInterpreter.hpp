@@ -36,7 +36,6 @@ class InterpreterCodelet;
 // of the c++ interpreter
 
 class ZeroInterpreter: public AbstractInterpreter {
-  friend class VMStructs;
  public:
   // Initialization/debugging
   static void       initialize_stub();
