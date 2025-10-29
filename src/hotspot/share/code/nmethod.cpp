@@ -2638,7 +2638,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
 // Main purpose is to reduce code cache pressure and get rid of
 // nmethods that don't seem to be all that relevant any longer.
 bool nmethod::is_cold() {
-  if (!MethodFlushing || is_native_method() || is_not_installed()) {
+  if (!MethodFlushing || is_not_installed()) {
     // No heuristic unloading at all
     return false;
   }
@@ -4306,6 +4306,46 @@ void nmethod::print_value_on_impl(outputStream* st) const {
 #if defined(SUPPORT_DATA_STRUCTS)
   print_on_with_msg(st, nullptr);
 #endif
+}
+
+void nmethod::print_code_snippet(outputStream* st, address addr) const {
+  if (entry_point() <= addr && addr < code_end()) {
+    // Pointing into the nmethod's code. Try to disassemble some instructions around addr.
+    // Determine conservative start and end points.
+    address start;
+    if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+        addr >= code_begin() + frame_complete_offset()) {
+      start = code_begin() + frame_complete_offset();
+    } else {
+      start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    }
+    address start_for_hex_dump = start; // We can choose a different starting point for hex dump, below.
+    address end = code_end();
+
+    // Try using relocations to find closer instruction start and end points.
+    // (Some platforms have variable length instructions and can only
+    // disassemble correctly at instruction start addresses.)
+    RelocIterator iter((nmethod*)this, start);
+    while (iter.next() && iter.addr() < addr) { // find relocation before addr
+      // Note: There's a relocation which doesn't point to an instruction start:
+      // ZBarrierRelocationFormatStoreGoodAfterMov with ZGC on x86_64
+      // We could detect and skip it, but hex dump is still usable when
+      // disassembler produces garbage in such a very rare case.
+      start = iter.addr();
+      // We want at least 64 Bytes ahead in hex dump.
+      if (iter.addr() <= (addr - 64)) start_for_hex_dump = iter.addr();
+    }
+    if (iter.has_current()) {
+      if (iter.addr() == addr) iter.next(); // find relocation after addr
+      if (iter.has_current()) end = iter.addr();
+    }
+
+    // Always print hex. Disassembler may still have problems when hitting an incorrect instruction start.
+    os::print_hex_dump(st, start_for_hex_dump, end, 1, /* print_ascii=*/false);
+    if (!Disassembler::is_abstract()) {
+      Disassembler::decode(start, end, st);
+    }
+  }
 }
 
 #ifndef PRODUCT

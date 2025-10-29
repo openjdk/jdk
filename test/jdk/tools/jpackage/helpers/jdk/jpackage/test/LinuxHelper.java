@@ -22,11 +22,11 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -90,9 +91,7 @@ public final class LinuxHelper {
 
     public static Path getDesktopFile(JPackageCommand cmd, String launcherName) {
         cmd.verifyIsOfType(PackageType.LINUX);
-        String desktopFileName = String.format("%s-%s.desktop", getPackageName(
-                cmd), Optional.ofNullable(launcherName).orElseGet(
-                        () -> cmd.name()).replaceAll("\\s+", "_"));
+        var desktopFileName = getLauncherDesktopFileName(cmd, launcherName);
         return cmd.appLayout().desktopIntegrationDirectory().resolve(
                 desktopFileName);
     }
@@ -202,6 +201,20 @@ public final class LinuxHelper {
             default:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    private static Path getFaIconFileName(JPackageCommand cmd, String mimeType) {
+        return Path.of(mimeType.replace('/', '-') + ".png");
+    }
+
+    static Path getLauncherDesktopFileName(JPackageCommand cmd, String launcherName) {
+        return Path.of(String.format("%s-%s.desktop", getPackageName(cmd),
+                Optional.ofNullable(launcherName).orElseGet(cmd::name).replaceAll("\\s+", "_")));
+    }
+
+    static Path getLauncherIconFileName(JPackageCommand cmd, String launcherName) {
+        return Path.of(String.format("%s.png",
+                Optional.ofNullable(launcherName).orElseGet(cmd::name).replaceAll("\\s+", "_")));
     }
 
     static PackageHandlers createDebPackageHandlers() {
@@ -423,7 +436,12 @@ public final class LinuxHelper {
         });
     }
 
-    static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
+    static void verifyDesktopIntegrationFiles(JPackageCommand cmd, boolean installed) {
+        verifyDesktopFiles(cmd, installed);
+        verifyAllIconsReferenced(cmd);
+    }
+
+    private static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
         final var desktopFiles = getDesktopFiles(cmd);
         try {
             if (installed) {
@@ -477,6 +495,39 @@ public final class LinuxHelper {
         return getPackageFiles(cmd).filter(path -> {
             return path.startsWith(packageDir);
         }).map(packageDir::relativize);
+    }
+
+    private static void verifyAllIconsReferenced(JPackageCommand cmd) {
+
+        var installCmd = Optional.ofNullable(cmd.unpackedPackageDirectory()).map(_ -> {
+            return cmd.createMutableCopy().setUnpackedPackageLocation(null);
+        }).orElse(cmd);
+
+        var installedIconFiles = relativePackageFilesInSubdirectory(
+                installCmd,
+                ApplicationLayout::desktopIntegrationDirectory
+        ).filter(path -> {
+            return ".png".equals(PathUtils.getSuffix(path));
+        }).map(installCmd.appLayout().desktopIntegrationDirectory()::resolve).collect(toSet());
+
+        var referencedIcons = getDesktopFiles(cmd).stream().map(path -> {
+            return new DesktopFile(path, false);
+        }).<Path>mapMulti((desktopFile, sink) -> {
+            desktopFile.findQuotedValue("Icon").map(Path::of).ifPresent(sink);
+            desktopFile.find("MimeType").ifPresent(str -> {
+                Stream.of(str.split(";"))
+                        .map(mimeType -> {
+                            return getFaIconFileName(cmd, mimeType);
+                        })
+                        .map(installCmd.appLayout().desktopIntegrationDirectory()::resolve)
+                        .forEach(sink);
+            });
+        }).collect(toSet());
+
+        var unreferencedIconFiles = Comm.compare(installedIconFiles, referencedIcons).unique1().stream().sorted().toList();
+
+        // Verify that all package icon (.png) files are referenced from package .desktop files.
+        TKit.assertEquals(List.of(), unreferencedIconFiles, "Check there are no unreferenced icon files in the package");
     }
 
     private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
@@ -661,16 +712,19 @@ public final class LinuxHelper {
         });
 
         test.addBundleVerifier(cmd -> {
-            final Path mimeTypeIconFileName = fa.getLinuxIconFileName();
-            if (mimeTypeIconFileName != null) {
-                // Verify there are xdg registration commands for mime icon file.
-                Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
-                        mimeTypeIconFileName);
+            Optional.of(fa).filter(FileAssociations::hasIcon)
+                    .map(FileAssociations::getMime)
+                    .map(mimeType -> {
+                        return getFaIconFileName(cmd, mimeType);
+                    }).ifPresent(mimeTypeIconFileName -> {
+                        // Verify there are xdg registration commands for mime icon file.
+                        Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
+                                mimeTypeIconFileName);
 
-                Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
-                scriptlets.entrySet().stream().forEach(e -> verifyIconInScriptlet(
-                        e.getKey(), e.getValue(), mimeTypeIcon));
-            }
+                        Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
+                        scriptlets.entrySet().stream().forEach(e -> verifyIconInScriptlet(
+                                e.getKey(), e.getValue(), mimeTypeIcon));
+                    });
         });
     }
 
