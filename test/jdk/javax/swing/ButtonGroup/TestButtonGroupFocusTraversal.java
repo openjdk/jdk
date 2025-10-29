@@ -163,7 +163,7 @@ public class TestButtonGroupFocusTraversal {
 
                 if (!textFieldFirst.equals(KeyboardFocusManager.getCurrentKeyboardFocusManager()
                         .getFocusOwner())) {
-                    robot.delay(100);
+                    robot.delay(300);
                     SwingUtilities.invokeAndWait(textFieldFirst::requestFocus);
                 }
 
