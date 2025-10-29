@@ -767,7 +767,7 @@ void ShenandoahFreeSet::add_promoted_in_place_region_to_old_collector(Shenandoah
 
 template<typename Iter>
 HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region) {
-  ShenandoahHeapRegion* free_region = nullptr;
+  ShenandoahHeapRegion* empty_region = nullptr;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (r->affiliation() == affiliation) {
@@ -775,13 +775,13 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator, Shenandoa
       if (result != nullptr) {
         return result;
       }
-    } else if (free_region == nullptr && r->affiliation() == FREE) {
-      free_region = r;
+    } else if (empty_region == nullptr && alloc_capacity(r) == ShenandoahHeapRegion::region_size_bytes()) {
+      empty_region = r;
     }
   }
   // Failed to allocate within any affiliated region, try the first free region in the partition.
-  if (free_region != nullptr) {
-    HeapWord* result = try_allocate_in(free_region, req, in_new_region);
+  if (empty_region != nullptr) {
+    HeapWord* result = try_allocate_in(empty_region, req, in_new_region);
     assert(result != nullptr, "Allocate in free region in the paritition must succeed.");
     return result;
   }
