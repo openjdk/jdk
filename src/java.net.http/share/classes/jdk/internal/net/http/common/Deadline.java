@@ -229,12 +229,11 @@ public final class Deadline implements Comparable<Deadline> {
      * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public long until(Deadline endExclusive, TemporalUnit unit) {
-        int delta = compareTo(endExclusive);
-        if (delta == 0) return 0;
         try {
             return deadline.until(endExclusive.deadline, unit);
         } catch (DateTimeException |        // "Instant exceeds minimum or maximum instant"
                  ArithmeticException _) {   // "long overflow"
+            int delta = compareTo(endExclusive);
             return delta < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
         }
     }
