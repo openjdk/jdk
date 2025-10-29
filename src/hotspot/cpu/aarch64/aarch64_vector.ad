@@ -390,25 +390,24 @@ source %{
   bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
     // Only SVE supports the predicate feature.
     if (UseSVE == 0) {
-      // On architectures that do not support the predicate feature, vector
-      // mask is stored in a normal vector with the type of "TypeVect" varing
-      // from "TypeVectA" to "TypeVectZ" based on the vector length in bytes.
-      // It cannot be a "TypeVectMask".
-      assert(vt->isa_vectmask() == nullptr, "mask type not match");
+      // On architectures that do not support predicate, masks are stored in
+      // general vector registers (TypeVect) with sizes ranging from TypeVectA
+      // to TypeVectX based on the vector size in bytes.
+      assert(vt->isa_vectmask() == nullptr, "mask type is not matched");
       return false;
     }
 
-    assert(vt->isa_vectmask(), "The mask type must be a TypeVectMask on SVE");
+    assert(vt->isa_vectmask() != nullptr, "expected TypeVectMask on SVE");
     switch (opcode) {
       case Op_VectorMaskToLong:
       case Op_VectorLongToMask:
-        // SVE does not have native predicate instructions for these two ops.
-        // Instead, they are implemented with vector instructions. Hence, to
-        // improve the performance, we prefer saving the mask in a vector as
-        // the input/output of these IRs.
+        // These operations lack native SVE predicate instructions and are
+        // implemented using general vector instructions instead. Use vector
+        // registers rather than predicate registers to save the mask for
+        // better performance.
         return false;
       default:
-        // By default, all the mask operations are implemented with predicate
+        // By default, the mask operations are implemented with predicate
         // instructions with a predicate input/output.
         return true;
     }
