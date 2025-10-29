@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,19 @@
  * @test
  * @bug 7026347
  * @summary X509CRL should have verify(PublicKey key, Provider sigProvider)
+ * @enablePreview
  */
 
-import java.io.ByteArrayInputStream;
-import java.security.*;
-import java.security.cert.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PEMDecoder;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.SignatureException;
+import java.security.cert.CRLException;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
 
 public class Verify {
 
@@ -144,23 +152,21 @@ public class Verify {
         }
     }
 
-    private static void setup() throws CertificateException, CRLException {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    private static void setup() {
 
+        final PEMDecoder pemDecoder = PEMDecoder.of();
         /* Create CRL */
-        ByteArrayInputStream inputStream =
-                new ByteArrayInputStream(crlStr.getBytes());
-        crl = (X509CRL)cf.generateCRL(inputStream);
+        crl = pemDecoder.decode(crlStr, X509CRL.class);
 
         /* Get public key of the CRL issuer cert */
-        inputStream = new ByteArrayInputStream(crlIssuerCertStr.getBytes());
-        X509Certificate cert
-                = (X509Certificate)cf.generateCertificate(inputStream);
-        crlIssuerCertPubKey = cert.getPublicKey();
+        crlIssuerCertPubKey = pemDecoder.decode(crlIssuerCertStr, X509Certificate.class)
+                .getPublicKey();
+
 
         /* Get public key of the self-signed Cert */
-        inputStream = new ByteArrayInputStream(selfSignedCertStr.getBytes());
-        selfSignedCertPubKey = cf.generateCertificate(inputStream).getPublicKey();
+        selfSignedCertPubKey = pemDecoder.decode(selfSignedCertStr, X509Certificate.class)
+                .getPublicKey();
+
     }
 
     private static void verifyCRL(PublicKey key, String providerName)
