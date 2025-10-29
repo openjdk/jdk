@@ -157,7 +157,10 @@ public:
   }
 
   template <class CT>
-  static const Type* int_type_xmeet(const CT* i1, const Type* t2);
+  static const Type* int_type_xmeet(const CT* i1, const CT* t2);
+
+  template <class CT>
+  static const Type* int_type_xjoin(const CT* i1, const CT* t2);
 
   template <class CT>
   static bool int_type_is_equal(const CT* t1, const CT* t2) {

@@ -23,6 +23,7 @@
  */
 
 #include "ci/ciMethodData.hpp"
+#include "ci/ciObject.hpp"
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -37,6 +38,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -45,6 +47,8 @@
 #include "opto/type.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -758,40 +762,18 @@ void Type::Initialize(Compile* current) {
 // Do the hash-cons trick.  If the Type already exists in the type table,
 // delete the current Type and return the existing Type.  Otherwise stick the
 // current Type in the Type table.
-const Type *Type::hashcons(void) {
+const Type* Type::hashcons() {
   DEBUG_ONLY(base());           // Check the assertion in Type::base().
   // Look up the Type in the Type dictionary
-  Dict *tdic = type_dict();
+  Dict* tdic = type_dict();
   Type* old = (Type*)(tdic->Insert(this, this, false));
-  if( old ) {                   // Pre-existing Type?
-    if( old != this )           // Yes, this guy is not the pre-existing?
-      delete this;              // Yes, Nuke this guy
-    assert( old->_dual, "" );
-    return old;                 // Return pre-existing
-  }
-
-  // Every type has a dual (to make my lattice symmetric).
-  // Since we just discovered a new Type, compute its dual right now.
-  assert( !_dual, "" );         // No dual yet
-  _dual = xdual();              // Compute the dual
-  if (equals(this, _dual)) {    // Handle self-symmetric
-    if (_dual != this) {
-      delete _dual;
-      _dual = this;
-    }
+  if (old == nullptr) {
     return this;
   }
-  assert( !_dual->_dual, "" );  // No reverse dual yet
-  assert( !(*tdic)[_dual], "" ); // Dual not in type system either
-  // New Type, insert into Type table
-  tdic->Insert((void*)_dual,(void*)_dual);
-  ((Type*)_dual)->_dual = this; // Finish up being symmetric
-#ifdef ASSERT
-  Type *dual_dual = (Type*)_dual->xdual();
-  assert( eq(dual_dual), "xdual(xdual()) should be identity" );
-  delete dual_dual;
-#endif
-  return this;                  // Return new Type
+  if (old != this) {
+    delete this;
+  }
+  return old;
 }
 
 //------------------------------eq---------------------------------------------
@@ -863,78 +845,106 @@ private:
     }
     const Type* res() const { return _res; }
   };
-  uint _depth;
-  GrowableArray<VerifyMeetResultEntry> _cache;
 
-  // With verification code, the meet of A and B causes the computation of:
-  // 1- meet(A, B)
-  // 2- meet(B, A)
-  // 3- meet(dual(meet(A, B)), dual(A))
-  // 4- meet(dual(meet(A, B)), dual(B))
-  // 5- meet(dual(A), dual(B))
-  // 6- meet(dual(B), dual(A))
-  // 7- meet(dual(meet(dual(A), dual(B))), A)
-  // 8- meet(dual(meet(dual(A), dual(B))), B)
+  uint _depth;
+  GrowableArray<VerifyMeetResultEntry> _meet_cache;
+  GrowableArray<VerifyMeetResultEntry> _join_cache;
+
+  // With verification code, the meet/join of A and B causes the computation of:
+  // 1-  meet(A, B)
+  // 2-  meet(B, A)
+  // 3-  join(A, B)
+  // 4-  join(B, A)
+  // 5-  meet(A, meet(A, B))
+  // 6-  meet(B, meet(A, B))
+  // 7-  join(A, meet(A, B))
+  // 8-  join(B, meet(A, B))
+  // 9-  meet(A, join(A, B))
+  // 10- meet(B, join(A, B))
+  // 11- join(A, join(A, B))
+  // 12- join(B, join(A, B))
   //
   // In addition the meet of A[] and B[] requires the computation of the meet of A and B.
   //
   // The meet of A[] and B[] triggers the computation of:
-  // 1- meet(A[], B[][)
-  //   1.1- meet(A, B)
-  //   1.2- meet(B, A)
-  //   1.3- meet(dual(meet(A, B)), dual(A))
-  //   1.4- meet(dual(meet(A, B)), dual(B))
-  //   1.5- meet(dual(A), dual(B))
-  //   1.6- meet(dual(B), dual(A))
-  //   1.7- meet(dual(meet(dual(A), dual(B))), A)
-  //   1.8- meet(dual(meet(dual(A), dual(B))), B)
+  // 1- meet(A[], B[])
+  //   1.1-  meet(A, B)
+  //   1.2-  meet(B, A)
+  //   1.3-  join(A, B)
+  //   1.4-  join(B, A)
+  //   1.5-  meet(A, meet(A, B))
+  //   1.6-  meet(B, meet(A, B))
+  //   1.7-  join(A, meet(A, B))
+  //   1.8-  join(B, meet(A, B))
+  //   1.9-  meet(A, join(A, B))
+  //   1.10- meet(B, join(A, B))
+  //   1.11- join(A, join(A, B))
+  //   1.12- join(B, join(A, B))
   // 2- meet(B[], A[])
-  //   2.1- meet(B, A) = 1.2
-  //   2.2- meet(A, B) = 1.1
-  //   2.3- meet(dual(meet(B, A)), dual(B)) = 1.4
-  //   2.4- meet(dual(meet(B, A)), dual(A)) = 1.3
-  //   2.5- meet(dual(B), dual(A)) = 1.6
-  //   2.6- meet(dual(A), dual(B)) = 1.5
-  //   2.7- meet(dual(meet(dual(B), dual(A))), B) = 1.8
-  //   2.8- meet(dual(meet(dual(B), dual(A))), B) = 1.7
+  //   2.1-  meet(B, A) = 1.2
+  //   2.2-  meet(A, B) = 1.1
+  //   1.3-  join(B, A) = 1.4
+  //   1.4-  join(A, B) = 1.3
+  //   1.5-  meet(B, meet(B, A)) = 1.6
+  //   1.6-  meet(A, meet(B, A)) = 1.5
+  //   1.7-  join(B, meet(B, A)) = 1.8
+  //   1.8-  join(A, meet(B, A)) = 1.7
+  //   1.9-  meet(B, join(B, A)) = 1.10
+  //   1.10- meet(A, join(B, A)) = 1.9
+  //   1.11- join(B, join(B, A)) = 1.12
+  //   1.12- join(A, join(B, A)) = 1.11
   // etc.
-  // The number of meet operations performed grows exponentially with the number of dimensions of the arrays but the number
-  // of different meet operations is linear in the number of dimensions. The function below caches meet results for the
-  // duration of the meet at the root of the recursive calls.
   //
-  const Type* meet(const Type* t1, const Type* t2) {
+  // When the dimensions of the arrays increase, the number of performed operations grows
+  // exponentially but the number of distinct operations grows linearly. The function below caches
+  // the results for the duration of the operation at the root of the recursive calls.
+  template <class F>
+  static const Type* meet_join(F op, GrowableArray<VerifyMeetResultEntry>& cache, const Type* t1, const Type* t2) {
     bool found = false;
-    const VerifyMeetResultEntry meet(t1, t2, nullptr);
-    int pos = _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+    const VerifyMeetResultEntry entry(t1, t2, nullptr);
+    int pos = cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(entry, found);
     const Type* res = nullptr;
     if (found) {
-      res = _cache.at(pos).res();
+      res = cache.at(pos).res();
     } else {
-      res = t1->xmeet(t2);
-      _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+      res = op(t1, t2);
+      cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
       found = false;
-      _cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(meet, found);
+      cache.find_sorted<VerifyMeetResultEntry, VerifyMeetResultEntry::compare>(entry, found);
       assert(found, "should be in table after it's added");
     }
     return res;
   }
 
-  void add(const Type* t1, const Type* t2, const Type* res) {
-    _cache.insert_sorted<VerifyMeetResultEntry::compare>(VerifyMeetResultEntry(t1, t2, res));
+  const Type* meet(const Type* t1, const Type* t2) {
+    auto op = [](const Type* t1, const Type* t2) {
+      return Type::xmeet(t1, t2);
+    };
+    return meet_join(op, _meet_cache, t1, t2);
   }
 
-  bool empty_cache() const {
-    return _cache.length() == 0;
+  const Type* join(const Type* t1, const Type* t2) {
+    auto op = [](const Type* t1, const Type* t2) {
+      return Type::xjoin(t1, t2);
+    };
+    return meet_join(op, _join_cache, t1, t2);
+  }
+
+  bool cache_is_empty() const {
+    assert(_meet_cache.is_empty() == _join_cache.is_empty(), "must be simultaneously empty or non-empty");
+    return _meet_cache.is_empty();
+  }
+
+  void empty_cache() {
+    _meet_cache.trunc_to(0);
+    _join_cache.trunc_to(0);
   }
 public:
-  VerifyMeetResult(Compile* C) :
-          _depth(0), _cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
+  VerifyMeetResult(Compile* C) : _depth(0),
+                                 _meet_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()),
+                                 _join_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
   }
 };
-
-void Type::assert_type_verify_empty() const {
-  assert(Compile::current()->_type_verify == nullptr || Compile::current()->_type_verify->empty_cache(), "cache should have been discarded");
-}
 
 class VerifyMeet {
 private:
@@ -951,188 +961,268 @@ public:
     assert(_C->_type_verify->_depth != 0, "");
     _C->_type_verify->_depth--;
     if (_C->_type_verify->_depth == 0) {
-      _C->_type_verify->_cache.trunc_to(0);
+      _C->_type_verify->empty_cache();
     }
   }
 
-  const Type* meet(const Type* t1, const Type* t2) const {
+  const Type* meet(const Type* t1, const Type* t2) {
     return _C->_type_verify->meet(t1, t2);
   }
 
-  void add(const Type* t1, const Type* t2, const Type* res) const {
-    _C->_type_verify->add(t1, t2, res);
+  const Type* join(const Type* t1, const Type* t2) {
+    return _C->_type_verify->join(t1, t2);
   }
 };
 
-void Type::check_symmetrical(const Type* t, const Type* mt, const VerifyMeet& verify) const {
+void Type::check_symmetrical(const Type* t1, const Type* t2, VerifyMeet& verify) {
   Compile* C = Compile::current();
-  const Type* mt2 = verify.meet(t, this);
-  if (mt != mt2) {
+  const Type* mt1 = verify.meet(t1, t2);
+  const Type* mt2 = verify.meet(t2, t1);
+  if (mt1 != mt2) {
     tty->print_cr("=== Meet Not Commutative ===");
-    tty->print("t           = ");   t->dump(); tty->cr();
-    tty->print("this        = ");      dump(); tty->cr();
-    tty->print("t meet this = "); mt2->dump(); tty->cr();
-    tty->print("this meet t = ");  mt->dump(); tty->cr();
+    tty->print("t1          = ");  t1->dump(); tty->cr();
+    tty->print("t2          = ");  t2->dump(); tty->cr();
+    tty->print("t1 meets t2 = "); mt1->dump(); tty->cr();
+    tty->print("t2 meets t1 = "); mt2->dump(); tty->cr();
     fatal("meet not commutative");
   }
-  const Type* dual_join = mt->_dual;
-  const Type* t2t    = verify.meet(dual_join,t->_dual);
-  const Type* t2this = verify.meet(dual_join,this->_dual);
 
-  // Interface meet Oop is Not Symmetric:
-  // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
-  // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
+  const Type* jt1 = verify.join(t1, t2);
+  const Type* jt2 = verify.join(t2, t1);
+  if (jt1 != jt2) {
+    tty->print_cr("=== Join Not Commutative ===");
+    tty->print("t1          = ");  t1->dump(); tty->cr();
+    tty->print("t2          = ");  t2->dump(); tty->cr();
+    tty->print("t1 joins t2 = "); jt1->dump(); tty->cr();
+    tty->print("t2 joins t1 = "); jt2->dump(); tty->cr();
+    fatal("join not commutative");
+  }
 
-  if (t2t != t->_dual || t2this != this->_dual) {
-    tty->print_cr("=== Meet Not Symmetric ===");
-    tty->print("t   =                   ");              t->dump(); tty->cr();
-    tty->print("this=                   ");                 dump(); tty->cr();
-    tty->print("mt=(t meet this)=       ");             mt->dump(); tty->cr();
+  const Type* mt = mt1;
+  const Type* jt = jt1;
 
-    tty->print("t_dual=                 ");       t->_dual->dump(); tty->cr();
-    tty->print("this_dual=              ");          _dual->dump(); tty->cr();
-    tty->print("mt_dual=                ");      mt->_dual->dump(); tty->cr();
+  const Type* t1mmt = verify.meet(t1, mt);
+  const Type* t2mmt = verify.meet(t2, mt);
+  const Type* t1jmt = verify.join(t1, mt);
+  const Type* t2jmt = verify.join(t2, mt);
+  const Type* t1mjt = verify.meet(t1, jt);
+  const Type* t2mjt = verify.meet(t2, jt);
+  const Type* t1jjt = verify.join(t1, jt);
+  const Type* t2jjt = verify.join(t2, jt);
 
-    tty->print("mt_dual meet t_dual=    "); t2t           ->dump(); tty->cr();
-    tty->print("mt_dual meet this_dual= "); t2this        ->dump(); tty->cr();
+  if (t1mmt != mt || t2mmt != mt || t1jmt != t1 || t2jmt != t2 ||
+      t1mjt != t1 || t2mjt != t2 || t1jjt != jt || t2jjt != jt) {
+    tty->print_cr("=== Fundamental Laws Violation ===");
+    tty->print("t1               = "); t1->dump(); tty->cr();
+    tty->print("t2               = "); t2->dump(); tty->cr();
+    tty->print("mt = t1 meets t2 = "); mt->dump(); tty->cr();
+    tty->print("jt = t1 joins t2 = "); jt->dump(); tty->cr();
 
-    fatal("meet not symmetric");
+    tty->print("t1 meets mt      = "); t1mmt->dump(); tty->cr();
+    tty->print("t2 meets mt      = "); t2mmt->dump(); tty->cr();
+    tty->print("t1 joins mt      = "); t1jmt->dump(); tty->cr();
+    tty->print("t2 joins mt      = "); t2jmt->dump(); tty->cr();
+    tty->print("t1 meets jt      = "); t1mjt->dump(); tty->cr();
+    tty->print("t2 meets jt      = "); t2mjt->dump(); tty->cr();
+    tty->print("t1 joins jt      = "); t1jjt->dump(); tty->cr();
+    tty->print("t2 joins jt      = "); t2jjt->dump(); tty->cr();
+
+    fatal("Fundamental Laws Violation");
   }
 }
 #endif
+
+template <class F>
+const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool include_speculative) {
+  if (t1->isa_narrowoop() && t2->isa_narrowoop()) {
+    const Type* result = meet_join_helper(op, t1->make_ptr(), t2->make_ptr(), include_speculative);
+    return result->make_narrowoop();
+  }
+  if (t1->isa_narrowklass() && t2->isa_narrowklass()) {
+    const Type* result = meet_join_helper(op, t1->make_ptr(), t2->make_ptr(), include_speculative);
+    return result->make_narrowklass();
+  }
+
+  t1 = t1->maybe_remove_speculative(include_speculative);
+  t2 = t2->maybe_remove_speculative(include_speculative);
+  const Type* rt = op(t1, t2);
+
+#ifdef ASSERT
+  Compile* C = Compile::current();
+  VerifyMeet verify(C);
+  check_symmetrical(t1, t2, verify);
+#endif
+
+  return rt;
+}
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
 // commutative and the lattice is symmetric.
 const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
-  if (isa_narrowoop() && t->isa_narrowoop()) {
-    const Type* result = make_ptr()->meet_helper(t->make_ptr(), include_speculative);
-    return result->make_narrowoop();
+  auto op = [](const Type* t1, const Type* t2) {
+    return xmeet(t1, t2); 
+  };
+  return meet_join_helper(op, this, t, include_speculative);
+}
+
+const Type* Type::join_helper(const Type* t, bool include_speculative) const {
+  auto op = [](const Type* t1, const Type* t2) {
+    return xjoin(t1, t2); 
+  };
+  return meet_join_helper(op, this, t, include_speculative);
+}
+
+const Type* Type::xmeet(const Type* t1, const Type* t2) {
+  if (t1 == t2) {
+    return t1;
   }
-  if (isa_narrowklass() && t->isa_narrowklass()) {
-    const Type* result = make_ptr()->meet_helper(t->make_ptr(), include_speculative);
-    return result->make_narrowklass();
+  if (t1 == Type::TOP) {
+    return t2;
+  } else if (t2 == Type::TOP) {
+    return t1;
+  } else if (t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
+    return Type::BOTTOM;
   }
 
-#ifdef ASSERT
-  Compile* C = Compile::current();
-  VerifyMeet verify(C);
-#endif
+  return t1->xmeet(t2);
+}
 
-  const Type *this_t = maybe_remove_speculative(include_speculative);
-  t = t->maybe_remove_speculative(include_speculative);
+const Type* Type::xjoin(const Type* t1, const Type* t2) {
+  if (t1 == t2) {
+    return t1;
+  }
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  } else if (t1 == Type::BOTTOM) {
+    return t2;
+  } else if (t2 == Type::BOTTOM) {
+    return t1;
+  }
 
-  const Type *mt = this_t->xmeet(t);
-#ifdef ASSERT
-  verify.add(this_t, t, mt);
-  if (isa_narrowoop() || t->isa_narrowoop()) {
-    return mt;
-  }
-  if (isa_narrowklass() || t->isa_narrowklass()) {
-    return mt;
-  }
-  this_t->check_symmetrical(t, mt, verify);
-  const Type *mt_dual = verify.meet(this_t->_dual, t->_dual);
-  this_t->_dual->check_symmetrical(t->_dual, mt_dual, verify);
-#endif
-  return mt;
+  return t1->xjoin(t2);
 }
 
 //------------------------------xmeet------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *Type::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+// Compute the MEET of two types. It returns a new Type object.
+const Type* Type::xmeet(const Type* t) const {
+  // Current "this->_base" is one of: Floatxxx, Doublexxx. For Bad, Multi, Control, Abio, Abstore,
+  // should have been handled by Type::xmeet(const Type* t1, const Type* t2) since their types are
+  // singleton and t1 must always be equal to t2.
+  switch (base()) {
+    default:
+      typerr(t);
 
-  // Meeting TOP with anything?
-  if( _base == Top ) return t;
-
-  // Meeting BOTTOM with anything?
-  if( _base == Bottom ) return BOTTOM;
-
-  // Current "this->_base" is one of: Bad, Multi, Control, Top,
-  // Abio, Abstore, Floatxxx, Doublexxx, Bottom, lastype.
-  switch (t->base()) {  // Switch on original type
-
-  // Cut in half the number of cases I must handle.  Only need cases for when
-  // the given enum "t->type" is less than or equal to the local enum "type".
-  case HalfFloatCon:
-  case FloatCon:
-  case DoubleCon:
-  case Int:
-  case Long:
-    return t->xmeet(this);
-
-  case OopPtr:
-    return t->xmeet(this);
-
-  case InstPtr:
-    return t->xmeet(this);
-
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-    return t->xmeet(this);
-
-  case AryPtr:
-    return t->xmeet(this);
-
-  case NarrowOop:
-    return t->xmeet(this);
-
-  case NarrowKlass:
-    return t->xmeet(this);
-
-  case Bad:                     // Type check
-  default:                      // Bogus type not in lattice
-    typerr(t);
-    return Type::BOTTOM;
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  case HalfFloatTop:
-    if (_base == HalfFloatTop) { return this; }
-  case HalfFloatBot:            // Half Float
-    if (_base == HalfFloatBot || _base == HalfFloatTop) { return HALF_FLOAT; }
-    if (_base == FloatBot || _base == FloatTop) { return Type::BOTTOM; }
-    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
-    typerr(t);
-    return Type::BOTTOM;
-
-  case FloatTop:
-    if (_base == FloatTop ) { return this; }
-  case FloatBot:                // Float
-    if (_base == FloatBot || _base == FloatTop) { return FLOAT; }
-    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
-    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
-    typerr(t);
-    return Type::BOTTOM;
-
-  case DoubleTop:
-    if (_base == DoubleTop) { return this; }
-  case DoubleBot:               // Double
-    if (_base == DoubleBot || _base == DoubleTop) { return DOUBLE; }
-    if (_base == HalfFloatTop || _base == HalfFloatBot) { return Type::BOTTOM; }
-    if (_base == FloatTop || _base == FloatBot) { return Type::BOTTOM; }
-    typerr(t);
-    return Type::BOTTOM;
-
-  // These next few cases must match exactly or it is a compile-time error.
-  case Control:                 // Control of code
-  case Abio:                    // State of world outside of program
-  case Memory:
-    if (_base == t->_base)  { return this; }
-    typerr(t);
-    return Type::BOTTOM;
-
-  case Top:                     // Top of the lattice
-    return this;
+    case HalfFloatTop:
+    case HalfFloatBot:
+    case FloatTop:
+    case FloatBot:
+    case DoubleTop:
+    case DoubleBot:
+      break;
   }
 
-  // The type is unchanged
-  return this;
+  switch (t->base()) {  // Switch on original type
+    case HalfFloatCon:
+    case FloatCon:
+    case DoubleCon:
+      return t->xmeet(this);
+
+    case HalfFloatTop:
+      if (base() == HalfFloatTop || base() == HalfFloatBot) {
+        return this;
+      }
+      typerr(t);
+    case HalfFloatBot:
+      if (base() == HalfFloatTop || base() == HalfFloatBot) {
+        return t;
+      }
+      typerr(t);
+
+    case FloatTop:
+      if (base() == FloatTop || base() == FloatBot) {
+        return this;
+      }
+      typerr(t);
+    case FloatBot:
+      if (base() == FloatTop || base() == FloatBot) {
+        return t;
+      }
+      typerr(t);
+
+    case DoubleTop:
+      if (base() == DoubleTop || base() == DoubleBot) {
+        return this;
+      }
+      typerr(t);
+    case DoubleBot:
+      if (base() == DoubleTop || base() == DoubleBot) {
+        return t;
+      }
+      typerr(t);
+
+    default:
+      typerr(t);
+  }
+}
+
+// Compute the JOIN of two types. This is similar to xmeet above.
+const Type* Type::xjoin(const Type* t) const {
+  switch (base()) {
+    default:
+      typerr(t);
+
+    case HalfFloatTop:
+    case HalfFloatBot:
+    case FloatTop:
+    case FloatBot:
+    case DoubleTop:
+    case DoubleBot:
+      break;
+  }
+
+  switch (t->base()) {  // Switch on original type
+    case HalfFloatCon:
+    case FloatCon:
+    case DoubleCon:
+      return t->xjoin(this);
+
+    case HalfFloatTop:
+      if (base() == HalfFloatTop || base() == HalfFloatBot) {
+        return t;
+      }
+      typerr(t);
+    case HalfFloatBot:
+      if (base() == HalfFloatTop || base() == HalfFloatBot) {
+        return this;
+      }
+      typerr(t);
+
+    case FloatTop:
+      if (base() == FloatTop || base() == FloatBot) {
+        return t;
+      }
+      typerr(t);
+    case FloatBot:
+      if (base() == FloatTop || base() == FloatBot) {
+        return this;
+      }
+      typerr(t);
+
+    case DoubleTop:
+      if (base() == DoubleTop || base() == DoubleBot) {
+        return t;
+      }
+      typerr(t);
+    case DoubleBot:
+      if (base() == DoubleTop || base() == DoubleBot) {
+        return this;
+      }
+      typerr(t);
+
+    default:
+      typerr(t);
+  }
 }
 
 //-----------------------------filter------------------------------------------
@@ -1141,13 +1231,6 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
   if (ft->empty())
     return Type::TOP;           // Canonical empty value
   return ft;
-}
-
-//------------------------------xdual------------------------------------------
-const Type *Type::xdual() const {
-  // Note: the base() accessor asserts the sanity of _base.
-  assert(_type_info[base()].dual_type != Bad, "implement with v-call");
-  return new Type(_type_info[_base].dual_type);
 }
 
 //------------------------------has_memory-------------------------------------
@@ -1347,59 +1430,34 @@ const TypeF *TypeF::make(float f) {
   return (TypeF*)(new TypeF(f))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeF::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
+const Type* TypeF::xmeet(const Type* t) const {
   // Current "this->_base" is FloatCon
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Int:
-  case Long:
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-
-  case FloatBot:
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case FloatCon:                // Float-constant vs Float-constant?
-    if( jint_cast(_f) != jint_cast(t->getf()) )         // unequal constants?
-                                // must compare bitwise as positive zero, negative zero and NaN have
-                                // all the same representation in C++
-      return FLOAT;             // Return generic float
-                                // Equal constants
-  case Top:
-  case FloatTop:
-    break;                      // Return the float constant
+  switch (t->base()) {
+    case FloatTop:
+      return this;
+    case FloatCon:
+      assert(jint_cast(_f) != jint_cast(t->getf()), "Equivalent instances should not appear here");
+      return Type::FLOAT;
+    case FloatBot:
+      return t;
+    default:
+      typerr(t);
   }
-  return this;                  // Return the float constant
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: symmetric
-const Type *TypeF::xdual() const {
-  return this;
+const Type* TypeF::xjoin(const Type* t) const {
+  // Current "this->_base" is FloatCon
+  switch (t->base()) {
+    case FloatTop:
+      return t;
+    case FloatCon:
+      assert(jint_cast(_f) != jint_cast(t->getf()), "Equivalent instances should not appear here");
+      return Type::make(FloatTop);
+    case FloatBot:
+      return this;
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------eq---------------------------------------------
@@ -1470,59 +1528,34 @@ const TypeH* TypeH::make(float f) {
   return (TypeH*)(new TypeH(hf))->hashcons();
 }
 
-//------------------------------xmeet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeH::xmeet(const Type* t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if (this == t) return this;  // Meeting same type-rep?
-
   // Current "this->_base" is FloatCon
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Int:
-  case Long:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-
-  case HalfFloatBot:
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case HalfFloatCon:            // Half float-constant vs Half float-constant?
-    if (_f != t->geth()) {      // unequal constants?
-                                // must compare bitwise as positive zero, negative zero and NaN have
-                                // all the same representation in C++
-      return HALF_FLOAT;        // Return generic float
-    }                           // Equal constants
-  case Top:
-  case HalfFloatTop:
-    break;                      // Return the Half float constant
+  switch (t->base()) {
+    case HalfFloatTop:
+      return this;
+    case HalfFloatCon:
+      assert(_f != t->is_half_float_constant()->_f, "Equivalent instances should not appear here");
+      return Type::HALF_FLOAT;
+    case HalfFloatBot:
+      return t;
+    default:
+      typerr(t);
   }
-  return this;                  // Return the Half float constant
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: symmetric
-const Type* TypeH::xdual() const {
-  return this;
+const Type* TypeH::xjoin(const Type* t) const {
+  // Current "this->_base" is FloatCon
+  switch (t->base()) {
+    case HalfFloatTop:
+      return t;
+    case HalfFloatCon:
+      assert(_f != t->is_half_float_constant()->_f, "Equivalent instances should not appear here");
+      return Type::make(HalfFloatTop);
+    case HalfFloatBot:
+      return this;
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------eq---------------------------------------------
@@ -1595,56 +1628,34 @@ const TypeD *TypeD::make(double d) {
   return (TypeD*)(new TypeD(d))->hashcons();
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeD::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is DoubleCon
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Int:
-  case Long:
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-
-  case DoubleBot:
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case DoubleCon:               // Double-constant vs Double-constant?
-    if( jlong_cast(_d) != jlong_cast(t->getd()) )       // unequal constants? (see comment in TypeF::xmeet)
-      return DOUBLE;            // Return generic double
-  case Top:
-  case DoubleTop:
-    break;
+const Type* TypeD::xmeet(const Type* t) const {
+  // Current "this->_base" is FloatCon
+  switch (t->base()) {
+    case DoubleTop:
+      return this;
+    case DoubleCon:
+      assert(jlong_cast(_d) != jlong_cast(t->getd()), "Equivalent instances should not appear here");
+      return Type::DOUBLE;
+    case DoubleBot:
+      return t;
+    default:
+      typerr(t);
   }
-  return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: symmetric
-const Type *TypeD::xdual() const {
-  return this;
+const Type* TypeD::xjoin(const Type* t) const {
+  // Current "this->_base" is FloatCon
+  switch (t->base()) {
+    case DoubleTop:
+      return t;
+    case DoubleCon:
+      assert(jlong_cast(_d) != jlong_cast(t->getd()), "Equivalent instances should not appear here");
+      return Type::make(DoubleTop);
+    case DoubleBot:
+      return this;
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------eq---------------------------------------------
@@ -1815,12 +1826,17 @@ bool TypeInt::contains(const TypeInt* t) const {
 }
 
 const Type* TypeInt::xmeet(const Type* t) const {
-  return TypeIntHelper::int_type_xmeet(this, t);
+  if (base() != Int || t->base() != Int) {
+    typerr(t);
+  }
+  return TypeIntHelper::int_type_xmeet(this, t->is_int());
 }
 
-const Type* TypeInt::xdual() const {
-  return new TypeInt(TypeIntPrototype<jint, juint>{{_lo, _hi}, {_ulo, _uhi}, _bits},
-                     _widen, !_is_dual);
+const Type* TypeInt::xjoin(const Type* t) const {
+  if (base() != Int || t->base() != Int) {
+    typerr(t);
+  }
+  return TypeIntHelper::int_type_xjoin(this, t->is_int());
 }
 
 const Type* TypeInt::widen(const Type* old, const Type* limit) const {
@@ -1943,12 +1959,17 @@ bool TypeLong::contains(const TypeLong* t) const {
 }
 
 const Type* TypeLong::xmeet(const Type* t) const {
-  return TypeIntHelper::int_type_xmeet(this, t);
+  if (base() != Long || t->base() != Long) {
+    typerr(t);
+  }
+  return TypeIntHelper::int_type_xmeet(this, t->is_long());
 }
 
-const Type* TypeLong::xdual() const {
-  return new TypeLong(TypeIntPrototype<jlong, julong>{{_lo, _hi}, {_ulo, _uhi}, _bits},
-                      _widen, !_is_dual);
+const Type* TypeLong::xjoin(const Type* t) const {
+  if (base() != Long || t->base() != Long) {
+    typerr(t);
+  }
+  return TypeIntHelper::int_type_xjoin(this, t->is_long());
 }
 
 const Type* TypeLong::widen(const Type* old, const Type* limit) const {
@@ -2149,40 +2170,24 @@ const Type **TypeTuple::fields( uint arg_cnt ) {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeTuple::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is Tuple
-  switch (t->base()) {          // switch on original type
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case Tuple: {                 // Meeting 2 signatures?
-    const TypeTuple *x = t->is_tuple();
-    assert( _cnt == x->_cnt, "" );
-    const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
-    for( uint i=0; i<_cnt; i++ )
-      fields[i] = field_at(i)->xmeet( x->field_at(i) );
-    return TypeTuple::make(_cnt,fields);
+const Type* TypeTuple::xmeet(const Type* t) const {
+  const TypeTuple* x = t->is_tuple();
+  assert(_cnt == x->_cnt, "mismatched shape: %d != %d", _cnt, x->_cnt);
+  const Type** fields = (const Type**)(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
+  for (uint i = 0; i < _cnt; i++) {
+    fields[i] = field_at(i)->meet_speculative(x->field_at(i));
   }
-  case Top:
-    break;
-  }
-  return this;                  // Return the double constant
+  return TypeTuple::make(_cnt, fields);
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeTuple::xdual() const {
-  const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
-  for( uint i=0; i<_cnt; i++ )
-    fields[i] = _fields[i]->dual();
-  return new TypeTuple(_cnt,fields);
+const Type* TypeTuple::xjoin(const Type* t) const {
+  const TypeTuple* x = t->is_tuple();
+  assert(_cnt == x->_cnt, "mismatched shape: %d != %d", _cnt, x->_cnt);
+  const Type** fields = (const Type**)(Compile::current()->type_arena()->AmallocWords(_cnt * sizeof(Type*)));
+  for (uint i = 0; i < _cnt; i++) {
+    fields[i] = field_at(i)->join_speculative(x->field_at(i));
+  }
+  return TypeTuple::make(_cnt, fields);
 }
 
 //------------------------------eq---------------------------------------------
@@ -2269,42 +2274,59 @@ const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable)
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeAry::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is Ary
-  switch (t->base()) {          // switch on original type
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case Array: {                 // Meeting 2 arrays?
-    const TypeAry* a = t->is_ary();
-    const Type* size = _size->xmeet(a->_size);
-    const TypeInt* isize = size->isa_int();
-    if (isize == nullptr) {
-      assert(size == Type::TOP || size == Type::BOTTOM, "");
-      return size;
-    }
-    return TypeAry::make(_elem->meet_speculative(a->_elem),
-                         isize, _stable && a->_stable);
-  }
-  case Top:
-    break;
-  }
-  return this;                  // Return the double constant
+const Type* TypeAry::xmeet(const Type* t) const {
+  const TypeAry* a = t->is_ary();
+  const TypeInt* size = _size->meet(a->_size)->is_int();
+  return TypeAry::make(meet_elem(_elem, a->_elem), size, _stable && a->_stable);
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeAry::xdual() const {
-  const TypeInt* size_dual = _size->dual()->is_int();
-  size_dual = normalize_array_size(size_dual);
-  return new TypeAry(_elem->dual(), size_dual, !_stable);
+const Type* TypeAry::xjoin(const Type* t) const {
+  const TypeAry* a = t->is_ary();
+  const Type* size = _size->join(a->_size);
+  if (size == Type::TOP) {
+    return Type::TOP;
+  }
+  const Type* elem = join_elem(_elem, a->_elem);
+  if (elem->empty()) {
+    return Type::TOP;
+  }
+  return TypeAry::make(elem, size->is_int(), _stable || a->_stable);
+}
+
+// These help us avoid implementing meet and join of unrelated type in Type::xmeet/xjoin. This is
+// useful to narrow the scope of this uncommon interaction between unrelated types.
+const Type* TypeAry::meet_elem(const Type* elem_type1, const Type* elem_type2) {
+  if (elem_type1 == Type::TOP) {
+    return elem_type2;
+  } else if (elem_type2 == Type::TOP) {
+    return elem_type1;
+  }
+  if (elem_type1 == Type::BOTTOM || elem_type2 == Type::BOTTOM) {
+    return Type::BOTTOM;
+  }
+  BasicType bt1 = elem_type1->basic_type();
+  BasicType bt2 = elem_type2->basic_type();
+  if (bt1 == bt2 || (!is_java_primitive(bt1) && !is_java_primitive(bt2))) {
+    return elem_type1->meet_speculative(elem_type2);
+  }
+  return Type::BOTTOM;
+}
+
+const Type* TypeAry::join_elem(const Type* elem_type1, const Type* elem_type2) {
+  if (elem_type1 == Type::BOTTOM) {
+    return elem_type2;
+  } else if (elem_type2 == Type::BOTTOM) {
+    return elem_type1;
+  }
+  if (elem_type1 == Type::TOP || elem_type2 == Type::TOP) {
+    return Type::TOP;
+  }
+  BasicType bt1 = elem_type1->basic_type();
+  BasicType bt2 = elem_type2->basic_type();
+  if (bt1 == bt2 || (is_reference_type(bt1, true) && is_reference_type(bt2, true))) {
+    return elem_type1->join_speculative(elem_type2);
+  }
+  return Type::TOP;
 }
 
 //------------------------------eq---------------------------------------------
@@ -2450,48 +2472,6 @@ const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   }
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types. Since each TypeVect is the only instance of
-// its species, meeting often returns itself
-const Type* TypeVect::xmeet(const Type* t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if (this == t) {
-    return this;
-  }
-
-  // Current "this->_base" is Vector
-  switch (t->base()) {          // switch on original type
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-  case VectorMask:
-  case VectorA:
-  case VectorS:
-  case VectorD:
-  case VectorX:
-  case VectorY:
-  case VectorZ: {                // Meeting 2 vectors?
-    const TypeVect* v = t->is_vect();
-    assert(base() == v->base(), "");
-    assert(length() == v->length(), "");
-    assert(element_basic_type() == v->element_basic_type(), "");
-    return this;
-  }
-  case Top:
-    break;
-  }
-  return this;
-}
-
-//------------------------------xdual------------------------------------------
-// Since each TypeVect is the only instance of its species, it is self-dual
-const Type* TypeVect::xdual() const {
-  return this;
-}
-
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeVect::eq(const Type* t) const {
@@ -2608,50 +2588,80 @@ const Type *TypePtr::xmeet(const Type *t) const {
   return res;
 }
 
-const Type *TypePtr::xmeet_helper(const Type *t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is AnyPtr
-  switch (t->base()) {          // switch on original type
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
-  case AnyPtr: {                // Meeting to AnyPtrs
-    const TypePtr *tp = t->is_ptr();
-    const TypePtr* speculative = xmeet_speculative(tp);
-    int depth = meet_inline_depth(tp->inline_depth());
-    return make(AnyPtr, meet_ptr(tp->ptr()), meet_offset(tp->offset()), speculative, depth);
-  }
-  case RawPtr:                  // For these, flip the call around to cut down
-  case OopPtr:
-  case InstPtr:                 // on the cases I have to handle.
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-    return t->xmeet(this);      // Call in reverse direction
-  default:                      // All else is a mistake
+const Type* TypePtr::xmeet_helper(const Type* t) const {
+  if (base() != AnyPtr) {
     typerr(t);
-
   }
-  return this;
+
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      const TypePtr* speculative = xmeet_speculative(tp);
+      int depth = meet_inline_depth(tp->inline_depth());
+      return make(AnyPtr, meet_ptr(tp->ptr()), meet_offset(tp->offset()), speculative, depth);
+    }
+    case RawPtr:
+    case OopPtr:
+    case InstPtr:
+    case AryPtr:
+    case MetadataPtr:
+    case KlassPtr:
+    case InstKlassPtr:
+    case AryKlassPtr:
+      // Call in reverse direction
+      return t->is_ptr()->xmeet(this);
+    default:
+      typerr(t);
+  }
+}
+
+const Type* TypePtr::xjoin(const Type* t) const {
+  const Type* res = xjoin_helper(t);
+  if (res->isa_ptr() == nullptr) {
+    return res;
+  }
+
+  const TypePtr* res_ptr = res->is_ptr();
+  if (res_ptr->speculative() != nullptr) {
+    // type->speculative() is null means that speculation is no better
+    // than type, i.e. type->speculative() == type. So there are 2
+    // ways to represent the fact that we have no useful speculative
+    // data and we should use a single one to be able to test for
+    // equality between types. Check whether type->speculative() ==
+    // type and set speculative to null if it is the case.
+    if (res_ptr->remove_speculative() == res_ptr->speculative()) {
+      return res_ptr->remove_speculative();
+    }
+  }
+
+  return res;
+}
+
+const Type* TypePtr::xjoin_helper(const Type* t) const {
+  if (base() != AnyPtr) {
+    typerr(t);
+  }
+
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      return make(AnyPtr, join_ptr(tp->ptr()), join_offset(tp->offset()), speculative, depth);
+    }
+    case RawPtr:
+    case OopPtr:
+    case InstPtr:
+    case AryPtr:
+    case MetadataPtr:
+    case KlassPtr:
+    case InstKlassPtr:
+    case AryKlassPtr:
+      // Call in reverse direction
+      return t->is_ptr()->xjoin(this);
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------meet_offset------------------------------------
@@ -2664,11 +2674,17 @@ int TypePtr::meet_offset( int offset ) const {
   return _offset;
 }
 
-//------------------------------dual_offset------------------------------------
-int TypePtr::dual_offset( ) const {
-  if( _offset == OffsetTop ) return OffsetBot;// Map 'TOP' into 'BOTTOM'
-  if( _offset == OffsetBot ) return OffsetTop;// Map 'BOTTOM' into 'TOP'
-  return _offset;               // Map everything else into self
+int TypePtr::join_offset(int o) const {
+  if (_offset == OffsetBot) {
+    return o;
+  } else if (o == OffsetBot) {
+    return _offset;
+  }
+  if (_offset != o) {
+    return OffsetTop;
+  } else {
+    return _offset;
+  }
 }
 
 //------------------------------xdual------------------------------------------
@@ -2676,9 +2692,6 @@ int TypePtr::dual_offset( ) const {
 const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
   BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
 };
-const Type *TypePtr::xdual() const {
-  return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), dual_speculative(), dual_inline_depth());
-}
 
 //------------------------------xadd_offset------------------------------------
 int TypePtr::xadd_offset( intptr_t offset ) const {
@@ -2758,16 +2771,6 @@ const Type* TypePtr::cleanup_speculative() const {
 }
 
 /**
- * dual of the speculative part of the type
- */
-const TypePtr* TypePtr::dual_speculative() const {
-  if (_speculative == nullptr) {
-    return nullptr;
-  }
-  return _speculative->dual()->is_ptr();
-}
-
-/**
  * meet of the speculative parts of 2 types
  *
  * @param other  type to meet with
@@ -2800,11 +2803,32 @@ const TypePtr* TypePtr::xmeet_speculative(const TypePtr* other) const {
   return this_spec->meet(other_spec)->is_ptr();
 }
 
-/**
- * dual of the inline depth for this type (used for speculation)
- */
-int TypePtr::dual_inline_depth() const {
-  return -inline_depth();
+const TypePtr* TypePtr::xjoin_speculative(const TypePtr* other) const {
+  bool this_has_spec = (_speculative != nullptr);
+  bool other_has_spec = (other->speculative() != nullptr);
+
+  if (!this_has_spec && !other_has_spec) {
+    return nullptr;
+  }
+
+  // If we are at a point where control flow meets and one branch has
+  // a speculative type and the other has not, we join the speculative
+  // type of one branch with the actual type of the other. If the
+  // actual type is exact and the speculative is as well, then the
+  // result is a speculative type which is exact and we can continue
+  // speculation further.
+  const TypePtr* this_spec = _speculative;
+  const TypePtr* other_spec = other->speculative();
+
+  if (!this_has_spec) {
+    this_spec = this;
+  }
+
+  if (!other_has_spec) {
+    other_spec = other;
+  }
+
+  return this_spec->join(other_spec)->is_ptr();
 }
 
 /**
@@ -2814,6 +2838,10 @@ int TypePtr::dual_inline_depth() const {
  */
 int TypePtr::meet_inline_depth(int depth) const {
   return MAX2(inline_depth(), depth);
+}
+
+int TypePtr::join_inline_depth(int depth) const {
+  return MIN2(inline_depth(), depth);
 }
 
 /**
@@ -3059,22 +3087,16 @@ intptr_t TypeRawPtr::get_con() const {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeRawPtr::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
+const Type* TypeRawPtr::xmeet(const Type* t) const {
   // Current "this->_base" is RawPtr
-  switch( t->base() ) {         // switch on original type
-  case Bottom:                  // Ye Olde Default
-    return t;
-  case Top:
-    return this;
-  case AnyPtr:                  // Meeting to AnyPtrs
+  switch (t->base()) {
+  case AnyPtr:
     break;
-  case RawPtr: {                // might be top, bot, any/not or constant
+  case RawPtr: {
     enum PTR tptr = t->is_ptr()->ptr();
     enum PTR ptr = meet_ptr( tptr );
-    if( ptr == Constant ) {     // Cannot be equal constants, so...
+    if( ptr == Constant ) {
+      // Same constant cases have been handled in Type::xmeet(const Type*, const Type*)
       if( tptr == Constant && _ptr != Constant)  return t;
       if( _ptr == Constant && tptr != Constant)  return this;
       ptr = NotNull;            // Fall down in lattice
@@ -3082,14 +3104,6 @@ const Type *TypeRawPtr::xmeet( const Type *t ) const {
     return make( ptr );
   }
 
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-    return TypePtr::BOTTOM;     // Oop meet raw is not well defined
   default:                      // All else is a mistake
     typerr(t);
   }
@@ -3111,10 +3125,48 @@ const Type *TypeRawPtr::xmeet( const Type *t ) const {
   return this;
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeRawPtr::xdual() const {
-  return new TypeRawPtr( dual_ptr(), _bits );
+const Type* TypeRawPtr::xjoin(const Type* t) const {
+  // Current "this->_base" is RawPtr
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, tp->offset(), tp->speculative(), tp->inline_depth());
+        case NotNull:
+        case BotPTR:
+          return this->ptr() == Constant ? this : make(ptr);
+        default:
+          typerr(t);
+      }
+    }
+
+    case RawPtr: {
+      const TypeRawPtr* tp = t->is_rawptr();
+      enum PTR ptr = join_ptr(tp->ptr());
+      // this->ptr() can only be Constant, NotNull, BotPTR
+      if (ptr != Constant) {
+        // Neither is a constant
+        return make(ptr);
+      }
+
+      // At least 1 is a constant
+      if (this->ptr() == Constant && tp->ptr() == Constant) {
+        assert(this->_bits != tp->_bits, "should have been handled in Type::xjoin");
+        return TypePtr::make(AnyPtr, TopPTR, 0);
+      } else if (this->ptr() == Constant) {
+        return this;
+      } else {
+        assert(tp->ptr() == Constant, "");
+        return tp;
+      }
+    }
+
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------add_offset-------------------------------------
@@ -3250,10 +3302,6 @@ bool TypeInterfaces::eq(ciInstanceKlass* k) const {
 uint TypeInterfaces::hash() const {
   assert(_initialized, "must be");
   return _hash;
-}
-
-const Type* TypeInterfaces::xdual() const {
-  return this;
 }
 
 void TypeInterfaces::compute_hash() {
@@ -3411,12 +3459,6 @@ void TypeInterfaces::verify_is_loaded() const {
 }
 #endif
 
-// Can't be implemented because there's no way to know if the type is above or below the center line.
-const Type* TypeInterfaces::xmeet(const Type* t) const {
-  ShouldNotReachHere();
-  return Type::xmeet(t);
-}
-
 bool TypeInterfaces::singleton(void) const {
   ShouldNotReachHere();
   return Type::singleton();
@@ -3555,41 +3597,11 @@ const TypeKlassPtr* TypeOopPtr::as_klass_type(bool try_for_exact) const {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is OopPtr
-  switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
-  default:                      // All else is a mistake
+const Type* TypeOopPtr::xmeet_helper(const Type *t) const {
+  if (base() != OopPtr) {
     typerr(t);
-
-  case RawPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-    return TypePtr::BOTTOM;     // Oop meet raw is not well defined
-
+  }
+  switch (t->base()) {          // switch on original type
   case AnyPtr: {
     // Found an AnyPtr type vs self-OopPtr type
     const TypePtr *tp = t->is_ptr();
@@ -3623,19 +3635,54 @@ const Type *TypeOopPtr::xmeet_helper(const Type *t) const {
 
   case InstPtr:                  // For these, flip the call around to cut down
   case AryPtr:
-    return t->xmeet(this);      // Call in reverse direction
-
-  } // End of switch
-  return this;                  // Return the double constant
+    return t->is_oopptr()->xmeet_helper(this);      // Call in reverse direction
+  
+  default:
+    typerr(t);
+  }
 }
 
+const Type* TypeOopPtr::xjoin_helper(const Type* t) const {
+  if (base() != OopPtr) {
+    typerr(t);
+  }
 
-//------------------------------xdual------------------------------------------
-// Dual of a pure heap pointer.  No relevant klass or oop information.
-const Type *TypeOopPtr::xdual() const {
-  assert(klass() == Compile::current()->env()->Object_klass(), "no klasses here");
-  assert(const_oop() == nullptr,             "no constants here");
-  return new TypeOopPtr(_base, dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      int offset = join_offset(tp->offset());
+      PTR ptr = join_ptr(tp->ptr());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      switch (tp->ptr()) {
+        case Null:
+        case TopPTR:
+          return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+        case BotPTR:
+        case NotNull: {
+          int instance_id = join_instance_id(InstanceBot);
+          return make(ptr, offset, instance_id, speculative, depth);
+        }
+        default:
+          typerr(t);
+      }
+    }
+
+    case OopPtr: {
+      const TypeOopPtr* tp = t->is_oopptr();
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      return make(join_ptr(tp->ptr()), join_offset(tp->offset()), instance_id, speculative, depth);
+    }
+
+    case InstPtr:
+    case AryPtr:
+      return t->is_oopptr()->xjoin_helper(this);
+    
+    default:
+      typerr(t);
+  }
 }
 
 //--------------------------make_from_klass_common-----------------------------
@@ -3890,23 +3937,31 @@ int TypeOopPtr::meet_instance_id( int instance_id ) const {
   return _instance_id;
 }
 
-//------------------------------dual_instance_id--------------------------------
-int TypeOopPtr::dual_instance_id( ) const {
-  if( _instance_id == InstanceTop ) return InstanceBot; // Map TOP into BOTTOM
-  if( _instance_id == InstanceBot ) return InstanceTop; // Map BOTTOM into TOP
-  return _instance_id;              // Map everything else into self
+int TypeOopPtr::join_instance_id(int uid) const {
+  if (_instance_id == InstanceBot) {
+    return uid;
+  } else if (uid == InstanceBot) {
+    return _instance_id;
+  }
+  if (_instance_id != uid) {
+    return InstanceTop;
+  } else {
+    return _instance_id;
+  }
 }
 
-
 const TypeInterfaces* TypeOopPtr::meet_interfaces(const TypeOopPtr* other) const {
-  if (above_centerline(_ptr) && above_centerline(other->_ptr)) {
-    return _interfaces->union_with(other->_interfaces);
-  } else if (above_centerline(_ptr) && !above_centerline(other->_ptr)) {
-    return other->_interfaces;
-  } else if (above_centerline(other->_ptr) && !above_centerline(_ptr)) {
-    return _interfaces;
+  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+    typerr(other);
   }
-  return _interfaces->intersection_with(other->_interfaces);
+  return interfaces()->intersection_with(other->interfaces());
+}
+
+const TypeInterfaces* TypeOopPtr::join_interfaces(const TypeOopPtr* other) const {
+  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+    typerr(other);
+  }
+  return interfaces()->union_with(other->interfaces());
 }
 
 /**
@@ -4124,39 +4179,11 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst, const T
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
+const Type* TypeInstPtr::xmeet_helper(const Type* t) const {
   // Current "this->_base" is Pointer
   switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
   default:                      // All else is a mistake
     typerr(t);
-
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case RawPtr: return TypePtr::BOTTOM;
 
   case AryPtr: {                // All arrays inherit from Object class
     // Call in reverse direction to avoid duplication
@@ -4293,7 +4320,6 @@ const Type *TypeInstPtr::xmeet_helper(const Type *t) const {
   } // End of case InstPtr
 
   } // End of switch
-  return this;                  // Return the double constant
 }
 
 template<class T> TypePtr::MeetResult TypePtr::meet_instptr(PTR& ptr, const TypeInterfaces*& interfaces, const T* this_type, const T* other_type,
@@ -4401,6 +4427,138 @@ template<class T> TypePtr::MeetResult TypePtr::meet_instptr(PTR& ptr, const Type
   return LCA;
 }
 
+const Type* TypeInstPtr::xjoin_helper(const Type* t) const {
+  if (base() != InstPtr) {
+    typerr(t);
+  }
+
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+        case NotNull:
+        case BotPTR: {
+          int instance_id = join_instance_id(InstanceBot);
+          return make(ptr, klass(), interfaces(), klass_is_exact(), const_oop(), offset, instance_id, speculative, depth);
+        }
+        default:
+          typerr(t);
+      }
+    }
+
+    case OopPtr: {
+      const TypeOopPtr* tp = t->is_oopptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      switch (tp->ptr()) {
+        case NotNull:
+        case BotPTR:
+          return make(ptr, klass(), interfaces(), klass_is_exact(), const_oop(), offset, instance_id, speculative, depth);
+        default:
+          typerr(t);
+      }
+    }
+
+    case InstPtr: {
+      const TypeInstPtr* tp = t->is_instptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      const TypeInterfaces* interfaces = join_interfaces(tp);
+
+      // Join 2 constants
+      if (const_oop() != nullptr && tp->const_oop() != nullptr) {
+        if (const_oop() != tp->const_oop()) {
+          return TypePtr::make(AnyPtr, TopPTR, offset, speculative, depth);
+        } else {
+          return make(Constant, klass(), interfaces, true, const_oop(), offset, instance_id, speculative, depth);
+        }
+      }
+
+      // From here, at least one of the operand is not constant
+      ciObject* oop = const_oop() != nullptr ? const_oop() : tp->const_oop();
+      // For TypeInstPtr, klass() must return a non-null ciInstanceKlass
+      ciInstanceKlass* klass1 = instance_klass();
+      ciInstanceKlass* klass2 = tp->instance_klass();
+      bool xk1 = klass_is_exact();
+      bool xk2 = tp->klass_is_exact();
+
+      if (xk1 && xk2) {
+        if (exact_klass() == tp->exact_klass()) {
+          return make(ptr, klass1, interfaces, true, oop, offset, instance_id, speculative, depth);
+        } else {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      } else if (xk1) {
+        assert(klass1->is_loaded(), "pointer to an exact type must be loaded");
+        // We can have a TypeInstPtr of an exact interface. In that case, klass() is Object and
+        // interfaces() will be not empty. Very confusing.
+        if ((klass1->is_java_lang_Object() && klass2->is_java_lang_Object() && this->interfaces() == interfaces) ||
+            (klass2->is_loaded() && klass1->is_subtype_of(klass2) && interfaces->eq(klass1))) {
+          // Supertypes of a loaded class should also be loaded
+          return make(ptr, klass1, interfaces, true, oop, offset, instance_id, speculative, depth);
+        } else {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      } else if (xk2) {
+        assert(klass2->is_loaded(), "pointer to an exact type must be loaded");
+        if ((klass2->is_java_lang_Object() && klass1->is_java_lang_Object() && tp->interfaces() == interfaces) ||
+            (klass1->is_loaded() && klass2->is_subtype_of(klass1) && interfaces->eq(klass2))) {
+          return make(ptr, klass2, interfaces, true, oop, offset, instance_id, speculative, depth);
+        } else {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      }
+
+      if (!klass1->is_loaded() || !klass2->is_loaded()) {
+        if (klass1->is_java_lang_Object()) {
+          // Everything subtypes object, so the join would return the other type regardless
+          return make(ptr, klass2, interfaces, false, oop, offset, instance_id, speculative, depth);
+        } else if (klass2->is_java_lang_Object()) {
+          return make(ptr, klass1, interfaces, false, oop, offset, instance_id, speculative, depth);
+        } else if (klass1 == klass2) {
+          return make(ptr, klass1, interfaces, false, oop, offset, instance_id, speculative, depth);
+        } else {
+          // The current behavior is saying that no non-null instance satisfy this join, this seems
+          // only correct if we recompile when the unloaded classes get loaded
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      }
+
+      // There is no opposite of LCA, there exists a non-null object o subtyping both A and B iff A
+      // is a subtype of B or B is a subtype of A
+      assert(oop == nullptr, "const oop should have exact klass");
+      ciKlass* res_klass;
+      if (klass1->is_subtype_of(klass2)) {
+        res_klass = klass1;
+      } else if (klass2->is_subtype_of(klass1)) {
+        res_klass = klass2;
+      } else {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+      }
+
+      return make(ptr, res_klass, interfaces, false, nullptr, offset, instance_id, speculative, depth);
+    }
+
+    case AryPtr:
+      return t->is_oopptr()->xjoin_helper(this);
+    default:
+      typerr(t);
+  }
+}
+
 //------------------------java_mirror_type--------------------------------------
 ciType* TypeInstPtr::java_mirror_type() const {
   // must be a singleton type
@@ -4410,14 +4568,6 @@ ciType* TypeInstPtr::java_mirror_type() const {
   if( klass() != ciEnv::current()->Class_klass() )  return nullptr;
 
   return const_oop()->as_instance()->java_mirror_type();
-}
-
-
-//------------------------------xdual------------------------------------------
-// Dual: do NOT dual on klasses.  This means I do NOT understand the Java
-// inheritance mechanism.
-const Type *TypeInstPtr::xdual() const {
-  return new TypeInstPtr(dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
 //------------------------------eq---------------------------------------------
@@ -4807,30 +4957,11 @@ bool TypeAryPtr::maybe_java_subtype_of_helper(const TypeOopPtr* other, bool this
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+  if (base() != AryPtr) {
+    typerr(t);
+  }
   // Current "this->_base" is Pointer
   switch (t->base()) {          // switch on original type
-
-  // Mixing ints & oops happens when javac reuses local variables
-  case Int:
-  case Long:
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
   default:                      // All else is a mistake
     typerr(t);
 
@@ -4853,7 +4984,8 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
       int instance_id = meet_instance_id(tp->instance_id());
       return TypeOopPtr::make(ptr, offset, instance_id, speculative, depth);
     }
-    default: ShouldNotReachHere();
+    default:
+      typerr(t);
     }
   }
 
@@ -4881,12 +5013,6 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     default: ShouldNotReachHere();
     }
   }
-
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case RawPtr: return TypePtr::BOTTOM;
 
   case AryPtr: {                // Meeting 2 references?
     const TypeAryPtr *tap = t->is_aryptr();
@@ -4984,7 +5110,6 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
     }
   }
   }
-  return this;                  // Lint noise
 }
 
 
@@ -5081,11 +5206,137 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   return result;
 }
 
+const Type* TypeAryPtr::xjoin_helper(const Type* t) const {
+  if (base() != AryPtr) {
+    typerr(t);
+  }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeAryPtr::xdual() const {
-  return new TypeAryPtr(dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id(), is_autobox_cache(), dual_speculative(), dual_inline_depth());
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, offset, speculative, depth);
+        case NotNull:
+        case BotPTR: {
+          int instance_id = join_instance_id(InstanceBot);
+          return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), offset, instance_id, speculative, depth, is_autobox_cache());
+        }
+        default:
+          typerr(t);
+      }
+    }
+
+    case OopPtr: {
+      const TypeOopPtr* tp = t->is_oopptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      switch (tp->ptr()) {
+        case NotNull:
+        case BotPTR:
+          return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), offset, instance_id, speculative, depth, is_autobox_cache());
+        default:
+          typerr(t);
+      }
+    }
+
+    case InstPtr: {
+      const TypeInstPtr* tp = t->is_instptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+      if (tp->klass()->is_java_lang_Object() && !tp->klass_is_exact() && _array_interfaces->contains(tp->interfaces())) {
+        return make(ptr, const_oop(), _ary, klass(), klass_is_exact(), offset, instance_id, speculative, depth, is_autobox_cache());
+      } else {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+      }
+    }
+
+    case AryPtr: {
+      const TypeAryPtr* tp = t->is_aryptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      int instance_id = join_instance_id(tp->instance_id());
+      const TypePtr* speculative = xjoin_speculative(tp);
+      int depth = join_inline_depth(tp->inline_depth());
+
+      // Join of 2 constants
+      if (const_oop() != nullptr && tp->const_oop() != nullptr) {
+        if (const_oop() == tp->const_oop()) {
+          return make(ptr, const_oop(), _ary, klass(), true, offset, instance_id, speculative, depth);
+        } else {
+          return TypePtr::make(AnyPtr, TopPTR, offset, speculative, depth);
+        }
+      }
+
+      const Type* elem1 = elem();
+      const Type* elem2 = tp->elem();
+      const Type* ary_elem = TypeAry::join_elem(elem1, elem2);
+      if (ary_elem->empty() || (ary_elem->make_ptr() != nullptr && ary_elem->make_ptr()->ptr() == Null)) {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+      }
+
+      const TypeInt* ary_size = _ary->_size->join(tp->_ary->_size)->isa_int();
+      if (ary_size == nullptr) {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+      }
+
+      ciObject* oop = const_oop() != nullptr ? const_oop() : tp->const_oop();
+      const TypeAry* ary = TypeAry::make(ary_elem, ary_size, _ary->_stable || tp->_ary->_stable);
+      bool xk = this->klass_is_exact() || tp->klass_is_exact();
+      bool autobox_cache = this->is_autobox_cache() || tp->is_autobox_cache();
+
+      if (elem1 == Type::BOTTOM || elem2 == Type::BOTTOM) {
+        return make(ptr, oop, ary, elem1 == Type::BOTTOM ? tp->klass() : klass(), xk, offset, instance_id, speculative, depth, autobox_cache);
+      } else if (is_java_primitive(elem1->basic_type()) || is_java_primitive(elem2->basic_type())) {
+        // One of the operand is a primitive array
+        if (elem()->isa_int() && tp->elem()->isa_int()) {
+          // Maybe we are joining an int[] and a char[]
+          if (klass() == tp->klass()) {
+            return make(ptr, oop, ary, klass(), xk, offset, instance_id, speculative, depth, autobox_cache);
+          } else {
+            return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+          }
+        }
+
+        return make(ptr, oop, ary, nullptr, xk, offset, instance_id, speculative, depth, autobox_cache);
+      }
+
+      const TypeKlassPtr* elem1_klass = elem1->make_ptr()->is_oopptr()->as_klass_type(false);
+      const TypeKlassPtr* elem2_klass = elem2->make_ptr()->is_oopptr()->as_klass_type(false);
+      bool xk1 = klass_is_exact();
+      bool xk2 = tp->klass_is_exact();
+
+      if (xk1 && xk2) {
+        if (elem1_klass != elem2_klass) {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      } else if (xk1) {
+        if (!elem1_klass->higher_equal(elem2_klass)) {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      } else if (xk2) {
+        if (!elem2_klass->higher_equal(elem1_klass)) {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset, speculative, depth);
+        }
+      }
+
+      return make(ptr, oop, ary, nullptr, xk, offset, instance_id, speculative, depth, autobox_cache);
+    }
+
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------dump2------------------------------------------
@@ -5208,12 +5459,6 @@ bool TypeNarrowPtr::eq( const Type *t ) const {
   return false;
 }
 
-const Type *TypeNarrowPtr::xdual() const {    // Compute dual right now.
-  const TypePtr* odual = _ptrtype->dual()->is_ptr();
-  return make_same_narrowptr(odual);
-}
-
-
 const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_speculative) const {
   if (isa_same_narrowptr(kills)) {
     const Type* ft =_ptrtype->filter_helper(is_same_narrowptr(kills)->_ptrtype, include_speculative);
@@ -5231,59 +5476,6 @@ const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_specula
   } else {
     return Type::TOP;
   }
-}
-
-//------------------------------xmeet------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeNarrowPtr::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  if (t->base() == base()) {
-    const Type* result = _ptrtype->xmeet(t->make_ptr());
-    if (result->isa_ptr()) {
-      return make_hash_same_narrowptr(result->is_ptr());
-    }
-    return result;
-  }
-
-  // Current "this->_base" is NarrowKlass or NarrowOop
-  switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case AnyPtr:
-  case RawPtr:
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  } // End of switch
-
-  return this;
 }
 
 #ifndef PRODUCT
@@ -5402,30 +5594,12 @@ const TypeMetadataPtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+  if (base() != MetadataPtr) {
+    typerr(t);
+  }
 
   // Current "this->_base" is OopPtr
   switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
   default:                      // All else is a mistake
     typerr(t);
 
@@ -5449,15 +5623,6 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     }
   }
 
-  case RawPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-    return TypePtr::BOTTOM;     // Oop meet raw is not well defined
-
   case MetadataPtr: {
     const TypeMetadataPtr *tp = t->is_metadataptr();
     int offset = meet_offset(tp->offset());
@@ -5478,14 +5643,49 @@ const Type *TypeMetadataPtr::xmeet( const Type *t ) const {
     break;
   }
   } // End of switch
-  return this;                  // Return the double constant
 }
 
+const Type* TypeMetadataPtr::xjoin(const Type* t) const {
+  if (base() != MetadataPtr) {
+    typerr(t);
+  }
 
-//------------------------------xdual------------------------------------------
-// Dual of a pure metadata pointer.
-const Type *TypeMetadataPtr::xdual() const {
-  return new TypeMetadataPtr(dual_ptr(), metadata(), dual_offset());
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
+        case NotNull:
+        case BotPTR:
+          return make(ptr, _metadata, offset);
+        default:
+          typerr(t);
+      }
+    }
+
+    case MetadataPtr: {
+      const TypeMetadataPtr* tp = t->is_metadataptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      ciMetadata* metadata = this->metadata();
+      if (tp->metadata() != nullptr) {
+        if (metadata == nullptr) {
+          metadata = tp->metadata();
+        } else {
+          return TypePtr::make(AnyPtr, TopPTR, offset);
+        }
+      }
+
+      return make(ptr, metadata, offset);
+    }
+
+    default:
+      typerr(t);
+  }
 }
 
 //------------------------------dump2------------------------------------------
@@ -5614,14 +5814,17 @@ const Type *TypeKlassPtr::filter_helper(const Type *kills, bool include_speculat
 }
 
 const TypeInterfaces* TypeKlassPtr::meet_interfaces(const TypeKlassPtr* other) const {
-  if (above_centerline(_ptr) && above_centerline(other->_ptr)) {
-    return _interfaces->union_with(other->_interfaces);
-  } else if (above_centerline(_ptr) && !above_centerline(other->_ptr)) {
-    return other->_interfaces;
-  } else if (above_centerline(other->_ptr) && !above_centerline(_ptr)) {
-    return _interfaces;
+  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+    typerr(other);
   }
-  return _interfaces->intersection_with(other->_interfaces);
+  return interfaces()->intersection_with(other->interfaces());
+}
+
+const TypeInterfaces* TypeKlassPtr::join_interfaces(const TypeKlassPtr* other) const {
+  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
+    typerr(other);
+  }
+  return interfaces()->union_with(other->interfaces());
 }
 
 //------------------------------get_con----------------------------------------
@@ -5776,31 +5979,13 @@ const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
 
 //------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.
-const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+const Type* TypeInstKlassPtr::xmeet(const Type* t) const {
+  if (base() != InstKlassPtr) {
+    typerr(t);
+  }
 
   // Current "this->_base" is Pointer
   switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
   default:                      // All else is a mistake
     typerr(t);
 
@@ -5822,13 +6007,6 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
     default: typerr(t);
     }
   }
-
-  case RawPtr:
-  case MetadataPtr:
-  case OopPtr:
-  case AryPtr:                  // Meet with AryPtr
-  case InstPtr:                 // Meet with InstPtr
-    return TypePtr::BOTTOM;
 
   //
   //             A-top         }
@@ -5921,10 +6099,83 @@ const Type    *TypeInstKlassPtr::xmeet( const Type *t ) const {
   return this;                  // Return the double constant
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type    *TypeInstKlassPtr::xdual() const {
-  return new TypeInstKlassPtr(dual_ptr(), klass(), _interfaces, dual_offset());
+const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
+  if (base() != InstKlassPtr) {
+    typerr(t);
+  }
+
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
+        case NotNull:
+        case BotPTR:
+          return make(ptr, klass(), interfaces(), offset);
+        default:
+          typerr(t);
+      }
+    }
+
+    case InstKlassPtr: {
+      const TypeInstKlassPtr* tp = t->is_instklassptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      const TypeInterfaces* interfaces = join_interfaces(tp);
+
+      // For TypeInstKlassPtr, klass() must return a non-null ciInstanceKlass
+      ciInstanceKlass* klass1 = instance_klass();
+      ciInstanceKlass* klass2 = tp->instance_klass();
+      bool xk1 = klass_is_exact();
+      bool xk2 = tp->klass_is_exact();
+      if (xk1 && xk2) {
+        if (klass1 == klass2) {
+          return make(ptr, klass1, interfaces, offset);
+        } else {
+          return TypePtr::make(AnyPtr, TopPTR, offset);
+        }
+      } else if (xk1) {
+        // When the exact klass pointer is an interface, the klass() is Object and the interfaces()
+        // is not empty
+        if ((klass1->is_java_lang_Object() && klass2->is_java_lang_Object() && this->interfaces() == interfaces) ||
+            (klass1->is_subtype_of(klass2) && interfaces->eq(klass1))) {
+          return make(ptr, klass1, interfaces, offset);
+        } else {
+          return TypePtr::make(AnyPtr, TopPTR, offset);
+        }
+      } else if (xk2) {
+        if ((klass2->is_java_lang_Object() && klass1->is_java_lang_Object() && tp->interfaces() == interfaces) ||
+            (klass2->is_subtype_of(klass1) && interfaces->eq(klass2))) {
+          return make(ptr, klass2, interfaces, offset);
+        } else {
+          return TypePtr::make(AnyPtr, TopPTR, offset);
+        }
+      } else {
+        // There is no opposite of LCA, there exists a type subtyping both A and B iff A is a
+        // subtype of B or B is a subtype of A
+        ciKlass* subklass;
+        if (klass1->is_subtype_of(klass2)) {
+          subklass = klass1;
+        } else if (klass2->is_subtype_of(klass1)) {
+          subklass = klass2;
+        } else {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset);
+        }
+
+        return make(ptr, subklass, interfaces, offset);
+      }
+    }
+
+    case AryKlassPtr:
+      return t->is_aryklassptr()->xjoin(this);
+    
+    default:
+      typerr(t);
+  }
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
@@ -6039,7 +6290,11 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
 }
 
 
-const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset) {
+const TypeAryKlassPtr* TypeAryKlassPtr::make(PTR ptr, const Type* elem, ciKlass* k, int offset) {
+  if (ptr == Constant && elem->isa_klassptr()) {
+    elem = elem->is_klassptr()->cast_to_exactness(true);
+  }
+
   return (TypeAryKlassPtr*)(new TypeAryKlassPtr(ptr, elem, k, offset))->hashcons();
 }
 
@@ -6116,7 +6371,7 @@ ciKlass* TypeAryPtr::klass() const {
   // Oops, need to compute _klass and cache it
   ciKlass* k_ary = compute_klass();
 
-  if( this != TypeAryPtr::OOPS && this->dual() != TypeAryPtr::OOPS ) {
+  if (this != TypeAryPtr::OOPS) {
     // The _klass field acts as a cache of the underlying
     // ciKlass for this array type.  In order to set the field,
     // we need to cast away const-ness.
@@ -6200,7 +6455,7 @@ const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) cons
 //-----------------------------as_instance_type--------------------------------
 // Corresponding type for an instance of the given class.
 // It will be NotNull, and exact if and only if the klass type is exact.
-const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
+const TypeAryPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
   ciKlass* k = klass();
   bool    xk = klass_is_exact();
   const Type* el = nullptr;
@@ -6216,31 +6471,9 @@ const TypeOopPtr* TypeAryKlassPtr::as_instance_type(bool klass_change) const {
 
 //------------------------------xmeet------------------------------------------
 // Compute the MEET of two types, return a new Type object.
-const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
+const Type* TypeAryKlassPtr::xmeet(const Type* t) const {
   // Current "this->_base" is Pointer
   switch (t->base()) {          // switch on original type
-
-  case Int:                     // Mixing ints & oops happens when javac
-  case Long:                    // reuses local variables
-  case HalfFloatTop:
-  case HalfFloatCon:
-  case HalfFloatBot:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case NarrowOop:
-  case NarrowKlass:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  case Top:
-    return this;
-
   default:                      // All else is a mistake
     typerr(t);
 
@@ -6263,13 +6496,6 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
     }
   }
 
-  case RawPtr:
-  case MetadataPtr:
-  case OopPtr:
-  case AryPtr:                  // Meet with AryPtr
-  case InstPtr:                 // Meet with InstPtr
-    return TypePtr::BOTTOM;
-
   //
   //             A-top         }
   //           /   |   \       }  Tops
@@ -6289,7 +6515,7 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
   case AryKlassPtr: {  // Meet two KlassPtr types
     const TypeAryKlassPtr *tap = t->is_aryklassptr();
     int off = meet_offset(tap->offset());
-    const Type* elem = _elem->meet(tap->_elem);
+    const Type* elem = TypeAry::meet_elem(_elem, tap->_elem);
 
     PTR ptr = meet_ptr(tap->ptr());
     ciKlass* res_klass = nullptr;
@@ -6349,6 +6575,69 @@ const Type    *TypeAryKlassPtr::xmeet( const Type *t ) const {
 
   } // End of switch
   return this;                  // Return the double constant
+}
+
+const Type* TypeAryKlassPtr::xjoin(const Type* t) const {
+  if (base() != AryKlassPtr) {
+    typerr(t);
+  }
+
+  switch (t->base()) {
+    case AnyPtr: {
+      const TypePtr* tp = t->is_ptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+      switch (tp->ptr()) {
+        case TopPTR:
+        case Null:
+          return TypePtr::make(AnyPtr, ptr, offset, tp->speculative(), tp->inline_depth());
+        case NotNull:
+        case BotPTR:
+          return make(ptr, elem(), klass(), offset);
+        default:
+          typerr(t);
+      }
+    }
+
+    case InstKlassPtr: {
+      const TypeInstKlassPtr* tp = t->is_instklassptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+
+      if (tp->klass()->is_java_lang_Object() && !tp->klass_is_exact() && _array_interfaces->contains(tp->interfaces())) {
+        return make(ptr, elem(), klass(), offset);
+      } else {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset);
+      }
+    }
+
+    case AryKlassPtr: {
+      const TypeAryKlassPtr* tp = t->is_aryklassptr();
+      PTR ptr = join_ptr(tp->ptr());
+      int offset = join_offset(tp->offset());
+
+      const Type* elem1 = elem();
+      const Type* elem2 = tp->elem();
+      if (elem1->isa_int() && elem2->isa_int()) {
+        // There may be cases that we are joining int[] and char[]
+        if (klass() == tp->klass()) {
+          return make(ptr, elem1->join(elem2), klass(), offset);
+        } else {
+          return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset);
+        }
+      }
+
+      const Type* res_elem = TypeAry::join_elem(elem1, elem2);
+      if (res_elem->empty() || (res_elem->isa_ptr() && !res_elem->isa_klassptr())) {
+        return TypePtr::make(AnyPtr, ptr == BotPTR ? Null : TopPTR, offset);
+      }
+
+      return make(ptr, res_elem, nullptr, offset);
+    }
+
+    default:
+      typerr(t);
+  }
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
@@ -6469,12 +6758,6 @@ bool TypeAryKlassPtr::maybe_java_subtype_of_helper(const TypeKlassPtr* other, bo
   return TypePtr::maybe_java_subtype_of_helper_for_array(this, other, this_exact, other_exact);
 }
 
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type    *TypeAryKlassPtr::xdual() const {
-  return new TypeAryKlassPtr(dual_ptr(), elem()->dual(), klass(), dual_offset());
-}
-
 // Is there a single ciKlass* that can represent that type?
 ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
   if (elem()->isa_klassptr()) {
@@ -6573,33 +6856,6 @@ const TypeFunc *TypeFunc::make(ciMethod* method) {
   tf = TypeFunc::make(domain, range);
   C->set_last_tf(method, tf);  // fill cache
   return tf;
-}
-
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeFunc::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is Func
-  switch (t->base()) {          // switch on original type
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-
-  case Top:
-    break;
-  }
-  return this;                  // Return the double constant
-}
-
-//------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeFunc::xdual() const {
-  return this;
 }
 
 //------------------------------eq---------------------------------------------

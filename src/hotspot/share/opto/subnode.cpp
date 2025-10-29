@@ -1994,8 +1994,9 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
 Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
-  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
-      phase->type(in1)->higher_equal(TypeLong::POS)) {
+  const Type* in_type = phase->type(in1);
+  if ((in_type->isa_int() && in_type->is_int()->_lo >= 0) ||
+      (in_type->isa_long() && in_type->is_long()->_lo >= 0)) {
     return in1;
   }
   // Convert "abs(abs(x))" into "abs(x)"

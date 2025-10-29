@@ -689,72 +689,29 @@ template class TypeIntPrototype<intn_t<2>, uintn_t<2>>;
 template class TypeIntPrototype<intn_t<3>, uintn_t<3>>;
 template class TypeIntPrototype<intn_t<4>, uintn_t<4>>;
 
-// Compute the meet of 2 types. When dual is true, the subset relation in CT is
-// reversed. This means that the result of 2 CTs would be the intersection of
-// them if dual is true, and be the union of them if dual is false. The subset
-// relation in the Type hierarchy is still the same, however. E.g. the result
-// of 1 CT and Type::BOTTOM would always be Type::BOTTOM, and the result of 1
-// CT and Type::TOP would always be the CT instance itself.
 template <class CT>
-const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2) {
-  // Perform a fast test for common case; meeting the same types together.
-  if (i1 == t2 || t2 == Type::TOP) {
-    return i1;
-  }
-  const CT* i2 = t2->try_cast<CT>();
-  if (i2 != nullptr) {
-    assert(i1->_is_dual == i2->_is_dual, "must have the same duality");
-    using S = std::remove_const_t<decltype(CT::_lo)>;
-    using U = std::remove_const_t<decltype(CT::_ulo)>;
-
-    if (!i1->_is_dual) {
-      // meet (a.k.a union)
-      return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
-                                                    {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                                    {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
-                             MAX2(i1->_widen, i2->_widen), false);
-    } else {
-      // join (a.k.a intersection)
-      return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
-                                                    {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                                    {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
-                             MIN2(i1->_widen, i2->_widen), true);
-    }
-  }
-
-  assert(t2->base() != i1->base(), "");
-  switch (t2->base()) {          // Switch on original type
-  case Type::AnyPtr:                  // Mixing with oops happens when javac
-  case Type::RawPtr:                  // reuses local variables
-  case Type::OopPtr:
-  case Type::InstPtr:
-  case Type::AryPtr:
-  case Type::MetadataPtr:
-  case Type::KlassPtr:
-  case Type::InstKlassPtr:
-  case Type::AryKlassPtr:
-  case Type::NarrowOop:
-  case Type::NarrowKlass:
-  case Type::Int:
-  case Type::Long:
-  case Type::HalfFloatTop:
-  case Type::HalfFloatCon:
-  case Type::HalfFloatBot:
-  case Type::FloatTop:
-  case Type::FloatCon:
-  case Type::FloatBot:
-  case Type::DoubleTop:
-  case Type::DoubleCon:
-  case Type::DoubleBot:
-  case Type::Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  default:                      // All else is a mistake
-    i1->typerr(t2);
-    return nullptr;
-  }
+const Type* TypeIntHelper::int_type_xmeet(const CT* t1, const CT* t2) {
+  using S = std::remove_const_t<decltype(CT::_lo)>;
+  using U = std::remove_const_t<decltype(CT::_ulo)>;
+  return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(t1->_lo, t2->_lo), MAX2(t1->_hi, t2->_hi)},
+                                                {MIN2(t1->_ulo, t2->_ulo), MAX2(t1->_uhi, t2->_uhi)},
+                                                {t1->_bits._zeros & t2->_bits._zeros, t1->_bits._ones & t2->_bits._ones}},
+                         MAX2(t1->_widen, t2->_widen), false);
 }
-template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const Type* t2);
-template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const Type* t2);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const TypeInt* t2);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const TypeLong* t2);
+
+template <class CT>
+const Type* TypeIntHelper::int_type_xjoin(const CT* t1, const CT* t2) {
+  using S = std::remove_const_t<decltype(CT::_lo)>;
+  using U = std::remove_const_t<decltype(CT::_ulo)>;
+  return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
+                                                {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
+                                                {t1->_bits._zeros | t2->_bits._zeros, t1->_bits._ones | t2->_bits._ones}},
+                         MIN2(t1->_widen, t2->_widen), false);
+}
+template const Type* TypeIntHelper::int_type_xjoin(const TypeInt* i1, const TypeInt* t2);
+template const Type* TypeIntHelper::int_type_xjoin(const TypeLong* i1, const TypeLong* t2);
 
 // Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
 // first, after WidenMax attempts, if the type has still not converged we speed up the
