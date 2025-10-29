@@ -1242,7 +1242,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   const BasicType bt = element_basic_type();
   const int ropc     = vector_reduction_opcode();
   const int vopc     = VectorNode::opcode(sopc, bt);
-  if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
+  if (!Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt)) {
     DEBUG_ONLY( this->print(); )
     assert(false, "do not have normal vector op for this reduction");
     return false; // not implemented
