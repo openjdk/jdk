@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
  * @summary Test if StringCoding and NIO result have the same de/encoding result
+ * @library /test/lib
  * @modules java.base/sun.nio.cs
  * @run main/othervm/timeout=2000 TestStringCoding
  * @key randomness
@@ -32,6 +33,10 @@
 import java.util.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class TestStringCoding {
     public static void main(String[] args) throws Throwable {
@@ -195,29 +200,70 @@ public class TestStringCoding {
             if (cs.name().equals("UTF-8") ||     // utf8 handles surrogates
                 cs.name().equals("CESU-8"))      // utf8 handles surrogates
                 return;
-            enc.replaceWith(new byte[] { (byte)'A'});
-            sun.nio.cs.ArrayEncoder cae = (sun.nio.cs.ArrayEncoder)enc;
 
-            String str = "ab\uD800\uDC00\uD800\uDC00cd";
-            byte[] ba = new byte[str.length() - 2];
-            int n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 6 || !"abAAcd".equals(new String(ba, cs.name())))
-                throw new RuntimeException("encode1(surrogates) failed  -> "
-                                           + cs.name());
+            // Configure the replacement sequence
+            enc.replaceWith(new byte[]{(byte) 'A'});
 
-            ba = new byte[str.length()];
-            n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 6 || !"abAAcd".equals(new String(ba, 0, n,
-                                                     cs.name())))
-                throw new RuntimeException("encode2(surrogates) failed  -> "
-                                           + cs.name());
-            str = "ab\uD800B\uDC00Bcd";
-            ba = new byte[str.length()];
-            n = cae.encode(str.toCharArray(), 0, str.length(), ba);
-            if (n != 8 || !"abABABcd".equals(new String(ba, 0, n,
-                                                       cs.name())))
-                throw new RuntimeException("encode3(surrogates) failed  -> "
-                                           + cs.name());
+            // Test `String::new(byte[], Charset)` with surrogate-pair
+            {
+                var srcStr = "ab\uD800\uDC00\uD800\uDC00cd";
+                assertEquals(8, srcStr.length());
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(6);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        6, dstBuf.position(),
+                        "Was expecting 6 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, cs);
+                assertEquals("abAAcd", dstStr);
+            }
+
+            // Test `String::new(byte[], int, int, Charset)` with surrogate-pair
+            {
+                var srcStr = "ab\uD800\uDC00\uD800\uDC00cd";
+                assertEquals(8, srcStr.length());
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(8);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        6, dstBuf.position(),
+                        "Was expecting 6 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, 0, 6, cs);
+                assertEquals("abAAcd", dstStr);
+            }
+
+            // Test `String::new(byte[], int, int, Charset)` with a dangling
+            // high- and low-surrogate
+            {
+                var srcStr = "ab\uD800B\uDC00Bcd";
+                var srcBuf = CharBuffer.wrap(srcStr.toCharArray(), 0, 8);
+                var dstBuf = ByteBuffer.allocate(8);
+                var cr = enc.encode(srcBuf, dstBuf, true);
+                if (cr.isError()) {
+                    cr.throwException();
+                }
+                var dstArr = dstBuf.array();
+                assertEquals(
+                        8, dstBuf.position(),
+                        "Was expecting 8 items, found: " + Map.of(
+                                "position", dstBuf.position(),
+                                "array", prettyPrintBytes(dstArr)));
+                var dstStr = new String(dstArr, 0, 8, cs);
+                assertEquals("abABABcd", dstStr);
+            }
+
             /* sun.nio.cs.ArrayDeEncoder works on the assumption that the
                invoker (StringCoder) allocates enough output buf, utf8
                and double-byte coder does not check the output buffer limit.
@@ -242,4 +288,9 @@ public class TestStringCoding {
             }
         }
     }
+
+    private static String prettyPrintBytes(byte[] bs) {
+        return "[" + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(bs) + "]";
+    }
+
 }
