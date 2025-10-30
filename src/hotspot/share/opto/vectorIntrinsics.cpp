@@ -727,7 +727,8 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   }
 
 
-  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM) {
+  int  bcast_mode = mode->get_con();
+  if (operType->get_con() != VectorSupport::VECTOR_TYPE_PRIM && bcast_mode != VectorSupport::MODE_BROADCAST) {
     log_if_needed("  ** unhandled operType=%s", get_opertype_string(operType->get_con()));
     return false;
   }
@@ -747,7 +748,6 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
   bool is_mask = is_vector_mask(vbox_klass);
-  int  bcast_mode = mode->get_con();
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_mask ? VecMaskUseAll : VecMaskNotUsed);
   int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
