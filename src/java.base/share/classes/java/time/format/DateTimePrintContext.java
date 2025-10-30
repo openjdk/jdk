@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +65,7 @@ import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 
-import java.time.DateTimeException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
@@ -87,6 +83,11 @@ import java.util.Objects;
  * <p>
  * This class provides a single wrapper to items used in the format.
  *
+ * @implSpec
+ * This class is a mutable context intended for use from a single thread.
+ * Usage of the class is thread-safe within standard printing as the framework creates
+ * a new instance of the class for each format and printing is single-threaded.
+ *
  * @since 1.8
  */
 final class DateTimePrintContext {
@@ -101,14 +102,45 @@ final class DateTimePrintContext {
     private final DateTimeFormatter formatter;
 
     /**
+     * The local date, null if not yet obtained.
+     */
+    private final LocalDate localDate;
+
+    /**
+     * The local time, null if not yet obtained.
+     */
+    private final LocalTime localTime;
+
+    /**
      * Creates a new instance of the context.
      *
      * @param temporal  the temporal object being output, not null
      * @param formatter  the formatter controlling the format, not null
      */
-    DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
+    public DateTimePrintContext(TemporalAccessor temporal, DateTimeFormatter formatter) {
         this.temporal = adjust(temporal, formatter);
         this.formatter = formatter;
+
+        LocalDate localDate = null;
+        LocalTime localTime = null;
+        if (temporal instanceof ZonedDateTime zdt) {
+            localDate = zdt.toLocalDate();
+            localTime = zdt.toLocalTime();
+        } else if (temporal instanceof LocalDateTime ldt) {
+            localDate = ldt.toLocalDate();
+            localTime = ldt.toLocalTime();
+        } else if (temporal instanceof LocalDate) {
+            localDate = (LocalDate) temporal;
+        } else if (temporal instanceof LocalTime) {
+            localTime = (LocalTime) temporal;
+        } else if (temporal instanceof OffsetDateTime odt) {
+            localDate = odt.toLocalDate();
+            localTime = odt.toLocalTime();
+        } else if (temporal instanceof OffsetTime oft) {
+            localTime = oft.toLocalTime();
+        }
+        this.localDate = localDate;
+        this.localTime = localTime;
     }
 
     /**
@@ -118,11 +150,11 @@ final class DateTimePrintContext {
      * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
      * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
      *
-     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
-     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      * @param temporal  the temporal object to adjust, not null
      * @param formatter the formatter providing potential chronology and time-zone overrides
      * @return the adjusted temporal, or the original if no overrides are present in the formatter
+     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
+     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      */
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first (early return is an optimization)
@@ -132,7 +164,8 @@ final class DateTimePrintContext {
             return temporal;
         }
 
-        // Placing the non-null cases in a separate method allows more flexible code optimizations
+        // The chronology and zone fields of Formatter are usually null,
+        // so the non-null processing code is placed in a separate method
         return adjustWithOverride(temporal, overrideChrono, overrideZone);
     }
 
@@ -223,8 +256,12 @@ final class DateTimePrintContext {
      */
     private static TemporalAccessor adjustSlow(
             TemporalAccessor temporal,
-            ZoneId overrideZone, ZoneId temporalZone,
-            Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
+            ZoneId overrideZone,
+            ZoneId temporalZone,
+            Chronology overrideChrono,
+            Chronology effectiveChrono,
+            Chronology temporalChrono
+    ) {
         if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
@@ -343,7 +380,6 @@ final class DateTimePrintContext {
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
-     * @param optional  whether the query is optional, true if the query may be missing
      * @return the result, null if not found and optional is true
      * @throws DateTimeException if the type is not available and the section is not optional
      */
@@ -359,18 +395,172 @@ final class DateTimePrintContext {
     /**
      * Gets the value of the specified field.
      * <p>
-     * This will return the value for the specified field.
      *
      * @param field  the field to find, not null
-     * @param optional  whether the field is optional, true if the field may be missing
-     * @return the value, null if not found and optional is true
+     * @return the value
      * @throws DateTimeException if the field is not available and the section is not optional
      */
-    Long getValue(TemporalField field, boolean optional) {
-        if (optional && !temporal.isSupported(field)) {
-            return null;
-        }
+    public long getLong(TemporalField field) {
         return temporal.getLong(field);
+    }
+
+    /**
+     * Gets the value of the specified field.
+     * <p>
+     *
+     * @param field  the field to find, not null
+     * @return the value
+     * @throws DateTimeException if the field is not available and the section is not optional
+     */
+    public int get(TemporalField field) {
+        return temporal.get(field);
+    }
+
+    /**
+     * Gets the year
+     * @return the year value
+     */
+    public int getYear() {
+        return localDate != null ? localDate.getYear() : temporal.get(ChronoField.YEAR);
+    }
+
+    /**
+     * Gets the year of era
+     * @return the year of era value
+     */
+    public int getYearOfEra() {
+        int year = getYear();
+
+        return (year >= 1 ? year : 1 - year);
+    }
+
+    /**
+     * Gets the month of year
+     * @return the month value
+     */
+    public int getMonthValue() {
+        return localDate != null ? localDate.getMonthValue() : temporal.get(ChronoField.MONTH_OF_YEAR);
+    }
+
+    /**
+     * Gets the day of year
+     * @return the day of year value
+     */
+    public int getDayOfYear() {
+        return localDate != null ? localDate.getDayOfYear() : temporal.get(ChronoField.DAY_OF_YEAR);
+    }
+
+    /**
+     * Gets the day of month
+     * @return the day of month value
+     */
+    public int getDayOfMonth() {
+        return localDate != null ? localDate.getDayOfMonth() : temporal.get(ChronoField.DAY_OF_MONTH);
+    }
+
+    /**
+     * Gets the hour of day
+     * @return the hour of day value
+     */
+    public int getHour() {
+        return localTime != null ? localTime.getHour() : temporal.get(ChronoField.HOUR_OF_DAY);
+    }
+
+    /**
+     * Gets the minute of hour
+     * @return the minute of hour value
+     */
+    public int getMinute() {
+        return localTime != null ? localTime.getMinute() : temporal.get(ChronoField.MINUTE_OF_HOUR);
+    }
+
+    /**
+     * Gets the second of minute
+     * @return the second of minute value
+     */
+    public int getSecond() {
+        return localTime != null ? localTime.getSecond() : temporal.get(ChronoField.SECOND_OF_MINUTE);
+    }
+
+    /**
+     * Gets the nano of second
+     * @return the nano of second value
+     */
+    public int getNano() {
+        return localTime != null ? localTime.getNano() : temporal.get(ChronoField.NANO_OF_SECOND);
+    }
+
+    /**
+     * Checks if the specified field is supported.
+     * @param field  the field to check, null returns false
+     * @return true if this date-time can be queried for the field, false if not
+     */
+    public boolean isSupported(TemporalField field) {
+        return temporal.isSupported(field);
+    }
+
+    /**
+     * Checks if year is supported.
+     * @return true if this temporal can be queried for year, false if not
+     */
+    public boolean isSupportYear() {
+        return localDate != null || temporal.isSupported(ChronoField.YEAR);
+    }
+
+    /**
+     * Checks if year of era is supported.
+     * @return true if this temporal can be queried for year of era, false if not
+     */
+    public boolean isSupportYearOfEra() {
+        return localDate != null || temporal.isSupported(ChronoField.YEAR_OF_ERA);
+    }
+
+    /**
+     * Checks if month is supported.
+     * @return true if this temporal can be queried for month, false if not
+     */
+    public boolean isSupportMonth() {
+        return localDate != null || temporal.isSupported(ChronoField.MONTH_OF_YEAR);
+    }
+
+    /**
+     * Checks if day of month is supported.
+     * @return true if this temporal can be queried for day of month, false if not
+     */
+    public boolean isSupportDayOfMonth() {
+        return localDate != null || temporal.isSupported(ChronoField.DAY_OF_MONTH);
+    }
+
+    /**
+     * Checks if hour is supported.
+     * @return true if this temporal can be queried for hour, false if not
+     */
+    public boolean isSupportHour() {
+        return localTime != null || temporal.isSupported(ChronoField.HOUR_OF_DAY);
+    }
+
+    /**
+     * Checks if minute is supported.
+     * @return true if this temporal can be queried for minute, false if not
+     */
+    public boolean isSupportMinute() {
+        return localTime != null || temporal.isSupported(ChronoField.MINUTE_OF_HOUR);
+    }
+
+    /**
+     * Checks if second is supported.
+     * @return true if this temporal can be queried for second, false if not
+     */
+    public boolean isSupportSecond() {
+        return localTime != null || temporal.isSupported(ChronoField.SECOND_OF_MINUTE);
+    }
+
+    /**
+     * Checks if nano is supported.
+     * @return true if this temporal can be queried for nano, false if not
+     */
+    public boolean isSupportNano() {
+        return localTime != null || temporal.isSupported(ChronoField.NANO_OF_SECOND);
     }
 
     //-----------------------------------------------------------------------
