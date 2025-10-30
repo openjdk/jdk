@@ -167,7 +167,7 @@ Java_FieldEventsFromJNI_enableEventsAndAccessField(
   if (access_cnt != numOfEventsExpected) {
     char buffer[100];
     snprintf(buffer, sizeof(buffer),
-        "Invalid field access count: %d. Should be %d.",
+        "Incorrect field access count: %d. Should be %d.",
         (int)access_cnt, numOfEventsExpected);
     fatal(jni, buffer);
   }
@@ -204,7 +204,7 @@ Java_FieldEventsFromJNI_enableEventsAndModifyField(
   if (modify_cnt != numOfEventsExpected) {
     char buffer[100];
     snprintf(buffer, sizeof(buffer),
-        "Invalid field modification count: %d. Should be %d.",
+        "Incorrect field modification count: %d. Should be %d.",
         (int)modify_cnt, numOfEventsExpected);
     fatal(jni, buffer);
   }
