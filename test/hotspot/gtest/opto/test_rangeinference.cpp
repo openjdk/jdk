@@ -282,6 +282,7 @@ static std::array<CTP, all_instances_size<CTP>()> compute_all_instances() {
     static RBTreeOrdering cmp(const CTP& x, const RBNode<CTP, int>* node) {
       // Quick helper for the tediousness below
       auto f = [](auto x, auto y) {
+        assert(x != y, "we only handle lt and gt cases");
         return x < y ? RBTreeOrdering::LT : RBTreeOrdering::GT;
       };
 
