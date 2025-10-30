@@ -246,7 +246,7 @@ public class SignatureUtil {
                     throw new AssertionError("Unknown curve name: " + kAlg);
             }
         } else if (kAlg.toUpperCase(Locale.ENGLISH).startsWith("ML-DSA")) {
-            // https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cms-ml-dsa-06#name-signerinfo-content
+            // https://datatracker.ietf.org/doc/html/rfc9882#name-signerinfo-content
             // Just use SHA-512
             digAlgID = DigestAlgHolder.sha512;
         } else if (sigalg.equalsIgnoreCase("RSASSA-PSS")) {

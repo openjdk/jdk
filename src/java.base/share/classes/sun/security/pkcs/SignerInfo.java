@@ -534,7 +534,7 @@ public class SignerInfo implements DerEncoder {
                 break;
             case "ML-DSA-44":
                 // Following 3 from Table 1 inside
-                // https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cms-ml-dsa-06#name-signerinfo-content
+                // https://datatracker.ietf.org/doc/html/rfc9882#name-signerinfo-content
                 if (!digAlgId.equalsOID(AlgorithmId.SHA256_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA384_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA512_oid)
