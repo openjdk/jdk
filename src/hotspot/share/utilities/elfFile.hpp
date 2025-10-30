@@ -537,7 +537,7 @@ class DwarfFile : public ElfFile {
       // Do not retry as linear scan won't be able to read this either.
       FAILED,
 
-      // Cache is usable, no need to fallback to linear scan.
+      // Cache is usable, no need to fall back to linear scan.
       VALID,
 
       // Cache is unusable, possible reasons are C heap allocation failures. Fall back to linear scan.
