@@ -177,6 +177,15 @@ static inline int64_t time_ms_for_samples(int samples, int64_t sampling_period_m
 
 using NMethodSamples = ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtCompiler>;
 
+static inline bool steady_nmethod_count(int new_nmethods_count, int total_nmethods_count) {
+  if (total_nmethods_count == 0) {
+    return false;
+  }
+  constexpr double steady_threshold = 0.05; // 5%
+  const double fraction_new = (double)new_nmethods_count / total_nmethods_count;
+  return fraction_new < steady_threshold;
+}
+
 class ThreadSampler : public StackObj {
  private:
   static const int INITIAL_TABLE_SIZE = 109;
@@ -216,6 +225,9 @@ class ThreadSampler : public StackObj {
           int *count = _samples.put_if_absent(nm, 0, &created);
           (*count)++;
           _total_nmethods_samples++;
+          if (created) {
+            _samples.maybe_grow();
+          }
         }
       }
     }
@@ -227,23 +239,47 @@ class ThreadSampler : public StackObj {
     log_info(hotcodegrouper)("Profiling nmethods");
 
     const int64_t max_needed_time_ms = 2 * time_ms_for_samples(min_samples(), max_sampling_period_ms());
+    const int64_t start_time = get_monotonic_ms();
 
-    int64_t start_time = get_monotonic_ms();
-    double start_cpu_time = os::elapsed_process_cpu_time();
     while (true) {
-      int64_t t1 = get_monotonic_ms();
-      int total_samples = _total_samples;
+      const int nmethod_count_start = _samples.number_of_entries();
       run();
-      int64_t sampling_end = get_monotonic_ms();
-      if (_total_samples >= min_samples()) {
+      const int nmethod_count_end = _samples.number_of_entries();
+      const int new_nmethods_this_iteration = nmethod_count_end - nmethod_count_start;
+      const bool have_enough_samples = _total_samples >= min_samples();
+      const bool is_nmethod_count_steady =
+          steady_nmethod_count(new_nmethods_this_iteration, nmethod_count_end);
+
+      if (have_enough_samples && is_nmethod_count_steady) {
+        log_info(hotcodegrouper)(
+            "Profiling complete: collected %d samples with %d nmethods (added "
+            "%d new nmethods)",
+            _total_samples, nmethod_count_end, new_nmethods_this_iteration);
         break;
       }
 
-      if (sampling_end - start_time >= max_needed_time_ms) {
-        log_info(hotcodegrouper)("Could not collect %d samples within %d ms, collected %d samples",
-           min_samples(), (int)max_needed_time_ms, _total_samples);
+      // Check timeout
+      if (get_monotonic_ms() - start_time >= max_needed_time_ms) {
+        // Enough samples but nmethod count not stable:
+        // Proceed with grouping (we have statistical confidence, even if
+        // nmethods still being added)
+        if (have_enough_samples && !is_nmethod_count_steady) {
+          log_info(hotcodegrouper)(
+              "Timeout: collected %d samples but nmethod count not steady (%d "
+              "new/%d total = %.2f%%). Proceeding with grouping.",
+              _total_samples, new_nmethods_this_iteration, nmethod_count_end,
+              100.0 * new_nmethods_this_iteration / nmethod_count_end);
+          break;
+        }
+
+        log_info(hotcodegrouper)(
+            "Timeout: insufficient samples (%d/%d, nmethod count %s). "
+            "Profiling failed.",
+            _total_samples, min_samples(),
+            is_nmethod_count_steady ? "steady" : "unstable");
         return ProfilingResult::Failure;
       }
+
       os::naked_sleep(rand_sampling_period_ms());
     }
 
