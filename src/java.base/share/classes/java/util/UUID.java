@@ -189,7 +189,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * pseudo-random number generator.
      *
      * @apiNote {@code UUIDv7} values are created by allocating a Unix timestamp in milliseconds
-     * in the most significant 48 bits, allocating the required version and variant bits,
+     * in the most significant 48 bits, allocating the required version (4 bits) and variant (2-bits)
      * and filling the remaining 74 bits with random bits. As such, this method rejects {@code timestamp}
      * values that do not fit into 48 bits.
      * <p>
