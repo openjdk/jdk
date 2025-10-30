@@ -179,7 +179,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),
                         List.of("handshake", "javax.net.debug.logger",
-                                "keymanager", "packet",  "plaintext",
+                                "keymanager", "packet", "plaintext",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose"))
         );
