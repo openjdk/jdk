@@ -27,7 +27,6 @@
 
 #include "runtime/synchronizer.hpp"
 
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
 inline ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
@@ -38,14 +37,8 @@ inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj,
   if (!UseObjectMonitorTable) {
     return read_monitor(mark);
   } else {
-    return LightweightSynchronizer::get_monitor_from_table(current, obj);
+    return ObjectSynchronizer::get_monitor_from_table(current, obj);
   }
-}
-
-inline void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
-  assert(current == Thread::current(), "must be");
-
-  LightweightSynchronizer::enter(obj, lock, current);
 }
 
 inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {
@@ -57,11 +50,7 @@ inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread
     return false;
   }
 
-  return LightweightSynchronizer::quick_enter(obj, lock, current);
-}
-
-inline void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) {
-  LightweightSynchronizer::exit(object, lock, current);
+  return ObjectSynchronizer::quick_enter_internal(obj, lock, current);
 }
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_INLINE_HPP

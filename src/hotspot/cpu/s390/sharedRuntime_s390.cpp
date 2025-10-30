@@ -1765,7 +1765,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Try fastpath for locking.
     // Fast_lock kills r_temp_1, r_temp_2.
-    __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
+    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1961,7 +1961,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Try fastpath for unlocking.
     // Fast_unlock kills r_tmp1, r_tmp2.
-    __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
