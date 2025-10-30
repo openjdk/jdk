@@ -58,7 +58,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
   assert(!thread->owns_locks(), "must release all locks when leaving VM");
   guarantee(thread->can_call_java(), "cannot make java calls from the native compiler");
-  assert(!thread->preempting(), "");
+  assert(!thread->preempting(), "Unexpected Java upcall whilst processing preemption");
   _result   = result;
 
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java_or_stub,

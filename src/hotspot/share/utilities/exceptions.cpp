@@ -345,8 +345,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     assert(klass != nullptr, "klass must exist");
     // We could get here while linking or initializing a klass
     // from a preemptable call. Don't preempt here since before
-    // the exception is propagated we might make an upcall to
-    // Java to initialize the object with the cause of exception.
+    // the PreemptedException is propagated we might make an upcall
+    // to Java to initialize the object with the cause of exception.
     NoPreemptMark npm(thread);
     h_exception = JavaCalls::construct_new_instance(InstanceKlass::cast(klass),
                                 signature,
