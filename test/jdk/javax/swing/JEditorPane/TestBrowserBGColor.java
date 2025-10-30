@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,94 +23,79 @@
 
 /*
  * @test
- * @key headful
  * @bug 8213781
  * @summary Verify webpage background color renders correctly in JEditorPane
  */
 
-import java.awt.Toolkit;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.text.html.HTMLFrameHyperlinkEvent;
-import javax.swing.text.html.HTMLDocument;
 import java.awt.Color;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Robot;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.stream.IntStream;
 
-public class TestBrowserBGColor extends JFrame implements HyperlinkListener {
+import javax.imageio.ImageIO;
+import javax.swing.JEditorPane;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.View;
 
-    private static TestBrowserBGColor b;
-    private static JEditorPane browser;
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
+import static java.lang.Integer.toHexString;
+
+public final class TestBrowserBGColor {
+
+    private static final String HTML_DOC =
+            "<!DOCTYPE html>"
+            + "<html><head>"
+            + "<style> body { background: #FFF; } </style>"
+            + "<title>Title</title></head>"
+            + "<body> </body> </html>";
+
+    private static final int SIZE = 300;
 
     public static void main(final String[] args) throws Exception {
-        Robot r = new Robot();
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                b = new TestBrowserBGColor();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            b.setSize(Toolkit.getDefaultToolkit().getScreenSize());
-            b.setVisible(true);
-            b.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            b.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    b.dispose();
-                    b = null;
-                }
-            });
-        });
-
-        r.waitForIdle();
-        r.delay(500);
-
-        SwingUtilities.invokeAndWait(() -> {
-            Insets insets = browser.getInsets();
-            Point loc = browser.getLocationOnScreen();
-            Color c = r.getPixelColor( loc.x + insets.left+100,
-                                  loc.y + insets.top + 100);
-            b.dispose();
-            if (!c.equals(Color.WHITE)) {
-                throw new RuntimeException("webpage background color wrong");
-            }
-        });
-    }
-
-
-    String htmlDoc = " <!DOCTYPE html> <html><style> body { background: #FFF; } </style> <head> <title>Title</title> </head> <body> </body> </html>";
-
-    public TestBrowserBGColor() throws IOException, MalformedURLException {
-        browser = new JEditorPane("text/html", htmlDoc);
+        JEditorPane browser = new JEditorPane("text/html", HTML_DOC);
         browser.setEditable(false);
-        browser.addHyperlinkListener(this);
-        JScrollPane scroll = new JScrollPane(browser);
-        getContentPane().add(scroll);
+        browser.setSize(SIZE, SIZE);
+
+        BufferedImage image = new BufferedImage(SIZE, SIZE, TYPE_INT_RGB);
+        Graphics g = image.getGraphics();
+        browser.paint(g);
+        g.dispose();
+
+        Color bgColor = StyleConstants.getBackground(
+                getBodyView(browser.getUI()
+                                   .getRootView(browser))
+                .getAttributes());
+        if (!bgColor.equals(Color.WHITE)) {
+            saveImage(image);
+            throw new RuntimeException("Wrong background color: "
+                                       + toHexString(bgColor.getRGB())
+                                       + " vs "
+                                       + toHexString(Color.WHITE.getRGB()));
+        }
     }
 
-    public void hyperlinkUpdate(final HyperlinkEvent e) {
-        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-            JEditorPane pane = (JEditorPane) e.getSource();
-            if (e instanceof HTMLFrameHyperlinkEvent) {
-                HTMLFrameHyperlinkEvent evt = (HTMLFrameHyperlinkEvent) e;
-                HTMLDocument doc = (HTMLDocument) pane.getDocument();
-                doc.processHTMLFrameHyperlinkEvent(evt);
-            } else {
-                try {
-                    pane.setPage(e.getURL());
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
-            }
+    private static View getBodyView(final View view) {
+        if ("body".equals(view.getElement()
+                              .getName())) {
+            return view;
+        }
+
+        return IntStream.range(0, view.getViewCount())
+                        .mapToObj(view::getView)
+                        .map(TestBrowserBGColor::getBodyView)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(null);
+    }
+
+    private static void saveImage(BufferedImage image) {
+        try {
+            ImageIO.write(image, "png",
+                          new File("html-rendering.png"));
+        } catch (IOException ignored) {
         }
     }
 }

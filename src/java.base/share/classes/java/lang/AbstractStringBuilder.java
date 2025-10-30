@@ -1448,8 +1448,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         shift(currValue, coder, count, dstOffset, len);
         count += len;
         // Coder of CharSequence may be a mismatch, requiring the value array to be inflated
-        byte[] newValue = (s instanceof String str)
-            ? putStringAt(currValue, coder, count, dstOffset, str, start, end)
+        byte[] newValue = (s instanceof String str && str.length() == len)
+            ? putStringAt(currValue, coder, count, dstOffset, str)
             : putCharsAt(currValue, coder, count, dstOffset, s, start, end);
         if (currValue != newValue) {
             this.coder = UTF16;
@@ -1928,10 +1928,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @param index the index to insert the string
      * @param str the string
      */
-     private static byte[] putStringAt(byte[] value, byte coder, int count, int index, String str, int off, int end) {
+     private static byte[] putStringAt(byte[] value, byte coder, int count, int index, String str) {
         byte[] newValue = inflateIfNeededFor(value, count, coder, str.coder());
         coder = (newValue == value) ? coder : UTF16;
-        str.getBytes(newValue, off, index, coder, end - off);
+        str.getBytes(newValue, 0, index, coder, str.length());
         return newValue;
     }
 

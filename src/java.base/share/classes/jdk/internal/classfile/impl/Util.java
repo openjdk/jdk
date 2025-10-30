@@ -230,7 +230,7 @@ public final class Util {
 
     public static IllegalArgumentException outOfRangeException(int value, String fieldName, String typeName) {
         return new IllegalArgumentException(
-                String.format("%s out of range of %d: %d", fieldName, typeName, value));
+                String.format("%s out of range of %s: %d", fieldName, typeName, value));
     }
 
     /// Ensures the given mask won't be truncated when written as an access flag

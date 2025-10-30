@@ -43,6 +43,7 @@ class InlineTree;
 class ciMethod;
 class JVMState;
 class ConnectionGraph;
+class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
  private:
@@ -116,7 +117,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   Compile *C;
   double _max_freq;
   bool _append;
-  ConnectionGraph *_congraph;
+  ConnectionGraph* _congraph;
+  const Parse* _parse;
 
   // Walk the native stack and print relevant C2 frames as IGV properties (if
   // graph_name == nullptr) or the graph name based on the highest C2 frame (if
@@ -158,6 +160,8 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
 
   bool traverse_outs();
   void set_traverse_outs(bool b);
+  const Parse* parse();
+  void set_parse(const Parse* parser);
   void print_inlining();
   void begin_method();
   void end_method();

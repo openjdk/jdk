@@ -192,7 +192,7 @@ class TestEncoderReplaceLatin1 {
     /**
      * Verifies {@linkplain CoderResult#isUnmappable() unmappable} character
      * {@linkplain CodingErrorAction#REPLACE replacement} using {@link
-     * ArrayEncoder#encodeFromLatin1(byte[], int, int, byte[])
+     * ArrayEncoder#encodeFromLatin1(byte[], int, int, byte[], int)
      * ArrayEncoder::encodeFromLatin1}.
      */
     private static void testArrayEncoderLatin1Replace(CharsetEncoder encoder, char unmappable, byte[] replacement) {
@@ -202,7 +202,7 @@ class TestEncoderReplaceLatin1 {
         }
         byte[] sa = {(byte) unmappable};
         byte[] da = new byte[replacement.length];
-        int dp = arrayEncoder.encodeFromLatin1(sa, 0, 1, da);
+        int dp = arrayEncoder.encodeFromLatin1(sa, 0, 1, da, 0);
         assertTrue(dp == replacement.length && Arrays.equals(da, replacement), () -> {
             Object context = Map.of(
                     "dp", dp,
