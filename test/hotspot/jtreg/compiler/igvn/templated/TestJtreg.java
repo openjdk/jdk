@@ -96,44 +96,17 @@ int arg6 = LibraryRNG.nextInt();
 
 @DontInline
 public static boolean primitiveConTest_compiled(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
-arg0 = constrain_arg0(arg0);
-arg4 = constrain_arg4(arg4);
-arg5 = constrain_arg5(arg5);
-arg6 = constrain_arg6(arg6);
+arg5 = (long)Math.min(Math.max(arg5, 8796093022205L), -3297683376527800628L);
+arg5 = (long)((arg5 & 1541862882599486797L) | -4294967288L);
 var val = (((!((arg0 == -16384)))?Float.min(arg1, (float)((char)40629)):(float)((true?(char)(Float.max(arg2, (-1.10794424E-7f * arg3))):Character.reverseBytes((char)((byte)((char)(arg4))))))) <= (float)(Long.compress(arg5, Integer.toUnsignedLong(arg6))));
 return val;
 }
 
 @DontCompile
 public static boolean primitiveConTest_reference(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
-arg0 = constrain_arg0(arg0);
-arg4 = constrain_arg4(arg4);
-arg5 = constrain_arg5(arg5);
-arg6 = constrain_arg6(arg6);
+arg5 = (long)Math.min(Math.max(arg5, 8796093022205L), -3297683376527800628L);
+arg5 = (long)((arg5 & 1541862882599486797L) | -4294967288L);
 var val = (((!((arg0 == -16384)))?Float.min(arg1, (float)((char)40629)):(float)((true?(char)(Float.max(arg2, (-1.10794424E-7f * arg3))):Character.reverseBytes((char)((byte)((char)(arg4))))))) <= (float)(Long.compress(arg5, Integer.toUnsignedLong(arg6))));
 return val;
-}
-
-@ForceInline
-public static int constrain_arg0(int v) {
-v = (int)Math.min(Math.max(v, 524287), -65534);
-v = (int)((v & 1073741823) | 1209351794);
-return v;
-}
-@ForceInline
-public static long constrain_arg4(long v) {
-v = (long)((v & -45L) | 8704317956283722753L);
-return v;
-}
-@ForceInline
-public static long constrain_arg5(long v) {
-v = (long)Math.min(Math.max(v, 8796093022205L), -3297683376527800628L);
-v = (long)((v & 1541862882599486797L) | -4294967288L);
-return v;
-}
-@ForceInline
-public static int constrain_arg6(int v) {
-v = (int)((v & 67108864) | -15);
-return v;
 }
 }
