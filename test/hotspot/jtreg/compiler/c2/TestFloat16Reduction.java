@@ -47,12 +47,12 @@ public class TestFloat16Reduction {
         G.fill(genHF, arr);
     }
 
-    public static long GOLDEN_ADD = ADDReduceLong();
-    public static long GOLDEN_SUB = SUBReduceLong();
-    public static long GOLDEN_MUL = MULReduceLong();
-    public static long GOLDEN_DIV = DIVReduceLong();
-    public static long GOLDEN_MAX = MAXReduceLong();
-    public static long GOLDEN_MIN = MINReduceLong();
+    static long GOLDEN_ADD = ADDReduceLong();
+    static long GOLDEN_SUB = SUBReduceLong();
+    static long GOLDEN_MUL = MULReduceLong();
+    static long GOLDEN_DIV = DIVReduceLong();
+    static long GOLDEN_MAX = MAXReduceLong();
+    static long GOLDEN_MIN = MINReduceLong();
 
     @Test
     @IR(counts = {IRNode.ADD_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
