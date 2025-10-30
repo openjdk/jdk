@@ -426,7 +426,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       // Now check if region is a humongous candidate
       if (!hr->is_starts_humongous()) {
-        _g1h->register_region_with_region_attr(hr);
+        _g1h->update_region_attr(hr);
         return false;
       }
 
@@ -436,7 +436,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
-        _g1h->register_region_with_region_attr(hr);
+        _g1h->update_region_attr(hr);
       }
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
                                "marked %d pinned count %zu reclaim candidate %d type %s",

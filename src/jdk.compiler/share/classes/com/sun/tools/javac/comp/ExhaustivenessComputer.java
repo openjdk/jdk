@@ -233,30 +233,36 @@ public class ExhaustivenessComputer {
                             return instantiated != null && types.isCastable(selectorType, instantiated);
                         });
 
+                        //the set of pending permitted subtypes needed to cover clazz:
+                        Set<Symbol> pendingPermitted = new HashSet<>(permitted);
+
                         for (PatternDescription pdOther : patterns) {
                             if (pdOther instanceof BindingPattern bpOther) {
-                                Set<Symbol> currentPermittedSubTypes =
-                                        allPermittedSubTypes(bpOther.type.tsym, s -> true);
+                                //remove all types from pendingPermitted that we can
+                                //cover using bpOther:
 
-                                PERMITTED: for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
-                                    Symbol perm = it.next();
+                                //all types that are permitted subtypes of bpOther's type:
+                                pendingPermitted.removeIf(pending -> isSubtypeErasure(pending.type,
+                                                                                      bpOther.type));
 
-                                    for (Symbol currentPermitted : currentPermittedSubTypes) {
-                                        if (isSubtypeErasure(currentPermitted.type,
-                                                             perm.type)) {
-                                            it.remove();
-                                            continue PERMITTED;
-                                        }
-                                    }
-                                    if (isSubtypeErasure(perm.type,
-                                                         bpOther.type)) {
-                                        it.remove();
-                                    }
+                                if (bpOther.type.tsym.isAbstract()) {
+                                    //all types that are in a diamond hierarchy with bpOther's type
+                                    //i.e. there's a common subtype of the given type and bpOther's type:
+                                    Predicate<Symbol> check =
+                                            pending -> permitted.stream()
+                                                                .filter(perm -> isSubtypeErasure(perm.type,
+                                                                                                 bpOther.type))
+                                                                .filter(perm -> isSubtypeErasure(perm.type,
+                                                                                                 pending.type))
+                                                                .findAny()
+                                                                .isPresent();
+
+                                    pendingPermitted.removeIf(check);
                                 }
                             }
                         }
 
-                        if (permitted.isEmpty()) {
+                        if (pendingPermitted.isEmpty()) {
                             toAdd.add(new BindingPattern(clazz.type));
                         }
                     }
