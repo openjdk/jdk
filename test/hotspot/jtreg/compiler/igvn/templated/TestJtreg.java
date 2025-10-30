@@ -2,23 +2,23 @@
  * @test
  * @bug 8370459
  * @summary TODO: desc
- * @modules java.base/jdk.internal.misc
- * @library /test/lib /
- * @run driver compiler.igvn.templated.TestJtreg
+ * @run main/othervm
+ *      -Xcomp -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server
+ *      -XX:CompileCommand=compileonly,*.TestJtreg::primitiveConTest_compiled
+ *      -XX:CompileCommand=printcompilation,*.TestJtreg::primitiveConTest_compiled
+ *      -XX:+PrintIdeal
+ *      -XX:+TieredCompilation compiler.igvn.templated.TestJtreg
  */
 
 package compiler.igvn.templated;
 
-import compiler.lib.ir_framework.*;
-
 public class TestJtreg {
     public static void main(String[] vmFlags) {
-        TestFramework framework = new TestFramework(TestJtreg.class);
-        framework.addFlags(vmFlags);
-        framework.start();
+        for (int i = 0; i < 10_000; i++) {
+            primitiveConTest();
+        }
     }
 
-    @Test
     public static void primitiveConTest() {
         int arg0 = 513;
         float arg1 = 3.9974846E-10f;
@@ -44,7 +44,6 @@ public class TestJtreg {
         }
     }
 
-    @DontInline
     public static boolean primitiveConTest_compiled(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
         arg5 = (long)Math.min(Math.max(arg5, 8796093022205L), -3297683376527800628L);
         arg5 = (long)((arg5 & 1541862882599486797L) | -4294967288L);
@@ -52,7 +51,6 @@ public class TestJtreg {
         return val;
     }
 
-    @DontCompile
     public static boolean primitiveConTest_reference(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
         arg5 = (long)Math.min(Math.max(arg5, 8796093022205L), -3297683376527800628L);
         arg5 = (long)((arg5 & 1541862882599486797L) | -4294967288L);
