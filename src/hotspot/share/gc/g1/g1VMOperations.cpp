@@ -147,15 +147,14 @@ void VM_G1PauseConcurrent::doit() {
 
 bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
-
-  assert(!Thread::current()->is_Java_thread(), "Unexpected");
-  assert(!Thread::current()->is_suspendible_thread(), "Unexpected");
-
-  // Hang forever if we are shutting down
-  while (CollectedHeap::is_shutting_down()) {
-    Heap_lock->wait_without_safepoint_check();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->is_shutting_down()) {
+    Heap_lock->unlock();
+    // JVM shutdown has started. This ensures that any further operations will be properly aborted
+    // and will not interfere with the shutdown process.
+    g1h->concurrent_mark()->abort_marking_threads();
+    return false;
   }
-
   return true;
 }
 
