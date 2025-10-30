@@ -537,8 +537,8 @@ protected:
   void    register_thread_stack_with_NMT();
   void    unregister_thread_stack_with_NMT();
 
-  int     lgrp_id() const        { return _lgrp_id; }
-  void    set_lgrp_id(int value) { _lgrp_id = value; }
+  int     lgrp_id() const  { return _lgrp_id; }
+  void    update_lgrp_id() { _lgrp_id = os::numa_get_group_id(); }
 
   // Printing
   void print_on(outputStream* st, bool print_extended_info) const;

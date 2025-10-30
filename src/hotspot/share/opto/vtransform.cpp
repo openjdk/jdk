@@ -23,6 +23,7 @@
 
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/vtransform.hpp"
@@ -30,6 +31,45 @@
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
   _vtnodes.push(vtnode);
+}
+
+#define TRACE_OPTIMIZE(code)                          \
+  NOT_PRODUCT(                                        \
+    if (vtransform.vloop().is_trace_optimization()) { \
+      code                                            \
+    }                                                 \
+  )
+
+// This is similar to IGVN optimization. But we are a bit lazy, and don't care about
+// notification / worklist, since the list of nodes is rather small, and we don't
+// expect optimizations that trickle over the whole graph.
+void VTransformGraph::optimize(VTransform& vtransform) {
+  TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
+
+  bool progress = true;
+  DEBUG_ONLY(int pass_count = 0;)
+  while (progress) {
+    progress = false;
+    assert(++pass_count < 10, "ensure we do not have endless loops");
+    for (int i = 0; i < _vtnodes.length(); i++) {
+      VTransformNode* vtn = _vtnodes.at(i);
+      if (!vtn->is_alive()) { continue; }
+      progress |= vtn->optimize(_vloop_analyzer, vtransform);
+
+      // Nodes that have no use any more are dead.
+      if (vtn->out_strong_edges() == 0 &&
+          // There are some exceptions:
+          // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
+          // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
+          // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
+          !(vtn->isa_LoopPhi() != nullptr ||
+            vtn->is_load_or_store_in_loop() ||
+            (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
+        vtn->mark_dead();
+        progress = true;
+      }
+    }
+  }
 }
 
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
@@ -59,10 +99,11 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   collect_nodes_without_strong_in_edges(stack);
+  const int num_alive_nodes = count_alive_vtnodes();
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
-  int rpo_idx = _vtnodes.length() - 1;
+  int rpo_idx = num_alive_nodes - 1;
   while (!stack.is_empty()) {
     VTransformNode* vtn = stack.top();
     if (!pre_visited.test_set(vtn->_idx)) {
@@ -78,6 +119,13 @@ bool VTransformGraph::schedule() {
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
       for (uint i = 0; i < vtn->out_strong_edges(); i++) {
         VTransformNode* use = vtn->out_strong_edge(i);
+
+        // Skip dead nodes
+        if (!use->is_alive()) { continue; }
+
+        // Skip LoopPhi backedge.
+        if ((use->isa_LoopPhi() != nullptr || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) { continue; }
+
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
@@ -117,10 +165,25 @@ bool VTransformGraph::schedule() {
 void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
+    if (!vtn->is_alive()) { continue; }
     if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
+    // If an Outer node has both inputs and outputs, we will most likely have cycles in the final graph.
+    // This is not a correctness problem, but it just will prevent vectorization. If this ever happens
+    // try to find a way to avoid the cycle somehow.
+    assert(vtn->isa_Outer() == nullptr || (vtn->has_strong_in_edge() != (vtn->out_strong_edges() > 0)),
+           "Outer nodes should either be inputs or outputs, but not both, otherwise we may get cycles");
   }
+}
+
+int VTransformGraph::count_alive_vtnodes() const {
+  int count = 0;
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    if (vtn->is_alive()) { count++; }
+  }
+  return count;
 }
 
 #ifndef PRODUCT
@@ -717,28 +780,118 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
+void VTransformApplyState::init_memory_states_and_uses_after_loop() {
+  const GrowableArray<Node*>& inputs = _vloop_analyzer.memory_slices().inputs();
+  const GrowableArray<PhiNode*>& heads = _vloop_analyzer.memory_slices().heads();
+  for (int i = 0; i < inputs.length(); i++) {
+    PhiNode* head = heads.at(i);
+    if (head != nullptr) {
+      // Slice with Phi (i.e. with stores) -> start with the phi (phi_mem)
+      _memory_states.at_put(i, head);
+
+      // Remember uses outside the loop of the last memory state (store).
+      StoreNode* last_store = head->in(2)->as_Store();
+      assert(vloop().in_bb(last_store), "backedge store should be in the loop");
+      for (DUIterator_Fast jmax, j = last_store->fast_outs(jmax); j < jmax; j++) {
+        Node* use = last_store->fast_out(j);
+        if (!vloop().in_bb(use)) {
+          for (uint k = 0; k < use->req(); k++) {
+            if (use->in(k) == last_store) {
+              _memory_state_uses_after_loop.push(MemoryStateUseAfterLoop(use, k, i));
+            }
+          }
+        }
+      }
+    } else {
+      // Slice without Phi (i.e. only loads) -> use the input state (entry_mem)
+      _memory_states.at_put(i, inputs.at(i));
+    }
+  }
+}
+
+// We may have reordered the scalar stores, or replaced them with vectors. Now
+// the last memory state in the loop may have changed. Thus, we need to change
+// the uses of the old last memory state the new last memory state.
+void VTransformApplyState::fix_memory_state_uses_after_loop() {
+  for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
+    MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
+    Node* last_state = memory_state(use._alias_idx);
+    phase()->igvn().replace_input_of(use._use, use._in_idx, last_state);
+  }
+}
+
+void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  for (uint i = 0; i < req(); i++) {
+    VTransformNode* vtn_def = in_req(i);
+    if (vtn_def != nullptr) {
+      Node* def = apply_state.transformed_node(vtn_def);
+      phase->igvn().replace_input_of(n, i, def);
+    }
+  }
+}
+
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  apply_vtn_inputs_to_node(_node, apply_state);
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
+  Node* mem = apply_state.memory_state(_node->adr_type());
+  apply_state.phase()->igvn().replace_input_of(_node, 1, mem);
+  if (_node->is_Store()) {
+    apply_state.set_memory_state(_node->adr_type(), _node);
+  }
+
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  apply_vtn_inputs_to_node(_node, apply_state);
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* in0 = apply_state.transformed_node(in_req(0));
+  Node* in1 = apply_state.transformed_node(in_req(1));
+  phase->igvn().replace_input_of(_node, 0, in0);
+  phase->igvn().replace_input_of(_node, 1, in1);
+  // Note: the backedge is hooked up later.
+
+  // The Phi's inputs may have been modified, and the types changes,
+  // e.g. from scalar to vector.
+  const Type* t = in1->bottom_type();
+  _node->as_Type()->set_type(t);
+  phase->igvn().set_type(_node, t);
+
   return VTransformApplyResult::make_scalar(_node);
 }
 
+// Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
+// we only have the transformed backedges after the phis are already transformed.
+// We hook the backedges into the phis now, during cleanup.
+void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  if (_node->is_memory_phi()) {
+    // Memory phi/backedge
+    // The last memory state of that slice is the backedge.
+    Node* last_state = apply_state.memory_state(_node->adr_type());
+    phase->igvn().replace_input_of(_node, 2, last_state);
+  } else {
+    // Data phi/backedge
+    Node* in2 = apply_state.transformed_node(in_req(2));
+    phase->igvn().replace_input_of(_node, 2, in2);
+  }
+}
+
 VTransformApplyResult VTransformCFGNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  // We do not modify the inputs of the CountedLoop (and certainly not its backedge)
+  if (!_node->is_CountedLoop()) {
+    apply_vtn_inputs_to_node(_node, apply_state);
+  }
   return VTransformApplyResult::make_scalar(_node);
 }
 
 VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_state) const {
-  // This was just wrapped. Now we simply unwrap without touching the inputs.
+  apply_vtn_inputs_to_node(_node, apply_state);
   return VTransformApplyResult::make_scalar(_node);
 }
 
@@ -797,7 +950,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
     vn = VectorNode::make(_vector_opcode, in1, in2, in3, vt); // ternary
   }
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -812,7 +965,7 @@ VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(
   register_new_node_from_vectorization(apply_state, long_vn);
   // Cast long -> int, to mimic the scalar long -> int operation.
   VectorNode* vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -824,7 +977,7 @@ VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyStat
   Node* in1 = apply_state.transformed_node(in_req(1));
   VectorNode* vn = new VectorReinterpretNode(in1, src_vt, dst_vt);
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
 }
 
@@ -843,8 +996,244 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   PhaseIdealLoop* phase = apply_state.phase();
   ConINode* mask_node  = phase->intcon((int)mask);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
+}
+
+bool VTransformReductionVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  return optimize_move_non_strict_order_reductions_out_of_loop(vloop_analyzer, vtransform);
+}
+
+int VTransformReductionVectorNode::vector_reduction_opcode() const {
+  return ReductionNode::opcode(scalar_opcode(), element_basic_type());
+}
+
+bool VTransformReductionVectorNode::requires_strict_order() const {
+  int vopc = vector_reduction_opcode();
+  return ReductionNode::auto_vectorization_requires_strict_order(vopc);
+}
+
+// Having ReductionNodes in the loop is expensive. They need to recursively
+// fold together the vector values, for every vectorized loop iteration. If
+// we encounter the following pattern, we can vector accumulate the values
+// inside the loop, and only have a single UnorderedReduction after the loop.
+//
+// Note: UnorderedReduction represents a ReductionNode which does not require
+// calculating in strict order.
+//
+// CountedLoop     init
+//          |        |
+//          +------+ | +------------------------+
+//                 | | |                        |
+//                PhiNode (s)                   |
+//                  |                           |
+//                  |          Vector           |
+//                  |            |              |
+//               UnorderedReduction (first_red) |
+//                  |                           |
+//                 ...         Vector           |
+//                  |            |              |
+//               UnorderedReduction (last_red)  |
+//                       |                      |
+//                       +----------------------+
+//
+// We patch the graph to look like this:
+//
+// CountedLoop   identity_vector
+//         |         |
+//         +-------+ | +---------------+
+//                 | | |               |
+//                PhiNode (v)          |
+//                   |                 |
+//                   |         Vector  |
+//                   |           |     |
+//                 VectorAccumulator   |
+//                   |                 |
+//                  ...        Vector  |
+//                   |           |     |
+//      init       VectorAccumulator   |
+//        |          |     |           |
+//     UnorderedReduction  +-----------+
+//
+// We turned the scalar (s) Phi into a vectorized one (v). In the loop, we
+// use vector_accumulators, which do the same reductions, but only element
+// wise. This is a single operation per vector_accumulator, rather than many
+// for a UnorderedReduction. We can then reduce the last vector_accumulator
+// after the loop, and also reduce the init value into it.
+//
+// We can not do this with all reductions. Some reductions do not allow the
+// reordering of operations (for example float addition/multiplication require
+// strict order).
+//
+// Note: we must perform this optimization already during auto vectorization,
+//       before we evaluate the cost-model. Without this optimization, we may
+//       still have expensive reduction nodes in the loop which can make
+//       vectorization unprofitable. Only with the optimization does vectorization
+//       become profitable, since the expensive reduction node is moved
+//       outside the loop, and instead cheaper element-wise vector accumulations
+//       are performed inside the loop.
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform) {
+  // We have a phi with a single use.
+  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  if (phi == nullptr) {
+    return false;
+  }
+  if (phi->out_strong_edges() != 1) {
+    TRACE_OPTIMIZE(
+      tty->print("  Cannot move out of loop, phi has multiple uses:");
+      print();
+      tty->print("  phi: ");
+      phi->print();
+    )
+    return false;
+  }
+
+  if (requires_strict_order()) {
+    TRACE_OPTIMIZE(
+      tty->print("  Cannot move out of loop, strict order required: ");
+      print();
+    )
+    return false;
+  }
+
+  const int sopc     = scalar_opcode();
+  const uint vlen    = vector_length();
+  const BasicType bt = element_basic_type();
+  const int ropc     = vector_reduction_opcode();
+  const int vopc     = VectorNode::opcode(sopc, bt);
+  if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
+    DEBUG_ONLY( this->print(); )
+    assert(false, "do not have normal vector op for this reduction");
+    return false; // not implemented
+  }
+
+  // Traverse up the chain of non strict order reductions, checking that it loops
+  // back to the phi. Check that all non strict order reductions only have a single
+  // use, except for the last (last_red), which only has phi as a use in the loop,
+  // and all other uses are outside the loop.
+  VTransformReductionVectorNode* first_red   = this;
+  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* current_red = last_red;
+  while (true) {
+    if (current_red == nullptr ||
+        current_red->vector_reduction_opcode() != ropc ||
+        current_red->element_basic_type() != bt ||
+        current_red->vector_length() != vlen) {
+      TRACE_OPTIMIZE(
+        tty->print("  Cannot move out of loop, other reduction node does not match:");
+        print();
+        tty->print("  other: ");
+        current_red->print();
+      )
+      return false; // not compatible
+    }
+
+    VTransformVectorNode* vector_input = current_red->in_req(2)->isa_Vector();
+    if (vector_input == nullptr) {
+      assert(false, "reduction has a bad vector input");
+      return false;
+    }
+
+    // Expect single use of the non strict order reduction. Except for the last_red.
+    if (current_red == last_red) {
+      // All uses must be outside loop body, except for the phi.
+      for (uint i = 0; i < current_red->out_strong_edges(); i++) {
+        VTransformNode* use = current_red->out_strong_edge(i);
+        if (use->isa_LoopPhi() == nullptr &&
+            use->isa_Outer() == nullptr) {
+          // Should not be allowed by SuperWord::mark_reductions
+          assert(false, "reduction has use inside loop");
+          return false;
+        }
+      }
+    } else {
+      if (current_red->out_strong_edges() != 1) {
+        TRACE_OPTIMIZE(
+          tty->print("  Cannot move out of loop, other reduction node has use outside loop:");
+          print();
+          tty->print("  other: ");
+          current_red->print();
+        )
+        return false; // Only single use allowed
+      }
+    }
+
+    // If the scalar input is a phi, we passed all checks.
+    VTransformNode* scalar_input = current_red->in_req(1);
+    if (scalar_input == phi) {
+      break;
+    }
+
+    // We expect another non strict reduction, verify it in the next iteration.
+    current_red = scalar_input->isa_ReductionVector();
+  }
+  return true; // success
+}
+
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  if (!optimize_move_non_strict_order_reductions_out_of_loop_preconditions(vtransform)) {
+    return false;
+  }
+
+  // All checks were successful. Edit the vtransform graph now.
+  TRACE_OPTIMIZE(
+    tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
+  )
+
+  const int sopc     = scalar_opcode();
+  const uint vlen    = vector_length();
+  const BasicType bt = element_basic_type();
+  const int vopc     = VectorNode::opcode(sopc, bt);
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  // Create a vector of identity values.
+  Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
+  phase->set_root_as_ctrl(identity);
+  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
+
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
+  vtn_identity_vector->init_req(1, vtn_identity);
+
+  // Turn the scalar phi into a vector phi.
+  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  VTransformNode* init = phi->in_req(1);
+  phi->set_req(1, vtn_identity_vector);
+
+  // Traverse down the chain of reductions, and replace them with vector_accumulators.
+  VTransformReductionVectorNode* first_red   = this;
+  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* current_red = first_red;
+  VTransformNode* current_vector_accumulator = phi;
+  while (true) {
+    VTransformNode* vector_input = current_red->in_req(2);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
+    vector_accumulator->init_req(1, current_vector_accumulator);
+    vector_accumulator->init_req(2, vector_input);
+    TRACE_OPTIMIZE(
+      tty->print("  replace    ");
+      current_red->print();
+      tty->print("  with       ");
+      vector_accumulator->print();
+    )
+    current_vector_accumulator = vector_accumulator;
+    if (current_red == last_red) { break; }
+    current_red = current_red->unique_out_strong_edge()->isa_ReductionVector();
+  }
+
+  // Feed vector accumulator into the backedge.
+  phi->set_req(2, current_vector_accumulator);
+
+  // Create post-loop reduction. last_red keeps all uses outside the loop.
+  last_red->set_req(1, init);
+  last_red->set_req(2, current_vector_accumulator);
+
+  TRACE_OPTIMIZE(
+    tty->print("  phi        ");
+    phi->print();
+    tty->print("  after loop ");
+    last_red->print();
+  )
+  return true; // success
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -852,7 +1241,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   Node* vec  = apply_state.transformed_node(in_req(2));
 
   ReductionNode* vn = ReductionNode::make(scalar_opcode(), nullptr, init, vec, element_basic_type());
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
@@ -861,10 +1250,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  LoadNode* first = nodes().at(0)->as_Load();
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
-  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
 
   // Set the memory dependency of the LoadVector as early as possible.
@@ -880,10 +1268,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt,
-                                            control_dependency());
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, _adr_type, vlen, bt, _control_dependency);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
@@ -891,27 +1278,17 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   int sopc  = scalar_opcode();
   uint vlen = vector_length();
 
-  StoreNode* first = nodes().at(0)->as_Store();
+  // The memory state has to be applied separately: the vtn does not hold it. This allows reordering.
   Node* ctrl = apply_state.transformed_node(in_req(MemNode::Control));
-  // first has the correct memory state, determined by VTransformGraph::apply_memops_reordering_with_schedule
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(_adr_type);
   Node* adr  = apply_state.transformed_node(in_req(MemNode::Address));
 
   Node* value = apply_state.transformed_node(in_req(MemNode::ValueIn));
   StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, _adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(apply_state, vn);
-  return VTransformApplyResult::make_vector(vn, vn->vect_type());
-}
-
-void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(VTransformApplyState& apply_state, Node* vn) const {
-  PhaseIdealLoop* phase = apply_state.phase();
   register_new_node_from_vectorization(apply_state, vn);
-
-  for (int i = 0; i < _nodes.length(); i++) {
-    Node* n = _nodes.at(i);
-    phase->igvn().replace_node(n, vn);
-  }
+  apply_state.set_memory_state(_adr_type, vn);
+  return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
 
 void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
@@ -944,15 +1321,6 @@ void VTransformGraph::print_schedule() const {
   }
 }
 
-void VTransformGraph::print_memops_schedule() const {
-  tty->print_cr("\nVTransformGraph::print_memops_schedule:");
-  int i = 0;
-  for_each_memop_in_schedule([&] (MemNode* mem) {
-    tty->print(" %3d: ", i++);
-    mem->dump();
-  });
-}
-
 void VTransformNode::print() const {
   tty->print("%3d %s (", _idx, name());
   for (uint i = 0; i < _req; i++) {
@@ -970,7 +1338,7 @@ void VTransformNode::print() const {
       print_node_idx(_in.at(i));
     }
   }
-  tty->print(") [");
+  tty->print(") %s[", _is_alive ? "" : "dead ");
   for (uint i = 0; i < _out_end_strong_edges; i++) {
     print_node_idx(_out.at(i));
   }

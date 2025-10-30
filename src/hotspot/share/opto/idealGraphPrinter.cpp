@@ -161,6 +161,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
+  _parse = nullptr;
 
   if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files);
@@ -399,6 +400,14 @@ void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
 }
 
+const Parse* IdealGraphPrinter::parse() {
+  return _parse;
+}
+
+void IdealGraphPrinter::set_parse(const Parse* parse) {
+  _parse = parse;
+}
+
 void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
   if (edges) {
@@ -447,6 +456,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
           print_prop("phase_type", buffer);
         }
       }
+    }
+    if (n->adr_type() != nullptr) {
+      stringStream adr_type_stream;
+      n->adr_type()->dump_on(&adr_type_stream);
+      print_prop("adr_type", adr_type_stream.freeze());
     }
 
     if (C->cfg() != nullptr) {
@@ -991,6 +1005,17 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 
   head(PROPERTIES_ELEMENT);
   print_stack(fr, nullptr);
+  if (_parse != nullptr) {
+    if (_parse->map() == nullptr) {
+      print_prop("map", "-");
+    } else {
+      print_prop("map", _parse->map()->_idx);
+    }
+    print_prop("block", _parse->block()->rpo());
+    stringStream shortStr;
+    _parse->flow()->method()->print_short_name(&shortStr);
+    print_prop("method", shortStr.freeze());
+  }
   tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);

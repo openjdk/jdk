@@ -204,15 +204,18 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   key="x"/value="java-1-7"</dd>
  * </dl>
  *
- * <b>BCP 47 deviation:</b> Although BCP 47 requires field values to be registered
- * in the IANA Language Subtag Registry, the {@code Locale} class
- * does not validate this requirement. For example, the variant code <em>"foobar"</em>
- * is well-formed since it is composed of 5 to 8 alphanumerics, but is not defined
- * the IANA Language Subtag Registry. The {@link Builder}
- * only checks if an individual field satisfies the syntactic
- * requirement (is well-formed), but does not validate the value
- * itself. Conversely, {@link #of(String, String, String) Locale::of} and its
- * overloads do not make any syntactic checks on the input.
+ * <b>BCP 47 deviation:</b> BCP47 defines the following two levels of
+ * <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.9">conformance</a>,
+ * "valid" and "well-formed". A valid tag requires that it is well-formed, its
+ * subtag values are registered in the IANA Language Subtag Registry, and it does not
+ * contain duplicate variant or extension singleton subtags. The {@code Locale}
+ * class does not enforce that subtags are registered in the Subtag Registry.
+ * {@link Builder} only checks if an individual field satisfies the syntactic
+ * requirement (is well-formed). When passed duplicate variants, {@code Builder}
+ * accepts and includes them. When passed duplicate extension singletons, {@code
+ * Builder} accepts but ignores the duplicate key and its associated value.
+ * Conversely, {@link #of(String, String, String) Locale::of} and its
+ * overloads do not check if the input is well-formed at all.
  *
  * <h3><a id="def_locale_extension">Unicode BCP 47 U Extension</a></h3>
  *
@@ -246,7 +249,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * can be empty, or a series of subtags 3-8 alphanums in length).  A
  * well-formed locale attribute has the form
  * {@code [0-9a-zA-Z]{3,8}} (it is a single subtag with the same
- * form as a locale type subtag).
+ * form as a locale type subtag). Duplicate locale attributes as well
+ * as locale keys do not convey meaning. For methods in {@code Locale} and
+ * {@code Locale.Builder} that accept extensions, occurrences of duplicate
+ * locale attributes as well as locale keys and their associated type are accepted
+ * but ignored.
  *
  * <p>The Unicode locale extension specifies optional behavior in
  * locale-sensitive services.  Although the LDML specification defines
@@ -561,6 +568,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
+ * @spec https://www.rfc-editor.org/info/rfc6067
+ *      RFC 6067: BCP 47 Extension U
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
  * @see Builder
@@ -1743,6 +1752,12 @@ public final class Locale implements Cloneable, Serializable {
      * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
+     * <p>Duplicate variants are accepted and included by the builder.
+     * However, duplicate extension singleton keys and their associated type
+     * are accepted but ignored. The same behavior applies to duplicate locale
+     * keys and attributes within a U extension. Note that subsequent subtags after
+     * the occurrence of a duplicate are not ignored.
+     *
      * <p>The following <b id="langtag_conversions">conversions</b> are performed:<ul>
      *
      * <li>The language code "und" is mapped to language "".
@@ -2717,6 +2732,12 @@ public final class Locale implements Cloneable, Serializable {
          * just discards ill-formed and following portions of the
          * tag).
          *
+         * <p>Duplicate variants are accepted and included by the builder.
+         * However, duplicate extension singleton keys and their associated type
+         * are accepted but ignored. The same behavior applies to duplicate locale
+         * keys and attributes within a U extension. Note that subsequent subtags after
+         * the occurrence of a duplicate are not ignored.
+         *
          * <p>See {@link Locale##langtag_conversions converions} for a full list
          * of conversions that are performed on {@code languageTag}.
          *
@@ -2726,9 +2747,13 @@ public final class Locale implements Cloneable, Serializable {
          * @see Locale#forLanguageTag(String)
          */
         public Builder setLanguageTag(String languageTag) {
-            LanguageTag tag = LanguageTag.parse(
-                    languageTag, new ParsePosition(0), false);
-            localeBuilder.setLanguageTag(tag);
+            if (LocaleUtils.isEmpty(languageTag)) {
+                localeBuilder.clear();
+            } else {
+                LanguageTag tag = LanguageTag.parse(
+                        languageTag, new ParsePosition(0), false);
+                localeBuilder.setLanguageTag(tag);
+            }
             return this;
         }
 
@@ -2804,7 +2829,8 @@ public final class Locale implements Cloneable, Serializable {
          * Sets the variant.  If variant is null or the empty string, the
          * variant in this {@code Builder} is removed.  Otherwise, it
          * must consist of one or more {@linkplain Locale##def_variant well-formed}
-         * subtags, or an exception is thrown.
+         * subtags, or an exception is thrown. Duplicate variants are
+         * accepted and included by the builder.
          *
          * <p><b>Note:</b> This method checks if {@code variant}
          * satisfies the IETF BCP 47 variant subtag's syntax requirements,
@@ -2837,7 +2863,8 @@ public final class Locale implements Cloneable, Serializable {
          * <p><b>Note:</b> The key {@link #UNICODE_LOCALE_EXTENSION
          * UNICODE_LOCALE_EXTENSION} ('u') is used for the Unicode locale extension.
          * Setting a value for this key replaces any existing Unicode locale key/type
-         * pairs with those defined in the extension.
+         * pairs with those defined in the extension. Duplicate locale attributes
+         * as well as locale keys and their associated type are accepted but ignored.
          *
          * <p><b>Note:</b> The key {@link #PRIVATE_USE_EXTENSION
          * PRIVATE_USE_EXTENSION} ('x') is used for the private use code. To be

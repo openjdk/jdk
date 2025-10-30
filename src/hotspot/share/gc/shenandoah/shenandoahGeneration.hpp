@@ -142,7 +142,12 @@ private:
   size_t soft_available() const override;
 
   size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start();
+
+  // Reset the bytes allocated within this generation since the start of GC.  The argument initial_bytes_allocated
+  // is normally zero.  In the case that some memory was allocated following the last allocation rate sample that
+  // precedes the start of GC, the number of bytes allocated is supplied as the initial value of bytes_allocated_since_gc_start.
+  // We will behave as if these bytes were allocated after the start of GC.
+  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
   void increase_allocated(size_t bytes);
 
   // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current
@@ -198,7 +203,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete() { return _is_marking_complete.is_set(); }
+  bool is_mark_complete() const { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 

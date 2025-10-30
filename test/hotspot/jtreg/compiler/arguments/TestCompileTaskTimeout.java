@@ -25,7 +25,7 @@ package compiler.arguments;
 
 /*
  * @test TestCompileTaskTimeout
- * @bug 8308094 8365909
+ * @bug 8308094 8365909 8366875
  * @requires vm.debug & vm.flagless & os.name == "Linux"
  * @summary Check functionality of CompileTaskTimeout
  * @library /test/lib
@@ -42,6 +42,7 @@ public class TestCompileTaskTimeout {
             timeoutFactor = Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"));
         } catch (NumberFormatException ignored) {}
 
+        // Short timeouts crash the VM.
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "--version")
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
@@ -54,8 +55,17 @@ public class TestCompileTaskTimeout {
                     .shouldHaveExitValue(134)
                     .shouldContain("timed out after");
 
+        // A long enough timeout succeeds.
         int timeout = (int)(500.0 * timeoutFactor);
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=" + timeout, "--version")
+                    .shouldHaveExitValue(0);
+
+        // Each repeated compilation has a new timeout.
+        ProcessTools.executeTestJava("-Xcomp",
+                                     "-XX:CompileTaskTimeout=" + timeout,
+                                     "-XX:RepeatCompilation=100",
+                                     "-XX:CompileCommand=compileonly,java/util/concurrent/ConcurrentHashMap.*",
+                                     "--version")
                     .shouldHaveExitValue(0);
     }
 }
