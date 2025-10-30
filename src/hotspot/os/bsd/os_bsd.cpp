@@ -2508,11 +2508,9 @@ void os::print_open_file_descriptors(outputStream* st) {
 #ifdef __APPLE__
   const int MAX_SAFE_FDS = 1024;
   struct proc_fdinfo fds[MAX_SAFE_FDS];
-  struct proc_bsdinfo bsdinfo;
   int nfiles;
   kern_return_t kres;
   int res;
-  size_t fds_size;
   pid_t my_pid;
 
   kres = pid_for_task(mach_task_self(), &my_pid);
