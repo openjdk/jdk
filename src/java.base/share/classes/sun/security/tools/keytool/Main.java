@@ -2064,8 +2064,8 @@ public final class Main {
     /**
      * Returns the full display name of the given key object. Could be
      * - "X25519", if its getParams() is NamedParameterSpec
-     * - "EC (secp256r1)", if it's an EC key
-     * - "1024-bit RSA", other known keys
+     * - "256-bit EC (secp256r1)", if it's an EC key
+     * - "1024-bit RSA", other keys with a defined key size
      * - plain algorithm name, otherwise
      *
      * Note: the same method appears in keytool and jarsigner which uses
