@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8351032
+ * @bug 8370344
  * @library /test/lib
  * @run junit/native TestSharedCloseJvmti
  */
