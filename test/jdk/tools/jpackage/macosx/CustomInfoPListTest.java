@@ -69,11 +69,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --type image --resource-dir "Info.plist" and "Runtime-Info.plist"
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build CustomInfoPListTest
  * @requires (os.family == "mac")
- * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CustomInfoPListTest
  */

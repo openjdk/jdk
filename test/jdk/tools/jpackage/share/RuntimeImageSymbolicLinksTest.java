@@ -40,7 +40,6 @@ import jdk.jpackage.test.Executor;
  * @test
  * @summary jpackage with --runtime-image
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @requires (os.family != "windows")
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror RuntimeImageSymbolicLinksTest.java

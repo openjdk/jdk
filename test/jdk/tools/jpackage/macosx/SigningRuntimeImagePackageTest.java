@@ -80,6 +80,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build SigningRuntimeImagePackageTest
  * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningRuntimeImagePackageTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady

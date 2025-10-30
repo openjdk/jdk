@@ -34,7 +34,6 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --runtime-image
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
