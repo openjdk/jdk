@@ -2765,7 +2765,8 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
+void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
+                                          CodeStub* overflow) {
   // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Address dest_adr = as_Address(addr->as_address_ptr());
@@ -2789,13 +2790,13 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   }
 
   Label dont;
+  Label *skip = overflow ? overflow->continuation() : &dont;
 
   if (incr->is_register()) {
     Register inc = incr->as_register();
     if (profile_capture_ratio > 1) {
-      __ movl(dest->as_register(), inc);
       __ cmpl(r_profile_rng, threshold);
-      __ jccb(Assembler::aboveEqual, dont);
+      __ jccb(Assembler::aboveEqual, *skip);
     }
     __ movl(temp, dest_adr);
     if (profile_capture_ratio > 1) {
@@ -2811,7 +2812,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         if (dest->is_register())  __ movl(dest->as_register(), inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
-          __ jccb(Assembler::aboveEqual, dont);
+          __ jccb(Assembler::aboveEqual, *skip);
         }
         inc *= profile_capture_ratio;
         if (dest->is_register()) {
@@ -2829,7 +2830,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
-          __ jccb(Assembler::aboveEqual, dont);
+          __ jccb(Assembler::aboveEqual, *skip);
         }
         inc *= profile_capture_ratio;
         if (dest->is_register()) {

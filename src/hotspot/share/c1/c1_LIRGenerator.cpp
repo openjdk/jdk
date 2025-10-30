@@ -3196,7 +3196,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
 
-    __ increment_profile_ctr(step, counter, result, tmp);
+    __ increment_profile_ctr(step, counter, result, tmp, overflow);
 
     int freq = frequency << InvocationCounter::count_shift;
     if (freq == 0) {
