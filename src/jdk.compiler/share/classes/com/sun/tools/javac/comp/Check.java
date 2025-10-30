@@ -4737,25 +4737,25 @@ public class Check {
                     JCCase testCase = caseAndLabel.fst;
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
-                    boolean dominated = false;
 
-                    if (unconditionalCaseLabel == testCaseLabel) {
-                        unconditionalFound = true;
+                    // an unconditional pattern cannot be followed by any other label
+                    if (allowPrimitivePatterns && unconditionalCaseLabel == testCaseLabel && unconditionalCaseLabel != label) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                        continue;
                     }
+
+                    boolean dominated = false;
                     if (!currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
-                        //the current label is potentially dominated by the existing (test) label, check:
-                        if (label instanceof JCConstantCaseLabel &&
-                                types.isUnconditionallyExactCombined(currentType, testType)) {
+                        // the current label is potentially dominated by the existing (test) label, check:
+                        if (types.isUnconditionallyExactCombined(currentType, testType) &&
+                                label instanceof JCConstantCaseLabel) {
                             dominated = !(testCaseLabel instanceof JCConstantCaseLabel) &&
-                                    TreeInfo.unguardedCase(testCase);
+                                         TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
                                    (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
                             dominated = patternDominated(testPatternCaseLabel.pat, patternCL.pat);
                         }
-                    }
-                    if (allowPrimitivePatterns && unconditionalFound && unconditionalCaseLabel != label) {
-                        dominated = true;
                     }
                     if (dominated) {
                         log.error(label.pos(), Errors.PatternDominated);
