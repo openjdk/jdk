@@ -598,42 +598,44 @@ final class StringUTF16 {
     }
 
     private static int compareToFC0(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
-        int[] folded1 = null;
-        int[] folded2 = null;
-        int k1 = off, k2 = ooff, fk1 = 0, fk2 = 0;
-        while ((k1 < last || folded1 != null && fk1 < folded1.length) &&
-               (k2 < olast || folded2 != null && fk2 < folded2.length)) {
+        int f1 = 0, f2 = 0;
+        int k1 = off, k2 = ooff;
+        while ((k1 < last || f1 != 0) && (k2 < olast || f2 != 0)) {
             int c1, c2;
-            if (folded1 != null && fk1 < folded1.length) {
-                c1 = folded1[fk1++];
+            if (f1 != 0) {
+                c1 = f1 & 0xffff; f1 >>>= 16;
             } else {
-                c1 = codePointAt(value, k1, last, true);
+                c1 = StringUTF16.codePointAt(value, k1, last, true);
                 k1 += Character.charCount(c1);
-                folded1 = CaseFolding.foldIfDefined(c1);
-                fk1 = 0;
-                if (folded1 != null) {
-                    c1 = folded1[fk1++];
+                var f = CaseFolding.fold(c1);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c1 = (int)(f & 0xfffff);
+                } else {
+                    c1 = (int)(f & 0xffff);
+                    f1 = (int)(f >> 16);
                 }
             }
-            if (folded2 != null && fk2 < folded2.length) {
-                c2 = folded2[fk2++];
+            if (f2 != 0) {
+                c2 = f2 & 0xffff; f2 >>>= 16;
             } else {
-                c2 = codePointAt(other, k2, olast, true);
+                c2 = StringUTF16.codePointAt(other, k2, olast, true);
                 k2 += Character.charCount(c2);
-                folded2 = CaseFolding.foldIfDefined(c2);
-                fk2 = 0;
-                if (folded2 != null) {
-                    c2 = folded2[fk2++];
+                var f = CaseFolding.fold(c2);
+                if (CaseFolding.isSingleCodePoint(f)) {
+                    c2 = (int)(f & 0xfffff);
+                } else {
+                    c2 = (int)(f & 0xffff);
+                    f2 = (int)(f >>> 16);
                 }
             }
             if (c1 != c2) {
                 return c1 - c2;
             }
         }
-        if (k1 < last || folded1 != null && fk1 < folded1.length) {
+        if (k1 < last || f1 != 0) {
             return 1;
         }
-        if (k2 < olast || folded2 != null && fk2 < folded2.length) {
+        if (k2 < olast || f2 != 0) {
             return -1;
         }
         return 0;
@@ -647,14 +649,17 @@ final class StringUTF16 {
         while (k < lim) {
             int cp1 = codePointAt(value, k, tlast, true);
             int cp2 = codePointAt(other, k, olast, true);
-            if (cp1 == cp2) {
-                k += Character.charCount(cp1);
-                continue;
+            if (cp1 != cp2) {
+                long cf1 = CaseFolding.fold(cp1);
+                long cf2 = CaseFolding.fold(cp2);
+                if (cf1 != cf2) {
+                    if (!CaseFolding.isSingleCodePoint(cf1) || !CaseFolding.isSingleCodePoint(cf2)) {
+                        return compareToFC0(value, k, tlast, other, k, olast);
+                    }
+                    return (int) cf1 - (int) cf2;
+                }
             }
-            if (CaseFolding.isDefined(cp1) || CaseFolding.isDefined(cp2)) {
-                return compareToFC0(value, k, tlast, other, k, olast);
-            }
-            return cp1 - cp2;
+            k += Character.charCount(cp1);
         }
         return tlast - olast;
     }

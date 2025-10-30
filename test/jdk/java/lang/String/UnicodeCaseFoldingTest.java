@@ -64,7 +64,7 @@ public class UnicodeCaseFoldingTest {
                     var source = new String(Character.toChars(cp));
                     var expected = new String(folding, 0, folding.length);
                     // (1) Verify the folding result matches expected
-                    assertEquals(expected, foldCase(source), "CaseFolding.fold()");
+                    assertEquals(expected, foldCase(source), "CaseFolding.fold(): ");
 
                     // (2) Verify compareToFoldCase() result
                     assertEquals(0, source.compareToFoldCase(expected), "source.compareToFoldCase(expected)");
@@ -285,6 +285,20 @@ public class UnicodeCaseFoldingTest {
     }
 
     // helper to test the integrity of folding mapping
+    private static int[] longToFolding(long value) {
+        int len = (int) (value >>> 48);
+        if (len == 0) {
+            return new int[]{(int) (value & 0xFFFFF)};
+        } else {
+            var folding = new int[len];
+            for (int i = 0; i < len; i++) {
+                folding[i] = (int) (value & 0xFFFF);
+                value >>= 16;
+            }
+            return folding;
+        }
+    }
+
     private static String foldCase(String s) {
         int first;
         int len = s.length();
@@ -303,13 +317,9 @@ public class UnicodeCaseFoldingTest {
         sb.append(s, 0, first);
         for (int i = first; i < len; i += cpCnt) {
             int cp = s.codePointAt(i);
-            int[] folded = CaseFolding.foldIfDefined(cp);
-            if (folded == null) {
-                sb.appendCodePoint(cp);
-            } else {
-                for (int f : folded) {
-                    sb.appendCodePoint(f);
-                }
+            int[] folded = longToFolding(CaseFolding.fold(cp));
+            for (int f : folded) {
+                sb.appendCodePoint(f);
             }
             cpCnt = Character.charCount(cp);
         }

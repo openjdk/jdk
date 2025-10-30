@@ -87,6 +87,20 @@ public class GenerateCaseFolding {
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    private static long foldingToLong(String[] folding) {
+        int cp = Integer.parseInt(folding[0], 16);
+        long value = (long)Integer.parseInt(folding[1], 16);
+        if (!Character.isSupplementaryCodePoint(cp) && folding.length != 2) {
+            var shift = 16;
+            for (int j = 2; j < folding.length; j++) {
+                value |= (long)Integer.parseInt(folding[j], 16) << shift;
+                shift <<= 1;
+            }
+            value = value | (long) (folding.length - 1) << 48;
+        }
+        return value;
+    }
+
     private static String genFoldingEntries(String[][] foldings) {
         StringBuilder sb = new StringBuilder();
         sb.append("    private static final int[] CASE_FOLDING_CPS = {\n");
@@ -102,17 +116,12 @@ public class GenerateCaseFolding {
         }
         sb.append("    };\n\n");
 
-        sb.append("    private static final int[][] CASE_FOLDING_VALUES = {\n");
+        sb.append("    private static final long[] CASE_FOLDING_VALUES = {\n");
         width = 6;
         for (int i = 0; i < foldings.length; i++) {
             if (i % width == 0)
                 sb.append("        "); // indent
-            var folding = foldings[i];
-            sb.append(Arrays.stream(folding)
-                            .skip(1)
-                            .map(f -> String.format("0X%s", f))
-                            .collect(Collectors.joining(", ", "{", "}"))
-            );
+            sb.append(String.format("0x%013xL", foldingToLong(foldings[i])));
             if (i < foldings.length - 1)
                 sb.append(", ");
             if (i % width == width - 1 || i == foldings.length - 1) {
