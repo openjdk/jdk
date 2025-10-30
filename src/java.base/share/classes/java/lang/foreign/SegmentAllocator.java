@@ -134,7 +134,7 @@ public interface SegmentAllocator {
     default MemorySegment allocateFrom(String str, Charset charset) {
         Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
-        int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
+        int termCharSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
         MemorySegment segment;
         int length;
         if (StringSupport.bytesCompatible(str, charset)) {

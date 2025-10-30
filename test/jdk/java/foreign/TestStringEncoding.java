@@ -78,7 +78,7 @@ public class TestStringEncoding {
                         MemorySegment text = arena.allocateFrom(testString, charset);
 
                         int expectedByteLength =
-                                testString.getBytes(charset).length + terminatorSize(charset);
+                                testString.getBytes(charset).length + codeUnitSize(charset);
 
                         assertEquals(text.byteSize(), expectedByteLength);
 
@@ -104,11 +104,10 @@ public class TestStringEncoding {
                     for (Arena arena : arenas()) {
                         try (arena) {
                             MemorySegment text = arena.allocateFrom(testString, charset);
-
-                            String roundTrip = text.getString(0,
-                                    (int) text.byteSize() - terminatorSize(charset) * 2, charset);
+                            int length = testString.getBytes(charset).length / codeUnitSize(charset);
+                            String roundTrip = text.getString(0, charset, length);
                             if (charset.newEncoder().canEncode(testString)) {
-                                assertEquals(roundTrip, testString.substring(0, testString.length() - 1));
+                                assertEquals(roundTrip, testString);
                             }
                         }
                     }
@@ -121,7 +120,7 @@ public class TestStringEncoding {
     public void testStringsLengthNegative() {
         try (Arena arena = Arena.ofConfined()) {
             var segment = arena.allocateFrom("abc");
-            assertThrows(IllegalArgumentException.class, () -> segment.getString(0, -1, StandardCharsets.UTF_8));
+            assertThrows(IllegalArgumentException.class, () -> segment.getString(0, StandardCharsets.UTF_8, -1));
         }
     }
 
@@ -564,15 +563,15 @@ public class TestStringEncoding {
         return values.toArray(Object[][]::new);
     }
 
-    static int terminatorSize(Charset charset) {
-        int terminatorSize = "\0".getBytes(charset).length;
+    static int codeUnitSize(Charset charset) {
+        int codeUnitSize = "\0".getBytes(charset).length;
         if (charset == StandardCharsets.UTF_16) {
-            terminatorSize -= 2; // drop BOM
+            codeUnitSize -= 2; // drop BOM
         }
         // Note that the JDK's UTF_32 encoder doesn't add a BOM.
         // This is legal under the Unicode standard, and means the byte order is BE.
         // See: https://unicode.org/faq/utf_bom.html#gen7
-        return terminatorSize;
+        return codeUnitSize;
     }
 
 }

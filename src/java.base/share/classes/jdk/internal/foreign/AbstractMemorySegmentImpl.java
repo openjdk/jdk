@@ -536,7 +536,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public String getString(long offset, int length, Charset charset) {
+    public String getString(long offset, Charset charset, int length) {
         if (length < 0) {
             throw new IllegalArgumentException();
         }
