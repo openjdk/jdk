@@ -5054,9 +5054,9 @@ public class Types {
     }
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="Unconditionality">
-    /** Check unconditionality between any combination of reference or primitive
-     *  types.
+    // <editor-fold defaultstate="collapsed" desc="Unconditional Exactness">
+    /** Check type-based unconditional exactness between any combination of
+     *  reference or primitive types according to JLS 5.7.2.
      *
      *  The following are unconditionally exact regardless of the input
      *  expression:
@@ -5067,18 +5067,10 @@ public class Types {
      *    - a boxing conversion
      *    - a boxing conversion followed by a widening reference conversion
      *
-     *  Additionally, the following can be unconditionally exact if the source
-     *  primitive is a constant expression and the conversions is exact for that
-     *  constant expression:
-     *
-     *    - a narrowing primitive conversion
-     *    - a widening and narrowing primitive conversion
-     *    - a widening primitive conversion that is not exact
-     *
      *  @param source     Source primitive or reference type
      *  @param target     Target primitive or reference type
      */
-    public boolean isUnconditionallyExact(Type source, Type target) {
+    public boolean isUnconditionallyExactTypeBased(Type source, Type target) {
         if (isSameType(source, target)) {
             return true;
         }
@@ -5096,8 +5088,23 @@ public class Types {
             return isSubtype(boxedTypeOrType(erasure(source)), target);
         }
     }
-    // where
-    public boolean isUnconditionallyExactConstantPrimitives(Type source, Type target) {
+
+    /** Check value-based unconditional exactness between any combination of
+     *  reference or primitive types for the value of a constant expression
+     *   according to JLS 5.7.2.
+     *
+     *  The following can be unconditionally exact if the source primitive is a
+     *  constant expression and the conversions is exact for that constant
+     *  expression:
+     *
+     *    - a narrowing primitive conversion
+     *    - a widening and narrowing primitive conversion
+     *    - a widening primitive conversion that is not exact
+     *
+     *  @param source     Source primitive or reference type, should be a numeric value
+     *  @param target     Target primitive or reference type
+     */
+    public boolean isUnconditionallyExactValueBased(Type source, Type target) {
         if (!(source.constValue() instanceof Number value) || !target.getTag().isNumeric()) return false;
 
         switch (source.getTag()) {
@@ -5157,6 +5164,18 @@ public class Types {
                 break;
         }
         return true;
+    }
+
+    /** Check both type or value-based unconditional exactness between any
+     *  combination of reference or primitive types for the value of a constant
+     *  expression according to JLS 5.7.2.
+     *
+     *  @param source     Source primitive or reference type, should be a numeric value
+     *  @param target     Target primitive or reference type
+     */
+    public boolean isUnconditionallyExactCombined(Type currentType, Type testType) {
+        return isUnconditionallyExactTypeBased(currentType, testType) ||
+                (currentType.constValue() instanceof Number && isUnconditionallyExactValueBased(currentType, testType));
     }
     // </editor-fold>
 

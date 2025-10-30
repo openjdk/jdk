@@ -48,96 +48,50 @@ public class PrimitiveUnconditionallyExactInAssignability extends TypeHarness {
     PrimitiveUnconditionallyExactInAssignability() {
     }
 
-    void assertAssignmentNarrowingAndUnconditionality() {
-        // byte b = <constant short> vs ExactConversionsSupport::isIntToByteExact
-        assertAssignable(fac.Constant(Short.MIN_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MIN_VALUE));
-        assertAssignable(fac.Constant((short) (Byte.MIN_VALUE - 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MIN_VALUE - 1)));
-        assertAssignable(fac.Constant((short) (Byte.MAX_VALUE + 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Short.MAX_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MAX_VALUE));
-
-        // byte b = <constant char> vs ExactConversionsSupport::isIntToByteExact
-        assertAssignable(fac.Constant(Character.MIN_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MIN_VALUE));
-        assertAssignable(fac.Constant((char) (Byte.MAX_VALUE + 1)),         predef.byteType, ExactConversionsSupport.isIntToByteExact((char) (Byte.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Character.MAX_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MAX_VALUE));
-
-        // byte b = <constant int>  vs ExactConversionsSupport::isIntToByteExact
-        assertAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MIN_VALUE));
-        assertAssignable(fac.Constant((int) (Byte.MIN_VALUE - 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MIN_VALUE - 1)));
-        assertAssignable(fac.Constant((int) (Byte.MAX_VALUE + 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MAX_VALUE));
-
-        // char c = <constant short> vs ExactConversionsSupport::isIntToCharExact
-        assertAssignable(fac.Constant(Short.MIN_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MIN_VALUE));
-        assertAssignable(fac.Constant((short) (Character.MIN_VALUE - 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE - 1)));
-        assertAssignable(fac.Constant((short) (Character.MAX_VALUE + 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE + 1)));
-        assertAssignable(fac.Constant(Short.MAX_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MAX_VALUE));
-
-        // char c = <constant int>   vs ExactConversionsSupport::isIntToCharExact
-        assertAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MIN_VALUE));
-        assertAssignable(fac.Constant((int) (Character.MIN_VALUE - 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MIN_VALUE - 1)));
-        assertAssignable(fac.Constant((int) (Character.MAX_VALUE + 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MAX_VALUE));
-
-        // short b = <constant char> vs ExactConversionsSupport::isIntToShortExact
-        assertAssignable(fac.Constant(Character.MIN_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MIN_VALUE));
-        assertAssignable(fac.Constant((char) (Character.MAX_VALUE + 1)),    predef.shortType, ExactConversionsSupport.isIntToShortExact((char) (Character.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Character.MAX_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MAX_VALUE));
-
-        // short b = <constant int>  vs ExactConversionsSupport::isIntToShortExact
-        assertAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MIN_VALUE));
-        assertAssignable(fac.Constant((int) (Short.MIN_VALUE - 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MIN_VALUE - 1)));
-        assertAssignable(fac.Constant((int) (Short.MAX_VALUE + 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MAX_VALUE + 1)));
-        assertAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MAX_VALUE));
-    }
     void assertOriginalAssignmentNarrowingAndUnconditionality() {
         // byte b = <constant short> vs ExactConversionsSupport::isIntToByteExact
-        assertOriginalAssignable(fac.Constant(Short.MIN_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((short) (Byte.MIN_VALUE - 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MIN_VALUE - 1)));
-        assertOriginalAssignable(fac.Constant((short) (Byte.MAX_VALUE + 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Short.MAX_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Short.MIN_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((short) (Byte.MIN_VALUE - 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MIN_VALUE - 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant((short) (Byte.MAX_VALUE + 1)),        predef.byteType, ExactConversionsSupport.isIntToByteExact((short) (Byte.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Short.MAX_VALUE),                     predef.byteType, ExactConversionsSupport.isIntToByteExact(Short.MAX_VALUE));
 
         // byte b = <constant char> vs ExactConversionsSupport::isIntToByteExact
-        assertOriginalAssignable(fac.Constant(Character.MIN_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((char) (Byte.MAX_VALUE + 1)),         predef.byteType, ExactConversionsSupport.isIntToByteExact((char) (Byte.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Character.MAX_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Character.MIN_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((char) (Byte.MAX_VALUE + 1)),         predef.byteType, ExactConversionsSupport.isIntToByteExact((char) (Byte.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Character.MAX_VALUE),                 predef.byteType, ExactConversionsSupport.isIntToByteExact(Character.MAX_VALUE));
 
         // byte b = <constant int>  vs ExactConversionsSupport::isIntToByteExact
-        assertOriginalAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((int) (Byte.MIN_VALUE - 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MIN_VALUE - 1)));
-        assertOriginalAssignable(fac.Constant((int) (Byte.MAX_VALUE + 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Byte.MIN_VALUE - 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MIN_VALUE - 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Byte.MAX_VALUE + 1)),          predef.byteType, ExactConversionsSupport.isIntToByteExact((int) (Byte.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.byteType, ExactConversionsSupport.isIntToByteExact(Integer.MAX_VALUE));
 
         // char c = <constant short> vs ExactConversionsSupport::isIntToCharExact
-        assertOriginalAssignable(fac.Constant(Short.MIN_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((short) (Character.MIN_VALUE - 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE - 1)));
-        assertOriginalAssignable(fac.Constant((short) (Character.MAX_VALUE + 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Short.MAX_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Short.MIN_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((short) (Character.MIN_VALUE - 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE - 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant((short) (Character.MAX_VALUE + 1)),   predef.charType, ExactConversionsSupport.isIntToCharExact((short) (Character.MIN_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Short.MAX_VALUE),                     predef.charType, ExactConversionsSupport.isIntToCharExact(Short.MAX_VALUE));
 
         // char c = <constant int>   vs ExactConversionsSupport::isIntToCharExact
-        assertOriginalAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((int) (Character.MIN_VALUE - 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MIN_VALUE - 1)));
-        assertOriginalAssignable(fac.Constant((int) (Character.MAX_VALUE + 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Character.MIN_VALUE - 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MIN_VALUE - 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Character.MAX_VALUE + 1)),     predef.charType, ExactConversionsSupport.isIntToCharExact((int) (Character.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.charType, ExactConversionsSupport.isIntToCharExact(Integer.MAX_VALUE));
 
         // short b = <constant char> vs ExactConversionsSupport::isIntToShortExact
-        assertOriginalAssignable(fac.Constant(Character.MIN_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((char) (Character.MAX_VALUE + 1)),    predef.shortType, ExactConversionsSupport.isIntToShortExact((char) (Character.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Character.MAX_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Character.MIN_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((char) (Character.MAX_VALUE + 1)),    predef.shortType, ExactConversionsSupport.isIntToShortExact((char) (Character.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Character.MAX_VALUE),                 predef.shortType, ExactConversionsSupport.isIntToShortExact(Character.MAX_VALUE));
 
         // short b = <constant int>  vs ExactConversionsSupport::isIntToShortExact
-        assertOriginalAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MIN_VALUE));
-        assertOriginalAssignable(fac.Constant((int) (Short.MIN_VALUE - 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MIN_VALUE - 1)));
-        assertOriginalAssignable(fac.Constant((int) (Short.MAX_VALUE + 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MAX_VALUE + 1)));
-        assertOriginalAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MAX_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MIN_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MIN_VALUE));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Short.MIN_VALUE - 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MIN_VALUE - 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant((int) (Short.MAX_VALUE + 1)),         predef.shortType, ExactConversionsSupport.isIntToShortExact((int) (Short.MAX_VALUE + 1)));
+        assertOriginaAndUpdatedAssignable(fac.Constant(Integer.MAX_VALUE),                   predef.shortType, ExactConversionsSupport.isIntToShortExact(Integer.MAX_VALUE));
     }
     // where
-    public void assertOriginalAssignable(Type s, Type t, boolean expected) {
-        if (originalIsAssignable(s, t) != expected) {
-            String msg = expected ?
-                    " is not assignable to " :
-                    " is assignable to ";
-            error(s + msg + t);
-        }
+    public void assertOriginaAndUpdatedAssignable(Type s, Type t, boolean expected) {
+        assertAssignable(s, t, originalIsAssignable(s, t));
     }
     public boolean originalIsAssignable(Type t, Type s) {
         if (t.hasTag(ERROR))
@@ -179,7 +133,6 @@ public class PrimitiveUnconditionallyExactInAssignability extends TypeHarness {
 
     public static void main(String[] args) {
         PrimitiveUnconditionallyExactInAssignability harness = new PrimitiveUnconditionallyExactInAssignability();
-        harness.assertAssignmentNarrowingAndUnconditionality();
         harness.assertOriginalAssignmentNarrowingAndUnconditionality();
     }
 }

@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToIntBiFunction;
@@ -4740,24 +4739,19 @@ public class Check {
                     Type testType = labelType(testCaseLabel);
                     boolean dominated = false;
 
-                    if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
-                    boolean dominatedCandidate = false;
+                    if (unconditionalCaseLabel == testCaseLabel) {
+                        unconditionalFound = true;
+                    }
                     if (!currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
-                        if (types.isUnconditionallyExact(currentType, testType)) {
-                            dominatedCandidate = true;
-                        } else if (currentType.constValue() instanceof Number) {
-                            dominatedCandidate = types.isUnconditionallyExactConstantPrimitives(currentType, testType);
-                        }
                         //the current label is potentially dominated by the existing (test) label, check:
-                        if (label instanceof JCConstantCaseLabel) {
-                            dominated = dominatedCandidate &&
-                                         !(testCaseLabel instanceof JCConstantCaseLabel) &&
-                                         TreeInfo.unguardedCase(testCase);
+                        if (label instanceof JCConstantCaseLabel &&
+                                types.isUnconditionallyExactCombined(currentType, testType)) {
+                            dominated = !(testCaseLabel instanceof JCConstantCaseLabel) &&
+                                    TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
                                    (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
-                            dominated = dominatedCandidate &&
-                                        patternDominated(testPatternCaseLabel.pat, patternCL.pat);
+                            dominated = patternDominated(testPatternCaseLabel.pat, patternCL.pat);
                         }
                     }
                     if (allowPrimitivePatterns && unconditionalFound && unconditionalCaseLabel != label) {
@@ -4782,7 +4776,7 @@ public class Check {
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
+            if (!types.isUnconditionallyExactTypeBased(currentPatternType, existingPatternType)) {
                 return false;
             }
             if (currentPattern instanceof JCBindingPattern ||

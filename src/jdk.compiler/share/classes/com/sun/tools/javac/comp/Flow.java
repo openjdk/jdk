@@ -1332,8 +1332,8 @@ public class Flow {
             Type pattype = types.erasure(bp.type);
 
             return seltype.isPrimitive() ?
-                    types.isUnconditionallyExact(seltype, pattype) :
-                    (bp.type.isPrimitive() && types.isUnconditionallyExact(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
+                    types.isUnconditionallyExactTypeBased(seltype, pattype) :
+                    (bp.type.isPrimitive() && types.isUnconditionallyExactTypeBased(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
         }
         return false;
     }

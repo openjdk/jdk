@@ -195,7 +195,7 @@ public class TypeHarness {
 
     /** assert that 's' is/is not unconditionally exact to 't' */
     public void assertIsUnconditionallyExactConstantPrimitives(Type s, Type t, boolean expected) {
-        if (types.isUnconditionallyExactConstantPrimitives(s, t) != expected) {
+        if (types.isUnconditionallyExactValueBased(s, t) != expected) {
             String msg = expected ?
                     " is not unconditionally exact to " :
                     " is unconditionally exact to ";
