@@ -28,9 +28,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -41,7 +38,6 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,13 +53,14 @@ import java.util.stream.Stream;
  * @test
  * @bug 8364361
  * @summary Tests for Process.close
- * @modules java.base/java.io:+open
+ * @modules java.base/java.lang:+open java.base/java.io:+open
  * @run junit jdk.java.lang.Process.ProcessCloseTest
  */
 public class ProcessCloseTest {
 
     private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
     private final static String CAT_PROGRAM = "cat";
+    public static final String FORCED_CLOSE_MSG = "Forced close";
     private static List<String> JAVA_ARGS;
 
     private static List<String> setupJavaEXE() {
@@ -433,19 +430,43 @@ public class ProcessCloseTest {
             p.destroy();
         }
 
-        private static void processForceOutCloseException(Process p) {
-            var out = p.getOutputStream();
-            closeOutputStreamPrematurely(out);
-        }
-
+        // Interpose an input stream that throws on close()
         private static void processForceInCloseException(Process p) {
-            var in = p.getInputStream();
-            closeInputStreamPrematurely(in);
+            try {
+                synchronized (p) {
+                    Field stdinField = p.getClass().getDeclaredField(OS_WINDOWS ? "stdin_stream" : "stdin");
+                    stdinField.setAccessible(true);
+                    stdinField.set(p, new ThrowingOutputStream((OutputStream) stdinField.get(p)));
+                }
+            } catch (Exception ex) {
+                Assertions.fail("Failed to setup InputStream for throwing close", ex);
+            }
         }
 
+        // Interpose an output stream that throws on close()
+        private static void processForceOutCloseException(Process p) {
+            try {
+                synchronized (p) {
+                    Field stdoutField = p.getClass().getDeclaredField(OS_WINDOWS ? "stdout_stream" : "stdout");
+                    stdoutField.setAccessible(true);
+                    stdoutField.set(p, new ThrowingInputStream((InputStream) stdoutField.get(p)));
+                }
+            } catch (Exception ex) {
+                Assertions.fail("Failed to setup OutputStream throwing close", ex);
+            }
+        }
+
+        // Interpose an error stream that throws on close()
         private static void processForceErrorCloseException(Process p) {
-            var err = p.getErrorStream();
-            closeInputStreamPrematurely(err);
+            try {
+                synchronized (p) {
+                    Field stderrField = p.getClass().getDeclaredField(OS_WINDOWS ? "stderr_stream" : "stderr");
+                    stderrField.setAccessible(true);
+                    stderrField.set(p, new ThrowingInputStream((InputStream) stderrField.get(p)));
+                }
+            } catch (Exception ex) {
+                Assertions.fail("Failed to setup OutputStream for throwing close", ex);
+            }
         }
 
         // Hard coded to interrupt the invoking thread at a fixed rate of .2 second, if process is alive
@@ -545,37 +566,36 @@ public class ProcessCloseTest {
     }
 
     static Stream<Arguments> closeExceptions() {
-        final String badFDMsg = OS_WINDOWS ? "The handle is invalid" : "Bad file descriptor";
         return Stream.of(
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg, badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG, FORCED_CLOSE_MSG, FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG, FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG, FORCED_CLOSE_MSG)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG, FORCED_CLOSE_MSG)),
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
-                        List.of(ExitStatus.RACY), List.of(badFDMsg))
+                        List.of(ExitStatus.RACY), List.of(FORCED_CLOSE_MSG))
         );
     }
     /**
@@ -625,86 +645,43 @@ public class ProcessCloseTest {
         }
     }
 
-    /*
-     * Invasive hack to force closing a FileDescriptor to throw an exception on FileDescriptor.close().
-     * The output stream is pealed back to get the FileDescriptor containing the fd or handle.
-     * On Linux, the existing fd is closed to prevent a leak and the fd is replaced by a bad fd.
-     * On Windows, the existing handle is closed
-     * @param an OutputStream from Process.getOutputStream
+    /**
+     * An OutputStream that delegates to another stream and always throws IOException on close().
      */
-    private static void closeOutputStreamPrematurely(OutputStream out) {
-        try {
-            Field fosOutField = FilterOutputStream.class.getDeclaredField("out");
-            fosOutField.setAccessible(true);
-            FileOutputStream pipeOut = (FileOutputStream) fosOutField.get(out);
-
-            Field fosFdField = FileOutputStream.class.getDeclaredField("fd");
-            fosFdField.setAccessible(true);
-            FileDescriptor fileDescriptor = (FileDescriptor) fosFdField.get(pipeOut);
-            closeFDPrematurely(fileDescriptor);
-        } catch (Exception ex) {
-            Assertions.fail("Failed to setup OutputStream FileDescriptor for bad close", ex);
+    private static class ThrowingOutputStream extends FilterOutputStream {
+        public ThrowingOutputStream(OutputStream out) {
+            super(out);
         }
-    }
 
-    /*
-     * Invasive hack to force closing a FileDescriptor to throw an exception on FileDescriptor.close().
-     * The input stream is pealed back to get the FileDescriptor containing the fd or handle.
-     * On Linux, the existing fd is closed to prevent a leak and the fd is replaced by a bad fd.
-     * On Windows, the existing handle is closed
-     * @param in an InputStream from Process.getInputStream
-     */
-    private static void closeInputStreamPrematurely(InputStream in) {
-        try {
-            if (in instanceof FilterInputStream fis) {
-                // On Linux and Mac, the pipe is wrapped in a ProcessPipeInputStream (a FilterInputStream)
-                Field fisInField = FilterInputStream.class.getDeclaredField("in");
-                fisInField.setAccessible(true);
-                in = (FileInputStream) fisInField.get(fis);
+        @Override
+        public void close() throws IOException {
+            try {
+                out.close();
+            } catch (IOException ioe) {
+                // ignore except to log the exception; may be useful to debug
+                ioe.printStackTrace(System.err);
             }
-            FileInputStream pipeIn = (FileInputStream) in;
-            Field fisFdField = FileInputStream.class.getDeclaredField("fd");
-            fisFdField.setAccessible(true);
-            FileDescriptor fileDescriptor = (FileDescriptor) fisFdField.get(pipeIn);
-            closeFDPrematurely(fileDescriptor);
-        } catch (Exception ex) {
-            Assertions.fail("Failed to setup InputStream FileDescriptor for bad close", ex);
+            throw new IOException(FORCED_CLOSE_MSG);
         }
     }
 
     /**
-     * Close the FileDescriptor and reset the fd or handle to cause an IOException when closed again.
-     * On Linux, the FileDescriptor fd is closed to prevent a leak and the fd is restored to the same fd.
-     * On Windows, the existing handle is closed and the handle is restored.
-     * Closing the fd or the handle again throws an IOException
-     * @param fileDescriptor FileDescriptor from a process input or output stream
-     * @throws Exception if setup or invoking close fails
+     * An InputStream that delegates to another stream and always throws IOException on close().
      */
-    private static void closeFDPrematurely(FileDescriptor fileDescriptor) throws Exception {
-        Method fdCloseMethod = FileDescriptor.class.getDeclaredMethod("close");
-        fdCloseMethod.setAccessible(true);
+    private static class ThrowingInputStream extends FilterInputStream {
+        public ThrowingInputStream(InputStream in) {
+            super(in);
+        }
 
-        if (OS_WINDOWS) {
-            Field fdHandleField = FileDescriptor.class.getDeclaredField("handle");
-            fdHandleField.setAccessible(true);
-            final long handle = (long) fdHandleField.get(fileDescriptor);
-            Log.printf("FileDescriptor.handle: %08x%n", handle);
-            // Close the known handle
-            // And restore the handle so normal close() will throw an exception
-            fdCloseMethod.invoke(fileDescriptor);
-            fdHandleField.set(fileDescriptor, handle);
-            Log.printf("FileDescriptor.handle to close again and fail: %08x%n", handle);
-        } else {
-            // Linux
-            Field fdFdField = FileDescriptor.class.getDeclaredField("fd");
-            fdFdField.setAccessible(true);
-            final int fd = (int) fdFdField.get(fileDescriptor);
-            Log.printf("FileDescriptor.fd: %08x%n", fd);
-            // Close the known fd
-            // And restore the fd so normal close() will throw an exception
-            fdCloseMethod.invoke(fileDescriptor);
-            fdFdField.set(fileDescriptor, fd);
-            Log.printf("FileDescriptor.fd to close again and fail: %08x%n", fd);
+        @Override
+        public void close() throws IOException {
+            try {
+                in.close();
+            } catch (IOException ioe) {
+                // ignore except to log the exception; may be useful to debug
+                ioe.printStackTrace(System.err);
+            }
+            throw new IOException(FORCED_CLOSE_MSG);
         }
     }
 
