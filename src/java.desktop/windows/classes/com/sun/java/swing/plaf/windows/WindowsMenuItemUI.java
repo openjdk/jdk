@@ -203,11 +203,13 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
             if (menuItem.getComponentOrientation().isLeftToRight()) {
-                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.LEFT) {
                     rect.x += lh.getAfterCheckIconGap();
                 }
             } else {
-                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
+                if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING
+                    && menuItem.getHorizontalTextPosition() != SwingConstants.RIGHT) {
                     rect.x -= lh.getAfterCheckIconGap();
                 }
             }
