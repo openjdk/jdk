@@ -26,24 +26,26 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>  // for access()
-#include <limits.h>  // for realpath()
+#include <unistd.h>
+#include <limits.h>
 
 #include "NativeCredentialCacheHelper.h"
 
-// Global krb5 context - initialized once
+// Global krb5 context
 static krb5_context g_context = NULL;
 
-// Initialize krb5 context with OneKDC config if available
+/**
+ * Initialize krb5 context with OneKDC config
+ */
 static krb5_error_code ensure_context() {
-    // Always check for OneKDC config file and set environment
+    // Check if OneKDC config file exists or needs to be created
     if (access("localkdc-krb5.conf", F_OK) != -1) {
         char *current_path = realpath("localkdc-krb5.conf", NULL);
         if (current_path != NULL) {
             setenv("KRB5_CONFIG", current_path, 1);
             free(current_path);
 
-            // If context already exists, reinitialize it to pick up new config
+            // If context already exists, reinitialize it
             if (g_context != NULL) {
                 krb5_free_context(g_context);
                 g_context = NULL;
@@ -57,7 +59,9 @@ static krb5_error_code ensure_context() {
     return 0;
 }
 
-// Utility function to convert Java string to C string
+/**
+ * Convert Java string to C string
+ */
 static char* jstring_to_cstring(JNIEnv *env, jstring jstr) {
     if (jstr == NULL) return NULL;
 
@@ -69,7 +73,9 @@ static char* jstring_to_cstring(JNIEnv *env, jstring jstr) {
     return result;
 }
 
-// Print error message for krb5 errors
+/**
+ * Print error messages for krb5 errors
+ */
 static void print_krb5_error(const char *operation, krb5_error_code code) {
     if (code != 0) {
         printf("krb5 error in %s: %s\n", operation, error_message(code));
@@ -78,8 +84,6 @@ static void print_krb5_error(const char *operation, krb5_error_code code) {
 
 /**
  * Create an in-memory credential cache using native krb5 API.
- * Creates a MEMORY: type cache that can be used for testing JAAS access
- * to in-memory credential stores.
  */
 JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_createInMemoryCache
   (JNIEnv *env, jclass cls, jstring cacheName)
@@ -114,10 +118,8 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_createInMemoryCache
     return JNI_TRUE;
 }
 
-
 /**
- * Set the default credential cache to the specified credential cache.
- * This makes the credential cache the target for credential lookups.
+ * Set KRB5CCNAME so that the test will pick up the in-memory credential cache.
  */
 JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_setDefaultCache
   (JNIEnv *env, jclass cls, jstring cacheName)
@@ -140,9 +142,9 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_setDefaultCache
 
 
 /**
- * Copy real Kerberos credentials from a source cache to a memory cache.
- * This preserves the proper credential format so JAAS can access them.
- * Used to move OneKDC-generated TGTs to in-memory caches for testing.
+ * Copy real Kerberos credentials from a source cache to an in-memory cache.
+ * in-memory cache.  Used to move OneKDC-generated TGTs to an in-memory cache
+ * for testing.
  */
 JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInMemoryCache
   (JNIEnv *env, jclass cls, jstring inMemoryCacheName, jstring sourceCacheName)
@@ -264,7 +266,3 @@ cleanup:
 
     return (ret == 0) ? JNI_TRUE : JNI_FALSE;
 }
-
-
-
-

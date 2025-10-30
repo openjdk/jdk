@@ -1,9 +1,9 @@
 #!/bin/bash
-# Build script for NativeCacheTest - compiles Java classes and native library
+# Build script for NativeCacheTest
 
 set -e
 
-# Use jtreg environment variables when available, fallback to manual calculation
+# Use jtreg environment variables when available
 if [ -n "$TESTJAVA" ]; then
     # Running under jtreg
     BUILT_JDK="$TESTJAVA"
@@ -23,7 +23,7 @@ export PATH="$BUILT_JDK/bin:$PATH"
 
 # Module exports required for Kerberos internal APIs
 if [ -n "$TESTCLASSPATH" ]; then
-    # Use jtreg's prepared classpath
+    # Use the jtreg classpath
     JAVA_CP="$TESTCLASSPATH"
 else
     # Manual execution classpath
@@ -41,9 +41,8 @@ MODULE_EXPORTS="--add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED \
 cd "$TEST_DIR"
 
 # For jtreg, classes are already compiled by the harness
-# For manual execution, compile what's needed
 if [ -z "$TESTJAVA" ]; then
-    # Manual execution - compile everything
+    # Manual execution
 
     # Compile test library classes
     cd "$LIB_DIR"
@@ -61,7 +60,7 @@ if [ -z "$TESTJAVA" ]; then
         NativeCredentialCacheHelper.java NativeCacheTest.java
 fi
 
-# Generate JNI header (always needed for native compilation)
+# Generate JNI header
 cd "$TEST_DIR"
 if [ -n "$TESTCLASSPATH" ]; then
     javac -cp "$TESTCLASSPATH" -h . NativeCredentialCacheHelper.java
@@ -69,7 +68,7 @@ else
     javac -cp . -h . NativeCredentialCacheHelper.java
 fi
 
-# get the OS
+# Get the OS to determine the compiler and library extension
 OS=$(uname -s | tr 'A-Z' 'a-z')
 if [ "$OS" == "linux" ]; then
     COMPILER=gcc
@@ -82,7 +81,7 @@ else
     exit 1
 fi
 
-# Compile native library (work from test source directory)
+# Compile native library
 cd "$TEST_DIR"
 ${COMPILER} -shared -fPIC -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/${OS}" -lkrb5 \
             -o libnativecredentialcachehelper.${LIBEXT} NativeCredentialCacheHelper.c

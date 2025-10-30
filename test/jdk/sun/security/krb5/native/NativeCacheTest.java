@@ -89,7 +89,7 @@ public class NativeCacheTest {
     }
 
     /**
-     * Use OneKDC to create a real TGT via JAAS LoginModule
+     * Use OneKDC to create a real TGT via the JAAS LoginModule
      */
     private static void createRealTGTWithOneKDC() throws Exception {
         System.out.println("Creating TGT via OneKDC");
@@ -101,7 +101,7 @@ public class NativeCacheTest {
         System.setProperty("test.kdc.save.ccache", "onekdc_cache.ccache");
 
         try {
-            // Authenticate using JAAS LoginModule
+            // Authenticate using the JAAS LoginModule
             LoginContext lc = new LoginContext("com.sun.security.jgss.krb5.initiate",
                                                new OneKDC.CallbackForClient());
             lc.login();
@@ -119,20 +119,20 @@ public class NativeCacheTest {
     }
 
     /**
-     * Copy the real TGT to memory cache using JNI
+     * Copy the real TGT to an in-memory cache using JNI
      */
     private static String copyTGTToInMemoryCache() throws Exception {
         System.out.println("Copying credentials to memory cache");
 
         String memoryCacheName = "MEMORY:test_" + System.currentTimeMillis();
 
-        // Create the memory cache
+        // Create the in-memory cache
         if (!NativeCredentialCacheHelper.createInMemoryCache(memoryCacheName)) {
             throw new RuntimeException("Failed to create memory cache");
         }
         System.out.println("Created memory cache: " + memoryCacheName);
 
-        // Try to copy credentials from saved cache file
+        // Try to copy credentials from the saved cache file
         boolean copied = false;
         File savedCache = new File("onekdc_cache.ccache");
         if (savedCache.exists()) {
@@ -143,7 +143,7 @@ public class NativeCacheTest {
             );
         }
 
-        // Fallback to default cache if file cache doesn't exist
+        // Fallback to the default cache if the file cache doesn't exist
         if (!copied) {
             copied = NativeCredentialCacheHelper.copyCredentialsToInMemoryCache(memoryCacheName, null);
         }
@@ -154,7 +154,7 @@ public class NativeCacheTest {
             System.out.println("No credentials found to copy");
         }
 
-        // Set as default cache for JAAS testing
+        // Set as the default cache for JAAS testing
         NativeCredentialCacheHelper.setDefaultCache(memoryCacheName);
         System.setProperty("KRB5CCNAME", memoryCacheName);
 
@@ -162,12 +162,12 @@ public class NativeCacheTest {
     }
 
     /**
-     * Test JAAS access to the memory cache (the main test)
+     * Test JAAS access to an in-memory cache
      */
     private static void testJAASAccessToInMemoryCache(String inMemoryCacheName) throws Exception {
         System.out.println("Testing JAAS access to an in-memory cache");
 
-        // Verify KRB5CCNAME points to our memory cache
+        // Verify KRB5CCNAME points to our in-memory cache
         String krb5ccname = System.getProperty("KRB5CCNAME");
         System.out.println("KRB5CCNAME is set to: " + krb5ccname);
         System.out.println("Expected in-memory cache: " + inMemoryCacheName);
@@ -188,7 +188,7 @@ public class NativeCacheTest {
                 System.out.println("Client: " + client);
                 System.out.println("Server: " + server);
 
-                // Verify these are the OneKDC test credentials we copied
+                // Verify these are the OneKDC test credentials
                 if (client.contains("dummy") && server.contains("RABBIT.HOLE")) {
                     System.out.println("SUCCESS: Retrieved correct OneKDC test credentials from in-memory cache");
                     if (server.contains("krbtgt")) {
