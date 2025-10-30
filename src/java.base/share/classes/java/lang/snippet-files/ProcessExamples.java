@@ -23,20 +23,17 @@
  * questions.
  */
 
-import java.io.Reader;
-import java.io.Writer;
-
 public class ProcessExamples {
     // @start region=example
-    void example() {
+    void main() {
         try (Process p = new ProcessBuilder("cat").start();
-             Writer writer = p.outputWriter();
-             Reader reader = p.inputReader()) {
+             var writer = p.outputWriter();
+             var reader = p.inputReader()) {
             writer.write(haiku);
             writer.close();
             // Read all lines and print each
             reader.readAllLines()
-                    .forEach(System.out::println);
+                    .forEach(IO::println);
             var status = p.waitFor();
             if (status != 0)
                 throw new RuntimeException("unexpected process status: " + status);
