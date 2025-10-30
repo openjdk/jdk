@@ -511,8 +511,7 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Want a pattern to quickly diff against layout header in register
-  // find something less clever!
+  // Find the right-most bit of the diff array-of-boolean vs array-of-byte layout helpers.
   static int layout_helper_boolean_diffbit() {
     uint zlh = checked_cast<uint>(array_layout_helper(T_BOOLEAN));
     uint blh = checked_cast<uint>(array_layout_helper(T_BYTE));
@@ -523,6 +522,7 @@ protected:
     // The usual form is (x & -x), but VS warns (C4146) about unary minus of unsigned.
     // So use alternate form of negation to avoid warning.
     uint result = candidates & (~candidates + 1);
+    assert( (right_n_bits(exact_log2(result)) & result) == 0, "post-condition");
     return static_cast<int>(result);
   }
 
