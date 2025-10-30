@@ -86,15 +86,15 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   Copy::zero_to_bytes(_biased_cset_map, page_size);
 }
 
-void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
+void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r, ShenandoahMarkingContext* context, size_t index) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
   _cset_map[r->index()] = 1;
-  size_t live    = r->get_live_data_bytes();
-  size_t garbage = r->garbage();
+  size_t live    = r->get_live_data_bytes(context, index);
+  size_t garbage = r->garbage(context, index);
   size_t free    = r->free();
   if (r->is_young()) {
     _young_bytes_to_evacuate += live;

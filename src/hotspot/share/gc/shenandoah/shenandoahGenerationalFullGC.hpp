@@ -103,6 +103,7 @@ private:
   HeapWord*                      _old_compact_point;
   HeapWord*                      _young_compact_point;
   uint                           _worker_id;
+  ShenandoahMarkingContext*      _ctx;
 
 public:
   ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,
