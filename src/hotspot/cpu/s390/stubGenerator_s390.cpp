@@ -3374,7 +3374,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_cipherBlockChaining_decryptAESCrypt)) {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt();
-    } 
+    }
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_counterMode_AESCrypt)) {
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();

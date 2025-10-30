@@ -1559,8 +1559,8 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
     case vmIntrinsics::_ghash_processBlocks:
-      if (!has_Crypto_GHASH()) {
-        return false;
+      if (has_Crypto_GHASH()) {
+        return true;
       }
       break;
     case vmIntrinsics::_aescrypt_encryptBlock:
@@ -1570,74 +1570,102 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
     case vmIntrinsics::_galoisCounterMode_AESCrypt:
-      if(!has_Crypto_AES()) {
-        return false;
+      if(has_Crypto_AES()) {
+        return true;
       }
       break;
     case vmIntrinsics::_counterMode_AESCrypt:
-      if(!has_Crypto_AES_CTR()) {
-        return false;
+      if(has_Crypto_AES_CTR()) {
+        return true;
       }
       break;
     case vmIntrinsics::_sha_implCompress:
-      if(!has_Crypto_SHA1() || !has_Crypto_SHA()) {
-        return false;
+      if(has_Crypto_SHA1() && has_Crypto_SHA()) {
+        return true;
       }
       break;
     case vmIntrinsics::_sha2_implCompress:
-      if(!has_Crypto_SHA256() || !has_Crypto_SHA()) {
-        return false;
+      if(has_Crypto_SHA256() && has_Crypto_SHA()) {
+        return true;
       }
       break;
     case vmIntrinsics::_sha5_implCompress:
-      if(!has_Crypto_SHA512() || !has_Crypto_SHA()) {
-        return false;
+      if(has_Crypto_SHA512() && has_Crypto_SHA()) {
+        return true;
       }
       break;
     case vmIntrinsics::_digestBase_implCompressMB:
-      if(!(has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512()) || !has_Crypto_SHA()) {
-        return false;
+      if((has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512()) && has_Crypto_SHA()) {
+        return true;
       }
       break;
-    case vmIntrinsics::_md5_implCompress:
-    case vmIntrinsics::_double_keccak:
-    case vmIntrinsics::_sha3_implCompress:
-    case vmIntrinsics::_chacha20Block:
-    case vmIntrinsics::_kyberNtt:
-    case vmIntrinsics::_kyberInverseNtt:
-    case vmIntrinsics::_kyberNttMult:
-    case vmIntrinsics::_kyberAddPoly_2:
-    case vmIntrinsics::_kyberAddPoly_3:
-    case vmIntrinsics::_kyber12To16:
-    case vmIntrinsics::_kyberBarrettReduce:
-    case vmIntrinsics::_dilithiumAlmostNtt:
-    case vmIntrinsics::_dilithiumAlmostInverseNtt:
-    case vmIntrinsics::_dilithiumNttMult:
-    case vmIntrinsics::_dilithiumMontMulByConstant:
-    case vmIntrinsics::_dilithiumDecomposePoly:
-    case vmIntrinsics::_base64_encodeBlock:
-    case vmIntrinsics::_base64_decodeBlock:
-    case vmIntrinsics::_poly1305_processBlocks:
-    case vmIntrinsics::_intpoly_montgomeryMult_P256:
-    case vmIntrinsics::_intpoly_assign:
-    case vmIntrinsics::_updateBytesAdler32:
-    case vmIntrinsics::_updateByteBufferAdler32:
-#ifdef COMPILER2
-    case vmIntrinsics::_vectorizedHashCode:
-    case vmIntrinsics::_squareToLen:
-    case vmIntrinsics::_mulAdd:
-    case vmIntrinsics::_isDigit:
-    case vmIntrinsics::_isLowerCase:
-    case vmIntrinsics::_isUpperCase:
-    case vmIntrinsics::_isWhitespace:
-    case vmIntrinsics::_dcopySign:
-    case vmIntrinsics::_fcopySign:
-    case vmIntrinsics::_dsignum:
-    case vmIntrinsics::_fsignum:
-#endif //COMPILER2
-      return false;
-    default:
+    case vmIntrinsics::_updateCRC32:
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateByteBufferCRC32:
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    case vmIntrinsics::_multiplyToLen:
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare:
+    case vmIntrinsics::_getShortUnaligned:
+    case vmIntrinsics::_getCharUnaligned:
+    case vmIntrinsics::_getIntUnaligned:
+    case vmIntrinsics::_getLongUnaligned:
+    case vmIntrinsics::_putShortUnaligned:
+    case vmIntrinsics::_putCharUnaligned:
+    case vmIntrinsics::_putIntUnaligned:
+    case vmIntrinsics::_putLongUnaligned:
+    case vmIntrinsics::_fmaD:
+    case vmIntrinsics::_fmaF:
+    case vmIntrinsics::_dabs:
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict:
+    case vmIntrinsics::_dsin:
+    case vmIntrinsics::_dcos:
+    case vmIntrinsics::_dtan:
+    case vmIntrinsics::_dlog:
+    case vmIntrinsics::_dlog10:
+    case vmIntrinsics::_dexp:
+    case vmIntrinsics::_dpow:
+    case vmIntrinsics::_isInstance:
+    case vmIntrinsics::_floatToFloat16:
+    case vmIntrinsics::_float16ToFloat:
+    case vmIntrinsics::_dsinh:
+    case vmIntrinsics::_dtanh:
+    case vmIntrinsics::_dcbrt:
+    case vmIntrinsics::_Reference_get0:
+    case vmIntrinsics::_Preconditions_checkIndex:
+    case vmIntrinsics::_getReferenceVolatile:
+    case vmIntrinsics::_compareAndSetLong:
+    case vmIntrinsics::_compareAndSetInt:
+    case vmIntrinsics::_arraycopy:
+    case vmIntrinsics::_compareAndSetReference:
+    case vmIntrinsics::_equalsL:
+    case vmIntrinsics::_clone:
+    case vmIntrinsics::_getShort:
+    case vmIntrinsics::_getByte:
+    case vmIntrinsics::_getInt:
+    case vmIntrinsics::_reverseBytes_i:
+    case vmIntrinsics::_currentThread:
+    case vmIntrinsics::_getLong:
+    case vmIntrinsics::_getCharStringU:
+    case vmIntrinsics::_putCharStringU:
+    case vmIntrinsics::_getClass:
+    case vmIntrinsics::_max:
+    case vmIntrinsics::_getReferenceAcquire:
+    case vmIntrinsics::_putByte:
+    case vmIntrinsics::_compressStringC:
+    case vmIntrinsics::_numberOfLeadingZeros_l:
+    case vmIntrinsics::_numberOfLeadingZeros_i:
+    case vmIntrinsics::_getChar:
+    case vmIntrinsics::_putReferenceVolatile:
+    case vmIntrinsics::_maxL:
+    case vmIntrinsics::_currentCarrierThread:
+    case vmIntrinsics::_allocateUninitializedArray:
+    case vmIntrinsics::_hashCode:
       return true;
+    default:
+      return false;
   }
-  return true;
+  return false;
 }
