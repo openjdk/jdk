@@ -35,6 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,17 +63,20 @@ public class TestVMProcess {
     private OutputAnalyzer oa;
     private String irEncoding;
 
-    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
-                         boolean allowNotCompilable, boolean testClassesOnBootClassPath) {
+    public TestVMProcess() {
         this.cmds = new ArrayList<>();
-        TestFrameworkSocket socket = new TestFrameworkSocket();
+    }
+
+    public void runProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
+                         boolean allowNotCompilable, boolean testClassesOnBootClassPath, PrintStream printStream) {
+        TestFrameworkSocket socket = new TestFrameworkSocket(printStream);
         try (socket) {
             prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup,
                                allowNotCompilable, testClassesOnBootClassPath);
             start();
         }
-        processSocketOutput(socket);
-        checkTestVMExitCode();
+        processSocketOutput(socket, printStream);
+        checkTestVMExitCode(printStream);
     }
 
     public String getCommandLine() {
@@ -177,7 +181,7 @@ public class TestVMProcess {
      * Process the socket output: All prefixed lines are dumped to the standard output while the remaining lines
      * represent the IR encoding used for IR matching later.
      */
-    private void processSocketOutput(TestFrameworkSocket socket) {
+    private void processSocketOutput(TestFrameworkSocket socket, PrintStream printStream) {
         String output = socket.getOutput();
         if (socket.hasStdOut()) {
             StringBuilder testListBuilder = new StringBuilder();
@@ -200,17 +204,17 @@ public class TestVMProcess {
                     nonStdOutBuilder.append(line).append(System.lineSeparator());
                 }
             }
-            System.out.println();
+            printStream.println();
             if (!testListBuilder.isEmpty()) {
-                System.out.println("Run flag defined test list");
-                System.out.println("--------------------------");
-                System.out.println(testListBuilder);
-                System.out.println();
+                printStream.println("Run flag defined test list");
+                printStream.println("--------------------------");
+                printStream.println(testListBuilder);
+                printStream.println();
             }
             if (!messagesBuilder.isEmpty()) {
-                System.out.println("Messages from Test VM");
-                System.out.println("---------------------");
-                System.out.println(messagesBuilder);
+                printStream.println("Messages from Test VM");
+                printStream.println("---------------------");
+                printStream.println(messagesBuilder);
             }
             irEncoding = nonStdOutBuilder.toString();
         } else {
@@ -218,11 +222,11 @@ public class TestVMProcess {
         }
     }
 
-    private void checkTestVMExitCode() {
+    private void checkTestVMExitCode(PrintStream printStream) {
         final int exitCode = oa.getExitValue();
         if (EXCLUDE_RANDOM || REPORT_STDOUT || (VERBOSE && exitCode == 0)) {
-            System.out.println("--- OUTPUT TestFramework test VM ---");
-            System.out.println(oa.getOutput());
+            printStream.println("--- OUTPUT TestFramework test VM ---");
+            printStream.println(oa.getOutput());
         }
 
         if (exitCode != 0) {

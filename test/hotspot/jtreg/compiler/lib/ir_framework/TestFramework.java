@@ -741,22 +741,26 @@ public class TestFramework {
 
         Stream<Scenario> stream = parallel ? scenarios.parallelStream() : scenarios.stream();
         List<Outcome> outcomes = stream.map(scenario -> {
+            Outcome outcome;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                PrintStream ps = new PrintStream(baos);
                 start(scenario, ps);
+                outcome = new Outcome(scenario, null, null);
+            } catch (TestFormatException e) {
+                outcome = new Outcome(scenario, e, null);
+            } catch (Exception e) {
+                outcome = new Outcome(scenario, null, e);
+            } finally {
+                // Print the output to stdout in one go
                 synchronized (printLock) {
                     String output = baos.toString();
                     if (!output.isEmpty()) {
                         System.out.println(output);
                     }
                 }
-                return new Outcome(scenario, null, null);
-            } catch (TestFormatException e) {
-                return new Outcome(scenario, e, null);
-            } catch (Exception e) {
-                return new Outcome(scenario, null, e);
             }
+            return outcome;
         }).toList();
         // Rethrow first TestFormatException
         Optional<TestFormatException> tfe = outcomes.stream()
@@ -866,7 +870,8 @@ public class TestFramework {
             }
 
             printStream.println("Run Test VM" + frameworkAndScenarioFlags + ":");
-            testVMProcess = runTestVM(additionalFlags, printStream);
+            testVMProcess = new TestVMProcess();
+            runTestVM(testVMProcess, additionalFlags, printStream);
         } finally {
             if (scenario != null && testVMProcess != null) {
                 scenario.setTestVMOutput(testVMProcess.getTestVMOutput());
@@ -905,9 +910,12 @@ public class TestFramework {
         return nonWhiteListedFlags;
     }
 
-    private TestVMProcess runTestVM(List<String> additionalFlags, PrintStream printStream) {
-        TestVMProcess testVMProcess = new TestVMProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
-                                                        isAllowNotCompilable, testClassesOnBootClassPath);
+    private void runTestVM(TestVMProcess testVMProcess, List<String> additionalFlags, PrintStream printStream) {
+        if (testVMProcess == null) {
+            throw new TestFrameworkException("TestVMProcess is null");
+        }
+        testVMProcess.runProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
+                                 isAllowNotCompilable, testClassesOnBootClassPath, printStream);
         if (shouldVerifyIR) {
             try {
                 TestClassParser testClassParser = new TestClassParser(testClass, isAllowNotCompilable);
@@ -926,7 +934,6 @@ public class TestFramework {
                                "that make the IR verification impossible (e.g. -XX:-UseCompile, " +
                                "-XX:TieredStopAtLevel=[1,2,3], etc.).");
         }
-        return testVMProcess;
     }
 
     public static void check(boolean test, String failureMessage) {
