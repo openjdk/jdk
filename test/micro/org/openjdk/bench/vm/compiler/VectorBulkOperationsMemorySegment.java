@@ -174,23 +174,25 @@ public class VectorBulkOperationsMemorySegment {
         }
     }
 
-    // TODO: fix or remove
-    // @Benchmark
-    // public void fill_zero_byte_arrays_fill() {
-    //     for (int r = 0; r < REPETITIONS; r++) {
-    //         int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
-    //         MemorySegment.fill();
-    //         Arrays.fill(aB, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (byte)0);
-    //     }
-    // }
+    @Benchmark
+    public void fill_zero_byte_MS_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            // The API does not allow us to fill a sub-segment directly, so we have to slice.
+            MemorySegment slice = ms.asSlice(offset_store, NUM_ACCESS_ELEMENTS);
+            slice.fill((byte)0);
+        }
+    }
 
-    // @Benchmark
-    // public void fill_var_byte_arrays_fill() {
-    //     for (int r = 0; r < REPETITIONS; r++) {
-    //         int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
-    //         Arrays.fill(aB, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varB);
-    //     }
-    // }
+    @Benchmark
+    public void fill_var_byte_MS_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            // The API does not allow us to fill a sub-segment directly, so we have to slice.
+            MemorySegment slice = ms.asSlice(offset_store, NUM_ACCESS_ELEMENTS);
+            slice.fill(varB);
+        }
+    }
 
     @Benchmark
     public void copy_byte_loop() {
