@@ -324,7 +324,7 @@ class MacData {
 
             // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
             tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
-            tmp2.write(DerValue.tag_Sequence, tmp3);
+            tmp2.write(tmp3);
 
             tmp1.write(DerValue.tag_Sequence, tmp2);
             tmp1.putOctetString(digest);

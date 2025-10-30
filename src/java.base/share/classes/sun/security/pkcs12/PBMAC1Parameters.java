@@ -126,7 +126,8 @@ final class PBMAC1Parameters {
 
         // messageAuthScheme AlgorithmIdentifier {{PBMAC1-MACs}}
         out.write(AlgorithmId.get(hmac));
-        return out.toByteArray();
+        return new DerOutputStream().write(DerValue.tag_Sequence, out)
+                .toByteArray();
     }
 
     PBKDF2Parameters getKdfParams() {
