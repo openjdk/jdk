@@ -124,6 +124,12 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   }
 }
 
+jlong CgroupV1MemoryController::uses_mem_hierarchy() {
+  julong use_hierarchy;
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.use_hierarchy", "Use Hierarchy", use_hierarchy);
+  return (jlong)use_hierarchy;
+}
+
 /*
  * The common case, containers, we have _root == _cgroup_path, and thus set the
  * controller path to the _mount_point. This is where the limits are exposed in
@@ -160,13 +166,13 @@ void verbose_log(julong read_mem_limit, julong upper_mem_bound) {
 jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong upper_bound) {
   julong memlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
-  if (memlimit >= upper_bound) {
-    verbose_log(memlimit, upper_bound);
-    return (jlong)-1;
-  } else {
-    verbose_log(memlimit, upper_bound);
-    return (jlong)memlimit;
+  if (memlimit >= upper_bound && uses_mem_hierarchy()) {
+    CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
+                                               "hierarchical_memory_limit", "Hierarchical Memory Limit",
+                                               memlimit);
   }
+  verbose_log(memlimit, upper_bound);
+  return (jlong)((memlimit < upper_bound) ? memlimit : -1);
 }
 
 /* read_mem_swap
@@ -184,12 +190,13 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong upper_bound) {
 jlong CgroupV1MemoryController::read_mem_swap(julong upper_memsw_bound) {
   julong memswlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
-  if (memswlimit >= upper_memsw_bound) {
-    log_trace(os, container)("Memory and Swap Limit is: Unlimited");
-    return (jlong)-1;
-  } else {
-    return (jlong)memswlimit;
+  if (memswlimit >= upper_memsw_bound && uses_mem_hierarchy()) {
+      CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
+                                                 "hierarchical_memsw_limit", "Hierarchical Memory and Swap Limit",
+                                                 memswlimit);
   }
+  verbose_log(memswlimit, upper_memsw_bound);
+  return (jlong)((memswlimit < upper_memsw_bound) ? memswlimit : -1);
 }
 
 jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
