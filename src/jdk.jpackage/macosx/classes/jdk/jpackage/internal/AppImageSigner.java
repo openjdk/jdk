@@ -106,7 +106,7 @@ final class AppImageSigner {
             throw new IllegalArgumentException();
         }
 
-        app = normalizeAppImageLayout(app);
+        app = copyWithUnresolvedAppImageLayout(app);
 
         final var fileFilter = new SignFilter(app, appImage);
 
@@ -243,7 +243,7 @@ final class AppImageSigner {
         }
     }
 
-    private static MacApplication normalizeAppImageLayout(MacApplication app) {
+    private static MacApplication copyWithUnresolvedAppImageLayout(MacApplication app) {
         switch (app.imageLayout()) {
             case MacApplicationLayout macLayout -> {
                 return MacApplicationBuilder.overrideAppImageLayout(app, APPLICATION_LAYOUT);

@@ -61,11 +61,18 @@ PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
 PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
+size_t ParallelScavengeHeap::_desired_page_size = 0;
 
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
+  assert(_desired_page_size != 0, "Should be initialized");
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, _desired_page_size);
+  // Adjust SpaceAlignment based on actually used large page size.
+  if (UseLargePages) {
+    SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
+  }
+  assert(is_aligned(SpaceAlignment, heap_rs.page_size()), "inv");
 
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 

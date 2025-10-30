@@ -910,6 +910,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       nm->print_nmethod(true);
     } else {
       nm->print_on(st);
+      nm->print_code_snippet(st, addr);
     }
     return;
   }
