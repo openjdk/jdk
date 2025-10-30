@@ -516,6 +516,16 @@ public class TestFramework {
         return this;
     }
 
+    /**
+     * Get the VM output of the test VM. Use {@code -DVerbose=true} to enable more debug information. If scenarios
+     * were run, use {@link Scenario#getTestVMOutput()}.
+     *
+     * @return the last test VM output.
+     */
+    public static String getLastTestVMOutput() {
+        return TestVMProcess.getLastTestVMOutput();
+    }
+
     /*
      * The following methods are only intended to be called from actual @Test methods and not from the main() method of
      * a JTreg test. Calling these methods from main() results in a linking exception (Whitebox not yet loaded and enabled).
@@ -726,16 +736,6 @@ public class TestFramework {
         }
 
         System.out.println("");
-    }
-
-    /**
-     * Get the VM output of the test VM. Use {@code -DVerbose=true} to enable more debug information. If scenarios
-     * were run, use {@link Scenario#getTestVMOutput()}.
-     *
-     * @return the last test VM output.
-     */
-    public static String getLastTestVMOutput() {
-        return TestVMProcess.getLastTestVMOutput();
     }
 
     /**
