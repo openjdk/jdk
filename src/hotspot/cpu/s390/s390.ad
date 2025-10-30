@@ -9168,7 +9168,7 @@ instruct maxI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   match(Set dst (MaxI src1 src2));
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
-  size(12);	
+  size(12);
   format %{ "MaxI $dst $src1,$src2\t MaxI const16" %}
   ins_encode %{
     Label done;
@@ -9585,6 +9585,20 @@ instruct cmpb_RegI_imm(cmpOpT boolnode, iRegI src1, immI8 src2, label labl, flag
 // INT REG/IMM operands
 instruct cmpbU_RegI_imm(cmpOpT boolnode, iRegI src1, uimmI8 src2, label labl, flagsReg cr) %{
   match(If boolnode (CmpU src1 src2));
+  effect(USE labl, KILL cr);
+  predicate(VM_Version::has_CompareBranch());
+  ins_cost(BRANCH_COST);
+  size(6);
+  format %{ "CLIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
+  opcode(CLIJ_ZOPC);
+  ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
+  ins_pipe(pipe_class_dummy);
+  ins_short_branch(1);
+%}
+
+// LONG REG/IMM operands
+instruct cmpb_RegL_imm(cmpOpT boolnode, iRegL src1, immL8 src2, label labl, flagsReg cr) %{
+  match(If boolnode (CmpL src1 src2));
   effect(USE labl, KILL cr);
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
