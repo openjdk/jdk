@@ -58,7 +58,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         debugMessages.put("handshake",
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
-        debugMessages.put("keymanager", List.of("choosing key:"));
+        debugMessages.put("keymanager", List.of("Choosing key:"));
         debugMessages.put("packet", List.of("Raw write"));
         debugMessages.put("plaintext",
                 List.of("Plaintext before ENCRYPTION"));
@@ -108,30 +108,30 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         return Stream.of(
                 // all should print everything
                 Arguments.of(List.of("-Djavax.net.debug=all"),
-                        List.of("handshake", "ssl,keymanager", "packet",
+                        List.of("handshake", "keymanager", "packet",
                                 "plaintext", "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // ssl should print most details except verbose details
                 Arguments.of(List.of("-Djavax.net.debug=ssl"),
-                        List.of("handshake", "ssl,keymanager",
+                        List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // allow expand option for more verbose output
                 Arguments.of(
                         List.of("-Djavax.net.debug=ssl,handshake,expand"),
                         List.of("handshake", "handshake-expand",
-                                "ssl,keymanager", "record", "session",
+                                "keymanager", "record", "session",
                                 "record-expand", "ssl", "sslctx",
                                 "trustmanager", "verbose")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("handshake", "handshake-expand",
-                                "ssl,keymanager", "record", "record-expand",
+                                "keymanager", "record", "record-expand",
                                 "session", "ssl", "sslctx", "trustmanager",
                                 "verbose")),
                 // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
-                        List.of("handshake", "ssl,keymanager", "record",
+                        List.of("handshake", "keymanager", "record",
                                 "session", "ssl", "sslctx",
                                 "trustmanager", "verbose")),
                 // example of test where no "ssl" value is passed
@@ -144,26 +144,26 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                         List.of("record")),
                 // ignore bad sub-option. treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
-                        List.of("handshake", "ssl,keymanager",
+                        List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // ssltypo contains "ssl". Treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
-                        List.of("handshake", "ssl,keymanager",
+                        List.of("handshake", "keymanager",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // plaintext is valid for record option
                 Arguments.of(
                         List.of("-Djavax.net.debug=ssl:record:plaintext"),
-                        List.of("handshake", "ssl,keymanager", "plaintext",
+                        List.of("handshake", "keymanager", "plaintext",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager"),
-                        List.of("handshake", "ssl,keymanager", "record",
+                        List.of("handshake", "keymanager", "record",
                                 "session", "ssl", "sslctx", "trustmanager",
                                 "verbose")),
                 Arguments.of(List.of("-Djavax.net.debug=ssl:sslctx"),
-                        List.of("handshake", "ssl,keymanager", "record",
+                        List.of("handshake", "keymanager", "record",
                                 "session", "ssl", "sslctx", "trustmanager",
                                 "verbose")),
                 // help message test. Should exit without running test
@@ -173,13 +173,13 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=ssl:trustmanager",
                                 "-Djava.security.debug=all"),
                         List.of("handshake", "java.security.debug",
-                                "ssl,keymanager", "record", "session", "ssl",
+                                "keymanager", "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // empty invokes System.Logger use
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),
                         List.of("handshake", "javax.net.debug.logger",
-                                "ssl,keymanager", "packet",  "plaintext",
+                                "keymanager", "packet",  "plaintext",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose"))
         );
