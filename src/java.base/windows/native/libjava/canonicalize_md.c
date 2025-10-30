@@ -332,6 +332,7 @@ JNIEXPORT int
 JDK_Canonicalize(const char *orig, char *out, int len) {
     wchar_t* wpath = NULL;
     wchar_t* wresult = NULL;
+    wchar_t* wcanon = NULL;
     int wpath_len;
     int ret = -1;
 
@@ -355,12 +356,12 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
         goto finish;
     }
 
-    if (wcanonicalize(wpath, wresult, len) != 0) {
+    if ((wcanon = wcanonicalize(wpath, wresult, len)) == NULL) {
         goto finish;
     }
 
     if (WideCharToMultiByte(CP_ACP, 0,
-                            wresult, -1, out, len, NULL, NULL) == 0) {
+                            wcanon, -1, out, len, NULL, NULL) == 0) {
         goto finish;
     }
 
@@ -368,8 +369,12 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
     ret = 0;
 
  finish:
-    free(wresult);
-    free(wpath);
+    if (wcanon != NULL && wcanon != wresult)
+        free(wcanon);
+    if (wresult != NULL)
+        free(wresult);
+    if (wpath != NULL)
+        free(wpath);
 
     return ret;
 }

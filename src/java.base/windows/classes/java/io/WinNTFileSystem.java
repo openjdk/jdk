@@ -488,14 +488,6 @@ final class WinNTFileSystem extends FileSystem {
     private native String canonicalize0(String path)
             throws IOException;
 
-    private String getFinalPath(String path) throws IOException {
-        return getFinalPath0(path);
-    }
-
-    private native String getFinalPath0(String path)
-            throws IOException;
-
-
     /* -- Attribute accessors -- */
 
     @Override

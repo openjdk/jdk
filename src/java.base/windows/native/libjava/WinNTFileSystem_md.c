@@ -288,7 +288,7 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
                 JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
             }
         } else if ((fp = wcanonicalize(path, canonicalPath, MAX_PATH_LENGTH)) != NULL) {
-            rv = (*env)->NewString(env, fp, (jsize)wcslen(canonicalPath));
+            rv = (*env)->NewString(env, fp, (jsize)wcslen(fp));
             if (fp != canonicalPath)
                 free(fp);
         }
@@ -296,26 +296,6 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
         JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
-    return rv;
-}
-
-
-JNIEXPORT jstring JNICALL
-Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pathname) {
-    jstring rv = NULL;
-
-    WITH_UNICODE_STRING(env, pathname, path) {
-        WCHAR* finalPath = getFinalPath(env, path);
-        if (finalPath != NULL) {
-            rv = (*env)->NewString(env, finalPath, (jsize)wcslen(finalPath));
-            free(finalPath);
-        }
-    } END_UNICODE_STRING(env, path);
-
-    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
-    }
-
     return rv;
 }
 
