@@ -43,8 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class TestSharedCloseJvmti {
 
     private static final String JVMTI_AGENT_LIB = Path.of(Utils.TEST_NATIVE_PATH, System.mapLibraryName("SharedCloseAgent"))
@@ -62,7 +60,7 @@ public class TestSharedCloseJvmti {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
             Process process = ProcessTools.startProcess("fork", pb, null, null, 1L, TimeUnit.MINUTES);
             OutputAnalyzer output = new OutputAnalyzer(process);
-            assertEquals(0, output.getExitValue());
+            output.shouldHaveExitValue(0);
             output.stderrShouldContain("Exception in thread \"Trigger\" jdk.internal.misc.ScopedMemoryAccess$ScopedAccessError: Invalid memory access");
         } catch (TimeoutException e) {
             throw new RuntimeException("Timeout while waiting for forked process");
