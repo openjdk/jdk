@@ -47,7 +47,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
         build/tools/jigsaw \
         build/tools/depend, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
-    DISABLED_WARNINGS := dangling-doc-comments options, \
+    DISABLED_WARNINGS := dangling-doc-comments options suppression, \
     JAVAC_FLAGS := \
         --add-exports java.desktop/sun.awt=ALL-UNNAMED \
         --add-exports java.base/sun.text=ALL-UNNAMED \
@@ -81,7 +81,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_DEPEND, \
     SRC := $(TOPDIR)/make/jdk/src/classes, \
     INCLUDES := build/tools/depend, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/depend, \
-    DISABLED_WARNINGS := options, \
+    DISABLED_WARNINGS := options suppression, \
     JAVAC_FLAGS := \
         --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
         --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
