@@ -821,7 +821,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                 if (defaultFont == null) {
                     defaultFont = new Font("Dialog", Font.PLAIN, 12);
                 }
-                Graphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
+                SunGraphics2D delegate = new SunGraphics2D(sd, Color.black, Color.white, defaultFont);
 
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
@@ -830,8 +830,11 @@ public final class CPrinterJob extends RasterPrinterJob {
                     pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
                 }
                 painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
-                delegate.dispose();
-                delegate = null;
+                synchronized (sd) {
+                    sd.invalidate();
+                    delegate.dispose();
+                    delegate = null;
+                }
         } catch (PrinterException pe) { throw new java.lang.reflect.UndeclaredThrowableException(pe); }
         }};
 
