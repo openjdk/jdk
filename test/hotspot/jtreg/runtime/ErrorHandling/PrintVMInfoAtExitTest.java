@@ -29,6 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires vm.flagless
+ * @requires !vm.asan
  * @requires vm.bits == "64"
  * @run driver PrintVMInfoAtExitTest
  */
