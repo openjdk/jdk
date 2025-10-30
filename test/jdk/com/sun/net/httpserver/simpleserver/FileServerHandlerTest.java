@@ -46,6 +46,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import sun.net.httpserver.simpleserver.FileServerHandler;
+
 import static org.testng.Assert.*;
 
 public class FileServerHandlerTest {
@@ -80,6 +82,79 @@ public class FileServerHandlerTest {
         var exchange = new MethodHttpExchange(requestMethod);
         handler.handle(exchange);
         assertEquals(exchange.rCode, 501);
+    }
+
+    @DataProvider
+    public Object[][] validRangeHeaders() {
+        return new Object[][]{
+                // start-end
+                {1000L, "bytes=0-499", new FileServerHandler.RangeEntry(0, 499)},
+                {1000L, "bytes=500-999", new FileServerHandler.RangeEntry(500, 999)},
+                {500L,  "bytes=100-199", new FileServerHandler.RangeEntry(100, 199)},
+
+                // start-
+                {1000L, "bytes=0-", new FileServerHandler.RangeEntry(0, 999)},
+                {1000L, "bytes=500-", new FileServerHandler.RangeEntry(500, 999)},
+                {500L,  "bytes=250-", new FileServerHandler.RangeEntry(250, 499)},
+
+                // -length
+                {1000L, "bytes=-500", new FileServerHandler.RangeEntry(500, 999)},
+                {1000L, "bytes=-1", new FileServerHandler.RangeEntry(999, 999)},
+                {500L,  "bytes=-50", new FileServerHandler.RangeEntry(450, 499)},
+
+                // single byte ranges
+                {1000L, "bytes=0-0", new FileServerHandler.RangeEntry(0, 0)},
+                {1000L, "bytes=999-999", new FileServerHandler.RangeEntry(999, 999)},
+                {500L,  "bytes=499-499", new FileServerHandler.RangeEntry(499, 499)},
+
+                // multiple ranges
+                {
+                        1000L, "bytes=0-499,500-999",
+                        new FileServerHandler.RangeEntry(0, 499),
+                        new FileServerHandler.RangeEntry(500, 999)
+                },
+                {
+                        1000L, "bytes=0-,-200",
+                        new FileServerHandler.RangeEntry(0, 999),
+                        new FileServerHandler.RangeEntry(800, 999)
+                },
+                {
+                        500L, "bytes=0-99,200-",
+                        new FileServerHandler.RangeEntry(0, 99),
+                        new FileServerHandler.RangeEntry(200, 499)
+                }
+        };
+    }
+
+    @Test(dataProvider = "validRangeHeaders")
+    public void testValidRangeParse(long fileLength, String rangeHeader, FileServerHandler.RangeEntry... entries) {
+        var ranges = FileServerHandler.parseRangeHeader(rangeHeader, fileLength);
+        assertNotNull(ranges);
+        assertEquals(ranges.size(), entries.length);
+        for (int i = 0; i < entries.length; i++) {
+            assertEquals(ranges.get(i).start(), entries[i].start());
+            assertEquals(ranges.get(i).end(), entries[i].end());
+        }
+    }
+
+    @DataProvider
+    public Object[][] invalidRangeHeaders() {
+        return new Object[][]{
+                {"bytes=500-400"},         // start > end
+                {"bytes=1000-1001"},       // end >= file length
+                {"bytes=1000-"},           // start >= file length
+                {"bytes=-0"},              // zero length suffix
+                {"bytes=meow"},            // non-numeric
+                {"bytes=--500"},           // malformed
+                {"bytes=500"},             // malformed
+                {"bytes=500-600,700-600"}  // second range invalid
+        };
+    }
+
+    @Test(dataProvider = "invalidRangeHeaders")
+    public void testInvalidRangeParse(String rangeHeader) {
+        var ranges = FileServerHandler.parseRangeHeader(rangeHeader, 1000L);
+        assertNull(ranges);
     }
 
     // 301 and 404 response codes tested in SimpleFileServerTest

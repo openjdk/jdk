@@ -320,7 +320,7 @@ public final class FileServerHandler implements HttpHandler {
     //  "bytes=9500-"           -> from byte 9500 to end
     // Multiple ranges are allowed, separated by commas(without spaces):
     //  "bytes=0-499,1000-1499" -> first 500 bytes and second 500 bytes
-    private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
+    public static List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
         if (!rangeHeader.startsWith("bytes=")) {
             return null;  // only 'bytes' unit is supported.
         }
@@ -412,7 +412,7 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-    private record RangeEntry(long start, long end) {
+    public record RangeEntry(long start, long end) {
     }
 
     private void listFiles(HttpExchange exchange, Path path, boolean writeBody)
