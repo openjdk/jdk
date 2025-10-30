@@ -525,7 +525,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (!rm.is_Empty() && rm.is_bound(ideal_reg())) {
+    if (!rm.is_empty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }
@@ -619,8 +619,11 @@ void MachNullCheckNode::save_label( Label** label, uint* block_num ) {
 }
 
 const RegMask &MachNullCheckNode::in_RegMask( uint idx ) const {
-  if( idx == 0 ) return RegMask::Empty;
-  else return in(1)->as_Mach()->out_RegMask();
+  if (idx == 0) {
+    return RegMask::EMPTY;
+  } else {
+    return in(1)->as_Mach()->out_RegMask();
+  }
 }
 
 //=============================================================================
