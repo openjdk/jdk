@@ -56,8 +56,6 @@ public class TestVMProcess {
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     private static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
 
-    private static String lastTestVMOutput = "";
-
     private final ArrayList<String> cmds;
     private String hotspotPidFileName;
     private String commandLine;
@@ -89,8 +87,8 @@ public class TestVMProcess {
         return hotspotPidFileName;
     }
 
-    public static String getLastTestVMOutput() {
-        return lastTestVMOutput;
+    public String getTestVMOutput() {
+        return oa.getOutput();
     }
 
     private void prepareTestVMFlags(List<String> additionalFlags, TestFrameworkSocket socket, Class<?> testClass,
@@ -173,7 +171,6 @@ public class TestVMProcess {
         commandLine = "Command Line:" + System.lineSeparator() + String.join(" ", process.command())
                       + System.lineSeparator();
         hotspotPidFileName = String.format("hotspot_pid%d.log", oa.pid());
-        lastTestVMOutput = oa.getOutput();
     }
 
     /**
