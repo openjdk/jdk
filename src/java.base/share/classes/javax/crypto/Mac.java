@@ -627,6 +627,7 @@ public class Mac implements Cloneable {
         }
         byte[] mac = doFinal();
         System.arraycopy(mac, 0, output, outOffset, macLen);
+        Arrays.fill(mac, (byte)0);
     }
 
     /**

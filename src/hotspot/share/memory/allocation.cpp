@@ -73,7 +73,7 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has its own operator new
   assert(type != ClassType, "class has its own operator new");
-  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false, THREAD);
+  return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
@@ -81,7 +81,7 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  MetaspaceObj::Type type) throw() {
   assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
   assert(type != ClassType, "class has its own operator new");
-  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false);
+  return Metaspace::allocate(loader_data, word_size, type);
 }
 
 // This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.

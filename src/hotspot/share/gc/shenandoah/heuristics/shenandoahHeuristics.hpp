@@ -241,6 +241,11 @@ public:
 
   double elapsed_cycle_time() const;
 
+  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) {
+    // do nothing
+    return 0;
+  }
+
   // Format prefix and emit log message indicating a GC cycle hs been triggered
   void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 };

@@ -41,7 +41,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -322,7 +322,7 @@ void JfrThreadLocal::set(bool* exclusion_field, bool state) {
 }
 
 bool JfrThreadLocal::is_vthread_excluded() const {
-  return Atomic::load(&_vthread_excluded);
+  return AtomicAccess::load(&_vthread_excluded);
 }
 
 bool JfrThreadLocal::is_jvm_thread_excluded(const Thread* t) {
@@ -337,7 +337,7 @@ void JfrThreadLocal::exclude_vthread(const JavaThread* jt) {
 
 void JfrThreadLocal::include_vthread(const JavaThread* jt) {
   JfrThreadLocal* const tl = jt->jfr_thread_local();
-  Atomic::store(&tl->_vthread_epoch, static_cast<u2>(0));
+  AtomicAccess::store(&tl->_vthread_epoch, static_cast<u2>(0));
   set(&tl->_vthread_excluded, false);
   JfrJavaEventWriter::include(vthread_id(jt), jt);
 }
@@ -357,7 +357,7 @@ void JfrThreadLocal::include_jvm_thread(const Thread* t) {
 }
 
 bool JfrThreadLocal::is_excluded() const {
-  return Atomic::load_acquire(&_vthread) ? is_vthread_excluded(): _jvm_thread_excluded;
+  return AtomicAccess::load_acquire(&_vthread) ? is_vthread_excluded(): _jvm_thread_excluded;
 }
 
 bool JfrThreadLocal::is_included() const {
@@ -401,7 +401,7 @@ void JfrThreadLocal::set_vthread_epoch(const JavaThread* jt, traceid tid, u2 epo
   assert(is_vthread(jt), "invariant");
   assert(!is_non_reentrant(), "invariant");
 
-  Atomic::store(&jt->jfr_thread_local()->_vthread_epoch, epoch);
+  AtomicAccess::store(&jt->jfr_thread_local()->_vthread_epoch, epoch);
 
   oop vthread = jt->vthread();
   assert(vthread != nullptr, "invariant");
@@ -427,7 +427,7 @@ void JfrThreadLocal::set_vthread_epoch_checked(const JavaThread* jt, traceid tid
 
 traceid JfrThreadLocal::vthread_id(const Thread* t) {
   assert(t != nullptr, "invariant");
-  return Atomic::load(&t->jfr_thread_local()->_vthread_id);
+  return AtomicAccess::load(&t->jfr_thread_local()->_vthread_id);
 }
 
 traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const {
@@ -445,13 +445,13 @@ traceid JfrThreadLocal::vthread_id_with_epoch_update(const JavaThread* jt) const
 
 u2 JfrThreadLocal::vthread_epoch(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  return Atomic::load(&jt->jfr_thread_local()->_vthread_epoch);
+  return AtomicAccess::load(&jt->jfr_thread_local()->_vthread_epoch);
 }
 
 bool JfrThreadLocal::should_write() const {
   const u2 current_generation = JfrTraceIdEpoch::epoch_generation();
-  if (Atomic::load(&_generation) != current_generation) {
-    Atomic::store(&_generation, current_generation);
+  if (AtomicAccess::load(&_generation) != current_generation) {
+    AtomicAccess::store(&_generation, current_generation);
     return true;
   }
   return false;
@@ -504,7 +504,7 @@ traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
     if (t->is_Java_thread()) {
       tid = load_java_thread_id(t);
       tl->_jvm_thread_id = tid;
-      Atomic::store(&tl->_vthread_id, tid);
+      AtomicAccess::store(&tl->_vthread_id, tid);
       return tid;
     }
     tid = static_cast<traceid>(ThreadIdentifier::next());
@@ -525,7 +525,7 @@ traceid JfrThreadLocal::jvm_thread_id(const Thread* t) {
 
 bool JfrThreadLocal::is_vthread(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  return Atomic::load_acquire(&jt->jfr_thread_local()->_vthread) && jt->last_continuation() != nullptr;
+  return AtomicAccess::load_acquire(&jt->jfr_thread_local()->_vthread) && jt->last_continuation() != nullptr;
 }
 
 int32_t JfrThreadLocal::make_non_reentrant(Thread* t) {
@@ -558,18 +558,18 @@ void JfrThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
   assert(thread != nullptr, "invariant");
   JfrThreadLocal* const tl = jt->jfr_thread_local();
   if (!is_virtual(jt, thread)) {
-    Atomic::release_store(&tl->_vthread, false);
+    AtomicAccess::release_store(&tl->_vthread, false);
     return;
   }
   assert(tl->_non_reentrant_nesting == 0, "invariant");
-  Atomic::store(&tl->_vthread_id, AccessThreadTraceId::id(thread));
+  AtomicAccess::store(&tl->_vthread_id, AccessThreadTraceId::id(thread));
   const u2 epoch_raw = AccessThreadTraceId::epoch(thread);
   const bool excluded = epoch_raw & excluded_bit;
-  Atomic::store(&tl->_vthread_excluded, excluded);
+  AtomicAccess::store(&tl->_vthread_excluded, excluded);
   if (!excluded) {
-    Atomic::store(&tl->_vthread_epoch, static_cast<u2>(epoch_raw & epoch_mask));
+    AtomicAccess::store(&tl->_vthread_epoch, static_cast<u2>(epoch_raw & epoch_mask));
   }
-  Atomic::release_store(&tl->_vthread, true);
+  AtomicAccess::release_store(&tl->_vthread, true);
 }
 
 Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
@@ -607,21 +607,21 @@ timer_t* JfrThreadLocal::cpu_timer() const {
 }
 
 bool JfrThreadLocal::is_cpu_time_jfr_enqueue_locked() {
-  return Atomic::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
+  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == ENQUEUE;
 }
 
 bool JfrThreadLocal::is_cpu_time_jfr_dequeue_locked() {
-  return Atomic::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
+  return AtomicAccess::load_acquire(&_cpu_time_jfr_locked) == DEQUEUE;
 }
 
 bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
-  return Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
+  return AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, ENQUEUE) == UNLOCKED;
 }
 
 bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
   CPUTimeLockState got;
   while (true)  {
-    CPUTimeLockState got = Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
+    CPUTimeLockState got = AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
     if (got == UNLOCKED) {
       return true; // successfully locked for dequeue
     }
@@ -634,21 +634,21 @@ bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
 
 void JfrThreadLocal::acquire_cpu_time_jfr_dequeue_lock() {
   SpinYield s;
-  while (Atomic::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
+  while (AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE) != UNLOCKED) {
     s.wait();
   }
 }
 
 void JfrThreadLocal::release_cpu_time_jfr_queue_lock() {
-  Atomic::release_store(&_cpu_time_jfr_locked, UNLOCKED);
+  AtomicAccess::release_store(&_cpu_time_jfr_locked, UNLOCKED);
 }
 
 void JfrThreadLocal::set_has_cpu_time_jfr_requests(bool has_requests) {
-  Atomic::release_store(&_has_cpu_time_jfr_requests, has_requests);
+  AtomicAccess::release_store(&_has_cpu_time_jfr_requests, has_requests);
 }
 
 bool JfrThreadLocal::has_cpu_time_jfr_requests() {
-  return Atomic::load_acquire(&_has_cpu_time_jfr_requests);
+  return AtomicAccess::load_acquire(&_has_cpu_time_jfr_requests);
 }
 
 JfrCPUTimeTraceQueue& JfrThreadLocal::cpu_time_jfr_queue() {
@@ -660,11 +660,11 @@ void JfrThreadLocal::deallocate_cpu_time_jfr_queue() {
 }
 
 void JfrThreadLocal::set_do_async_processing_of_cpu_time_jfr_requests(bool wants) {
-  Atomic::release_store(&_do_async_processing_of_cpu_time_jfr_requests, wants);
+  AtomicAccess::release_store(&_do_async_processing_of_cpu_time_jfr_requests, wants);
 }
 
 bool JfrThreadLocal::wants_async_processing_of_cpu_time_jfr_requests() {
-  return Atomic::load_acquire(&_do_async_processing_of_cpu_time_jfr_requests);
+  return AtomicAccess::load_acquire(&_do_async_processing_of_cpu_time_jfr_requests);
 }
 
 #endif

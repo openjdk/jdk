@@ -68,7 +68,7 @@ private:
 public:
   ShenandoahFullGC();
   ~ShenandoahFullGC();
-  bool collect(GCCause::Cause cause);
+  bool collect(GCCause::Cause cause) override;
 
 private:
   // GC entries

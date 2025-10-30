@@ -61,7 +61,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1780,6 +1780,62 @@ static const TypeFunc* make_osr_end_Type() {
   return TypeFunc::make(domain, range);
 }
 
+#ifndef PRODUCT
+static void debug_print_convert_type(const Type** fields, int* argp, Node *parm) {
+  const BasicType bt = parm->bottom_type()->basic_type();
+  fields[(*argp)++] = Type::get_const_basic_type(bt);
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    fields[(*argp)++] = Type::HALF;
+  }
+}
+
+static void update_arg_cnt(const Node* parm, int* arg_cnt) {
+  (*arg_cnt)++;
+  const BasicType bt = parm->bottom_type()->basic_type();
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    (*arg_cnt)++;
+  }
+}
+
+const TypeFunc* OptoRuntime::debug_print_Type(Node* parm0, Node* parm1,
+                                        Node* parm2, Node* parm3,
+                                        Node* parm4, Node* parm5,
+                                        Node* parm6) {
+  int argcnt = 1;
+  if (parm0 != nullptr) { update_arg_cnt(parm0, &argcnt);
+  if (parm1 != nullptr) { update_arg_cnt(parm1, &argcnt);
+  if (parm2 != nullptr) { update_arg_cnt(parm2, &argcnt);
+  if (parm3 != nullptr) { update_arg_cnt(parm3, &argcnt);
+  if (parm4 != nullptr) { update_arg_cnt(parm4, &argcnt);
+  if (parm5 != nullptr) { update_arg_cnt(parm5, &argcnt);
+  if (parm6 != nullptr) { update_arg_cnt(parm6, &argcnt);
+  /* close each nested if ===> */  } } } } } } }
+
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // static string pointer
+
+  if (parm0 != nullptr) { debug_print_convert_type(fields, &argp, parm0);
+  if (parm1 != nullptr) { debug_print_convert_type(fields, &argp, parm1);
+  if (parm2 != nullptr) { debug_print_convert_type(fields, &argp, parm2);
+  if (parm3 != nullptr) { debug_print_convert_type(fields, &argp, parm3);
+  if (parm4 != nullptr) { debug_print_convert_type(fields, &argp, parm4);
+  if (parm5 != nullptr) { debug_print_convert_type(fields, &argp, parm5);
+  if (parm6 != nullptr) { debug_print_convert_type(fields, &argp, parm6);
+  /* close each nested if ===> */  } } } } } } }
+
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+#endif // PRODUCT
+
 //-------------------------------------------------------------------------------------
 // register policy
 
@@ -1913,9 +1969,6 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
 
     current->set_exception_pc(pc);
     current->set_exception_handler_pc(handler_address);
-
-    // Check if the exception PC is a MethodHandle call site.
-    current->set_is_method_handle_return(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
@@ -2206,7 +2259,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     c->set_next(nullptr);
     head = _named_counters;
     c->set_next(head);
-  } while (Atomic::cmpxchg(&_named_counters, head, c) != head);
+  } while (AtomicAccess::cmpxchg(&_named_counters, head, c) != head);
   return c;
 }
 

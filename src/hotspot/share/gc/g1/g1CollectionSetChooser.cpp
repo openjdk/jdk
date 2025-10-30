@@ -27,7 +27,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/shared/space.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/quickSort.hpp"
 
 // Determine collection set candidates (from marking): For all regions determine
@@ -105,7 +105,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
     // Claim a new chunk, returning its bounds [from, to[.
     void claim_chunk(uint& from, uint& to) {
-      uint result = Atomic::add(&_cur_claim_idx, _chunk_size);
+      uint result = AtomicAccess::add(&_cur_claim_idx, _chunk_size);
       assert(_max_size > result - 1,
              "Array too small, is %u should be %u with chunk size %u.",
              _max_size, result, _chunk_size);
@@ -208,7 +208,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
 
   void update_totals(uint num_regions) {
     if (num_regions > 0) {
-      Atomic::add(&_num_regions_added, num_regions);
+      AtomicAccess::add(&_num_regions_added, num_regions);
     }
   }
 
@@ -220,7 +220,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
   void prune(G1HeapRegion** data) {
     G1Policy* p = G1CollectedHeap::heap()->policy();
 
-    uint num_candidates = Atomic::load(&_num_regions_added);
+    uint num_candidates = AtomicAccess::load(&_num_regions_added);
 
     uint min_old_cset_length = p->calc_min_old_cset_length(num_candidates);
     uint num_pruned = 0;
@@ -253,7 +253,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
                               wasted_bytes,
                               allowed_waste);
 
-    Atomic::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
+    AtomicAccess::sub(&_num_regions_added, num_pruned, memory_order_relaxed);
   }
 
 public:

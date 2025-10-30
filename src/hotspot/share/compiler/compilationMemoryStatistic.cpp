@@ -37,7 +37,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/checkedCast.hpp"
@@ -902,7 +902,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int aren
         // Store this ArenaStat. If other threads also run into OOMs, let them sleep.
         // We will never return, so the global store will not contain this info. We will
         // print the stored ArenaStat in hs-err (see print_error_report)
-        if (Atomic::cmpxchg(&_arenastat_oom_crash, (ArenaStatCounter*) nullptr, arena_stat) != nullptr) {
+        if (AtomicAccess::cmpxchg(&_arenastat_oom_crash, (ArenaStatCounter*) nullptr, arena_stat) != nullptr) {
           os::infinite_sleep();
         }
       }
@@ -992,7 +992,7 @@ static bool check_before_reporting(outputStream* st) {
 }
 
 bool CompilationMemoryStatistic::in_oom_crash() {
-  return Atomic::load(&_arenastat_oom_crash) != nullptr;
+  return AtomicAccess::load(&_arenastat_oom_crash) != nullptr;
 }
 
 void CompilationMemoryStatistic::print_error_report(outputStream* st) {
@@ -1000,7 +1000,7 @@ void CompilationMemoryStatistic::print_error_report(outputStream* st) {
     return;
   }
   StreamIndentor si(tty, 4);
-  const ArenaStatCounter* const oom_stats = Atomic::load(&_arenastat_oom_crash);
+  const ArenaStatCounter* const oom_stats = AtomicAccess::load(&_arenastat_oom_crash);
   if (oom_stats != nullptr) {
     // we crashed due to a compiler limit hit. Lead with a printout of the offending stats
     // in detail.
