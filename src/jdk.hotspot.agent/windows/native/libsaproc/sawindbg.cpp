@@ -598,7 +598,8 @@ static bool addThreads(JNIEnv* env, jobject obj) {
     #define REG_INDEX(x) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##x
 
     context.ContextFlags = CONTEXT_FULL;
-    ptrIDebugAdvanced->GetThreadContext(&context, sizeof(CONTEXT));
+    COM_VERIFY_OK_(ptrIDebugAdvanced->GetThreadContext(&context, sizeof(CONTEXT)),
+                   "Windbg Error: GetThreadContext failed!", false);
 
     ptrRegs[REG_INDEX(R0)]  = context.X0;
     ptrRegs[REG_INDEX(R1)]  = context.X1;
@@ -634,7 +635,7 @@ static bool addThreads(JNIEnv* env, jobject obj) {
     ptrRegs[REG_INDEX(LR)]  = context.Lr;
     ptrRegs[REG_INDEX(SP)]  = context.Sp;
     ptrRegs[REG_INDEX(PC)]  = context.Pc;
-    ptrRegs[REG_INDEX(PSTATE)]  = context.Cpsr;
+    ptrRegs[REG_INDEX(PSTATE)] = context.Cpsr;
 
 #endif
 
