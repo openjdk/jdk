@@ -45,7 +45,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
 
   // Check all pinned regions have updated status before choosing the collection set.
-  heap->assert_pinned_region_status();
+  heap->assert_pinned_region_status(_generation);
 
   // Step 1. Build up the region candidates we care about, rejecting losers and accepting winners right away.
 

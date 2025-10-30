@@ -494,7 +494,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
 
     parallel_heap_region_iterate(&cl);
-    heap->assert_pinned_region_status();
+    heap->assert_pinned_region_status(this);
   }
 
   {
