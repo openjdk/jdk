@@ -83,8 +83,4 @@ class SocketDispatcher extends UnixDispatcher {
 
     private static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
-
-    static {
-        IOUtil.load();
-    }
 }

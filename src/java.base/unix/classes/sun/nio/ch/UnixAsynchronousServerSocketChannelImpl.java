@@ -67,7 +67,7 @@ class UnixAsynchronousServerSocketChannelImpl
         super(port);
 
         try {
-            IOUtil.configureBlocking(fd, false);
+            NIOUtil.configureBlocking(fd, false);
         } catch (IOException x) {
             nd.close(fd);  // prevent leak
             throw x;
