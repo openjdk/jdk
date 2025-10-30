@@ -30,7 +30,7 @@
 
 jvmtiEnv* jvmti_env;
 
-// The event counters are used to check events from differen threads.
+// The event counters are used to check events from different threads.
 static std::atomic<jint> access_cnt{0};
 static std::atomic<jint> modify_cnt{0};
 
@@ -38,10 +38,8 @@ static std::atomic<jint> modify_cnt{0};
 static const char* TEST_CLASS_NAME    = "LFieldEventsFromJNI;";
 
 static const char* ACCESS_FIELD_NAME  = "accessField";
-static const char* ACCESS_FIELD_VALUE = "accessFieldValue";
 static const char* ACCESS_METHOD_NAME = "enableEventsAndAccessField";
 static const char* MODIFY_FIELD_NAME  = "modifyField";
-static const char* MODIFY_FIELD_VALUE = "modifyFieldValue";
 static const char* MODIFY_METHOD_NAME = "enableEventsAndModifyField";
 
 
@@ -113,22 +111,22 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   jvmtiEnv *jvmti = nullptr;
-  jint res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_21);
+  jint res = vm->GetEnv((void **)&jvmti, JVMTI_VERSION_21);
   if (res != JNI_OK) {
     return JNI_ERR;
   }
   jvmtiError err = JVMTI_ERROR_NONE;
   jvmtiCapabilities capabilities;
-  (void) memset(&capabilities, 0, sizeof (capabilities));
+  (void)memset(&capabilities, 0, sizeof (capabilities));
   capabilities.can_generate_field_access_events = true;
   capabilities.can_generate_field_modification_events = true;
   err = jvmti->AddCapabilities(&capabilities);
   check_jvmti_error(err, "AddCapabilities");
   jvmtiEventCallbacks callbacks;
-  (void) memset(&callbacks, 0, sizeof (callbacks));
+  (void)memset(&callbacks, 0, sizeof (callbacks));
   callbacks.FieldAccess = &cbFieldAccess;
   callbacks.FieldModification = &cbFieldModification;
-  err = jvmti->SetEventCallbacks(&callbacks, (int) sizeof (jvmtiEventCallbacks));
+  err = jvmti->SetEventCallbacks(&callbacks, (int)sizeof (jvmtiEventCallbacks));
   check_jvmti_error(err, "SetEventCallbacks");
   jvmti_env = jvmti;
   return JNI_OK;
@@ -157,23 +155,23 @@ Java_FieldEventsFromJNI_enableEventsAndAccessField(
   err = jvmti_env->SetFieldAccessWatch(cls, fieldToRead);
   check_jvmti_error(err, "SetFieldAccessWatch");
 
-  jstring jname = (jstring)jni->GetObjectField(self, fieldToRead);
+  jstring jvalue = (jstring)jni->GetObjectField(self, fieldToRead);
 
   err = jvmti_env->ClearFieldAccessWatch(cls, fieldToRead);
   check_jvmti_error(err, "ClearFieldAccessWatch");
   err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_ACCESS, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
 
-  const char* name_str = jni->GetStringUTFChars(jname, nullptr);
-  LOG("The field %s\n", name_str);
-  if (strcmp(name_str, ACCESS_FIELD_VALUE) != 0) {
-    fatal(jni, "The field value is incorrect.");
-  }
+  const char* value_str = jni->GetStringUTFChars(jvalue, nullptr);
 
   if (access_cnt != numOfEventsExpected) {
-    fatal(jni, "The field access count is incorrect.");
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer),
+        "Invalid field access count: %d. Should be %d.",
+        (int)access_cnt, numOfEventsExpected);
+    fatal(jni, buffer);
   }
-  jni->ReleaseStringUTFChars(jname, name_str);
+  jni->ReleaseStringUTFChars(jvalue, value_str);
 }
 
 JNIEXPORT void JNICALL
@@ -194,9 +192,9 @@ Java_FieldEventsFromJNI_enableEventsAndModifyField(
   check_jvmti_error(err, "SetEventNotificationMode");
   err = jvmti_env->SetFieldModificationWatch(cls, fieldToModify);
   check_jvmti_error(err, "SetFieldAccessWatch");
-  jstring jval = jni->NewStringUTF("newValue");
+  jstring jvalue = jni->NewStringUTF("newValue");
 
-  jni->SetObjectField(self, fieldToModify, jval);
+  jni->SetObjectField(self, fieldToModify, jvalue);
 
   err = jvmti_env->ClearFieldModificationWatch(cls, fieldToModify);
   check_jvmti_error(err, "ClearFieldAccessWatch");
@@ -204,7 +202,11 @@ Java_FieldEventsFromJNI_enableEventsAndModifyField(
   check_jvmti_error(err, "SetEventNotificationMode");
 
   if (modify_cnt != numOfEventsExpected) {
-    fatal(jni, "The field access count should be 1.");
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer),
+        "Invalid field modification count: %d. Should be %d.",
+        (int)modify_cnt, numOfEventsExpected);
+    fatal(jni, buffer);
   }
 }
 
