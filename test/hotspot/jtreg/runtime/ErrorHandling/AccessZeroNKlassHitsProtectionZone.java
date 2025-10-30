@@ -207,7 +207,7 @@ public class AccessZeroNKlassHitsProtectionZone {
         Argument arg = Argument.valueOf(args[0]);
         System.out.println(arg);
         switch (arg) {
-            case runwb -> System.out.println("CompressedClassSpaceBaseAddress=0x0000000800000000 given with shift 6, cannot be used to encode class pointers");
+            case runwb -> WhiteBox.getWhiteBox().decodeNKlassAndAccessKlass(0);
             case no_coh_no_cds -> run_test(false, false);
             case no_coh_cds -> run_test(false, true);
             case coh_no_cds -> run_test(true, false);
