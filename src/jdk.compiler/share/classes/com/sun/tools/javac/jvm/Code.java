@@ -1832,6 +1832,17 @@ public class Code {
                 }
 
                 return types.erasure(lub);
+                /*
+                //List<Type> supers = types.supertypeClosure(t1, t2);//types.lub(true, t1, t2);
+                List<Type> ec = types.intersect(false, types.erasedSupertypes(t1), types.erasedSupertypes(t2));
+
+                if (ec.isEmpty() || ec.head.hasTag(BOT)) {
+                    throw Assert.error("Cannot find a common super class of: " +
+                                       t1 + " and " + t2);
+                }
+
+                return types.erasure(ec.head);
+                */
             }
         }
 

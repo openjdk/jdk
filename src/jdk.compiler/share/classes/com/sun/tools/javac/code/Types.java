@@ -3837,7 +3837,7 @@ public class Types {
     /**
      * Intersect two closures
      */
-    private List<Type> intersect(boolean lubWillBeErased, List<Type> cl1, List<Type> cl2) {
+    public List<Type> intersect(boolean lubWillBeErased, List<Type> cl1, List<Type> cl2) {
         if (cl1 == cl2)
             return cl1;
         if (cl1.isEmpty() || cl2.isEmpty())
@@ -4105,7 +4105,7 @@ public class Types {
         }
     }
     // where
-        List<Type> erasedSupertypes(Type t) {
+        public List<Type> erasedSupertypes(Type t) {
             ListBuffer<Type> buf = new ListBuffer<>();
             for (Type sup : closure(t)) {
                 if (sup.hasTag(TYPEVAR)) {
@@ -4588,7 +4588,7 @@ public class Types {
         return false;
     }
 
-    private List<Type> supertypeClosure(Type t, Type s) {
+    public List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
