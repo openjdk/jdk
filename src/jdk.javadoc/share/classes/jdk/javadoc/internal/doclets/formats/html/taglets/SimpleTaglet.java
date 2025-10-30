@@ -63,21 +63,6 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Constructs a {@code SimpleTaglet}.
      *
-     * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     *                  The string can contain 'p' for package, 't' for type,
-     *                  'm' for method, 'c' for constructor and 'f' for field.
-     *                  See {@link #getLocations(String) getLocations} for the
-     *                  complete list.
-     */
-    SimpleTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
-        this(config, tagName, header, getLocations(locations), isEnabled(locations));
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
