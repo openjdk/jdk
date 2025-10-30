@@ -58,6 +58,7 @@ public class TestVMProcess {
     private static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
 
     private static String lastTestVMOutput = "";
+
     private final ArrayList<String> cmds;
     private String hotspotPidFileName;
     private String commandLine;
