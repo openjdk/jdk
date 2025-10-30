@@ -104,21 +104,21 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
             for (SSLEngine engine :
                     new SSLEngine[]{test.serverEngine, test.clientEngine}) {
 
-                var sslParams = engine.getSSLParameters();
-                var defaultConfigSS = new ArrayList<>(List.of(
-                        sslParams.getSignatureSchemes()));
-
                 // Test default config signature schemes.
-                assertFalse(defaultConfigSS.contains(DISABLED_SS));
-                defaultConfigSS.add(DISABLED_SS);
-                assertTrue(REFERENCE_SS.equals(
-                        defaultConfigSS.stream().sorted().toList()));
+                checkEngineDefaultSS(engine);
 
                 // Test custom values.
+                var sslParams = engine.getSSLParameters();
                 sslParams.setSignatureSchemes(CUSTOM_SS);
                 engine.setSSLParameters(sslParams);
                 assertTrue(Arrays.equals(CUSTOM_SS,
                         engine.getSSLParameters().getSignatureSchemes()));
+
+                // Set null custom value, default signature schemes should
+                // be returned.
+                sslParams.setSignatureSchemes(null);
+                engine.setSSLParameters(sslParams);
+                checkEngineDefaultSS(engine);
             }
         }
     }
@@ -129,5 +129,15 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
                 .getSSLParameters().getSignatureSchemes()).sorted().toList();
         var propertySS = Stream.of(property.split(",")).sorted().toList();
         assertTrue(engineSS.equals(propertySS));
+    }
+
+    private static void checkEngineDefaultSS(SSLEngine engine) {
+        var defaultConfigSS = new ArrayList<>(List.of(
+                engine.getSSLParameters().getSignatureSchemes()));
+
+        assertFalse(defaultConfigSS.contains(DISABLED_SS));
+        defaultConfigSS.add(DISABLED_SS);
+        assertTrue(REFERENCE_SS.equals(
+                defaultConfigSS.stream().sorted().toList()));
     }
 }
