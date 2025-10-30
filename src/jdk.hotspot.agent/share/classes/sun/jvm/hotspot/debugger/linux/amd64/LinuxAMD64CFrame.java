@@ -155,8 +155,8 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      try {
        nextDwarf = createDwarfParser(nextPC);
      } catch (DebuggerException _) {
-       // Try again with RIP-1 because RIP points next instruction
-       // if the function is during `call` instruction.
+       // Try again with RIP-1 in case RIP is just outside function bounds,
+       // due to function ending with a `call` instruction.
        try {
          nextDwarf = createDwarfParser(nextPC.addOffsetTo(-1));
          fallback = true;
