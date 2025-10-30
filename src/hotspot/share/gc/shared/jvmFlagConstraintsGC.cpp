@@ -285,13 +285,7 @@ JVMFlag::Error SoftMaxHeapSizeConstraintFunc(size_t value, bool verbose) {
 JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
   // If an overflow happened in Arguments::set_heap_size(), MaxHeapSize will have too large a value.
   // Check for this by ensuring that MaxHeapSize plus the requested min base address still fit within max_uintx.
-  if (std::numeric_limits<size_t>::max() - value < MaxHeapSize) { // overflow
-    JVMFlag::printError(verbose,
-                        "Sum of HeapBaseMinAddress (%zu) and MaxHeapSize (%zu) results in an overflow (%zu)\n",
-                        value , MaxHeapSize, value + MaxHeapSize);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-  if (UseCompressedOops && FLAG_IS_ERGO(MaxHeapSize) && (value > (max_uintx - MaxHeapSize))) {
+  if (value > (max_uintx - MaxHeapSize)) {
     JVMFlag::printError(verbose,
                         "HeapBaseMinAddress (%zu) or MaxHeapSize (%zu) is too large. "
                         "Sum of them must be less than or equal to maximum of size_t (%zu)\n",
