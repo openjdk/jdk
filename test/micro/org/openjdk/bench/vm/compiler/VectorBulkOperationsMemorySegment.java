@@ -88,8 +88,7 @@ public class VectorBulkOperationsMemorySegment {
             "300"})
     public static long NUM_ACCESS_ELEMENTS;
 
-    // TODO: add more?
-    @Param({"native", "array_byte"})
+    @Param({"native", "array_byte", "array_int", "array_long"})
     public static String BACKING_TYPE;
 
     // Every array has two regions:
@@ -144,10 +143,11 @@ public class VectorBulkOperationsMemorySegment {
     public void init() {
         // Make sure we can fit the longs, and then some whiggle room for alignment.
         REGION_SIZE = roundUp4k(NUM_ACCESS_ELEMENTS * 8 + 1024 + REGION_2_BYTE_OFFSET);
-
         ms = switch(BACKING_TYPE) {
-            case "native" -> Arena.ofAuto().allocate(2 * REGION_SIZE, 4 * 1024);
+            case "native"     -> Arena.ofAuto().allocate(2 * REGION_SIZE, 4 * 1024);
             case "array_byte" -> MemorySegment.ofArray(new byte[(int)(2 * REGION_SIZE)]);
+            case "array_int"  -> MemorySegment.ofArray(new int[(int)(2 * REGION_SIZE / 4)]);
+            case "array_long" -> MemorySegment.ofArray(new long[(int)(2 * REGION_SIZE / 8)]);
             default -> throw new RuntimeException("not implemented: " + BACKING_TYPE);
         };
     }
