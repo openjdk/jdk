@@ -58,8 +58,6 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
 }
 
 void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   const Register tmp   = Z_R1_scratch;
 
   assert_different_registers(Rmark, Roop, Rbox, tmp);
@@ -69,95 +67,17 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   z_stg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
 
-  assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      load_klass(tmp, Roop);
-      z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-      branch_optimized(Assembler::bcondAllOne, slow_case);
-    }
-
-    NearLabel done;
-
-    // Load object header.
-    z_lg(Rmark, Address(Roop, hdr_offset));
-
-    // and mark it as unlocked.
-    z_oill(Rmark, markWord::unlocked_value);
-    // Save unlocked object header into the displaced header location on the stack.
-    z_stg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // Test if object header is still the same (i.e. unlocked), and if so, store the
-    // displaced header address in the object header. If it is not the same, get the
-    // object header instead.
-    z_csg(Rmark, Rbox, hdr_offset, Roop);
-    // If the object header was the same, we're done.
-    branch_optimized(Assembler::bcondEqual, done);
-    // If the object header was not the same, it is now in the Rmark register.
-    // => Test if it is a stack pointer into the same stack (recursive locking), i.e.:
-    //
-    // 1) (Rmark & markWord::lock_mask_in_place) == 0
-    // 2) rsp <= Rmark
-    // 3) Rmark <= rsp + page_size
-    //
-    // These 3 tests can be done by evaluating the following expression:
-    //
-    // (Rmark - Z_SP) & (~(page_size-1) | markWord::lock_mask_in_place)
-    //
-    // assuming both the stack pointer and page_size have their least
-    // significant 2 bits cleared and page_size is a power of 2
-    z_sgr(Rmark, Z_SP);
-
-    load_const_optimized(Z_R0_scratch, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
-    z_ngr(Rmark, Z_R0_scratch); // AND sets CC (result eq/ne 0).
-    // For recursive locking, the result is zero. => Save it in the displaced header
-    // location (null in the displaced Rmark location indicates recursive locking).
-    z_stg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // Otherwise we don't care about the result and handle locking via runtime call.
-    branch_optimized(Assembler::bcondNotZero, slow_case);
-    // done
-    bind(done);
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
+  lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
 }
 
 void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rbox, Label& slow_case) {
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   assert_different_registers(Rmark, Roop, Rbox);
-
-  NearLabel done;
-
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Load displaced header.
-    z_ltg(Rmark, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
-    // If the loaded Rmark is null we had recursive locking, and we are done.
-    z_bre(done);
-  }
 
   // Load object.
   z_lg(Roop, Address(Rbox, BasicObjectLock::obj_offset()));
   verify_oop(Roop, FILE_AND_LINE);
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-    // Test if object header is pointing to the displaced header, and if so, restore
-    // the displaced header in the object. If the object header is not pointing to
-    // the displaced header, get the object header instead.
-    z_csg(Rbox, Rmark, hdr_offset, Roop);
-    // If the object header was not pointing to the displaced header,
-    // we do unlocking via runtime call.
-    branch_optimized(Assembler::bcondNotEqual, slow_case);
-  } else {
-    assert(false, "Unhandled LockingMode:%d", LockingMode);
-  }
-  // done
-  bind(done);
+  lightweight_unlock(Roop, Rmark, Z_R1_scratch, slow_case);
 }
 
 void C1_MacroAssembler::try_allocate(

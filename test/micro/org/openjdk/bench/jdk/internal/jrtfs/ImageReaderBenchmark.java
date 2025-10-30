@@ -195,9 +195,9 @@ public class ImageReaderBenchmark {
     static long countAllNodes(ImageReader reader, Node node) {
         long count = 1;
         if (node.isDirectory()) {
-            count += node.getChildren().stream().mapToLong(n -> {
+            count += node.getChildNames().mapToLong(n -> {
                 try {
-                    return countAllNodes(reader, reader.findNode(n.getName()));
+                    return countAllNodes(reader, reader.findNode(n));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -1062,7 +1062,6 @@ public class ImageReaderBenchmark {
             "/modules/java.base/jdk/internal/loader/URLClassPath$FileLoader.class",
             "/modules/java.base/jdk/internal/loader/Resource.class",
             "/modules/java.base/java/io/FileCleanable.class",
-            "/modules/java.base/sun/nio/ByteBuffered.class",
             "/modules/java.base/java/security/SecureClassLoader$CodeSourceKey.class",
             "/modules/java.base/java/security/PermissionCollection.class",
             "/modules/java.base/java/security/Permissions.class",

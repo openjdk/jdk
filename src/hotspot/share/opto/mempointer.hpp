@@ -41,6 +41,10 @@
 //  - alignment                  -> find an alignment solution for all memops in a vectorized loop
 //  - detect partial overlap     -> indicates store-to-load-forwarding failures
 //
+// A more advanced use case of MemPointers is speculative aliasing analysis. If we can prove that
+// the MemPointer has a linear form in the loop induction variable (iv), we can formulate runtime
+// checks to establish that two MemPointer never overlap for all iterations, i.e. for all iv values.
+//
 // -----------------------------------------------------------------------------------------
 //
 // Intuition and Examples:
@@ -158,7 +162,7 @@
 //
 //     pointer = SUM(summands) + con
 //
-//   Where each summand_i in summands has the form:
+//   Where each summand_i in summands has the MemPointerSummand form:
 //
 //     summand_i = scale_i * variable_i
 //
@@ -266,6 +270,10 @@
 //   the MemPointerAliasing computations. To prove the "MemPointer Lemma", we need to define
 //   the idea of a "safe decomposition", and then prove that all the decompositions we apply
 //   are such "safe decompositions".
+//
+//   Even further down, we prove the "MemPointer Linearity Corrolary", where we show that
+//   (under reasonable restrictions) both the MemPointer and the corresponding pointer
+//   can be considered linear functions.
 //
 //
 // Definition: Safe decomposition
@@ -385,7 +393,103 @@
 //
 //        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
 //        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
-
+//
+//
+// Having proven the "MemPointer Lemma", we can now derive an interesting corrolary.
+//
+// With the "Linearity Corrolary" below, we can prove that some MemPointers can be treated as
+// linear in some summand variable v over some range r. This is useful when MemPointers are
+// used in loops, where v=iv scale_v=scale_iv and the range is the iv range from some initial
+// iv value to the last iv value just before the limit.
+// For an application, see: VPointer::make_speculative_aliasing_check_with
+//
+// MemPointer Linearity Corrolary:
+//   Given:
+//     (C0) pointer p and its MemPointer mp, which is constructed with safe decompositions.
+//     (C1) a specific summand "scale_v * v" that occurs in mp.
+//     (C2) a strided range r = [lo, lo + stride_v, .. hi] for v (lo and hi are inclusive in the range).
+//     (C3) for all v in this strided range r we know that p is within bounds of its memory object.
+//     (C4) abs(scale_v * stride_v) < 2^31
+//            Required for (S2) in application of MemPointer Lemma below, it is essencial in
+//            establishing linearity of mp.
+//
+//   Then:
+//     Both p and mp have a linear form for v in r:
+//       p(v)  = p(lo)  - lo * scale_v + v * scale_v              (Corrolary P)
+//       mp(v) = mp(lo) - lo * scale_v + v * scale_v              (Corrolary MP)
+//
+//     Note: the calculations are done in long, and hence there can be no int overflow.
+//           Thus, p(v) and mp(v) can be considered linear functions for v in r.
+//
+//   It can be useful to "anchor" at hi instead of lo:
+//     p(hi) = p(lo) - lo * scale_v + hi * scale_v
+//
+//     p(v) = p(lo) - lo * scale_v + v * scale_v
+//            --------------------
+//          = p(hi) - hi * scale_v + v * scale_v             (Alternative Corrolary P)
+//
+//
+// Proof of "MemPointer Linearity Corrolary":
+//   We state the form of mp:
+//
+//     mp = summand_rest + scale_v * v + con
+//
+//   We prove the Corrolary by induction over v:
+//   Base Case: v = lo
+//     p(lo)  = p(lo)  - lo * scale_v + lo * scale_v
+//     mp(lo) = mp(lo) - lo * scale_v + lo * scale_v
+//
+//   Step Case: v0 and v1 in r, v1 = v0 + stride_v
+//     Assume:
+//       p(v0)  = p(lo)  - lo * scale_v + v * scale_v          (Induction Hypothesis IH-P)
+//       mp(v0) = mp(lo) - lo * scale_v + v * scale_v          (Induction Hypothesis IH-MP)
+//
+//     We take the form of mp, and further apply SAFE1 decompositions, i.e. long addition,
+//     subtraction and multiplication:
+//       mp(v1) = summand_rest + scale_v * v1                                   + con
+//              = summand_rest + scale_v * (v0 + stride_v)                      + con
+//              = summand_rest + scale_v * v0              + scale_v * stride_v + con
+//              = mp(v0)                                   + scale_v * stride_v
+//
+//     From this it follows that we can see mp(v0) and mp(v1) as two MemPointer with the
+//     same summands, and only their constants differ by exactly "scale_v * stride_v":
+//       mp(v0) = summand_rest + scale_v * v0 + con
+//       mp(v1) = summand_rest + scale_v * v0 + con + scale_v * stride_v            (MP-DIFF)
+//
+//     We continue by applying the Induction Hypothesis IH-MP
+//       mp(v1) = mp(v0)                                + scale_v * stride_v
+//                -------- apply (IH-MP) -------------
+//              = mp(lo) - lo * scale_v + v0 * scale_v  + scale_v * stride_v
+//              = mp(lo) - lo * scale_v + (v0 + stride_v) * scale_v
+//              = mp(lo) - lo * scale_v + v1 * scale_v
+//
+//     This proves the Corrolary MP.
+//
+//     To prove the Corrolary P, we now apply the MemPointer Lemma:
+//       (S0) Let p(v0) and p(v1) be the pointers corresponding to v0 and v1, and mp(v0) and mp(v1)
+//            their MemPointer. (C0) provides the safe deconstruction, and reformulation of terms
+//            happens with long addition, subtraction and multiplication only, and is hence SAFE
+//            as well.
+//       (S1) According to (C3), p is in bounds of its memory object for all v in r. Since v0 and
+//            v1 are in r, it follows that p(v0) and p(v1) are in bounds of the same memory object.
+//       (S2) The difference of constants of mp(v0) and mp(v1) is exactly "scale_v * stride_v" (MP-DIFF).
+//            Given (C4), this difference is not too large.
+//       (S3) All summands of mp0 and mp1 are the same (only the constants differ), given (MP-DIFF).
+//
+//     It follows:
+//       p(v1) - p(v0) = mp(v1) - mp(v0)
+//
+//     Reformulating and applying (MP-DIFF) and (IH-P):
+//       p(v1) = p(v0)                                  + mp(v1) - mp(v1)
+//                                                        apply (MP-DIFF)
+//             = p(v0)                                  + scale_v * stride_v
+//               ------------ apply (IH-P) ------------
+//             = p(lo) - lo * scale_v + v0 * scale_v    + scale_v * stride_v
+//             = p(lo) - lo * scale_v + (v0 + stride_v) * scale_v
+//             = p(lo) - lo * scale_v + v1 * scale_v
+//
+//     This proves Corrolary P.
+//
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
@@ -466,6 +570,13 @@ public:
            (_distance <= distance_lo || distance_hi <= _distance);
   }
 
+  // Use case: overlap.
+  // Note: the bounds are exclusive: lo < element < hi
+  bool is_always_in_distance_range(const jint distance_lo, const jint distance_hi) const {
+    return _aliasing == AlwaysAtDistance &&
+           (distance_lo < _distance && _distance < distance_hi);
+  }
+
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
@@ -540,7 +651,167 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     _scale.print_on(st);
-    tty->print(" * [%d %s]", _variable->_idx, _variable->Name());
+    st->print(" * [%d %s]", _variable->_idx, _variable->Name());
+  }
+
+  static void print_on(outputStream* st, NoOverflowInt con, const GrowableArray<MemPointerSummand>& summands) {
+    st->print("Summands (%d): con(", summands.length());
+    con.print_on(st);
+    st->print(")");
+    for (int i = 0; i < summands.length(); i++) {
+      st->print(" + ");
+      summands.at(i).print_on(tty);
+    }
+    st->cr();
+  }
+#endif
+};
+
+// We need two different ways of tracking the summands:
+// - MemPointerRawSummand: designed to keep track of the original form of
+//                         the pointer, preserving its overflow behavior.
+// - MemPointerSummand:    designed to allow simplification of the MemPointer
+//                         form, does not preserve the original form and
+//                         ignores overflow from ConvI2L.
+//
+// The MemPointerSummand is designed to allow the simplification of
+// the MemPointer form as much as possible, to allow aliasing checks
+// to be as simple as possible. For example, the C2 IR pointer:
+//
+//   pointer = AddP(
+//               AddP(
+//                 base,
+//                 LShiftL(
+//                   ConvI2L(
+//                     AddI(AddI(i, LShiftI(j, 2)), con1)
+//                   ),
+//                   1
+//                 )
+//               ),
+//               con2
+//             )
+//
+// and more readable:
+//
+//   pointer = base + 2L * ConvI2L(i + 4 * j + con1) + con2
+//
+// is simplified to this MemPointer form, using only MemPointerSummands,
+// which ignore the possible overflow in ConvI2L:
+//
+//   pointer = base + 2L * ConvI2L(i) + 8L * ConvI2L(j) + con
+//   con = 2L * con1 + con2
+//
+// This is really convenient, because this way we are able to ignore
+// the ConvI2L in the aliasing anaylsis computation, and we can collect
+// all constants to a single constant. Even with this simplicication,
+// we are able to prove the correctness of the aliasing checks.
+//
+// However, there is one thing we are not able to do with this simplification:
+// we cannot reconstruct the original pointer expression, because the
+// simplification ignores overflows that could happen inside the ConvI2L:
+//
+//   2L * ConvI2L(i + 4 * j + con1) != 2L * ConvI2L(i) + 8L * ConvI2L(j) + 2L * con1
+//
+// The MemPointerRawSummand is designed to keep track of the original form
+// of the pointer, preserving its overflow behaviour. We observe that the
+// only critical point for overflows is at the ConvI2L. Thus, we give each
+// ConvI2L a "int group" id > 0, and all raw summands belonging to that ConvI2L
+// have that id. This allows us to reconstruct which raw summands need to
+// be added together before the ConvI2L. Any raw summands that do not belong
+// to a ConvI2L (i.e. the summands with long variables) have "int group"
+// id = 0, since they do not belong to any such "int group" and can be
+// directly added together. For raw summands belonging to an "int group",
+// we need to track the scale inside (scaleI) and outside (scaleL) the
+// ConvI2L. With the example from above:
+//
+//   pointer = base + 2L * ConvI2L(i + 4 * j + con1) + con2
+//
+//   _variable  = base  _variable  = i  _variable  = j  _variable  = null  _variable  = null
+//   _scaleI    = 1     _scaleI    = 1  _scaleI    = 4  _scaleI    = con1  _scaleI    = 1
+//   _scaleL    = 1     _scaleL    = 2  _scaleL    = 2  _scaleL    = 2     _scaleL    = con2
+//   _int_group = 0     _int_group = 1  _int_group = 1  _int_group = 1     _int_group = 0
+//
+// Note: we also need to track constants as separate raw summands. For
+//       this, we say that a raw summand tracks a constant iff _variable == null,
+//       and we store the constant value in _scaleI (for int constant) and in
+//       _scaleL (for long constants).
+//
+class MemPointerRawSummand : public StackObj {
+private:
+  Node* _variable;
+  NoOverflowInt _scaleI;
+  NoOverflowInt _scaleL;
+  int _int_group;
+
+public:
+  MemPointerRawSummand(Node* variable, NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) :
+    _variable(variable), _scaleI(scaleI), _scaleL(scaleL), _int_group(int_group) {}
+
+  MemPointerRawSummand() :
+    MemPointerRawSummand(nullptr, NoOverflowInt::make_NaN(), NoOverflowInt::make_NaN(), -1) {}
+
+  static MemPointerRawSummand make_trivial(Node* variable) {
+    assert(variable != nullptr, "must have variable");
+    return MemPointerRawSummand(variable, NoOverflowInt(1), NoOverflowInt(1), 0);
+  }
+
+  static MemPointerRawSummand make_con(NoOverflowInt scaleI, NoOverflowInt scaleL, int int_group) {
+    return MemPointerRawSummand(nullptr, scaleI, scaleL, int_group);
+  }
+
+  bool is_valid() const { return _int_group >= 0; }
+  bool is_con() const { assert(is_valid(), ""); return _variable == nullptr; }
+  Node* variable() const { assert(is_valid(), ""); return _variable; }
+  NoOverflowInt scaleI() const { assert(is_valid(), ""); return _scaleI; }
+  NoOverflowInt scaleL() const { assert(is_valid(), ""); return _scaleL; }
+  int int_group() const { assert(is_valid(), ""); return _int_group; }
+
+  MemPointerSummand to_summand() const {
+    assert(!is_con(), "must be variable");
+    return MemPointerSummand(variable(), scaleL() * scaleI());
+  }
+
+  NoOverflowInt to_con() const {
+    assert(is_con(), "must be constant");
+    return scaleL() * scaleI();
+  }
+
+  static int cmp_by_int_group_and_variable_idx(MemPointerRawSummand* p1, MemPointerRawSummand* p2) {
+    int int_group_diff = p1->int_group() - p2->int_group();
+    if (int_group_diff != 0) { return int_group_diff; }
+
+    if (p1->is_con()) {
+      return p2->is_con() ? 0 : 1;
+    }
+    if (p2->is_con()) {
+      return -1;
+    }
+    return p1->variable()->_idx - p2->variable()->_idx;
+  }
+
+#ifndef PRODUCT
+  void print_on(outputStream* st) const {
+    if (!is_valid()) {
+      st->print("<invalid>");
+    } else {
+      st->print("<%d: ", _int_group);
+      _scaleL.print_on(st);
+      st->print(" * ");
+      _scaleI.print_on(st);
+      if (!is_con()) {
+        st->print(" * [%d %s]", _variable->_idx, _variable->Name());
+      }
+      st->print(">");
+    }
+  }
+
+  static void print_on(outputStream* st, const GrowableArray<MemPointerRawSummand>& summands) {
+    st->print("Raw Summands (%d): ", summands.length());
+    for (int i = 0; i < summands.length(); i++) {
+      if (i > 0) { st->print(" + "); }
+      summands.at(i).print_on(tty);
+    }
+    st->cr();
   }
 #endif
 };
@@ -582,10 +853,13 @@ public:
 //
 class MemPointer : public StackObj {
 public:
-  // We limit the number of summands to 10. This is just a best guess, and not at this
-  // point supported by evidence. But I think it is reasonable: usually, a pointer
-  // contains a base pointer (e.g. array pointer or null for native memory) and a few
-  // variables. It should be rare that we have more than 9 variables.
+  // We limit the number of summands to 10, and the raw summands to 16. This is just a
+  // best guess, and not at this point supported by evidence. But I think it is reasonable:
+  // usually, a pointer contains a base pointer (e.g. array pointer or null for native memory)
+  // and a few variables. It should be rare that we have more than 9 variables. We need
+  // a few more raw summands, especially because there can be multiple constants, one
+  // per ConvI2L "int group".
+  static const int RAW_SUMMANDS_SIZE = 16;
   static const int SUMMANDS_SIZE = 10;
 
   // A base can be:
@@ -637,10 +911,20 @@ public:
   };
 
 private:
+  // Raw summands: represent the pointer form exactly, allowing the reconstruction of the
+  //               pointer expression. Overflows inside the "int groups" (i.e. ConvI2L)
+  //               are preserved, and there may be multiple constants.
+  MemPointerRawSummand _raw_summands[RAW_SUMMANDS_SIZE];
+
+  // Summands:     Simplified form, with only a single constant. Makes aliasing analysis
+  //               much simpler.
   MemPointerSummand _summands[SUMMANDS_SIZE];
   const NoOverflowInt _con;
   const Base _base;
+
+  // Size in bytes for the referenced memory region: [pointer, pointer + size)
   const jint _size;
+
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   // Default / trivial: pointer = 0 + 1 * pointer
@@ -659,6 +943,7 @@ private:
 
   // pointer = SUM(SUMMANDS) + con
   MemPointer(Node* pointer,
+             const GrowableArray<MemPointerRawSummand>& raw_summands,
              const GrowableArray<MemPointerSummand>& summands,
              const NoOverflowInt& con,
              const jint size
@@ -670,13 +955,24 @@ private:
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+    assert(raw_summands.length() <= RAW_SUMMANDS_SIZE, "raw summands must fit");
 #ifdef ASSERT
     for (int i = 0; i < summands.length(); i++) {
       const MemPointerSummand& s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
       assert(!s.scale().is_NaN(), "non-NaN scale");
     }
+    for (int i = 0; i < raw_summands.length(); i++) {
+      const MemPointerRawSummand& s = raw_summands.at(i);
+      assert(!s.scaleI().is_NaN(), "non-NaN scale");
+      assert(!s.scaleL().is_NaN(), "non-NaN scale");
+    }
 #endif
+
+    // Copy raw summands in the same order.
+    for (int i = 0; i < raw_summands.length(); i++) {
+      _raw_summands[i] = raw_summands.at(i);
+    }
 
     // Put the base in the 0th summand.
     Node* base = _base.object_or_native_or_null();
@@ -708,6 +1004,11 @@ private:
     NOT_PRODUCT(COMMA _trace(old._trace))
   {
     assert(!_con.is_NaN(), "non-NaN constant");
+
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      _raw_summands[i] = old.raw_summands_at(i);
+    }
+
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       _summands[i] = old.summands_at(i);
     }
@@ -733,15 +1034,27 @@ public:
   }
 
   static MemPointer make(Node* pointer,
+                         const GrowableArray<MemPointerRawSummand>& raw_summands,
+                         const NoOverflowInt con,
                          const GrowableArray<MemPointerSummand>& summands,
-                         const NoOverflowInt& con,
                          const jint size
                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
-    if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
+    if (raw_summands.length() <= RAW_SUMMANDS_SIZE &&
+        summands.length() <= SUMMANDS_SIZE &&
+        has_no_NaN_in_con_and_summands(con, summands)) {
+      return MemPointer(pointer, raw_summands, summands, con, size NOT_PRODUCT(COMMA trace));
     } else {
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
+  }
+
+  static bool has_no_NaN_in_con_and_summands(const NoOverflowInt con,
+                                             const GrowableArray<MemPointerSummand>& summands) {
+    if (con.is_NaN()) { return false; }
+    for (int i = 0; i < summands.length(); i++) {
+      if (summands.at(i).scale().is_NaN()) { return false; }
+    }
+    return true;
   }
 
   MemPointer make_with_size(const jint new_size) const {
@@ -775,9 +1088,33 @@ public:
     return _summands[i];
   }
 
+  const MemPointerRawSummand& raw_summands_at(const uint i) const {
+    assert(i < RAW_SUMMANDS_SIZE, "in bounds");
+    return _raw_summands[i];
+  }
+
   const NoOverflowInt con() const { return _con; }
   const Base& base() const { return _base; }
   jint size() const { return _size; }
+
+  int max_int_group() const {
+    int n = 0;
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      const MemPointerRawSummand& s = _raw_summands[i];
+      if (!s.is_valid()) { continue; }
+      n = MAX2(n, s.int_group());
+    }
+    return n;
+  }
+
+  template<typename Callback>
+  void for_each_raw_summand_of_int_group(int int_group, Callback callback) const {
+    for (int i = 0; i < RAW_SUMMANDS_SIZE; i++) {
+      const MemPointerRawSummand& s = _raw_summands[i];
+      if (!s.is_valid() || s.int_group() != int_group) { continue; }
+      callback(s);
+    }
+  }
 
   static int cmp_summands(const MemPointer& a, const MemPointer& b) {
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
@@ -801,6 +1138,7 @@ public:
 
   bool is_adjacent_to_and_before(const MemPointer& other) const;
   bool never_overlaps_with(const MemPointer& other) const;
+  bool always_overlaps_with(const MemPointer& other) const;
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
@@ -818,13 +1156,54 @@ public:
     }
   }
 
-  void print_on(outputStream* st, bool end_with_cr = true) const {
+  void print_on(outputStream* st) const {
     st->print("MemPointer[size: %2d, base: ", size());
     _base.print_on(st);
     st->print(", form: ");
     print_form_on(st);
     st->print("]");
-    if (end_with_cr) { st->cr(); }
+    st->cr();
+
+    st->print("  raw: ");
+
+    int long_count = 0;
+    for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
+      if (long_count > 0) { st->print(" + "); }
+      long_count++;
+      if (s.is_con()) {
+        // Long constant.
+        NoOverflowInt con = s.scaleI() * s.scaleL();
+        con.print_on(st);
+        st->print("L");
+      } else {
+        // Long variable.
+        assert(s.scaleI().is_one(), "must be long variable");
+        s.scaleL().print_on(st);
+        st->print("L * [%d %s]", s.variable()->_idx, s.variable()->Name());
+      }
+    });
+
+    // Int groups, i.e. "ConvI2L(...)"
+    for (int int_group = 1; int_group <= max_int_group(); int_group++) {
+      if (long_count > 0) { st->print(" + "); }
+      long_count++;
+      int int_count = 0;
+      for_each_raw_summand_of_int_group(int_group, [&] (const MemPointerRawSummand& s) {
+        if (int_count == 0) {
+          s.scaleL().print_on(st);
+          st->print("L * ConvI2L(");
+        } else {
+          st->print(" + ");
+        }
+        int_count++;
+        s.scaleI().print_on(st);
+        if (!s.is_con()) {
+          st->print(" * [%d %s]", s.variable()->_idx, s.variable()->Name());
+        }
+      });
+      st->print(")");
+    }
+    st->cr();
   }
 #endif
 };
@@ -838,9 +1217,13 @@ class MemPointerParser : public StackObj {
 private:
   const MemNode* _mem;
 
-  // Internal data-structures for parsing.
-  NoOverflowInt _con;
-  GrowableArray<MemPointerSummand> _worklist;
+  // Internal data-structures for parsing raw summands.
+  int _next_int_group = 1;
+  GrowableArray<MemPointerRawSummand> _worklist;
+  GrowableArray<MemPointerRawSummand> _raw_summands;
+
+  // Internal data-structures for parsing "regular" summands.
+  NoOverflowInt _con = NoOverflowInt(0);
   GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
@@ -850,7 +1233,6 @@ private:
                    MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     _mem(mem),
-    _con(NoOverflowInt(0)),
     _mem_pointer(parse(callback NOT_PRODUCT(COMMA trace))) {}
 
 public:
@@ -881,10 +1263,14 @@ private:
   MemPointer parse(MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace));
 
-  void parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback);
+  void parse_sub_expression(const MemPointerRawSummand& summand, MemPointerParserCallback& callback);
   static bool sub_expression_has_native_base_candidate(Node* n);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
+
+  void canonicalize_raw_summands();
+  void create_summands();
+  void canonicalize_summands();
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP

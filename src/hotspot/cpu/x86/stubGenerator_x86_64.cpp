@@ -541,22 +541,6 @@ address StubGenerator::generate_orderaccess_fence() {
 }
 
 
-// Support for intptr_t get_previous_sp()
-//
-// This routine is used to find the previous stack pointer for the
-// caller.
-address StubGenerator::generate_get_previous_sp() {
-  StubId stub_id = StubId::stubgen_get_previous_sp_id;
-  StubCodeMark mark(this, stub_id);
-  address start = __ pc();
-
-  __ movptr(rax, rsp);
-  __ addptr(rax, 8); // return address is at the top of the stack.
-  __ ret(0);
-
-  return start;
-}
-
 //----------------------------------------------------------------------------------------------------
 // Support for void verify_mxcsr()
 //
@@ -3689,6 +3673,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
       StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsinh)) {
+      StubRoutines::_dsinh = generate_libmSinh(); // from stubGenerator_x86_64_sinh.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
       StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
     }
@@ -4080,8 +4067,6 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::_catch_exception_entry = generate_catch_exception();
 
   // platform dependent
-  StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
-
   StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
   StubRoutines::x86::_f2i_fixup             = generate_f2i_fixup();
@@ -4095,15 +4080,11 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask(StubId::stubgen_double_sign_flip_id, 0x8000000000000000);
 
   if (UseCRC32Intrinsics) {
-    // set table address before stub generation which use it
-    StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
-    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
-    StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
     StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
   }
 
@@ -4332,10 +4313,10 @@ void StubGenerator::generate_compiler_stubs() {
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
+      os::snprintf_checked(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
       StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
+      os::snprintf_checked(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }

@@ -22,7 +22,7 @@
  *
  */
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -55,14 +55,14 @@ public:
   virtual void main_run() {
     size_t iterations = 0;
     size_t values_changed = 0;
-    while (Atomic::load_acquire(_continue_running) != 0) {
+    while (AtomicAccess::load_acquire(_continue_running) != 0) {
       { ThreadBlockInVM tbiv(this); } // Safepoint check outside critical section.
       ++iterations;
       SingleWriterSynchronizer::CriticalSection cs(_synchronizer);
-      uintx value = Atomic::load_acquire(_synchronized_value);
+      uintx value = AtomicAccess::load_acquire(_synchronized_value);
       uintx new_value = value;
       for (uint i = 0; i < reader_iterations; ++i) {
-        new_value = Atomic::load_acquire(_synchronized_value);
+        new_value = AtomicAccess::load_acquire(_synchronized_value);
         // A reader can see either the value it first read after
         // entering the critical section, or that value + 1.  No other
         // values are possible.
@@ -96,7 +96,7 @@ public:
   {}
 
   virtual void main_run() {
-    while (Atomic::load_acquire(_continue_running) != 0) {
+    while (AtomicAccess::load_acquire(_continue_running) != 0) {
       ++*_synchronized_value;
       _synchronizer->synchronize();
       { ThreadBlockInVM tbiv(this); } // Safepoint check.

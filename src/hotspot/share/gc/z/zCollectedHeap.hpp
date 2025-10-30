@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZCOLLECTEDHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
@@ -76,7 +75,7 @@ public:
   bool requires_barriers(stackChunkOop obj) const override;
 
   oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;

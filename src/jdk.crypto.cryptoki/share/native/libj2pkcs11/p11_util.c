@@ -1209,7 +1209,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
     jclass jStringClass;
     jclass jObjectClass, jClassClass;
-    CK_VOID_PTR ckpObject;
+    CK_VOID_PTR ckpObject = NULL;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;

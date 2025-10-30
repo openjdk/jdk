@@ -23,15 +23,14 @@
 */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/javaAssertions.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
@@ -602,21 +601,21 @@ void Modules::ArchivedProperty::runtime_check() const {
   bool disable = false;
   if (runtime_value == nullptr) {
     if (_archived_value != nullptr) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
       disable = true;
     }
   } else {
     if (_archived_value == nullptr) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
       disable = true;
     } else if (strcmp(runtime_value, _archived_value) != 0) {
-      MetaspaceShared::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
       disable = true;
     }
   }
 
   if (disable) {
-    MetaspaceShared::report_loading_error("Disabling optimized module handling");
+    AOTMetaspace::report_loading_error("Disabling optimized module handling");
     CDSConfig::stop_using_optimized_module_handling();
   }
 }
@@ -701,6 +700,26 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
+  if (h_platform_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  }
+
+  if (h_system_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  }
+
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // Already initialized
+    precond(SystemDictionary::java_platform_loader() == h_platform_loader());
+    precond(SystemDictionary::java_system_loader() == h_system_loader());
+  } else {
+    init_archived_modules(THREAD, h_platform_loader, h_system_loader);
+  }
+}
+
+void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader) {
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
+  ExceptionMark em(current);
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
@@ -709,16 +728,15 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
          "CDS should be disabled if early class hooks are enabled");
 
-  Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
-  // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(THREAD, java_base_module);
-
-  if (h_platform_loader.is_null()) {
-    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
+    ClassLoaderDataShared::archived_boot_unnamed_module()->restore_archived_oops(boot_loader_data);
   }
 
-  if (h_system_loader.is_null()) {
-    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  Handle java_base_module(current, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    // Patch any previously loaded class's module field with java.base's java.lang.Module.
+    ModuleEntryTable::patch_javabase_entries(current, java_base_module);
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
@@ -778,7 +796,9 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_using_full_module_graph()) {
     precond(unnamed_module == ClassLoaderDataShared::archived_boot_unnamed_module());
-    unnamed_module->restore_archived_oops(boot_loader_data);
+    if (!CDSConfig::is_using_aot_linked_classes()) {
+      unnamed_module->restore_archived_oops(boot_loader_data);
+    }
   } else
 #endif
   {

@@ -53,7 +53,6 @@ final class MacDmgPackageBuilder {
     }
 
     MacDmgPackage create() throws ConfigException {
-        final var superPkgBuilder = pkgBuilder.pkgBuilder();
         final var pkg = pkgBuilder.create();
 
         return MacDmgPackage.create(pkg, new MacDmgPackageMixin.Stub(

@@ -3296,6 +3296,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dsinh         : // fall through
   case vmIntrinsics::_dtanh         : // fall through
   case vmIntrinsics::_dcbrt         : // fall through
   case vmIntrinsics::_dlog          : // fall through

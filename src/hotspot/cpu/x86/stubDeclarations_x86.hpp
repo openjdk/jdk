@@ -37,14 +37,10 @@
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
                                       do_arch_entry_init)               \
-  do_arch_blob(initial, 20000 WINDOWS_ONLY(+1000))                      \
+  do_arch_blob(initial, PRODUCT_ONLY(20000) NOT_PRODUCT(21000) WINDOWS_ONLY(+1000))                      \
   do_stub(initial, verify_mxcsr)                                        \
   do_arch_entry(x86, initial, verify_mxcsr, verify_mxcsr_entry,         \
                 verify_mxcsr_entry)                                     \
-  do_stub(initial, get_previous_sp)                                     \
-  do_arch_entry(x86, initial, get_previous_sp,                          \
-                get_previous_sp_entry,                                  \
-                get_previous_sp_entry)                                  \
   do_stub(initial, f2i_fixup)                                           \
   do_arch_entry(x86, initial, f2i_fixup, f2i_fixup, f2i_fixup)          \
   do_stub(initial, f2l_fixup)                                           \

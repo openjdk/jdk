@@ -780,7 +780,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump_bfs(100,nullptr,"#");
+    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -807,9 +807,9 @@ PhaseIterGVN::PhaseIterGVN(PhaseIterGVN* igvn) : _delay_transform(igvn->_delay_t
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
-// Initialize with previous PhaseGVN info from Parser
-PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : _delay_transform(false),
-                                            _worklist(*C->igvn_worklist())
+// Initialize from scratch
+PhaseIterGVN::PhaseIterGVN() : _delay_transform(false),
+                               _worklist(*C->igvn_worklist())
 {
   _iterGVN = true;
   uint max;
@@ -1670,6 +1670,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found (linux x64 only?) with:
     //   serviceability/sa/ClhsdbThreadContext.java
     //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    //   Note: The -XX:LockingMode option is not available anymore.
     case Op_StrEquals:
       return false;
 
@@ -2558,6 +2559,24 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // Check for redundant conversion patterns:
+  // ConvD2L->ConvL2D->ConvD2L
+  // ConvF2I->ConvI2F->ConvF2I
+  // ConvF2L->ConvL2F->ConvF2L
+  // ConvI2F->ConvF2I->ConvI2F
+  // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
+  // are the only ones that are known to trigger missed optimizations otherwise
+  if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
+      (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
+      (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
+      (n->Opcode() == Op_ConvI2F && use_op == Op_ConvF2I)) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == n->Opcode()) {
+        worklist.push(u);
+      }
+    }
+  }
   // If changed AddP inputs:
   // - check Stores for loop invariant, and
   // - if the changed input is the offset, check constant-offset AddP users for
@@ -2626,7 +2645,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
-  if (use->Opcode() == Op_AddX) {
+
+  // From CastX2PNode::Ideal
+  // CastX2P(AddX(x, y))
+  // CastX2P(SubX(x, y))
+  if (use->Opcode() == Op_AddX || use->Opcode() == Op_SubX) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->Opcode() == Op_CastX2P) {

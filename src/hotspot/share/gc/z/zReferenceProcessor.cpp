@@ -35,7 +35,7 @@
 #include "gc/z/zValue.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
@@ -316,7 +316,7 @@ void ZReferenceProcessor::process_worker_discovered_list(zaddress discovered_lis
 
   // Anything kept on the list?
   if (!is_null(keep_head)) {
-    const zaddress old_pending_list = Atomic::xchg(_pending_list.addr(), keep_head);
+    const zaddress old_pending_list = AtomicAccess::xchg(_pending_list.addr(), keep_head);
 
     // Concatenate the old list
     reference_set_discovered(keep_tail, old_pending_list);
@@ -335,7 +335,7 @@ void ZReferenceProcessor::work() {
 
   ZPerWorkerIterator<zaddress> iter(&_discovered_list);
   for (zaddress* start; iter.next(&start);) {
-    const zaddress discovered_list = Atomic::xchg(start, zaddress::null);
+    const zaddress discovered_list = AtomicAccess::xchg(start, zaddress::null);
 
     if (discovered_list != zaddress::null) {
       // Process discovered references

@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -36,6 +35,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -89,6 +89,7 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
@@ -101,8 +102,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Historic gc information
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
-
-  SoftRefPolicy _soft_ref_policy;
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
@@ -160,8 +159,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -247,6 +245,13 @@ protected:
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
+
+  bool is_shutting_down() const;
+
+  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
+  // In this case, stall the allocation request briefly in the hope that
+  // the VM shutdown completes before the allocation request returns.
+  void stall_for_vm_shutdown();
 
   void before_exit();
 
@@ -394,9 +399,6 @@ protected:
     }
   }
 
-  // Return the SoftRefPolicy for the heap;
-  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
-
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
   virtual GrowableArray<MemoryPool*> memory_pools() = 0;
@@ -429,8 +431,6 @@ protected:
 
   void print_relative_to_gc(GCWhen::Type when) const;
 
-  void log_gc_cpu_time() const;
-
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -462,8 +462,6 @@ protected:
 
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
-
-  double elapsed_gc_cpu_time() const;
 
   void print_before_gc() const;
   void print_after_gc() const;
