@@ -530,7 +530,7 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
+    assert(ShenandoahCardBarrier, "Card mark barrier should be on");
     return _old_generation;
   }
 
@@ -669,7 +669,8 @@ public:
   void unpin_object(JavaThread* thread, oop obj) override;
 
   void sync_pinned_region_status();
-  void assert_pinned_region_status() NOT_DEBUG_RETURN;
+  void assert_pinned_region_status() const NOT_DEBUG_RETURN;
+  void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;
 
 // ---------- CDS archive support
 
