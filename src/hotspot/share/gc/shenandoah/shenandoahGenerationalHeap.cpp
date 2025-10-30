@@ -1084,6 +1084,10 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     entry_global_coalesce_and_fill();
   }
 
+  log_info(gc, cset)("Concurrent cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
+                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
+
   TransferResult result;
   {
     ShenandoahHeapLocker locker(lock());
