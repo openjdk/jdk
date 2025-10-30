@@ -2535,7 +2535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<pattern>{1} 'um' {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
-							<pattern draft="contributed">{1} 'at' {0}</pattern>
+							<pattern draft="contributed">{1} 'um' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
