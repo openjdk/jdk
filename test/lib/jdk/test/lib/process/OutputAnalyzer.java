@@ -354,25 +354,34 @@ public final class OutputAnalyzer {
         return this;
     }
 
+    private boolean matchesHelper(String s, Pattern pattern) {
+        return s != null && pattern.matcher(s).find();
+    }
+
+    private boolean matchesHelper(String stdout, String stderr, String regexp) {
+        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+        return matchesHelper(stdout, pattern) || matchesHelper(stderr, pattern);
+    }
+
     /**
      * Returns true if stdout matches the given pattern
      */
     public boolean stdoutMatches(String regexp) {
-        return getStdout().matches(regexp);
+        return matchesHelper(getStdout(), null, regexp);
     }
 
     /**
      * Returns true if stderr matches the given pattern
      */
     public boolean stderrMatches(String regexp) {
-        return getStderr().matches(regexp);
+        return matchesHelper(null, getStderr(), regexp);
     }
 
     /**
      * Returns true if either stdout or stderr matches the given pattern
      */
     public boolean matches(String regexp) {
-        return stdoutMatches(regexp) || stderrMatches(regexp);
+        return matchesHelper(getStdout(), getStderr(), regexp);
     }
 
     /**
