@@ -1377,6 +1377,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1387,11 +1390,6 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
         } else if (sv->field_at(i)->is_constant_int()) {
           ScopeValue* next_scope_field = sv->field_at(i + 1);
           if (next_scope_field->is_constant_long() || next_scope_field->is_constant_double()) {
-#ifdef ASSERT
-            tty->print_cr("Deopt rematerialization found [int, long] in a int/flat array.");
-            sv->print_fields_on(tty);
-            assert(false, "never hit this case in testing, seems to be a strange case");
-#endif
             big_value = true;
           }
         }
@@ -1409,6 +1407,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
