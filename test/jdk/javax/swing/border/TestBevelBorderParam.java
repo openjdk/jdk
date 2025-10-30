@@ -40,6 +40,7 @@ public class TestBevelBorderParam {
             BorderFactory.createBevelBorder(BevelBorder.RAISED, null, null);
         } catch (NullPointerException ex) {
             failure = true;
+            str.append("\n");
             str.append("BorderFactory.createBevelBorder throws NPE for null highlight and shadow");
         }
         try {
@@ -48,6 +49,13 @@ public class TestBevelBorderParam {
             failure = true;
             str.append("\n");
             str.append("BorderFactory.createSoftBevelBorder throws NPE for null highlight and shadow");
+        }
+        try {
+            new BevelBorder(BevelBorder.RAISED, null, null);
+        } catch (NullPointerException ex) {
+            failure = true;
+            str.append("\n");
+            str.append("BevelBorder constructor throws NPE for null highlight and shadow");
         }
         if (failure) {
             throw new RuntimeException(str.toString());
