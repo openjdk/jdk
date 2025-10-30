@@ -3159,9 +3159,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
+      update_region_attr(new_alloc_region);
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-    register_region_with_region_attr(new_alloc_region);
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }

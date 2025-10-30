@@ -84,7 +84,6 @@ public:
 
   bool remset_is_tracked() const     { return _remset_is_tracked != 0; }
 
-  void set_new_survivor()              { _type = NewSurvivor; }
   bool is_pinned() const               { return _is_pinned != 0; }
 
   void set_old()                       { _type = Old; }
@@ -132,10 +131,10 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Optional, remset_is_tracked));
   }
 
-  void set_new_survivor_region(uintptr_t index) {
+  void set_new_survivor_region(uintptr_t index, bool region_is_pinned) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    get_ref_by_index(index)->set_new_survivor();
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::NewSurvivor, true, region_is_pinned));
   }
 
   void set_humongous_candidate(uintptr_t index) {
@@ -170,12 +169,10 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Young, true, is_pinned));
   }
 
-  void set_in_old(uintptr_t index, bool remset_is_tracked) {
+  void set_in_old(uintptr_t index, bool remset_is_tracked, bool is_pinned) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
-    // We do not select regions with pinned objects into the collection set.
-    const bool region_is_pinned = false;
-    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Old, remset_is_tracked, region_is_pinned));
+    set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::Old, remset_is_tracked, is_pinned));
   }
 
   bool is_in_cset_or_humongous_candidate(HeapWord* addr) const { return at(addr).is_in_cset_or_humongous_candidate(); }
