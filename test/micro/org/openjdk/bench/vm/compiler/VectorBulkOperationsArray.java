@@ -107,6 +107,9 @@ public class VectorBulkOperationsArray {
     public static final int REGION_2_LONG_OFFSET   = REGION_2_BYTE_OFFSET / 8;
     public static final int REGION_2_FLOAT_OFFSET  = REGION_2_BYTE_OFFSET / 4;
     public static final int REGION_2_DOUBLE_OFFSET = REGION_2_BYTE_OFFSET / 8;
+    // For Objects, it could be 4 or 8 bytes. Dividing by 8 gives us something
+    // reasonable for both cases.
+    public static final int REGION_2_OBJECT_OFFSET = REGION_2_BYTE_OFFSET / 8;
 
     // The arrays with the two regions each
     private byte[] aB;
@@ -125,6 +128,25 @@ public class VectorBulkOperationsArray {
     private long varL = 42;
     private float varF = 42;
     private double varD = 42;
+
+    // Classes for Object arrays.
+    static class A {
+        int x;
+        A(int x) {
+            this.x = x;
+        }
+    }
+    static class B extends A {
+        int y;
+        B(int x, int y) {
+            super(x);
+            this.y = y;
+        }
+    }
+    private A[] aOA;
+    private B[] aOB;
+    private A varOA = new A(-1);
+    private B varOB = new B(-1, -1);
 
     // Number of repetitions, to randomize the offsets.
     public static final int REPETITIONS = 64 * 64;
@@ -154,8 +176,10 @@ public class VectorBulkOperationsArray {
         aL = new long[2 * REGION_SIZE];
         aF = new float[2 * REGION_SIZE];
         aD = new double[2 * REGION_SIZE];
+        aOA = new A[2 * REGION_SIZE];
+        aOB = new B[2 * REGION_SIZE];
 
-        for (int i = 0; i < REGION_SIZE; i++) {
+        for (int i = 0; i < 2 * REGION_SIZE; i++) {
             aB[i] = (byte) r.nextInt();
             aS[i] = (short) r.nextInt();
             aC[i] = (char) r.nextInt();
@@ -163,6 +187,12 @@ public class VectorBulkOperationsArray {
             aL[i] = r.nextLong();
             aF[i] = r.nextFloat();
             aD[i] = r.nextDouble();
+            aOA[i] = switch (i % 4) {
+                case 0, 1 -> new A(i);
+                case 2    -> new B(i, i);
+                default   -> null;
+            };
+            aOB[i] = (i % 3 != 0) ? new B(i, i) : null;
         }
     }
 
@@ -569,6 +599,102 @@ public class VectorBulkOperationsArray {
             int offset_load = offsetLoad(r);
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
             System.arraycopy(aD, offset_load, aD, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- OBJECT ------------------------------
+
+    @Benchmark
+    public void fill_null_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aOA[i + offset_store] = null;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_A2A_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aOA[i + offset_store] = varOA;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_B2A_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aOA[i + offset_store] = varOB;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_null_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            Arrays.fill(aOA, offset_store, offset_store + NUM_ACCESS_ELEMENTS, null);
+        }
+    }
+
+    @Benchmark
+    public void fill_A2A_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            Arrays.fill(aOA, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varOA);
+        }
+    }
+
+    @Benchmark
+    public void fill_B2A_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            Arrays.fill(aOA, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varOB);
+        }
+    }
+
+    @Benchmark
+    public void copy_A2A_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aOA[i + offset_store] = aOA[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_B2A_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aOA[i + offset_store] = aOB[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_A2A_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            System.arraycopy(aOA, offset_load, aOA, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    @Benchmark
+    public void copy_B2A_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_OBJECT_OFFSET;
+            System.arraycopy(aOB, offset_load, aOA, offset_store, NUM_ACCESS_ELEMENTS);
         }
     }
 }
