@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,27 @@
  * questions.
  */
 
-package nsk.share.gc;
-
-import nsk.share.runner.RunParams;
-
-/**
- *  Helper that prints information about FinMemoryObjects.
+/*
+ * @test
+ * @bug 8367059
+ * @summary DTLS: loss of NewSessionTicket message results in handshake failure
+ * @modules java.base/sun.security.util
+ * @library /test/lib
+ * @build DTLSOverDatagram
+ *
+ * @comment Make sure client doesn't expect NewSessionTicket in the final
+ * flight if server doesn't send the "session_ticket" extension with
+ * ServerHello handshake message.
+ *
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false
+ *                   DTLSNoNewSessionTicket
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false
+ *                   DTLSNoNewSessionTicket
  */
-public class FinDiag implements Runnable {
-        private long sleepTime;
 
-        public FinDiag() {
-                this(RunParams.getInstance().getSleepTime());
-        }
-
-        public FinDiag(long sleepTime) {
-                this.sleepTime = sleepTime;
-        }
-
-        public void run() {
-                FinMemoryObject.dumpStatistics();
-                // Ensure that interrupted status is not lost
-                if (Thread.currentThread().isInterrupted())
-                        return;
-                try {
-                        Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                }
-        }
+public class DTLSNoNewSessionTicket extends DTLSOverDatagram {
+    public static void main(String[] args) throws Exception {
+        var testCase = new DTLSNoNewSessionTicket();
+        testCase.runTest(testCase);
+    }
 }
