@@ -132,29 +132,4 @@ public final class TextLabelFactory {
     TextSource source = new StandardTextSource(text, start, limit - start, lineStart, lineLimit - lineStart, level, layoutFlags, font, frc, lm);
     return new ExtendedTextSourceLabel(source, decorator);
   }
-
-  /**
-   * Create a simple glyph array for the text between start and limit.
-   *
-   * @param font the font to use to generate glyphs and character positions.
-   * @param start the start of the subrange for which to create the glyph array
-   * @param limit the limit of the subrange for which to create glyph array
-   */
-  public TextLabel createSimple(Font font,
-                                CoreMetrics lm,
-                                int start,
-                                int limit) {
-
-    if (start > limit || start < lineStart || limit > lineLimit) {
-      throw new IllegalArgumentException("bad start: " + start + " or limit: " + limit);
-    }
-
-    int level = lineBidi == null ? 0 : lineBidi.getLevelAt(start - lineStart);
-    int linedir = (lineBidi == null || lineBidi.baseIsLeftToRight()) ? 0 : 1;
-    int layoutFlags = flags & ~0x9; // remove bidi, line direction flags
-    if ((level & 0x1) != 0) layoutFlags |= 1; // rtl
-    if ((linedir & 0x1) != 0) layoutFlags |= 8; // line rtl
-    TextSource source = new StandardTextSource(text, start, limit - start, lineStart, lineLimit - lineStart, level, layoutFlags, font, frc, lm);
-    return new TextSourceLabel(source);
-  }
 }
