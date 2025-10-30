@@ -21,6 +21,10 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show custom node info"/>
         </file>
+        <file name="Show connection graph nodes.js" url="filters/showConnectionNodes.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Show connection node types"/>
+        </file>
         <file name="Simplify graph.js" url="filters/simplifyGraph.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show types"/>

@@ -2438,6 +2438,7 @@ bool ConnectionGraph::complete_connection_graph(
         timeout = true;
         break;
       }
+      NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph Iter", 5);)
     }
     if ((iterations < GRAPH_BUILD_ITER_LIMIT) && !timeout) {
       time.start();
@@ -2459,8 +2460,6 @@ bool ConnectionGraph::complete_connection_graph(
     } else {
       new_edges = 0; // Bailout
     }
-
-    NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph Iter", 5);)
   } while (new_edges > 0);
 
   build_time.stop();
@@ -2513,7 +2512,8 @@ bool ConnectionGraph::complete_connection_graph(
 // Propagate GlobalEscape and ArgEscape escape states to all nodes
 // and check that we still have non-escaping java objects.
 bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
-                                               GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist) {
+                                               GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist,
+                                               bool verify) {
   GrowableArray<PointsToNode*> escape_worklist;
   // First, put all nodes with GlobalEscape and ArgEscape states on worklist.
   int ptnodes_length = ptnodes_worklist.length();
@@ -2572,6 +2572,9 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         if (es_changed) {
           escape_worklist.push(e);
         }
+      }
+      if (!verify) {
+        NOT_PRODUCT(igv_print_step("EA: Connection Graph Propagate Iter", 6);)
       }
     }
   }
@@ -3175,7 +3178,7 @@ void ConnectionGraph::verify_connection_graph(
   assert(new_edges == 0, "graph was not complete");
   // Verify that escape state is final.
   int length = non_escaped_allocs_worklist.length();
-  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist);
+  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist, /*verify=*/ true);
   assert((non_escaped_length == non_escaped_allocs_worklist.length()) &&
          (non_escaped_length == length) &&
          (_worklist.length() == 0), "escape state was not final");

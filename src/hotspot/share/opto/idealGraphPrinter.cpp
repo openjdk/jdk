@@ -749,8 +749,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
                               ptn->is_LocalVar() ? "localvar" :
                               ptn->is_Field() ? "field" :
                               "");
-        print_prop("escape", ptn->escape_state());
-        print_prop("replaceable", ptn->scalar_replaceable());
+        print_prop("escape", ptn->escape_state() == PointsToNode::EscapeState::NoEscape ? "no_escape" :
+                             ptn->escape_state() == PointsToNode::EscapeState::ArgEscape ? "arg_escape" :
+                             ptn->escape_state() == PointsToNode::EscapeState::GlobalEscape ? "global_escape" :
+                             "");
+        print_prop("replaceable", ptn->scalar_replaceable() ? "true" : "");
       }
     }
 
