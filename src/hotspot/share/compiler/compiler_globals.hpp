@@ -399,7 +399,7 @@
           "Reduce and randomize tiered-compilation profile captures "       \
           "in order to reduce cache contention on shared method data. "     \
           "Must be a power of 2.")                                          \
-          range(1, 256)
+          range(1, 65536)
 
 // end of COMPILER_FLAGS
 

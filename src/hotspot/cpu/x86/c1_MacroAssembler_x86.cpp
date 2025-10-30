@@ -297,6 +297,8 @@ void C1_MacroAssembler::invalidate_registers(bool inv_rax, bool inv_rbx, bool in
 #endif
 }
 
+int baz, barf;
+
 // Randomized profile capture.
 
 void C1_MacroAssembler::step_random(Register state, Register temp) {
@@ -317,6 +319,28 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   movl(temp, 1103515245);
   imull(state, temp);
   addl(state, 12345);
+
+  int ratio_shift = exact_log2(ProfileCaptureRatio);
+  int threshold = (1ull << 32) >> ratio_shift;
+
+  if (getenv("APH_BAZ_BARF")) {
+    Label big, done;
+    push(temp);
+    cmpl(state, threshold);
+    jcc(Assembler::aboveEqual, big);
+
+    lea(temp, ExternalAddress((address)&baz));
+    addl(Address(temp), 1);
+    jmp(done);
+
+    bind(big);
+    lea(temp, ExternalAddress((address)&barf));
+    addl(Address(temp), 1);
+
+    bind(done);
+    pop(temp);
+  }
+
 }
 
 void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &skip) {
@@ -333,6 +357,7 @@ void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &s
 
     cmpl(state, threshold);
     jcc(Assembler::aboveEqual, skip);
+
 #ifndef PRODUCT
     if (CommentedAssembly) {
       block_comment("} " "step_profile_rng");

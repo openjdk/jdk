@@ -38,6 +38,8 @@
 // Instructions for which a 'better' code sequence exists depending
 // on arguments should also go in here.
 
+extern int baz, barf;
+
 class MacroAssembler: public Assembler {
   friend class LIR_Assembler;
   friend class Runtime1;      // as_Address()

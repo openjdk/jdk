@@ -2770,7 +2770,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Address dest_adr = as_Address(addr->as_address_ptr());
 
-  assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
+  // assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
 
 #ifndef PRODUCT
   if (CommentedAssembly) {
@@ -2784,57 +2784,65 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   assert(threshold > 0, "must be");
 
-  __ step_random(r_profile_rng, temp);
+  if (profile_capture_ratio > 1) {
+    __ step_random(r_profile_rng, temp);
+  }
 
   Label dont;
 
   if (incr->is_register()) {
     Register inc = incr->as_register();
-    __ movl(dest->as_register(), inc);
-    __ cmpl(r_profile_rng, threshold);
-    __ jccb(Assembler::aboveEqual, dont);
-
+    if (profile_capture_ratio > 1) {
+      __ movl(dest->as_register(), inc);
+      __ cmpl(r_profile_rng, threshold);
+      __ jccb(Assembler::aboveEqual, dont);
+    }
     __ movl(temp, dest_adr);
-    __ sall(inc, ratio_shift);
+    if (profile_capture_ratio > 1) {
+      __ sall(inc, ratio_shift);
+    }
     __ addl(temp, inc);
     __ movl(dest_adr, temp);
     __ movl(dest->as_register(), temp);
   } else {
+    jint inc = incr->as_constant_ptr()->as_jint_bits();
     switch (dest->type()) {
-        case T_INT: {
-          jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
-          if (dest->is_register())  __ movl(dest->as_register(), inc);
+      case T_INT: {
+        if (dest->is_register())  __ movl(dest->as_register(), inc);
+        if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
-
-          if (dest->is_register()) {
-            __ movl(temp, dest_adr);
-            __ addl(temp, inc);
-            __ movl(dest_adr, temp);
-            __ movl(dest->as_register(), temp);
-          } else {
-            __ addl(dest_adr, inc);
-          }
-
-          break;
         }
-        case T_LONG: {
-          jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
-          if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
+        inc *= profile_capture_ratio;
+        if (dest->is_register()) {
+          __ movl(temp, dest_adr);
+          __ addl(temp, inc);
+          __ movl(dest_adr, temp);
+          __ movl(dest->as_register(), temp);
+        } else {
+          __ addl(dest_adr, inc);
+        }
+
+        break;
+      }
+      case T_LONG: {
+        if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
+        if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
-
-          if (dest->is_register()) {
+        }
+        inc *= profile_capture_ratio;
+        if (dest->is_register()) {
           __ movq(temp, dest_adr);
           __ addq(temp, inc);
           __ movq(dest_adr, temp);
           __ movq(dest->as_register_lo(), temp);
-          } else {
-            __ addq(dest_adr, inc);
-          }
-
-          break;
+        } else {
+          __ addq(dest_adr, inc);
         }
+
+        break;
+      }
       default:
         ShouldNotReachHere();
     }
@@ -2847,8 +2855,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   __ bind(dont);
 }
-
-int ibaz;
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();

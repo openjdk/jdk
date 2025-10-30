@@ -725,7 +725,9 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       break;
 
     case lir_increment_profile_ctr:
-      increment_profile_ctr(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr());
+      increment_profile_ctr(op->in_opr1(), op->in_opr2(), op->result_opr(), op->tmp1_opr()// ,
+                            // op->continuation_opr()
+                            );
       break;
 
     default:

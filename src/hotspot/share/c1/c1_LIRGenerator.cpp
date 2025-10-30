@@ -928,15 +928,15 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Opr data_reg = new_pointer_register();
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
     LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
-    if (ProfileCaptureRatio == 1) {
-      __ move(data_addr, data_reg);
-      // Use leal instead of add to avoid destroying condition codes on x86
-      __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
-      __ move(data_reg, data_addr);
-    } else {
+    // if (ProfileCaptureRatio == 1) {
+    //   __ move(data_addr, data_reg);
+    //   // Use leal instead of add to avoid destroying condition codes on x86
+    //   __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
+    //   __ move(data_reg, data_addr);
+    // } else {
       LIR_Opr tmp = new_register(T_INT);
       __ increment_profile_ctr(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
-    }
+    // }
   }
 }
 
@@ -2380,16 +2380,16 @@ void LIRGenerator::do_Goto(Goto* x) {
 
     LIR_Address *counter_addr = new LIR_Address(md_reg, offset,
                                            NOT_LP64(T_INT) LP64_ONLY(T_LONG));
-    if (ProfileCaptureRatio == 1) {
-      increment_counter(counter_addr, DataLayout::counter_increment);
-    } else {
+    // if (ProfileCaptureRatio == 1) {
+    //   increment_counter(counter_addr, DataLayout::counter_increment);
+    // } else {
       // LIR_Address *counter_addr = new LIR_Address(md_reg, offset, T_INT);
       LIR_Opr tmp = new_register(T_INT);
       // LIR_Opr dummy = new_register(T_INT);
       LIR_Opr dummy = LIR_OprFact::intConst(0);
       LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
       __ increment_profile_ctr(inc, counter_addr, dummy, tmp);
-    }
+    // }
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -3189,17 +3189,15 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
   LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
   LIR_Opr tmp = new_register(T_INT);
-  if (ProfileCaptureRatio == 1) {
-    __ load(counter, result);
-    __ add(result, step, result);
-    __ store(result, counter);
-  } else {
-    __ increment_profile_ctr(step, counter, result, tmp);
-  }
+
+  __ increment_profile_ctr(step, counter, result, tmp);
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
+
+    __ increment_profile_ctr(step, counter, result, tmp);
+
     int freq = frequency << InvocationCounter::count_shift;
     if (freq == 0) {
       if (!step->is_constant()) {
@@ -3220,6 +3218,8 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
       __ branch(lir_cond_equal, overflow);
     }
     __ branch_destination(overflow->continuation());
+  } else {
+      __ increment_profile_ctr(step, counter, result, tmp);
   }
 }
 
