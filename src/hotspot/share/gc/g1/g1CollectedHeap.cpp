@@ -1958,6 +1958,13 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       return op.gc_succeeded();
     }
 
+    // If VMOp skipped initiating concurrent marking cycle because
+    // we're shutting down, then we're done.
+    if (op.is_shutting_down()) {
+      LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
+      return false;
+    }
+
     // Lock to get consistent set of values.
     uint old_marking_started_after;
     uint old_marking_completed_after;
