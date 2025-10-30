@@ -34,6 +34,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -112,7 +113,7 @@ public final class Security {
 
         private static Path currentPath;
 
-        private static final Set<Path> activePaths = new HashSet<>();
+        private static final List<Path> activePaths = new ArrayList<>();
 
         static void loadAll() {
             // first load the master properties file to
@@ -253,16 +254,38 @@ public final class Security {
                                 "from a non-regular properties file " +
                                 "(e.g. HTTP served file)");
                     }
-                    // Inside loadFromPath, we have performed symlinks
-                    // resolution on currentPath under the rationale that
-                    // the original file writer is the one who decided
-                    // where the relative includes should resolve.
-                    path = currentPath.resolveSibling(path);
+                    // We perform symlinks resolution on currentPath under the
+                    // rationale that the original file writer is the one who
+                    // decided where the relative includes should resolve.
+                    path = resolve(currentPath).resolveSibling(path);
                 }
                 loadFromPath(path, LoadingMode.APPEND);
             } catch (IOException | InvalidPathException e) {
                 throw new InternalError("Unable to include '" + expPropFile +
                         "'", e);
+            }
+        }
+
+        private static Path resolve(Path path) {
+            // JDK-8352728: we prefer java.io.File::getCanonicalFile over
+            // java.nio.file.Path::toRealPath because the former is more
+            // fault-tolerant, since the canonical form of a pathname is
+            // specified to exist even for nonexistent/inaccessible files.
+            try {
+                return path.toFile().getCanonicalFile().toPath();
+            } catch (IOException e) {
+                throw new InternalError("Cannot resolve path", e);
+            }
+        }
+
+        private static void checkCyclicInclude(Path path) {
+            for (Path activePath : activePaths) {
+                try {
+                    if (Files.isSameFile(path, activePath)) {
+                        throw new InternalError(
+                                "Cyclic include of '" + resolve(path) + "'");
+                    }
+                } catch (IOException ignore) {}
             }
         }
 
@@ -272,15 +295,8 @@ public final class Security {
             if (!isRegularFile && Files.isDirectory(path)) {
                 throw new IOException("Is a directory");
             }
-            // JDK-8352728: we prefer java.io.File::getCanonicalFile over
-            // java.nio.file.Path::toRealPath because the former is more
-            // fault-tolerant, since the canonical form of a pathname is
-            // specified to exist even for nonexistent/inaccessible files.
-            path = path.toFile().getCanonicalFile().toPath();
-            if (activePaths.contains(path)) {
-                throw new InternalError("Cyclic include of '" + path + "'");
-            }
             try (InputStream is = Files.newInputStream(path)) {
+                checkCyclicInclude(path);
                 reset(mode);
                 Path previousPath = currentPath;
                 currentPath = isRegularFile ? path : null;
@@ -290,7 +306,7 @@ public final class Security {
                     props.load(is);
                     debugLoad(false, path);
                 } finally {
-                    activePaths.remove(path);
+                    activePaths.removeLast();
                     currentPath = previousPath;
                 }
             }
@@ -309,6 +325,7 @@ public final class Security {
         private static void debugLoad(boolean start, Object source) {
             if (sdebug != null) {
                 int level = activePaths.isEmpty() ? 1 : activePaths.size();
+                source = source instanceof Path path ? resolve(path) : source;
                 sdebug.println((start ?
                         ">".repeat(level) + " starting to process " :
                         "<".repeat(level) + " finished processing ") + source);
