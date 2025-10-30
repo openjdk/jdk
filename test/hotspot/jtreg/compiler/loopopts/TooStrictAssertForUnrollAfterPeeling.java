@@ -42,44 +42,28 @@
  *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo2
  *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test2
- *                   -XX:-TieredCompilation
- *                   -Xbatch
- *                   -XX:PerMethodTrapLimit=0
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-LoopMultiversioning
- *                   -XX:-RangeCheckElimination
- *                   -XX:-SplitIfBlocks
- *                   -XX:-UseOnStackReplacement
- *                   -XX:LoopMaxUnroll=2
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo2
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
- *
  * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test3
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo3
  *                   -XX:-RangeCheckElimination
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
- *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test3
- *                   -XX:-TieredCompilation
- *                   -Xbatch
- *                   -XX:PerMethodTrapLimit=0
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-LoopMultiversioning
- *                   -XX:-RangeCheckElimination
- *                   -XX:-SplitIfBlocks
- *                   -XX:-UseOnStackReplacement
- *                   -XX:LoopMaxUnroll=2
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo3
  *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  *
  * @run main compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  */
 package compiler.loopopts;
 
+
+/* Cases 2 and 3 can use the additional flags
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:-LoopMultiversioning
+ *   -XX:-RangeCheckElimination
+ *   -XX:-SplitIfBlocks
+ *   -XX:-UseOnStackReplacement
+ *   -XX:LoopMaxUnroll=2
+ * to disable more optimizations and give a simpler graph, while still reproducing. It can be useful to debug, investigate...
+ */
 public class TooStrictAssertForUnrollAfterPeeling {
     static int iArr[] = new int[400];
     static boolean flag;
