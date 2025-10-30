@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "memory/universe.hpp"
 #include "utilities/checkedCast.hpp"
@@ -45,13 +44,13 @@ public:
   void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    shenandoah_assert_generational();
+    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    shenandoah_assert_generational();
+    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
