@@ -3851,7 +3851,7 @@ public class Types {
         if (cl1.head.tsym == cl2.head.tsym &&
             cl1.head.hasTag(CLASS) && cl2.head.hasTag(CLASS)) {
             if (cl1.head.isParameterized() && cl2.head.isParameterized()) {
-                Type merge = merge(lubWillBeErased, cl1.head,cl2.head);
+                Type merge = merge(lubWillBeErased, cl1.head, cl2.head);
                 return intersect(lubWillBeErased, cl1.tail, cl2.tail).prepend(merge);
             }
             if (cl1.head.isRaw() || cl2.head.isRaw())
