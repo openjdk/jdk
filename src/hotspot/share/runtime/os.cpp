@@ -2207,13 +2207,12 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 bool os::used_memory(physical_memory_size_type& value) {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
-    jlong mem_usage = OSContainer::memory_usage_in_bytes();
-    if (mem_usage > 0) {
-      value = static_cast<physical_memory_size_type>(mem_usage);
-      return true;
-    } else {
+    physical_memory_size_type mem_usage = 0;
+    if (!OSContainer::memory_usage_in_bytes(mem_usage)) {
       return false;
     }
+    value = mem_usage;
+    return true;
   }
 #endif
   physical_memory_size_type avail_mem = 0;
