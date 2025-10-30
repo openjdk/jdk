@@ -834,20 +834,9 @@ void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
   address buffer_start = address(r.start()); // start of the current oop inside the buffer
   address buffer_end = address(r.end());
 
-  address narrow_base;
-  int narrow_shift;
-
-  if (ArchiveHeapWriter::is_writing_deterministic_heap()) {
-    narrow_base = (address)0;
-    narrow_shift = 0;
-  } else {
-    narrow_base = CompressedOops::base();
-    narrow_shift = CompressedOops::shift();
-  }
-
-  address requested_base = UseCompressedOops ? narrow_base : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
+  address requested_base = UseCompressedOops ? ArchiveHeapWriter::narrow_oop_base() : (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   address requested_start = UseCompressedOops ? ArchiveHeapWriter::buffered_addr_to_requested_addr(buffer_start) : requested_base;
-  int requested_shift = narrow_shift;
+  int requested_shift = ArchiveHeapWriter::narrow_oop_shift();
 
   FakeOop::init_globals(requested_base, requested_start, requested_shift, buffer_start, buffer_end);
 
