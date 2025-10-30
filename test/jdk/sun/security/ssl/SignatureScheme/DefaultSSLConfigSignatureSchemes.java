@@ -28,6 +28,9 @@
  *          SSLConfiguration#getSSLParameters() call
  * @library /javax/net/ssl/templates
  *          /test/lib
+ * @comment *_sha224 signatures schemes are not available on Windows
+ * @requires os.family != "windows"
+ *
  * @run main/othervm DefaultSSLConfigSignatureSchemes
  * @run main/othervm
  *          -Djdk.tls.server.SignatureSchemes=ecdsa_secp384r1_sha384,ed25519
@@ -128,7 +131,8 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
         var engineSS = Stream.of(engine
                 .getSSLParameters().getSignatureSchemes()).sorted().toList();
         var propertySS = Stream.of(property.split(",")).sorted().toList();
-        assertTrue(engineSS.equals(propertySS));
+        assertTrue(engineSS.equals(propertySS), "Engine signature scheme: "
+                + engineSS + "; Property signature scheme: " + propertySS);
     }
 
     private static void checkEngineDefaultSS(SSLEngine engine) {
@@ -138,6 +142,7 @@ public class DefaultSSLConfigSignatureSchemes extends SSLEngineTemplate {
         assertFalse(defaultConfigSS.contains(DISABLED_SS));
         defaultConfigSS.add(DISABLED_SS);
         assertTrue(REFERENCE_SS.equals(
-                defaultConfigSS.stream().sorted().toList()));
+                        defaultConfigSS.stream().sorted().toList()),
+                "Signature schemes returned by engine: " + defaultConfigSS);
     }
 }
