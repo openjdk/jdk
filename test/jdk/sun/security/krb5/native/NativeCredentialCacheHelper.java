@@ -38,15 +38,15 @@ public class NativeCredentialCacheHelper {
     }
 
     /**
-     * Create an in-memory credential cache using native krb5 calls.
+     * Create an in-memory credential cache using native krb5 API.
      * @param cacheName The name for the in-memory cache (e.g., "MEMORY:test123")
      * @return true if cache was created successfully, false otherwise
      */
     public static native boolean createInMemoryCache(String cacheName);
 
     /**
-     * Copy real credentials from a source cache to the in-memory cache.
-     * This preserves the proper Kerberos credential format for JAAS access.
+     * Copy real Kerberos credentials from a source cache to an in-memory cache.
+     * Used to move OneKDC-generated TGTs to an in-memory cache for testing.
      * @param inMemoryCacheName The target in-memory cache name (e.g., "MEMORY:test123")
      * @param sourceCacheName The source cache name (null for default cache)
      * @return true if credentials were copied successfully, false otherwise
@@ -54,7 +54,7 @@ public class NativeCredentialCacheHelper {
     public static native boolean copyCredentialsToInMemoryCache(String inMemoryCacheName, String sourceCacheName);
 
     /**
-     * Set the default credential cache to the specified credential cache.
+     * Set KRB5CCNAME so that the test will pick up the in-memory credential cache.
      * @param cacheName The credential cache name to set as default
      * @return true if set successfully, false otherwise
      */
