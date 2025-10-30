@@ -72,24 +72,13 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
-#ifndef AMD64
-# include <fpu_control.h>
-#endif
 
-#ifdef AMD64
 #define REG_SP REG_RSP
 #define REG_PC REG_RIP
 #define REG_FP REG_RBP
 #define REG_BCP REG_R13
 #define SPELL_REG_SP "rsp"
 #define SPELL_REG_FP "rbp"
-#else
-#define REG_SP REG_UESP
-#define REG_PC REG_EIP
-#define REG_FP REG_EBP
-#define SPELL_REG_SP "esp"
-#define SPELL_REG_FP "ebp"
-#endif // AMD64
 
 address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
@@ -281,43 +270,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           }
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
-      } else
-#ifdef AMD64
-      if (sig == SIGFPE &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+      } else if (sig == SIGFPE &&
+                 (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,
                                               pc,
                                               SharedRuntime::
                                               IMPLICIT_DIVIDE_BY_ZERO);
-#else
-      if (sig == SIGFPE /* && info->si_code == FPE_INTDIV */) {
-        // HACK: si_code does not work on linux 2.2.12-20!!!
-        int op = pc[0];
-        if (op == 0xDB) {
-          // FIST
-          // TODO: The encoding of D2I in x86_32.ad can cause an exception
-          // prior to the fist instruction if there was an invalid operation
-          // pending. We want to dismiss that exception. From the win_32
-          // side it also seems that if it really was the fist causing
-          // the exception that we do the d2i by hand with different
-          // rounding. Seems kind of weird.
-          // NOTE: that we take the exception at the NEXT floating point instruction.
-          assert(pc[0] == 0xDB, "not a FIST opcode");
-          assert(pc[1] == 0x14, "not a FIST opcode");
-          assert(pc[2] == 0x24, "not a FIST opcode");
-          return true;
-        } else if (op == 0xF7) {
-          // IDIV
-          stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_DIVIDE_BY_ZERO);
-        } else {
-          // TODO: handle more cases if we are using other x86 instructions
-          //   that can generate SIGFPE signal on linux.
-          tty->print_cr("unknown opcode 0x%X with SIGFPE.", op);
-          fatal("please update this code.");
-        }
-#endif // AMD64
       } else if (sig == SIGSEGV &&
                  MacroAssembler::uses_implicit_null_check(info->si_addr)) {
           // Determination of interpreter/vtable stub/compiled code null exception
@@ -344,81 +304,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-#ifndef AMD64
-  // Execution protection violation
-  //
-  // This should be kept as the last step in the triage.  We don't
-  // have a dedicated trap number for a no-execute fault, so be
-  // conservative and allow other handlers the first shot.
-  //
-  // Note: We don't test that info->si_code == SEGV_ACCERR here.
-  // this si_code is so generic that it is almost meaningless; and
-  // the si_code for this condition may change in the future.
-  // Furthermore, a false-positive should be harmless.
-  if (UnguardOnExecutionViolation > 0 &&
-      stub == nullptr &&
-      (sig == SIGSEGV || sig == SIGBUS) &&
-      uc->uc_mcontext.gregs[REG_TRAPNO] == trap_page_fault) {
-    size_t page_size = os::vm_page_size();
-    address addr = (address) info->si_addr;
-    address pc = os::Posix::ucontext_get_pc(uc);
-    // Make sure the pc and the faulting address are sane.
-    //
-    // If an instruction spans a page boundary, and the page containing
-    // the beginning of the instruction is executable but the following
-    // page is not, the pc and the faulting address might be slightly
-    // different - we still want to unguard the 2nd page in this case.
-    //
-    // 15 bytes seems to be a (very) safe value for max instruction size.
-    bool pc_is_near_addr =
-      (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
-    bool instr_spans_page_boundary =
-      (align_down((intptr_t) pc ^ (intptr_t) addr,
-                       (intptr_t) page_size) > 0);
-
-    if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
-      static volatile address last_addr =
-        (address) os::non_memory_address_word();
-
-      // In conservative mode, don't unguard unless the address is in the VM
-      if (addr != last_addr &&
-          (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
-
-        // Set memory to RWX and retry
-        address page_start = align_down(addr, page_size);
-        bool res = os::protect_memory((char*) page_start, page_size,
-                                      os::MEM_PROT_RWX);
-
-        log_debug(os)("Execution protection violation "
-                      "at " INTPTR_FORMAT
-                      ", unguarding " INTPTR_FORMAT ": %s, errno=%d", p2i(addr),
-                      p2i(page_start), (res ? "success" : "failed"), errno);
-        stub = pc;
-
-        // Set last_addr so if we fault again at the same address, we don't end
-        // up in an endless loop.
-        //
-        // There are two potential complications here.  Two threads trapping at
-        // the same address at the same time could cause one of the threads to
-        // think it already unguarded, and abort the VM.  Likely very rare.
-        //
-        // The other race involves two threads alternately trapping at
-        // different addresses and failing to unguard the page, resulting in
-        // an endless loop.  This condition is probably even more unlikely than
-        // the first.
-        //
-        // Although both cases could be avoided by using locks or thread local
-        // last_addr, these solutions are unnecessary complication: this
-        // handler is a best-effort safety net, not a complete solution.  It is
-        // disabled by default and should only be used as a workaround in case
-        // we missed any no-execute-unsafe VM code.
-
-        last_addr = addr;
-      }
-    }
-  }
-#endif // !AMD64
-
   if (stub != nullptr) {
     // save all thread context in case we need to restore it
     if (thread != nullptr) thread->set_saved_exception_pc(pc);
@@ -431,26 +316,13 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 }
 
 void os::Linux::init_thread_fpu_state(void) {
-#ifndef AMD64
-  // set fpu to 53 bit precision
-  set_fpu_control_word(0x27f);
-#endif // !AMD64
 }
 
 int os::Linux::get_fpu_control_word(void) {
-#ifdef AMD64
   return 0;
-#else
-  int fpu_control;
-  _FPU_GETCW(fpu_control);
-  return fpu_control & 0xffff;
-#endif // AMD64
 }
 
 void os::Linux::set_fpu_control_word(int fpu_control) {
-#ifndef AMD64
-  _FPU_SETCW(fpu_control);
-#endif // !AMD64
 }
 
 juint os::cpu_microcode_revision() {
@@ -496,20 +368,12 @@ juint os::cpu_microcode_revision() {
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 40 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
-#ifdef AMD64
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
-#else
-  size_t s = (thr_type == os::compiler_thread ? 2 * M : 512 * K);
-#endif // AMD64
   return s;
 }
 
@@ -522,7 +386,6 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t *uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-#ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RAX]);
   st->print(", RBX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RBX]);
   st->print(", RCX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RCX]);
@@ -564,27 +427,12 @@ void os::print_context(outputStream *st, const void *context) {
     }
     st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
   }
-#else
-  st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
-  st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
-  st->print(", ECX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ECX]);
-  st->print(", EDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDX]);
-  st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_UESP]);
-  st->print(", EBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBP]);
-  st->print(", ESI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ESI]);
-  st->print(", EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDI]);
-  st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EIP]);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
-  st->print(", CR2=" UINT64_FORMAT_X_0, (uint64_t)uc->uc_mcontext.cr2);
-#endif // AMD64
   st->cr();
   st->cr();
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
-  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  const int register_count = 16;
   int n = continuation;
   assert(n >= 0 && n <= register_count, "Invalid continuation value");
   if (context == nullptr || n == register_count) {
@@ -597,7 +445,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     continuation = n + 1;
 # define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->uc_mcontext.gregs[REG_##id]);
     switch (n) {
-#ifdef AMD64
     CASE_PRINT_REG( 0, "RAX=", RAX); break;
     CASE_PRINT_REG( 1, "RBX=", RBX); break;
     CASE_PRINT_REG( 2, "RCX=", RCX); break;
@@ -614,16 +461,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
     CASE_PRINT_REG(13, "R13=", R13); break;
     CASE_PRINT_REG(14, "R14=", R14); break;
     CASE_PRINT_REG(15, "R15=", R15); break;
-#else
-    CASE_PRINT_REG(0, "EAX=", EAX); break;
-    CASE_PRINT_REG(1, "EBX=", EBX); break;
-    CASE_PRINT_REG(2, "ECX=", ECX); break;
-    CASE_PRINT_REG(3, "EDX=", EDX); break;
-    CASE_PRINT_REG(4, "ESP=", ESP); break;
-    CASE_PRINT_REG(5, "EBP=", EBP); break;
-    CASE_PRINT_REG(6, "ESI=", ESI); break;
-    CASE_PRINT_REG(7, "EDI=", EDI); break;
-#endif // AMD64
     }
 # undef CASE_PRINT_REG
     ++n;
@@ -631,18 +468,11 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 void os::setup_fpu() {
-#ifndef AMD64
-  address fpu_cntrl = StubRoutines::x86::addr_fpu_cntrl_wrd_std();
-  __asm__ volatile (  "fldcw (%0)" :
-                      : "r" (fpu_cntrl) : "memory");
-#endif // !AMD64
 }
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
-#ifdef AMD64
   assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
-#endif
 }
 #endif
 
