@@ -273,6 +273,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       //  result.lo = 0
       if (maskcon != -1L) {
         int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
+        // TODO: this also looks suspicious.
         hi = (1UL << bitcount) - 1;
         lo = 0L;
       } else {
@@ -376,7 +377,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
         // Rule 3:
         // We can further constrain the upper bound of bit compression if the number of bits
         // which can be set(one) is less than the maximum number of bits of integral type.
-        hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
+        hi = MIN2((jlong)((1ULL << result_bit_width) - 1L), hi);
       }
     } else {
       assert(opc == Op_ExpandBits, "");
