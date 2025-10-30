@@ -1061,14 +1061,14 @@ const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool in
 // commutative and the lattice is symmetric.
 const Type *Type::meet_helper(const Type *t, bool include_speculative) const {
   auto op = [](const Type* t1, const Type* t2) {
-    return xmeet(t1, t2); 
+    return xmeet(t1, t2);
   };
   return meet_join_helper(op, this, t, include_speculative);
 }
 
 const Type* Type::join_helper(const Type* t, bool include_speculative) const {
   auto op = [](const Type* t1, const Type* t2) {
-    return xjoin(t1, t2); 
+    return xjoin(t1, t2);
   };
   return meet_join_helper(op, this, t, include_speculative);
 }
@@ -3636,7 +3636,7 @@ const Type* TypeOopPtr::xmeet_helper(const Type *t) const {
   case InstPtr:                  // For these, flip the call around to cut down
   case AryPtr:
     return t->is_oopptr()->xmeet_helper(this);      // Call in reverse direction
-  
+
   default:
     typerr(t);
   }
@@ -3679,7 +3679,7 @@ const Type* TypeOopPtr::xjoin_helper(const Type* t) const {
     case InstPtr:
     case AryPtr:
       return t->is_oopptr()->xjoin_helper(this);
-    
+
     default:
       typerr(t);
   }
@@ -6172,7 +6172,7 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
 
     case AryKlassPtr:
       return t->is_aryklassptr()->xjoin(this);
-    
+
     default:
       typerr(t);
   }
