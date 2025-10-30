@@ -29,8 +29,7 @@ package compiler.c2;
  * @summary Incorrect computation in Float16 reduction loop
  *
  * @library /test/lib /
- * @run main/othervm -XX:-TieredCompilation
- *                   compiler.c2.TestFloat16Reduction
+ * @run main/othervm compiler.c2.TestFloat16Reduction
  */
 
 import compiler.lib.ir_framework.*;
@@ -42,20 +41,23 @@ import java.util.Arrays;
 
 public class TestFloat16Reduction {
 
-    public short [] arr;
-    private static Generator<Short> genHF = G.uniformFloat16s();
+    static short [] arr = new short[32];
+    static Generator<Short> genHF = G.uniformFloat16s();
+    static {
+        G.fill(genHF, arr);
+    }
 
-    public long GOLDEN_ADD;
-    public long GOLDEN_SUB;
-    public long GOLDEN_MUL;
-    public long GOLDEN_DIV;
-    public long GOLDEN_MAX;
-    public long GOLDEN_MIN;
+    public static long GOLDEN_ADD = ADDReduceLong();
+    public static long GOLDEN_SUB = SUBReduceLong();
+    public static long GOLDEN_MUL = MULReduceLong();
+    public static long GOLDEN_DIV = DIVReduceLong();
+    public static long GOLDEN_MAX = MAXReduceLong();
+    public static long GOLDEN_MIN = MINReduceLong();
 
     @Test
     @IR(counts = {IRNode.ADD_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.ADD_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long ADDReduceLong() {
+    static long ADDReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(arr[i]));
@@ -71,7 +73,7 @@ public class TestFloat16Reduction {
     @Test
     @IR(counts = {IRNode.SUB_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.SUB_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long SUBReduceLong() {
+    static long SUBReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Float.float16ToFloat(res) - Float.float16ToFloat(arr[i]));
@@ -87,7 +89,7 @@ public class TestFloat16Reduction {
     @Test
     @IR(counts = {IRNode.MUL_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.MUL_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long MULReduceLong() {
+    static long MULReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Float.float16ToFloat(res) * Float.float16ToFloat(arr[i]));
@@ -103,7 +105,7 @@ public class TestFloat16Reduction {
     @Test
     @IR(counts = {IRNode.DIV_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.DIV_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long DIVReduceLong() {
+    static long DIVReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Float.float16ToFloat(res) / Float.float16ToFloat(arr[i]));
@@ -119,7 +121,7 @@ public class TestFloat16Reduction {
     @Test
     @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.MAX_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long MAXReduceLong() {
+    static long MAXReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Math.max(Float.float16ToFloat(res), Float.float16ToFloat(arr[i])));
@@ -135,7 +137,7 @@ public class TestFloat16Reduction {
     @Test
     @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(counts = {IRNode.MIN_HF, " >0 "}, applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
-    long MINReduceLong() {
+    static long MINReduceLong() {
         short res = 0;
         for (int i = 0; i < arr.length; i++) {
             res = Float.floatToFloat16(Math.min(Float.float16ToFloat(res), Float.float16ToFloat(arr[i])));
@@ -146,18 +148,6 @@ public class TestFloat16Reduction {
     @Check(test = "MINReduceLong")
     void checkMINReduceLong(long actual) {
         Verify.checkEQ(actual, GOLDEN_MIN);
-    }
-
-    public TestFloat16Reduction() {
-        arr = new short[32];
-        G.fill(genHF, arr);
-
-        GOLDEN_ADD = ADDReduceLong();
-        GOLDEN_SUB = SUBReduceLong();
-        GOLDEN_MUL = MULReduceLong();
-        GOLDEN_DIV = DIVReduceLong();
-        GOLDEN_MAX = MAXReduceLong();
-        GOLDEN_MIN = MINReduceLong();
     }
 
     public static void main(String [] args) {
