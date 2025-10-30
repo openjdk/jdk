@@ -438,7 +438,9 @@ public final class LinuxHelper {
 
     static void verifyDesktopIntegrationFiles(JPackageCommand cmd, boolean installed) {
         verifyDesktopFiles(cmd, installed);
-        verifyAllIconsReferenced(cmd);
+        if (installed) {
+            verifyAllIconsReferenced(cmd);
+        }
     }
 
     private static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
