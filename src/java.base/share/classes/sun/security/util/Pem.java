@@ -150,6 +150,9 @@ public class Pem {
      * Read the PEM text and return it in it's three components:  header,
      * base64, and footer.
      *
+     * The header begins processing when "-----B" is read.  At that point
+     * exceptions will be thrown for syntax errors.
+     *
      * The method will leave the stream after reading the end of line of the
      * footer or end of file
      * @param is an InputStream
@@ -170,9 +173,10 @@ public class Pem {
 
         int hyphen = (shortHeader ? 1 : 0);
         int eol = 0;
-
         ByteArrayOutputStream os = new ByteArrayOutputStream(6);
-        // Find starting hyphens
+
+        // Find 5 hyphens followed by a 'B' to start processing the header.
+        boolean headerStarted = false;
         do {
             int d = is.read();
             switch (d) {
@@ -183,13 +187,23 @@ public class Pem {
                     }
                     throw new EOFException("No PEM data found");
                 }
+                case 'B' -> {
+                    if (hyphen == 5) {
+                        headerStarted = true;
+                    } else {
+                        while (hyphen > 0) {
+                            os.write('-');
+                            hyphen--;
+                        }
+                    }
+                }
                 default -> hyphen = 0;
             }
             os.write(d);
-        } while (hyphen != 5);
+        } while (!headerStarted);
 
         StringBuilder sb = new StringBuilder(64);
-        sb.append("-----");
+        sb.append("-----B");
         hyphen = 0;
         int c;
 
@@ -312,8 +326,8 @@ public class Pem {
         // If there was data before finding the 5 dashes of the PEM header,
         // backup 5 characters and save that data.
         byte[] preData = null;
-        if (os.size() > 5) {
-            preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
+        if (os.size() > 6) {
+            preData = Arrays.copyOf(os.toByteArray(), os.size() - 6);
         }
 
         return new PEM(typeConverter(headerType), data, preData);

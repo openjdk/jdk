@@ -62,6 +62,10 @@ public class PEMEncoderTest {
     public static void main(String[] args) throws Exception {
         pkcs8DefaultAlgExpect = args[0];
         PEMEncoder encoder = PEMEncoder.of();
+        PEMDecoder decoder = PEMDecoder.of();
+        EncryptedPrivateKeyInfo ekpi;
+        KeyPair kp;
+        PEM pem;
 
         // These entries are removed
         var newEntryList = new ArrayList<>(PEMData.entryList);
@@ -76,8 +80,7 @@ public class PEMEncoderTest {
         System.out.println("Same instance re-encode testToString:");
         keymap.keySet().forEach(key -> testToString(key, encoder));
         System.out.println("New instance re-encode testToString:");
-        keymap.keySet().forEach(key -> testToString(key,
-            PEMEncoder.of()));
+        keymap.keySet().forEach(key -> testToString(key, PEMEncoder.of()));
         System.out.println("Same instance Encoder testEncodedKeySpec:");
         testEncodedKeySpec(encoder);
         System.out.println("New instance Encoder testEncodedKeySpec:");
@@ -102,37 +105,51 @@ public class PEMEncoderTest {
             }
         }
 
-        PEMDecoder d = PEMDecoder.of();
-        PEM pem =
-            d.decode(PEMData.ed25519ep8.pem(), PEM.class);
+        pem = decoder.decode(PEMData.ed25519ep8.pem(), PEM.class);
         PEMData.checkResults(PEMData.ed25519ep8, pem.toString());
 
         // test PEM is encapsulated with PEM header and footer on encoding
         String[] pemLines = PEMData.ed25519ep8.pem().split("\n");
         String[] pemNoHeaderFooter = Arrays.copyOfRange(pemLines, 1, pemLines.length - 1);
-        PEM pemR = new PEM("ENCRYPTED PRIVATE KEY", String.join("\n",
+        pem = new PEM("ENCRYPTED PRIVATE KEY", String.join("\n",
                 pemNoHeaderFooter));
-        PEMData.checkResults(PEMData.ed25519ep8.pem(), encoder.encodeToString(pemR));
+        PEMData.checkResults(PEMData.ed25519ep8.pem(), encoder.encodeToString(pem));
 
         // Verify the same private key bytes are returned with an ECDSA private
         // key PEM and an encrypted PEM.
-        KeyPair kp = d.decode(PEMData.ecsecp256.pem(), KeyPair.class);
+        kp = decoder.decode(PEMData.ecsecp256.pem(), KeyPair.class);
         var origPriv = kp.getPrivate();
         String s = encoder.withEncryption(PEMData.ecsecp256ekpi.password()).encodeToString(kp);
-        kp = d.withDecryption(PEMData.ecsecp256ekpi.password()).decode(s, KeyPair.class);
+        kp = decoder.withDecryption(PEMData.ecsecp256ekpi.password()).decode(s, KeyPair.class);
         var newPriv = kp.getPrivate();
         if (!Arrays.equals(origPriv.getEncoded(), newPriv.getEncoded())) {
             throw new AssertionError("compare fails");
         }
 
         // Encoded non-encrypted Keypair
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XDH");
-        kp = kpg.generateKeyPair();
-        s = PEMEncoder.of().encodeToString(kp);
-        DEREncodable der = d.decode(s);
-        if (!(der instanceof KeyPair)) {
-            throw new AssertionError("returned Private key instead of KeyPair");
-        }
+        kp = KeyPairGenerator.getInstance("XDH").generateKeyPair();
+        s = encoder.encodeToString(kp);
+        decoder.decode(s, KeyPair.class);
+
+        // EmptyKey for the PrivateKey in a KeyPair.  Uses keypair from above.
+        try {
+            encoder.encode(new KeyPair(kp.getPublic(), new EmptyKey()));
+            throw new AssertionError("encoder accepted a empty private key encoding");
+        } catch (IllegalArgumentException _) {}
+
+        // NullKey for the PrivateKey in a KeyPair.  Uses keypair from above.
+        try {
+            encoder.encode(new KeyPair(kp.getPublic(), new NullKey()));
+            throw new AssertionError("encoder accepted a empty private key encoding");
+        } catch (IllegalArgumentException _) {}
+
+        ekpi = decoder.decode(PEMData.ecsecp256ekpi.pem(),
+            EncryptedPrivateKeyInfo.class);
+        try {
+            encoder.withEncryption("blah".toCharArray()).encode(ekpi);
+            throw new AssertionError("encoder tried to encrypt " +
+                "an EncryptedPrivateKeyInfo.");
+        } catch (IllegalArgumentException _) {}
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {
@@ -287,4 +304,16 @@ public class PEMEncoderTest {
         @Override
         public byte[] getEncoded() { return new byte[0]; }
     }
+
+    private static class NullKey implements PrivateKey {
+        @Override
+        public String getAlgorithm() { return "Test"; }
+
+        @Override
+        public String getFormat() { return "Test"; }
+
+        @Override
+        public byte[] getEncoded() { return null; }
+    }
+
 }

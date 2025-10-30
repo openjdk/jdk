@@ -331,7 +331,7 @@ public final class PEMDecoder {
      * @param is {@code InputStream} containing PEM data
      * @return a {@code DEREncodable}
      * @throws IOException on IO or PEM syntax error where the
-     * {@code InputStream} did not complete decoding.
+     * {@code InputStream} did not complete decoding
      * @throws EOFException no PEM data found or unexpectedly reached the
      *   end of the {@code InputStream}
      * @throws IllegalArgumentException on error in decoding
@@ -400,13 +400,13 @@ public final class PEMDecoder {
      *
      * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
-     * @param <S> class type parameter that extends {@code DEREncodable}.
+     * @param <S> class type parameter that extends {@code DEREncodable}
      * @param is an {@code InputStream} containing PEM data
      * @param tClass the returned object class that extends or implements
-     *   {@code DEREncodable}.
+     *   {@code DEREncodable}
      * @return a {@code DEREncodable} typecast to {@code tClass}
      * @throws IOException on IO or PEM syntax error where the
-     *   {@code InputStream} did not complete decoding.
+     *   {@code InputStream} did not complete decoding
      * @throws EOFException no PEM data found or unexpectedly reached the
      *   end of the {@code InputStream}
      * @throws IllegalArgumentException on error in decoding

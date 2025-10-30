@@ -192,17 +192,23 @@ public final class PEMEncoder {
                             "contain PrivateKey.");
                     }
                     encoding = kp.getPrivate().getEncoded();
+                    if (encoding == null || encoding.length == 0) {
+                        throw new IllegalArgumentException("PrivateKey is " +
+                            "null or has no encoding.");
+                    }
                     yield buildKey(kp.getPublic().getEncoded(), encoding);
                 } finally {
                     KeyUtil.clear(encoding);
                 }
             }
-            case X509EncodedKeySpec x ->
-                buildKey(x.getEncoded(), null);
-            case PKCS8EncodedKeySpec p ->
-                buildKey(null, p.getEncoded());
+            case X509EncodedKeySpec x -> buildKey(x.getEncoded(), null);
+            case PKCS8EncodedKeySpec p -> buildKey(null, p.getEncoded());
             case EncryptedPrivateKeyInfo epki -> {
                 byte[] encoding = null;
+                if (key != null) {
+                    throw new IllegalArgumentException("Certificates " +
+                        "cannot be encrypted");
+                }
                 try {
                     encoding = epki.getEncoded();
                     yield Pem.pemEncoded(Pem.ENCRYPTED_PRIVATE_KEY, encoding);
@@ -213,22 +219,22 @@ public final class PEMEncoder {
                 }
             }
             case X509Certificate c -> {
+                if (key != null) {
+                    throw new IllegalArgumentException("Certificates " +
+                        "cannot be encrypted");
+                }
                 try {
-                    if (key != null) {
-                        throw new IllegalArgumentException("Certificates " +
-                            "cannot be encrypted");
-                    }
                     yield Pem.pemEncoded(Pem.CERTIFICATE, c.getEncoded());
                 } catch (CertificateEncodingException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
             case X509CRL crl -> {
+                if (key != null) {
+                    throw new IllegalArgumentException("CRLs cannot be " +
+                        "encrypted");
+                }
                 try {
-                    if (key != null) {
-                        throw new IllegalArgumentException("CRLs cannot be " +
-                            "encrypted");
-                    }
                     yield Pem.pemEncoded(Pem.X509_CRL, crl.getEncoded());
                 } catch (CRLException e) {
                     throw new IllegalArgumentException(e);

@@ -350,12 +350,12 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
-     * @param algorithm the PBE encryption algorithm.
+     * @param algorithm the PBE encryption algorithm
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
      *               {@code null}, the provider’s default parameters are applied.
      * @param provider the {@code Provider} for {@code SecretKeyFactory} and
      *                 {@code Cipher} operations. If {@code null}, provider
-     *                 defaults are used
+     *                 defaults are used.
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de}, {@code password}, or
      *         {@code algorithm} is {@code null}
@@ -402,7 +402,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
-     * defaults are determined by the provider.*
+     * defaults are determined by the provider.
      *
      * @since 25
      */
@@ -425,13 +425,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
      *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
-     * @param encryptKey the key used to encrypt the encoding.
+     * @param encryptKey the key used to encrypt the encoding
      * @param algorithm the encryption algorithm, such as a password-based
-     *                  encryption (PBE) algorithm.
+     *                  encryption (PBE) algorithm
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
      *               {@code null}, the provider’s default parameters are applied.
      * @param random the {@code SecureRandom} instance used during encryption.
-     *               If {@code null}, the default is used
+     *               If {@code null}, the default is used.
      * @param provider the {@code Provider} for {@code Cipher} operations.
      *                 If {@code null}, the default provider list is used.
      * @return an {@code EncryptedPrivateKeyInfo}
@@ -440,7 +440,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws IllegalArgumentException if {@code de} is an unsupported
      *         {@code DEREncodable}, if {@code encryptKey} is invalid, if
      *         {@code algorithm} or {@code params} are not supported by any
-     *         provider, or if an error occurs during encryption.
+     *         provider, or if an error occurs during encryption
      *
      * @since 25
      */
@@ -549,7 +549,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         byte[] encoding = null;
         try {
             encoding = decryptData(decryptKey, provider);
-            return PKCS8Key.parseKey(encoding, null);
+            return PKCS8Key.parseKey(encoding, provider);
         } finally {
             KeyUtil.clear(encoding);
         }

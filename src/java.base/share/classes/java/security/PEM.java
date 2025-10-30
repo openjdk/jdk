@@ -81,7 +81,7 @@ import java.util.Objects;
  * @see PEMDecoder
  * @see PEMEncoder
  *
- * @since 25
+ * @since 26
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public record PEM(String type, String content, byte[] leadingData)
