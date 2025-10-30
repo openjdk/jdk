@@ -37,9 +37,8 @@
  *   --add-exports java.base/sun.security.util=ALL-UNNAMED
  *   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
  *   NativeCacheTest.java
- * @run shell build.sh
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm
+ * @run main/othervm/native
  *   --add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED
  *   --add-exports java.security.jgss/sun.security.krb5.internal=ALL-UNNAMED
  *   --add-exports java.security.jgss/sun.security.krb5.internal.ccache=ALL-UNNAMED
@@ -52,7 +51,6 @@
  *   --add-opens java.security.jgss/sun.security.krb5.internal=ALL-UNNAMED
  *   --add-opens java.base/sun.security.util=ALL-UNNAMED
  *   --enable-native-access=ALL-UNNAMED
- *   -Djava.library.path=${test.src}:.:${test.jdk}/lib
  *   -Djdk.net.hosts.file=TestHosts
  *   NativeCacheTest
  */

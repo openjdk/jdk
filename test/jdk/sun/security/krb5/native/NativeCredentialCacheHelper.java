@@ -30,9 +30,9 @@ public class NativeCredentialCacheHelper {
 
     static {
         try {
-            System.loadLibrary("nativecredentialcachehelper");
+            System.loadLibrary("NativeCredentialCacheHelper");
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Failed to load nativecredentialcachehelper library: " + e.getMessage());
+            System.err.println("Failed to load NativeCredentialCacheHelper library: " + e.getMessage());
             throw e;
         }
     }
