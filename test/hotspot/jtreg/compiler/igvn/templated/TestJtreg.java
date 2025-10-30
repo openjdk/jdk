@@ -81,24 +81,22 @@ int arg6 = LibraryRNG.nextInt();
     boolean v0 = primitiveConTest_compiled(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
     boolean v1 = primitiveConTest_reference(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
     if (v0 != v1) {
-        System.out.println("wrong value: " + v0 + " vs " + v1);
-        System.out.println("arg0: " + arg0);
-        System.out.println("arg1: " + arg1);
-        System.out.println("arg2: " + arg2);
-        System.out.println("arg3: " + arg3);
-        System.out.println("arg4: " + arg4);
-        System.out.println("arg5: " + arg5);
-        System.out.println("arg6: " + arg6);
-        throw new RuntimeException("wrong value");
+        StringBuilder sb = new StringBuilder();
+        sb.append("wrong value: " + v0 + " vs " + v1);
+        sb.append(" arg0: " + arg0);
+        sb.append(" arg1: " + arg1);
+        sb.append(" arg2: " + arg2);
+        sb.append(" arg3: " + arg3);
+        sb.append(" arg4: " + arg4);
+        sb.append(" arg5: " + arg5);
+        sb.append(" arg6: " + arg6);
+        throw new RuntimeException("wrong value: " + sb.toString());
     }
 }
 
 @DontInline
 public static boolean primitiveConTest_compiled(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
 arg0 = constrain_arg0(arg0);
-arg1 = constrain_arg1(arg1);
-arg2 = constrain_arg2(arg2);
-arg3 = constrain_arg3(arg3);
 arg4 = constrain_arg4(arg4);
 arg5 = constrain_arg5(arg5);
 arg6 = constrain_arg6(arg6);
@@ -109,9 +107,6 @@ return val;
 @DontCompile
 public static boolean primitiveConTest_reference(int arg0, float arg1, float arg2, float arg3, long arg4, long arg5, int arg6) {
 arg0 = constrain_arg0(arg0);
-arg1 = constrain_arg1(arg1);
-arg2 = constrain_arg2(arg2);
-arg3 = constrain_arg3(arg3);
 arg4 = constrain_arg4(arg4);
 arg5 = constrain_arg5(arg5);
 arg6 = constrain_arg6(arg6);
@@ -123,18 +118,6 @@ return val;
 public static int constrain_arg0(int v) {
 v = (int)Math.min(Math.max(v, 524287), -65534);
 v = (int)((v & 1073741823) | 1209351794);
-return v;
-}
-@ForceInline
-public static float constrain_arg1(float v) {
-return v;
-}
-@ForceInline
-public static float constrain_arg2(float v) {
-return v;
-}
-@ForceInline
-public static float constrain_arg3(float v) {
 return v;
 }
 @ForceInline
