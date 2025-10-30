@@ -729,6 +729,16 @@ public class TestFramework {
     }
 
     /**
+     * Get the VM output of the test VM. Use {@code -DVerbose=true} to enable more debug information. If scenarios
+     * were run, use {@link Scenario#getTestVMOutput()}.
+     *
+     * @return the last test VM output.
+     */
+    public static String getLastTestVMOutput() {
+        return TestVMProcess.getLastTestVMOutput();
+    }
+
+    /**
      * For scenarios: Run the tests with the scenario settings and collect all exceptions to be able to run all
      * scenarios without prematurely throwing an exception. Format violations, however, are wrong for all scenarios
      * and thus is reported immediately on the first scenario execution.
