@@ -122,6 +122,10 @@ public:
     return _card_set_mm.memory_stats();
   }
 
+  size_t cards_occupied() const {
+    return _card_set.occupied();
+  }
+
   void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroupIterator begin() const {

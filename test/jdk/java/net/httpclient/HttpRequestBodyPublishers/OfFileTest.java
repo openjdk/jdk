@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @bug 8364733
+ * @bug 8226303 8235459 8358688 8364733
  * @summary Verify all specified `HttpRequest.BodyPublishers::ofFile` behavior
  * @build ByteBufferUtils
  *        RecordingSubscriber

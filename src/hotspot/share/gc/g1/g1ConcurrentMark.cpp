@@ -27,6 +27,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
+#include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -34,7 +35,7 @@
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -51,7 +52,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/referencePolicy.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -483,7 +483,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads),
+  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
@@ -1141,7 +1141,7 @@ void G1ConcurrentMark::mark_from_roots() {
   // worker threads may currently exist and more may not be
   // available.
   active_workers = _concurrent_workers->set_active_workers(active_workers);
-  log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->max_workers());
+  log_info(gc, task)("Concurrent Mark Using %u of %u Workers", active_workers, _concurrent_workers->max_workers());
 
   _num_concurrent_workers = active_workers;
 
@@ -1651,6 +1651,8 @@ class G1RemarkThreadsClosure : public ThreadClosure {
 };
 
 class G1CMRemarkTask : public WorkerTask {
+  // For Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope;
   G1ConcurrentMark* _cm;
 public:
   void work(uint worker_id) {
@@ -1674,7 +1676,7 @@ public:
   }
 
   G1CMRemarkTask(G1ConcurrentMark* cm, uint active_workers) :
-    WorkerTask("Par Remark"), _cm(cm) {
+    WorkerTask("Par Remark"), _threads_claim_token_scope(), _cm(cm) {
     _cm->terminator()->reset_for_reuse(active_workers);
   }
 };
@@ -1693,8 +1695,6 @@ void G1ConcurrentMark::finalize_marking() {
   // through the task.
 
   {
-    StrongRootsScope srs(active_workers);
-
     G1CMRemarkTask remarkTask(this, active_workers);
     // We will start all available threads, even if we decide that the
     // active_workers will be fewer. The extra ones will just bail out
@@ -1883,7 +1883,7 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // nothing, but this situation should be extremely rare (a full gc after shutdown
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
-  if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
+  if (!cm_thread()->in_progress() && !_g1h->is_shutting_down()) {
     return false;
   }
 

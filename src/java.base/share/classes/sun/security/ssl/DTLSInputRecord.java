@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
         // Buffer next epoch message if necessary.
         if (this.readEpoch < recordEpoch) {
-            // Discard the record younger than the current epcoh if:
+            // Discard the record younger than the current epoch if:
             // 1. it is not a handshake message, or
             // 3. it is not of next epoch.
             if ((contentType != ContentType.HANDSHAKE.id &&
@@ -801,8 +801,11 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // buffer this fragment
             if (hsf.handshakeType == SSLHandshake.FINISHED.id) {
-                // Need no status update.
-                bufferedFragments.add(hsf);
+                // Make sure it's not a retransmitted message
+                if (hsf.recordEpoch > handshakeEpoch) {
+                    bufferedFragments.add(hsf);
+                    flightIsReady = holes.isEmpty();
+                }
             } else {
                 bufferFragment(hsf);
             }
@@ -1442,7 +1445,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 //
                 if (expectCCSFlight) {
                     // Have the ChangeCipherSpec/Finished flight been received?
-                    boolean isReady = hasFinishedMessage(bufferedFragments);
+                    boolean isReady = hasFinishedMessage();
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine(
                             "Has the final flight been received? " + isReady);
@@ -1489,7 +1492,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 //
                 // an abbreviated handshake
                 //
-                if (hasFinishedMessage(bufferedFragments)) {
+                if (hasFinishedMessage()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine("It's an abbreviated handshake.");
                     }
@@ -1562,7 +1565,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     }
                 }
 
-                if (!hasFinishedMessage(bufferedFragments)) {
+                if (!hasFinishedMessage()) {
                     // not yet have the ChangeCipherSpec/Finished messages
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine(
@@ -1598,35 +1601,33 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             return false;
         }
 
-        // Looking for the ChangeCipherSpec and Finished messages.
+        // Looking for the ChangeCipherSpec, Finished and
+        // NewSessionTicket messages.
         //
         // As the cached Finished message should be a ciphertext, we don't
         // exactly know a ciphertext is a Finished message or not.  According
         // to the spec of TLS/DTLS handshaking, a Finished message is always
         // sent immediately after a ChangeCipherSpec message.  The first
         // ciphertext handshake message should be the expected Finished message.
-        private boolean hasFinishedMessage(Set<RecordFragment> fragments) {
-
+        private boolean hasFinishedMessage() {
             boolean hasCCS = false;
             boolean hasFin = false;
-            for (RecordFragment fragment : fragments) {
+
+            for (RecordFragment fragment : bufferedFragments) {
                 if (fragment.contentType == ContentType.CHANGE_CIPHER_SPEC.id) {
-                    if (hasFin) {
-                        return true;
-                    }
                     hasCCS = true;
-                } else if (fragment.contentType == ContentType.HANDSHAKE.id) {
-                    // Finished is the first expected message of a new epoch.
-                    if (fragment.isCiphertext) {
-                        if (hasCCS) {
-                            return true;
-                        }
-                        hasFin = true;
-                    }
+                } else if (fragment.contentType == ContentType.HANDSHAKE.id
+                        && fragment.isCiphertext) {
+                    hasFin = true;
                 }
             }
 
-            return false;
+            // NewSessionTicket message presence in the Finished flight
+            // should only be expected on the client side, and only
+            // if stateless resumption is enabled.
+            return hasCCS && hasFin && (!tc.sslConfig.isClientMode
+                    || !tc.handshakeContext.statelessResumption
+                    || hasCompleted(SSLHandshake.NEW_SESSION_TICKET.id));
         }
 
         // Is client CertificateVerify a mandatory message?
@@ -1671,7 +1672,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 int presentMsgSeq, int endMsgSeq) {
 
             // The caller should have checked the completion of the first
-            // present handshake message.  Need not to check it again.
+            // present handshake message.  Need not check it again.
             for (RecordFragment rFrag : fragments) {
                 if ((rFrag.contentType != ContentType.HANDSHAKE.id) ||
                         rFrag.isCiphertext) {

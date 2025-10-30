@@ -46,10 +46,15 @@ class ShenandoahFullGC;
 class VM_ShenandoahOperation : public VM_Operation {
 protected:
   uint _gc_id;
+  ShenandoahGeneration* _generation;
 
   void set_active_generation();
 public:
-  VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
+  explicit VM_ShenandoahOperation(ShenandoahGeneration* generation)
+  : _gc_id(GCId::current())
+  , _generation(generation) {
+  }
+
   bool skip_thread_oop_barriers() const override { return true; }
 
   void log_active_generation(const char* prefix);
@@ -61,93 +66,74 @@ public:
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
 public:
-  VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
+  explicit VM_ShenandoahReferenceOperation(ShenandoahGeneration* generation)
+    : VM_ShenandoahOperation(generation) {};
   bool doit_prologue() override;
   void doit_epilogue() override;
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {
-private:
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc) :
-    VM_ShenandoahOperation(),
-    _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitMark; }
-  const char* name()             const { return "Shenandoah Init Marking"; }
-  virtual void doit();
+  explicit VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahInitMark; }
+  const char* name()             const override { return "Shenandoah Init Marking"; }
+  void doit() override;
 };
 
 class VM_ShenandoahFinalMarkStartEvac: public VM_ShenandoahOperation {
-private:
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc) :
-    VM_ShenandoahOperation(),
-    _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalMarkStartEvac; }
-  const char* name()             const { return "Shenandoah Final Mark and Start Evacuation"; }
-  virtual  void doit();
+  explicit VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalMarkStartEvac; }
+  const char* name()             const override { return "Shenandoah Final Mark and Start Evacuation"; }
+  void doit() override;
 };
 
 class VM_ShenandoahDegeneratedGC: public VM_ShenandoahReferenceOperation {
-private:
   ShenandoahDegenGC* const _gc;
 public:
-  VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc) :
-    VM_ShenandoahReferenceOperation(),
-    _gc(gc) {};
-
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahDegeneratedGC; }
-  const char* name()             const { return "Shenandoah Degenerated GC"; }
-  virtual  void doit();
+  explicit VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahDegeneratedGC; }
+  const char* name()             const override { return "Shenandoah Degenerated GC"; }
+  void doit() override;
 };
 
 class VM_ShenandoahFullGC : public VM_ShenandoahReferenceOperation {
-private:
   GCCause::Cause           _gc_cause;
   ShenandoahFullGC* const  _full_gc;
 public:
-  VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc) :
-    VM_ShenandoahReferenceOperation(),
-    _gc_cause(gc_cause),
-    _full_gc(full_gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFullGC; }
-  const char* name()             const { return "Shenandoah Full GC"; }
-  virtual void doit();
+  explicit VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFullGC; }
+  const char* name()             const override { return "Shenandoah Full GC"; }
+  void doit() override;
 };
 
 class VM_ShenandoahInitUpdateRefs: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc) :
-    VM_ShenandoahOperation(),
-    _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahInitUpdateRefs; }
-  const char* name()             const { return "Shenandoah Init Update References"; }
-  virtual void doit();
+  explicit VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahInitUpdateRefs; }
+  const char* name()             const override { return "Shenandoah Init Update References"; }
+  void doit() override;
 };
 
 class VM_ShenandoahFinalUpdateRefs: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc) :
-    VM_ShenandoahOperation(),
-    _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalUpdateRefs; }
-  const char* name()             const { return "Shenandoah Final Update References"; }
-  virtual void doit();
+  explicit VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalUpdateRefs; }
+  const char* name()             const override { return "Shenandoah Final Update References"; }
+  void doit() override;
 };
 
 class VM_ShenandoahFinalRoots: public VM_ShenandoahOperation {
   ShenandoahConcurrentGC* const _gc;
 public:
-  VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc) :
-    VM_ShenandoahOperation(),
-    _gc(gc) {};
-  VM_Operation::VMOp_Type type() const { return VMOp_ShenandoahFinalRoots; }
-  const char* name()             const { return "Shenandoah Final Roots"; }
-  virtual void doit();
+  explicit VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc);
+  VM_Operation::VMOp_Type type() const override { return VMOp_ShenandoahFinalRoots; }
+  const char* name()             const override { return "Shenandoah Final Roots"; }
+  void doit() override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVMOPERATIONS_HPP

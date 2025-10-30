@@ -110,10 +110,9 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     // failure (degenerated cycle), or old marking was cancelled to run a young collection.
     // In either case, the correct generation for the next cycle can be determined by
     // the cancellation cause.
-    request.cause = _heap->cancelled_cause();
+    request.cause = _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     if (request.cause == GCCause::_shenandoah_concurrent_gc) {
       request.generation = _heap->young_generation();
-      _heap->clear_cancelled_gc(false);
     }
   } else {
     request.cause = _requested_gc_cause;
@@ -199,6 +198,24 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 
   // preemption was requested or this is a regular cycle
   return request.generation->is_old() ? servicing_old : concurrent_normal;
+}
+
+void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const {
+  LogTarget(Debug, gc, age) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    AgeTable young_region_ages(false);
+    for (uint i = 0; i < _heap->num_regions(); ++i) {
+      const ShenandoahHeapRegion* r = _heap->get_region(i);
+      if (r->is_young()) {
+        young_region_ages.add(r->age(), r->get_live_data_words());
+      }
+    }
+
+    ls.print("Young regions: ");
+    young_region_ages.print_on(&ls);
+    ls.cr();
+  }
 }
 
 void ShenandoahGenerationalControlThread::maybe_set_aging_cycle() {
@@ -298,7 +315,11 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->global_generation()->heuristics()->clear_metaspace_oom();
   }
 
-  process_phase_timings();
+  // Manage and print gc stats
+  _heap->process_gc_stats();
+
+  // Print table for young region ages if log is enabled
+  maybe_print_young_region_ages();
 
   // Print Metaspace change following GC (if logging is enabled).
   MetaspaceUtils::print_metaspace_change(meta_sizes);
@@ -315,29 +336,6 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   log_debug(gc, thread)("Completed GC (%s): %s, %s, cancelled: %s",
     gc_mode_name(gc_mode()), GCCause::to_string(request.cause), request.generation->name(), GCCause::to_string(_heap->cancelled_cause()));
-}
-
-void ShenandoahGenerationalControlThread::process_phase_timings() const {
-  // Commit worker statistics to cycle data
-  _heap->phase_timings()->flush_par_workers_to_cycle();
-
-  ShenandoahEvacuationTracker* evac_tracker = _heap->evac_tracker();
-  ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
-
-  // Print GC stats for current cycle
-  {
-    LogTarget(Info, gc, stats) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm;
-      LogStream ls(lt);
-      _heap->phase_timings()->print_cycle_on(&ls);
-      evac_tracker->print_evacuations_on(&ls, &evac_stats.workers,
-                                              &evac_stats.mutators);
-    }
-  }
-
-  // Commit statistics to globals
-  _heap->phase_timings()->flush_cycle_to_global();
 }
 
 // Young and old concurrent cycles are initiated by the regulator. Implicit
@@ -417,7 +415,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       set_gc_mode(bootstrapping_old);
       young_generation->set_old_gen_task_queues(old_generation->task_queues());
       service_concurrent_cycle(young_generation, request.cause, true);
-      process_phase_timings();
+      _heap->process_gc_stats();
       if (_heap->cancelled_gc()) {
         // Young generation bootstrap cycle has failed. Concurrent mark for old generation
         // is going to resume after degenerated bootstrap cycle completes.

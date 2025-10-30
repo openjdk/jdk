@@ -248,6 +248,13 @@ jint ShenandoahHeap::initialize() {
   // Now we know the number of regions and heap sizes, initialize the heuristics.
   initialize_heuristics();
 
+  // If ShenandoahCardBarrier is enabled but it's not generational mode
+  // it means we're under passive mode and we have to initialize old gen
+  // for the purpose of having card table.
+  if (ShenandoahCardBarrier && !(mode()->is_generational())) {
+    _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity());
+  }
+
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
   //
@@ -529,7 +536,6 @@ void ShenandoahHeap::initialize_heuristics() {
 
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
-  _gc_generation(nullptr),
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
@@ -1257,7 +1263,8 @@ private:
   ShenandoahGCStatePropagatorHandshakeClosure _propagator;
 };
 
-void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
+void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
+  assert(generation->is_global(), "Only global generation expected here");
   ShenandoahEvacuationTask task(this, _collection_set, concurrent);
   workers()->run_task(&task);
 }
@@ -1441,6 +1448,27 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
+void ShenandoahHeap::process_gc_stats() const {
+  // Commit worker statistics to cycle data
+  phase_timings()->flush_par_workers_to_cycle();
+
+  // Print GC stats for current cycle
+  LogTarget(Info, gc, stats) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    phase_timings()->print_cycle_on(&ls);
+    if (ShenandoahEvacTracking) {
+      ShenandoahCycleStats  evac_stats = evac_tracker()->flush_cycle_to_global();
+      evac_tracker()->print_evacuations_on(&ls, &evac_stats.workers,
+                                               &evac_stats.mutators);
+    }
+  }
+
+  // Commit statistics to globals
+  phase_timings()->flush_cycle_to_global();
+}
+
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
   assert(!start->has_live(), "liveness must be zero");
@@ -1555,8 +1583,8 @@ void ShenandoahHeap::collect_as_vm_thread(GCCause::Cause cause) {
   // cycle. We _could_ cancel the concurrent cycle and then try to run a cycle directly
   // on the VM thread, but this would confuse the control thread mightily and doesn't
   // seem worth the trouble. Instead, we will have the caller thread run (and wait for) a
-  // concurrent cycle in the prologue of the heap inspect/dump operation. This is how
-  // other concurrent collectors in the JVM handle this scenario as well.
+  // concurrent cycle in the prologue of the heap inspect/dump operation (see VM_HeapDumper::doit_prologue).
+  // This is how other concurrent collectors in the JVM handle this scenario as well.
   assert(Thread::current()->is_VM_thread(), "Should be the VM thread");
   guarantee(cause == GCCause::_heap_dump || cause == GCCause::_heap_inspection, "Invalid cause");
 }
@@ -1566,7 +1594,10 @@ void ShenandoahHeap::collect(GCCause::Cause cause) {
 }
 
 void ShenandoahHeap::do_full_collection(bool clear_all_soft_refs) {
-  //assert(false, "Shouldn't need to do full collections");
+  // This method is only called by `CollectedHeap::collect_as_vm_thread`, which we have
+  // overridden to do nothing. See the comment there for an explanation of how heap inspections
+  // work for Shenandoah.
+  ShouldNotReachHere();
 }
 
 HeapWord* ShenandoahHeap::block_start(const void* addr) const {
@@ -1635,17 +1666,11 @@ void ShenandoahHeap::print_tracing_info() const {
   }
 }
 
-void ShenandoahHeap::set_gc_generation(ShenandoahGeneration* generation) {
-  shenandoah_assert_control_or_vm_thread_at_safepoint();
-  _gc_generation = generation;
-}
-
 // Active generation may only be set by the VM thread at a safepoint.
-void ShenandoahHeap::set_active_generation() {
+void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   assert(Thread::current()->is_VM_thread(), "Only the VM Thread");
   assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint!");
-  assert(_gc_generation != nullptr, "Will set _active_generation to nullptr");
-  _active_generation = _gc_generation;
+  _active_generation = generation;
 }
 
 void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
@@ -1654,17 +1679,14 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   const GCCause::Cause current = gc_cause();
   assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s",
          GCCause::to_string(current), GCCause::to_string(cause));
-  assert(_gc_generation == nullptr, "Over-writing _gc_generation");
 
   set_gc_cause(cause);
-  set_gc_generation(generation);
 
   generation->heuristics()->record_cycle_start();
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   assert(gc_cause() != GCCause::_no_gc, "cause wasn't set");
-  assert(_gc_generation != nullptr, "_gc_generation wasn't set");
 
   generation->heuristics()->record_cycle_end();
   if (mode()->is_generational() && generation->is_global()) {
@@ -1673,14 +1695,13 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
     old_generation()->heuristics()->record_cycle_end();
   }
 
-  set_gc_generation(nullptr);
   set_gc_cause(GCCause::_no_gc);
 }
 
 void ShenandoahHeap::verify(VerifyOption vo) {
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     if (ShenandoahVerify) {
-      verifier()->verify_generic(vo);
+      verifier()->verify_generic(active_generation(), vo);
     } else {
       // TODO: Consider allocating verification bitmaps on demand,
       // and turn this on unconditionally.
@@ -2040,14 +2061,13 @@ void ShenandoahHeap::do_class_unloading() {
   }
 }
 
-void ShenandoahHeap::stw_weak_refs(bool full_gc) {
+void ShenandoahHeap::stw_weak_refs(ShenandoahGeneration* generation, bool full_gc) {
   // Weak refs processing
   ShenandoahPhaseTimings::Phase phase = full_gc ? ShenandoahPhaseTimings::full_gc_weakrefs
                                                 : ShenandoahPhaseTimings::degen_gc_weakrefs;
   ShenandoahTimingsTracker t(phase);
   ShenandoahGCWorkerPhase worker_phase(phase);
-  shenandoah_assert_generations_reconciled();
-  gc_generation()->ref_processor()->process_references(phase, workers(), false /* concurrent */);
+  generation->ref_processor()->process_references(phase, workers(), false /* concurrent */);
 }
 
 void ShenandoahHeap::prepare_update_heap_references() {
@@ -2238,8 +2258,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       // Clean JVMCI metadata handles.
       JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
-      uint num_workers = _workers->active_workers();
-      ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);
+      ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
       _workers->run_task(&unlink_task);
     }
     // Release unloaded nmethods's memory.
@@ -2289,13 +2308,13 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   }
 }
 
-void ShenandoahHeap::parallel_cleaning(bool full_gc) {
+void ShenandoahHeap::parallel_cleaning(ShenandoahGeneration* generation, bool full_gc) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
   assert(is_stw_gc_in_progress(), "Only for Degenerated and Full GC");
   ShenandoahGCPhase phase(full_gc ?
                           ShenandoahPhaseTimings::full_gc_purge :
                           ShenandoahPhaseTimings::degen_gc_purge);
-  stw_weak_refs(full_gc);
+  stw_weak_refs(generation, full_gc);
   stw_process_weak_roots(full_gc);
   stw_unload_classes(full_gc);
 }
@@ -2319,12 +2338,27 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  if (mode()->is_generational()) {
-    young_generation()->reset_bytes_allocated_since_gc_start();
-    old_generation()->reset_bytes_allocated_since_gc_start();
-  }
+  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
+  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
+  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
+  // allocation rate computations.  This effect is considered to be be negligible.
 
-  global_generation()->reset_bytes_allocated_since_gc_start();
+  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+  // bytes are allocated after the start of subsequent gc.
+  size_t unaccounted_bytes;
+  if (mode()->is_generational()) {
+    size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
+    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+    young_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+    unaccounted_bytes = 0;
+    old_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+  } else {
+    size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
+    // Single-gen Shenandoah uses global heuristics.
+    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+  }
+  global_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2388,11 +2422,8 @@ void ShenandoahHeap::sync_pinned_region_status() {
 void ShenandoahHeap::assert_pinned_region_status() {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
-    shenandoah_assert_generations_reconciled();
-    if (gc_generation()->contains(r)) {
-      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-             "Region %zu pinning status is inconsistent", i);
-    }
+    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+           "Region %zu pinning status is inconsistent", i);
   }
 }
 #endif
@@ -2495,7 +2526,8 @@ private:
   }
 };
 
-void ShenandoahHeap::update_heap_references(bool concurrent) {
+void ShenandoahHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
+  assert(generation->is_global(), "Should only get global generation here");
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
   if (concurrent) {

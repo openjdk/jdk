@@ -25,6 +25,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
@@ -54,15 +55,16 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
     _num_humongous_regions_removed(0),
     _local_cleanup_list(local_cleanup_list) {}
 
-  void reclaim_empty_region(G1HeapRegion* hr) {
+  void reclaim_empty_region_common(G1HeapRegion* hr) {
     assert(!hr->has_pinned_objects(), "precondition");
     assert(hr->used() > 0, "precondition");
 
     _freed_bytes += hr->used();
     hr->set_containing_set(nullptr);
-    hr->clear_cardtable();
+    hr->clear_both_card_tables();
     _cm->clear_statistics(hr);
     G1HeapRegionPrinter::mark_reclaim(hr);
+    _g1h->concurrent_refine()->notify_region_reclaimed(hr);
   }
 
   void reclaim_empty_humongous_region(G1HeapRegion* hr) {
@@ -71,8 +73,8 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
     auto on_humongous_region = [&] (G1HeapRegion* hr) {
       assert(hr->is_humongous(), "precondition");
 
-      reclaim_empty_region(hr);
       _num_humongous_regions_removed++;
+      reclaim_empty_region_common(hr);
       _g1h->free_humongous_region(hr, _local_cleanup_list);
     };
 
@@ -82,8 +84,8 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
   void reclaim_empty_old_region(G1HeapRegion* hr) {
     assert(hr->is_old(), "precondition");
 
-    reclaim_empty_region(hr);
     _num_old_regions_removed++;
+    reclaim_empty_region_common(hr);
     _g1h->free_region(hr, _local_cleanup_list);
   }
 
