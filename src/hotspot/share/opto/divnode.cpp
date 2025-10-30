@@ -553,7 +553,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //
   // Less precise comparisons still work after transform_int_divide, e.g.,
   // comparing with >= 21_476 does not conflict with the off-by-one overapproximation.
-  if (phase->is_IterGVN() == nullptr) {
+  if (!can_reshape) {
     phase->C->record_for_igvn(this);
     return nullptr;
   }
@@ -667,7 +667,7 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   // Keep this node as-is initially; we want Value() and
   // other optimizations checking for this node type to work.
   // See DivINode::Ideal for an explanation.
-  if (phase->is_IterGVN() == nullptr) {
+  if (!can_reshape) {
     phase->C->record_for_igvn(this);
     return nullptr;
   }
@@ -1119,6 +1119,12 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
+
+  // See if we are MOD'ing by 2^k or 2^k-1.
+  if (!ti->is_con()) {
+    return nullptr;
+  }
+
   // Keep this node as-is initially; we want Value() and
   // other optimizations checking for this node type to work.
   // Consider the following expression:
@@ -1126,13 +1132,10 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // With ModINode::Value, we can trivially tell the resulting range is [-1,1].
   // After idealizing, we have a subtraction from x, which means without
   // recognizing that as a modulo operation, we end up with a range of TypeInt::INT.
-  if (phase->is_IterGVN() == nullptr) {
+  if (!can_reshape) {
     phase->C->record_for_igvn(this);
     return nullptr;
   }
-
-  // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
 
   Node *hook = new Node(1);
@@ -1426,16 +1429,19 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
+  // See if we are MOD'ing by 2^k or 2^k-1.
+  if (!tl->is_con()) {
+    return nullptr;
+  }
+
   // Keep this node as-is initially; we want Value() and
   // other optimizations checking for this node type to work.
   // See ModINode::Ideal for an explanation.
-  if (phase->is_IterGVN() == nullptr) {
+  if (!can_reshape) {
     phase->C->record_for_igvn(this);
     return nullptr;
   }
 
-  // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !tl->is_con() ) return nullptr;
   jlong con = tl->get_con();
 
   Node *hook = new Node(1);
