@@ -747,29 +747,19 @@ int JDK_Version::compare(const JDK_Version& other) const {
 
 /* See JEP 223 */
 void JDK_Version::to_string(char* buffer, size_t buflen) const {
-  assert(buffer && buflen > 0, "call with useful buffer");
-  size_t index = 0;
-
+  assert((buffer != nullptr) && (buflen > 0), "call with useful buffer");
+  stringStream ss{buffer, buflen};
   if (!is_valid()) {
-    jio_snprintf(buffer, buflen, "%s", "(uninitialized)");
+    ss.print_raw("(uninitialized)");
   } else {
-    int rc = jio_snprintf(
-        &buffer[index], buflen - index, "%d.%d", _major, _minor);
-    if (rc == -1) return;
-    index += rc;
+    ss.print("%d.%d", _major, _minor);
     if (_patch > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d.%d", _security, _patch);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d.%d", _security, _patch);
     } else if (_security > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, ".%d", _security);
-      if (rc == -1) return;
-      index += rc;
+      ss.print(".%d", _security);
     }
     if (_build > 0) {
-      rc = jio_snprintf(&buffer[index], buflen - index, "+%d", _build);
-      if (rc == -1) return;
-      index += rc;
+      ss.print("+%d", _build);
     }
   }
 }

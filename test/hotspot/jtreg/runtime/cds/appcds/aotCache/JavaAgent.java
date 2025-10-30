@@ -38,6 +38,7 @@
  * @test id=dynamic
  * @bug 8362561
  * @summary -javaagent is not allowed when creating dynamic CDS archive
+ * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build JavaAgent JavaAgentTransformer Util
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar JavaAgentApp JavaAgentApp$ShouldBeTransformed

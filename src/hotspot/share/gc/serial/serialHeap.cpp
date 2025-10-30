@@ -56,7 +56,6 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -145,18 +144,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   return memory_pools;
 }
 
-void SerialHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void SerialHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
-
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
   return old_gen()->allocate(word_size);
@@ -195,7 +182,6 @@ jint SerialHeap::initialize() {
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
-  bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
   _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
@@ -282,9 +268,9 @@ size_t SerialHeap::max_capacity() const {
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  HeapWord* result = _young_gen->allocate(size);
+  HeapWord* result = _young_gen->expand_and_allocate(size);
 
-  if (result == nullptr) {
+  if (result == nullptr && !is_tlab) {
     result = _old_gen->expand_and_allocate(size);
   }
 
@@ -401,13 +387,12 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   // Only update stats for successful young-gc
   if (result) {
     _old_gen->update_promote_stats();
+    _young_gen->resize_after_young_gc();
   }
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
   }
-
-  _young_gen->compute_new_size();
 
   print_heap_change(pre_gc_values);
 
@@ -594,7 +579,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 
   // Adjust generation sizes.
   _old_gen->compute_new_size();
-  _young_gen->compute_new_size();
+  _young_gen->resize_after_full_gc();
 
   _old_gen->update_promote_stats();
 
@@ -779,7 +764,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {

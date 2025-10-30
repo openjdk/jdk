@@ -133,7 +133,7 @@ public class RedirectTimeoutTest implements HttpServerAdapters {
         if (version == HTTP_3) {
             reqBuilder = reqBuilder.version(HTTP_3).setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
         }
-        HttpRequest request = reqBuilder
+        HttpRequest request = reqBuilder.copy()
                 .GET()
                 .version(version)
                 .timeout(Duration.ofMillis(adjustTimeout(TIMEOUT_MILLIS)))

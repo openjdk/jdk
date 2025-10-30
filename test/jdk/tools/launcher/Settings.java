@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -83,6 +83,7 @@ public class Settings extends TestHelper {
     private static final String TIMEZONE_SETTINGS = "default timezone";
     private static final String TZDATA_SETTINGS = "tzdata version";
     private static final String ERR_MSG = "Unrecognized showSettings option:";
+    private static final String ENABLED_GROUPS_SETTINGS = "Enabled Named Groups:";
 
     /*
      * "all" should print verbose settings
@@ -105,6 +106,7 @@ public class Settings extends TestHelper {
             // only invoke system option by default on Linux
             checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
+        checkContains(tr, ENABLED_GROUPS_SETTINGS);
     }
     /*
      * default (no options) should print non verbose
@@ -234,6 +236,7 @@ public class Settings extends TestHelper {
         checkContains(tr, SEC_TLS_SETTINGS);
         // test a well known TLS config for sanity
         checkContains(tr, "TLSv1.2");
+        checkContains(tr, ENABLED_GROUPS_SETTINGS);
     }
 
     // ensure error message is printed when unrecognized option used
