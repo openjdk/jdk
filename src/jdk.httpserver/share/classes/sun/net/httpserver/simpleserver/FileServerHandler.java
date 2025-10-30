@@ -312,6 +312,15 @@ public final class FileServerHandler implements HttpHandler {
         return true;
     }
 
+    // Parses the HTTP Range header and returns a list of byte ranges.
+    // Returns null if the header is invalid.
+    // Example of valid Range header values:
+    //  "bytes=0-499"           -> first 500 bytes
+    //  "bytes=500-999"         -> second 500 bytes
+    //  "bytes=-500"            -> last 500 bytes
+    //  "bytes=9500-"           -> from byte 9500 to end
+    // Multiple ranges are allowed, separated by commas(without spaces):
+    //  "bytes=0-499,1000-1499" -> first 500 bytes and second 500 bytes
     private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
         if (!rangeHeader.startsWith("bytes=")) {
             return null;  // only 'bytes' unit is supported.
