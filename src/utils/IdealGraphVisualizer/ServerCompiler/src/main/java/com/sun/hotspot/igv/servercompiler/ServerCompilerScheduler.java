@@ -675,7 +675,9 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     private static boolean isProj(Node n) {
-        return hasName(n, "Proj") || hasName(n, "MachProj");
+        return hasName(n, "Proj") ||
+               hasName(n, "MachProj") ||
+               hasName(n, "NarrowMemProj");
     }
 
     private static boolean isParm(Node n) {
