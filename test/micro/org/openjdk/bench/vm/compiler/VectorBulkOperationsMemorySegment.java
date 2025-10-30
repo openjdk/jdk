@@ -101,12 +101,6 @@ public class VectorBulkOperationsMemorySegment {
     // to avoid running out of cache. But it might be quite large if NUM_ACCESS_ELEMENTS is large.
     public static long REGION_SIZE = -1024;
     public static final long REGION_2_BYTE_OFFSET   = 1024 * 2; // prevent 4k-aliasing
-    public static final long REGION_2_SHORT_OFFSET  = REGION_2_BYTE_OFFSET / 2;
-    public static final long REGION_2_CHAR_OFFSET   = REGION_2_BYTE_OFFSET / 2;
-    public static final long REGION_2_INT_OFFSET    = REGION_2_BYTE_OFFSET / 4;
-    public static final long REGION_2_LONG_OFFSET   = REGION_2_BYTE_OFFSET / 8;
-    public static final long REGION_2_FLOAT_OFFSET  = REGION_2_BYTE_OFFSET / 4;
-    public static final long REGION_2_DOUBLE_OFFSET = REGION_2_BYTE_OFFSET / 8;
 
     // TDOO: see what is still actie up here.
 
@@ -215,5 +209,147 @@ public class VectorBulkOperationsMemorySegment {
         }
     }
 
-    // TODO: more types?
+    // -------------------------------- CHAR ------------------------------
+
+    @Benchmark
+    public void fill_var_char_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_CHAR_UNALIGNED, 2L * i + offset_store, varC);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_char_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 2L * offsetLoad(r);
+            long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                char v = ms.get(ValueLayout.JAVA_CHAR_UNALIGNED, 2L * i + offset_load);
+                ms.set(ValueLayout.JAVA_CHAR_UNALIGNED, 2L * i + offset_store, v);
+            }
+        }
+    }
+
+    // -------------------------------- SHORT ------------------------------
+
+    @Benchmark
+    public void fill_var_short_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_SHORT_UNALIGNED, 2L * i + offset_store, varS);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_short_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 2L * offsetLoad(r);
+            long offset_store = 2L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                short v = ms.get(ValueLayout.JAVA_SHORT_UNALIGNED, 2L * i + offset_load);
+                ms.set(ValueLayout.JAVA_SHORT_UNALIGNED, 2L * i + offset_store, v);
+            }
+        }
+    }
+
+    // -------------------------------- INT ------------------------------
+
+    @Benchmark
+    public void fill_var_int_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + offset_store, varI);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_int_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 4L * offsetLoad(r);
+            long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + offset_load);
+                ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i + offset_store, v);
+            }
+        }
+    }
+
+    // -------------------------------- LONG ------------------------------
+
+    @Benchmark
+    public void fill_var_long_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i + offset_store, varL);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_long_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 8L * offsetLoad(r);
+            long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                long v = ms.get(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i + offset_load);
+                ms.set(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i + offset_store, v);
+            }
+        }
+    }
+
+    // -------------------------------- FLOAT ------------------------------
+
+    @Benchmark
+    public void fill_var_float_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i + offset_store, varS);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_float_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 4L * offsetLoad(r);
+            long offset_store = 4L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                float v = ms.get(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i + offset_load);
+                ms.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i + offset_store, v);
+            }
+        }
+    }
+
+    // -------------------------------- DOUBLE ------------------------------
+
+    @Benchmark
+    public void fill_var_double_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                ms.set(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i + offset_store, varS);
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_double_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            long offset_load = 8L * offsetLoad(r);
+            long offset_store = 8L * offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            for (long i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                double v = ms.get(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i + offset_load);
+                ms.set(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i + offset_store, v);
+            }
+        }
+    }
 }
