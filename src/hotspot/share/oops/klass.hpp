@@ -511,7 +511,7 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Find the right-most bit of the diff array-of-boolean vs array-of-byte layout helpers.
+  // Find the right-most bit of the diff of array-of-boolean and array-of-byte layout helpers.
   static int layout_helper_boolean_diffbit() {
     uint zlh = checked_cast<uint>(array_layout_helper(T_BOOLEAN));
     uint blh = checked_cast<uint>(array_layout_helper(T_BYTE));
