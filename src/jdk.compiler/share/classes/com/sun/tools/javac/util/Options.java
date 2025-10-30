@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import static com.sun.tools.javac.main.Option.*;
 
@@ -168,6 +169,143 @@ public class Options {
      */
     public boolean isUnset(Option option, String value) {
         return !isSet(option, value);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is enabled via a custom
+     * option flag of the form {@code -Flag}, {@code -Flag:all}, or {@code -Flag:key}.
+     *
+     * <p>
+     * The given {@code option} must have a custom lint variant (available via {@link Option#getLintCustom}).
+     *
+     * <p>
+     * Note: It's possible the category was also disabled; this method does not check that.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} is enabled via {@code option}'s lint custom variant (e.g., {@link Option#XLINT_CUSTOM})
+     * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
+     */
+    public boolean isEnabled(Option option, LintCategory lc) {
+        Option custom = option.getLintCustom();
+        return isExplicitlyEnabled(option, lc) || isSet(custom) || isSet(custom, Option.LINT_CUSTOM_ALL);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is disabled via a custom
+     * option flag of the form {@code -Flag:none} or {@code -Flag:-key}.
+     *
+     * <p>
+     * The given {@code option} must have a custom lint variant (available via {@link Option#getLintCustom}).
+     *
+     * <p>
+     * Note: It's possible the category was also enabled; this method does not check that.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} is disabled via {@code option}'s lint custom variant (e.g., {@link Option#XLINT_CUSTOM})
+     * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
+     */
+    public boolean isDisabled(Option option, LintCategory lc) {
+        return isExplicitlyDisabled(option, lc) || isSet(option.getLintCustom(), Option.LINT_CUSTOM_NONE);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is explicitly enabled via a custom
+     * option flag of the form {@code -Flag:key}.
+     *
+     * <p>
+     * The given {@code option} must have a custom lint variant (available via {@link Option#getLintCustom}).
+     *
+     * <p>
+     * Note: This does not check for option flags of the form {@code -Flag} or {@code -Flag:all}.
+     *
+     * <p>
+     * Note: It's possible the category was also disabled; this method does not check that.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} is explicitly enabled via {@code option}'s lint custom variant (e.g., {@link Option#XLINT_CUSTOM})
+     * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
+     */
+    public boolean isExplicitlyEnabled(Option option, LintCategory lc) {
+        Option customOption = option.getLintCustom();
+        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, alias));
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is explicitly disabled via a custom
+     * option flag of the form {@code -Flag:-key}.
+     *
+     * <p>
+     * The given {@code option} must have a custom lint variant (available via {@link Option#getLintCustom}).
+     *
+     * <p>
+     * Note: This does not check for an option flag of the form {@code -Flag:none}.
+     *
+     * <p>
+     * Note: It's possible the category was also enabled; this method does not check that.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} is explicitly disabled via {@code option}'s lint custom variant (e.g., {@link Option#XLINT_CUSTOM})
+     * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
+     */
+    public boolean isExplicitlyDisabled(Option option, LintCategory lc) {
+        Option customOption = option.getLintCustom();
+        return lc.optionList.stream().anyMatch(alias -> isSet(customOption, "-" + alias));
+    }
+
+    /**
+     * Collect the set of {@link LintCategory}s specified by option flag(s) of the form
+     * {@code -Flag} and/or {@code -Flag:[-]key,[-]key,...}.
+     *
+     * <p>
+     * The given {@code option} must have a custom lint variant (available via {@link Option#getLintCustom}).
+     *
+     * <p>
+     * The set of categories is calculated as follows. First, an initial set is created:
+     * <ul>
+     *  <li>If {@code -Flag} or {@code -Flag:all} appears, the initial set contains all categories; otherwise,
+     *  <li>If {@code -Flag:none} appears, the initial set is empty; otherwise,
+     *  <li>The {@code defaults} parameter is invoked to construct an initial set.
+     * </ul>
+     * Next, for each lint category key {@code key}:
+     * <ul>
+     *  <li>If {@code -Flag:key} flag appears, the corresponding category is added to the set; otherwise
+     *  <li>If {@code -Flag:-key} flag appears, the corresponding category is removed to the set
+     * </ul>
+     * Unrecognized {@code key}s are ignored.
+     *
+     * @param option the plain (non-custom) version of the option (e.g., {@link Option#XLINT})
+     * @param defaults populates the default set, or null for an empty default set
+     * @return the specified set of categories
+     * @throws IllegalArgumentException if there is no lint custom variant of {@code option}
+     */
+    public EnumSet<LintCategory> getLintCategoriesOf(Option option, Supplier<? extends EnumSet<LintCategory>> defaults) {
+
+        // Create the initial set
+        EnumSet<LintCategory> categories;
+        Option customOption = option.getLintCustom();
+        if (isSet(option) || isSet(customOption, Option.LINT_CUSTOM_ALL)) {
+            categories = EnumSet.allOf(LintCategory.class);
+        } else if (isSet(customOption, Option.LINT_CUSTOM_NONE)) {
+            categories = EnumSet.noneOf(LintCategory.class);
+        } else {
+            categories = defaults.get();
+        }
+
+        // Apply specific overrides
+        for (LintCategory category : LintCategory.values()) {
+            if (isExplicitlyEnabled(option, category)) {
+                categories.add(category);
+            } else if (isExplicitlyDisabled(option, category)) {
+                categories.remove(category);
+            }
+        }
+
+        // Done
+        return categories;
     }
 
     public void put(String name, String value) {

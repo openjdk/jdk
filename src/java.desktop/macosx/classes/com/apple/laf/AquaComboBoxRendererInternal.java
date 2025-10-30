@@ -47,6 +47,7 @@ class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer
 
     // Don't include checkIcon space, because this is also used for button size calculations
     // - the popup-size calc will get checkIcon space from getInsets
+    @Override
     public Dimension getPreferredSize() {
         // From BasicComboBoxRenderer - trick to avoid zero-height items
         final Dimension size;
@@ -63,15 +64,18 @@ class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer
     }
 
     // Don't paint the border here, it gets painted by the UI
+    @Override
     protected void paintBorder(final Graphics g) {
 
     }
 
+    @Override
     public int getBaseline(int width, int height) {
         return super.getBaseline(width, height) - 1;
     }
 
     // Really means is the one with the mouse over it
+    @Override
     public Component getListCellRendererComponent(final JList<? extends E> list,
                                                   final E value, int index,
                                                   final boolean isSelected,
@@ -127,6 +131,7 @@ class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer
         return this;
     }
 
+    @Override
     public Insets getInsets(Insets insets) {
         if (insets == null) insets = new Insets(0, 0, 0, 0);
         insets.top = 1;
@@ -141,6 +146,7 @@ class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer
     }
 
     // Paint this component, and a checkbox if it's the selected item and not in the button
+    @Override
     protected void paintComponent(final Graphics g) {
         if (fInList) {
             if (fSelected && !fEditable) {

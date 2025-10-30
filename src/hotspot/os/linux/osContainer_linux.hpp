@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef OS_LINUX_OSCONTAINER_LINUX_HPP
 #define OS_LINUX_OSCONTAINER_LINUX_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "memory/allStatic.hpp"
 
 #define OSCONTAINER_ERROR (-2)
 
@@ -50,10 +50,12 @@ class OSContainer: AllStatic {
   static inline bool is_containerized();
   static const char * container_type();
 
+  static bool available_memory_in_container(julong& value);
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
   static jlong memory_and_swap_usage_in_bytes();
   static jlong memory_soft_limit_in_bytes();
+  static jlong memory_throttle_limit_in_bytes();
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();
   static jlong rss_usage_in_bytes();
@@ -68,6 +70,8 @@ class OSContainer: AllStatic {
   static int cpu_period();
 
   static int cpu_shares();
+
+  static jlong cpu_usage_in_micros();
 
   static jlong pids_max();
   static jlong pids_current();

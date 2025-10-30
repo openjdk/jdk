@@ -28,36 +28,32 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment) :
+MutableSpace::MutableSpace(size_t page_size) :
   _last_setup_region(),
-  _alignment(alignment),
+  _page_size(page_size),
   _bottom(nullptr),
   _top(nullptr),
-  _end(nullptr)
-{
-  assert(MutableSpace::alignment() % os::vm_page_size() == 0,
-         "Space should be aligned");
-}
+  _end(nullptr) {}
 
-void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
-  if (!mr.is_empty()) {
-    HeapWord *start = align_up(mr.start(), page_size);
-    HeapWord *end =   align_down(mr.end(), page_size);
-    if (end > start) {
-      size_t size = pointer_delta(end, start, sizeof(char));
-      if (clear_space) {
-        // Prefer page reallocation to migration.
-        os::disclaim_memory((char*)start, size);
-      }
-      os::numa_make_global((char*)start, size);
-    }
+void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
+  assert(is_aligned(mr.start(), page_size()), "precondition");
+  assert(is_aligned(mr.end(), page_size()), "precondition");
+
+  if (mr.is_empty()) {
+    return;
   }
+
+  if (clear_space) {
+    // Prefer page reallocation to migration.
+    os::disclaim_memory((char*) mr.start(), mr.byte_size());
+  }
+  os::numa_make_global((char*) mr.start(), mr.byte_size());
 }
 
 void MutableSpace::initialize(MemRegion mr,
@@ -105,20 +101,17 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
-    size_t page_size = alignment();
-
     if (UseNUMA) {
-      numa_setup_pages(head, page_size, clear_space);
-      numa_setup_pages(tail, page_size, clear_space);
+      numa_setup_pages(head, clear_space);
+      numa_setup_pages(tail, clear_space);
     }
 
     if (AlwaysPreTouch) {
-      size_t pretouch_page_size = UseLargePages ? page_size : os::vm_page_size();
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             pretouch_page_size, pretouch_workers);
+                             page_size(), pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             pretouch_page_size, pretouch_workers);
+                             page_size(), pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
@@ -130,7 +123,7 @@ void MutableSpace::initialize(MemRegion mr,
   // makes the new space available for allocation by other threads.  So this
   // assignment must follow all other configuration and initialization that
   // might be done for expansion.
-  Atomic::release_store(end_addr(), mr.end());
+  AtomicAccess::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -162,10 +155,10 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
     // If end is read first, other threads may advance end and top such that
     // current top > old end and current top + size > current end.  Then
     // pointer_delta underflows, allowing installation of top > current end.
-    HeapWord* obj = Atomic::load_acquire(top_addr());
+    HeapWord* obj = AtomicAccess::load_acquire(top_addr());
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
+      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
@@ -184,7 +177,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
 // Try to deallocate previous allocation. Returns true upon success.
 bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   HeapWord* expected_top = obj + size;
-  return Atomic::cmpxchg(top_addr(), expected_top, obj) == expected_top;
+  return AtomicAccess::cmpxchg(top_addr(), expected_top, obj) == expected_top;
 }
 
 // Only used by oldgen allocation.

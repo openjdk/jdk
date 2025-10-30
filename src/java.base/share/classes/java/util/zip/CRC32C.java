@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.util.zip;
 
 import java.nio.ByteBuffer;
@@ -30,7 +31,6 @@ import java.nio.ByteOrder;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -176,7 +176,7 @@ public final class CRC32C implements Checksum {
         if (buffer.isDirect()) {
             NIO_ACCESS.acquireSession(buffer);
             try {
-                crc = updateDirectByteBuffer(crc, ((DirectBuffer)buffer).address(),
+                crc = updateDirectByteBuffer(crc, NIO_ACCESS.getBufferAddress(buffer),
                         pos, limit);
             } finally {
                 NIO_ACCESS.releaseSession(buffer);

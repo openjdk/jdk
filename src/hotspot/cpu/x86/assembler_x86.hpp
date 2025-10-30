@@ -441,6 +441,17 @@ class InstructionAttr;
 // See fxsave and xsave(EVEX enabled) documentation for layout
 const int FPUStateSizeInWords = 2688 / wordSize;
 
+
+// AVX10 new minmax instruction control mask encoding.
+//
+// imm8[4]                  =  0  (please refer to Table 11.1 of section 11.2 of AVX10 manual[1] for details)
+// imm8[3:2] (sign control) =  01 (select sign, please refer to Table 11.5 of section 11.2 of AVX10 manual[1] for details)
+// imm8[1:0]                =  00 (min) / 01 (max)
+//
+// [1] https://www.intel.com/content/www/us/en/content-details/856721/intel-advanced-vector-extensions-10-2-intel-avx10-2-architecture-specification.html?wapkw=AVX10
+const int AVX10_MINMAX_MAX_COMPARE_SIGN = 0x5;
+const int AVX10_MINMAX_MIN_COMPARE_SIGN = 0x4;
+
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
 // is what you get. The Assembler is generating code into a CodeBuffer.
@@ -772,24 +783,47 @@ private:
   void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
-  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                       InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                        InstructionAttr *attributes, bool no_flags = false);
 
-  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                      InstructionAttr *attributes, bool no_flags = false);
+  void eevex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                       InstructionAttr *attributes, bool no_flags = false);
 
   void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
                   InstructionAttr *attributes, bool nds_is_ndd = false, bool no_flags = false);
 
-  int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
+  int vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
                              InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
-  int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                                  InstructionAttr *attributes, bool no_flags = false);
-
-  int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+  int eevex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
                                  InstructionAttr *attributes, bool no_flags = false);
+
+  int emit_eevex_prefix_ndd(int dst_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
+
+  int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  int emit_eevex_prefix_or_demote_ndd(int dst_enc, int nds_enc, VexSimdPrefix pre, VexOpcode opc,
+                                      InstructionAttr *attributes, bool no_flags = false, bool use_prefixq = false);
+
+  void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                                             int size, int op1, int op2, bool no_flags = false, bool is_commutative = false);
+
+  void emit_eevex_prefix_or_demote_arith_ndd(Register dst, Register nds, int32_t imm32, VexSimdPrefix pre, VexOpcode opc,
+                                             int size, int op1, int op2, bool no_flags);
+
+  void emit_eevex_or_demote(Register dst, Register src1, Address src2, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags = false, bool is_map1 = false);
+
+  void emit_eevex_or_demote(Register dst, Address src1, Register src2, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags = false, bool is_map1 = false, bool is_commutative = false);
+
+  void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false, bool swap = false, bool is_commutative = false);
+
+  void emit_eevex_or_demote(int dst_enc, int nds_enc, int src_enc, int8_t imm8, VexSimdPrefix pre, VexOpcode opc,
+                            int size, int opcode_byte, bool no_flags, bool is_map1 = false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
@@ -798,10 +832,10 @@ private:
                              VexOpcode opc, InstructionAttr *attributes, bool src_is_gpr = false);
 
   // Helper functions for groups of instructions
+  bool is_demotable(bool no_flags, int dst_enc, int nds_enc);
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
-  void emit_arith(int op1, int op2, Register dst, int32_t imm32);
-  void emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32);
+  void emit_arith(int op1, int op2, Register dst, int32_t imm32, bool optimize_rax_dst = true);
   // Force generation of a 4 byte immediate value even if it fits into 8bit
   void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   void emit_arith(int op1, int op2, Register dst, Register src);
@@ -950,6 +984,7 @@ private:
   // New cpus require use of movaps and movapd to avoid partial register stall
   // when moving between registers.
   void movaps(XMMRegister dst, XMMRegister src);
+  void movapd(XMMRegister dst, Address src);
   void movapd(XMMRegister dst, XMMRegister src);
 
   // End avoid using directly
@@ -1120,6 +1155,7 @@ private:
   void eandl(Register dst, Register src, int32_t imm32, bool no_flags);
   void andl(Register dst, Address src);
   void eandl(Register dst, Register src1, Address src2, bool no_flags);
+  void eandl(Register dst, Address src1, Register src2, bool no_flags);
   void andl(Register dst, Register src);
   void eandl(Register dst, Register src1, Register src2, bool no_flags);
   void andl(Address dst, Register src);
@@ -1280,11 +1316,19 @@ private:
   void cvttsd2sil(Register dst, XMMRegister src);
   void cvttsd2siq(Register dst, Address src);
   void cvttsd2siq(Register dst, XMMRegister src);
+  void evcvttsd2sisl(Register dst, XMMRegister src);
+  void evcvttsd2sisl(Register dst, Address src);
+  void evcvttsd2sisq(Register dst, XMMRegister src);
+  void evcvttsd2sisq(Register dst, Address src);
 
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
   void cvtss2sil(Register dst, XMMRegister src);
+  void evcvttss2sisl(Register dst, XMMRegister src);
+  void evcvttss2sisl(Register dst, Address src);
+  void evcvttss2sisq(Register dst, XMMRegister src);
+  void evcvttss2sisq(Register dst, Address src);
 
   // Convert vector double to int
   void cvttpd2dq(XMMRegister dst, XMMRegister src);
@@ -1296,7 +1340,11 @@ private:
   // Convert vector float to int/long
   void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2dqs(XMMRegister dst, Address src, int vector_len);
   void evcvttps2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1305,9 +1353,13 @@ private:
   // Convert vector double to long
   void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2qqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2qqs(XMMRegister dst, Address src, int vector_len);
 
   // Convert vector double to int
   void vcvttpd2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2dqs(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttpd2dqs(XMMRegister dst, Address src, int vector_len);
 
   // Evex casts with truncation
   void evpmovwb(XMMRegister dst, XMMRegister src, int vector_len);
@@ -2450,6 +2502,9 @@ private:
   void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
+  // Bitwise Logical OR of Packed Floating-Point Values
+  void orpd(XMMRegister dst, XMMRegister src);
+
   void unpckhpd(XMMRegister dst, XMMRegister src);
   void unpcklpd(XMMRegister dst, XMMRegister src);
 
@@ -2723,6 +2778,17 @@ private:
   void vminps(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void minpd(XMMRegister dst, XMMRegister src);
   void vminpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
+
+  // AVX10.2 floating point minmax instructions
+  void eminmaxsh(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxss(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void eminmaxsd(XMMRegister dst, XMMRegister nds, XMMRegister src, int imm8);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxph(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxps(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int imm8, int vector_len);
+  void evminmaxpd(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int imm8, int vector_len);
 
   // Maximum of packed integers
   void pmaxsb(XMMRegister dst, XMMRegister src);

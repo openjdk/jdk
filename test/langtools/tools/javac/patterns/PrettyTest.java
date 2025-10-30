@@ -72,12 +72,12 @@ public class PrettyTest {
                         boolean _ = true;
                         b = o instanceof String s;
                         b = o instanceof R(String s);
-                        b = o instanceof R(/*missing*/ s);
-                        b = o instanceof R2(R(/*missing*/ s), String t);
-                        b = o instanceof R2(R(/*missing*/ s), /*missing*/ t);
+                        b = o instanceof R(var s);
+                        b = o instanceof R2(R(var s), String t);
+                        b = o instanceof R2(R(var s), var t);
                         b = o instanceof R(String _);
-                        b = o instanceof R2(R(/*missing*/ _), /*missing*/ _);
-                        b = o instanceof R2(R(_), /*missing*/ t);
+                        b = o instanceof R2(R(var _), var _);
+                        b = o instanceof R2(R(_), var t);
                     }
                     \n\
                     class R {

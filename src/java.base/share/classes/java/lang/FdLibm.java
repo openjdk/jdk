@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.lang;
+
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Port of the "Freely Distributable Math Library", version 5.3, from
@@ -451,8 +453,10 @@ final class FdLibm {
          */
         private static final double
             pio4  =  0x1.921fb54442d18p-1,  // 7.85398163397448278999e-01
-            pio4lo=  0x1.1a62633145c07p-55, // 3.06161699786838301793e-17
-            T[] = {
+            pio4lo=  0x1.1a62633145c07p-55; // 3.06161699786838301793e-17
+        @Stable
+        private static final double[]
+            T = {
              0x1.5555555555563p-2,  //  3.33333333333334091986e-01
              0x1.111111110fe7ap-3,  //  1.33333333333201242699e-01
              0x1.ba1ba1bb341fep-5,  //  5.39682539762260521377e-02
@@ -546,6 +550,7 @@ final class FdLibm {
         /*
          * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
          */
+        @Stable
         private static final int[] two_over_pi = {
             0xA2F983, 0x6E4E44, 0x1529FC, 0x2757D1, 0xF534DD, 0xC0DB62,
             0x95993C, 0x439041, 0xFE5163, 0xABDEBB, 0xC561B7, 0x246E3A,
@@ -560,6 +565,7 @@ final class FdLibm {
             0x4D7327, 0x310606, 0x1556CA, 0x73A8C9, 0x60E27B, 0xC08C6B,
         };
 
+        @Stable
         private static final int[] npio2_hw = {
             0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
             0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
@@ -807,8 +813,10 @@ final class FdLibm {
          * to produce the hexadecimal values shown.
          */
 
+        @Stable
         private static final int init_jk[] = {2, 3, 4, 6}; // initial value for jk
 
+        @Stable
         private static final double PIo2[] = {
             0x1.921fb4p0,    // 1.57079625129699707031e+00
             0x1.4442dp-24,   // 7.54978941586159635335e-08
@@ -1232,6 +1240,7 @@ final class FdLibm {
     static final class Atan {
         private Atan() {throw new UnsupportedOperationException();}
 
+        @Stable
         private static final double atanhi[] = {
             0x1.dac670561bb4fp-2,  // atan(0.5)hi 4.63647609000806093515e-01
             0x1.921fb54442d18p-1,  // atan(1.0)hi 7.85398163397448278999e-01
@@ -1239,6 +1248,7 @@ final class FdLibm {
             0x1.921fb54442d18p0,   // atan(inf)hi 1.57079632679489655800e+00
         };
 
+        @Stable
         private static final double atanlo[] = {
             0x1.a2b7f222f65e2p-56, // atan(0.5)lo 2.26987774529616870924e-17
             0x1.1a62633145c07p-55, // atan(1.0)lo 3.06161699786838301793e-17
@@ -1246,6 +1256,7 @@ final class FdLibm {
             0x1.1a62633145c07p-54, // atan(inf)lo 6.12323399573676603587e-17
         };
 
+        @Stable
         private static final double aT[] = {
              0x1.555555555550dp-2, //  3.33333333333329318027e-01
             -0x1.999999998ebc4p-3, // -1.99999999998764832476e-01
@@ -2245,12 +2256,8 @@ final class FdLibm {
 
                 // Compute ss = s_h + s_l = (x-1)/(x+1) or (x-1.5)/(x+1.5)
 
-                final double BP[]    = {1.0,
-                                       1.5};
-                final double DP_H[]  = {0.0,
-                                        0x1.2b80_34p-1};        // 5.84962487220764160156e-01
-                final double DP_L[]  = {0.0,
-                                        0x1.cfde_b43c_fd006p-27};// 1.35003920212974897128e-08
+                final double DP_H    = 0x1.2b80_34p-1;           // 5.84962487220764160156e-01
+                final double DP_L    = 0x1.cfde_b43c_fd006p-27;  // 1.35003920212974897128e-08
 
                 // Poly coefs for (3/2)*(log(x)-2s-2/3*s**3
                 final double L1      =  0x1.3333_3333_33303p-1;  //  5.99999999999994648725e-01
@@ -2259,15 +2266,17 @@ final class FdLibm {
                 final double L4      =  0x1.1746_0a91_d4101p-2;  //  2.72728123808534006489e-01
                 final double L5      =  0x1.d864_a93c_9db65p-3;  //  2.30660745775561754067e-01
                 final double L6      =  0x1.a7e2_84a4_54eefp-3;  //  2.06975017800338417784e-01
-                u = x_abs - BP[k];               // BP[0]=1.0, BP[1]=1.5
-                v = 1.0 / (x_abs + BP[k]);
+
+                double BP_k = 1.0 + 0.5*k; // BP[0]=1.0, BP[1]=1.5
+                u = x_abs - BP_k;
+                v = 1.0 / (x_abs + BP_k);
                 ss = u * v;
                 s_h = ss;
                 s_h = __LO(s_h, 0);
                 // t_h=x_abs + BP[k] High
                 t_h = 0.0;
                 t_h = __HI(t_h, ((ix >> 1) | 0x20000000) + 0x00080000 + (k << 18) );
-                t_l = x_abs - (t_h - BP[k]);
+                t_l = x_abs - (t_h - BP_k);
                 s_l = v * ((u - s_h * t_h) - s_h * t_l);
                 // Compute log(x_abs)
                 s2 = ss * ss;
@@ -2285,12 +2294,12 @@ final class FdLibm {
                 p_h = __LO(p_h, 0);
                 p_l = v - (p_h - u);
                 z_h = CP_H * p_h;             // CP_H + CP_L = 2/(3*log2)
-                z_l = CP_L * p_h + p_l * CP + DP_L[k];
+                z_l = CP_L * p_h + p_l * CP + DP_L*k;
                 // log2(x_abs) = (ss + ..)*2/(3*log2) = n + DP_H + z_h + z_l
                 t = (double)n;
-                t1 = (((z_h + z_l) + DP_H[k]) + t);
+                t1 = (((z_h + z_l) + DP_H*k) + t);
                 t1 = __LO(t1, 0);
-                t2 = z_l - (((t1 - t) - DP_H[k]) - z_h);
+                t2 = z_l - (((t1 - t) - DP_H*k) - z_h);
             }
 
             // Split up y into (y1 + y2) and compute (y1 + y2) * (t1 + t2)
@@ -2430,13 +2439,13 @@ final class FdLibm {
     static final class Exp {
         private Exp() {throw new UnsupportedOperationException();}
 
-        private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
         private static final double twom1000=     0x1.0p-1000;             //  9.33263618503218878990e-302 = 2^-1000
         private static final double o_threshold=  0x1.62e42fefa39efp9;     //  7.09782712893383973096e+02
         private static final double u_threshold= -0x1.74910d52d3051p9;     // -7.45133219101941108420e+02;
-        private static final double[] ln2HI   ={  0x1.62e42feep-1,         //  6.93147180369123816490e-01
-                                                 -0x1.62e42feep-1};        // -6.93147180369123816490e-01
+        private static final double ln2HI   =     0x1.62e42feep-1;         //  6.93147180369123816490e-01
+
+        @Stable
         private static final double[] ln2LO   ={  0x1.a39ef35793c76p-33,   //  1.90821492927058770002e-10
                                                  -0x1.a39ef35793c76p-33};  // -1.90821492927058770002e-10
         private static final double invln2 =      0x1.71547652b82fep0;     //  1.44269504088896338700e+00
@@ -2478,13 +2487,13 @@ final class FdLibm {
             /* argument reduction */
             if (hx > 0x3fd62e42) {           /* if  |x| > 0.5 ln2 */
                 if(hx < 0x3FF0A2B2) {       /* and |x| < 1.5 ln2 */
-                    hi = x - ln2HI[xsb];
+                    hi = x - ln2HI*(1 - 2*xsb); /* +/- ln2HI */
                     lo=ln2LO[xsb];
                     k = 1 - xsb - xsb;
                 } else {
-                    k  = (int)(invln2 * x + half[xsb]);
+                    k  = (int)(invln2 * x + 0.5 * (1 - 2*xsb) /* +/- 0.5 */  );
                     t  = k;
-                    hi = x - t*ln2HI[0];    /* t*ln2HI is exact here */
+                    hi = x - t*ln2HI;    /* t*ln2HI is exact here */
                     lo = t*ln2LO[0];
                 }
                 x  = hi - lo;

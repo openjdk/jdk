@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,8 @@ GLXGC_InitGLX()
     // we now only verify that the client GLX version is >= 1.3 (if the
     // server does not support GLX 1.3, then we will find that out later
     // when we attempt to create a GLXFBConfig)
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-                   "GLXGC_InitGLX: client GLX version=%s", version);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "GLXGC_InitGLX: client GLX version=%s", version);
     if (!((version[0] == '1' && version[2] >= '3') || (version[0] > '1'))) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "GLXGC_InitGLX: invalid GLX version; 1.3 is required");
@@ -224,8 +224,8 @@ GLXGC_InitFBConfig(JNIEnv *env, jint screennum, VisualID visualid)
     // be much less than this number)
     int minDepthPlusStencil = 512;
 
-    J2dRlsTraceLn2(J2D_TRACE_INFO, "GLXGC_InitFBConfig: scn=%d vis=0x%x",
-                   screennum, visualid);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "GLXGC_InitFBConfig: scn=%d vis=0x%x",
+                  screennum, visualid);
 
     // find all fbconfigs for this screen with the provided attributes
     fbconfigs = j2d_glXChooseFBConfig(awt_display, screennum,
@@ -275,9 +275,9 @@ GLXGC_InitFBConfig(JNIEnv *env, jint screennum, VisualID visualid)
             j2d_glXGetFBConfigAttrib(awt_display, fbc,
                                      GLX_ALPHA_SIZE, &alpha);
 
-            J2dRlsTrace5(J2D_TRACE_VERBOSE,
-                "[V]     id=0x%x db=%d alpha=%d depth=%d stencil=%d valid=",
-                         fbvisualid, db, alpha, depth, stencil);
+            J2dRlsTrace(J2D_TRACE_VERBOSE,
+                        "[V]     id=0x%x db=%d alpha=%d depth=%d stencil=%d valid=",
+                        fbvisualid, db, alpha, depth, stencil);
 
             if ((dtype & GLX_WINDOW_BIT) &&
                 (dtype & GLX_PBUFFER_BIT) &&
@@ -337,7 +337,7 @@ GLXGC_FindBestVisual(JNIEnv *env, jint screen)
     XVisualInfo *xvi;
     VisualID visualid;
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO, "GLXGC_FindBestVisual: scn=%d", screen);
+    J2dRlsTraceLn(J2D_TRACE_INFO, "GLXGC_FindBestVisual: scn=%d", screen);
 
     if (!GLXGC_IsGLXAvailable()) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -362,9 +362,9 @@ GLXGC_FindBestVisual(JNIEnv *env, jint screen)
     visualid = xvi->visualid;
     XFree(xvi);
 
-    J2dRlsTraceLn2(J2D_TRACE_INFO,
-        "GLXGC_FindBestVisual: chose 0x%x as the best visual for screen %d",
-                   visualid, screen);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "GLXGC_FindBestVisual: chose 0x%x as the best visual for screen %d",
+                  visualid, screen);
 
     return visualid;
 }
@@ -510,9 +510,9 @@ Java_sun_java2d_opengl_GLXGraphicsConfig_getGLXConfigInfo(JNIEnv *env,
     // destroy the temporary resources
     j2d_glXMakeContextCurrent(awt_display, None, None, NULL);
 
-    J2dRlsTraceLn1(J2D_TRACE_INFO,
-        "GLXGraphicsConfig_getGLXConfigInfo: OpenGL version=%s",
-                   (versionstr == NULL) ? "null" : (char *)versionstr);
+    J2dRlsTraceLn(J2D_TRACE_INFO,
+                  "GLXGraphicsConfig_getGLXConfigInfo: OpenGL version=%s",
+                  (versionstr == NULL) ? "null" : (char *)versionstr);
 
     if (!OGLContext_IsVersionSupported(versionstr)) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

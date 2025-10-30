@@ -27,8 +27,6 @@
  * @summary Test AOT cache support for array classes in custom class loaders.
  * @bug 8353298 8356838
  * @requires vm.cds.supports.aot.class.linking
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build ReturnIntegerAsString
  * @build AOTCacheSupportForCustomLoaders
@@ -60,15 +58,15 @@ public class AOTCacheSupportForCustomLoaders {
 
         SimpleCDSAppTester.of("AOTCacheSupportForCustomLoaders")
             .classpath("app.jar")
-            .addVmArgs("-Xlog:cds+class=debug", "-Xlog:cds",
+            .addVmArgs("-Xlog:aot+class=debug", "-Xlog:aot", "-Xlog:cds",
                        "--module-path=" + modulePath,
                        "--add-modules=com.test")
             .appCommandLine("AppWithCustomLoaders", modulePath)
             .setAssemblyChecker((OutputAnalyzer out) -> {
-                    out.shouldMatch("cds,class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
-                       .shouldMatch("cds,class.*unreg com.test.Foo")
-                       .shouldMatch("cds,class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
-                       .shouldNotMatch("cds,class.* ReturnIntegerAsString");
+                    out.shouldMatch(",class.*unreg AppWithCustomLoaders[$]MyLoadeeA")
+                       .shouldMatch(",class.*unreg com.test.Foo")
+                       .shouldMatch(",class.*array \\[LAppWithCustomLoaders[$]MyLoadeeA;")
+                       .shouldNotMatch(",class.* ReturnIntegerAsString");
                 })
             .setProductionChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Using AOT-linked classes: true");

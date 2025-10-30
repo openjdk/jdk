@@ -80,21 +80,21 @@ public abstract class PKCS11Test {
 
     // Version of the NSS artifact. This coincides with the version of
     // the NSS version
-    private static final String NSS_BUNDLE_VERSION = "3.107";
+    private static final String NSS_BUNDLE_VERSION = "3.111";
     private static final String NSSLIB = "jpg.tests.jdk.nsslib";
 
-    static double nss_version = -1;
+    static Version nss_version = null;
     static ECCState nss_ecc_status = ECCState.Basic;
 
     // The NSS library we need to search for in getNSSLibDir()
     // Default is "libsoftokn3.so", listed as "softokn3"
     // The other is "libnss3.so", listed as "nss3".
-    static String nss_library = "softokn3";
+    static String nss_library = System.getProperty("CUSTOM_P11_LIBRARY_NAME", "softokn3");
 
     // NSS versions of each library.  It is simpler to keep nss_version
     // for quick checking for generic testing than many if-else statements.
-    static double softoken3_version = -1;
-    static double nss3_version = -1;
+    static Version softoken3_version = null;
+    static Version nss3_version = null;
     static Provider pkcs11 = newPKCS11Provider();
     private static String PKCS11_BASE;
     private static Map<String, String[]> osMap;
@@ -199,6 +199,17 @@ public abstract class PKCS11Test {
         if (PKCS11_BASE != null) {
             return PKCS11_BASE;
         }
+        String customBaseDir = System.getProperty("CUSTOM_P11_CONFIG_BASE_DIR");
+        if (customBaseDir != null) {
+            File base = new File(customBaseDir);
+            if (!base.exists()) {
+                throw new RuntimeException(
+                        "Directory specified by CUSTOM_P11_CONFIG_BASE_DIR does not exist: "
+                                + base.getAbsolutePath());
+            }
+            PKCS11_BASE = base.getAbsolutePath();
+            return PKCS11_BASE;
+        }
         File cwd = new File(System.getProperty("test.src", ".")).getCanonicalFile();
         while (true) {
             File file = new File(cwd, "TEST.ROOT");
@@ -258,13 +269,29 @@ public abstract class PKCS11Test {
     }
 
     static boolean isBadNSSVersion(Provider p) {
-        double nssVersion = getNSSVersion();
-        if (isNSS(p) && nssVersion >= 3.11 && nssVersion < 3.12) {
-            System.out.println("NSS 3.11 has a DER issue that recent " +
-                    "version do not, skipping");
-            return true;
+        Version nssVersion = getNSSVersion();
+        if (isNSS(p)) {
+            // bad version is just between [3.11,3.12)
+            return nssVersion.major == 3 && 11 == nssVersion.minor;
+        } else {
+            return false;
         }
-        return false;
+    }
+
+    public record Version(int major, int minor, int patch) {}
+
+    protected static Version parseVersionString(String version) {
+        String [] parts = version.split("\\.");
+        int major = Integer.parseInt(parts[0]);
+        int minor = 0;
+        int patch = 0;
+        if (parts.length >= 2) {
+            minor = Integer.parseInt(parts[1]);
+        }
+        if (parts.length >= 3) {
+            patch = Integer.parseInt(parts[2]);
+        }
+        return new Version(major, minor, patch);
     }
 
     protected static void safeReload(String lib) {
@@ -293,26 +320,26 @@ public abstract class PKCS11Test {
         return p.getName().equalsIgnoreCase("SUNPKCS11-NSS");
     }
 
-    static double getNSSVersion() {
-        if (nss_version == -1)
+    static Version getNSSVersion() {
+        if (nss_version == null)
             getNSSInfo();
         return nss_version;
     }
 
     static ECCState getNSSECC() {
-        if (nss_version == -1)
+        if (nss_version == null)
             getNSSInfo();
         return nss_ecc_status;
     }
 
-    public static double getLibsoftokn3Version() {
-        if (softoken3_version == -1)
+    public static Version getLibsoftokn3Version() {
+        if (softoken3_version == null)
             return getNSSInfo("softokn3");
         return softoken3_version;
     }
 
-    public static double getLibnss3Version() {
-        if (nss3_version == -1)
+    public static Version getLibnss3Version() {
+        if (nss3_version == null)
             return getNSSInfo("nss3");
         return nss3_version;
     }
@@ -327,7 +354,7 @@ public abstract class PKCS11Test {
     // $Header: NSS <version>
     // Version: NSS <version>
     // Here, <version> stands for NSS version.
-    static double getNSSInfo(String library) {
+    static Version getNSSInfo(String library) {
         // look for two types of headers in NSS libraries
         String nssHeader1 = "$Header: NSS";
         String nssHeader2 = "Version: NSS";
@@ -336,15 +363,15 @@ public abstract class PKCS11Test {
         int i = 0;
         Path libfile = null;
 
-        if (library.compareTo("softokn3") == 0 && softoken3_version > -1)
+        if (library.compareTo("softokn3") == 0 && softoken3_version != null)
             return softoken3_version;
-        if (library.compareTo("nss3") == 0 && nss3_version > -1)
+        if (library.compareTo("nss3") == 0 && nss3_version != null)
             return nss3_version;
 
         try {
             libfile = getNSSLibPath();
             if (libfile == null) {
-                return 0.0;
+                return parseVersionString("0.0");
             }
             try (InputStream is = Files.newInputStream(libfile)) {
                 byte[] data = new byte[1000];
@@ -380,7 +407,7 @@ public abstract class PKCS11Test {
         if (!found) {
             System.out.println("lib" + library +
                     " version not found, set to 0.0: " + libfile);
-            nss_version = 0.0;
+            nss_version = parseVersionString("0.0");
             return nss_version;
         }
 
@@ -393,26 +420,7 @@ public abstract class PKCS11Test {
             version.append(c);
         }
 
-        // If a "dot dot" release, strip the extra dots for double parsing
-        String[] dot = version.toString().split("\\.");
-        if (dot.length > 2) {
-            version = new StringBuilder(dot[0] + "." + dot[1]);
-            for (int j = 2; dot.length > j; j++) {
-                version.append(dot[j]);
-            }
-        }
-
-        // Convert to double for easier version value checking
-        try {
-            nss_version = Double.parseDouble(version.toString());
-        } catch (NumberFormatException e) {
-            System.out.println("===== Content start =====");
-            System.out.println(s);
-            System.out.println("===== Content end =====");
-            System.out.println("Failed to parse lib" + library +
-                    " version. Set to 0.0");
-            e.printStackTrace();
-        }
+        nss_version = parseVersionString(version.toString());
 
         System.out.print("library: " + library + ", version: " + version + ".  ");
 
@@ -454,6 +462,40 @@ public abstract class PKCS11Test {
         System.out.println("testNSS: Completed");
     }
 
+    /**
+     * Prepares the NSS configuration file hierarchy, then returns the
+     * path of the configuration file that should be used to configure
+     * the PKCS11 provider.
+     *
+     * By default, the contents of the directory
+     * "test/jdk/sun/security/pkcs11/nss" are copied to the jtreg
+     * scratch directory ("."), and "./nss/p11-nss.txt" is returned.
+     *
+     * The following system properties modify the default behavior:
+     *
+     * CUSTOM_P11_CONFIG_BASE_DIR: The path of a custom configuration
+     * file hierarchy; overrides the default,
+     * "test/jdk/sun/security/pkcs11".
+     *
+     * CUSTOM_P11_CONFIG_NAME: The name of a custom configuration
+     * file; overrides the default, "p11-nss.txt".  Note that some
+     * test cases set CUSTOM_P11_CONFIG_NAME using -D in jtreg @run
+     * tags; for those test cases, setting this property on the
+     * top-level jtreg command line has no effect.
+     *
+     * CUSTOM_P11_CONFIG: The path of a custom configuration file;
+     * overrides the default "./nss/p11-nss.txt".  This takes
+     * precedence over CUSTOM_P11_CONFIG_NAME.  Tests that hard-code
+     * CUSTOM_P11_CONFIG_NAME in jtreg @run tags may not work
+     * correctly when CUSTOM_P11_CONFIG is set on the top-level jtreg
+     * command line.
+     *
+     * CUSTOM_DB_DIR: The path of a custom database directory;
+     * overrides the default, "./nss/db".
+     *
+     * CUSTOM_P11_LIBRARY_NAME: The name of a custom provider library
+     * to load; overrides the default, "softokn3".
+     */
     public static String getNssConfig() throws Exception {
         String libdir = getNSSLibDir();
         if (libdir == null) {
@@ -734,7 +776,12 @@ public abstract class PKCS11Test {
     }
 
     private static Path fetchNssLib(Class<?> clazz, Path libraryName) throws IOException {
-        Path p = ArtifactResolver.fetchOne(clazz);
+        Path p;
+        try {
+            p = ArtifactResolver.fetchOne(clazz);
+        } catch (IOException exc) {
+            throw new SkippedException("Could not find NSS", exc);
+        }
         return findNSSLibrary(p, libraryName);
     }
 

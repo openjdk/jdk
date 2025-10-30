@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,24 +85,6 @@ public class PPC64Frame extends Frame {
   private PPC64Frame() {
   }
 
-  private void adjustForDeopt() {
-    if ( pc != null) {
-      // Look for a deopt pc and if it is deopted convert to original pc
-      CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
-      if (cb != null && cb.isJavaMethod()) {
-        NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerBegin())) {
-          if (Assert.ASSERTS_ENABLED) {
-            Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
-          }
-          // adjust pc if frame is deoptimized.
-          pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
-          deoptimized = true;
-        }
-      }
-    }
-  }
-
   public PPC64Frame(Address raw_sp, Address raw_fp, Address pc) {
     this.raw_sp = raw_sp;
     this.raw_unextendedSP = raw_sp;
@@ -116,7 +98,6 @@ public class PPC64Frame extends Frame {
     } else {
       this.pc = pc;
     }
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -136,7 +117,6 @@ public class PPC64Frame extends Frame {
       this.raw_fp = raw_fp;
     }
     this.pc = raw_sp.getAddressAt(2 * VM.getVM().getAddressSize());
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -160,7 +140,6 @@ public class PPC64Frame extends Frame {
     } else {
       this.pc = pc;
     }
-    adjustUnextendedSP();
 
     // Frame must be fully constructed before this call
     adjustForDeopt();
@@ -279,7 +258,13 @@ public class PPC64Frame extends Frame {
     }
 
     if (cb != null) {
-      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
+      if (cb.isUpcallStub()) {
+        return senderForUpcallStub(map, (UpcallStub)cb);
+      } else if (cb.isContinuationStub()) {
+        return senderForContinuationStub(map, cb);
+      } else {
+        return senderForCompiledFrame(map, cb);
+      }
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -342,12 +327,6 @@ public class PPC64Frame extends Frame {
     return fr;
   }
 
-  //------------------------------------------------------------------------------
-  // frame::adjust_unextended_sp
-  private void adjustUnextendedSP() {
-    // Nothing to do. senderForInterpreterFrame finds the correct unextendedSP.
-  }
-
   private Frame senderForInterpreterFrame(PPC64RegisterMap map) {
     if (DEBUG) {
       System.out.println("senderForInterpreterFrame");
@@ -358,6 +337,15 @@ public class PPC64Frame extends Frame {
     return new PPC64Frame(sp, unextendedSP, getLink(), getSenderPC());
   }
 
+  private Frame senderForContinuationStub(PPC64RegisterMap map, CodeBlob cb) {
+    var contEntry = map.getThread().getContEntry();
+
+    Address sp = contEntry.getEntrySP();
+    Address pc = contEntry.getEntryPC();
+    Address fp = contEntry.getEntryFP();
+
+    return new PPC64Frame(sp, fp, pc);
+  }
 
   private Frame senderForCompiledFrame(PPC64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {

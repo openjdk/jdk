@@ -27,14 +27,12 @@
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build WeakReferenceTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar weakref.jar
  *             WeakReferenceTestApp WeakReferenceTestApp$Inner ShouldNotBeAOTInited ShouldNotBeArchived SharedQueue
  *             WeakReferenceTestBadApp1 WeakReferenceTestBadApp2
- * @run driver WeakReferenceTest AOT
+ * @run driver WeakReferenceTest AOT --two-step-training
  */
 
 import java.lang.ref.WeakReference;
@@ -89,7 +87,6 @@ public class WeakReferenceTest {
                 return new String[] {
                     "-Xlog:gc,cds+class=debug",
                     "-XX:AOTInitTestClass=" + mainClass,
-                    "-Xlog:cds+map,cds+map+oops=trace:file=cds.oops.txt:none:filesize=0",
                 };
             } else {
                 return new String[] {

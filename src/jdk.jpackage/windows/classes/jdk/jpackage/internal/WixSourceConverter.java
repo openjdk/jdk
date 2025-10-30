@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
@@ -52,6 +53,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stream.StreamSource;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -70,7 +72,7 @@ final class WixSourceConverter {
     WixSourceConverter(Path resourceDir) throws IOException {
         var buf = new ByteArrayOutputStream();
 
-        new OverridableResource("wix3-to-wix4-conv.xsl")
+        new OverridableResource("wix3-to-wix4-conv.xsl", ResourceLocator.class)
                 .setPublicName("wix-conv.xsl")
                 .setResourceDir(resourceDir)
                 .setCategory(I18N.getString("resource.wix-src-conv"))
@@ -89,7 +91,7 @@ final class WixSourceConverter {
         this.outputFactory = XMLOutputFactory.newInstance();
     }
 
-    Status appyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
+    Status applyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
         // Save the resource into DOM tree and read xml namespaces from it.
         // If some namespaces are not recognized by this converter, save the resource as is.
         // If all detected namespaces are recognized, run transformation of the DOM tree and save
@@ -143,7 +145,7 @@ final class WixSourceConverter {
                     newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
-            Files.createDirectories(IOUtils.getParent(resourceSaveAsFile));
+            Files.createDirectories(resourceSaveAsFile.getParent());
             Files.copy(new ByteArrayInputStream(outXml.toByteArray()), resourceSaveAsFile,
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (TransformerException | XMLStreamException ex) {
@@ -160,7 +162,7 @@ final class WixSourceConverter {
         return buf.toByteArray();
     }
 
-    final static class ResourceGroup {
+    static final class ResourceGroup {
 
         ResourceGroup(WixToolsetType wixToolsetType) {
             this.wixToolsetType = wixToolsetType;
@@ -183,7 +185,7 @@ final class WixSourceConverter {
                     }).findAny().map(OverridableResource::getResourceDir).orElse(null);
                     var conv = new WixSourceConverter(resourceDir);
                     for (var e : resources.entrySet()) {
-                        conv.appyTo(e.getValue(), e.getKey());
+                        conv.applyTo(e.getValue(), e.getKey());
                     }
                 }
                 default -> {
@@ -192,7 +194,7 @@ final class WixSourceConverter {
             }
         }
 
-        private final Map<Path, OverridableResource> resources = new HashMap<>();
+        private final Map<Path, OverridableResource> resources = new TreeMap<>();
         private final WixToolsetType wixToolsetType;
     }
 
@@ -415,7 +417,7 @@ final class WixSourceConverter {
     private final XMLOutputFactory outputFactory;
 
     // The list of WiX v3 namespaces this converter can handle
-    private final static Set<String> KNOWN_NAMESPACES = Set.of(
+    private static final Set<String> KNOWN_NAMESPACES = Set.of(
             "http://schemas.microsoft.com/wix/2006/localization",
             "http://schemas.microsoft.com/wix/2006/wi");
 }

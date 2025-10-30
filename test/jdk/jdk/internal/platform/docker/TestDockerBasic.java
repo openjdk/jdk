@@ -28,6 +28,7 @@
  * @summary Verify that -XshowSettings:system works
  * @key cgroups
  * @requires container.support
+ * @requires !vm.asan
  * @library /test/lib
  * @run main/timeout=360 TestDockerBasic
  */

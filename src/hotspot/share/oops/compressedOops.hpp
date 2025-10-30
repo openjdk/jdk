@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 class outputStream;

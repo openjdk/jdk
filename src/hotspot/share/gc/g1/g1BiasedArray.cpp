@@ -29,7 +29,7 @@ G1BiasedMappedArrayBase::G1BiasedMappedArrayBase() :
   _alloc_base(nullptr),
   _base(nullptr),
   _length(0),
-  _biased_base(nullptr),
+  _biased_base(0),
   _bias(0),
   _shift_by(0) { }
 
@@ -51,17 +51,9 @@ void G1BiasedMappedArrayBase::verify_index(idx_t index) const {
 }
 
 void G1BiasedMappedArrayBase::verify_biased_index(idx_t biased_index) const {
-  guarantee(_biased_base != nullptr, "Array not initialized");
+  guarantee(_biased_base != 0, "Array not initialized");
   guarantee(biased_index >= bias() && biased_index < (bias() + length()),
             "Biased index out of bounds, index: %zu bias: %zu length: %zu",
             biased_index, bias(), length());
 }
-
-void G1BiasedMappedArrayBase::verify_biased_index_inclusive_end(idx_t biased_index) const {
-  guarantee(_biased_base != nullptr, "Array not initialized");
-  guarantee(biased_index >= bias() && biased_index <= (bias() + length()),
-            "Biased index out of inclusive bounds, index: %zu bias: %zu length: %zu",
-            biased_index, bias(), length());
-}
-
 #endif

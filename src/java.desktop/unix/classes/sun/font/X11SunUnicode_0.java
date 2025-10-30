@@ -30,11 +30,12 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharsetDecoder;
 
-public class X11SunUnicode_0 extends Charset {
+public final class X11SunUnicode_0 extends Charset {
     public X11SunUnicode_0 () {
         super("X11SunUnicode_0", null);
     }
 
+    @Override
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
     }
@@ -42,15 +43,17 @@ public class X11SunUnicode_0 extends Charset {
     /* Seems like supporting a decoder is required, but we aren't going
      * to be publicly exposing this class, so no need to waste work
      */
+    @Override
     public CharsetDecoder newDecoder() {
         throw new Error("Decoder is not implemented for X11SunUnicode_0 Charset");
     }
 
+    @Override
     public boolean contains(Charset cs) {
         return cs instanceof X11SunUnicode_0;
     }
 
-    private static class Encoder extends DoubleByteEncoder {
+    private static final class Encoder extends DoubleByteEncoder {
         public Encoder(Charset cs) {
             super(cs, index1, index2);
         }
@@ -145,6 +148,7 @@ public class X11SunUnicode_0 extends Charset {
         };
 
         /* The default implementation creates a decoder and we don't have one */
+        @Override
         public boolean isLegalReplacement(byte[] repl) {
             return true;
         }

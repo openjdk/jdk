@@ -51,15 +51,16 @@ final class PlainTunnelingConnection extends HttpConnection {
     final InetSocketAddress proxyAddr;
     private volatile boolean connected;
 
-    protected PlainTunnelingConnection(InetSocketAddress addr,
+    protected PlainTunnelingConnection(Origin originServer,
+                                       InetSocketAddress addr,
                                        InetSocketAddress proxy,
                                        HttpClientImpl client,
                                        ProxyHeaders proxyHeaders,
                                        String label) {
-        super(addr, client, label);
+        super(originServer, addr, client, label);
         this.proxyAddr = proxy;
         this.proxyHeaders = proxyHeaders;
-        delegate = new PlainHttpConnection(proxy, client, label);
+        delegate = new PlainHttpConnection(originServer, proxy, client, label);
     }
 
     @Override

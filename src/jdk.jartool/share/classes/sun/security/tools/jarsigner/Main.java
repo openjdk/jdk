@@ -876,6 +876,11 @@ public class Main {
                         sb.append('|');
                     }
 
+                    // If the file exists, remove it from all entries in entriesInSF
+                    for (var signed : entriesInSF.values()) {
+                        signed.remove(name);
+                    }
+
                     // When -certs provided, display info has extra empty
                     // lines at the beginning and end.
                     if (isSigned) {
@@ -889,9 +894,6 @@ public class Main {
                                 sb.append(si);
                                 sb.append('\n');
                             }
-                        }
-                        for (var signed : entriesInSF.values()) {
-                            signed.remove(name);
                         }
                     } else if (showcerts && !verbose.equals("all")) {
                         // Print no info for unsigned entries when -verbose:all,

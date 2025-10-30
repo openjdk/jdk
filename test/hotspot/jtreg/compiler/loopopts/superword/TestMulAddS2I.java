@@ -77,10 +77,10 @@ public class TestMulAddS2I {
 
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaers");
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaers");
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaers");
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:-UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:-UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-AlignVector", "-XX:+UseCompactObjectHeaers");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+AlignVector", "-XX:+UseCompactObjectHeaers");
     }
 
     @Run(test = {"testa", "testb", "testc", "testd", "teste", "testf", "testg", "testh",

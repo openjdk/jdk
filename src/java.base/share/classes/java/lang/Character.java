@@ -117,11 +117,9 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * fixed-width 16-bit entities. The Unicode Standard has since been
  * changed to allow for characters whose representation requires more
  * than 16 bits.  The range of legal <em>code point</em>s is now
- * U+0000 to U+10FFFF, known as <em>Unicode scalar value</em>.
- * (Refer to the <a
- * href="http://www.unicode.org/reports/tr27/#notation"><i>
- * definition</i></a> of the U+<i>n</i> notation in the Unicode
- * Standard.)
+ * U+0000 to U+10FFFF, known as
+ * <em><a href="https://www.unicode.org/glossary/#unicode_scalar_value">
+ * Unicode scalar value</a></em>.
  *
  * <p><a id="BMP">The set of characters from U+0000 to U+FFFF</a> is
  * sometimes referred to as the <em>Basic Multilingual Plane (BMP)</em>.
@@ -173,7 +171,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
- * @spec https://www.unicode.org/reports/tr27 Unicode 3.1.0
+ * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
  * @author  Lee Boynton
  * @author  Guy Steele
  * @author  Akira Tanaka

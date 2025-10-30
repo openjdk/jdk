@@ -149,7 +149,7 @@ public final class GLXGraphicsConfig
      * This is a small helper class that allows us to execute
      * getGLXConfigInfo() on the queue flushing thread.
      */
-    private static class GLXGetConfigInfo implements Runnable {
+    private static final class GLXGetConfigInfo implements Runnable {
         private int screen;
         private int visual;
         private long cfginfo;
@@ -157,6 +157,7 @@ public final class GLXGraphicsConfig
             this.screen = screen;
             this.visual = visual;
         }
+        @Override
         public void run() {
             cfginfo = getGLXConfigInfo(screen, visual);
         }
@@ -212,6 +213,7 @@ public final class GLXGraphicsConfig
         }
     }
 
+    @Override
     public String toString() {
         return ("GLXGraphicsConfig[dev="+getDevice()+
                 ",vis=0x"+Integer.toHexString(visual)+
@@ -359,7 +361,7 @@ public final class GLXGraphicsConfig
         }
     }
 
-    private static class GLXBufferCaps extends BufferCapabilities {
+    private static final class GLXBufferCaps extends BufferCapabilities {
         public GLXBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -374,10 +376,11 @@ public final class GLXGraphicsConfig
         return bufferCaps;
     }
 
-    private static class GLXImageCaps extends ImageCapabilities {
+    private static final class GLXImageCaps extends ImageCapabilities {
         private GLXImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }

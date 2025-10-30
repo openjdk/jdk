@@ -34,7 +34,7 @@ import java.awt.geom.*;
  * @author Clemens Eisserer
  */
 
-public class XRMaskImage {
+public final class XRMaskImage {
 
     private static final int MASK_SCALE_FACTOR = 8;
 

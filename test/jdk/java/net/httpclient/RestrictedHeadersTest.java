@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class RestrictedHeadersTest {
     // This list must be same as impl
 
     static Set<String> defaultRestrictedHeaders =
-            Set.of("connection", "content-length", "expect", "host", "upgrade");
+            Set.of("connection", "content-length", "expect", "host", "upgrade", "alt-used");
 
     private static void runDefaultTest() {
         System.out.println("DEFAULT TEST: no property set");

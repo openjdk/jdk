@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class DumpingWithNoCoops {
 
     public static void main(String[] args) throws Exception {
         final String noCoops = "-XX:-UseCompressedOops";
-        final String logArg = "-Xlog:gc+heap=trace,cds=debug";
+        final String logArg = "-Xlog:gc+heap=trace,cds=debug,aot=debug";
         JarBuilder.getOrCreateHelloJar();
         String appJar = TestCommon.getTestJar("hello.jar");
         String appClasses[] = TestCommon.list("Hello");

@@ -30,6 +30,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <type_traits>
 
 // Compute mask to use for aligning to or testing alignment.

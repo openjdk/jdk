@@ -39,7 +39,7 @@ import com.apple.laf.AquaUtilControlSize.SizeDescriptor;
 import com.apple.laf.AquaUtilControlSize.SizeVariant;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaScrollRegionBorder extends AquaBorder {
+public final class AquaScrollRegionBorder extends AquaBorder {
     private static final RecyclableSingletonFromDefaultConstructor<AquaScrollRegionBorder> instance = new RecyclableSingletonFromDefaultConstructor<AquaScrollRegionBorder>(AquaScrollRegionBorder.class);
 
     public static AquaScrollRegionBorder getScrollRegionBorder() {
@@ -57,6 +57,7 @@ public class AquaScrollRegionBorder extends AquaBorder {
         return AquaPainter.<JRSUIState>create(state, 7, 7, 3, 3, 3, 3);
     }
 
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
         final State state = getState((JComponent)c);
         painter.state.set(state);
