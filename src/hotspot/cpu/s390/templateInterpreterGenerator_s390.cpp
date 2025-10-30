@@ -2073,6 +2073,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Frame accessors use Z_fp.
   // Z_ARG1 (==Z_tos): exception
   // Z_ARG2          : Return address/pc that threw exception.
+  {
+    Register top_frame_sp = Z_R1_scratch; // anyway going to load it with correct value
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();    // R13 points to call/send.
   __ restore_locals();
 
@@ -2180,6 +2188,14 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        false,  // install_monitor_exception
                        false); // notify_jvmdi
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
+  {
+    Register top_frame_sp = Z_R1_scratch;
+    __ z_lg(top_frame_sp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+    __ z_slag(top_frame_sp, top_frame_sp, Interpreter::logStackElementSize);
+    __ z_agr(top_frame_sp, Z_fp);
+
+    __ resize_frame_absolute(top_frame_sp, /* temp = */ Z_R0, /* load_fp = */ true);
+  }
   __ restore_bcp();
   __ restore_locals();
   __ restore_esp();
