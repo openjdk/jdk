@@ -304,7 +304,7 @@ public final class FileServerHandler implements HttpHandler {
         List<RangeEntry> ranges = parseRangeHeader(rangeHeader, fileSize);
         if (ranges == null) {
             var respHdrs = exchange.getResponseHeaders();
-            respHdrs.set("Content-Range", "bytes */%d".formatted(fileSize));
+            respHdrs.set("Content-Range", "bytes */%s".formatted(fileSize));
             exchange.sendResponseHeaders(416, -1);
             return true;
         }
@@ -366,7 +366,7 @@ public final class FileServerHandler implements HttpHandler {
         if (isSingleRange) {
             RangeEntry range = ranges.get(0);
             respHdrs.set("Content-Range",
-                    "bytes %d-%d/%d".formatted(range.start, range.end, fileSize));
+                    "bytes %s-%s/%s".formatted(range.start, range.end, fileSize));
             responseLength = range.end - range.start + 1;
         } else {
             respHdrs.set("Content-Type", "multipart/byteranges; boundary=" + boundary);
@@ -379,7 +379,7 @@ public final class FileServerHandler implements HttpHandler {
                 if (!isSingleRange) {
                     os.write(("--" + boundary + "\r\n").getBytes(UTF_8));
                     os.write(("Content-Type: " + fileContentType + "\r\n").getBytes(UTF_8));
-                    os.write("Content-Range: bytes %d-%d/%d\r\n\r\n"
+                    os.write("Content-Range: bytes %s-%s/%s\r\n\r\n"
                             .formatted(range.start, range.end, fileSize).getBytes(UTF_8));
                 }
                 raf.seek(range.start);
