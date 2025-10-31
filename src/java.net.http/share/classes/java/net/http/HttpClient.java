@@ -95,6 +95,10 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * <p><b>Synchronous Example</b>
  * {@snippet :
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
+ *
  *   HttpClient client = HttpClient.newBuilder()
  *        .version(Version.HTTP_1_1)
  *        .followRedirects(Redirect.NORMAL)
