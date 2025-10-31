@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -107,15 +108,23 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   // for old would be total heap - minimum capacity of young. This means the sum of the maximum
   // allowed for old and young could exceed the total heap size. It remains the case that the
   // _actual_ capacity of young + old = total.
-  _generation_sizer.heap_size_changed(max_capacity());
-  size_t initial_capacity_young = _generation_sizer.max_young_size();
-  size_t max_capacity_young = _generation_sizer.max_young_size();
+  size_t region_count = num_regions();
+  size_t max_young_regions = MAX2((region_count * ShenandoahMaxYoungPercentage) / 100, (size_t) 1U);
+  size_t initial_capacity_young = max_young_regions * ShenandoahHeapRegion::region_size_bytes();
+  size_t max_capacity_young = initial_capacity_young;
+  size_t initial_capacity_old = max_capacity() - max_capacity_young;
   size_t max_capacity_old = max_capacity() - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers());
+  _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
+}
+
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize(this);
+  _old_generation->post_initialize(this);
 }
 
 void ShenandoahGenerationalHeap::initialize_serviceability() {
@@ -577,39 +586,13 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
   retire_plab(plab, thread);
 }
 
-ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalHeap::balance_generations() {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  ShenandoahOldGeneration* old_gen = old_generation();
-  const ssize_t old_region_balance = old_gen->get_region_balance();
-  old_gen->set_region_balance(0);
-
-  if (old_region_balance > 0) {
-    const auto old_region_surplus = checked_cast<size_t>(old_region_balance);
-    const bool success = generation_sizer()->transfer_to_young(old_region_surplus);
-    return TransferResult {
-      success, old_region_surplus, "young"
-    };
-  }
-
-  if (old_region_balance < 0) {
-    const auto old_region_deficit = checked_cast<size_t>(-old_region_balance);
-    const bool success = generation_sizer()->transfer_to_old(old_region_deficit);
-    if (!success) {
-      old_gen->handle_failed_transfer();
-    }
-    return TransferResult {
-      success, old_region_deficit, "old"
-    };
-  }
-
-  return TransferResult {true, 0, "none"};
-}
-
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // xfer_limit, and any surplus is transferred to the young generation.
-// xfer_limit is the maximum we're able to transfer from young to old.
+//
+// xfer_limit is the maximum we're able to transfer from young to old based on either:
+//  1. an assumption that we will be able to replenish memory "borrowed" from young at the end of collection, or
+//  2. there is sufficient excess in the allocation runway during GC idle cycles
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions) {
 
   // We can limit the old reserve to the size of anticipated promotions:
@@ -637,9 +620,9 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
 
   const double bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
-  const double max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
-                                 bound_on_old_reserve: MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent) / double(100 - ShenandoahOldEvacRatioPercent),
-                                                            bound_on_old_reserve);
+  const double max_old_reserve = ((ShenandoahOldEvacRatioPercent == 100)? bound_on_old_reserve:
+                                  MIN2(double(young_reserve * ShenandoahOldEvacRatioPercent)
+                                       / double(100 - ShenandoahOldEvacRatioPercent), bound_on_old_reserve));
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
@@ -648,10 +631,12 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
   if (old_generation()->has_unprocessed_collection_candidates()) {
     // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
     // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
-    const double max_evac_need = (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
+    const double max_evac_need =
+      (double(old_generation()->unprocessed_collection_candidates_live_memory()) * ShenandoahOldEvacWaste);
     assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
            "Unaffiliated available must be less than total available");
-    const double old_fragmented_available = double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
+    const double old_fragmented_available =
+      double(old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes);
     reserve_for_mixed = max_evac_need + old_fragmented_available;
     if (reserve_for_mixed > max_old_reserve) {
       reserve_for_mixed = max_old_reserve;
@@ -698,6 +683,7 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t old_xfer_
 }
 
 void ShenandoahGenerationalHeap::reset_generation_reserves() {
+  ShenandoahHeapLocker locker(lock());
   young_generation()->set_evacuation_reserve(0);
   old_generation()->set_evacuation_reserve(0);
   old_generation()->set_promoted_reserve(0);
@@ -1060,15 +1046,6 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
     // a more detailed explanation.
     old_generation()->transfer_pointers_from_satb();
   }
-
-  // We defer generation resizing actions until after cset regions have been recycled.
-  TransferResult result = balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Degenerated GC", &ls);
-  }
-
   // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
   // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();
@@ -1090,24 +1067,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
-
-  log_info(gc, cset)("Concurrent cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
-                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
-                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
-
-  TransferResult result;
-  {
-    ShenandoahHeapLocker locker(lock());
-
-    result = balance_generations();
-    reset_generation_reserves();
-  }
-
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Concurrent GC", &ls);
-  }
+  reset_generation_reserves();
 }
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
