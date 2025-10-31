@@ -43,6 +43,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,9 +74,11 @@ public class DumpThreadsWithEliminatedLock {
 
         // A thread that spins creating and adding to a StringBuffer. StringBuffer is
         // synchronized, assume object will be scalar replaced and the lock eliminated.
+        var started = new CountDownLatch(1);
         var done = new AtomicBoolean();
         var ref = new AtomicReference<String>();
         Thread thread = factory.newThread(() -> {
+            started.countDown();
             while (!done.get()) {
                 StringBuffer sb = new StringBuffer();
                 sb.append(System.currentTimeMillis());
@@ -85,6 +88,7 @@ public class DumpThreadsWithEliminatedLock {
         });
         try {
             thread.start();
+            started.await();
             if (plain) {
                 testPlainFormat();
             } else {
