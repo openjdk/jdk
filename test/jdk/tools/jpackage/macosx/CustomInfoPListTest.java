@@ -21,6 +21,7 @@
  * questions.
  */
 
+import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.Map.entry;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,11 +69,9 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary jpackage with --type image --resource-dir "Info.plist" and "Runtime-Info.plist"
  * @library /test/jdk/tools/jpackage/helpers
- * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @build CustomInfoPListTest
  * @requires (os.family == "mac")
- * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CustomInfoPListTest
  */
@@ -142,12 +142,12 @@ public class CustomInfoPListTest {
             if (customPLists.isEmpty()) {
                 throw new IllegalArgumentException();
             }
+            customPLists = unmodifiableSortedSet(new TreeSet<>(customPLists));
         }
 
         @Override
         public String toString() {
             return customPLists.stream()
-                    .sorted(Comparator.comparing(CustomPListType::role))
                     .map(CustomPListType::toString)
                     .collect(Collectors.joining("+"));
         }
@@ -155,12 +155,12 @@ public class CustomInfoPListTest {
         JPackageCommand init(JPackageCommand cmd) throws IOException {
             if (customPLists.contains(CustomPListType.APP_WITH_FA)) {
                 final Path propFile = TKit.createTempFile("fa.properties");
-                var map = Map.ofEntries(
+                final var props = List.of(
                         entry("mime-type", "application/x-jpackage-foo"),
                         entry("extension", "foo"),
                         entry("description", "bar")
                 );
-                TKit.createPropertiesFile(propFile, map);
+                TKit.createPropertiesFile(propFile, props);
                 cmd.setArgumentValue("--file-associations", propFile);
             }
 

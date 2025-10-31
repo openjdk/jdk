@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@ import java.util.Optional;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.DoubleToDecimal;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -352,9 +354,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Joseph D. Darcy
  * @since 1.0
  */
 @jdk.internal.ValueBased
@@ -695,7 +694,6 @@ public final class Double extends Number
      * @param   d   the {@code double} to be converted.
      * @return a hex string representation of the argument.
      * @since 1.5
-     * @author Joseph D. Darcy
      */
     public static String toHexString(double d) {
         /*
@@ -703,56 +701,80 @@ public final class Double extends Number
          * 7.19.6.1; however, the output of this method is more
          * tightly specified.
          */
-        if (!isFinite(d) )
+        if (!isFinite(d)) {
             // For infinity and NaN, use the decimal output.
             return Double.toString(d);
-        else {
-            // Initialized to maximum size of output.
-            StringBuilder answer = new StringBuilder(24);
-
-            if (Math.copySign(1.0, d) == -1.0)    // value is negative,
-                answer.append("-");                  // so append sign info
-
-            answer.append("0x");
-
-            d = Math.abs(d);
-
-            if(d == 0.0) {
-                answer.append("0.0p0");
-            } else {
-                boolean subnormal = (d < Double.MIN_NORMAL);
-
-                // Isolate significand bits and OR in a high-order bit
-                // so that the string representation has a known
-                // length.
-                long signifBits = (Double.doubleToLongBits(d)
-                                   & DoubleConsts.SIGNIF_BIT_MASK) |
-                    0x1000000000000000L;
-
-                // Subnormal values have a 0 implicit bit; normal
-                // values have a 1 implicit bit.
-                answer.append(subnormal ? "0." : "1.");
-
-                // Isolate the low-order 13 digits of the hex
-                // representation.  If all the digits are zero,
-                // replace with a single 0; otherwise, remove all
-                // trailing zeros.
-                String signif = Long.toHexString(signifBits).substring(3,16);
-                answer.append(signif.equals("0000000000000") ? // 13 zeros
-                              "0":
-                              signif.replaceFirst("0{1,12}$", ""));
-
-                answer.append('p');
-                // If the value is subnormal, use the E_min exponent
-                // value for double; otherwise, extract and report d's
-                // exponent (the representation of a subnormal uses
-                // E_min -1).
-                answer.append(subnormal ?
-                              Double.MIN_EXPONENT:
-                              Math.getExponent(d));
-            }
-            return answer.toString();
         }
+
+        long doubleToLongBits = Double.doubleToLongBits(d);
+        boolean negative = doubleToLongBits < 0;
+
+        if (d == 0.0) {
+            return negative ? "-0x0.0p0" : "0x0.0p0";
+        }
+        d = Math.abs(d);
+        // Check if the value is subnormal (less than the smallest normal value)
+        boolean subnormal = d < Double.MIN_NORMAL;
+
+        // Isolate significand bits and OR in a high-order bit
+        // so that the string representation has a known length.
+        // This ensures we always have 13 hex digits to work with (52 bits / 4 bits per hex digit)
+        long signifBits = doubleToLongBits & DoubleConsts.SIGNIF_BIT_MASK;
+
+        // Calculate the number of trailing zeros in the significand (in groups of 4 bits)
+        // This is used to remove trailing zeros from the hex representation
+        // We limit to 12 because we want to keep at least 1 hex digit (13 total - 12 = 1)
+        // assert 0 <= trailingZeros && trailingZeros <= 12
+        int trailingZeros = Long.numberOfTrailingZeros(signifBits | 1L << 4 * 12) >> 2;
+
+        // Determine the exponent value based on whether the number is subnormal or normal
+        // Subnormal numbers use the minimum exponent, normal numbers use the actual exponent
+        int exp = subnormal ? Double.MIN_EXPONENT : Math.getExponent(d);
+
+        // Calculate the total length of the resulting string:
+        // Sign (optional) + prefix "0x" + implicit bit + "." + hex digits + "p" + exponent
+        int charlen = (negative ? 1 : 0) // sign character
+                + 4 // "0x1." or "0x0."
+                + 13 - trailingZeros // hex digits (13 max, minus trailing zeros)
+                + 1 // "p"
+                + DecimalDigits.stringSize(exp) // exponent
+                ;
+
+        // Create a byte array to hold the result characters
+        byte[] chars = new byte[charlen];
+        int index = 0;
+
+        // Add the sign character if the number is negative
+        if (negative) {  // value is negative
+            chars[index++] = '-';
+        }
+
+        // Add the prefix and the implicit bit ('1' for normal, '0' for subnormal)
+        // Subnormal values have a 0 implicit bit; normal values have a 1 implicit bit.
+        chars[index    ] = '0';      // Hex prefix
+        chars[index + 1] = 'x';  // Hex prefix
+        chars[index + 2] = (byte) (subnormal ? '0' : '1');  // Implicit bit
+        chars[index + 3] = '.';  // Decimal point
+        index += 4;
+
+        // Convert significand to hex digits manually to avoid creating temporary strings
+        // Extract the 13 hex digits (52 bits) from signifBits
+        // We need to extract bits 48-51, 44-47, ..., 0-3 (13 groups of 4 bits)
+        for (int sh = 4 * 12, end = 4 * trailingZeros; sh >= end; sh -= 4) {
+            // Extract 4 bits at a time from left to right
+            // Shift right by sh positions and mask with 0xF
+            // Integer.digits maps values 0-15 to '0'-'f' characters
+            chars[index++] = Integer.digits[((int)(signifBits >> sh)) & 0xF];
+        }
+
+        // Add the exponent indicator
+        chars[index] = 'p';
+
+        // Append the exponent value to the character array
+        // This method writes the decimal representation of exp directly into the byte array
+        DecimalDigits.uncheckedGetCharsLatin1(exp, charlen, chars);
+
+        return String.newStringWithLatin1Bytes(chars);
     }
 
     /**

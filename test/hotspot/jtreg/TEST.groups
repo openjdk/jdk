@@ -563,6 +563,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
  -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
+ -runtime/cds/appcds/SignedJar.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
@@ -570,6 +571,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
+ -runtime/cds/appcds/VerifyObjArrayCloneTest.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
  -runtime/cds/serviceability/ReplaceCriticalClasses.java \
  -runtime/cds/serviceability/transformRelatedClasses/TransformInterfaceAndImplementor.java \

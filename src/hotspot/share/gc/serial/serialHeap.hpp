@@ -55,10 +55,10 @@ class TenuredGeneration;
 //                                              +-- generation boundary (fixed after startup)
 //                                              |
 // |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
-// +-----------------+--------+--------+--------+---------------+-------------------+
-// |       eden      |  from  |   to   |        |      old      |                   |
-// |                 |  (to)  | (from) |        |               |                   |
-// +-----------------+--------+--------+--------+---------------+-------------------+
+// +--------+--------+-----------------+--------+---------------+-------------------+
+// |  from  |   to   |       eden      |        |      old      |                   |
+// |  (to)  | (from) |                 |        |               |                   |
+// +--------+--------+-----------------+--------+---------------+-------------------+
 // |<-          committed            ->|        |<- committed ->|
 //
 class SerialHeap : public CollectedHeap {
