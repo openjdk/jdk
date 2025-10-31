@@ -682,7 +682,7 @@ public class Operators {
     // arraylength  -- add all the overloads? int[], ..., Object[]
 
     // checkcast
-    
+
     // ifnonnnull -- see Objects::nonNull
 
     // ifnull -- see Objects::isNull
