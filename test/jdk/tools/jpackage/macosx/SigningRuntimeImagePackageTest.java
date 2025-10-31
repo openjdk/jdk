@@ -23,19 +23,15 @@
 
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.TKit;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments. Test
@@ -96,37 +92,10 @@ public class SigningRuntimeImagePackageTest {
         return cmd;
     }
 
-    private static Path createInputRuntimeBundle(MacSign.ResolvedKeychain keychain, int certIndex) throws IOException {
-
-        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
-
-        final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
-
-        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
-
-        var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .ignoreDefaultRuntime(true)
-                .dumpOutput(true)
-                .setPackageType(PackageType.MAC_DMG)
-                .setArgumentValue("--name", "foo")
-                .addArguments("--runtime-image", runtimeImage)
-                .addArguments("--dest", runtimeBundleWorkDir);
-
-        addSignOptions(cmd, keychain, certIndex);
-
-        cmd.execute();
-
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
-                Executor.of("cp", "-R")
-                        .addArgument(dmgImage)
-                        .addArgument(unpackadeRuntimeBundleDir)
-                        .execute(0);
-            }
+    private static Path createInputRuntimeBundle(MacSign.ResolvedKeychain keychain, int certIndex) {
+        return MacHelper.createRuntimeBundle(cmd -> {
+            addSignOptions(cmd, keychain, certIndex);
         });
-
-        return unpackadeRuntimeBundleDir;
     }
 
     @Test
