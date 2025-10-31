@@ -37,7 +37,7 @@ import sun.jvm.hotspot.utilities.Observer;
 
 public class NMethod extends CodeBlob {
   private static long          pcDescSize;
-  private static long          immutableDataReferencesCounterSize;
+  private static long          immutableDataRefCountSize;
   private static AddressField  methodField;
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
@@ -55,6 +55,7 @@ public class NMethod extends CodeBlob {
   private static CIntField     nulChkTableOffsetField;
   private static CIntegerField scopesPCsOffsetField;
   private static CIntegerField scopesDataOffsetField;
+  private static CIntegerField immutableDataRefCountOffsetField;
 
   /** Offsets for entry points */
   /** Entry point with class check */
@@ -90,6 +91,7 @@ public class NMethod extends CodeBlob {
     stubOffsetField                    = type.getCIntegerField("_stub_offset");
     scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
     scopesDataOffsetField              = type.getCIntegerField("_scopes_data_offset");
+    immutableDataRefCountOffsetField   = type.getCIntegerField("_immutable_data_ref_count_offset");
     handlerTableOffsetField            = new CIntField(type.getCIntegerField("_handler_table_offset"), 0);
     nulChkTableOffsetField             = new CIntField(type.getCIntegerField("_nul_chk_table_offset"), 0);
     entryOffsetField                   = new CIntField(type.getCIntegerField("_entry_offset"), 0);
@@ -97,7 +99,7 @@ public class NMethod extends CodeBlob {
     osrEntryPointField                 = type.getAddressField("_osr_entry_point");
     compLevelField                     = new CIntField(type.getCIntegerField("_comp_level"), 0);
     pcDescSize                         = db.lookupType("PcDesc").getSize();
-    immutableDataReferencesCounterSize = VM.getVM().getIntSize();
+    immutableDataRefCountSize          = VM.getVM().getIntSize();
   }
 
   public NMethod(Address addr) {
@@ -119,45 +121,46 @@ public class NMethod extends CodeBlob {
   public boolean isOSRMethod()    { return getEntryBCI() != VM.getVM().getInvocationEntryBCI(); }
 
   /** Boundaries for different parts */
-  public Address constantsBegin()       { return contentBegin();                                     }
-  public Address constantsEnd()         { return codeBegin();                                        }
-  public Address instsBegin()           { return codeBegin();                                        }
-  public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
-  public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
-  public Address deoptHandlerBegin()    { return headerBegin().addOffsetTo(getDeoptHandlerOffset());   }
-  public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
-  public Address stubEnd()              { return dataBegin();                                        }
-  public Address oopsBegin()            { return dataBegin();                                        }
-  public Address oopsEnd()              { return dataEnd();                                          }
+  public Address constantsBegin()             { return contentBegin();                                     }
+  public Address constantsEnd()               { return codeBegin();                                        }
+  public Address instsBegin()                 { return codeBegin();                                        }
+  public Address instsEnd()                   { return headerBegin().addOffsetTo(getStubOffset());         }
+  public Address exceptionBegin()             { return headerBegin().addOffsetTo(getExceptionOffset());    }
+  public Address deoptHandlerBegin()          { return headerBegin().addOffsetTo(getDeoptHandlerOffset()); }
+  public Address stubBegin()                  { return headerBegin().addOffsetTo(getStubOffset());         }
+  public Address stubEnd()                    { return dataBegin();                                        }
+  public Address oopsBegin()                  { return dataBegin();                                        }
+  public Address oopsEnd()                    { return dataEnd();                                          }
 
-  public Address immutableDataBegin()   { return immutableDataField.getValue(addr);                         }
-  public Address immutableDataEnd()     { return immutableDataBegin().addOffsetTo(getImmutableDataSize());  }
-  public Address dependenciesBegin()    { return immutableDataBegin();                                      }
-  public Address dependenciesEnd()      { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
-  public Address handlerTableBegin()    { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
-  public Address handlerTableEnd()      { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
-  public Address nulChkTableBegin()     { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
-  public Address nulChkTableEnd()       { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataBegin()      { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataEnd()        { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
-  public Address scopesPCsBegin()       { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
-  public Address scopesPCsEnd()         { return immutableDataEnd().addOffsetTo(-immutableDataReferencesCounterSize); }
+  public Address immutableDataBegin()         { return immutableDataField.getValue(addr);                         }
+  public Address immutableDataEnd()           { return immutableDataBegin().addOffsetTo(getImmutableDataSize());  }
+  public Address dependenciesBegin()          { return immutableDataBegin();                                      }
+  public Address dependenciesEnd()            { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
+  public Address handlerTableBegin()          { return immutableDataBegin().addOffsetTo(getHandlerTableOffset()); }
+  public Address handlerTableEnd()            { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
+  public Address nulChkTableBegin()           { return immutableDataBegin().addOffsetTo(getNulChkTableOffset());  }
+  public Address nulChkTableEnd()             { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
+  public Address scopesDataBegin()            { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
+  public Address scopesDataEnd()              { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
+  public Address scopesPCsBegin()             { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
+  public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
+  public Address immutableDataRefCountBegin() { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
 
-  public Address metadataBegin()        { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
-  public Address metadataEnd()          { return mutableDataEnd();                                      }
+  public Address metadataBegin()              { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
+  public Address metadataEnd()                { return mutableDataEnd();                                      }
 
-  public int getImmutableDataSize()     { return (int) immutableDataSizeField.getValue(addr);        }
-  public int constantsSize()            { return (int) constantsEnd()   .minus(constantsBegin());    }
-  public int instsSize()                { return (int) instsEnd()       .minus(instsBegin());        }
-  public int stubSize()                 { return (int) stubEnd()        .minus(stubBegin());         }
-  public int oopsSize()                 { return (int) oopsEnd()        .minus(oopsBegin());         }
-  public int metadataSize()             { return (int) metadataEnd()    .minus(metadataBegin());     }
-  public int scopesDataSize()           { return (int) scopesDataEnd()  .minus(scopesDataBegin());   }
-  public int scopesPCsSize()            { return (int) scopesPCsEnd()   .minus(scopesPCsBegin());    }
-  public int dependenciesSize()         { return (int) dependenciesEnd().minus(dependenciesBegin()); }
-  public int handlerTableSize()         { return (int) handlerTableEnd().minus(handlerTableBegin()); }
-  public int nulChkTableSize()          { return (int) nulChkTableEnd() .minus(nulChkTableBegin());  }
-  public int origPCOffset()             { return (int) origPCOffsetField.getValue(addr);             }
+  public int getImmutableDataSize()           { return (int) immutableDataSizeField.getValue(addr);        }
+  public int constantsSize()                  { return (int) constantsEnd()   .minus(constantsBegin());    }
+  public int instsSize()                      { return (int) instsEnd()       .minus(instsBegin());        }
+  public int stubSize()                       { return (int) stubEnd()        .minus(stubBegin());         }
+  public int oopsSize()                       { return (int) oopsEnd()        .minus(oopsBegin());         }
+  public int metadataSize()                   { return (int) metadataEnd()    .minus(metadataBegin());     }
+  public int scopesDataSize()                 { return (int) scopesDataEnd()  .minus(scopesDataBegin());   }
+  public int scopesPCsSize()                  { return (int) scopesPCsEnd()   .minus(scopesPCsBegin());    }
+  public int dependenciesSize()               { return (int) dependenciesEnd().minus(dependenciesBegin()); }
+  public int handlerTableSize()               { return (int) handlerTableEnd().minus(handlerTableBegin()); }
+  public int nulChkTableSize()                { return (int) nulChkTableEnd() .minus(nulChkTableBegin());  }
+  public int origPCOffset()                   { return (int) origPCOffsetField.getValue(addr);             }
 
   public int totalSize() {
     return
@@ -165,14 +168,20 @@ public class NMethod extends CodeBlob {
       instsSize()        +
       stubSize();
   }
+
   public int immutableDataSize() {
-    return
+    int size =
       scopesDataSize()   +
       scopesPCsSize()    +
       dependenciesSize() +
       handlerTableSize() +
-      nulChkTableSize()  +
-      (int) immutableDataReferencesCounterSize;
+      nulChkTableSize();
+
+    if (size > 0) {
+      size += (int) immutableDataRefCountSize;
+    }
+
+    return size;
   }
 
   public boolean constantsContains   (Address addr) { return constantsBegin()   .lessThanOrEqual(addr) && constantsEnd()   .greaterThan(addr); }
@@ -479,13 +488,14 @@ public class NMethod extends CodeBlob {
   // Internals only below this point
   //
 
-  private int getEntryBCI()           { return (int) entryBCIField          .getValue(addr); }
-  private int getExceptionOffset()    { return (int) exceptionOffsetField   .getValue(addr); }
-  private int getDeoptHandlerOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
-  private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
-  private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
-  private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
-  private int getHandlerTableOffset() { return (int) handlerTableOffsetField.getValue(addr); }
-  private int getNulChkTableOffset()  { return (int) nulChkTableOffsetField .getValue(addr); }
-  private int getCompLevel()          { return (int) compLevelField         .getValue(addr); }
+  private int getEntryBCI()                     { return (int) entryBCIField                    .getValue(addr); }
+  private int getExceptionOffset()              { return (int) exceptionOffsetField             .getValue(addr); }
+  private int getDeoptHandlerOffset()           { return (int) deoptHandlerOffsetField          .getValue(addr); }
+  private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(addr); }
+  private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(addr); }
+  private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(addr); }
+  private int getHandlerTableOffset()           { return (int) handlerTableOffsetField          .getValue(addr); }
+  private int getNulChkTableOffset()            { return (int) nulChkTableOffsetField           .getValue(addr); }
+  private int getCompLevel()                    { return (int) compLevelField                   .getValue(addr); }
+  private int getImmutableDataRefCountOffset()  { return (int) immutableDataRefCountOffsetField .getValue(addr); }
 }

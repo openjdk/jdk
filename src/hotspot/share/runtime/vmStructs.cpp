@@ -538,6 +538,7 @@
   nonstatic_field(nmethod,                     _deopt_handler_offset,                         int)                                   \
   nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
+  nonstatic_field(nmethod,                     _immutable_data_ref_count_offset,              int)                                   \
   nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
   nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
   nonstatic_field(nmethod,                     _handler_table_offset,                         u2)                                    \
