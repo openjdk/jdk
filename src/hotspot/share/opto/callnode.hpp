@@ -730,8 +730,9 @@ public:
   // for some macro nodes whose expansion does not have a safepoint on the fast path.
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion. If calls
-  // use MachConstantBase, it gets modified during matching. So when cloning
-  // the node the JVMState must be deep cloned. Default is to shallow clone.
+  // use MachConstantBase, it gets modified during matching. If the call is
+  // late inlined, it also needs the full JVMState. So when cloning the
+  // node the JVMState must be deep cloned. Default is to shallow clone.
   virtual bool needs_deep_clone_jvms(Compile* C) { return _generator != nullptr || C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
