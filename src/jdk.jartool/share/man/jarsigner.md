@@ -279,6 +279,11 @@ algorithm and SHA-384 as the hash and MGF1 algorithms.
 * If a key algorithm is not listed in this table, the `.DSA` extension
 is used when signing a JAR file.
 
+* Modern digital signature algorithms such as HSS/LMS and ML-DSA use the same
+name for both the key and signature algorithms. Only the signature algorithm
+with the same name can be used with a given key algorithm. The `.DSA`
+block file extension is always used.
+
 These default signature algorithms can be overridden by using the `-sigalg`
 option.
 

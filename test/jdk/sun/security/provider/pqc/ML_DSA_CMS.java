@@ -44,9 +44,9 @@ import static jdk.test.lib.security.DataFetcher.*;
 
 public class ML_DSA_CMS {
     public static void main(String[] args) throws Exception {
-        test(readCMS("examples/mldsa44-signed-attrs.pem"), readCert("examples/ML-DSA-44.crt"));
-        test(readCMS("examples/mldsa65-signed-attrs.pem"), readCert("examples/ML-DSA-65.crt"));
-        test(readCMS("examples/mldsa87-signed-attrs.pem"), readCert("examples/ML-DSA-87.crt"));
+        test(readCMS("mldsa44-signed-attrs.pem"), readCert("ML-DSA-44.crt"));
+        test(readCMS("mldsa65-signed-attrs.pem"), readCert("ML-DSA-65.crt"));
+        test(readCMS("mldsa87-signed-attrs.pem"), readCert("ML-DSA-87.crt"));
     }
 
     /// Verifies a signed file.
@@ -62,7 +62,7 @@ public class ML_DSA_CMS {
     static byte[] readCMS(String entry) throws IOException  {
         var data = fetchData(CMS_ML_DSA.class,
                 "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/",
-                entry);
+                "examples/" + entry);
         var pem = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data)))
                 .lines()
                 .filter(s -> !s.contains("-----"))
@@ -73,7 +73,7 @@ public class ML_DSA_CMS {
     static X509Certificate readCert(String entry) throws Exception {
         var data = fetchData(DILITHIUM_CERTIFICATES.class,
                 "dilithium-certificates-draft-ietf-lamps-dilithium-certificates-13/",
-                entry);
+                "examples/" + entry);
         var cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data));
     }
