@@ -44,6 +44,7 @@ import static jdk.test.lib.security.DataFetcher.*;
 
 public class ML_DSA_CMS {
     public static void main(String[] args) throws Exception {
+        // See https://datatracker.ietf.org/doc/html/rfc9882#name-examples
         test(readCMS("mldsa44-signed-attrs.pem"), readCert("ML-DSA-44.crt"));
         test(readCMS("mldsa65-signed-attrs.pem"), readCert("ML-DSA-65.crt"));
         test(readCMS("mldsa87-signed-attrs.pem"), readCert("ML-DSA-87.crt"));
@@ -59,6 +60,7 @@ public class ML_DSA_CMS {
         }
     }
 
+    // Read data in https://datatracker.ietf.org/doc/html/rfc9882#name-examples
     static byte[] readCMS(String entry) throws IOException  {
         var data = fetchData(CMS_ML_DSA.class,
                 "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/",
@@ -70,6 +72,7 @@ public class ML_DSA_CMS {
         return Base64.getMimeDecoder().decode(pem);
     }
 
+    // Read data in https://datatracker.ietf.org/doc/html/rfc9881#name-example-certificates
     static X509Certificate readCert(String entry) throws Exception {
         var data = fetchData(DILITHIUM_CERTIFICATES.class,
                 "dilithium-certificates-draft-ietf-lamps-dilithium-certificates-13/",
