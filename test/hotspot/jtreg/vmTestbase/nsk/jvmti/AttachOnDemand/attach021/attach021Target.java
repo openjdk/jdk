@@ -50,6 +50,7 @@ public class attach021Target extends TargetApplicationWaitingAgents {
     protected void targetApplicationActions() throws Throwable {
         try {
             if (createTaggedObject()) {
+                log.display("Provoking GC");
                 WhiteBox.getWhiteBox().fullGC();
             }
         } finally {
