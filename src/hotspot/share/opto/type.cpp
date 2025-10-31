@@ -762,18 +762,40 @@ void Type::Initialize(Compile* current) {
 // Do the hash-cons trick.  If the Type already exists in the type table,
 // delete the current Type and return the existing Type.  Otherwise stick the
 // current Type in the Type table.
-const Type* Type::hashcons() {
+const Type *Type::hashcons(void) {
   DEBUG_ONLY(base());           // Check the assertion in Type::base().
   // Look up the Type in the Type dictionary
-  Dict* tdic = type_dict();
+  Dict *tdic = type_dict();
   Type* old = (Type*)(tdic->Insert(this, this, false));
-  if (old == nullptr) {
+  if( old ) {                   // Pre-existing Type?
+    if( old != this )           // Yes, this guy is not the pre-existing?
+      delete this;              // Yes, Nuke this guy
+    assert( old->_dual, "" );
+    return old;                 // Return pre-existing
+  }
+
+  // Every type has a dual (to make my lattice symmetric).
+  // Since we just discovered a new Type, compute its dual right now.
+  assert( !_dual, "" );         // No dual yet
+  _dual = xdual();              // Compute the dual
+  if (equals(this, _dual)) {    // Handle self-symmetric
+    if (_dual != this) {
+      delete _dual;
+      _dual = this;
+    }
     return this;
   }
-  if (old != this) {
-    delete this;
-  }
-  return old;
+  assert( !_dual->_dual, "" );  // No reverse dual yet
+  assert( !(*tdic)[_dual], "" ); // Dual not in type system either
+  // New Type, insert into Type table
+  tdic->Insert((void*)_dual,(void*)_dual);
+  ((Type*)_dual)->_dual = this; // Finish up being symmetric
+#ifdef ASSERT
+  Type *dual_dual = (Type*)_dual->xdual();
+  assert( eq(dual_dual), "xdual(xdual()) should be identity" );
+  delete dual_dual;
+#endif
+  return this;                  // Return new Type
 }
 
 //------------------------------eq---------------------------------------------
@@ -846,6 +868,7 @@ private:
     const Type* res() const { return _res; }
   };
 
+  bool _is_disable;
   uint _depth;
   GrowableArray<VerifyMeetResultEntry> _meet_cache;
   GrowableArray<VerifyMeetResultEntry> _join_cache;
@@ -940,7 +963,7 @@ private:
     _join_cache.trunc_to(0);
   }
 public:
-  VerifyMeetResult(Compile* C) : _depth(0),
+  VerifyMeetResult(Compile* C) : _is_disable(false), _depth(0),
                                  _meet_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()),
                                  _join_cache(C->comp_arena(), 2, 0, VerifyMeetResultEntry()) {
   }
@@ -972,10 +995,25 @@ public:
   const Type* join(const Type* t1, const Type* t2) {
     return _C->_type_verify->join(t1, t2);
   }
+
+  bool is_disabled() const {
+    return _C->_type_verify->_is_disable;
+  }
+
+  void disable() {
+    _C->_type_verify->_is_disable = true;
+  }
+
+  void enable() {
+    _C->_type_verify->_is_disable = false;
+  }
 };
 
-void Type::check_symmetrical(const Type* t1, const Type* t2, VerifyMeet& verify) {
-  Compile* C = Compile::current();
+void Type::check_fundamental_laws(const Type* t1, const Type* t2, VerifyMeet& verify) {
+  if (verify.is_disabled()) {
+    return;
+  }
+
   const Type* mt1 = verify.meet(t1, t2);
   const Type* mt2 = verify.meet(t2, t1);
   if (mt1 != mt2) {
@@ -996,6 +1034,31 @@ void Type::check_symmetrical(const Type* t1, const Type* t2, VerifyMeet& verify)
     tty->print("t1 joins t2 = "); jt1->dump(); tty->cr();
     tty->print("t2 joins t1 = "); jt2->dump(); tty->cr();
     fatal("join not commutative");
+  }
+
+  if (t1->isa_ptr() && t1->maybe_null() && t2->isa_ptr() && t2->maybe_null() && jt1->empty()) {
+    tty->print_cr("=== Join of Nullable Pointers Cannot Be Empty ===");
+    tty->print("t1          = ");  t1->dump(); tty->cr();
+    tty->print("t2          = ");  t2->dump(); tty->cr();
+    tty->print("t1 joins t2 = "); jt1->dump(); tty->cr();
+    fatal("incorrect join");
+  }
+
+  // Do not do Type::check_fundamental_laws since we do not implement join for dual types
+  verify.disable();
+  const Type* mdt = verify.meet(t1->dual(), t2->dual())->dual();
+  verify.enable();
+
+  if (jt1->remove_speculative() != mdt->remove_speculative() && (!jt1->empty() || !mdt->empty())) {
+    bool excluded_case = t1->isa_ptr() && t1->maybe_null() && t2->isa_ptr() && t2->maybe_null() && mdt->empty() && jt1->is_ptr()->ptr() == TypePtr::Null;
+    if (!excluded_case) {
+      tty->print_cr("=== Join May Be Incorrect ===");
+      tty->print("t1                                    = ");  t1->dump(); tty->cr();
+      tty->print("t2                                    = ");  t2->dump(); tty->cr();
+      tty->print("t1 joins t2                           = "); jt1->dump(); tty->cr();
+      tty->print("(t1->dual() meets t2->dual())->dual() = "); mdt->dump(); tty->cr();
+      fatal("join may be incorrect");
+    }
   }
 
   const Type* mt = mt1;
@@ -1027,7 +1090,7 @@ void Type::check_symmetrical(const Type* t1, const Type* t2, VerifyMeet& verify)
     tty->print("t1 joins jt      = "); t1jjt->dump(); tty->cr();
     tty->print("t2 joins jt      = "); t2jjt->dump(); tty->cr();
 
-    fatal("Fundamental Laws Violation");
+    fatal("fundamental laws violation");
   }
 }
 #endif
@@ -1050,7 +1113,7 @@ const Type* Type::meet_join_helper(F op, const Type* t1, const Type* t2, bool in
 #ifdef ASSERT
   Compile* C = Compile::current();
   VerifyMeet verify(C);
-  check_symmetrical(t1, t2, verify);
+  check_fundamental_laws(t1, t2, verify);
 #endif
 
   return rt;
@@ -1231,6 +1294,13 @@ const Type *Type::filter_helper(const Type *kills, bool include_speculative) con
   if (ft->empty())
     return Type::TOP;           // Canonical empty value
   return ft;
+}
+
+//------------------------------xdual------------------------------------------
+const Type *Type::xdual() const {
+  // Note: the base() accessor asserts the sanity of _base.
+  assert(_type_info[base()].dual_type != Bad, "implement with v-call");
+  return new Type(_type_info[_base].dual_type);
 }
 
 //------------------------------has_memory-------------------------------------
@@ -1460,6 +1530,12 @@ const Type* TypeF::xjoin(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: symmetric
+const Type *TypeF::xdual() const {
+  return this;
+}
+
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeF::eq(const Type *t) const {
@@ -1556,6 +1632,12 @@ const Type* TypeH::xjoin(const Type* t) const {
     default:
       typerr(t);
   }
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: symmetric
+const Type* TypeH::xdual() const {
+  return this;
 }
 
 //------------------------------eq---------------------------------------------
@@ -1656,6 +1738,12 @@ const Type* TypeD::xjoin(const Type* t) const {
     default:
       typerr(t);
   }
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: symmetric
+const Type *TypeD::xdual() const {
+  return this;
 }
 
 //------------------------------eq---------------------------------------------
@@ -1839,6 +1927,11 @@ const Type* TypeInt::xjoin(const Type* t) const {
   return TypeIntHelper::int_type_xjoin(this, t->is_int());
 }
 
+const Type* TypeInt::xdual() const {
+  return new TypeInt(TypeIntPrototype<jint, juint>{{_lo, _hi}, {_ulo, _uhi}, _bits},
+                     _widen, !_is_dual);
+}
+
 const Type* TypeInt::widen(const Type* old, const Type* limit) const {
   assert(!_is_dual, "dual types should only be used for join calculation");
   return TypeIntHelper::int_type_widen(this, old->isa_int(), limit->isa_int());
@@ -1970,6 +2063,11 @@ const Type* TypeLong::xjoin(const Type* t) const {
     typerr(t);
   }
   return TypeIntHelper::int_type_xjoin(this, t->is_long());
+}
+
+const Type* TypeLong::xdual() const {
+  return new TypeLong(TypeIntPrototype<jlong, julong>{{_lo, _hi}, {_ulo, _uhi}, _bits},
+                      _widen, !_is_dual);
 }
 
 const Type* TypeLong::widen(const Type* old, const Type* limit) const {
@@ -2190,6 +2288,15 @@ const Type* TypeTuple::xjoin(const Type* t) const {
   return TypeTuple::make(_cnt, fields);
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeTuple::xdual() const {
+  const Type **fields = (const Type **)(Compile::current()->type_arena()->AmallocWords( _cnt*sizeof(Type*) ));
+  for( uint i=0; i<_cnt; i++ )
+    fields[i] = _fields[i]->dual();
+  return new TypeTuple(_cnt,fields);
+}
+
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeTuple::eq( const Type *t ) const {
@@ -2276,8 +2383,12 @@ const TypeAry* TypeAry::make(const Type* elem, const TypeInt* size, bool stable)
 // Compute the MEET of two types.  It returns a new Type object.
 const Type* TypeAry::xmeet(const Type* t) const {
   const TypeAry* a = t->is_ary();
-  const TypeInt* size = _size->meet(a->_size)->is_int();
-  return TypeAry::make(meet_elem(_elem, a->_elem), size, _stable && a->_stable);
+  const Type* size = _size->meet(a->_size);
+  if (!size->isa_int()) {
+    assert(size == Type::TOP || size == Type::BOTTOM, "");
+    return size;
+  }
+  return TypeAry::make(meet_elem(_elem, a->_elem), size->is_int(), _stable && a->_stable);
 }
 
 const Type* TypeAry::xjoin(const Type* t) const {
@@ -2287,7 +2398,7 @@ const Type* TypeAry::xjoin(const Type* t) const {
     return Type::TOP;
   }
   const Type* elem = join_elem(_elem, a->_elem);
-  if (elem->empty()) {
+  if (elem->empty() || (elem->make_ptr() != nullptr && elem->make_ptr()->ptr() == TypePtr::Null)) {
     return Type::TOP;
   }
   return TypeAry::make(elem, size->is_int(), _stable || a->_stable);
@@ -2327,6 +2438,14 @@ const Type* TypeAry::join_elem(const Type* elem_type1, const Type* elem_type2) {
     return elem_type1->join_speculative(elem_type2);
   }
   return Type::TOP;
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeAry::xdual() const {
+  const TypeInt* size_dual = _size->dual()->is_int();
+  size_dual = normalize_array_size(size_dual);
+  return new TypeAry(_elem->dual(), size_dual, !_stable);
 }
 
 //------------------------------eq---------------------------------------------
@@ -2470,6 +2589,12 @@ const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   } else {
     return make(elem_bt, length);
   }
+}
+
+//------------------------------xdual------------------------------------------
+// Since each TypeVect is the only instance of its species, it is self-dual
+const Type* TypeVect::xdual() const {
+  return this;
 }
 
 //------------------------------eq---------------------------------------------
@@ -2687,11 +2812,21 @@ int TypePtr::join_offset(int o) const {
   }
 }
 
+//------------------------------dual_offset------------------------------------
+int TypePtr::dual_offset( ) const {
+  if( _offset == OffsetTop ) return OffsetBot;// Map 'TOP' into 'BOTTOM'
+  if( _offset == OffsetBot ) return OffsetTop;// Map 'BOTTOM' into 'TOP'
+  return _offset;               // Map everything else into self
+}
+
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
 const TypePtr::PTR TypePtr::ptr_dual[TypePtr::lastPTR] = {
   BotPTR, NotNull, Constant, Null, AnyNull, TopPTR
 };
+const Type *TypePtr::xdual() const {
+  return new TypePtr(AnyPtr, dual_ptr(), dual_offset(), dual_speculative(), dual_inline_depth());
+}
 
 //------------------------------xadd_offset------------------------------------
 int TypePtr::xadd_offset( intptr_t offset ) const {
@@ -2771,6 +2906,16 @@ const Type* TypePtr::cleanup_speculative() const {
 }
 
 /**
+ * dual of the speculative part of the type
+ */
+const TypePtr* TypePtr::dual_speculative() const {
+  if (_speculative == nullptr) {
+    return nullptr;
+  }
+  return _speculative->dual()->is_ptr();
+}
+
+/**
  * meet of the speculative parts of 2 types
  *
  * @param other  type to meet with
@@ -2829,6 +2974,13 @@ const TypePtr* TypePtr::xjoin_speculative(const TypePtr* other) const {
   }
 
   return this_spec->join(other_spec)->is_ptr();
+}
+
+/**
+ * dual of the inline depth for this type (used for speculation)
+ */
+int TypePtr::dual_inline_depth() const {
+  return -inline_depth();
 }
 
 /**
@@ -3169,6 +3321,12 @@ const Type* TypeRawPtr::xjoin(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeRawPtr::xdual() const {
+  return new TypeRawPtr( dual_ptr(), _bits );
+}
+
 //------------------------------add_offset-------------------------------------
 const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
   if( offset == OffsetTop ) return BOTTOM; // Undefined offset-> undefined pointer
@@ -3302,6 +3460,10 @@ bool TypeInterfaces::eq(ciInstanceKlass* k) const {
 uint TypeInterfaces::hash() const {
   assert(_initialized, "must be");
   return _hash;
+}
+
+const Type* TypeInterfaces::xdual() const {
+  return this;
 }
 
 void TypeInterfaces::compute_hash() {
@@ -3685,6 +3847,14 @@ const Type* TypeOopPtr::xjoin_helper(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual of a pure heap pointer.  No relevant klass or oop information.
+const Type *TypeOopPtr::xdual() const {
+  assert(klass() == Compile::current()->env()->Object_klass(), "no klasses here");
+  assert(const_oop() == nullptr,             "no constants here");
+  return new TypeOopPtr(_base, dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
+}
+
 //--------------------------make_from_klass_common-----------------------------
 // Computes the element-type given a klass.
 const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_change, bool try_for_exact, InterfaceHandling interface_handling) {
@@ -3950,11 +4120,22 @@ int TypeOopPtr::join_instance_id(int uid) const {
   }
 }
 
+//------------------------------dual_instance_id--------------------------------
+int TypeOopPtr::dual_instance_id( ) const {
+  if( _instance_id == InstanceTop ) return InstanceBot; // Map TOP into BOTTOM
+  if( _instance_id == InstanceBot ) return InstanceTop; // Map BOTTOM into TOP
+  return _instance_id;              // Map everything else into self
+}
+
 const TypeInterfaces* TypeOopPtr::meet_interfaces(const TypeOopPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
-    typerr(other);
+  if (above_centerline(_ptr) && above_centerline(other->_ptr)) {
+    return _interfaces->union_with(other->_interfaces);
+  } else if (above_centerline(_ptr) && !above_centerline(other->_ptr)) {
+    return other->_interfaces;
+  } else if (above_centerline(other->_ptr) && !above_centerline(_ptr)) {
+    return _interfaces;
   }
-  return interfaces()->intersection_with(other->interfaces());
+  return _interfaces->intersection_with(other->_interfaces);
 }
 
 const TypeInterfaces* TypeOopPtr::join_interfaces(const TypeOopPtr* other) const {
@@ -4568,6 +4749,13 @@ ciType* TypeInstPtr::java_mirror_type() const {
   if( klass() != ciEnv::current()->Class_klass() )  return nullptr;
 
   return const_oop()->as_instance()->java_mirror_type();
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: do NOT dual on klasses.  This means I do NOT understand the Java
+// inheritance mechanism.
+const Type *TypeInstPtr::xdual() const {
+  return new TypeInstPtr(dual_ptr(), klass(), _interfaces, klass_is_exact(), const_oop(), dual_offset(), dual_instance_id(), dual_speculative(), dual_inline_depth());
 }
 
 //------------------------------eq---------------------------------------------
@@ -5339,6 +5527,12 @@ const Type* TypeAryPtr::xjoin_helper(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeAryPtr::xdual() const {
+  return new TypeAryPtr(dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id(), is_autobox_cache(), dual_speculative(), dual_inline_depth());
+}
+
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -5458,6 +5652,12 @@ bool TypeNarrowPtr::eq( const Type *t ) const {
   }
   return false;
 }
+
+const Type *TypeNarrowPtr::xdual() const {    // Compute dual right now.
+  const TypePtr* odual = _ptrtype->dual()->is_ptr();
+  return make_same_narrowptr(odual);
+}
+
 
 const Type *TypeNarrowPtr::filter_helper(const Type *kills, bool include_speculative) const {
   if (isa_same_narrowptr(kills)) {
@@ -5688,6 +5888,13 @@ const Type* TypeMetadataPtr::xjoin(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual of a pure metadata pointer.
+const Type *TypeMetadataPtr::xdual() const {
+  return new TypeMetadataPtr(dual_ptr(), metadata(), dual_offset());
+}
+
+
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -5814,10 +6021,14 @@ const Type *TypeKlassPtr::filter_helper(const Type *kills, bool include_speculat
 }
 
 const TypeInterfaces* TypeKlassPtr::meet_interfaces(const TypeKlassPtr* other) const {
-  if (above_centerline(ptr()) || above_centerline(other->ptr())) {
-    typerr(other);
+  if (above_centerline(_ptr) && above_centerline(other->_ptr)) {
+    return _interfaces->union_with(other->_interfaces);
+  } else if (above_centerline(_ptr) && !above_centerline(other->_ptr)) {
+    return other->_interfaces;
+  } else if (above_centerline(other->_ptr) && !above_centerline(_ptr)) {
+    return _interfaces;
   }
-  return interfaces()->intersection_with(other->interfaces());
+  return _interfaces->intersection_with(other->_interfaces);
 }
 
 const TypeInterfaces* TypeKlassPtr::join_interfaces(const TypeKlassPtr* other) const {
@@ -6178,6 +6389,12 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
   }
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type    *TypeInstKlassPtr::xdual() const {
+  return new TypeInstKlassPtr(dual_ptr(), klass(), _interfaces, dual_offset());
+}
+
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
   static_assert(std::is_base_of<T2, T1>::value, "");
   if (!this_one->is_loaded() || !other->is_loaded()) {
@@ -6371,7 +6588,7 @@ ciKlass* TypeAryPtr::klass() const {
   // Oops, need to compute _klass and cache it
   ciKlass* k_ary = compute_klass();
 
-  if (this != TypeAryPtr::OOPS) {
+  if( this != TypeAryPtr::OOPS && this->dual() != TypeAryPtr::OOPS ) {
     // The _klass field acts as a cache of the underlying
     // ciKlass for this array type.  In order to set the field,
     // we need to cast away const-ness.
@@ -6758,6 +6975,12 @@ bool TypeAryKlassPtr::maybe_java_subtype_of_helper(const TypeKlassPtr* other, bo
   return TypePtr::maybe_java_subtype_of_helper_for_array(this, other, this_exact, other_exact);
 }
 
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type    *TypeAryKlassPtr::xdual() const {
+  return new TypeAryKlassPtr(dual_ptr(), elem()->dual(), klass(), dual_offset());
+}
+
 // Is there a single ciKlass* that can represent that type?
 ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
   if (elem()->isa_klassptr()) {
@@ -6856,6 +7079,12 @@ const TypeFunc *TypeFunc::make(ciMethod* method) {
   tf = TypeFunc::make(domain, range);
   C->set_last_tf(method, tf);  // fill cache
   return tf;
+}
+
+//------------------------------xdual------------------------------------------
+// Dual: compute field-by-field dual
+const Type *TypeFunc::xdual() const {
+  return this;
 }
 
 //------------------------------eq---------------------------------------------

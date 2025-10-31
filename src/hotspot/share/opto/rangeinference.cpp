@@ -693,10 +693,17 @@ template <class CT>
 const Type* TypeIntHelper::int_type_xmeet(const CT* t1, const CT* t2) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
-  return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(t1->_lo, t2->_lo), MAX2(t1->_hi, t2->_hi)},
-                                                {MIN2(t1->_ulo, t2->_ulo), MAX2(t1->_uhi, t2->_uhi)},
-                                                {t1->_bits._zeros & t2->_bits._zeros, t1->_bits._ones & t2->_bits._ones}},
-                         MAX2(t1->_widen, t2->_widen), false);
+  if (!t1->_is_dual) {
+    return CT::make_or_top(TypeIntPrototype<S, U>{{MIN2(t1->_lo, t2->_lo), MAX2(t1->_hi, t2->_hi)},
+                                                  {MIN2(t1->_ulo, t2->_ulo), MAX2(t1->_uhi, t2->_uhi)},
+                                                  {t1->_bits._zeros & t2->_bits._zeros, t1->_bits._ones & t2->_bits._ones}},
+                           MAX2(t1->_widen, t2->_widen), false);
+  } else {
+    return CT::make_or_top(TypeIntPrototype<S, U>{{MAX2(t1->_lo, t2->_lo), MIN2(t1->_hi, t2->_hi)},
+                                                  {MAX2(t1->_ulo, t2->_ulo), MIN2(t1->_uhi, t2->_uhi)},
+                                                  {t1->_bits._zeros | t2->_bits._zeros, t1->_bits._ones | t2->_bits._ones}},
+                           MIN2(t1->_widen, t2->_widen), true);
+  }
 }
 template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const TypeInt* t2);
 template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const TypeLong* t2);
