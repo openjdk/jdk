@@ -780,8 +780,7 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator,
       if (result != nullptr) {
         return result;
       }
-    } else if (free_region == nullptr && r->affiliation() == FREE &&
-               (!r->is_trash() || !_heap->is_concurrent_weak_root_in_progress())) {
+    } else if (free_region == nullptr && r->affiliation() == FREE) {
       free_region = r;
     }
   }
