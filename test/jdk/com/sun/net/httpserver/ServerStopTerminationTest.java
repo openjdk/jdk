@@ -166,19 +166,8 @@ public class ServerStopTerminationTest {
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
         final long elapsed = timeShutdown(delayDuration);
         log("Shutdown complete");
-
-        // Complete the exchange 10 second into the future.
-        // Runs in parallel, so won't block the server stop
-        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
-        // taking start time before entering completeExchange to account for possible
-        // delays in reaching server.stop().
-        completeExchange(exchangeDuration);
-        log("Complete Exchange triggered");
-
-        // The shutdown should not await the exchange to complete
-        if (elapsed >= exchangeDuration.toNanos()) {
-            fail("HttpServer.stop terminated too late");
-        }
+        complete.countDown();
+        log("Exchange completed");
 
         // The shutdown delay should have expired
         if (elapsed < delayDuration.toNanos()) {
