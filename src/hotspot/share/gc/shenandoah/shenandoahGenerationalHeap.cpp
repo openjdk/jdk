@@ -925,7 +925,9 @@ private:
       HeapWord* prev_p = p;
       p += obj->size();
       if (p < tams) {
-        p = ctx->get_next_marked_addr(p, tams);
+        do {
+          p = ctx->get_next_marked_addr(p, tams);
+        } while (!ctx->is_marked_strong(p) && (p < tams));
         // If there are no more marked objects before tams, this returns tams.  Note that tams is
         // either >= end_of_range, or tams is the start of an object that is marked.
       }
@@ -956,7 +958,9 @@ private:
         }
       }
     } else if (!ctx->is_marked(cast_to_oop(p))) {
-      p = ctx->get_next_marked_addr(p, tams);
+      do {
+        p = ctx->get_next_marked_addr(p, tams);
+      } while (!ctx->is_marked_strong(p) && (p < tams));
       // If there are no more marked objects before tams, this returns tams.
       // Note that tams is either >= end_of_range, or tams is the start of an object that is marked.
     }

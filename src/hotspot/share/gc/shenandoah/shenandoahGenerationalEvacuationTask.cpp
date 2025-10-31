@@ -208,7 +208,10 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
       scanner->register_object_without_lock(obj_addr);
       obj_addr += obj->size();
     } else {
-      HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, tams);
+      HeapWord* next_marked_obj = obj_addr;
+      do {
+        next_marked_obj = marking_context->get_next_marked_addr(next_marked_obj, tams);
+      } while (!marking_context->is_marked_strong(next_marked_obj) && (next_marked_obj < tams));
       assert(next_marked_obj <= tams, "next marked object cannot exceed tams");
       size_t fill_size = next_marked_obj - obj_addr;
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated objects known to be larger than min_size");

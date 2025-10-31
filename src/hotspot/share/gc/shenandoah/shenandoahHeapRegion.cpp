@@ -482,7 +482,10 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
       obj_addr += obj->size();
     } else {
       // Object is not marked.  Coalesce and fill dead object with dead neighbors.
-      HeapWord* next_marked_obj = marking_context->get_next_marked_addr(obj_addr, t);
+      HeapWord* next_marked_obj = obj_addr;
+      do {
+        next_marked_obj = marking_context->get_next_marked_addr(next_marked_obj, t);
+      } while (!marking_context->is_marked_strong(next_marked_obj) && (next_marked_obj < t));
       assert(next_marked_obj <= t, "next marked object cannot exceed top");
       size_t fill_size = next_marked_obj - obj_addr;
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");

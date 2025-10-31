@@ -529,7 +529,10 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
 
   // Try to scan the initial candidate. If the candidate is above the TAMS, it would
   // fail the subsequent "< limit_bitmap" checks, and fall through to Step 2.
-  HeapWord* cb = ctx->get_next_marked_addr(start, end);
+  HeapWord* cb = start;
+  do {
+    cb = ctx->get_next_marked_addr(cb, end);
+  } while (!ctx->is_marked_strong(cb) && (cb < end));
 
   intx dist = ShenandoahMarkScanPrefetch;
   if (dist > 0) {
@@ -556,7 +559,9 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
         slots[avail++] = cb;
         cb += skip_bitmap_delta;
         if (cb < limit_bitmap) {
-          cb = ctx->get_next_marked_addr(cb, limit_bitmap);
+          do {
+            cb = ctx->get_next_marked_addr(cb, limit_bitmap);
+          } while (!ctx->is_marked_strong(cb) && (cb < limit_bitmap));
         }
       }
 
@@ -579,7 +584,9 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
       cl->do_object(obj);
       cb += skip_bitmap_delta;
       if (cb < limit_bitmap) {
-        cb = ctx->get_next_marked_addr(cb, limit_bitmap);
+        do {
+          cb = ctx->get_next_marked_addr(cb, limit_bitmap);
+        } while (!ctx->is_marked_strong(cb) && (cb < limit_bitmap));
       }
     }
   }
