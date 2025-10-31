@@ -168,7 +168,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
