@@ -34,6 +34,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToIntFunction;
 
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.DOUBLE;
 import static com.sun.tools.javac.code.TypeTag.INT;
@@ -1824,17 +1825,7 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
-                Type lub = types.lub(true, t1, t2);
-
-                if (lub.hasTag(BOT)) {
-                    throw Assert.error("Cannot find a common super class of: " +
-                                       t1 + " and " + t2);
-                }
-
-                return types.erasure(lub);
-                /*
-                //List<Type> supers = types.supertypeClosure(t1, t2);//types.lub(true, t1, t2);
-                List<Type> ec = types.intersect(false, types.erasedSupertypes(t1), types.erasedSupertypes(t2));
+                List<Type> ec = types.intersect(getErasedSuperTypes(t1), getErasedSuperTypes(t2));
 
                 if (ec.isEmpty() || ec.head.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +
@@ -1842,8 +1833,13 @@ public class Code {
                 }
 
                 return types.erasure(ec.head);
-                */
             }
+        }
+
+        List<Type> getErasedSuperTypes(Type t) {
+            return t.hasTag(ARRAY) ?
+                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                    types.erasedSupertypes(t);
         }
 
         void dump() {
