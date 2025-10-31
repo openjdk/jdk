@@ -2796,7 +2796,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
     Register inc = incr->as_register();
     if (profile_capture_ratio > 1) {
       __ cmpl(r_profile_rng, threshold);
-      __ jccb(Assembler::aboveEqual, *skip);
+      if (! getenv("APH_DISABLE")) {
+        __ jccb(Assembler::aboveEqual, *skip);
+      }
     }
     __ movl(temp, dest_adr);
     if (profile_capture_ratio > 1) {
@@ -2812,7 +2814,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         if (dest->is_register())  __ movl(dest->as_register(), inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
-          __ jccb(Assembler::aboveEqual, *skip);
+          if (! getenv("APH_DISABLE")) {
+            __ jccb(Assembler::aboveEqual, *skip);
+          }
         }
         inc *= profile_capture_ratio;
         if (dest->is_register()) {
@@ -2830,7 +2834,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
-          __ jccb(Assembler::aboveEqual, *skip);
+          if (! getenv("APH_DISABLE")) {
+            __ jccb(Assembler::aboveEqual, *skip);
+          }
         }
         inc *= profile_capture_ratio;
         if (dest->is_register()) {

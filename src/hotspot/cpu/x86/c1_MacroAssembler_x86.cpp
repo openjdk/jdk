@@ -356,7 +356,9 @@ void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &s
     int threshold = (1ull << 32) >> ratio_shift;
 
     cmpl(state, threshold);
-    jcc(Assembler::aboveEqual, skip);
+    if (! getenv("APH_DISABLE")) {
+      jcc(Assembler::aboveEqual, skip);
+    }
 
 #ifndef PRODUCT
     if (CommentedAssembly) {
