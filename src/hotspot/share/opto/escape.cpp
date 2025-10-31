@@ -41,9 +41,7 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/phasetype.hpp"
 #include "opto/rootnode.hpp"
-#include "runtime/arguments.hpp"
 #include "utilities/macros.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
