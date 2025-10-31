@@ -60,7 +60,7 @@ public class TestJhsdbJstackMixedWithXComp {
         System.out.println(stdout);
         System.err.println(out.getStderr());
 
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
 
         List<String> targetStackTrace = new ArrayList<>();
         boolean inStack = false;
