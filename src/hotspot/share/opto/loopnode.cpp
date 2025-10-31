@@ -4952,7 +4952,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
 
 
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
 
   // Reset major-progress flag for the driver's heuristics
@@ -5333,7 +5333,7 @@ void PhaseIdealLoop::print_statistics() {
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
   ResourceMark rm;
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
