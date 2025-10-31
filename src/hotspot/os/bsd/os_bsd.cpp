@@ -2273,7 +2273,9 @@ int os::open(const char *path, int oflag, int mode) {
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
         errno = EISDIR;
+        ErrnoPreserver ep;
         ::close(fd);
+        errno = ep.saved_errno();
         return -1;
       }
     } else {
