@@ -63,7 +63,7 @@ enum {
   _static_call_stub_size = 4 * BytesPerInstWord + MacroAssembler::b64_patchable_size, // or smaller
   _call_stub_size = _static_call_stub_size + MacroAssembler::trampoline_stub_size, // or smaller
   _exception_handler_size = MacroAssembler::b64_patchable_size, // or smaller
-  _deopt_handler_size = MacroAssembler::bl64_patchable_size
+  _deopt_handler_size = MacroAssembler::bl64_patchable_size + BytesPerInstWord
 };
 
   // '_static_call_stub_size' is only used on ppc (see LIR_Assembler::emit_static_call_stub()
