@@ -4574,7 +4574,7 @@ public class Types {
         return false;
     }
 
-    List<Type> supertypeClosure(Type t, Type s) {
+    private List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
