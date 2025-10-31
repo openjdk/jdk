@@ -1271,7 +1271,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, b
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   {
-    // Java threads take this lock while they are being attached and added to the list of thread.
+    // Java threads take this lock while they are being attached and added to the list of threads.
     // If another thread holds this lock before we update the gc state, it will receive a stale
     // gc state, but they will have been added to the list of java threads and so will be corrected
     // by the following handshake.
@@ -2419,11 +2419,17 @@ void ShenandoahHeap::sync_pinned_region_status() {
 }
 
 #ifdef ASSERT
-void ShenandoahHeap::assert_pinned_region_status() {
+void ShenandoahHeap::assert_pinned_region_status() const {
+  assert_pinned_region_status(global_generation());
+}
+
+void ShenandoahHeap::assert_pinned_region_status(ShenandoahGeneration* generation) const {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
-    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-           "Region %zu pinning status is inconsistent", i);
+    if (generation->contains(r)) {
+      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+             "Region %zu pinning status is inconsistent", i);
+    }
   }
 }
 #endif
