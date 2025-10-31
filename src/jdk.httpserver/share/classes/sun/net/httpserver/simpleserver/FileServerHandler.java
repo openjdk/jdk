@@ -334,6 +334,9 @@ public final class FileServerHandler implements HttpHandler {
             }
             String startStr = spec.substring(0, dashPos).trim();
             String endStr = spec.substring(dashPos + 1).trim();
+            if (startStr.startsWith("+") || endStr.startsWith("+")) {
+                return null;  // "+" prefix is not supported.
+            }
             long start, end;
             try {
                 if (startStr.isEmpty()) {  // "-<suffix-length>"

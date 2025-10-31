@@ -140,14 +140,17 @@ public class FileServerHandlerTest {
     @DataProvider
     public Object[][] invalidRangeHeaders() {
         return new Object[][]{
-                {"bytes=500-400"},         // start > end
-                {"bytes=1000-1001"},       // end >= file length
-                {"bytes=1000-"},           // start >= file length
-                {"bytes=-0"},              // zero length suffix
-                {"bytes=meow"},            // non-numeric
-                {"bytes=--500"},           // malformed
-                {"bytes=500"},             // malformed
-                {"bytes=500-600,700-600"}  // second range invalid
+                // invalid ranges: start > end, end beyond file, start beyond file
+                {"bytes=500-400"}, {"bytes=1000-1001"}, {"bytes=1000-"},
+
+                // malformed numbers or format
+                {"bytes=-0"}, {"bytes=meow"}, {"bytes=--500"}, {"bytes=500"}, {"bytes=-"}, {"bytes=+500-600"},
+
+                // multiple ranges with one invalid
+                {"bytes=500-600,700-600"},
+
+                // empty or extra commas/spaces
+                {"bytes="}, {"bytes=400-500,"}, {"bytes=,400-500"}, {"bytes= ,400-500"}, {"bytes=400-500, "}
         };
     }
 
