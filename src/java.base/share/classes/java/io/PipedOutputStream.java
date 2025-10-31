@@ -138,7 +138,7 @@ public class PipedOutputStream extends OutputStream {
      * @throws  IndexOutOfBoundsException {@inheritDoc}
      * @throws  IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
-     *          closed and {@code len} is positive,
+     *          closed and {@code len} is greater than zero,
      *          or if an I/O error occurs.
      */
     @Override
