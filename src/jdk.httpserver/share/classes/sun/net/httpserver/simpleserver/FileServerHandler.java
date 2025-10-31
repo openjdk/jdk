@@ -313,7 +313,7 @@ public final class FileServerHandler implements HttpHandler {
 
     // Parses the HTTP Range header and returns a list of byte ranges.
     // Returns null if the header is invalid.
-    // Example of valid Range header values:
+    // Example of valid Range header values:make image
     //  "bytes=0-499"           -> first 500 bytes
     //  "bytes=500-999"         -> second 500 bytes
     //  "bytes=-500"            -> last 500 bytes
@@ -337,15 +337,15 @@ public final class FileServerHandler implements HttpHandler {
             long start, end;
             try {
                 if (startStr.isEmpty()) {  // "-<suffix-length>"
-                    long suffixLength = Long.parseLong(endStr);
+                    long suffixLength = Long.parseLong(endStr, 10);
                     if (suffixLength <= 0) {
                         return null;
                     }
                     start = Math.max(0, fileSize - suffixLength);
                     end = fileSize - 1;
                 } else {  // "<start>-<end>" or "<start>-"
-                    start = Long.parseLong(startStr);
-                    end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr);
+                    start = Long.parseLong(startStr, 10);
+                    end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr, 10);
                     if (end >= fileSize) {
                         end = fileSize - 1;
                     }
