@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class LogStream;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
@@ -125,8 +126,8 @@ public:
   size_t get_promoted_expended() const;
 
   // Return the count and size (in words) of failed promotions since the last reset
-  size_t get_promotion_failed_count() const { return _promotion_failure_count; }
-  size_t get_promotion_failed_words() const { return _promotion_failure_words; }
+  size_t get_promotion_failed_count() const { return AtomicAccess::load(&_promotion_failure_count); }
+  size_t get_promotion_failed_words() const { return AtomicAccess::load(&_promotion_failure_words); }
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {
@@ -171,8 +172,9 @@ public:
   // This will signal the control thread to run a full GC instead of a futile degenerated gc
   void handle_failed_evacuation();
 
-  // This logs that an evacuation to the old generation has failed
+  // Increment promotion failure counters, optionally log a more detailed message
   void handle_failed_promotion(Thread* thread, size_t size);
+  void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
   void handle_evacuation(HeapWord* obj, size_t words, bool promotion);

@@ -304,7 +304,7 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
         // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
         // When we retire this plab, we'll unexpend what we don't really use.
         log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
-          actual_size, get_promoted_expended(), get_promoted_reserve());
+                            actual_size, get_promoted_expended(), get_promoted_reserve());
         expend_promoted(actual_size);
         ShenandoahThreadLocalData::enable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
@@ -313,7 +313,7 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
         log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
-          actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
+                            actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
       }
     } else if (req.is_promotion()) {
       // Shared promotion.
@@ -499,7 +499,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
 
     parallel_heap_region_iterate(&cl);
-    heap->assert_pinned_region_status();
+    heap->assert_pinned_region_status(this);
   }
 
   {
@@ -678,40 +678,42 @@ void ShenandoahOldGeneration::handle_failed_evacuation() {
 }
 
 void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
-  // We squelch excessive reports to reduce noise in logs.
-  const size_t MaxReportsPerEpoch = 4;
-  static size_t last_report_epoch = 0;
-  static size_t epoch_report_count = 0;
-  auto heap = ShenandoahGenerationalHeap::heap();
-
-  const size_t gc_id = heap->control_thread()->get_gc_id();
-
   AtomicAccess::inc(&_promotion_failure_count);
   AtomicAccess::add(&_promotion_failure_words, size);
 
+  LogTarget(Debug, gc, plab) lt;
+  LogStream ls(lt);
+  if (lt.is_enabled()) {
+    log_failed_promotion(ls, thread, size);
+  }
+}
+
+void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const {
+  // We squelch excessive reports to reduce noise in logs.
+  constexpr size_t MaxReportsPerEpoch = 4;
+  static size_t last_report_epoch = 0;
+  static size_t epoch_report_count = 0;
+
+  const auto heap = ShenandoahGenerationalHeap::heap();
+  const size_t gc_id = heap->control_thread()->get_gc_id();
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
-    size_t promotion_expended;
-    size_t promotion_reserve;
-    {
-      // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
-      ShenandoahHeapLocker locker(heap->lock());
-      promotion_reserve = get_promoted_reserve();
-      promotion_expended = get_promoted_expended();
-    }
+    // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
     PLAB* const plab = ShenandoahThreadLocalData::plab(thread);
     const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
     const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
 
-    log_info(gc, ergo)("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
-                       ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
-                       ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
-                       size * HeapWordSize, plab == nullptr? "no": "yes",
-                       words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
-                       max_capacity(), used(), free_unaffiliated_regions());
+    // Promoted reserve is only changed by vm or control thread. Promoted expended is always accessed atomically.
+    const size_t promotion_reserve = get_promoted_reserve();
+    const size_t promotion_expended = get_promoted_expended();
 
-    if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
-      log_debug(gc, ergo)("Squelching additional promotion failure reports for current epoch");
-    } else if (gc_id != last_report_epoch) {
+    ls.print_cr("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+                ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
+                ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
+                size * HeapWordSize, plab == nullptr? "no": "yes",
+                words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
+                max_capacity(), used(), free_unaffiliated_regions());
+
+    if (gc_id != last_report_epoch) {
       last_report_epoch = gc_id;
       epoch_report_count = 1;
     }

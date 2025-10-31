@@ -115,7 +115,7 @@ public:
   // Returns the amount of live bytes in old regions in the collection set.
   inline size_t get_live_bytes_in_old_regions() const;
 
-  // Returns the amount of live bytes in young regions with an age above the tenuring threshold.
+  // Returns the amount of live bytes in young regions with an age at or above the tenuring threshold.
   inline size_t get_live_bytes_in_tenurable_regions() const;
 
   // Returns the amount of free bytes in young regions in the collection set.
