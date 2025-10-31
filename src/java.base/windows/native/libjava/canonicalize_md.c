@@ -83,9 +83,9 @@ wnextsep(WCHAR *start)
 
 /* Tell whether the given string contains any wildcard characters */
 static int
-wwild(WCHAR *start)
+wwild(const WCHAR *start)
 {
-    WCHAR *p = start;
+    WCHAR *p = (WCHAR*)start;
     int c;
     while (c = *p) {
         if ((c == L'*') || (c == L'?'))
@@ -199,7 +199,7 @@ WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
    and returned as the canonical pathname.
  */
 WCHAR*
-wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
+wcanonicalize(const WCHAR *orig_path, WCHAR *result, int size)
 {
     WIN32_FIND_DATAW fd;
     HANDLE h;
