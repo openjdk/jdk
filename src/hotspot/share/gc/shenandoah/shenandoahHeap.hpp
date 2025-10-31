@@ -145,17 +145,10 @@ class ShenandoahHeap : public CollectedHeap {
 private:
   ShenandoahHeapLock _lock;
 
-  // Indicates the generation whose collection is in
-  // progress. Mutator threads aren't allowed to read
-  // this field.
-  ShenandoahGeneration* _gc_generation;
-
   // This is set and cleared by only the VMThread
-  // at each STW pause (safepoint) to the value seen in
-  // _gc_generation. This allows the value to be always consistently
+  // at each STW pause (safepoint) to the value given to the VM operation.
+  // This allows the value to be always consistently
   // seen by all mutators as well as all GC worker threads.
-  // In that sense, it's a stable snapshot of _gc_generation that is
-  // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
 
 protected:
@@ -167,25 +160,13 @@ public:
     return &_lock;
   }
 
-  ShenandoahGeneration* gc_generation() const {
-    // We don't want this field read by a mutator thread
-    assert(!Thread::current()->is_Java_thread(), "Not allowed");
-    // value of _gc_generation field, see above
-    return _gc_generation;
-  }
-
   ShenandoahGeneration* active_generation() const {
     // value of _active_generation field, see above
     return _active_generation;
   }
 
-  // Set the _gc_generation field
-  void set_gc_generation(ShenandoahGeneration* generation);
-
-  // Copy the value in the _gc_generation field into
-  // the _active_generation field: can only be called at
-  // a safepoint by the VMThread.
-  void set_active_generation();
+  // Update the _active_generation field: can only be called at a safepoint by the VMThread.
+  void set_active_generation(ShenandoahGeneration* generation);
 
   ShenandoahHeuristics* heuristics();
 
@@ -482,7 +463,7 @@ private:
 
   // GC support
   // Evacuation
-  virtual void evacuate_collection_set(bool concurrent);
+  virtual void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
@@ -497,7 +478,7 @@ private:
   // Turn off weak roots flag, purge old satb buffers in generational mode
   void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
-  virtual void update_heap_references(bool concurrent);
+  virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
   virtual void final_update_refs_update_region_states();
@@ -549,7 +530,7 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
+    assert(ShenandoahCardBarrier, "Card mark barrier should be on");
     return _old_generation;
   }
 
@@ -605,12 +586,12 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc);
+  void parallel_cleaning(ShenandoahGeneration* generation, bool full_gc);
 
 private:
   void stw_unload_classes(bool full_gc);
   void stw_process_weak_roots(bool full_gc);
-  void stw_weak_refs(bool full_gc);
+  void stw_weak_refs(ShenandoahGeneration* generation, bool full_gc);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);
@@ -688,7 +669,8 @@ public:
   void unpin_object(JavaThread* thread, oop obj) override;
 
   void sync_pinned_region_status();
-  void assert_pinned_region_status() NOT_DEBUG_RETURN;
+  void assert_pinned_region_status() const NOT_DEBUG_RETURN;
+  void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;
 
 // ---------- CDS archive support
 

@@ -97,7 +97,7 @@ private:
   // regions, which are marked in the preselected_regions() indicator
   // array of the heap's collection set, which should be initialized
   // to false.
-  size_t select_aged_regions(size_t old_available);
+  size_t select_aged_regions(size_t old_promotion_reserve);
 
   size_t available(size_t capacity) const;
 
@@ -203,7 +203,7 @@ private:
   bool is_bitmap_clear();
 
   // We need to track the status of marking for different generations.
-  bool is_mark_complete() { return _is_marking_complete.is_set(); }
+  bool is_mark_complete() const { return _is_marking_complete.is_set(); }
   virtual void set_mark_complete();
   virtual void set_mark_incomplete();
 
