@@ -916,8 +916,8 @@ public sealed interface StructuredTaskScope<T, R>
      * <p> If a {@linkplain Configuration#withTimeout(Duration) timeout} is set then it
      * starts when the scope is opened. If the timeout expires before the scope has
      * {@linkplain #join() joined} then the scope is {@linkplain ##Cancellation cancelled}
-     * and the {@code Joiner}'s {@link Joiner#onTimeout()} method is invoked to throw
-     * optionally throw {@link TimeoutException TimeoutException}.
+     * and the {@code Joiner}'s {@link Joiner#onTimeout() onTimeout()} method is invoked
+     * to optionally throw {@link TimeoutException TimeoutException}.
      *
      * <p> The new scope is owned by the current thread. Only code executing in this
      * thread can {@linkplain #fork(Callable) fork}, {@linkplain #join() join}, or
