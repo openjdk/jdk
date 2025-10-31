@@ -51,7 +51,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/synchronizer.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
@@ -2577,6 +2576,18 @@ bool ObjectSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monito
   return ObjectMonitorTable::contains_monitor(current, monitor);
 }
 
+ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
+  return mark.monitor();
+}
+
+ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
+  if (!UseObjectMonitorTable) {
+    return read_monitor(mark);
+  } else {
+    return ObjectSynchronizer::get_monitor_from_table(current, obj);
+  }
+}
+
 bool ObjectSynchronizer::quick_enter_internal(oop obj, BasicLock* lock, JavaThread* current) {
   assert(current->thread_state() == _thread_in_Java, "must be");
   assert(obj != nullptr, "must be");
@@ -2636,4 +2647,16 @@ bool ObjectSynchronizer::quick_enter_internal(oop obj, BasicLock* lock, JavaThre
 
   // Slow-path.
   return false;
+}
+
+bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {
+  assert(current->thread_state() == _thread_in_Java, "invariant");
+  NoSafepointVerifier nsv;
+  if (obj == nullptr) return false;       // Need to throw NPE
+
+  if (obj->klass()->is_value_based()) {
+    return false;
+  }
+
+  return ObjectSynchronizer::quick_enter_internal(obj, lock, current);
 }

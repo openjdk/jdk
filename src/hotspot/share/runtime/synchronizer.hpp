@@ -115,7 +115,7 @@ public:
   static void notifyall(Handle obj, TRAPS);
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
-  static inline bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
+  static bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
 
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk
@@ -125,8 +125,8 @@ public:
 public:
   static const char* inflate_cause_name(const InflateCause cause);
 
-  inline static ObjectMonitor* read_monitor(markWord mark);
-  inline static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
+  static ObjectMonitor* read_monitor(markWord mark);
+  static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
