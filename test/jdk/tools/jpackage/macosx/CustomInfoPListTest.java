@@ -23,6 +23,7 @@
 
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.Map.entry;
+import jdk.jpackage.internal.util.Slot;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
@@ -98,20 +99,21 @@ public class CustomInfoPListTest {
     @ParameterSupplier("customPLists")
     public void testFromAppImage(TestConfig cfg) {
 
-        List<Consumer<JPackageCommand>> verifier = new ArrayList<>();
-        JPackageCommand[] appImageCmd = new JPackageCommand[1];
+        var verifier = Slot.<Consumer<JPackageCommand>>createEmpty();
+
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
 
         new PackageTest().addRunOnceInitializer(() -> {
             // Create the input app image with custom plist file(s).
             // Call JPackageCommand.executePrerequisiteActions() to initialize
             // all command line options.
-            appImageCmd[0] = cfg.init(JPackageCommand.helloAppImage().setFakeRuntime().executePrerequisiteActions());
-            appImageCmd[0].execute();
-            verifier.add(cfg.createPListFilesVerifier(appImageCmd[0]));
+            cfg.init(appImageCmd.executePrerequisiteActions());
+            appImageCmd.execute();
+            verifier.set(cfg.createPListFilesVerifier(appImageCmd));
         }).addInitializer(cmd -> {
-            cmd.removeArgumentWithValue("--input").setArgumentValue("--app-image", appImageCmd[0].outputBundle());
+            cmd.removeArgumentWithValue("--input").setArgumentValue("--app-image", appImageCmd.outputBundle());
         }).addInstallVerifier(cmd -> {
-            verifier.get(0).accept(cmd);
+            verifier.get().accept(cmd);
         }).run(Action.CREATE_AND_UNPACK);
     }
 
@@ -119,28 +121,29 @@ public class CustomInfoPListTest {
     @Parameter("true")
     @Parameter("false")
     public void testRuntime(boolean runtimeBundle) {
-        final Path runtimeImage[] = new Path[1];
+
+        var runtimeImage = Slot.<Path>createEmpty();
 
         var cfg = new TestConfig(Set.of(CustomPListType.RUNTIME));
 
         new PackageTest().addRunOnceInitializer(() -> {
             if (runtimeBundle) {
                 // Use custom plist file with the input runtime bundle.
-                runtimeImage[0] = MacHelper.createRuntimeBundle(toConsumer(buildRuntimeBundleCmd -> {
+                runtimeImage.set(MacHelper.createRuntimeBundle(toConsumer(buildRuntimeBundleCmd -> {
                     // Use the same name for the input runtime bundle as the name of the output bundle.
                     // This is to make the plist file validation pass, as the custom plist file
                     // is configured for the command building the input runtime bundle,
                     // but the plist file from the output bundle is examined.
                     buildRuntimeBundleCmd.setDefaultAppName();
                     cfg.init(buildRuntimeBundleCmd);
-                }));
+                })));
             } else {
-                runtimeImage[0] = JPackageCommand.createInputRuntimeImage();
+                runtimeImage.set(JPackageCommand.createInputRuntimeImage());
             }
         }).addInitializer(cmd -> {
             cmd.ignoreDefaultRuntime(true)
                     .removeArgumentWithValue("--input")
-                    .setArgumentValue("--runtime-image", runtimeImage[0]);
+                    .setArgumentValue("--runtime-image", runtimeImage.get());
             if (!runtimeBundle) {
                 cfg.init(cmd);
             }
