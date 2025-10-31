@@ -69,12 +69,6 @@ void ShenandoahOldGC::op_final_mark() {
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
 
-    // Believe verification following old-gen concurrent mark needs to be different than verification following
-    // young-gen concurrent mark, so am commenting this out for now:
-    //   if (ShenandoahVerify) {
-    //     heap->verifier()->verify_after_concmark();
-    //   }
-
     if (VerifyAfterGC) {
       Universe::verify();
     }

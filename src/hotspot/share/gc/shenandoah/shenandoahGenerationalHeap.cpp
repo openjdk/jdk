@@ -275,6 +275,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
               // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
               // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
               // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
+              // Shrinking the desired PLAB size may allow us to eke out a small PLAB while staying beneath evacuation reserve.
               if (plab->words_remaining() < plab_min_size()) {
                 ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
                 copy = allocate_from_plab(thread, size, is_promotion);
@@ -444,9 +445,8 @@ inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, 
 
 // Establish a new PLAB and allocate size HeapWords within it.
 HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion) {
-  // New object should fit the PLAB size
-
   assert(mode()->is_generational(), "PLABs only relevant to generational GC");
+
   const size_t plab_min_size = this->plab_min_size();
   // PLABs are aligned to card boundaries to avoid synchronization with concurrent
   // allocations in other PLABs.
@@ -459,23 +459,24 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
   }
 
   // Expand aggressively, doubling at each refill in this epoch, ceiling at plab_max_size()
-  size_t future_size = MIN2(cur_size * 2, plab_max_size());
+  const size_t future_size = MIN2(cur_size * 2, plab_max_size());
   // Doubling, starting at a card-multiple, should give us a card-multiple. (Ceiling and floor
   // are card multiples.)
   assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: %zu"
-          ", card_size: %zu, cur_size: %zu, max: %zu",
-         future_size, (size_t) CardTable::card_size_in_words(), cur_size, plab_max_size());
+          ", card_size: %u, cur_size: %zu, max: %zu",
+         future_size, CardTable::card_size_in_words(), cur_size, plab_max_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
   // heuristics should catch up with them.  Note that the requested cur_size may
   // not be honored, but we remember that this is the preferred size.
-  log_debug(gc, free)("Set new PLAB size: %zu", future_size);
+  log_debug(gc, plab)("Set next PLAB refill size: %zu bytes", future_size * HeapWordSize);
   ShenandoahThreadLocalData::set_plab_size(thread, future_size);
+
   if (cur_size < size) {
     // The PLAB to be allocated is still not large enough to hold the object. Fall back to shared allocation.
     // This avoids retiring perfectly good PLABs in order to represent a single large object allocation.
-    log_debug(gc, free)("Current PLAB size (%zu) is too small for %zu", cur_size, size);
+    log_debug(gc, plab)("Current PLAB size (%zu) is too small for %zu", cur_size * HeapWordSize, size * HeapWordSize);
     return nullptr;
   }
 
@@ -561,6 +562,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   ShenandoahThreadLocalData::reset_plab_promoted(thread);
   ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
   if (not_promoted > 0) {
+    log_debug(gc, plab)("Retire PLAB, unexpend unpromoted: %zu", not_promoted * HeapWordSize);
     old_generation()->unexpend_promoted(not_promoted);
   }
   const size_t original_waste = plab->waste();
@@ -572,8 +574,8 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   if (top != nullptr && plab->waste() > original_waste && is_in_old(top)) {
     // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
     // safely walk the region backing the plab.
-    log_debug(gc)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
-                  plab->waste() - original_waste, p2i(top));
+    log_debug(gc, plab)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
+                        (plab->waste() - original_waste) * HeapWordSize, p2i(top));
     // No lock is necessary because the PLAB memory is aligned on card boundaries.
     old_generation()->card_scan()->register_object_without_lock(top);
   }

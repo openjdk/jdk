@@ -305,6 +305,8 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
       if (can_promote(actual_size)) {
         // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
         // When we retire this plab, we'll unexpend what we don't really use.
+        log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
+                            actual_size, get_promoted_expended(), get_promoted_reserve());
         expend_promoted(actual_size);
         ShenandoahThreadLocalData::enable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
@@ -312,9 +314,12 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
         // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
+        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
+                            actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
       }
     } else if (req.is_promotion()) {
       // Shared promotion.
+      log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
       expend_promoted(actual_size);
     }
   }
@@ -496,7 +501,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
 
     parallel_heap_region_iterate(&cl);
-    heap->assert_pinned_region_status();
+    heap->assert_pinned_region_status(this);
   }
 
   {
