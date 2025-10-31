@@ -602,11 +602,7 @@ private:
   HeapWord* allocate_with_affiliation(Iter& iterator,
                                       ShenandoahAffiliation affiliation,
                                       ShenandoahAllocRequest& req,
-                                      bool& in_new_region,
-                                      bool& allow_new_region);
-
-  // Return true if the respective generation for this request has free regions.
-  bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
+                                      bool& in_new_region);
 
   // Attempt to allocate memory for an evacuation from the mutator's partition.
   HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);

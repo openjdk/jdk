@@ -1269,8 +1269,7 @@ template<typename Iter>
 HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator,
                                                        ShenandoahAffiliation affiliation,
                                                        ShenandoahAllocRequest& req,
-                                                       bool& in_new_region,
-                                                       bool& allow_new_region) {
+                                                       bool& in_new_region) {
   assert(affiliation != ShenandoahAffiliation::FREE, "Must not");
   ShenandoahHeapRegion* free_region = nullptr;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
@@ -1285,7 +1284,7 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator,
     }
   }
   // Failed to allocate within any affiliated region, try the first free region in the partition.
-  if (free_region != nullptr && (allow_new_region = can_allocate_in_new_region(req)) == true) {
+  if (free_region != nullptr) {
     HeapWord* result = try_allocate_in(free_region, req, in_new_region);
     assert(result != nullptr, "Allocate in free region in the partition always succeed.");
     return result;
@@ -1394,13 +1393,12 @@ HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req,
   shenandoah_assert_heaplocked();
   ShenandoahFreeSetPartitionId which_partition = req.is_old()? ShenandoahFreeSetPartitionId::OldCollector: ShenandoahFreeSetPartitionId::Collector;
   HeapWord* result = nullptr;
-  bool allow_new_region = false;
   if (_partitions.alloc_from_left_bias(which_partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, which_partition);
-    result = allocate_with_affiliation(iterator, req.affiliation(), req, in_new_region, allow_new_region);
+    result = allocate_with_affiliation(iterator, req.affiliation(), req, in_new_region);
   } else {
     ShenandoahRightLeftIterator iterator(&_partitions, which_partition);
-    result = allocate_with_affiliation(iterator, req.affiliation(), req, in_new_region, allow_new_region);
+    result = allocate_with_affiliation(iterator, req.affiliation(), req, in_new_region);
   }
 
   if (result != nullptr) {
@@ -1412,7 +1410,7 @@ HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req,
     return nullptr;
   }
 
-  if (allow_new_region || (req.is_old() && _heap->young_generation()->free_unaffiliated_regions() > 0)) {
+  if (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) > 0) {
     // Try to steal an empty region from the mutator view.
     result = try_allocate_from_mutator(req, in_new_region);
   }
@@ -1420,16 +1418,6 @@ HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req,
   // This is it. Do not try to mix mutator and GC allocations, because adjusting region UWM
   // due to GC allocations would expose unparsable mutator allocations.
   return result;
-}
-
-bool ShenandoahFreeSet::can_allocate_in_new_region(const ShenandoahAllocRequest& req) {
-  if (!_heap->mode()->is_generational()) {
-    return true;
-  }
-
-  assert(req.is_old() || req.is_young(), "Should request affiliation");
-  return (req.is_old() && _heap->old_generation()->free_unaffiliated_regions() > 0)
-         || (req.is_young() && _heap->young_generation()->free_unaffiliated_regions() > 0);
 }
 
 HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region) {
