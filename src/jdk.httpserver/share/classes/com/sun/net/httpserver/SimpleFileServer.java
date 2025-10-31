@@ -90,6 +90,18 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *    );
  * }</pre>
  *
+ * <h3>Range requests</h3>
+ *
+ * <p>The file server also supports HTTP <i>range requests</i>, allowing clients to
+ * request partial file content using the {@code Range} request header, as specified in
+ * <a href="https://datatracker.ietf.org/doc/html/rfc9110#name-range-requests">RFC 9110</a>.</p>
+ *
+ * <p>The server also supports conditional range requests with the {@code If-Range}
+ * request header using a date.
+ * If the provided date matches the file's {@code Last-Modified} timestamp, the server returns
+ * the requested ranges; otherwise, it returns the entire file.
+ * Entity-tag (ETag) based {@code If-Range} requests are not currently supported.</p>
+ *
  * <h2>Output filter</h2>
  *
  * <p> The {@link #createOutputFilter(OutputStream, OutputLevel) createOutputFilter}
