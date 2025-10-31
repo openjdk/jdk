@@ -676,7 +676,7 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
     public static long test20(int x) {
-        // Analysis of when this used to produce wrong results on Windows:
+        // Analysis of when this is used to produce wrong results on Windows:
         //
         // src  = -2683206580L = ffff_ffff_6011_844c
         // mask = 0..maxuint, at runtime: 4294950911 = 0xffff_bfff
@@ -697,11 +697,11 @@ public class TestBitCompressValueTransform {
         // hi = MIN2((jlong)((1UL << result_bit_width) - 1L), hi);
         //
         // But watch out: on windows 1UL is only a 32 bit value. Intended was probably 1ULL.
-        // So when we caluculate "1UL << 32", we just get 1. And so then hi would be 0 now.
+        // So when we calculate "1UL << 32", we just get 1. And so then hi would be 0 now.
         // If we instead did "1ULL << 32", we would get 0x1_0000_0000, and hi = 0xffff_ffff.
         //
         // We create type [lo, hi]:
-        // windowns: [0, 0]           -> constant zero
+        // Windows: [0, 0]           -> constant zero
         // correct:  [0, 0xffff_ffff] -> does not constant fold. At runtime: 0x3008_c44c
         return Long.compress(-2683206580L, Integer.toUnsignedLong(x));
     }
@@ -725,7 +725,7 @@ public class TestBitCompressValueTransform {
     @Test
     @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
     public static long test21(long x) {
-        // Analysis of when this used to produce wrong results on Windows:
+        // Analysis of when this is used to produce wrong results on Windows:
         //
         // Very similar to case in test20, but this time we go into the A) case.
         //
