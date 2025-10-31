@@ -29,85 +29,149 @@
 AC_DEFUN_ONCE([LIB_SETUP_KRB5],
 [
   AC_ARG_WITH(krb5, [AS_HELP_STRING([--with-krb5],
-      [enable krb5 support (default=yes), or "no" to disable])])
+      [specify prefix directory for the krb5 package on Linux, or use "yes/no/auto" (default=auto)])])
+  AC_ARG_WITH(krb5-include, [AS_HELP_STRING([--with-krb5-include],
+      [specify directory for the krb5 include files on Linux])])
+  AC_ARG_WITH(krb5-lib, [AS_HELP_STRING([--with-krb5-lib],
+      [specify directory for the krb5 library on Linux])])
 
-  # Determine if krb5 should be disabled
-  KRB5_DISABLED=no
-  if test "x${with_krb5}" = xno; then
-    AC_MSG_NOTICE([krb5 explicitly disabled])
-    KRB5_DISABLED=yes
-  elif test "x$NEEDS_LIB_KRB5" = xfalse; then
-    if test "x${with_krb5}" != x && test "x${with_krb5}" != xno; then
-      AC_MSG_WARN([[krb5 not used, so --with-krb5 is ignored]])
-    fi
-    KRB5_DISABLED=yes
-  fi
+  KRB5_CFLAGS=
+  KRB5_LIBS=
+  ENABLE_LIBKRB5_LINUX=false
 
-  if test "x$KRB5_DISABLED" = xyes; then
-    KRB5_CFLAGS=
-    KRB5_LIBS=
-    ENABLE_LIBLINUXKRB5=false
+  if test "x$OPENJDK_TARGET_OS" != "xlinux" && test "x${with_krb5}" = "xyes"; then
+    AC_MSG_ERROR([krb5 support is only available on Linux])
   else
-    # First try pkg-config (most modern approach)
-    AC_PATH_TOOL([PKG_CONFIG], [pkg-config], [no])
-    use_pkgconfig_for_krb5=no
+    KRB5_FOUND=no
 
-    if test "x$PKG_CONFIG" != "xno"; then
-      AC_MSG_CHECKING([if pkg-config knows about krb5])
-      if $PKG_CONFIG --exists krb5; then
-        AC_MSG_RESULT([yes])
-        use_pkgconfig_for_krb5=yes
-      else
-        AC_MSG_RESULT([no])
+    if test "x${with_krb5}" != "x" && test "x${with_krb5}" != "xyes" && test "x${with_krb5}" != "xauto"; then
+      # if a path was provided, use it
+      if test "x${with_krb5}" != "x"; then
+        AC_MSG_CHECKING([for krb5])
+        KRB5_LIBS="-L${with_krb5}/lib -lkrb5 -lcom_err"
+        KRB5_CFLAGS="-I${with_krb5}/include"
+        KRB5_FOUND=yes
+        AC_MSG_RESULT([${with_krb5}])
       fi
     fi
 
-    if test "x$use_pkgconfig_for_krb5" = "xyes"; then
-      # Use pkg-config to get compiler and linker flags
-      AC_MSG_CHECKING([for krb5 cflags via pkg-config])
-      KRB5_CFLAGS="`$PKG_CONFIG --cflags krb5`"
-      AC_MSG_RESULT([$KRB5_CFLAGS])
+    if test "x${with_krb5_include}" != "x"; then
+      AC_MSG_CHECKING([for krb5 includes])
+      KRB5_CFLAGS="-I${with_krb5_include}"
+      KRB5_FOUND=yes
+      AC_MSG_RESULT([${with_krb5_include}])
+    fi
 
-      AC_MSG_CHECKING([for krb5 libs via pkg-config])
-      KRB5_LIBS="`$PKG_CONFIG --libs krb5`"
-      AC_MSG_RESULT([$KRB5_LIBS])
+    if test "x${with_krb5_lib}" != "x"; then
+      AC_MSG_CHECKING([for krb5 libs])
+      KRB5_LIBS="-L${with_krb5_lib} -lkrb5 -lcom_err"
+      KRB5_FOUND=yes
+      AC_MSG_RESULT([${with_krb5_lib}])
+    fi
 
-      ENABLE_LIBLINUXKRB5=true
-    else
-      # Fallback: try krb5-config
-      AC_PATH_TOOL([KRB5CONF], [krb5-config], [no])
+    if test "x$KRB5_FOUND" = "xno"; then
+      if test "x$SYSROOT" != "x"; then
+        AC_MSG_CHECKING([for krb5 ($SYSROOT)])
+        # Cross-compilation with SYSROOT - look at known locations in SYSROOT.
+        KRB5_LIB_PATH=""
+        COM_ERR_LIB_PATH=""
 
-      if test "x$KRB5CONF" != "xno"; then
-        # Use krb5-config to get compiler and linker flags
-        AC_MSG_CHECKING([for krb5 cflags via krb5-config])
-        KRB5_CFLAGS="`$KRB5CONF --cflags`"
-        AC_MSG_RESULT([$KRB5_CFLAGS])
+        # Look for libkrb5/libcom_err
+        if test -f "$SYSROOT/usr/lib64/libkrb5.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          KRB5_LIB_PATH="$SYSROOT/usr/lib64"
+        elif test -f "$SYSROOT/usr/lib/libkrb5.so"; then
+          KRB5_LIB_PATH="$SYSROOT/usr/lib"
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libkrb5.so"; then
+          KRB5_LIB_PATH="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libkrb5.so"; then
+          KRB5_LIB_PATH="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
+        fi
 
-        AC_MSG_CHECKING([for krb5 libs via krb5-config])
-        KRB5_LIBS="`$KRB5CONF --libs`"
-        AC_MSG_RESULT([$KRB5_LIBS])
+        if test -f "$KRB5_LIB_PATH/libcom_err.so"; then
+          COM_ERR_LIB_PATH="$KRB5_LIB_PATH"
+        elif test -f "$SYSROOT/usr/lib64/libcom_err.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          COM_ERR_LIB_PATH="$SYSROOT/usr/lib64"
+        elif test -f "$SYSROOT/usr/lib/libcom_err.so"; then
+          COM_ERR_LIB_PATH="$SYSROOT/usr/lib"
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libcom_err.so"; then
+          COM_ERR_LIB_PATH="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libcom_err.so"; then
+          COM_ERR_LIB_PATH="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
+        fi
 
-        ENABLE_LIBLINUXKRB5=true
+        # Check for matching include files
+        KRB5_INCLUDE_PATH=""
+        COM_ERR_INCLUDE_PATH=""
+
+        if test -f "$SYSROOT/usr/include/krb5/krb5.h"; then
+          KRB5_INCLUDE_PATH="$SYSROOT/usr/include"
+        fi
+
+        if test -f "$SYSROOT/usr/include/com_err.h"; then
+          COM_ERR_INCLUDE_PATH="$SYSROOT/usr/include"
+        fi
+
+        # Check everything was found and merge paths
+        if test "x$KRB5_LIB_PATH" != "x" && test "x$COM_ERR_LIB_PATH" != "x" && \
+             test "x$KRB5_INCLUDE_PATH" != "x" && test "x$COM_ERR_INCLUDE_PATH" != "x"; then
+          KRB5_LIBS="-L$KRB5_LIB_PATH -lkrb5"
+          if test "x$COM_ERR_LIB_PATH" != "x" && test "x$COM_ERR_LIB_PATH" != "x$KRB5_LIB_PATH"; then
+            KRB5_LIBS="$KRB5_LIBS -L$COM_ERR_LIB_PATH"
+          fi
+          KRB5_LIBS="$KRB5_LIBS -lcom_err"
+
+          KRB5_CFLAGS="-I$KRB5_INCLUDE_PATH"
+          if test "x$COM_ERR_INCLUDE_PATH" != "x" && test "x$COM_ERR_INCLUDE_PATH" != "x$KRB5_INCLUDE_PATH"; then
+            KRB5_CFLAGS="$KRB5_CFLAGS -I$COM_ERR_INCLUDE_PATH"
+          fi
+
+          KRB5_FOUND=yes
+        fi
+        AC_MSG_RESULT([$KRB5_FOUND])
       else
-        # Final fallback: try manual detection in system locations
-        AC_CHECK_HEADERS([krb5.h], [
+        PKG_CHECK_MODULES(KRB5, krb5, [KRB5_FOUND=yes], [KRB5_FOUND=no])
+        if test "x$KRB5_FOUND" = "xno"; then
+          UTIL_LOOKUP_PROGS(KRB5CONF, krb5-config)
+          if test "x$KRB5CONF" != "x"; then
+            AC_MSG_CHECKING([for krb5 using krb5-config])
+            KRB5_CFLAGS="`$KRB5CONF --cflags`"
+            KRB5_LIBS="`$KRB5CONF --libs`"
+            KRB5_FOUND=yes
+            AC_MSG_RESULT([$KRB5_FOUND])
+          fi
+        fi
+      fi
+    fi
+
+    # No sysconfig/pkg-config/krb5-config, so auto-detect
+    if test "x$KRB5_FOUND" = "xno"; then
+      AC_CHECK_HEADERS([krb5.h], [
+        AC_CHECK_HEADERS([com_err.h], [
           AC_CHECK_LIB([krb5], [krb5_init_context], [
             KRB5_CFLAGS=""
             KRB5_LIBS="-lkrb5"
-            # Check for com_err header and library which are often required
-            AC_CHECK_HEADERS([com_err.h], [
-              AC_CHECK_LIB([com_err], [com_err], [
-                KRB5_LIBS="$KRB5_LIBS -lcom_err"
-              ])
+            AC_CHECK_LIB([com_err], [com_err], [
+              KRB5_LIBS="$KRB5_LIBS -lcom_err"
             ])
-            ENABLE_LIBLINUXKRB5=true
-          ], [ENABLE_LIBLINUXKRB5=false])
-        ], [ENABLE_LIBLINUXKRB5=false])
+            KRB5_FOUND=yes
+          ])
+        ])
+      ])
+    fi
+
+    if test "x$KRB5_FOUND" = "xno"; then
+      if test "x${with_krb5}" = "xyes"; then
+        AC_MSG_ERROR([krb5 was required but could not be found])
       fi
+      KRB5_CFLAGS=
+      KRB5_LIBS=
+      ENABLE_LIBKRB5_LINUX=false
+    else
+      ENABLE_LIBKRB5_LINUX=true
     fi
   fi
 
   AC_SUBST(KRB5_CFLAGS)
   AC_SUBST(KRB5_LIBS)
-  AC_SUBST(ENABLE_LIBLINUXKRB5)
+  AC_SUBST(ENABLE_LIBKRB5_LINUX)
 ])

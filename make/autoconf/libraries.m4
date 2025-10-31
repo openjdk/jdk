@@ -82,13 +82,6 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
     NEEDS_LIB_ALSA=false
   fi
 
-  # Check if krb5 is needed
-  if test "x$OPENJDK_TARGET_OS" = xlinux -o "x$OPENJDK_TARGET_OS" = xmacosx; then
-    NEEDS_LIB_KRB5=true
-  else
-    NEEDS_LIB_KRB5=false
-  fi
-
   # Check if ffi is needed
   if HOTSPOT_CHECK_JVM_VARIANT(zero) || test "x$ENABLE_FALLBACK_LINKER" = "xtrue"; then
     NEEDS_LIB_FFI=true
