@@ -1828,9 +1828,9 @@ public class Code {
             } else {
                 /* the most semantically correct approach here would be to invoke Types::lub
                  * and then erase the result.
-                 * But this approach can backfire for some complex cases, see JDK-8369654.
+                 * But this approach can be too slow for some complex cases, see JDK-8369654.
                  * This is why the method below leverages the fact that the result
-                 * would be erased to produce a correct supertype using a simpler approach compared
+                 * will be erased to produce a correct supertype using a simpler approach compared
                  * to a full blown lub.
                  */
                 Type es = erasedSuper(t1, t2);
