@@ -174,7 +174,7 @@ static const char *GETIMG_H_SIG = "()D";
  * (1000th of an inch) by this number to
  * get a value in 72nds of an inch.
  */
-static const double HIENGLISH_TO_POINTS = (72.0 / 1000.0);
+// static const double HIENGLISH_TO_POINTS = (72.0 / 1000.0);
 
 /* Multiply a Window's MM_HIMETRIC value
  * (100ths of a millimeter) by this
