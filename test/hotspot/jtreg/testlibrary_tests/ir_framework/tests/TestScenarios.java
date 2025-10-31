@@ -29,17 +29,29 @@ import jdk.test.lib.Asserts;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.function.Consumer;
 
 /*
  * @test
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
- * @summary Test scenarios with the framework.
+ * @summary Test scenarios with the framework while running them sequentially.
  * @library /test/lib /testlibrary_tests /
  * @run driver ir_framework.tests.TestScenarios
  */
 
+/*
+ * @test
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
+ * @summary Test scenarios with the framework while running them concurrently.
+ * @library /test/lib /testlibrary_tests /
+ * @run driver ir_framework.tests.TestScenarios parallel
+ */
+
 public class TestScenarios {
     public static void main(String[] args) {
+        TestFramework testFramework;
+        Consumer<TestFramework> startMethod =
+                args.length > 0 && args[0].equals("parallel") ? TestFramework::startParallel : TestFramework::start;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
         PrintStream oldOut = System.out;
@@ -51,7 +63,7 @@ public class TestScenarios {
         Scenario s3 = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         Scenario s3dup = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         try {
-            new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
+            startMethod.accept(new TestFramework().addScenarios(sDefault, s1, s2, s3));
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
             if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #3")) {
@@ -61,7 +73,7 @@ public class TestScenarios {
 
         baos.reset();
         try {
-            new TestFramework().addScenarios(s1, s2, s3).start();
+            startMethod.accept(new TestFramework().addScenarios(s1, s2, s3));
             Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
             if (!e.getMessage().contains("The following scenarios have failed: #1, #3")) {
@@ -69,7 +81,7 @@ public class TestScenarios {
             }
         }
         System.setOut(oldOut);
-        new TestFramework(ScenarioTest.class).addScenarios(s1, s2, s3).start();
+        startMethod.accept(new TestFramework(ScenarioTest.class).addScenarios(s1, s2, s3));
         try {
             new TestFramework().addScenarios(s1, s3dup, s2, s3).start();
             Asserts.fail("Should not reach");
@@ -77,7 +89,7 @@ public class TestScenarios {
             Asserts.assertTrue(e.getMessage().contains("Cannot define two scenarios with the same index 3"), e.getMessage());
         }
         try {
-            new TestFramework(MyExceptionTest.class).addScenarios(s1, s2, s3).start();
+            startMethod.accept(new TestFramework(MyExceptionTest.class).addScenarios(s1, s2, s3));
             Asserts.fail("Should not reach");
         } catch (TestRunException e) {
             Asserts.assertTrue(s1.getTestVMOutput().contains("Caused by: ir_framework.tests.MyScenarioException"));
@@ -116,3 +128,7 @@ class MyExceptionTest {
 }
 
 class MyScenarioException extends RuntimeException {}
+
+
+public class TestScenarios {
+
