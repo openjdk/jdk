@@ -25,7 +25,7 @@
  * @test
  * @bug      7025314 8023700 7198273 8025633 8026567 8081854 8196027 8182765
  *           8196200 8196202 8223378 8258659 8261976 8320458 8329537 8350638
- *           8342705
+ *           8342705 8371021
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
@@ -72,8 +72,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
+                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/package-summary.html", true,
@@ -86,8 +94,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -100,8 +116,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -114,8 +138,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -128,8 +160,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -356,8 +396,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -370,8 +418,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -384,8 +440,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -398,8 +462,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="theme-light"><img src="../resource-fil\
-                    es/moon.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
+                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -440,8 +512,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
+                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
@@ -458,8 +538,16 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="theme-light"><img src="resource-files/moo\
-                    n.svg" alt="Select Theme" class="theme-dark"></button></li>
+                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
+                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <div id="theme-panel">
+                    <div>Select Theme</div>
+                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
+                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
+                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
+                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
+                    <span>System Setting</span></label></div>
+                    </div>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
