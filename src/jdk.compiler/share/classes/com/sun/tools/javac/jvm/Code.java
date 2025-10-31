@@ -1844,7 +1844,7 @@ public class Code {
                 } while (t.hasTag(TYPEVAR));
             }
             return t.hasTag(ARRAY) ?
-                    List.of(syms.serializableType, syms.cloneableType) :
+                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
                     types.erasedSupertypes(t);
         }
 
