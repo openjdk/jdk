@@ -62,6 +62,27 @@ public record ConfigurationTarget(Optional<JPackageCommand> cmd, Optional<Packag
         return this;
     }
 
+    public ConfigurationTarget addInstallVerifier(Consumer<JPackageCommand> verifier) {
+        cmd.ifPresent(Objects.requireNonNull(verifier));
+        test.ifPresent(v -> {
+            v.addInstallVerifier(verifier::accept);
+        });
+        return this;
+    }
+
+    public ConfigurationTarget addRunOnceInitializer(Consumer<ConfigurationTarget> initializer) {
+        Objects.requireNonNull(initializer);
+        cmd.ifPresent(_ -> {
+            initializer.accept(this);
+        });
+        test.ifPresent(v -> {
+            v.addRunOnceInitializer(() -> {
+                initializer.accept(this);
+            });
+        });
+        return this;
+    }
+
     public ConfigurationTarget add(AdditionalLauncher addLauncher) {
         return apply(addLauncher::applyTo, addLauncher::applyTo);
     }
