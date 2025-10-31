@@ -128,7 +128,3 @@ class MyExceptionTest {
 }
 
 class MyScenarioException extends RuntimeException {}
-
-
-public class TestScenarios {
-
