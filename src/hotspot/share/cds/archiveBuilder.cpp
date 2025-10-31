@@ -1032,7 +1032,6 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(u4 offset) const {
-  // As zero is allowed for _requested_static_archive_bottom, use integer arithmetic to avoid UB pointer arithmetic.
   address buffered_addr = _buffer_bottom + offset;
   assert(is_in_buffer_space(buffered_addr), "bad offset");
   return buffered_addr;
@@ -1100,8 +1099,8 @@ class RelocateBufferToRequested : public BitMapClosure {
     address top = _builder->buffer_top();
     // It is acceptable that new_bottom/new_top may be zero.
     // As zero is allowed for new_bottom, use integer arithmetic to avoid UB pointer arithmetic.
-    address new_bottom = (address)(bottom + _buffer_to_requested_delta);
-    address new_top = (address)(top + _buffer_to_requested_delta);
+    address new_bottom = (address)((intx)bottom + _buffer_to_requested_delta);
+    address new_top = top + _buffer_to_requested_delta;
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                    p2i(bottom), p2i(top),
