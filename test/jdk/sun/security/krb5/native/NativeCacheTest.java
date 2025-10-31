@@ -64,17 +64,17 @@ import java.io.File;
 /**
  * Test JAAS access to in-memory credential caches.
  *
- * This test validates that JAAS can access MEMORY: credential caches
- * on Linux through the native enhancement, using real TGTs from OneKDC.
+ * This test validates that JAAS can access in-memory credential caches
+ * on Linux through the native enhancement, using TGTs from OneKDC.
  */
 public class NativeCacheTest {
 
     public static void main(String[] args) throws Exception {
         try {
-            // Create real TGT using OneKDC (in isolated cache)
-            createRealTGTWithOneKDC();
+            // Create TGT using OneKDC (in file cache)
+            createTGTWithOneKDC();
 
-            // Copy real TGT to in-memory cache using JNI
+            // Copy TGT to in-memory cache using JNI
             String inMemoryCacheName = copyTGTToInMemoryCache();
 
             // Test JAAS access to in-memory cache
@@ -90,9 +90,9 @@ public class NativeCacheTest {
     }
 
     /**
-     * Use OneKDC to create a real TGT via the JAAS LoginModule
+     * Use OneKDC to create a TGT via the JAAS LoginModule
      */
-    private static void createRealTGTWithOneKDC() throws Exception {
+    private static void createTGTWithOneKDC() throws Exception {
         System.out.println("Creating TGT via OneKDC");
 
         OneKDC kdc = new OneKDC(null);
@@ -120,7 +120,7 @@ public class NativeCacheTest {
     }
 
     /**
-     * Copy the real TGT to an in-memory cache using JNI
+     * Copy the TGT to an in-memory cache using JNI
      */
     private static String copyTGTToInMemoryCache() throws Exception {
         System.out.println("Copying credentials to memory cache");
@@ -133,18 +133,18 @@ public class NativeCacheTest {
         }
         System.out.println("Created memory cache: " + memoryCacheName);
 
-        // Try to copy credentials from the saved cache file
+        // Try to copy credentials from the file cache
         boolean copied = false;
-        File savedCache = new File("onekdc_cache.ccache");
-        if (savedCache.exists()) {
-            System.out.println("Copying from: " + savedCache.getAbsolutePath());
+        File fileCache = new File("onekdc_cache.ccache");
+        if (fileCache.exists()) {
+            System.out.println("Copying from: " + fileCache.getAbsolutePath());
             copied = NativeCredentialCacheHelper.copyCredentialsToInMemoryCache(
                 memoryCacheName,
-                "FILE:" + savedCache.getAbsolutePath()
+                "FILE:" + fileCache.getAbsolutePath()
             );
         }
 
-        // Fallback to the default cache if the file cache doesn't exist
+        // Fallback to the default cache if copying from file cache fails
         if (!copied) {
             copied = NativeCredentialCacheHelper.copyCredentialsToInMemoryCache(memoryCacheName, null);
         }

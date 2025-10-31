@@ -180,7 +180,7 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInM
         source_cache_name ? source_cache_name : "default cache"
     );
 
-    // Open source cache (default if sourceCacheName is null)
+    // Open source cache (or default cache if sourceCacheName is null)
     if (source_cache_name) {
         ret = krb5_cc_resolve(g_context, source_cache_name, &source_ccache);
         if (ret) {
