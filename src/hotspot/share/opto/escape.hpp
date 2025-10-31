@@ -634,7 +634,6 @@ private:
   const char* trace_propagate_message(PointsToNode* from) const;
   const char* trace_arg_escape_message(CallNode* call) const;
   const char* trace_merged_message(PointsToNode* other) const;
-  void igv_print_step(const char* step, int level);
 #endif
 
 public:

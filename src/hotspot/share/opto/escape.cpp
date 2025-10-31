@@ -41,7 +41,9 @@
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/phasetype.hpp"
 #include "opto/rootnode.hpp"
+#include "runtime/arguments.hpp"
 #include "utilities/macros.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
@@ -285,7 +287,7 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 1. Initial Connection Graph", 4);)
+  _compile->print_method(PHASE_EA_AFTER_INITIAL_CONGRAPH, 4);
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -297,7 +299,7 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph", 4);)
+  _compile->print_method(PHASE_EA_AFTER_COMPLETE_CONGRAPH, 4);
 
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
@@ -320,7 +322,7 @@ bool ConnectionGraph::compute_escape() {
         found_nsr_alloc = true;
       }
     }
-    NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR Iter", 5);)
+    _compile->print_method(PHASE_EA_ADJUST_SCALAR_REPLACEABLE_ITER, 6);
   }
 
   // Propagate NSR (Not Scalar Replaceable) state.
@@ -358,8 +360,8 @@ bool ConnectionGraph::compute_escape() {
 #endif
 
   _collecting = false;
-  NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR", 4);)
 
+  _compile->print_method(PHASE_EA_AFTER_PROPAGATE_NSR, 4);
   } // TracePhase t3("connectionGraph")
 
   // 4. Optimize ideal graph based on EA information.
@@ -397,7 +399,7 @@ bool ConnectionGraph::compute_escape() {
   }
 #endif
 
-  NOT_PRODUCT(igv_print_step("EA: 4. After Graph Optimization", 4);)
+  _compile->print_method(PHASE_EA_AFTER_GRAPH_OPTIMIZATION, 4);
 
   // 5. Separate memory graph for scalar replaceable allcations.
   bool has_scalar_replaceable_candidates = (alloc_worklist.length() > 0);
@@ -424,7 +426,7 @@ bool ConnectionGraph::compute_escape() {
 #endif
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types", 4);)
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES, 4);
 
   // 6. Reduce allocation merges used as debug information. This is done after
   // split_unique_types because the methods used to create SafePointScalarObject
@@ -467,7 +469,7 @@ bool ConnectionGraph::compute_escape() {
     }
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 6. After reduce_phi_on_safepoints", 4);)
+  _compile->print_method(PHASE_EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS, 4);
 
   NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
@@ -1317,14 +1319,14 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
     }
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 5. Before Phi Reduction", 5);)
+  _compile->print_method(PHASE_EA_BEFORE_PHI_REDUCTION, 5);
 
   // CastPPs need to be processed before Cmps because during the process of
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
     reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist);
-    NOT_PRODUCT(igv_print_step("EA: 5. Phi -> CastPP Reduction", 6);)
+    _compile->print_method(PHASE_EA_AFTER_PHI_CASTPP_REDUCTION, 6);
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -1336,7 +1338,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
       reduce_phi_on_cmp(use);
     }
 
-    NOT_PRODUCT(igv_print_step("EA: 5. Phi -> AddPP/Cmp Reduction", 6);)
+    _compile->print_method(PHASE_EA_AFTER_PHI_ADDPP_CMP_REDUCTION, 6);
   }
 
   _igvn->set_delay_transform(delay);
@@ -2437,7 +2439,7 @@ bool ConnectionGraph::complete_connection_graph(
         timeout = true;
         break;
       }
-      NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph Iter", 5);)
+      _compile->print_method(PHASE_EA_COMPLETE_CONNECTION_GRAPH_ITER, 5);
     }
     if ((iterations < GRAPH_BUILD_ITER_LIMIT) && !timeout) {
       time.start();
@@ -2573,7 +2575,7 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         }
       }
       if (!verify) {
-        NOT_PRODUCT(igv_print_step("EA: Connection Graph Propagate Iter", 6);)
+        _compile->print_method(PHASE_EA_CONNECTION_GRAPH_PROPAGATE_ITER, 6);
       }
     }
   }
@@ -3150,7 +3152,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               // objects.
               revisit_reducible_phi_status(jobj, reducible_merges);
               found_nsr_alloc = true;
-              NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR Iter", 4);)
+              _compile->print_method(PHASE_EA_PROPAGATE_NSR_ITER, 5);
               break;
             }
           }
@@ -4725,7 +4727,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // New alias types were created in split_AddP().
   uint new_index_end = (uint) _compile->num_alias_types();
 
-  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 1", 5);)
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_1, 5);
 
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
@@ -4918,7 +4920,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     record_for_optimizer(nmm);
   }
 
-  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 3", 5);)
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_3, 5);
 
   //  Phase 4:  Update the inputs of non-instance memory Phis and
   //            the Memory input of memnodes
@@ -4988,7 +4990,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     assert(old_cnt == old_mem->outcnt(), "old mem could be lost");
   }
 #endif
-  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 4", 5);)
+  _compile->print_method(PHASE_EA_AFTER_SPLIT_UNIQUE_TYPES_4, 5);
 }
 
 #ifndef PRODUCT
@@ -5171,13 +5173,6 @@ const char* ConnectionGraph::trace_merged_message(PointsToNode* other) const {
     return nullptr;
   }
 }
-
-void ConnectionGraph::igv_print_step(const char* step, int level) {
-  if (_compile->should_print_igv(level)) {
-    _compile->igv_printer()->print_graph(step);
-  }
-}
-
 #endif
 
 void ConnectionGraph::record_for_optimizer(Node *n) {
