@@ -356,7 +356,7 @@ instruct g1CompareAndExchangeP(iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval
 
     __ z_lgr($res$$Register, $oldval$$Register); // previous content
 
-    __ z_csg($oldval$$Register, $newval$$Register, 0, $mem_ptr$$reg);
+    __ z_csg($res$$Register, $newval$$Register, 0, $mem_ptr$$reg);
 
     write_barrier_post(masm, this,
                        $mem_ptr$$Register /* store_addr */,

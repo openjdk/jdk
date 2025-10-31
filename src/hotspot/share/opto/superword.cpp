@@ -1606,7 +1606,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
       // 3 instructions (1 shuffle and two reduction ops).
       // However, this optimization assumes that these reductions stay in the loop
       // which may not be true any more in most cases after the introduction of:
-      // PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // See: VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop
       // Hence, this heuristic has room for improvement.
       bool is_two_element_int_or_long_reduction = (size == 2) &&
                                                   (arith_type->basic_type() == T_INT ||
@@ -1698,7 +1698,9 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
 
-  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+  switch (cmp0->Opcode()) {
+  case Op_CmpF:
+  case Op_CmpD:
     // If we have a Float or Double comparison, we must be careful with
     // handling NaN's correctly. CmpF and CmpD have a return code, as
     // they are based on the java bytecodes fcmpl/dcmpl:
@@ -1742,7 +1744,24 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       mask = bol->_test.negate();
       is_negated = true;
     }
-  }
+    break;
+  case Op_CmpU:
+  case Op_CmpUL:
+    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
+    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
+    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
+    // explicit.
+    mask = BoolTest::unsigned_mask(mask);
+    break;
+  case Op_CmpI:
+  case Op_CmpL:
+    // The mask of signed int/long scalar comparisons has the same semantics
+    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
+    break;
+  default:
+    // Other Cmp ops are not expected to get here.
+    ShouldNotReachHere();
+  } // switch
 
   return VTransformBoolTest(mask, is_negated);
 }
@@ -1782,7 +1801,7 @@ bool SuperWord::profitable(const Node_List* p) const {
       // This heuristic is a bit simplistic, and assumes that the reduction
       // vector stays in the loop. But in some cases, we can move the
       // reduction out of the loop, replacing it with a single vector op.
-      // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
+      // See: VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop
       // Hence, this heuristic has room for improvement.
 #ifndef PRODUCT
         if (is_trace_superword_rejections()) {
@@ -1946,6 +1965,8 @@ bool SuperWord::do_vtransform() const {
     ResourceMark rm;
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
+
+  vtransform.optimize();
 
   if (!vtransform.schedule()) { return false; }
   if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
@@ -2498,6 +2519,8 @@ static bool can_subword_truncate(Node* in, const Type* type) {
   case Op_RotateRight:
   case Op_RotateLeft:
   case Op_PopCountI:
+  case Op_ReverseBytesS:
+  case Op_ReverseBytesUS:
   case Op_ReverseBytesI:
   case Op_ReverseI:
   case Op_CountLeadingZerosI:

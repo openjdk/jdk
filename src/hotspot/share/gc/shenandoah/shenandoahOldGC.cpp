@@ -49,7 +49,7 @@ void ShenandoahOldGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_old_generation);
   }
 
   if (!heap->cancelled_gc()) {
@@ -68,12 +68,6 @@ void ShenandoahOldGC::op_final_mark() {
 
     heap->set_unload_classes(false);
     heap->prepare_concurrent_roots();
-
-    // Believe verification following old-gen concurrent mark needs to be different than verification following
-    // young-gen concurrent mark, so am commenting this out for now:
-    //   if (ShenandoahVerify) {
-    //     heap->verifier()->verify_after_concmark();
-    //   }
 
     if (VerifyAfterGC) {
       Universe::verify();
