@@ -1826,54 +1826,36 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
-                List<Type> es = erasedSuper(t1, t2);
-                if (es.isEmpty() || es.head.hasTag(BOT)) {
+                Type es = erasedSuper(t1, t2);
+                if (es == null || es.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +
                                        t1 + " and " + t2);
                 }
-
-                return types.erasure(es.head);
+                return es;
             }
         }
 
-        private List<Type> erasedSuper(Type... ts) {
-            if (ts[0].hasTag(ARRAY) && ts[1].hasTag(ARRAY)) {
-                return List.of(allArray(ts));
-            } else {
-                return types.intersect(getErasedSuperTypes(ts[0]), getErasedSuperTypes(ts[1]));
-            }
-        }
-
-        private Type allArray(Type... ts) {
-            Type[] elements = new Type[ts.length];
-            for (int i = 0 ; i < ts.length ; i++) {
-                Type elem = elements[i] = types.elemTypeFun.apply(ts[i]);
-                if (elem.isPrimitive()) {
-                    // if a primitive type is found, then return
-                    // arraySuperType unless all the types are the
-                    // same
-                    Type first = ts[0];
-                    for (int j = 1 ; j < ts.length ; j++) {
-                        if (!types.isSameType(first, ts[j])) {
-                            return types.arraySuperType();
-                        }
-                    }
-                    // all the array types are the same, return one
-                    return first;
+        private Type erasedSuper(Type t1, Type t2) {
+            if (t1.hasTag(ARRAY) && t2.hasTag(ARRAY)) {
+                Type elem1 = types.elemtype(t1);
+                Type elem2 = types.elemtype(t2);
+                if (elem1.isPrimitive() || elem2.isPrimitive()) {
+                    return (elem1.tsym == elem2.tsym) ? t1 : syms.serializableType;
+                } else { // both are arrays of references
+                    return new ArrayType(erasedSuper(elem1, elem2), syms.arrayClass);
                 }
+            } else {
+                t1 = types.skipTypeVars(t1, false);
+                t2 = types.skipTypeVars(t2, false);
+                List<Type> intersection = types.intersect(
+                        t1.hasTag(ARRAY) ?
+                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                types.erasedSupertypes(t1),
+                        t2.hasTag(ARRAY) ?
+                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                types.erasedSupertypes(t2));
+                return intersection.head;
             }
-            return new ArrayType(erasedSuper(elements).head, syms.arrayClass);
-        }
-
-        private List<Type> getErasedSuperTypes(Type t) {
-            if (t.hasTag(TYPEVAR)) {
-                do {
-                    t = t.getUpperBound();
-                } while (t.hasTag(TYPEVAR));
-            }
-            return t.hasTag(ARRAY) ?
-                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
-                    types.erasedSupertypes(t);
         }
 
         void dump() {
