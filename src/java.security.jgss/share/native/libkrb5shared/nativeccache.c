@@ -24,11 +24,7 @@
  */
 
 /*
- * Unified Kerberos native credential cache implementation for Mac OS X and Linux.
- * This implementation consolidates the previously separate platform-specific
- * implementations while maintaining platform-specific library names.
- *
- * Platform-specific differences are handled via conditional compilation.
+ * Unified Kerberos native credential cache implementation for MacOSX/Linux.
  */
 
 #include "sun_security_krb5_Credentials.h"
