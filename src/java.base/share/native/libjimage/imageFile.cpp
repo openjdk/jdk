@@ -331,7 +331,9 @@ bool ImageFileReader::open() {
     }
     // Memory map image (minimally the index.)
     _index_data = (u1*)osSupport::map_memory(_fd, _name, 0, (size_t)map_size());
-    assert(_index_data && "image file not memory mapped");
+    if (_index_data == nullptr) {
+      return false;
+    }
     // Retrieve length of index perfect hash table.
     u4 length = table_length();
     // Compute offset of the perfect hash table redirect table.
