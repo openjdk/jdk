@@ -110,12 +110,18 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libCreationTimeHelper := -ldl
 endif
 
-# Kerberos native test library needs krb5 and com_err libraries
-BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeCredentialCacheHelper := -lkrb5 -lcom_err
+# Kerberos native test library - only build if krb5 is available
+ifeq ($(ENABLE_LIBLINUXKRB5), true)
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeCredentialCacheHelper := $(KRB5_LIBS)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper := $(KRB5_CFLAGS)
 
-ifeq ($(call isTargetOs, macosx), true)
-  # On macOS, disable deprecation warnings for krb5 API
-  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper := -Wno-deprecated-declarations
+  ifeq ($(call isTargetOs, macosx), true)
+    # On macOS, disable deprecation warnings for krb5 API
+    BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper += -Wno-deprecated-declarations
+  endif
+else
+  # Exclude the Kerberos test library if krb5 is not available
+  BUILD_JDK_JTREG_EXCLUDE += libNativeCredentialCacheHelper.c
 endif
 
 ifeq ($(ASAN_ENABLED), true)
