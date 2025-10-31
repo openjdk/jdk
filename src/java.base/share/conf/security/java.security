@@ -1341,8 +1341,9 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #keystore.pkcs12.keyPbeIterationCount = 10000
 
 # The algorithm used to calculate the optional MacData at the end of a PKCS12
-# file. This can be any HmacPBE algorithm defined in the Mac section of the
-# Java Security Standard Algorithm Names Specification. When set to "NONE",
+# file. This can be any HmacPBE<digest> or PBEWith<mac> algorithm defined in
+# the Mac section of the Java Security Standard Algorithm Names Specification,
+# for example, HmacPBESHA256 or PBEWithHmacSHA256. When set to "NONE",
 # no Mac is generated. The default value is "HmacPBESHA256".
 #keystore.pkcs12.macAlgorithm = HmacPBESHA256
 
