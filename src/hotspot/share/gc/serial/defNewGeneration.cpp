@@ -844,8 +844,7 @@ void DefNewGeneration::print_on(outputStream* st) const {
 }
 
 HeapWord* DefNewGeneration::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
 
   size_t eden_free_bytes = eden()->free();
   size_t requested_bytes = word_size * HeapWordSize;
