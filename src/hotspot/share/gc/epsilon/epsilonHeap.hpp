@@ -29,7 +29,6 @@
 #include "gc/epsilon/epsilonBarrierSet.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
 #include "services/memoryManager.hpp"
@@ -85,7 +84,7 @@ public:
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;

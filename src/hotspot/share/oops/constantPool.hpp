@@ -37,8 +37,8 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.
@@ -145,7 +145,7 @@ class ConstantPool : public Metadata {
   enum {
     _has_preresolution    = 1,       // Flags
     _on_stack             = 2,
-    _is_shared            = 4,
+    _in_aot_cache         = 4,
     _has_dynamic_constant = 8,
     _is_for_method_handle_intrinsic = 16
   };
@@ -212,7 +212,7 @@ class ConstantPool : public Metadata {
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution() {
-    assert(!is_shared(), "should never be called on shared ConstantPools");
+    assert(!in_aot_cache(), "should never be called on ConstantPools in AOT cache");
     _flags |= _has_preresolution;
   }
 
@@ -248,8 +248,8 @@ class ConstantPool : public Metadata {
   bool is_maybe_on_stack() const;
   void set_on_stack(const bool value);
 
-  // Faster than MetaspaceObj::is_shared() - used by set_on_stack()
-  bool is_shared() const                     { return (_flags & _is_shared) != 0; }
+  // Shadows MetaspaceObj::in_aot_cache(). It's faster and is used by set_on_stack()
+  bool in_aot_cache() const               { return (_flags & _in_aot_cache) != 0; }
 
   bool has_dynamic_constant() const       { return (_flags & _has_dynamic_constant) != 0; }
   void set_has_dynamic_constant()         { _flags |= _has_dynamic_constant; }
@@ -872,7 +872,7 @@ private:
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    HashTable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
    public:
     void add_if_absent(const Symbol* sym, u2 value) {

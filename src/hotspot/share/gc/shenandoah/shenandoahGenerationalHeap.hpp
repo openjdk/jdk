@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "memory/universe.hpp"
 #include "utilities/checkedCast.hpp"
@@ -44,13 +43,13 @@ public:
   void initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    shenandoah_assert_generational();
+    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    shenandoah_assert_generational();
+    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
@@ -80,6 +79,7 @@ public:
     return _age_census;
   }
 
+  inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
@@ -87,8 +87,11 @@ public:
 
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
-  void evacuate_collection_set(bool concurrent) override;
-  void promote_regions_in_place(bool concurrent);
+
+  // In the generational mode, we will use these two functions for young, mixed, and global collections.
+  // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
+  void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) override;
+  void promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent);
 
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
@@ -98,7 +101,9 @@ public:
 
   // ---------- Update References
   //
-  void update_heap_references(bool concurrent) override;
+  // In the generational mode, we will use this function for young, mixed, and global collections.
+  // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
+  void update_heap_references(ShenandoahGeneration* generation, bool concurrent) override;
   void final_update_refs_update_region_states() override;
 
 private:

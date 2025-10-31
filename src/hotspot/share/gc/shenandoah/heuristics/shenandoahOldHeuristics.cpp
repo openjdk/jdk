@@ -141,7 +141,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     // If region r is evacuated to fragmented memory (to free memory within a partially used region), then we need
     // to decrease the capacity of the fragmented memory by the scaled loss.
 
-    size_t live_data_for_evacuation = r->get_live_data_bytes();
+    const size_t live_data_for_evacuation = r->get_live_data_bytes();
     size_t lost_available = r->free();
 
     if ((lost_available > 0) && (excess_fragmented_available > 0)) {
@@ -169,7 +169,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
       // We were not able to account for the lost free memory within fragmented memory, so we need to take this
       // allocation out of unfragmented memory.  Unfragmented memory does not need to account for loss of free.
       if (live_data_for_evacuation > unfragmented_available) {
-        // There is not room to evacuate this region or any that come after it in within the candidates array.
+        // There is no room to evacuate this region or any that come after it in within the candidates array.
+        log_debug(gc, cset)("Not enough unfragmented memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+                            unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= live_data_for_evacuation;
@@ -187,7 +189,9 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
         evacuation_need = 0;
       }
       if (evacuation_need > unfragmented_available) {
-        // There is not room to evacuate this region or any that come after it in within the candidates array.
+        // There is no room to evacuate this region or any that come after it in within the candidates array.
+        log_debug(gc, cset)("Not enough unfragmented memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+                            unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= evacuation_need;
@@ -412,7 +416,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t defrag_count = 0;
   size_t total_uncollected_old_regions = _last_old_region - _last_old_collection_candidate;
 
-  if (cand_idx > _last_old_collection_candidate) {
+  if ((ShenandoahGenerationalHumongousReserve > 0) && (cand_idx > _last_old_collection_candidate)) {
     // Above, we have added into the set of mixed-evacuation candidates all old-gen regions for which the live memory
     // that they contain is below a particular old-garbage threshold.  Regions that were not selected for the collection
     // set hold enough live memory that it is not considered efficient (by "garbage-first standards") to compact these

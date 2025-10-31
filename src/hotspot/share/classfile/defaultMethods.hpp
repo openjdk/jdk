@@ -26,8 +26,8 @@
 #define SHARE_CLASSFILE_DEFAULTMETHODS_HPP
 
 #include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
 
 class InstanceKlass;
 class Symbol;

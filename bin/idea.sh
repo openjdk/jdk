@@ -125,7 +125,8 @@ if [ -d "$TOPLEVEL_DIR/.hg" ] ; then
     VCS_TYPE="hg4idea"
 fi
 
-if [ -d "$TOPLEVEL_DIR/.git" ] ; then
+# Git worktrees use a '.git' file rather than directory, so test both.
+if [ -d "$TOPLEVEL_DIR/.git" -o -f "$TOPLEVEL_DIR/.git" ] ; then
     VCS_TYPE="Git"
 fi
 

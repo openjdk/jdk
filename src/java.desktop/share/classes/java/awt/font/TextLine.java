@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -836,13 +836,17 @@ final class TextLine {
         }
 
         if (result == null) {
-            result = new Rectangle2D.Float(Float.MAX_VALUE, Float.MAX_VALUE, Float.MIN_VALUE, Float.MIN_VALUE);
+            result = new Rectangle2D.Float(0, 0, 0, 0);
         }
 
         return result;
     }
 
     public Rectangle2D getItalicBounds() {
+
+        if (fComponents.length == 0) {
+            return new Rectangle2D.Float(0, 0, 0, 0);
+        }
 
         float left = Float.MAX_VALUE, right = -Float.MAX_VALUE;
         float top = Float.MAX_VALUE, bottom = -Float.MAX_VALUE;
@@ -927,7 +931,7 @@ final class TextLine {
         // dlf: get baseRot from font for now???
 
         if (!requiresBidi) {
-            requiresBidi = Bidi.requiresBidi(chars, 0, chars.length);
+            requiresBidi = Bidi.requiresBidi(chars, 0, characterCount);
         }
 
         if (requiresBidi) {
@@ -935,7 +939,7 @@ final class TextLine {
               ? Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT
               : values.getRunDirection();
 
-          bidi = new Bidi(chars, 0, embs, 0, chars.length, bidiflags);
+          bidi = new Bidi(chars, 0, embs, 0, characterCount, bidiflags);
           if (!bidi.isLeftToRight()) {
               levels = BidiUtils.getLevels(bidi);
               int[] charsVtoL = BidiUtils.createVisualToLogicalMap(levels);
@@ -945,13 +949,11 @@ final class TextLine {
         }
 
         Decoration decorator = Decoration.getDecoration(values);
-
         int layoutFlags = 0; // no extra info yet, bidi determines run and line direction
         TextLabelFactory factory = new TextLabelFactory(frc, chars, bidi, layoutFlags);
 
         TextLineComponent[] components = new TextLineComponent[1];
-
-        components = createComponentsOnRun(0, chars.length,
+        components = createComponentsOnRun(0, characterCount,
                                            chars,
                                            charsLtoV, levels,
                                            factory, font, lm,
@@ -972,7 +974,7 @@ final class TextLine {
         }
 
         return new TextLine(frc, components, lm.baselineOffsets,
-                            chars, 0, chars.length, charsLtoV, levels, isDirectionLTR);
+                            chars, 0, characterCount, charsLtoV, levels, isDirectionLTR);
     }
 
     private static TextLineComponent[] expandArray(TextLineComponent[] orig) {
