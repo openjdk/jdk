@@ -1379,6 +1379,7 @@ public:
     WorkerTask("PSAdjust task"),
     _threads_claim_token_scope(),
     _weak_proc_task(nworkers),
+    _oop_storage_iter(),
     _nworkers(nworkers),
     _code_cache_claimed(false) {
 
