@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1983,7 +1984,7 @@ void LIR_Assembler::align_call(LIR_Code code) {  }
 
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ trampoline_call(Address(op->addr(), rtype), op->method());
   if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;

@@ -1036,6 +1036,7 @@ bool CodeBuffer::finalize_stubs() {
 }
 
 void CodeBuffer::shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset) {
+  assert(_finalize_stubs || _shared_stub_to_interp_requests == nullptr, "stubs have been finalized already");
   if (_shared_stub_to_interp_requests == nullptr) {
     _shared_stub_to_interp_requests = new SharedStubToInterpRequests(8);
   }
