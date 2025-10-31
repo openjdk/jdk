@@ -34,8 +34,6 @@
  */
 
 import java.lang.invoke.MethodHandles;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.reflect.ConstantPool;
 
 import org.objectweb.asm.ClassWriter;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -43,22 +41,13 @@ import static org.objectweb.asm.Opcodes.V17;
 
 public class HiddenClassesTest {
 
-    private static int getDefaultSize() throws Exception {
-        var cw = new ClassWriter(0);
-        cw.visit(V17, ACC_PUBLIC, "Empty", null, "java/lang/Object", null);
-        Class<?> c = MethodHandles.lookup().defineClass(cw.toByteArray());
-        ConstantPool cp = SharedSecrets.getJavaLangAccess().getConstantPool(c);
-        return cp.getSize();
-    }
-
     public static void main(String[] args) throws Exception {
         var cw = new ClassWriter(0);
-        int defaultSize = getDefaultSize();
-        System.out.println("default size is " + defaultSize);
         cw.visit(V17, ACC_PUBLIC, "Hidden", null, "java/lang/Object", null);
         // This magic number causes a constant pool index overflow with this asm generated class.
-        for (int i = 0; i < 65535 - defaultSize; i++) {
-            cw.newUTF8(Integer.toString(i));
+        int i = 0;
+        while (i < 65535-1) {
+            i = cw.newUTF8(Integer.toString(i));
         }
         try {
             MethodHandles.lookup().defineHiddenClass(cw.toByteArray(), false);
