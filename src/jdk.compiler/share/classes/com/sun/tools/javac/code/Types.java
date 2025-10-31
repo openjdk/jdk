@@ -2109,7 +2109,7 @@ public class Types {
     /**
      * Mapping to take element type of an arraytype
      */
-    private TypeMapping<Void> elemTypeFun = new TypeMapping<Void>() {
+    public TypeMapping<Void> elemTypeFun = new TypeMapping<Void>() {
         @Override
         public Type visitArrayType(ArrayType t, Void _unused) {
             return t.elemtype;
@@ -4090,29 +4090,29 @@ public class Types {
             return lub(classes);
         }
     }
-    // where
-        public List<Type> erasedSupertypes(Type t) {
-            ListBuffer<Type> buf = new ListBuffer<>();
-            for (Type sup : closure(t)) {
-                if (sup.hasTag(TYPEVAR)) {
-                    buf.append(sup);
-                } else {
-                    buf.append(erasure(sup));
-                }
-            }
-            return buf.toList();
-        }
 
-        private Type arraySuperType;
-        private Type arraySuperType() {
-            // initialized lazily to avoid problems during compiler startup
-            if (arraySuperType == null) {
-                // JLS 10.8: all arrays implement Cloneable and Serializable.
-                arraySuperType = makeIntersectionType(List.of(syms.serializableType,
-                        syms.cloneableType), true);
+    public List<Type> erasedSupertypes(Type t) {
+        ListBuffer<Type> buf = new ListBuffer<>();
+        for (Type sup : closure(t)) {
+            if (sup.hasTag(TYPEVAR)) {
+                buf.append(sup);
+            } else {
+                buf.append(erasure(sup));
             }
-            return arraySuperType;
         }
+        return buf.toList();
+    }
+
+    private Type arraySuperType;
+    public Type arraySuperType() {
+        // initialized lazily to avoid problems during compiler startup
+        if (arraySuperType == null) {
+            // JLS 10.8: all arrays implement Cloneable and Serializable.
+            arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                    syms.cloneableType), true);
+        }
+        return arraySuperType;
+    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Greatest lower bound">

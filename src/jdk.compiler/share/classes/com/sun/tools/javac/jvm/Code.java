@@ -1826,18 +1826,46 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
-                List<Type> ec = types.intersect(getErasedSuperTypes(t1), getErasedSuperTypes(t2));
-
-                if (ec.isEmpty() || ec.head.hasTag(BOT)) {
+                List<Type> es = erasedSuper(t1, t2);
+                if (es.isEmpty() || es.head.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +
                                        t1 + " and " + t2);
                 }
 
-                return types.erasure(ec.head);
+                return types.erasure(es.head);
             }
         }
 
-        List<Type> getErasedSuperTypes(Type t) {
+        private List<Type> erasedSuper(Type... ts) {
+            if (ts[0].hasTag(ARRAY) && ts[1].hasTag(ARRAY)) {
+                return List.of(allArray(ts));
+            } else {
+                return types.intersect(getErasedSuperTypes(ts[0]), getErasedSuperTypes(ts[1]));
+            }
+        }
+
+        private Type allArray(Type... ts) {
+            Type[] elements = new Type[ts.length];
+            for (int i = 0 ; i < ts.length ; i++) {
+                Type elem = elements[i] = types.elemTypeFun.apply(ts[i]);
+                if (elem.isPrimitive()) {
+                    // if a primitive type is found, then return
+                    // arraySuperType unless all the types are the
+                    // same
+                    Type first = ts[0];
+                    for (int j = 1 ; j < ts.length ; j++) {
+                        if (!types.isSameType(first, ts[j])) {
+                            return types.arraySuperType();
+                        }
+                    }
+                    // all the array types are the same, return one
+                    return first;
+                }
+            }
+            return new ArrayType(erasedSuper(elements).head, syms.arrayClass);
+        }
+
+        private List<Type> getErasedSuperTypes(Type t) {
             if (t.hasTag(TYPEVAR)) {
                 do {
                     t = t.getUpperBound();

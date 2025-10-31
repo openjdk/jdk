@@ -25,7 +25,7 @@
  * @test
  * @bug 8369654
  * @summary javac OutOfMemoryError for complex intersection type
- * @run main ExpressionSwitchComplexIntersectionTest
+ * @compile ExpressionSwitchComplexIntersectionTest.java
  */
 
 public class ExpressionSwitchComplexIntersectionTest {
@@ -96,14 +96,19 @@ public class ExpressionSwitchComplexIntersectionTest {
             WithMixin20<ClientB> {
     }
 
-    public static void main(String... args) {
-        ClientA a = null;
-        ClientB b = null;
-        String selector = "a";
-        Object o = switch (selector) {
-            case "a" -> a;
-            case "b" -> b;
-            default -> null;
-        };
+    Object f1(boolean b, ClientA c1, ClientB c2) {
+        return b ? c1 : c2;
+    }
+
+    Object f2(boolean b, ClientA[] array1, ClientB[] array2) {
+        return b ? array1 : array2;
+    }
+
+    <TA extends ClientA, TB extends ClientB> Object f3(boolean b, TA[] array1, TB[] array2) {
+        return b ? array1 : array2;
+    }
+
+    <TA extends ClientA, TB extends ClientB, TAA extends TA, TBB extends TB> Object f4(boolean b, TAA[] array1, TBB[] array2) {
+        return b ? array1 : array2;
     }
 }
