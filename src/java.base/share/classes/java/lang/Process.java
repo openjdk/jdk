@@ -204,7 +204,7 @@ public abstract class Process implements Closeable {
      * <p>
      * Try-with-resources example to write text to a process, read back the
      * response, and close the streams and process:
-     * {@snippet class=ProcessExamples region=example}
+     * {@snippet file="ProcessExamples.java" region=example}
      *
      * @implNote
      * Concrete implementations that override this class are strongly encouraged to
