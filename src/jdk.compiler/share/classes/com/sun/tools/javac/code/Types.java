@@ -4064,7 +4064,7 @@ public class Types {
                     cl = intersect(cl, erasedSupertypes(t));
             }
             //step 2 - compute minimal erased candidate set (MEC)
-            List<Type> mec = closureMin(cl);;
+            List<Type> mec = closureMin(cl);
             //step 3 - for each element G in MEC, compute lci(Inv(G))
             List<Type> candidates = List.nil();
             for (Type erasedSupertype : mec) {
@@ -4574,7 +4574,7 @@ public class Types {
         return false;
     }
 
-    public List<Type> supertypeClosure(Type t, Type s) {
+    List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
