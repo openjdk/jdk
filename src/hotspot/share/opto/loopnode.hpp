@@ -1307,6 +1307,9 @@ public:
   // Replace parallel induction variable (parallel to trip counter)
   void replace_parallel_iv(IdealLoopTree *loop);
 
+  // Replace XOR-based parallel induction variable
+  void replace_xor_parallel_iv(IdealLoopTree *loop);
+
   Node *dom_lca( Node *n1, Node *n2 ) const {
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
