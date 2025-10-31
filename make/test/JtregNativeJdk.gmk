@@ -113,6 +113,11 @@ endif
 # Kerberos native test library needs krb5 and com_err libraries
 BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeCredentialCacheHelper := -lkrb5 -lcom_err
 
+ifeq ($(call isTargetOs, macosx), true)
+  # On macOS, disable deprecation warnings for krb5 API
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libNativeCredentialCacheHelper := -Wno-deprecated-declarations
+endif
+
 ifeq ($(ASAN_ENABLED), true)
   # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
   # default ASan options.
