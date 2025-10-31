@@ -370,7 +370,14 @@ private:
   // Search for allocation in region with same affiliation as request, using given iterator,
   // or affiliate the first usable FREE region with given affiliation and allocate in.
   template<typename Iter>
-  HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
+  HeapWord* allocate_with_affiliation(Iter& iterator,
+                                      ShenandoahAffiliation affiliation,
+                                      ShenandoahAllocRequest& req,
+                                      bool& in_new_region,
+                                      bool& allow_new_region);
+
+  // Return true if the respective generation for this request has free regions.
+  bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
 
   // Attempt to allocate memory for an evacuation from the mutator's partition.
   HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
