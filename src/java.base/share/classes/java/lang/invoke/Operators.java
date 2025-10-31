@@ -37,8 +37,8 @@ package java.lang.invoke;
  * @jls 4.2.2 Integer Operations
  * @jls 4.2.4 Floating-Point Operations
  */
-public class Operators {
-    private  Operators(){throw new AssertionError("No Operators instances for you");}
+public final class Operators {
+    private Operators(){throw new AssertionError("No Operators instances for you");}
 
     /*
      * Quoting from JLS:
@@ -70,47 +70,47 @@ public class Operators {
      * {@return whether or not the first argument is less than the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <} operator on {@code int} augments.
+     * This method wraps the {@code <} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean lessThan(int a, int b) {return a < b;}
+    public static final boolean lessThan(int a, int b) {return a < b;}
 
     /**
      * {@return whether or not the first argument is less than or
      * equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <=} operator on {@code int} augments.
+     * This method wraps the {@code <=} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean lessThanEqual(int a, int b) {return a <= b;}
+    public static final boolean lessThanEqual(int a, int b) {return a <= b;}
 
     /**
      * {@return whether or not the first argument is greater than the second argument}
      *
      * @implSpec
-     * This method wraps the {@code >} operator on {@code int} augments.
+     * This method wraps the {@code >} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean greaterThan(int a, int b) {return a > b;}
+    public static final boolean greaterThan(int a, int b) {return a > b;}
 
     /**
      * {@return whether or not the first argument is greater than or
      * equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <=} operator on {@code int} augments.
+     * This method wraps the {@code <=} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean greaterThanEqual(int a, int b) {return a >= b;}
+    public static final boolean greaterThanEqual(int a, int b) {return a >= b;}
 
     // icomp
 
@@ -118,23 +118,23 @@ public class Operators {
      * {@return whether or not the first argument is equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code ==} operator on {@code int} augments.
+     * This method wraps the {@code ==} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean equal(int a, int b) {return a == b;}
+    public static final boolean equal(int a, int b) {return a == b;}
 
     /**
      * {@return whether or not the first argument is not equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code !=} operator on {@code int} augments.
+     * This method wraps the {@code !=} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean notEqual(int a, int b) {return a != b;}
+    public static final boolean notEqual(int a, int b) {return a != b;}
 
     // Numerical operators
 
@@ -142,21 +142,21 @@ public class Operators {
      * {@return the unary plus of the argument}
      *
      * @implSpec
-     * This method wraps the unary {@code +} operator on {@code int} augment.
+     * This method wraps the unary {@code +} operator on an {@code int} argument.
      *
      * @param a the argument
      */
-    public static int plus(int a) {return +a;} // Just for completeness; don't need this.
+    public static final int plus(int a) {return +a;} // Just for completeness; don't need this.
 
     /**
      * {@return the unary negation of the argument}
      *
      * @implSpec
-     * This method wraps the unary {@code -} operator on {@code int} augment.
+     * This method wraps the unary {@code -} operator on an {@code int} argument.
      *
      * @param a the argument
      */
-    public static int negate(int a) {return -a;}
+    public static final int negate(int a) {return -a;}
 
     // Multiplicative operators
 
@@ -164,34 +164,34 @@ public class Operators {
      * {@return the product of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code *} operator on {@code int} augments.
+     * This method wraps the binary {@code *} operator on {@code int} arguments.
      *
      * @param multiplier the first operand
      * @param multiplicand the second operand
      */
-    public static int multiply(int multiplier, int multiplicand) {return multiplier * multiplicand;}
+    public static final int multiply(int multiplier, int multiplicand) {return multiplier * multiplicand;}
 
     /**
      * {@return the quotient of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code /} operator on {@code int} augments.
+     * This method wraps the binary {@code /} operator on {@code int} arguments.
      *
      * @param dividend the first operand
      * @param divisor the second operand
      */
-    public static int divide(int dividend, int divisor) {return dividend / divisor;}
+    public static final int divide(int dividend, int divisor) {return dividend / divisor;}
 
     /**
      * {@return the remainder of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code %} operator on {@code int} augments.
+     * This method wraps the binary {@code %} operator on {@code int} arguments.
      *
      * @param dividend the first operand
      * @param divisor the second operand
      */
-    public static int remainder(int dividend, int divisor) {return dividend % divisor;}
+    public static final int remainder(int dividend, int divisor) {return dividend % divisor;}
 
 
     // Additive operators
@@ -200,23 +200,23 @@ public class Operators {
      * {@return the sum of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code +} operator on {@code int} augments.
+     * This method wraps the binary {@code +} operator on {@code int} arguments.
      *
      * @param addend the first operand
      * @param augend the second operand
      */
-    public static int add(int addend, int augend) {return addend + augend;}
+    public static final int add(int addend, int augend) {return addend + augend;}
 
     /**
      * {@return the difference of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code -} operator on {@code int} augments.
+     * This method wraps the binary {@code -} operator on {@code int} arguments.
      *
      * @param minuend the first operand
      * @param subtrahend the second operand
      */
-    public static int substract(int minuend, int subtrahend) {return minuend - subtrahend;}
+    public static final int subtract(int minuend, int subtrahend) {return minuend - subtrahend;}
 
     // Increment/decrement operators
 
@@ -224,21 +224,21 @@ public class Operators {
      * {@return the operand incremented by 1}
      *
      * @implSpec
-     * This method wraps the {@code ++} operator on an {@code int} augment.
+     * This method wraps the {@code ++} operator on an {@code int} argument.
      *
      * @param a the operand
      */
-    public static int increment(int a) {return a++;}
+    public static final int increment(int a) {return ++a;}
 
     /**
      * {@return the operand incremented by 1}
      *
      * @implSpec
-     * This method wraps the {@code --} operator on an {@code int} augment.
+     * This method wraps the {@code --} operator on an {@code int} argument.
      *
      * @param a the operand
      */
-    public static int decrement(int a) {return a--;}
+    public static final int decrement(int a) {return --a;}
 
     // Shift operators
 
@@ -246,34 +246,34 @@ public class Operators {
      * {@return the first argument left shifted by the shift distance of the second argument}
      *
      * @implSpec
-     * This method wraps the {@code >>} operator on {@code int} augments.
+     * This method wraps the {@code >>} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param shiftDistance shift distance in bits
      */
-    public static int shiftLeft(int a, int shiftDistance) {return a << shiftDistance;}
+    public static final int shiftLeft(int a, int shiftDistance) {return a << shiftDistance;}
 
     /**
      * {@return the first argument right shifted by the shift distance of the second argument}
      *
      * @implSpec
-     * This method wraps the {@code >>} operator on {@code int} augments.
+     * This method wraps the {@code >>} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param shiftDistance shift distance in bits
      */
-    public static int shiftRight(int a, int shiftDistance) {return a >> shiftDistance;}
+    public static final int shiftRight(int a, int shiftDistance) {return a >> shiftDistance;}
 
     /**
      * {@return the first argument unsigned right shifted by the shift distance of the second argument}
      *
      * @implSpec
-     * This method wraps the {@code >>>} operator on {@code int} augments.
+     * This method wraps the {@code >>>} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param shiftDistance shift distance in bits
      */
-    public static int shiftRightUnsigned(int a, int shiftDistance) {return a >>> shiftDistance;}
+    public static final int shiftRightUnsigned(int a, int shiftDistance) {return a >>> shiftDistance;}
 
 
     // Bitwise operators
@@ -282,44 +282,44 @@ public class Operators {
      * {@return the complement of the argument}
      *
      * @implSpec
-     * This method wraps the {@code ~} operator applied to the {@code int} augment.
+     * This method wraps the {@code ~} operator applied to the {@code int} argument.
      *
      * @param a the argument
      */
-    public static int complement(int a) {return ~a;}
+    public static final int complement(int a) {return ~a;}
 
     /**
      * {@return the arguments AND'ed together}
      *
      * @implSpec
-     * This method wraps the {@code &} operator on {@code int} augments.
+     * This method wraps the {@code &} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static int and(int a, int b) {return a & b;}
+    public static final int and(int a, int b) {return a & b;}
 
     /**
      * {@return the arguments OR'ed together}
      *
      * @implSpec
-     * This method wraps the {@code |} operator on {@code int} augments.
+     * This method wraps the {@code |} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static int or(int a, int b) {return a | b;}
+    public static final int or(int a, int b) {return a | b;}
 
     /**
      * {@return the arguments XOR'ed together}
      *
      * @implSpec
-     * This method wraps the {@code ^} operator on {@code int} augments.
+     * This method wraps the {@code ^} operator on {@code int} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static int xor(int a, int b) {return a ^ b;}
+    public static final int xor(int a, int b) {return a ^ b;}
 
 
     // casting -- i2b, i2c, i2d, i2f, i2l, i2s
@@ -332,7 +332,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code byte}
      */
-    public static byte i2b(int a)   {return (byte)  a;}
+    public static final byte i2b(int a)   {return (byte)  a;}
 
     /**
      * {@return the result of casting the argument to {@code char}}
@@ -342,7 +342,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code char}
      */
-    public static char i2c(int a)   {return (char)  a;}
+    public static final char i2c(int a)   {return (char)  a;}
 
     /**
      * {@return the result of casting the argument to {@code double}}
@@ -352,7 +352,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code double}
      */
-    public static double i2d(int a) {return (double)a;}
+    public static final double i2d(int a) {return (double)a;}
 
     /**
      * {@return the result of casting the argument to {@code float}}
@@ -362,7 +362,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code float}
      */
-    public static float i2f(int a)  {return (float) a;}
+    public static final float i2f(int a)  {return (float) a;}
 
     /**
      * {@return the result of casting the argument to {@code long}}
@@ -372,7 +372,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code long}
      */
-    public static long i2l(int a)   {return (long)  a;}
+    public static final long i2l(int a)   {return (long)  a;}
 
     /**
      * {@return the result of indexing into the argument array}
@@ -383,7 +383,7 @@ public class Operators {
      * @param array the argument to convert to index into
      * @param index the index
      */
-    public static int iaload(int[] array, int index) {return array[index];}
+    public static final int iaload(int[] array, int index) {return array[index];}
 
     /**
      * Store a value into the specified index of the argument array.
@@ -393,9 +393,9 @@ public class Operators {
      *
      * @param array the argument to convert to index into
      * @param index the index
-     * @param value the value to store into the aray
+     * @param value the value to store into the array
      */
-    public static void iastore(int[] array, int index, int value) {array[index] = value; }
+    public static final void iastore(int[] array, int index, int value) {array[index] = value; }
 
     // TODO add methods for long
     // casting -- l2d, l2f, l2i
@@ -433,69 +433,69 @@ public class Operators {
      * {@return whether or not the first argument is less than the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <} operator on {@code float} augments.
+     * This method wraps the {@code <} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean lessThan(float a, float b) {return a < b;}
+    public static final boolean lessThan(float a, float b) {return a < b;}
 
     /**
      * {@return whether or not the first argument is less than or
      * equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <=} operator on {@code float} augments.
+     * This method wraps the {@code <=} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean lessThanEqual(float a, float b) {return a <= b;}
+    public static final boolean lessThanEqual(float a, float b) {return a <= b;}
 
     /**
      * {@return whether or not the first argument is greater than the second argument}
      *
      * @implSpec
-     * This method wraps the {@code >} operator on {@code float} augments.
+     * This method wraps the {@code >} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean greaterThan(float a, float b) {return a > b;}
+    public static final boolean greaterThan(float a, float b) {return a > b;}
 
     /**
      * {@return whether or not the first argument is greater than or
      * equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code <=} operator on {@code float} augments.
+     * This method wraps the {@code <=} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean greaterThanEqual(float a, float b) {return a >= b;}
+    public static final boolean greaterThanEqual(float a, float b) {return a >= b;}
 
     /**
      * {@return whether or not the first argument is equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code ==} operator on {@code float} augments.
+     * This method wraps the {@code ==} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean equal(float a, float b) {return a == b;}
+    public static final boolean equal(float a, float b) {return a == b;}
 
     /**
      * {@return whether or not the first argument is not equal to the second argument}
      *
      * @implSpec
-     * This method wraps the {@code !=} operator on {@code float} augments.
+     * This method wraps the {@code !=} operator on {@code float} arguments.
      *
      * @param a the first argument
      * @param b the second argument
      */
-    public static boolean notEqual(float a, float b) {return a != b;}
+    public static final boolean notEqual(float a, float b) {return a != b;}
 
     // Include fcompg, fcompl?
 
@@ -505,21 +505,21 @@ public class Operators {
      * {@return the unary plus of the argument}
      *
      * @implSpec
-     * This method wraps the unary {@code +} operator on {@code float} augment.
+     * This method wraps the unary {@code +} operator on a {@code float} argument.
      *
      * @param a the argument
      */
-    public static float plus(float a) {return +a;} // Just for completeness; don't need this.
+    public static final float plus(float a) {return +a;} // Just for completeness; don't need this.
 
     /**
      * {@return the unary negation of the argument}
      *
      * @implSpec
-     * This method wraps the unary {@code -} operator on {@code float} augment.
+     * This method wraps the unary {@code -} operator on a {@code float} argument.
      *
      * @param a the argument
      */
-    public static float negate(float a) {return -a;}
+    public static final float negate(float a) {return -a;}
 
     // Multiplicative operators
 
@@ -527,34 +527,34 @@ public class Operators {
      * {@return the product of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code *} operator on {@code float} augments.
+     * This method wraps the binary {@code *} operator on {@code float} arguments.
      *
      * @param multiplier the first operand
      * @param multiplicand the second operand
      */
-    public static float multiply(float multiplier, float multiplicand) {return multiplier * multiplicand;}
+    public static final float multiply(float multiplier, float multiplicand) {return multiplier * multiplicand;}
 
     /**
      * {@return the quotient of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code /} operator on {@code float} augments.
+     * This method wraps the binary {@code /} operator on {@code float} arguments.
      *
      * @param dividend the first operand
      * @param divisor the second operand
      */
-    public static float divide(float dividend, float divisor) {return dividend / divisor;}
+    public static final float divide(float dividend, float divisor) {return dividend / divisor;}
 
     /**
      * {@return the remainder of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code %} operator on {@code float} augments.
+     * This method wraps the binary {@code %} operator on {@code float} arguments.
      *
      * @param dividend the first operand
      * @param divisor the second operand
      */
-    public static float remainder(float dividend, float divisor) {return dividend % divisor;}
+    public static final float remainder(float dividend, float divisor) {return dividend % divisor;}
 
 
     // Additive operators
@@ -563,23 +563,23 @@ public class Operators {
      * {@return the sum of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code +} operator on {@code float} augments.
+     * This method wraps the binary {@code +} operator on {@code float} arguments.
      *
      * @param addend the first operand
      * @param augend the second operand
      */
-    public static float add(float addend, float augend) {return addend + augend;}
+    public static final float add(float addend, float augend) {return addend + augend;}
 
     /**
      * {@return the difference of the two operands}
      *
      * @implSpec
-     * This method wraps the binary {@code -} operator on {@code float} augments.
+     * This method wraps the binary {@code -} operator on {@code float} arguments.
      *
      * @param minuend the first operand
      * @param subtrahend the second operand
      */
-    public static float substract(float minuend, float subtrahend) {return minuend - subtrahend;}
+    public static final float subtract(float minuend, float subtrahend) {return minuend - subtrahend;}
 
     // Increment/decrement operators
 
@@ -587,21 +587,21 @@ public class Operators {
      * {@return the operand incremented by 1}
      *
      * @implSpec
-     * This method wraps the {@code ++} operator on an {@code float} augment.
+     * This method wraps the {@code ++} operator on an {@code float} argument.
      *
      * @param a the operand
      */
-    public static float increment(float a) {return a++;}
+    public static final float increment(float a) {return ++a;}
 
     /**
      * {@return the operand incremented by 1}
      *
      * @implSpec
-     * This method wraps the {@code --} operator on an {@code float} augment.
+     * This method wraps the {@code --} operator on an {@code float} argument.
      *
      * @param a the operand
      */
-    public static float decrement(float a) {return a--;}
+    public static final float decrement(float a) {return --a;}
 
     // casting -- f2d, f2i, f2l
 
@@ -613,7 +613,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code double}
      */
-    public static double f2d(float a) {return (double)a;}
+    public static final double f2d(float a) {return (double)a;}
 
     /**
      * {@return the result of casting the argument to {@code int}}
@@ -623,7 +623,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code int}
      */
-    public static int f2i(float a)   {return (int)    a;}
+    public static final int f2i(float a)   {return (int)    a;}
 
     /**
      * {@return the result of casting the argument to {@code long}}
@@ -633,7 +633,7 @@ public class Operators {
      *
      * @param a the argument to convert to {@code long}
      */
-    public static long f2l(float a)   {return (long)  a;}
+    public static final long f2l(float a)   {return (long)  a;}
 
     /**
      * {@return the result of indexing into the argument array}
@@ -643,8 +643,9 @@ public class Operators {
      *
      * @param array the argument to convert to index into
      * @param index the index
+     * @see MethodHandles#arrayElementGetter(Class<?>)
      */
-    public static float faload(float[] array, int index) {return array[index];}
+    public static final float faload(float[] array, int index) {return array[index];}
 
     /**
      * Store a value into the specified index of the argument array.
@@ -654,9 +655,10 @@ public class Operators {
      *
      * @param array the argument to convert to index into
      * @param index the index
-     * @param value the value to store into the aray
+     * @param value the value to store into the array
+     * @see MethodHandles#arrayElementSetter(Class<?>)
      */
-    public static void fastore(float[] array, int index, float value) {array[index] = value; }
+    public static final void fastore(float[] array, int index, float value) {array[index] = value; }
 
 
     // TODO add methods for double
@@ -672,8 +674,9 @@ public class Operators {
      *
      * @param t the throwable to throw
      * @throws Throwable unconditionally
+     * @see MethodHandles#throwException(Class<?>, Class<? extends Throwable>)
      */
-    public static void athrow(Throwable t) throws Throwable {
+    public static final void athrow(Throwable t) throws Throwable {
         throw t;
     }
 
@@ -695,5 +698,5 @@ public class Operators {
      * @apiNote
      * This method corresponds to the {@code nop} JVM instruction.
      */
-    public void nop() {return;}
+    public static final void nop() {return;}
 }
