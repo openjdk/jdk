@@ -1271,7 +1271,7 @@ void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation, b
 
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   {
-    // Java threads take this lock while they are being attached and added to the list of thread.
+    // Java threads take this lock while they are being attached and added to the list of threads.
     // If another thread holds this lock before we update the gc state, it will receive a stale
     // gc state, but they will have been added to the list of java threads and so will be corrected
     // by the following handshake.
