@@ -1826,6 +1826,13 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
+                /* the most semantically correct approach here would be to invoke Types::lub
+                 * and then erase the result.
+                 * But this approach can backfire for some complex cases, see JDK-8369654.
+                 * This is why the method below leverages the fact that the result
+                 * would be erased to produce a correct supertype using a simpler approach compared
+                 * to a full blown lub.
+                 */
                 Type es = erasedSuper(t1, t2);
                 if (es == null || es.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +
