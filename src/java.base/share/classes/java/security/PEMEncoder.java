@@ -206,8 +206,8 @@ public final class PEMEncoder {
             case EncryptedPrivateKeyInfo epki -> {
                 byte[] encoding = null;
                 if (key != null) {
-                    throw new IllegalArgumentException("Certificates " +
-                        "cannot be encrypted");
+                    throw new IllegalArgumentException(
+                        "EncryptedPrivateKeyInfo cannot be encrypted");
                 }
                 try {
                     encoding = epki.getEncoded();

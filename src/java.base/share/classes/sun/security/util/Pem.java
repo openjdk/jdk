@@ -191,10 +191,7 @@ public class Pem {
                     if (hyphen == 5) {
                         headerStarted = true;
                     } else {
-                        while (hyphen > 0) {
-                            os.write('-');
-                            hyphen--;
-                        }
+                        hyphen = 0;
                     }
                 }
                 default -> hyphen = 0;
