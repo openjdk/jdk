@@ -47,13 +47,12 @@ public class TestDForceSequentialScenarios {
                 Scenario s3 = new Scenario(10);
                 new TestFramework().addScenarios(s1, s2, s3).startParallel();
         } else {
-            OutputAnalyzer oa;
             ProcessBuilder process = ProcessTools.createLimitedTestJavaProcessBuilder(
                     "-Dtest.jdk=" + Utils.TEST_JDK,
                     "-DForceSequentialScenarios=true",
                     "ir_framework.tests.TestDForceSequentialScenarios",
                     "test");
-            oa = ProcessTools.executeProcess(process);
+            OutputAnalyzer oa = ProcessTools.executeProcess(process);
             oa.shouldHaveExitValue(0);
             System.out.println(oa.getOutput());
             Asserts.assertTrue(oa.getOutput().matches("(?s).*Scenario #1.*Scenario #5.*Scenario #10.*"));
