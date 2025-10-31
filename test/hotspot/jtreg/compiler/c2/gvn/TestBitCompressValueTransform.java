@@ -722,6 +722,41 @@ public class TestBitCompressValueTransform {
         }
     }
 
+    @Test
+    @IR (counts = { IRNode.COMPRESS_BITS, " >0 " }, applyIfCPUFeature = { "bmi2", "true" })
+    public static long test21(long x) {
+        // Analysis of when this used to produce wrong results on Windows:
+        //
+        // Very similar to case in test20, but this time we go into the A) case.
+        //
+        // maskcon = 0xffff_ffff
+        // bitcount = 32
+        //
+        // And now the problematic part:
+        // hi = (1UL << bitcount) - 1;
+        //
+        // On Windows, this becomes 0 (but it should be 0xffff_ffff).
+        // Hence, the range wrongly collapses to [0, 0], and the CompressBits node
+        // is wrongly replaced with a zero constant.
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @DontCompile
+    public static long test21_interpreted(long x) {
+        return Long.compress(x, 0xffff_ffffL);
+    }
+
+    @Run (test = "test21")
+    public void run21() {
+        for (int i = 0; i < 100; i++) {
+            int arg = GEN_I.next();
+
+            long actual = test21(arg);
+            long expected = test21_interpreted(arg);
+            Asserts.assertEQ(actual, expected);
+        }
+    }
+
     public static void main(String[] args) {
         TestFramework.run(TestBitCompressValueTransform.class);
     }

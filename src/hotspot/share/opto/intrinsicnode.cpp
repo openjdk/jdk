@@ -273,8 +273,7 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
       //  result.lo = 0
       if (maskcon != -1L) {
         int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
-        // TODO: this also looks suspicious.
-        hi = (1UL << bitcount) - 1;
+        hi = (1ULL << bitcount) - 1;
         lo = 0L;
       } else {
         // preserve originally assigned hi (MAX_INT/LONG) and lo (MIN_INT/LONG) values
