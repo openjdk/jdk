@@ -55,12 +55,12 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *     -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
- *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.GetUsageTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *     -XX:-UseCodeCacheFlushing -XX:-MethodFlushing
- *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.GetUsageTest
  */
 

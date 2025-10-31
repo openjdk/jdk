@@ -54,11 +54,11 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
+ *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.PeakUsageTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
- *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
+ *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.PeakUsageTest
  */
 

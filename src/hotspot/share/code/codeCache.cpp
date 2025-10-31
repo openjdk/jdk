@@ -446,7 +446,7 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     // Tiered compilation: use all code heaps
     // except the hot code heap unless it is requested.
 
-    if (COMPILER2_PRESENT(!HotCodeGrouper &&) (code_blob_type == CodeBlobType::MethodHot)) {
+    if (COMPILER2_PRESENT(!HotCodeHeap &&) (code_blob_type == CodeBlobType::MethodHot)) {
       return false;
     }
 
@@ -456,7 +456,7 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     // and the hot code heap if it is requested.
     return (code_blob_type == CodeBlobType::NonNMethod) ||
            (code_blob_type == CodeBlobType::MethodNonProfiled)
-           COMPILER2_PRESENT(|| ((code_blob_type == CodeBlobType::MethodHot) && HotCodeGrouper));
+           COMPILER2_PRESENT(|| ((code_blob_type == CodeBlobType::MethodHot) && HotCodeHeap));
   }
 }
 

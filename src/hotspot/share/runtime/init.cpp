@@ -208,7 +208,7 @@ jint init_globals2() {
   MethodHandles::generate_adapters();
 
 #ifdef COMPILER2
-  if (HotCodeGrouper) {
+  if (HotCodeHeap) {
     HotCodeGrouper::initialize();
   }
 #endif // COMPILER2

@@ -52,8 +52,8 @@ public class TestSegmentedCodeCacheOption {
                     true);
     private static final String UNLOCK_EXPERIMENTAL_VM_OPTIONS
             = CommandLineOptionTest.prepareBooleanFlag("UnlockExperimentalVMOptions", true);
-    private static final String HOT_CODE_GROUPER
-            = CommandLineOptionTest.prepareBooleanFlag("HotCodeGrouper", true);
+    private static final String HOT_CODE_HEAP
+            = CommandLineOptionTest.prepareBooleanFlag("HotCodeHeap", true);
     private static final long THRESHOLD_CC_SIZE_VALUE
             = CodeCacheOptions.mB(240);
     private static final long BELOW_THRESHOLD_CC_SIZE
@@ -185,7 +185,7 @@ public class TestSegmentedCodeCacheOption {
                 CommandLineOptionTest.verifyOptionValueForSameVM(
                         SEGMENTED_CODE_CACHE, "true", errorMessage,
                         UNLOCK_EXPERIMENTAL_VM_OPTIONS,
-                        HOT_CODE_GROUPER,
+                        HOT_CODE_HEAP,
                         CommandLineOptionTest.prepareNumericFlag(
                                 BlobType.MethodHot.sizeOptionName,
                                 HOT_CODE_HEAP_SIZE),
@@ -205,7 +205,7 @@ public class TestSegmentedCodeCacheOption {
                         BlobType.MethodHot.sizeOptionName, String.valueOf(HOT_CODE_HEAP_SIZE),
                         errorMessage,
                         UNLOCK_EXPERIMENTAL_VM_OPTIONS,
-                        HOT_CODE_GROUPER,
+                        HOT_CODE_HEAP,
                         CommandLineOptionTest.prepareNumericFlag(
                                 BlobType.All.sizeOptionName,
                                 BELOW_THRESHOLD_CC_SIZE),

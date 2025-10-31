@@ -43,7 +43,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,null::*
  *                   -XX:ReservedCodeCacheSize=20m -XX:+SegmentedCodeCache
- *                   -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=4M
+ *                   -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=4M
  *                   compiler.codecache.MHIntrinsicAllocFailureTest
  */
 

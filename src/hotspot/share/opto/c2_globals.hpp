@@ -896,8 +896,8 @@
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
                                                                             \
-  product(bool, HotCodeGrouper, false, EXPERIMENTAL,                        \
-          "Relocate hot code to HotCodeHeap")                               \
+  product(bool, HotCodeHeap, false, EXPERIMENTAL,                           \
+          "Enable the code heap for hot C2 nmethods")                      \
                                                                             \
   product(double, HotCodeMinMethodFrequency, 0.001, DIAGNOSTIC,             \
           "Minimum frequency of a method to be considered actively used")   \

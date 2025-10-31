@@ -56,11 +56,11 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M
  *                   -Xmixed -XX:TieredStopAtLevel=4
  *                   compiler.codecache.OverflowCodeCacheTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M
+ *                   -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:HotCodeHeapSize=8M
  *                   -Xmixed -XX:TieredStopAtLevel=4
  *                   compiler.codecache.OverflowCodeCacheTest
  */

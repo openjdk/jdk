@@ -78,17 +78,13 @@ static void set_state(State new_state) {
 }
 
 void HotCodeGrouper::initialize() {
-  if (!CompilerConfig::is_c2_enabled()) {
-    return; // No C2 support, no need for nmethod grouping
+  if (!HotCodeHeap) {
+    return; // No hot code heap, no need for nmethod grouping
   }
 
-  if (!NMethodRelocation) {
-    vm_exit_during_initialization("NMethodRelocation must be enabled to use HotCodeGrouper");
-  }
-
-  if (HotCodeHeapSize == 0) {
-    vm_exit_during_initialization("HotCodeHeapSize must be non-zero to use HotCodeGrouper");
-  }
+  assert(CompilerConfig::is_c2_enabled(), "HotCodeGrouper requires C2 enabled");
+  assert(NMethodRelocation, "HotCodeGrouper requires NMethodRelocation enabled");
+  assert(HotCodeHeapSize > 0, "HotCodeHeapSize must be non-zero to use HotCodeGrouper");
 
   _nmethod_grouper_thread = new HotCodeGrouperThread();
   if (os::create_thread(_nmethod_grouper_thread, os::os_thread)) {
