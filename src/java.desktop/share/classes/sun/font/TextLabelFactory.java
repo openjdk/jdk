@@ -42,8 +42,7 @@ import java.text.Bidi;
    * @see Font
    * @see FontRenderContext
    * @see java.awt.font.GlyphVector
-   * @see TextLabel
-   * @see ExtendedTextLabel
+   * @see ExtendedTextSourceLabel
    * @see Bidi
    * @see java.awt.font.TextLayout
    */
@@ -100,7 +99,7 @@ public final class TextLabelFactory {
   }
 
   /**
-   * Create an extended glyph array for the text between start and limit.
+   * Create a glyph array for the text between start and limit.
    *
    * @param font the font to use to generate glyphs and character positions.
    * @param start the start of the subrange for which to create the glyph array
@@ -113,11 +112,11 @@ public final class TextLabelFactory {
    * at start.  Clients should ensure that all text between start and limit
    * has the same bidi level for the current line.
    */
-  public ExtendedTextLabel createExtended(Font font,
-                                          CoreMetrics lm,
-                                          Decoration decorator,
-                                          int start,
-                                          int limit) {
+  public ExtendedTextSourceLabel createTextLabel(Font font,
+                                                 CoreMetrics lm,
+                                                 Decoration decorator,
+                                                 int start,
+                                                 int limit) {
 
     if (start > limit || start < lineStart || limit > lineLimit) {
       throw new IllegalArgumentException("bad start: " + start + " or limit: " + limit);
