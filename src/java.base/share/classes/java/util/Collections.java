@@ -4944,6 +4944,11 @@ public final class Collections {
         }
 
         @Override
+        public List<E> reversed() {
+            return this;
+        }
+
+        @Override
         public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
 
         // Preserves singleton property
@@ -5310,6 +5315,18 @@ public final class Collections {
         public void sort(Comparator<? super E> c) {
         }
         @Override
+        public List<E> reversed() {
+            return this;
+        }
+        @Override
+        public E getFirst() {
+            return element;
+        }
+        @Override
+        public E getLast() {
+            return element;
+        }
+        @Override
         public Spliterator<E> spliterator() {
             return singletonSpliterator(element);
         }
@@ -5550,6 +5567,11 @@ public final class Collections {
                     a[n] = null;
             }
             return a;
+        }
+
+        @Override
+        public List<E> reversed() {
+            return this;
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
