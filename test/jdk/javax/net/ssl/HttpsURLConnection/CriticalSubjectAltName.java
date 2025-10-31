@@ -217,7 +217,6 @@ public class CriticalSubjectAltName implements HostnameVerifier {
 
     public static void main(String[] args) throws Exception {
         if (args[1].contains("MD5")) {
-            // MD5 is used in this test case, don't disable MD5 algorithm.
             SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
                     List.of("MD5"));
             SecurityUtils.removeFromDisabledTlsAlgs("MD5");

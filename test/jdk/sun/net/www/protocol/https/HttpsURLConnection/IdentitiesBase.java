@@ -155,7 +155,7 @@ public abstract class IdentitiesBase {
     }
 
     // get the ssl context
-    protected SSLContext getSSLContext(X509Certificate trustedCert,
+    private SSLContext getSSLContext(X509Certificate trustedCert,
                    X509Certificate keyCert, KeyPair key, char[] passphrase)
             throws Exception {
 
@@ -166,29 +166,21 @@ public abstract class IdentitiesBase {
         // import the trused cert
         ks.setCertificateEntry("RSA Export Signer", trustedCert);
 
-        if (keyCert != null) {
-            Certificate[] chain = new Certificate[2];
-            chain[0] = keyCert;
-            chain[1] = trustedCert;
+        Certificate[] chain = new Certificate[2];
+        chain[0] = keyCert;
+        chain[1] = trustedCert;
 
-            // import the key entry.
-            ks.setKeyEntry("Whatever", key.getPrivate(), passphrase, chain);
-        }
+        // import the key entry.
+        ks.setKeyEntry("Whatever", key.getPrivate(), passphrase, chain);
 
         // create SSL context
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(ks);
 
         SSLContext ctx = SSLContext.getInstance(protocol);
-
-        if (keyCert != null) {
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
-
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, passphrase);
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         return ctx;
     }
