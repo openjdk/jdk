@@ -317,14 +317,11 @@ class MacData {
         if (algName.equals("PBMAC1")) {
             DerOutputStream tmp1 = new DerOutputStream();
             DerOutputStream tmp2 = new DerOutputStream();
-            DerOutputStream tmp3 = new DerOutputStream();
-
-            tmp3.writeBytes(PBMAC1Parameters.encode(macSalt, iterations,
-                    keyLength, kdfHmac, hmac));
 
             // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
             tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
-            tmp2.write(tmp3);
+            tmp2.writeBytes(PBMAC1Parameters.encode(macSalt, iterations,
+                    keyLength, kdfHmac, hmac));
 
             tmp1.write(DerValue.tag_Sequence, tmp2);
             tmp1.putOctetString(digest);
