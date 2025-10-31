@@ -95,10 +95,6 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * <p><b>Synchronous Example</b>
  * {@snippet :
- *   HttpRequest request = HttpRequest.newBuilder()
- *       .uri(URI.create("https://foo.com/"))
- *       .build();
- *
  *   HttpClient client = HttpClient.newBuilder()
  *        .version(Version.HTTP_1_1)
  *        .followRedirects(Redirect.NORMAL)
@@ -106,6 +102,10 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
  *   System.out.println(response.body());  }
