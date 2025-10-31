@@ -45,6 +45,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpHandlers;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -388,10 +389,10 @@ public final class FileServerHandler implements HttpHandler {
              OutputStream os = exchange.getResponseBody()) {
             for (RangeEntry range : ranges) {
                 if (!isSingleRange) {
-                    os.write(("--" + boundary + "\r\n").getBytes(UTF_8));
-                    os.write(("Content-Type: " + fileContentType + "\r\n").getBytes(UTF_8));
+                    os.write(("--" + boundary + "\r\n").getBytes(US_ASCII));
+                    os.write(("Content-Type: " + fileContentType + "\r\n").getBytes(US_ASCII));
                     os.write("Content-Range: bytes %s-%s/%s\r\n\r\n"
-                            .formatted(range.start, range.end, fileSize).getBytes(UTF_8));
+                            .formatted(range.start, range.end, fileSize).getBytes(US_ASCII));
                 }
                 raf.seek(range.start);
                 long bytesToWrite = range.end - range.start + 1;
@@ -405,12 +406,12 @@ public final class FileServerHandler implements HttpHandler {
                     bytesToWrite -= len;
                 }
                 if (!isSingleRange) {
-                    os.write("\r\n".getBytes(UTF_8));
+                    os.write("\r\n".getBytes(US_ASCII));
                 }
             }
             if (!isSingleRange) {
                 String closingBoundary = "--" + boundary + "--\r\n";
-                os.write(closingBoundary.getBytes(UTF_8));
+                os.write(closingBoundary.getBytes(US_ASCII));
             }
         }
     }
