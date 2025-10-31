@@ -87,6 +87,23 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   }
 }
 
+HeapWord* ShenandoahHeapRegion::allocate_fill(size_t size) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
+  assert(size >= ShenandoahHeap::min_fill_size(), "Cannot fill unless min fill size");
+
+  HeapWord* obj = top();
+  HeapWord* new_top = obj + size;
+  ShenandoahHeap::fill_with_object(obj, size);
+  set_top(new_top);
+
+  assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));
+  assert(is_object_aligned(obj),     "obj is not aligned: "       PTR_FORMAT, p2i(obj));
+
+  return obj;
+}
+
+
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, const ShenandoahAllocRequest& req) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);

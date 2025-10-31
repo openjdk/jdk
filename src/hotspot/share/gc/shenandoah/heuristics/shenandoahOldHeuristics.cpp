@@ -606,12 +606,12 @@ void ShenandoahOldHeuristics::set_trigger_if_old_is_fragmented(size_t first_old_
 }
 
 void ShenandoahOldHeuristics::set_trigger_if_old_is_overgrown() {
-  size_t old_used = _old_generation->used() + _old_generation->get_humongous_waste();
+  // used() includes humongous waste
+  size_t old_used = _old_generation->used();
   size_t trigger_threshold = _old_generation->usage_trigger_threshold();
   // Detects unsigned arithmetic underflow
   assert(old_used <= _heap->capacity(),
-         "Old used (%zu, %zu) must not be more than heap capacity (%zu)",
-         _old_generation->used(), _old_generation->get_humongous_waste(), _heap->capacity());
+         "Old used (%zu) must not be more than heap capacity (%zu)", _old_generation->used(), _heap->capacity());
   if (old_used > trigger_threshold) {
     _growth_trigger = true;
   }
@@ -683,7 +683,8 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   if (_growth_trigger) {
     // Growth may be falsely triggered during mixed evacuations, before the mixed-evacuation candidates have been
     // evacuated.  Before acting on a false trigger, we check to confirm the trigger condition is still satisfied.
-    const size_t current_usage = _old_generation->used() + _old_generation->get_humongous_waste();
+    // _old_generation->used() includes humongous waste.
+    const size_t current_usage = _old_generation->used();
     const size_t trigger_threshold = _old_generation->usage_trigger_threshold();
     const size_t heap_size = heap->capacity();
     const size_t ignore_threshold = (ShenandoahIgnoreOldGrowthBelowPercentage * heap_size) / 100;
