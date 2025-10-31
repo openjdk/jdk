@@ -155,6 +155,16 @@ public class RightLeftOrientation {
         menuItem.setHorizontalTextPosition(SwingConstants.LEADING);
         menu.add(menuItem);
 
+        menuItem = new JMenuItem("Text to the left", new MyMenuItemIcon());
+        menuItem.setComponentOrientation(o);
+        menuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        menu.add(menuItem);
+
+        menuItem = new JMenuItem("Text to the right", new MyMenuItemIcon());
+        menuItem.setComponentOrientation(o);
+        menuItem.setHorizontalTextPosition(SwingConstants.RIGHT);
+        menu.add(menuItem);
+
         menuItem = new JRadioButtonMenuItem("Radio Button Menu Item");
         menuItem.setComponentOrientation(o);
         menuItem.setSelected(true);
