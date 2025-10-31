@@ -2109,7 +2109,7 @@ public class Types {
     /**
      * Mapping to take element type of an arraytype
      */
-    public TypeMapping<Void> elemTypeFun = new TypeMapping<Void>() {
+    private TypeMapping<Void> elemTypeFun = new TypeMapping<Void>() {
         @Override
         public Type visitArrayType(ArrayType t, Void _unused) {
             return t.elemtype;
@@ -4103,16 +4103,17 @@ public class Types {
         return buf.toList();
     }
 
-    private Type arraySuperType;
-    public Type arraySuperType() {
-        // initialized lazily to avoid problems during compiler startup
-        if (arraySuperType == null) {
-            // JLS 10.8: all arrays implement Cloneable and Serializable.
-            arraySuperType = makeIntersectionType(List.of(syms.serializableType,
-                    syms.cloneableType), true);
+    // where
+        private Type arraySuperType;
+        private Type arraySuperType() {
+            // initialized lazily to avoid problems during compiler startup
+            if (arraySuperType == null) {
+                // JLS 10.8: all arrays implement Cloneable and Serializable.
+                arraySuperType = makeIntersectionType(List.of(syms.serializableType,
+                        syms.cloneableType), true);
+            }
+            return arraySuperType;
         }
-        return arraySuperType;
-    }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Greatest lower bound">
