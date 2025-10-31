@@ -420,6 +420,9 @@ void HotCodeGrouper::unregister_nmethod(nmethod* nm) {
 
 void HotCodeGrouper::register_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
+  if (!_is_initialized) {
+    return;
+  }
 
   if (!nm->is_compiled_by_c2()) {
     return; // Only C2 nmethods are relocated to HotCodeHeap.
@@ -428,14 +431,15 @@ void HotCodeGrouper::register_nmethod(nmethod* nm) {
   // CodeCache_lock is held, so we can safely increment the count.
   _total_c2_nmethods_count++;
 
-  if (!_is_initialized) {
-    return;
-  }
-
   if (get_state() == State::NotStarted &&
       get_c2_code_size() >= min_c2_code_size()) {
     MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
     ml.notify();
+    return;
+  }
+
+  if (CodeCache::get_code_blob_type(nm) == CodeBlobType::MethodHot) {
+    // Nmethods in the hot code heap are not new. They are copies of existing nmethods.
     return;
   }
 
