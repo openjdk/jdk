@@ -39,6 +39,7 @@ import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.DOUBLE;
 import static com.sun.tools.javac.code.TypeTag.INT;
 import static com.sun.tools.javac.code.TypeTag.LONG;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Double;
@@ -1837,8 +1838,13 @@ public class Code {
         }
 
         List<Type> getErasedSuperTypes(Type t) {
+            if (t.hasTag(TYPEVAR)) {
+                do {
+                    t = t.getUpperBound();
+                } while (t.hasTag(TYPEVAR));
+            }
             return t.hasTag(ARRAY) ?
-                    List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                    List.of(syms.serializableType, syms.cloneableType) :
                     types.erasedSupertypes(t);
         }
 
