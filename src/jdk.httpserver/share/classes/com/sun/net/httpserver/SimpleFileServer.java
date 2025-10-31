@@ -92,12 +92,13 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *
  * <h3>Range requests</h3>
  *
- * <p>The file server also supports HTTP <i>range requests</i>, allowing clients to
+ * <p>The file server and {@linkplain #createFileHandler(Path) file handler} also support HTTP
+ * <i>range requests</i>, allowing clients to
  * request partial file content using the {@code Range} request header, as specified in
- * <a href="https://datatracker.ietf.org/doc/html/rfc9110#name-range-requests">RFC 9110</a>.</p>
+ * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-range-requests">RFC 9110</a>.</p>
  *
- * <p>The server also supports conditional range requests with the {@code If-Range}
- * request header using a date.
+ * <p>Conditional range requests with the {@code If-Range}
+ * request header using a date are also supported.
  * If the provided date matches the file's {@code Last-Modified} timestamp, the server returns
  * the requested ranges; otherwise, it returns the entire file.
  * Entity-tag (ETag) based {@code If-Range} requests are not currently supported.</p>
@@ -123,6 +124,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * {@code jwebserver} tool.
  *
  * @toolGuide jwebserver
+ * @spec https://www.rfc-editor.org/info/rfc9110
+ *       RFC 9110: HTTP Semantics
  *
  * @since 18
  */
