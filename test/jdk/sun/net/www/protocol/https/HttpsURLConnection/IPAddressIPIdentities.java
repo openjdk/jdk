@@ -201,8 +201,8 @@ public class IPAddressIPIdentities extends IdentitiesBase {
 
     public static void main(String args[]) throws Exception {
         if (args[1].contains("MD5")) {
-            SecurityUtils.removeFromDisabledAlgs("jdk.certpath.disabledAlgorithms",
-                    List.of("MD5"));
+            SecurityUtils.removeFromDisabledAlgs(
+                    "jdk.certpath.disabledAlgorithms", List.of("MD5"));
             SecurityUtils.removeFromDisabledTlsAlgs("MD5");
         }
 
