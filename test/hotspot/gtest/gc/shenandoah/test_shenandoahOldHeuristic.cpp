@@ -49,7 +49,7 @@
 #else
 #define SKIP_IF_NOT_SHENANDOAH() \
     if (!UseShenandoahGC) {      \
-      tty->print_cr("skipped");  \
+      std::cout << "skipped\n";  \
       return;                    \
     }
 #endif
