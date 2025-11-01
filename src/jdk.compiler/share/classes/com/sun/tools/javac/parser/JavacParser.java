@@ -4933,7 +4933,8 @@ public class JavacParser implements Parser {
             }
 
             // Field
-            if (!isVoid && typarams.isEmpty() && (token.kind == EQ || token.kind == SEMI)) {
+            if (!isVoid && typarams.isEmpty() &&
+                (token.kind == EQ || token.kind == SEMI || token.kind == COMMA)) {
                 List<JCTree> defs =
                         variableDeclaratorsRest(pos, mods, type, name, false, dc,
                                 new ListBuffer<JCTree>(), false).toList();
