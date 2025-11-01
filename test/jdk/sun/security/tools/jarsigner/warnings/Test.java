@@ -151,6 +151,13 @@ public abstract class Test {
     static final String WEAK_KEY_WARNING
             = "will be disabled in a future update.";
 
+    static final String OUTDATED_KEYSTORE_WARNING1
+            = "uses outdated cryptographic algorithms and will be "
+            + "removed in a future release. Migrate to PKCS12 using:";
+
+    static final String OUTDATED_KEYSTORE_WARNING2
+            = "keytool -importkeystore -srckeystore";
+
     static final String JAR_SIGNED = "jar signed.";
 
     static final String JAR_VERIFIED = "jar verified.";
