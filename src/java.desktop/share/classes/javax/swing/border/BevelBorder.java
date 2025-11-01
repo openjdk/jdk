@@ -83,6 +83,11 @@ public class BevelBorder extends AbstractBorder
         this.bevelType = bevelType;
     }
 
+    private static boolean setColor(Color highlight, Color shadow) {
+        boolean ret = (highlight != null && shadow != null) ? true : false;
+        return ret;
+    }
+
     /**
      * Creates a bevel border with the specified type, highlight and
      * shadow colors.
@@ -90,12 +95,23 @@ public class BevelBorder extends AbstractBorder
      * will be derived from specified highlight color and
      * bevel outer shadow color and bevel inner shadow color
      * will be derived from specified shadow color.
+     * If highlight and shadow color are null, then it will
+     * fallback to create beveled border of the specified type.
      * @param bevelType the type of bevel for the border
      * @param highlight the color to use for the bevel highlight
      * @param shadow the color to use for the bevel shadow
      */
     public BevelBorder(int bevelType, Color highlight, Color shadow) {
-        this(bevelType, highlight.brighter(), highlight, shadow, shadow.brighter());
+        boolean ret = setColor(highlight, shadow);
+        if (ret) {
+            this.bevelType = bevelType;
+            this.highlightOuter = highlight.brighter();
+            this.highlightInner = highlight;
+            this.shadowOuter = shadow;
+            this.shadowInner = shadow.brighter();
+        } else {
+            this.bevelType = bevelType;
+        }
     }
 
     /**
