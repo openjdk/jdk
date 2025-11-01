@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -574,6 +575,24 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     /**
+     * Returns the name of the main launcher. It will read the name of the main
+     * launcher from the external app image if such is specified.
+     *
+     * @return the name of the main launcher
+     *
+     * @throws IllegalArgumentException if the command is configured for packaging
+     *                                  Java runtime
+     */
+    public String mainLauncherName() {
+        verifyNotRuntime();
+        return name();
+    }
+
+    boolean isMainLauncher(String launcherName) {
+        return launcherName == null || mainLauncherName().equals(launcherName);
+    }
+
+    /**
      * Returns path for application launcher with the given name.
      *
      * E.g.: [jpackage --name Foo --type rpm] -> `/opt/foo/bin/Foo`
@@ -589,7 +608,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path appLauncherPath(String launcherName) {
         verifyNotRuntime();
         if (launcherName == null) {
-            launcherName = name();
+            launcherName = mainLauncherName();
         }
 
         if (TKit.isWindows()) {
@@ -607,15 +626,54 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     /**
-     * Returns names of all additional launchers or empty list if none
-     * configured.
+     * Returns names of additional launchers or an empty list if none configured.
+     * <p>
+     * If {@code lookupInPrederfinedAppImage} is {@code true} and the command is
+     * configured with an external app image, it will read names of the additional
+     * launchers from the external app image.
+     *
+     * @param lookupInPrederfinedAppImage if to read names of additional launchers
+     *                                    from an external app image
+     *
+     * @return the names of additional launchers
      */
-    public List<String> addLauncherNames() {
+    public List<String> addLauncherNames(boolean lookupInPrederfinedAppImage) {
+        if (isRuntime()) {
+            return List.of();
+        }
+
         List<String> names = new ArrayList<>();
+        if (lookupInPrederfinedAppImage) {
+            Optional.ofNullable(getArgumentValue("--app-image"))
+                    .map(Path::of)
+                    .map(AppImageFile::load)
+                    .map(AppImageFile::addLaunchers)
+                    .map(Map::keySet)
+                    .ifPresent(names::addAll);
+        }
         forEachAdditionalLauncher(this, (launcherName, propFile) -> {
             names.add(launcherName);
         });
-        return names;
+        return Collections.unmodifiableList(names);
+    }
+
+    /**
+     * Returns names of all launchers.
+     * <p>
+     * If the list is not empty, the first element is {@code null} referencing the
+     * main launcher. In the case of runtime packaging, the list is empty.
+     *
+     * @return the names of all launchers
+     */
+    public List<String> launcherNames(boolean lookupInPrederfinedAppImage) {
+        if (isRuntime()) {
+            return List.of();
+        }
+
+        List<String> names = new ArrayList<>();
+        names.add(null);
+        names.addAll(addLauncherNames(lookupInPrederfinedAppImage));
+        return Collections.unmodifiableList(names);
     }
 
     private void verifyNotRuntime() {
@@ -639,7 +697,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Path appLauncherCfgPath(String launcherName) {
         verifyNotRuntime();
         if (launcherName == null) {
-            launcherName = name();
+            launcherName = mainLauncherName();
         }
         return appLayout().appDirectory().resolve(launcherName + ".cfg");
     }
@@ -1244,7 +1302,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // a predefined app image.
             if (!hasArgument("--app-image")) {
                 TKit.assertStringListEquals(
-                        addLauncherNames().stream().sorted().toList(),
+                        addLauncherNames(false).stream().sorted().toList(),
                         aif.addLaunchers().keySet().stream().sorted().toList(),
                         "Check additional launcher names");
             }

@@ -56,6 +56,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -662,16 +663,21 @@ public final class MacHelper {
     }
 
     private static String getPackageId(JPackageCommand cmd) {
-        return cmd.getArgumentValue("--mac-package-identifier", () -> {
-            return cmd.getArgumentValue("--main-class", cmd::name, className -> {
-                var packageName = ClassDesc.of(className).packageName();
-                if (packageName.isEmpty()) {
-                    return className;
-                } else {
-                    return packageName;
-                }
-            });
-        });
+        UnaryOperator<String> getPackageIdFromClassName = className -> {
+            var packageName = ClassDesc.of(className).packageName();
+            if (packageName.isEmpty()) {
+                return className;
+            } else {
+                return packageName;
+            }
+        };
+
+        return PropertyFinder.findAppProperty(cmd,
+                PropertyFinder.cmdlineOptionWithValue("--mac-package-identifier").or(
+                        PropertyFinder.cmdlineOptionWithValue("--main-class").map(getPackageIdFromClassName)
+                ),
+                PropertyFinder.appImageFile(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
+        ).orElseGet(cmd::name);
     }
 
     public static boolean isXcodeDevToolsInstalled() {

@@ -67,6 +67,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
@@ -116,7 +117,7 @@ final class FromParams {
             if (hasPredefinedAppImage(params)) {
                 final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
                 appBuilder.initFromExternalApplication(appImageFile, launcherInfo -> {
-                    var launcherParams = mapLauncherInfo(launcherInfo);
+                    var launcherParams = mapLauncherInfo(appImageFile, launcherInfo);
                     return launcherMapper.apply(mergeParams(params, launcherParams));
                 });
             } else {
@@ -220,10 +221,14 @@ final class FromParams {
         return new ApplicationLaunchers(mainLauncher, additionalLaunchers);
     }
 
-    private static Map<String, ? super Object> mapLauncherInfo(LauncherInfo launcherInfo) {
+    private static Map<String, ? super Object> mapLauncherInfo(ExternalApplication appImageFile, LauncherInfo launcherInfo) {
         Map<String, ? super Object> launcherParams = new HashMap<>();
         launcherParams.put(NAME.getID(), launcherInfo.name());
-        launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
+        if (!appImageFile.getLauncherName().equals(launcherInfo.name())) {
+            // This is not the main launcher, accept the value
+            // of "launcher-as-service" from the app image file (.jpackage.xml).
+            launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
+        }
         launcherParams.putAll(launcherInfo.extra());
         return launcherParams;
     }
