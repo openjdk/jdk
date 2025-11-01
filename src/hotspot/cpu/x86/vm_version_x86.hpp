@@ -991,6 +991,10 @@ public:
     return true;
   }
 
+  constexpr static bool supports_misaligned_vector_accesses() {
+    return true;
+  }
+
   constexpr static bool supports_stack_watermark_barrier() {
     return true;
   }

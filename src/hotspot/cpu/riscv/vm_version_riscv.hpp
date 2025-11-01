@@ -502,6 +502,21 @@ private:
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 
+  static bool supports_misaligned_vector_accesses() { return !AlignVector; }
+
+  static bool is_misaligned_vector_fault(address pc) {
+    return pc != nullptr && (pc == _misaligned_vector_fault_pc1 || pc == _misaligned_vector_fault_pc2);
+  }
+
+  static address continuation_for_misaligned_vector_fault(address pc) {
+    assert(_misaligned_vector_continuation_pc != nullptr , "not initialized");
+    return _misaligned_vector_continuation_pc;
+  }
+
+  static address _misaligned_vector_fault_pc1;
+  static address _misaligned_vector_fault_pc2;
+  static address _misaligned_vector_continuation_pc;
+
   static bool supports_on_spin_wait() { return UseZihintpause; }
 
   // RISCV64 supports fast class initialization checks
@@ -514,6 +529,12 @@ private:
 
   // Check intrinsic support
   static bool is_intrinsic_supported(vmIntrinsicID id);
+
+  // Detect misaligned vector support
+  static bool detect_misaligned_vector_support();
+
+  // Detect misaligned vector support by sew
+  static bool detect_misaligned_vector_support(int esize);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
