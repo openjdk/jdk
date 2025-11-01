@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,10 +81,10 @@ public class TestVectorFPReduction {
 
     @Test
     @IR(failOn = {IRNode.MUL_REDUCTION_VF},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+        applyIfCPUFeature = {"asimd", "true"})
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VF, ">=1"},
         failOn = {"no_strict_order"},
-        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        applyIfCPUFeature = {"sse2", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVF() {
         float result = 1;
@@ -96,10 +96,10 @@ public class TestVectorFPReduction {
 
     @Test
     @IR(failOn = {IRNode.MUL_REDUCTION_VD},
-        applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+        applyIfCPUFeature = {"asimd", "true"})
     @IR(counts = {"requires_strict_order", ">=1", IRNode.MUL_REDUCTION_VD, ">=1"},
         failOn = {"no_strict_order"},
-        applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"sse2", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     private static void testMulReductionVD() {
         double result = 1;
