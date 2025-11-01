@@ -53,8 +53,11 @@ import sun.security.util.Pem;
 public class PEMDecoderTest {
 
     static HexFormat hex = HexFormat.of();
+    static final PEMDecoder d = PEMDecoder.of();
 
     public static void main(String[] args) throws Exception {
+        PEMDecoder decr;
+
         System.out.println("Decoder test:");
         PEMData.entryList.forEach(entry -> test(entry, false));
         System.out.println("Decoder test withFactory:");
@@ -89,12 +92,12 @@ public class PEMDecoderTest {
         System.out.println("Decoder test ecsecp256:");
         testFailure(PEMData.ecsecp256pub.makeNoCRLF("pubecpem-no"));
         System.out.println("Decoder test RSAcert with decryption Decoder:");
-        PEMDecoder d = PEMDecoder.of().withDecryption("123".toCharArray());
-        d.decode(PEMData.rsaCert.pem());
+        decr = d.withDecryption("123".toCharArray());
+        decr.decode(PEMData.rsaCert.pem());
         System.out.println("Decoder test ecsecp256 private key with decryption Decoder:");
-        ((KeyPair) d.decode(PEMData.ecsecp256.pem())).getPrivate();
+        ((KeyPair) decr.decode(PEMData.ecsecp256.pem())).getPrivate();
         System.out.println("Decoder test ecsecp256 to P8EKS:");
-        d.decode(PEMData.ecsecp256.pem(), PKCS8EncodedKeySpec.class);
+        decr.decode(PEMData.ecsecp256.pem(), PKCS8EncodedKeySpec.class);
 
         System.out.println("Checking if decode() returns the same encoding:");
         PEMData.privList.forEach(PEMDecoderTest::testDERCheck);
@@ -111,11 +114,11 @@ public class PEMDecoderTest {
         System.out.println("Checking if ecCSR:");
         test(PEMData.ecCSR);
         System.out.println("Checking if ecCSR with preData:");
-        DEREncodable result = PEMDecoder.of().decode(PEMData.ecCSRWithData.pem(), PEMRecord.class);
-        if (result instanceof PEMRecord rec) {
+        DEREncodable result = d.decode(PEMData.ecCSRWithData.pem(), PEM.class);
+        if (result instanceof PEM rec) {
             if (PEMData.preData.compareTo(new String(rec.leadingData())) != 0) {
-                System.err.println("expected: " + PEMData.preData);
-                System.err.println("received: " + new String(rec.leadingData()));
+                System.err.println("expected: \"" + PEMData.preData + "\"");
+                System.err.println("received: \"" + new String(rec.leadingData()) + "\"");
                 throw new AssertionError("ecCSRWithData preData wrong");
             }
             if (rec.content().lastIndexOf("F") > rec.content().length() - 5) {
@@ -128,35 +131,34 @@ public class PEMDecoderTest {
         }
 
         System.out.println("Decoding RSA pub using class PEMRecord:");
-        result = PEMDecoder.of().decode(PEMData.rsapub.pem(), PEMRecord.class);
-        if (!(result instanceof PEMRecord)) {
+        result = d.decode(PEMData.rsapub.pem(), PEM.class);
+        if (!(result instanceof PEM)) {
             throw new AssertionError("pubecpem didn't return a PEMRecord");
         }
-        if (((PEMRecord) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
+        if (((PEM) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
         }
 
         testInputStream();
         testPEMRecord(PEMData.rsapub);
         testPEMRecord(PEMData.ecCert);
-        testPEMRecord(PEMData.ec25519priv);
+        testPEMRecord(PEMData.ed25519priv);
         testPEMRecord(PEMData.ecCSR);
         testPEMRecord(PEMData.ecCSRWithData);
         testPEMRecordDecode(PEMData.rsapub);
         testPEMRecordDecode(PEMData.ecCert);
-        testPEMRecordDecode(PEMData.ec25519priv);
+        testPEMRecordDecode(PEMData.ed25519priv);
         testPEMRecordDecode(PEMData.ecCSR);
         testPEMRecordDecode(PEMData.ecCSRWithData);
 
-        d = PEMDecoder.of();
         System.out.println("Check leadingData is null with back-to-back PEMs: ");
-        String s = new PEMRecord("ONE", "1212").toString()
-            + new PEMRecord("TWO", "3434").toString();
-        var ins = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
-        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
+        String s = new PEM("ONE", "1212").toString()
+            + new PEM("TWO", "3434").toString();
+        ByteArrayInputStream bis = new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+        if (d.decode(bis, PEM.class).leadingData() != null) {
             throw new AssertionError("leading data not null on first pem");
         }
-        if (d.decode(ins, PEMRecord.class).leadingData() != null) {
+        if (d.decode(bis, PEM.class).leadingData() != null) {
             throw new AssertionError("leading data not null on second pem");
         }
         System.out.println("PASS");
@@ -173,8 +175,8 @@ public class PEMDecoderTest {
         }
 
         // PBE
-        System.out.println("EncryptedPrivateKeyInfo.encryptKey with PBE: ");
-        ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey,
+        System.out.println("EncryptedPrivateKeyInfo.encrypt with PBE: ");
+        ekpi = EncryptedPrivateKeyInfo.encrypt(privateKey,
             "password".toCharArray(),"PBEWithMD5AndDES", null, null);
         try {
             ekpi.getKey("password".toCharArray());
@@ -184,8 +186,8 @@ public class PEMDecoderTest {
         }
 
         // PBES2
-        System.out.println("EncryptedPrivateKeyInfo.encryptKey with default: ");
-        ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey
+        System.out.println("EncryptedPrivateKeyInfo.encrypt with default: ");
+        ekpi = EncryptedPrivateKeyInfo.encrypt(privateKey
             , "password".toCharArray());
         try {
             ekpi.getKey("password".toCharArray());
@@ -197,6 +199,13 @@ public class PEMDecoderTest {
 
         System.out.println("Decoder test testCoefZero:");
         testCoefZero(PEMData.rsaCrtCoefZeroPriv);
+
+        // leadingData can contain dashes
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write("--------\n".getBytes(StandardCharsets.ISO_8859_1));
+        bos.write(PEMData.ecsecp256ekpi.pem().getBytes(StandardCharsets.ISO_8859_1));
+        bis = new ByteArrayInputStream(bos.toByteArray());
+        result = d.decode(bis, PEM.class);
     }
 
     static void testInputStream() throws IOException {
@@ -211,10 +220,10 @@ public class PEMDecoderTest {
         ByteArrayInputStream is = new ByteArrayInputStream(ba.toByteArray());
 
         System.out.println("Decoding 2 RSA pub with pre & post data:");
-        PEMRecord obj;
+        PEM obj;
         int keys = 0;
         while (keys++ < 2) {
-            obj = PEMDecoder.of().decode(is, PEMRecord.class);
+            obj = d.decode(is, PEM.class);
             if (!PEMData.preData.equalsIgnoreCase(
                 new String(obj.leadingData()))) {
                 System.out.println("expected: \"" + PEMData.preData + "\"");
@@ -225,7 +234,7 @@ public class PEMDecoderTest {
             System.out.println("  Read public key.");
         }
         try {
-            PEMDecoder.of().decode(is, PEMRecord.class);
+            d.decode(is, PEM.class);
             throw new AssertionError("3rd entry returned a PEMRecord");
         } catch (EOFException e) {
             System.out.println("Success: No 3rd entry found.  EOFE thrown.");
@@ -234,7 +243,7 @@ public class PEMDecoderTest {
         // End of stream
         try {
             System.out.println("Failed: There should be no PEMRecord: " +
-                PEMDecoder.of().decode(is, PEMRecord.class));
+                d.decode(is, PEM.class));
         } catch (EOFException e) {
             System.out.println("Success");
             return;
@@ -250,22 +259,22 @@ public class PEMDecoderTest {
     static void testCertTypeConverter(PEMData.Entry entry) throws CertificateEncodingException {
         String certPem = entry.pem().replace("CERTIFICATE", "X509 CERTIFICATE");
         Asserts.assertEqualsByteArray(entry.der(),
-                PEMDecoder.of().decode(certPem, X509Certificate.class).getEncoded());
+                d.decode(certPem, X509Certificate.class).getEncoded());
 
         certPem = entry.pem().replace("CERTIFICATE", "X.509 CERTIFICATE");
         Asserts.assertEqualsByteArray(entry.der(),
-                PEMDecoder.of().decode(certPem, X509Certificate.class).getEncoded());
+                d.decode(certPem, X509Certificate.class).getEncoded());
     }
 
     // test that when the crtCoeff is zero, the key is decoded but only the modulus and private
     // exponent are used resulting in a different der
     static void testCoefZero(PEMData.Entry entry) {
-        RSAPrivateKey decoded = PEMDecoder.of().decode(entry.pem(), RSAPrivateKey.class);
+        RSAPrivateKey decoded = d.decode(entry.pem(), RSAPrivateKey.class);
         Asserts.assertNotEqualsByteArray(decoded.getEncoded(), entry.der());
     }
 
     static void testPEMRecord(PEMData.Entry entry) {
-        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
+        PEM r = d.decode(entry.pem(), PEM.class);
         String expected = entry.pem().split("-----")[2].replace(System.lineSeparator(), "");
         try {
             PEMData.checkResults(expected, r.content());
@@ -285,7 +294,7 @@ public class PEMDecoderTest {
             case Pem.X509_CRL ->
                 entry.clazz().isAssignableFrom(X509CRL.class);
             case "CERTIFICATE REQUEST" ->
-                entry.clazz().isAssignableFrom(PEMRecord.class);
+                entry.clazz().isAssignableFrom(PEM.class);
             default -> false;
         };
 
@@ -300,8 +309,8 @@ public class PEMDecoderTest {
 
 
     static void testPEMRecordDecode(PEMData.Entry entry) {
-        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
-        DEREncodable de = PEMDecoder.of().decode(r.toString());
+        PEM r = d.decode(entry.pem(), PEM.class);
+        DEREncodable de = d.decode(r.toString());
 
         boolean result = switch(r.type()) {
             case Pem.PRIVATE_KEY ->
@@ -311,7 +320,7 @@ public class PEMDecoderTest {
             case Pem.CERTIFICATE, Pem.X509_CERTIFICATE ->
                 (de instanceof X509Certificate);
             case Pem.X509_CRL -> (de instanceof X509CRL);
-            case "CERTIFICATE REQUEST" -> (de instanceof PEMRecord);
+            case "CERTIFICATE REQUEST" -> (de instanceof PEM);
             default -> false;
         };
 
@@ -332,7 +341,7 @@ public class PEMDecoderTest {
 
     static void testFailure(PEMData.Entry entry, Class c) {
         try {
-            test(entry.pem(), c, PEMDecoder.of());
+            test(entry.pem(), c, d);
             if (entry.pem().indexOf('\r') != -1) {
                 System.out.println("Found a CR.");
             }
@@ -351,9 +360,11 @@ public class PEMDecoderTest {
     }
 
     static DEREncodable testEncrypted(PEMData.Entry entry) {
-        PEMDecoder decoder = PEMDecoder.of();
+        PEMDecoder decoder;
         if (!Objects.equals(entry.clazz(), EncryptedPrivateKeyInfo.class)) {
-            decoder = decoder.withDecryption(entry.password());
+            decoder = d.withDecryption(entry.password());
+        } else {
+            decoder = d;
         }
 
         try {
@@ -381,9 +392,9 @@ public class PEMDecoderTest {
             PEMDecoder pemDecoder;
             if (withFactory) {
                 Provider provider = Security.getProvider(entry.provider());
-                pemDecoder = PEMDecoder.of().withFactory(provider);
+                pemDecoder = d.withFactory(provider);
             } else {
-                pemDecoder = PEMDecoder.of();
+                pemDecoder = d;
             }
             DEREncodable r = test(entry.pem(), entry.clazz(), pemDecoder);
             System.out.println("PASS (" + entry.name() + ")");
@@ -446,9 +457,8 @@ public class PEMDecoderTest {
     // result is the same
     static void testTwoKeys() throws IOException {
         PublicKey p1, p2;
-        PEMDecoder pd = PEMDecoder.of();
-        p1 = pd.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
-        p2 = pd.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
+        p1 = d.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
+        p2 = d.decode(PEMData.rsapub.pem(), RSAPublicKey.class);
         if (!Arrays.equals(p1.getEncoded(), p2.getEncoded())) {
             System.err.println("These two should have matched:");
             System.err.println(hex.parseHex(new String(p1.getEncoded())));
@@ -460,7 +470,7 @@ public class PEMDecoderTest {
 
     private static void testPKCS8Key(PEMData.Entry entry) {
         try {
-            PKCS8Key key = PEMDecoder.of().decode(entry.pem(), PKCS8Key.class);
+            PKCS8Key key = d.decode(entry.pem(), PKCS8Key.class);
             PKCS8EncodedKeySpec spec =
                     new PKCS8EncodedKeySpec(key.getEncoded());
 
@@ -472,7 +482,7 @@ public class PEMDecoderTest {
     }
 
     static void testClass(PEMData.Entry entry, Class clazz) throws IOException {
-        var pk = PEMDecoder.of().decode(entry.pem(), clazz);
+        var pk = d.decode(entry.pem(), clazz);
     }
 
     static void testClass(PEMData.Entry entry, Class clazz, boolean pass)
@@ -506,7 +516,7 @@ public class PEMDecoderTest {
             return;
         }
 
-        PKCS8EncodedKeySpec p8 = PEMDecoder.of().decode(entry.pem(),
+        PKCS8EncodedKeySpec p8 = d.decode(entry.pem(),
                 PKCS8EncodedKeySpec.class);
         int result = Arrays.compare(entry.der(), p8.getEncoded());
         if (result != 0) {
@@ -531,8 +541,8 @@ public class PEMDecoderTest {
         byte[] data = "12345678".getBytes();
         PrivateKey privateKey;
 
-        DEREncodable d = PEMDecoder.of().decode(entry.pem());
-        switch (d) {
+        DEREncodable der = d.decode(entry.pem());
+        switch (der) {
             case PrivateKey p -> privateKey = p;
             case KeyPair kp -> privateKey = kp.getPrivate();
             case EncryptedPrivateKeyInfo e -> {
@@ -563,7 +573,7 @@ public class PEMDecoderTest {
         };
 
         try {
-            if (d instanceof PrivateKey) {
+            if (der instanceof PrivateKey) {
                 s = Signature.getInstance(algorithm);
                 if (spec != null) {
                     s.setParameter(spec);
@@ -572,12 +582,12 @@ public class PEMDecoderTest {
                 s.update(data);
                 s.sign();
                 System.out.println("PASS (Sign): " + entry.name());
-            } else if (d instanceof KeyPair) {
+            } else if (der instanceof KeyPair) {
                 s = Signature.getInstance(algorithm);
                 s.initSign(privateKey);
                 s.update(data);
                 byte[] sig = s.sign();
-                s.initVerify(((KeyPair)d).getPublic());
+                s.initVerify(((KeyPair)der).getPublic());
                 s.verify(sig);
                 System.out.println("PASS (Sign/Verify): " + entry.name());
             } else {

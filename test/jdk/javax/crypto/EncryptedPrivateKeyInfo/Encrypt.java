@@ -48,7 +48,7 @@ import java.util.Arrays;
 
 import static jdk.test.lib.Asserts.assertEquals;
 
-public class EncryptKey {
+public class Encrypt {
 
     private static final String encEdECKey =
         """
@@ -74,7 +74,7 @@ public class EncryptKey {
         AlgorithmParameters ap = ekpi.getAlgParameters();
 
         // Test encryptKey(PrivateKey, char[], String, ... )
-        var e = EncryptedPrivateKeyInfo.encryptKey(priKey, password,
+        var e = EncryptedPrivateKeyInfo.encrypt(priKey, password,
             ekpi.getAlgName(), ap.getParameterSpec(PBEParameterSpec.class),
             null);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
@@ -83,45 +83,53 @@ public class EncryptKey {
         }
 
         // Test encryptKey(PrivateKey, char[], String, ...) with provider
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, password, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p);
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, password, ekpi.getAlgName(),
+            ap.getParameterSpec(PBEParameterSpec.class), p);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, char[], String, ...) with provider and null algorithm
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, password, null, null,
-                p);
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, password, Pem.DEFAULT_ALGO, null, p);
         assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
 
         // Test encryptKey(PrivateKey, Key, String, ...)
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
-            ap.getParameterSpec(PBEParameterSpec.class),null, null);
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
+            ap.getParameterSpec(PBEParameterSpec.class), null, null);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
                 " with expected.");
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and null random
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p, null);
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
+            ap.getParameterSpec(PBEParameterSpec.class), p, null);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p, new SecureRandom());
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
+            ap.getParameterSpec(PBEParameterSpec.class), p, new SecureRandom());
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and null algorithm
-        e = EncryptedPrivateKeyInfo.encryptKey(priKey, key, null, null,
-                p, new SecureRandom());
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, Pem.DEFAULT_ALGO, null,
+            p, new SecureRandom());
         assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
+
+
+        SecretKey key2 = new SecretKeySpec("1234567890123456".getBytes(), "AES");
+
+        // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key2, "AES_128/GCM/NoPadding",
+            null, p, new SecureRandom());
+        PrivateKey key3 = e.getKey(key2, null);
+        assertEquals(key3, priKey, "AES encryption failed");
     }
 }
