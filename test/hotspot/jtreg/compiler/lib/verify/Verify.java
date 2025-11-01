@@ -127,6 +127,7 @@ public final class Verify {
             return;
         }
 
+        // TODO: or maybe check Float16 here?
         switch (a) {
             case Object[]  x -> checkEQimpl(x, (Object[])b,                 field, aParent, bParent);
             case Byte      x -> checkEQimpl(x, (Byte)b,                     field, aParent, bParent);
