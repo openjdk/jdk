@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,17 +297,20 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified new value.  The new value is first
-     * automatically unwrapped if the array has a primitive component
-     * type.
+     * object to the specified new value.  If the array has a primitive
+     * component type, the new value is first converted to a value of a
+     * primitive type by an unboxing conversion.  The possibly unboxed new
+     * value is converted to the array's component type by an identity or
+     * widening conversion and stored into the array.
+     *
      * @param array the array
      * @param index the index into the array
      * @param value the new value of the indexed component
      * @throws    NullPointerException If the specified object argument
      * is null
      * @throws    IllegalArgumentException If the specified object argument
-     * is not an array, or if the array component type is primitive and
-     * an unwrapping conversion fails
+     * is not an array, if the array component type is primitive and the
+     * unboxing conversion fails, or if the identity or widening conversion fails
      * @throws    ArrayIndexOutOfBoundsException If the specified {@code index}
      * argument is negative, or if it is greater than or equal to
      * the length of the specified array
@@ -317,7 +320,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code boolean} value.
+     * object to the specified {@code boolean} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param z the new value of the indexed component
@@ -337,7 +342,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code byte} value.
+     * object to the specified {@code byte} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param b the new value of the indexed component
@@ -357,7 +364,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code char} value.
+     * object to the specified {@code char} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param c the new value of the indexed component
@@ -377,7 +386,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code short} value.
+     * object to the specified {@code short} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param s the new value of the indexed component
@@ -397,7 +408,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code int} value.
+     * object to the specified {@code int} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param i the new value of the indexed component
@@ -417,7 +430,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code long} value.
+     * object to the specified {@code long} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param l the new value of the indexed component
@@ -437,7 +452,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code float} value.
+     * object to the specified {@code float} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param f the new value of the indexed component
@@ -457,7 +474,9 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code double} value.
+     * object to the specified {@code double} value. This method never performs
+     * a boxing conversion.
+     *
      * @param array the array
      * @param index the index into the array
      * @param d the new value of the indexed component
