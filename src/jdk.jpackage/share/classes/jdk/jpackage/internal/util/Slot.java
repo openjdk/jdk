@@ -25,15 +25,72 @@
 package jdk.jpackage.internal.util;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * A mutable container object for a value.
+ * <p>
+ * An alternative for cases where {@link AtomicReference} would be an overkill.
+ * Sample usage:
+ * {@snippet :
+ * void foo(MessageNotifier messageNotifier) {
+ *     var lastMessage = Slot.createEmpty();
+ *
+ *     messageNotifier.setListener(msg -> {
+ *         lastMessage.set(msg);
+ *     }).run();
+ *
+ *     lastMessage.find().ifPresentOrElse(msg -> {
+ *         System.out.println(String.format("The last message: [%s]", msg));
+ *     }, () -> {
+ *         System.out.println("No messages received");
+ *     });
+ * }
+ *
+ * abstract class MessageNotifier {
+ *     MessageNotifier setListener(Consumer<String> messageConsumer) {
+ *         callback = messageConsumer;
+ *         return this;
+ *     }
+ *
+ *     void run() {
+ *         for (;;) {
+ *             var msg = fetchNextMessage();
+ *             msg.ifPresent(callback);
+ *             if (msg.isEmpty()) {
+ *                 break;
+ *             }
+ *         }
+ *     }
+ *
+ *     abstract Optional<String> fetchNextMessage();
+ *
+ *     private Consumer<String> callback;
+ * }
+ * }
+ *
+ * An alternative to the {@code Slot} would be either {@code
+ * AtomicReference} or a single-element {@code String[]} or any other
+ * suitable container type. {@code AtomicReference} would be an overkill if
+ * thread-safety is not a concern and the use of other options would be
+ * confusing.
+ *
+ * @param <T> value type
+ */
 public final class Slot<T> {
 
     public static <T> Slot<T> createEmpty() {
+
         return new Slot<>();
     }
 
     public T get() {
-        return Objects.requireNonNull(value);
+        return find().orElseThrow();
+    }
+
+    public Optional<T> find() {
+        return Optional.ofNullable(value);
     }
 
     public void set(T v) {
