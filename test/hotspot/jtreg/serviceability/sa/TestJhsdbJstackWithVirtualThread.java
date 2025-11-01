@@ -37,7 +37,6 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8369505
  * @requires vm.hasSA
- * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64" | os.arch == "riscv64")
  * @library /test/lib
  * @run driver TestJhsdbJstackWithVirtualThread
  */
@@ -45,7 +44,7 @@ public class TestJhsdbJstackWithVirtualThread {
 
     private static void runJstack(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-        launcher.addVMArgs(Utils.getTestJavaOpts());
+        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
         launcher.addToolArg("jstack");
         launcher.addToolArg("--pid");
         launcher.addToolArg(Long.toString(app.getPid()));

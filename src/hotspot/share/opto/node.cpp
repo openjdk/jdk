@@ -2800,12 +2800,12 @@ uint Node::match_edge(uint idx) const {
 // Register classes are defined for specific machines
 const RegMask &Node::out_RegMask() const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 const RegMask &Node::in_RegMask(uint) const {
   ShouldNotCallThis();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 void Node_Array::grow(uint i) {

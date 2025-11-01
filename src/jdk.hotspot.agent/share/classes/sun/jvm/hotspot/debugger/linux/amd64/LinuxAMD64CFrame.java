@@ -61,18 +61,24 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    }
 
    private LinuxAMD64CFrame(LinuxDebugger dbg, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame) {
+      this(dbg, cfa, rip, dwarf, finalFrame, false);
+   }
+
+   private LinuxAMD64CFrame(LinuxDebugger dbg, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame, boolean use1ByteBeforeToLookup) {
       super(dbg.getCDebugger());
       this.cfa = cfa;
       this.rip = rip;
       this.dbg = dbg;
       this.dwarf = dwarf;
       this.finalFrame = finalFrame;
+      this.use1ByteBeforeToLookup = use1ByteBeforeToLookup;
    }
 
    // override base class impl to avoid ELF parsing
    public ClosestSymbol closestSymbolToPC() {
+      Address symAddr = use1ByteBeforeToLookup ? pc().addOffsetTo(-1) : pc();
       // try native lookup in debugger.
-      return dbg.lookup(dbg.getAddressValue(pc()));
+      return dbg.lookup(dbg.getAddressValue(symAddr));
    }
 
    public Address pc() {
@@ -164,19 +170,16 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      }
 
      DwarfParser nextDwarf = null;
-     Address libptr = dbg.findLibPtrByAddress(nextPC);
-     if (libptr != null) {
+     boolean fallback = false;
+     try {
+       nextDwarf = createDwarfParser(nextPC);
+     } catch (DebuggerException _) {
+       // Try again with RIP-1 in case RIP is just outside function bounds,
+       // due to function ending with a `call` instruction.
        try {
-         nextDwarf = new DwarfParser(libptr);
-       } catch (DebuggerException e) {
-         // Bail out to Java frame
-       }
-     }
-
-     if (nextDwarf != null) {
-       try {
-         nextDwarf.processDwarf(nextPC);
-       } catch (DebuggerException e) {
+         nextDwarf = createDwarfParser(nextPC.addOffsetTo(-1));
+         fallback = true;
+       } catch (DebuggerException _) {
          // DWARF processing should succeed when the frame is native
          // but it might fail if Common Information Entry (CIE) has language
          // personality routine and/or Language Specific Data Area (LSDA).
@@ -186,7 +189,25 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
 
      Address nextCFA = getNextCFA(nextDwarf, context, fp);
      return nextCFA == null ? null
-                            : new LinuxAMD64CFrame(dbg, nextCFA, nextPC, nextDwarf);
+                            : new LinuxAMD64CFrame(dbg, nextCFA, nextPC, nextDwarf, false, fallback);
+   }
+
+   private DwarfParser createDwarfParser(Address pc) throws DebuggerException {
+     DwarfParser nextDwarf = null;
+     Address libptr = dbg.findLibPtrByAddress(pc);
+     if (libptr != null) {
+       try {
+         nextDwarf = new DwarfParser(libptr);
+       } catch (DebuggerException _) {
+         // Bail out to Java frame
+       }
+     }
+
+     if (nextDwarf != null) {
+       nextDwarf.processDwarf(pc);
+     }
+
+     return nextDwarf;
    }
 
    // package/class internals only
@@ -196,4 +217,5 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    private LinuxDebugger dbg;
    private DwarfParser dwarf;
    private boolean finalFrame;
+   private boolean use1ByteBeforeToLookup;
 }
