@@ -24,7 +24,7 @@
 
 /*
   @test
-  @bug 8370141
+  @bug 8370141 8370637
   @summary  Test no crash printing to Graphics after job is ended.
   @key headful printer
   @run main PrintJobAfterEndTest
