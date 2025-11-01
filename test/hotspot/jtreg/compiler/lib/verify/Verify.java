@@ -127,6 +127,7 @@ public final class Verify {
             return;
         }
 
+        // TODO: or maybe check Float16 here?
         switch (a) {
             case Object[]  x -> checkEQimpl(x, (Object[])b,                 field, aParent, bParent);
             case Byte      x -> checkEQimpl(x, (Byte)b,                     field, aParent, bParent);
@@ -150,6 +151,7 @@ public final class Verify {
             default -> {
                 if (isVectorAPIClass(ca)) {
                     checkEQForVectorAPIClass(a, b, field, aParent, bParent);
+                // TODO: handle Float16
                 } else {
                     checkEQArbitraryClasses(a, b);
                 }

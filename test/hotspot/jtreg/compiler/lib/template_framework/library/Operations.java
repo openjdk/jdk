@@ -23,9 +23,12 @@
 
 package compiler.lib.template_framework.library;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static compiler.lib.template_framework.library.PrimitiveType.BYTES;
 import static compiler.lib.template_framework.library.PrimitiveType.SHORTS;
@@ -35,6 +38,7 @@ import static compiler.lib.template_framework.library.PrimitiveType.LONGS;
 import static compiler.lib.template_framework.library.PrimitiveType.FLOATS;
 import static compiler.lib.template_framework.library.PrimitiveType.DOUBLES;
 import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
+import static compiler.lib.template_framework.library.Float16Type.FLOAT16;
 
 /**
  * This class provides various lists of {@link Expression}s, that represent Java operators or library
@@ -45,17 +49,32 @@ public final class Operations {
     // private constructor to avoid instantiation.
     private Operations() {}
 
+    private static Expression.Info WITH_ARITHMETIC_EXCEPTION = new Expression.Info().withExceptions(Set.of("ArithmeticException"));
+    private static Expression.Info WITH_NONDETERMINISTIC_RESULT = new Expression.Info().withNondeterministicResult();
+
+
     /**
      * Provides a lits of operations on {@link PrimitiveType}s, such as arithmetic, logical,
      * and cast operations.
      */
     public static final List<Expression> PRIMITIVE_OPERATIONS = generatePrimitiveOperations();
 
+    public static final List<Expression> FLOAT16_OPERATIONS = generateFloat16Operations();
+
+    public static final List<Expression> NUMERIC_OPERATIONS = concat(
+            PRIMITIVE_OPERATIONS,
+            FLOAT16_OPERATIONS
+    );
+
+    @SafeVarargs
+    private static List<Expression> concat(List<Expression>... lists) {
+        return Arrays.stream(lists)
+                     .flatMap(List::stream)
+                     .collect(Collectors.toList());
+    }
+
     private static List<Expression> generatePrimitiveOperations() {
         List<Expression> ops = new ArrayList<>();
-
-        Expression.Info withArithmeticException = new Expression.Info().withExceptions(Set.of("ArithmeticException"));
-        Expression.Info withNondeterministicResult = new Expression.Info().withNondeterministicResult();
 
         // Cast between all primitive types. Except for Boolean, we cannot cast from and to.
         CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES.stream().forEach(src -> {
@@ -75,8 +94,8 @@ public final class Operations {
             ops.add(Expression.make(type, "(", type, " + ", type, ")"));
             ops.add(Expression.make(type, "(", type, " - ", type, ")"));
             ops.add(Expression.make(type, "(", type, " * ", type, ")"));
-            ops.add(Expression.make(type, "(", type, " / ", type, ")", withArithmeticException));
-            ops.add(Expression.make(type, "(", type, " % ", type, ")", withArithmeticException));
+            ops.add(Expression.make(type, "(", type, " / ", type, ")", WITH_ARITHMETIC_EXCEPTION));
+            ops.add(Expression.make(type, "(", type, " % ", type, ")", WITH_ARITHMETIC_EXCEPTION));
 
             // Bitwise Operators (non short-circuit)
             ops.add(Expression.make(type, "(~(", type, "))"));
@@ -123,6 +142,7 @@ public final class Operations {
         ops.add(Expression.make(INTS,  "Byte.compareUnsigned(", BYTES, ", ", BYTES, ")"));
         ops.add(Expression.make(INTS,  "Byte.toUnsignedInt(",   BYTES, ")"));
         ops.add(Expression.make(LONGS, "Byte.toUnsignedLong(",  BYTES, ")"));
+        // TODO: think about implementing compare (un)signed for le/ge/lt/gt/eg/ne.
 
         // ------------ char -------------
         // Cast and ternary operator handled above.
@@ -152,7 +172,7 @@ public final class Operations {
         ops.add(Expression.make(INTS,  "Integer.compare(", INTS, ", ", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.compareUnsigned(", INTS, ", ", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.compress(", INTS, ", ", INTS, ")"));
-        ops.add(Expression.make(INTS,  "Integer.divideUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS,  "Integer.divideUnsigned(", INTS, ", ", INTS, ")", WITH_ARITHMETIC_EXCEPTION));
         ops.add(Expression.make(INTS,  "Integer.expand(", INTS, ", ", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.highestOneBit(", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.lowestOneBit(", INTS, ")"));
@@ -160,7 +180,7 @@ public final class Operations {
         ops.add(Expression.make(INTS,  "Integer.min(", INTS, ", ", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.numberOfLeadingZeros(", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.numberOfTrailingZeros(", INTS, ")"));
-        ops.add(Expression.make(INTS,  "Integer.remainderUnsigned(", INTS, ", ", INTS, ")", withArithmeticException));
+        ops.add(Expression.make(INTS,  "Integer.remainderUnsigned(", INTS, ", ", INTS, ")", WITH_ARITHMETIC_EXCEPTION));
         ops.add(Expression.make(INTS,  "Integer.reverse(", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.reverseBytes(", INTS, ")"));
         ops.add(Expression.make(INTS,  "Integer.rotateLeft(", INTS, ", ", INTS, ")"));
@@ -178,7 +198,7 @@ public final class Operations {
         ops.add(Expression.make(INTS,  "Long.compare(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(INTS,  "Long.compareUnsigned(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.compress(", LONGS, ", ", LONGS, ")"));
-        ops.add(Expression.make(LONGS, "Long.divideUnsigned(", LONGS, ", ", LONGS, ")", withArithmeticException));
+        ops.add(Expression.make(LONGS, "Long.divideUnsigned(", LONGS, ", ", LONGS, ")", WITH_ARITHMETIC_EXCEPTION));
         ops.add(Expression.make(LONGS, "Long.expand(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.highestOneBit(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.lowestOneBit(", LONGS, ")"));
@@ -186,7 +206,7 @@ public final class Operations {
         ops.add(Expression.make(LONGS, "Long.min(", LONGS, ", ", LONGS, ")"));
         ops.add(Expression.make(INTS,  "Long.numberOfLeadingZeros(", LONGS, ")"));
         ops.add(Expression.make(INTS,  "Long.numberOfTrailingZeros(", LONGS, ")"));
-        ops.add(Expression.make(LONGS, "Long.remainderUnsigned(", LONGS, ", ", LONGS, ")", withArithmeticException));
+        ops.add(Expression.make(LONGS, "Long.remainderUnsigned(", LONGS, ", ", LONGS, ")", WITH_ARITHMETIC_EXCEPTION));
         ops.add(Expression.make(LONGS, "Long.reverse(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.reverseBytes(", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Long.rotateLeft(", LONGS, ", ", INTS, ")"));
@@ -201,7 +221,7 @@ public final class Operations {
         // ------------ Float -------------
         ops.add(Expression.make(INTS, "Float.compare(", FLOATS, ", ", FLOATS, ")"));
         ops.add(Expression.make(INTS, "Float.floatToIntBits(", FLOATS, ")"));
-        ops.add(Expression.make(INTS, "Float.floatToRawIntBits(", FLOATS, ")", withNondeterministicResult));
+        ops.add(Expression.make(INTS, "Float.floatToRawIntBits(", FLOATS, ")", WITH_NONDETERMINISTIC_RESULT));
         // Note: there are multiple NaN values with different bit representations.
         ops.add(Expression.make(FLOATS, "Float.float16ToFloat(", SHORTS, ")"));
         ops.add(Expression.make(FLOATS, "Float.intBitsToFloat(", INTS, ")"));
@@ -220,7 +240,7 @@ public final class Operations {
         ops.add(Expression.make(INTS,     "Double.compare(", DOUBLES, ", ", DOUBLES, ")"));
         ops.add(Expression.make(LONGS,    "Double.doubleToLongBits(", DOUBLES, ")"));
         // Note: there are multiple NaN values with different bit representations.
-        ops.add(Expression.make(LONGS,    "Double.doubleToRawLongBits(", DOUBLES, ")", withNondeterministicResult));
+        ops.add(Expression.make(LONGS,    "Double.doubleToRawLongBits(", DOUBLES, ")", WITH_NONDETERMINISTIC_RESULT));
         ops.add(Expression.make(DOUBLES,  "Double.longBitsToDouble(", LONGS, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isFinite(", DOUBLES, ")"));
         ops.add(Expression.make(BOOLEANS, "Double.isInfinite(", DOUBLES, ")"));
@@ -246,6 +266,30 @@ public final class Operations {
         ops.add(Expression.make(BOOLEANS, "Boolean.logicalXor(", BOOLEANS, ", ", BOOLEANS, ")"));
 
         // TODO: Math and other classes.
+
+        // Make sure the list is not modifiable.
+        return List.copyOf(ops);
+    }
+
+    private static List<Expression> generateFloat16Operations() {
+        List<Expression> ops = new ArrayList<>();
+
+        ops.add(Expression.make(FLOAT16, "Float16.abs(", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.add(", FLOAT16, ",", FLOAT16, ")"));
+
+        ops.add(Expression.make(BYTES, "(", FLOAT16, ").byteValue()"));
+
+        ops.add(Expression.make(INTS, "Float16.compare(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(INTS, "(", FLOAT16, ").compareTo(",  FLOAT16, ")"));
+        // TODO: consider le/gt/...
+        ops.add(Expression.make(FLOAT16, "Float16.copySign(", FLOAT16, ",", FLOAT16, ")"));
+        ops.add(Expression.make(FLOAT16, "Float16.divide(", FLOAT16, ",", FLOAT16, ")"));
+
+        ops.add(Expression.make(DOUBLES, "(", FLOAT16, ").doubleValue()"));
+
+        ops.add(Expression.make(SHORTS, "Float16.float16ToRawShortBits(", FLOAT16, ")"));
+
+        // TODO: add all
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
