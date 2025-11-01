@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,16 @@ public class TestSegmentedCodeCacheOption {
     private static final String USE_SEGMENTED_CODE_CACHE
             = CommandLineOptionTest.prepareBooleanFlag(SEGMENTED_CODE_CACHE,
                     true);
+    private static final String UNLOCK_EXPERIMENTAL_VM_OPTIONS
+            = CommandLineOptionTest.prepareBooleanFlag("UnlockExperimentalVMOptions", true);
+    private static final String HOT_CODE_HEAP
+            = CommandLineOptionTest.prepareBooleanFlag("HotCodeHeap", true);
     private static final long THRESHOLD_CC_SIZE_VALUE
             = CodeCacheOptions.mB(240);
     private static final long BELOW_THRESHOLD_CC_SIZE
             = THRESHOLD_CC_SIZE_VALUE - CodeCacheOptions.mB(1);
+    private static final long HOT_CODE_HEAP_SIZE
+            = CodeCacheOptions.mB(8);
     private static final String[] UNEXPECTED_MESSAGES = new String[] {
             ".*" + SEGMENTED_CODE_CACHE + ".*"
     };
@@ -104,7 +110,7 @@ public class TestSegmentedCodeCacheOption {
             public void run() throws Throwable {
                 // SCC is disabled w/o TieredCompilation by default
                 String errorMessage = SEGMENTED_CODE_CACHE
-                        + " should be disabled by default  when tiered "
+                        + " should be disabled by default when tiered "
                         + "compilation is disabled";
 
                 CommandLineOptionTest.verifyOptionValueForSameVM(
@@ -161,6 +167,52 @@ public class TestSegmentedCodeCacheOption {
                                 THRESHOLD_CC_SIZE_VALUE),
                         CommandLineOptionTest.prepareBooleanFlag(
                                 TIERED_COMPILATION, true));
+            }
+        },
+        OPTION_VALUES_HOT {
+            @Override
+            public boolean isApplicable() {
+                return Platform.isServer() && !Platform.isEmulatedClient();
+            }
+
+            @Override
+            public void run() throws Throwable {
+                // SCC is enabled w hot code heap w/o TieredCompilation
+                String errorMessage = SEGMENTED_CODE_CACHE
+                        + " should be enabled when the hot code heap "
+                        + "is enabled";
+
+                CommandLineOptionTest.verifyOptionValueForSameVM(
+                        SEGMENTED_CODE_CACHE, "true", errorMessage,
+                        UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                        HOT_CODE_HEAP,
+                        CommandLineOptionTest.prepareNumericFlag(
+                                BlobType.MethodHot.sizeOptionName,
+                                HOT_CODE_HEAP_SIZE),
+                        CommandLineOptionTest.prepareBooleanFlag(
+                                TIERED_COMPILATION, false));
+
+                // Hot code heap could be explicitly enabled w/ SegmentedCodeCache
+                // and w/ ReservedCodeCacheSize value below the threshold
+                errorMessage = String.format("It should be possible to explicitly "
+                                + "enable %s and %s with %s below threshold %d.",
+                        BlobType.MethodHot.sizeOptionName,
+                        SEGMENTED_CODE_CACHE,
+                        BlobType.All.sizeOptionName,
+                        THRESHOLD_CC_SIZE_VALUE);
+
+                CommandLineOptionTest.verifyOptionValueForSameVM(
+                        BlobType.MethodHot.sizeOptionName, String.valueOf(HOT_CODE_HEAP_SIZE),
+                        errorMessage,
+                        UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                        HOT_CODE_HEAP,
+                        CommandLineOptionTest.prepareNumericFlag(
+                                BlobType.All.sizeOptionName,
+                                BELOW_THRESHOLD_CC_SIZE),
+                        CommandLineOptionTest.prepareNumericFlag(
+                                BlobType.MethodHot.sizeOptionName,
+                                HOT_CODE_HEAP_SIZE),
+                        USE_SEGMENTED_CODE_CACHE);
             }
         };
 
