@@ -27,8 +27,6 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Arrays;
-
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
@@ -102,7 +100,6 @@ public class FloatingDecimal{
      * values into an ASCII <code>String</code> representation.
      */
     public interface BinaryToASCIIConverter {
-        int getChars(byte[] result);
 
         /**
          * Retrieves the decimal exponent most closely corresponding to this value.
@@ -115,21 +112,7 @@ public class FloatingDecimal{
          * @param digits The digit array.
          * @return The number of valid digits copied into the array.
          */
-        int getDigits(char[] digits);
-
-        /**
-         * Indicates the sign of the value.
-         * @return {@code value < 0.0}.
-         */
-        boolean isNegative();
-
-        /**
-         * Indicates whether the value is either infinite or not a number.
-         *
-         * @return <code>true</code> if and only if the value is <code>NaN</code>
-         * or infinite.
-         */
-        boolean isExceptional();
+        int getDigits(byte[] digits);
 
         /**
          * Indicates whether the value was rounded up during the binary to ASCII
@@ -147,63 +130,9 @@ public class FloatingDecimal{
         boolean decimalDigitsExact();
     }
 
-    /**
-     * A <code>BinaryToASCIIConverter</code> which represents <code>NaN</code>
-     * and infinite values.
-     */
-    private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
-        private final String image;
-        private final boolean isNegative;
-
-        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
-            this.image = image;
-            this.isNegative = isNegative;
-        }
-
-        @Override
-        @SuppressWarnings("deprecation")
-        public int getChars(byte[] chars) {
-            image.getBytes(0, image.length(), chars, 0);
-            return image.length();
-        }
-
-        @Override
-        public int getDecimalExponent() {
-            throw new IllegalArgumentException("Exceptional value does not have an exponent");
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            throw new IllegalArgumentException("Exceptional value does not have digits");
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
-        }
-
-        @Override
-        public boolean isExceptional() {
-            return true;
-        }
-
-        @Override
-        public boolean digitsRoundedUp() {
-            throw new IllegalArgumentException("Exceptional value is not rounded");
-        }
-
-        @Override
-        public boolean decimalDigitsExact() {
-            throw new IllegalArgumentException("Exceptional value is not exact");
-        }
-    }
-
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
     private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
 
@@ -255,19 +184,9 @@ public class FloatingDecimal{
         }
 
         @Override
-        public int getDigits(char[] digits) {
+        public int getDigits(byte[] digits) {
             System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
             return this.nDigits;
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
-        }
-
-        @Override
-        public boolean isExceptional() {
-            return false;
         }
 
         @Override
@@ -825,83 +744,6 @@ public class FloatingDecimal{
                 59,
                 61,
         };
-
-        /**
-         * Converts the decimal representation of a floating-point number into its
-         * ASCII character representation and stores it in the provided byte array.
-         *
-         * @param result the byte array to store the ASCII representation, must have length at least 26
-         * @return the number of characters written to the result array
-         */
-        public int getChars(byte[] result) {
-            assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
-            int i = 0;
-            if (isNegative) {
-                result[0] = '-';
-                i = 1;
-            }
-            if (decExponent > 0 && decExponent < 8) {
-                // print digits.digits.
-                int charLength = Math.min(nDigits, decExponent);
-                System.arraycopy(digits, firstDigitIndex, result, i, charLength);
-                i += charLength;
-                if (charLength < decExponent) {
-                    charLength = decExponent - charLength;
-                    Arrays.fill(result, i, i + charLength, (byte) '0');
-                    i += charLength;
-                    result[i++] = '.';
-                    result[i++] = '0';
-                } else {
-                    result[i++] = '.';
-                    if (charLength < nDigits) {
-                        int t = nDigits - charLength;
-                        System.arraycopy(digits, firstDigitIndex + charLength, result, i, t);
-                        i += t;
-                    } else {
-                        result[i++] = '0';
-                    }
-                }
-            } else if (decExponent <= 0 && decExponent > -3) {
-                result[i++] = '0';
-                result[i++] = '.';
-                if (decExponent != 0) {
-                    Arrays.fill(result, i, i-decExponent, (byte) '0');
-                    i -= decExponent;
-                }
-                System.arraycopy(digits, firstDigitIndex, result, i, nDigits);
-                i += nDigits;
-            } else {
-                result[i++] = digits[firstDigitIndex];
-                result[i++] = '.';
-                if (nDigits > 1) {
-                    System.arraycopy(digits, firstDigitIndex+1, result, i, nDigits - 1);
-                    i += nDigits - 1;
-                } else {
-                    result[i++] = '0';
-                }
-                result[i++] = 'E';
-                int e;
-                if (decExponent <= 0) {
-                    result[i++] = '-';
-                    e = -decExponent + 1;
-                } else {
-                    e = decExponent - 1;
-                }
-                // decExponent has 1, 2, or 3, digits
-                if (e <= 9) {
-                    result[i++] = (byte) (e + '0');
-                } else if (e <= 99) {
-                    result[i++] = (byte) (e / 10 + '0');
-                    result[i++] = (byte) (e % 10 + '0');
-                } else {
-                    result[i++] = (byte) (e / 100 + '0');
-                    e %= 100;
-                    result[i++] = (byte) (e / 10 + '0');
-                    result[i++] = (byte) (e % 10 + '0');
-                }
-            }
-            return i;
-        }
 
     }
 
@@ -1707,9 +1549,9 @@ public class FloatingDecimal{
         // Discover obvious special cases of NaN and Infinity.
         if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
             if ( fractBits == 0L ){
-                return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
+                throw new IllegalArgumentException((isNegative ? "-" : "") + INFINITY_REP);
             } else {
-                return B2AC_NOT_A_NUMBER;
+                throw new IllegalArgumentException(NAN_REP);
             }
         }
         // Finish unpacking

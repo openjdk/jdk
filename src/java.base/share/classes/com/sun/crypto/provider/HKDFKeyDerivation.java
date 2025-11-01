@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.access.SharedSecrets;
+
 import javax.crypto.KDFSpi;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -123,8 +125,12 @@ abstract class HKDFKeyDerivation extends KDFSpi {
                     + "empty");
         }
 
-        return new SecretKeySpec(engineDeriveData(derivationSpec), alg);
-
+        var data = engineDeriveData(derivationSpec);
+        try {
+            return new SecretKeySpec(data, alg);
+        } finally {
+            Arrays.fill(data, (byte)0);
+        }
     }
 
     /**
@@ -346,7 +352,7 @@ abstract class HKDFKeyDerivation extends KDFSpi {
                     "prk must be at least " + hmacLen + " bytes");
         }
 
-        SecretKey pseudoRandomKey = new SecretKeySpec(prk, hmacAlgName);
+        SecretKeySpec pseudoRandomKey = new SecretKeySpec(prk, hmacAlgName);
 
         Mac hmacObj = Mac.getInstance(hmacAlgName);
 
@@ -382,6 +388,9 @@ abstract class HKDFKeyDerivation extends KDFSpi {
             // sized the buffers to their largest possible size up-front,
             // but just in case...
             throw new ProviderException(sbe);
+        } finally {
+            SharedSecrets.getJavaxCryptoSpecAccess()
+                    .clearSecretKeySpec(pseudoRandomKey);
         }
         return kdfOutput;
     }

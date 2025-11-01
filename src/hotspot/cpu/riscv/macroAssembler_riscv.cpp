@@ -225,36 +225,6 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bind(done);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  addi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count overflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  subi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
 int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleScope scope(this);
   intptr_t before = offset();
@@ -355,14 +325,15 @@ void MacroAssembler::call_VM(Register oop_result,
 }
 
 void MacroAssembler::post_call_nop() {
+  assert(!in_compressible_scope(), "Must be");
+  assert_alignment(pc());
   if (!Continuations::enabled()) {
     return;
   }
-  relocate(post_call_nop_Relocation::spec(), [&] {
-    InlineSkippedInstructionsCounter skipCounter(this);
-    nop();
-    li32(zr, 0);
-  });
+  relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
+  nop();
+  li32(zr, 0);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -389,12 +360,14 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
-  sd(last_java_sp, Address(xthread, JavaThread::last_Java_sp_offset()));
-
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
     sd(last_java_fp, Address(xthread, JavaThread::last_Java_fp_offset()));
   }
+
+  // We must set sp last.
+  sd(last_java_sp, Address(xthread, JavaThread::last_Java_sp_offset()));
+
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -3402,6 +3375,8 @@ void MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register tmp) {
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
@@ -3412,18 +3387,13 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
     return;
   }
 
-  Register xbase = dst;
-  if (dst == src) {
-    xbase = tmp;
-  }
+  Register xbase = tmp;
 
-  assert_different_registers(src, xbase);
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    Register t = src == dst ? dst : t0;
-    assert_different_registers(t, xbase);
-    shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
+    // dst = (src << shift) + xbase
+    shadd(dst, src, xbase, dst /* temporary, dst != xbase */, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
@@ -5016,7 +4986,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleScope scope(this); // relocations
+  assert(!in_compressible_scope(), "Must be");
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -5874,13 +5844,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= CacheLineSize.
+// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
+  int zicboz_block_size = VM_Version::zicboz_block_size.value();
   Label initial_table_end, loop;
 
   // Align base with cache line size.
   neg(tmp1, base);
-  andi(tmp1, tmp1, CacheLineSize - 1);
+  andi(tmp1, tmp1, zicboz_block_size - 1);
 
   // tmp1: the number of bytes to be filled to align the base with cache line size.
   add(base, base, tmp1);
@@ -5890,16 +5861,16 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   la(tmp1, initial_table_end);
   sub(tmp2, tmp1, tmp2);
   jr(tmp2);
-  for (int i = -CacheLineSize + wordSize; i < 0; i += wordSize) {
+  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  mv(tmp1, CacheLineSize / wordSize);
+  mv(tmp1, zicboz_block_size / wordSize);
   bind(loop);
   cbo_zero(base);
   sub(cnt, cnt, tmp1);
-  addi(base, base, CacheLineSize);
+  addi(base, base, zicboz_block_size);
   bge(cnt, tmp1, loop);
 }
 

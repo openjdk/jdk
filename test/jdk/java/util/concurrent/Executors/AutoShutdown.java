@@ -23,22 +23,31 @@
 
 /*
  * @test
- * @bug 6399443 8302899
+ * @bug 6399443 8302899 8362123
  * @summary Test that Executors.newSingleThreadExecutor wraps an ExecutorService that
  *    automatically shuts down and terminates when the wrapper is GC'ed
+ * @library /test/lib/
  * @modules java.base/java.util.concurrent:+open
  * @run junit AutoShutdown
  */
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
+
+import jdk.test.lib.Utils;
+import jdk.test.lib.util.ForceGC;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,6 +68,13 @@ class AutoShutdown {
         int[] queuedTaskCounts = { 0, 1, 2 };
         return executors().flatMap(s -> IntStream.of(queuedTaskCounts)
                 .mapToObj(i -> Arguments.of(s, i)));
+    }
+
+    private static Stream<Arguments> shutdownMethods() {
+        return Stream.<Consumer<ExecutorService>>of(
+                e -> e.shutdown(),
+                e -> e.shutdownNow()
+            ).map(Arguments::of);
     }
 
     /**
@@ -110,6 +126,28 @@ class AutoShutdown {
         assertEquals(ntasks, completedTaskCount.get());
     }
 
+    @ParameterizedTest
+    @MethodSource("shutdownMethods")
+    void testShutdownUnlinksCleaner(Consumer<ExecutorService> shutdown) throws Exception {
+        ClassLoader classLoader =
+            Utils.getTestClassPathURLClassLoader(ClassLoader.getPlatformClassLoader());
+
+        ReferenceQueue<?> queue = new ReferenceQueue<>();
+        Reference<?> reference = new PhantomReference(classLoader, queue);
+        try {
+            Class<?> isolatedClass = classLoader.loadClass("AutoShutdown$IsolatedClass");
+            assertSame(isolatedClass.getClassLoader(), classLoader);
+            isolatedClass.getDeclaredMethod("shutdown", Consumer.class).invoke(null, shutdown);
+
+            isolatedClass = null;
+            classLoader = null;
+
+            assertTrue(ForceGC.wait(() -> queue.poll() != null));
+        } finally {
+            Reference.reachabilityFence(reference);
+        }
+    }
+
     /**
      * Returns the delegate for the given ExecutorService. The given ExecutorService
      * must be a Executors$DelegatedExecutorService.
@@ -132,5 +170,22 @@ class AutoShutdown {
             terminated = executor.awaitTermination(100, TimeUnit.MILLISECONDS);
         }
     }
-}
 
+    public static class IsolatedClass {
+
+        private static final ExecutorService executor =
+            Executors.newSingleThreadExecutor(new IsolatedThreadFactory());
+
+        public static void shutdown(Consumer<ExecutorService> shutdown) {
+            shutdown.accept(executor);
+        }
+    }
+
+    public static class IsolatedThreadFactory implements ThreadFactory {
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r);
+        }
+    }
+}

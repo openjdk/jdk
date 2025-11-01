@@ -42,6 +42,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -59,7 +60,7 @@ class UnixPath implements Path {
     private final byte[] path;
 
     // String representation (created lazily, no need to be volatile)
-    private String stringValue;
+    private @Stable String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
@@ -124,7 +125,6 @@ class UnixPath implements Path {
 
     // encodes the given path-string into a sequence of bytes
     private static byte[] encode(UnixFileSystem fs, String input) {
-        input = fs.normalizeNativePath(input);
         try {
             return JLA.uncheckedGetBytesOrThrow(input, Util.jnuEncoding());
         } catch (CharacterCodingException cce) {
@@ -814,7 +814,7 @@ class UnixPath implements Path {
         // OK if two or more threads create a String
         String stringValue = this.stringValue;
         if (stringValue == null) {
-            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = Util.toString(path);     // platform encoding
         }
         return stringValue;
     }
@@ -948,28 +948,51 @@ class UnixPath implements Path {
 
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
-            // key is equal to the key of the current element
+            // internal path bytes equal the internal path bytes of the current
+            // element, or whose key is equal to the key  of the current element
+            boolean found = false;
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
+            // compare path bytes until a match is found or no more entries
             try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
-                boolean found = false;
                 for (Path entry : entries) {
-                    UnixPath p = path.resolve(entry.getFileName());
-                    UnixFileAttributes attributes = null;
-                    try {
-                        attributes = UnixFileAttributes.get(p, false);
-                        UnixFileKey key = attributes.fileKey();
-                        if (key.equals(elementKey)) {
-                            path = path.resolve(entry);
-                            found = true;
-                            break;
+                    Path name = entry.getFileName();
+                    if (name.compareTo(element) == 0) {
+                        found = true;
+                        path = path.resolve(entry);
+                        break;
+                    }
+                }
+            }
+
+            // if no path match found, compare file keys
+            if (!found) {
+                try {
+                    dp = opendir(path);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(path);
+                }
+
+                try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
+                    for (Path entry : entries) {
+                        Path name = entry.getFileName();
+                        UnixPath p = path.resolve(name);
+                        UnixFileAttributes attributes = null;
+                        try {
+                            attributes = UnixFileAttributes.get(p, false);
+                            UnixFileKey key = attributes.fileKey();
+                            if (key.equals(elementKey)) {
+                                found = true;
+                                path = path.resolve(entry);
+                                break;
+                            }
+                        } catch (UnixException ignore) {
+                            continue;
                         }
-                    } catch (UnixException ignore) {
-                        continue;
                     }
                 }
 
-                // Fallback which should in theory never happen
                 if (!found) {
+                    // Fallback which should in theory never happen
                     path = path.resolve(element);
                 }
             }
