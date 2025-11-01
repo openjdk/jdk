@@ -35,7 +35,6 @@ import java.io.FileDescriptor;
 import jdk.internal.util.Exceptions;
 
 import sun.net.ConnectionResetException;
-import sun.net.NetHooks;
 
 /**
  * Unix implementation of AsynchronousSocketChannel
@@ -310,7 +309,6 @@ class UnixAsynchronousSocketChannelImpl
         InetSocketAddress isa = Net.checkAddress(remote);
 
         // check and set state
-        boolean notifyBeforeTcpConnect;
         synchronized (stateLock) {
             if (state == ST_CONNECTED)
                 throw new AlreadyConnectedException();
@@ -318,15 +316,11 @@ class UnixAsynchronousSocketChannelImpl
                 throw new ConnectionPendingException();
             state = ST_PENDING;
             pendingRemote = remote;
-            notifyBeforeTcpConnect = (localAddress == null);
         }
 
         Throwable e = null;
         try {
             begin();
-            // notify hook if unbound
-            if (notifyBeforeTcpConnect)
-                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             int n = Net.connect(fd, isa.getAddress(), isa.getPort());
             if (n == IOStatus.UNAVAILABLE) {
                 // connection could not be established immediately
