@@ -30,7 +30,6 @@ import java.lang.reflect.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.debugger.remote.x86.*;
 import sun.jvm.hotspot.debugger.remote.amd64.*;
 import sun.jvm.hotspot.debugger.remote.ppc64.*;
 
@@ -55,9 +54,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       int cachePageSize = 4096;
       int cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
       String cpu = remoteDebugger.getCPU();
-      if (cpu.equals("x86")) {
-        threadFactory = new RemoteX86ThreadFactory(this);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
+      if (cpu.equals("amd64") || cpu.equals("x86_64")) {
         threadFactory = new RemoteAMD64ThreadFactory(this);
       } else if (cpu.equals("ppc64")) {
         threadFactory = new RemotePPC64ThreadFactory(this);
