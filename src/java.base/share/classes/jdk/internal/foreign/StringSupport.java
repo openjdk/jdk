@@ -59,6 +59,24 @@ public final class StringSupport {
     }
 
     @ForceInline
+    public static String read(AbstractMemorySegmentImpl segment, long offset, Charset charset, int length) {
+        int lengthBytes = length * CharsetKind.of(charset).codeUnitSize();
+        return readBytes(segment, offset, charset, lengthBytes);
+    }
+
+    @ForceInline
+    public static String readBytes(AbstractMemorySegmentImpl segment, long offset, Charset charset, int lengthBytes) {
+        final byte[] bytes = new byte[lengthBytes];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, lengthBytes);
+        try {
+            return JAVA_LANG_ACCESS.uncheckedNewStringOrThrow(bytes, charset);
+        } catch (CharacterCodingException _) {
+            // use replacement characters for malformed input
+            return new String(bytes, charset);
+        }
+    }
+
+    @ForceInline
     public static void write(AbstractMemorySegmentImpl segment, long offset, Charset charset, String string) {
         switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> writeByte(segment, offset, charset, string);
@@ -70,14 +88,7 @@ public final class StringSupport {
     @ForceInline
     private static String readByte(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         final int len = strlenByte(segment, offset, segment.byteSize());
-        final byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        try {
-            return JAVA_LANG_ACCESS.uncheckedNewStringOrThrow(bytes, charset);
-        } catch (CharacterCodingException _) {
-            // use replacement characters for malformed input
-            return new String(bytes, charset);
-        }
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -89,14 +100,7 @@ public final class StringSupport {
     @ForceInline
     private static String readShort(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         int len = strlenShort(segment, offset, segment.byteSize());
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        try {
-            return JAVA_LANG_ACCESS.uncheckedNewStringOrThrow(bytes, charset);
-        } catch (CharacterCodingException _) {
-          // use replacement characters for malformed input
-          return new String(bytes, charset);
-        }
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -108,14 +112,7 @@ public final class StringSupport {
     @ForceInline
     private static String readInt(AbstractMemorySegmentImpl segment, long offset, Charset charset) {
         int len = strlenInt(segment, offset, segment.byteSize());
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
-        try {
-            return JAVA_LANG_ACCESS.uncheckedNewStringOrThrow(bytes, charset);
-        } catch (CharacterCodingException _) {
-            // use replacement characters for malformed input
-            return new String(bytes, charset);
-        }
+        return readBytes(segment, offset, charset, len);
     }
 
     @ForceInline
@@ -315,14 +312,14 @@ public final class StringSupport {
         DOUBLE_BYTE(2),
         QUAD_BYTE(4);
 
-        final int terminatorCharSize;
+        final int codeUnitSize;
 
-        CharsetKind(int terminatorCharSize) {
-            this.terminatorCharSize = terminatorCharSize;
+        CharsetKind(int codeUnitSize) {
+            this.codeUnitSize = codeUnitSize;
         }
 
-        public int terminatorCharSize() {
-            return terminatorCharSize;
+        public int codeUnitSize() {
+            return codeUnitSize;
         }
 
         public static CharsetKind of(Charset charset) {
