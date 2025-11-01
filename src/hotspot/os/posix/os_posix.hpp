@@ -89,6 +89,8 @@ public:
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
 
+  DEBUG_ONLY(static bool ucontext_is_interpreter(const ucontext_t* ctx);)
+
   static void to_RTC_abstime(timespec* abstime, int64_t millis);
 
   // clock ticks per second of the system

@@ -53,6 +53,7 @@ public class T6410643 extends ToolTester {
     void test(String... args) {
         task = tool.getTask(null, null, null, null, null, null);
         try {
+            // no need to check the result of JavacTask::call, reevaluate if the test is modified
             task.call();
             throw new AssertionError("Error expected");
         } catch (IllegalStateException e) {

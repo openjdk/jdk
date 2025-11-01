@@ -240,6 +240,19 @@ void Assembler::add_sub_immediate(Instruction_aarch64 &current_insn,
   srf(Rn, 5);
 }
 
+// This method is used to generate Advanced SIMD data processing instructions
+void Assembler::adv_simd_three_same(Instruction_aarch64 &current_insn, FloatRegister Vd,
+                                    SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm,
+                                    int op1, int op2, int op3) {
+  assert(T == T4H || T == T8H || T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  int op22 = (T == T2S || T == T4S) ? 0b0 : 0b1;
+  int op21 = (T == T4H || T == T8H) ? 0b0 : 0b1;
+  int op14 = (T == T4H || T == T8H) ? 0b00 : 0b11;
+  f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);
+  f(op22, 22); f(op21, 21), rf(Vm, 16), f(op14, 15, 14), f(op3, 13, 10),
+  rf(Vn, 5), rf(Vd, 0);
+}
+
 #undef f
 #undef sf
 #undef rf
@@ -419,6 +432,11 @@ int Assembler::operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement
   }
 
   return -1;
+}
+
+bool Assembler::operand_valid_for_sve_dup_immediate(int64_t imm) {
+  return ((imm >= -128 && imm <= 127) ||
+          (((imm & 0xff) == 0) && imm >= -32768 && imm <= 32512));
 }
 
 bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {

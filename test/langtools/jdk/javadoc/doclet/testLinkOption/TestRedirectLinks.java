@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8190312
+ * @key intermittent
  * @summary test redirected URLs for -link
  * @library /tools/lib ../../lib /test/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,7 +34,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
  * @build jtreg.SkippedException
  * @build jdk.test.lib.Platform jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main TestRedirectLinks
+ * @run main/timeout=480 TestRedirectLinks
  */
 
 import java.io.File;

@@ -50,7 +50,7 @@ import sun.util.logging.PlatformLogger;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-public class FcFontConfiguration extends FontConfiguration {
+public final class FcFontConfiguration extends FontConfiguration {
 
     /** Version of the cache file format understood by this code.
      * Its part of the file name so that we can rev this at

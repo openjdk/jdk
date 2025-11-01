@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 /* We should also include jdk_util.h here, for the prototype of JDK_Canonicalize.
    This isn't possible though because canonicalize_md.c is as well used in
    different contexts within Oracle.
- */
+*/
 #include "io_util_md.h"
 
 /* Copy bytes to dst, not going past dend; return dst + number of bytes copied,
@@ -139,7 +139,8 @@ lastErrorReportable()
         || (errval == ERROR_ACCESS_DENIED)
         || (errval == ERROR_NETWORK_UNREACHABLE)
         || (errval == ERROR_NETWORK_ACCESS_DENIED)
-        || (errval == ERROR_NO_MORE_FILES)) {
+        || (errval == ERROR_NO_MORE_FILES)
+        || (errval == ERROR_NETNAME_DELETED)) {
         return 0;
     }
     return 1;
@@ -183,7 +184,7 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     /* Copy prefix, assuming path is absolute */
     c = src[0];
     if (((c <= L'z' && c >= L'a') || (c <= L'Z' && c >= L'A'))
-       && (src[1] == L':') && (src[2] == L'\\')) {
+        && (src[1] == L':') && (src[2] == L'\\')) {
         /* Drive specifier */
         *src = towupper(*src);    /* Canonicalize drive letter */
         if (!(dst = wcp(dst, dend, L'\0', src, src + 2))) {
@@ -244,9 +245,9 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
             continue;
         } else {
             if (!lastErrorReportable()) {
-               if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))){
-                   goto err;
-               }
+                if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))){
+                    goto err;
+                }
                 break;
             } else {
                 goto err;
@@ -255,7 +256,7 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     }
 
     if (dst >= dend) {
-    errno = ENAMETOOLONG;
+        errno = ENAMETOOLONG;
         goto err;
     }
     *dst = L'\0';
@@ -265,64 +266,6 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
  err:
     free(path);
     return -1;
-}
-
-/* Convert a pathname to canonical form.  The input prefix is assumed
-   to be in canonical form already, and the trailing filename must not
-   contain any wildcard, dot/double dot, or other "tricky" characters
-   that are rejected by the canonicalize() routine above.  This
-   routine is present to allow the canonicalization prefix cache to be
-   used while still returning canonical names with the correct
-   capitalization. */
-int
-wcanonicalizeWithPrefix(WCHAR *canonicalPrefix, WCHAR *pathWithCanonicalPrefix, WCHAR *result, int size)
-{
-    WIN32_FIND_DATAW fd;
-    HANDLE h;
-    WCHAR *src, *dst, *dend;
-    WCHAR *pathbuf;
-    int pathlen;
-
-    src = pathWithCanonicalPrefix;
-    dst = result;        /* Place results here */
-    dend = dst + size;   /* Don't go to or past here */
-
-
-    if ((pathlen=(int)wcslen(pathWithCanonicalPrefix)) > MAX_PATH - 1) {
-        pathbuf = getPrefixed(pathWithCanonicalPrefix, pathlen);
-        h = FindFirstFileW(pathbuf, &fd);    /* Look up prefix */
-        free(pathbuf);
-    } else
-        h = FindFirstFileW(pathWithCanonicalPrefix, &fd);    /* Look up prefix */
-    if (h != INVALID_HANDLE_VALUE) {
-        /* Lookup succeeded; append true name to result and continue */
-        FindClose(h);
-        if (!(dst = wcp(dst, dend, L'\0',
-                        canonicalPrefix,
-                        canonicalPrefix + wcslen(canonicalPrefix)))) {
-            return -1;
-        }
-        if (!(dst = wcp(dst, dend, L'\\',
-                        fd.cFileName,
-                        fd.cFileName + wcslen(fd.cFileName)))) {
-            return -1;
-        }
-    } else {
-        if (!lastErrorReportable()) {
-            if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))) {
-                return -1;
-            }
-        } else {
-            return -1;
-        }
-    }
-
-    if (dst >= dend) {
-        errno = ENAMETOOLONG;
-        return -1;
-    }
-    *dst = L'\0';
-    return 0;
 }
 
 /* Non-Wide character version of canonicalize.
@@ -366,7 +309,7 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
     // Change return value to success.
     ret = 0;
 
-finish:
+ finish:
     free(wresult);
     free(wpath);
 

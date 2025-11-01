@@ -156,8 +156,6 @@ class ClassFileStream: public ResourceObj {
   // Tells whether eos is reached
   bool at_eos() const { return _current == _buffer_end; }
 
-  uint64_t compute_fingerprint() const;
-
   bool from_class_file_load_hook() const { return _from_class_file_load_hook; }
 };
 

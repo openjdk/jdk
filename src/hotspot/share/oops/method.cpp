@@ -22,9 +22,9 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
@@ -36,9 +36,9 @@
 #include "code/debugInfoRec.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
-#include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
@@ -51,8 +51,9 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
-#include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/constMethod.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
@@ -60,10 +61,11 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -150,11 +152,17 @@ void Method::release_C_heap_structures() {
 }
 
 address Method::get_i2c_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::throw_AbstractMethodError_entry();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_i2c_entry();
 }
 
 address Method::get_c2i_entry() {
+  if (is_abstract()) {
+    return SharedRuntime::get_handle_wrong_method_abstract_stub();
+  }
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_entry();
 }
@@ -408,6 +416,12 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Method::remove_unshareable_info() {
   unlink_method();
+  if (method_data() != nullptr) {
+    method_data()->remove_unshareable_info();
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->remove_unshareable_info();
+  }
   if (CDSConfig::is_dumping_adapters() && _adapter != nullptr) {
     _adapter->remove_unshareable_info();
     _adapter = nullptr;
@@ -417,6 +431,12 @@ void Method::remove_unshareable_info() {
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+  if (method_data() != nullptr) {
+    method_data()->restore_unshareable_info(CHECK);
+  }
+  if (method_counters() != nullptr) {
+    method_counters()->restore_unshareable_info(CHECK);
+  }
   if (_adapter != nullptr) {
     assert(_adapter->is_linked(), "must be");
     _from_compiled_entry = _adapter->get_c2i_entry();
@@ -426,7 +446,7 @@ void Method::restore_unshareable_info(TRAPS) {
 #endif
 
 void Method::set_vtable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_vtable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context.
@@ -437,7 +457,7 @@ void Method::set_vtable_index(int index) {
 }
 
 void Method::set_itable_index(int index) {
-  if (is_shared() && !MetaspaceShared::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
+  if (in_aot_cache() && !AOTMetaspace::remapped_readwrite() && method_holder()->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader to obtain the loader
     // constraints based on the runtime classloaders' context. The dumptime
@@ -588,9 +608,43 @@ void Method::print_invocation_count(outputStream* st) {
 #endif
 }
 
+MethodTrainingData* Method::training_data_or_null() const {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return nullptr;
+  } else {
+    MethodTrainingData* mtd = mcs->method_training_data();
+    if (mtd == mcs->method_training_data_sentinel()) {
+      return nullptr;
+    }
+    return mtd;
+  }
+}
+
+bool Method::init_training_data(MethodTrainingData* td) {
+  MethodCounters* mcs = method_counters();
+  if (mcs == nullptr) {
+    return false;
+  } else {
+    return mcs->init_method_training_data(td);
+  }
+}
+
+bool Method::install_training_method_data(const methodHandle& method) {
+  MethodTrainingData* mtd = MethodTrainingData::find(method);
+  if (mtd != nullptr && mtd->final_profile() != nullptr) {
+    AtomicAccess::replace_if_null(&method->_method_data, mtd->final_profile());
+    return true;
+  }
+  return false;
+}
+
 // Build a MethodData* object to hold profiling information collected on this
 // method when requested.
 void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
+  if (install_training_method_data(method)) {
+    return;
+  }
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -606,7 +660,7 @@ void Method::build_profiling_method_data(const methodHandle& method, TRAPS) {
     return;   // return the exception (which is cleared)
   }
 
-  if (!Atomic::replace_if_null(&method->_method_data, method_data)) {
+  if (!AtomicAccess::replace_if_null(&method->_method_data, method_data)) {
     MetadataFactory::free_metadata(loader_data, method_data);
     return;
   }
@@ -657,7 +711,7 @@ MethodCounters* Method::build_method_counters(Thread* current, Method* m) {
 
 bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
-  return Atomic::replace_if_null(&_method_counters, counters);
+  return AtomicAccess::replace_if_null(&_method_counters, counters);
 }
 
 void Method::set_exception_handler_entered(int handler_bci) {
@@ -981,7 +1035,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // If so, we have to make it not_entrant.
   nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
-    nm->make_not_entrant("set native function");
+    nm->make_not_entrant(nmethod::InvalidationReason::SET_NATIVE_FUNCTION);
   }
 }
 
@@ -1117,9 +1171,9 @@ void Method::clear_code() {
   // this may be null if c2i adapters have not been made yet
   // Only should happen at allocate time.
   if (adapter() == nullptr) {
-    _from_compiled_entry    = nullptr;
+    _from_compiled_entry = nullptr;
   } else {
-    _from_compiled_entry    = adapter()->get_c2i_entry();
+    _from_compiled_entry = adapter()->get_c2i_entry();
   }
   OrderAccess::storestore();
   _from_interpreted_entry = _i2i_entry;
@@ -1148,7 +1202,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   _code = nullptr;
-  if (!CDSConfig::is_dumping_adapters() || AdapterHandlerLibrary::is_abstract_method_adapter(_adapter)) {
+  if (!CDSConfig::is_dumping_adapters()) {
     _adapter = nullptr;
   }
   _i2i_entry = nullptr;
@@ -1163,6 +1217,12 @@ void Method::unlink_method() {
 
   clear_method_data();
   clear_method_counters();
+  clear_is_not_c1_compilable();
+  clear_is_not_c1_osr_compilable();
+  clear_is_not_c2_compilable();
+  clear_is_not_c2_osr_compilable();
+  clear_queued_for_compilation();
+
   remove_unshareable_flags();
 }
 
@@ -1191,7 +1251,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
-    if (adapter()->is_shared()) {
+    if (adapter()->in_aot_cache()) {
       assert(adapter()->is_linked(), "Adapter is shared but not linked");
     } else {
       return;
@@ -1223,9 +1283,14 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // called from the vtable.  We need adapters on such methods that get loaded
   // later.  Ditto for mega-morphic itable calls.  If this proves to be a
   // problem we'll make these lazily later.
-  if (_adapter == nullptr) {
+  if (is_abstract()) {
+    h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
+  } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
+#ifndef ZERO
     assert(adapter()->is_linked(), "Adapter must have been linked");
+#endif
+    h_method->_from_compiled_entry = adapter()->get_c2i_entry();
   }
 
   // ONLY USE the h_method now as make_adapter may have blocked
@@ -1246,6 +1311,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  assert(!mh->is_abstract(), "abstract methods do not have adapters");
   PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
 
   // Adapters for compiled code are made eagerly here.  They are fairly
@@ -1264,7 +1330,6 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   }
 
   mh->set_adapter_entry(adapter);
-  mh->_from_compiled_entry = adapter->get_c2i_entry();
   return adapter->get_c2i_entry();
 }
 
@@ -1286,7 +1351,7 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  nmethod *code = Atomic::load_acquire(&_code);
+  nmethod *code = AtomicAccess::load_acquire(&_code);
   return code == nullptr || (code->method() == nullptr) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
@@ -1326,7 +1391,7 @@ void Method::set_code(const methodHandle& mh, nmethod *code) {
       guarantee(false, "Unknown Continuation native intrinsic");
     }
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
-    Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
+    AtomicAccess::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
     // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();
@@ -2006,172 +2071,33 @@ void BreakpointInfo::clear(Method* method) {
 #endif // INCLUDE_JVMTI
 
 // jmethodID handling
-
-// This is a block allocating object, sort of like JNIHandleBlock, only a
-// lot simpler.
-// It's allocated on the CHeap because once we allocate a jmethodID, we can
-// never get rid of it.
-
-static const int min_block_size = 8;
-
-class JNIMethodBlockNode : public CHeapObj<mtClass> {
-  friend class JNIMethodBlock;
-  Method**        _methods;
-  int             _number_of_methods;
-  int             _top;
-  JNIMethodBlockNode* _next;
-
- public:
-
-  JNIMethodBlockNode(int num_methods = min_block_size);
-
-  ~JNIMethodBlockNode() { FREE_C_HEAP_ARRAY(Method*, _methods); }
-
-  void ensure_methods(int num_addl_methods) {
-    if (_top < _number_of_methods) {
-      num_addl_methods -= _number_of_methods - _top;
-      if (num_addl_methods <= 0) {
-        return;
-      }
-    }
-    if (_next == nullptr) {
-      _next = new JNIMethodBlockNode(MAX2(num_addl_methods, min_block_size));
-    } else {
-      _next->ensure_methods(num_addl_methods);
-    }
-  }
-};
-
-class JNIMethodBlock : public CHeapObj<mtClass> {
-  JNIMethodBlockNode _head;
-  JNIMethodBlockNode *_last_free;
- public:
-  static Method* const _free_method;
-
-  JNIMethodBlock(int initial_capacity = min_block_size)
-      : _head(initial_capacity), _last_free(&_head) {}
-
-  void ensure_methods(int num_addl_methods) {
-    _last_free->ensure_methods(num_addl_methods);
-  }
-
-  Method** add_method(Method* m) {
-    for (JNIMethodBlockNode* b = _last_free; b != nullptr; b = b->_next) {
-      if (b->_top < b->_number_of_methods) {
-        // top points to the next free entry.
-        int i = b->_top;
-        b->_methods[i] = m;
-        b->_top++;
-        _last_free = b;
-        return &(b->_methods[i]);
-      } else if (b->_top == b->_number_of_methods) {
-        // if the next free entry ran off the block see if there's a free entry
-        for (int i = 0; i < b->_number_of_methods; i++) {
-          if (b->_methods[i] == _free_method) {
-            b->_methods[i] = m;
-            _last_free = b;
-            return &(b->_methods[i]);
-          }
-        }
-        // Only check each block once for frees.  They're very unlikely.
-        // Increment top past the end of the block.
-        b->_top++;
-      }
-      // need to allocate a next block.
-      if (b->_next == nullptr) {
-        b->_next = _last_free = new JNIMethodBlockNode();
-      }
-    }
-    guarantee(false, "Should always allocate a free block");
-    return nullptr;
-  }
-
-  bool contains(Method** m) {
-    if (m == nullptr) return false;
-    for (JNIMethodBlockNode* b = &_head; b != nullptr; b = b->_next) {
-      if (b->_methods <= m && m < b->_methods + b->_number_of_methods) {
-        // This is a bit of extra checking, for two reasons.  One is
-        // that contains() deals with pointers that are passed in by
-        // JNI code, so making sure that the pointer is aligned
-        // correctly is valuable.  The other is that <= and > are
-        // technically not defined on pointers, so the if guard can
-        // pass spuriously; no modern compiler is likely to make that
-        // a problem, though (and if one did, the guard could also
-        // fail spuriously, which would be bad).
-        ptrdiff_t idx = m - b->_methods;
-        if (b->_methods + idx == m) {
-          return true;
-        }
-      }
-    }
-    return false;  // not found
-  }
-
-  // During class unloading the methods are cleared, which is different
-  // than freed.
-  void clear_all_methods() {
-    for (JNIMethodBlockNode* b = &_head; b != nullptr; b = b->_next) {
-      for (int i = 0; i< b->_number_of_methods; i++) {
-        b->_methods[i] = nullptr;
-      }
-    }
-  }
-#ifndef PRODUCT
-  int count_methods() {
-    // count all allocated methods
-    int count = 0;
-    for (JNIMethodBlockNode* b = &_head; b != nullptr; b = b->_next) {
-      for (int i = 0; i< b->_number_of_methods; i++) {
-        if (b->_methods[i] != _free_method) count++;
-      }
-    }
-    return count;
-  }
-#endif // PRODUCT
-};
-
-// Something that can't be mistaken for an address or a markWord
-Method* const JNIMethodBlock::_free_method = (Method*)55;
-
-JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _top(0), _next(nullptr) {
-  _number_of_methods = MAX2(num_methods, min_block_size);
-  _methods = NEW_C_HEAP_ARRAY(Method*, _number_of_methods, mtInternal);
-  for (int i = 0; i < _number_of_methods; i++) {
-    _methods[i] = JNIMethodBlock::_free_method;
-  }
-}
-
-void Method::ensure_jmethod_ids(ClassLoaderData* cld, int capacity) {
-  // Have to add jmethod_ids() to class loader data thread-safely.
-  // Also have to add the method to the list safely, which the lock
-  // protects as well.
-  MutexLocker ml(JmethodIdCreation_lock,  Mutex::_no_safepoint_check_flag);
-  if (cld->jmethod_ids() == nullptr) {
-    cld->set_jmethod_ids(new JNIMethodBlock(capacity));
-  } else {
-    cld->jmethod_ids()->ensure_methods(capacity);
-  }
-}
+// jmethodIDs are 64-bit integers that will never run out and are mapped in a table
+// to their Method and vice versa.  If JNI code has access to stale jmethodID, this
+// wastes no memory but the Method* returned is null.
 
 // Add a method id to the jmethod_ids
 jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
   // Have to add jmethod_ids() to class loader data thread-safely.
-  // Also have to add the method to the list safely, which the lock
+  // Also have to add the method to the InstanceKlass list safely, which the lock
   // protects as well.
   assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
+  jmethodID jmid = JmethodIDTable::make_jmethod_id(m);
+  assert(jmid != nullptr, "must be created");
 
-  ResourceMark rm;
-  log_debug(jmethod)("Creating jmethodID for Method %s", m->external_name());
-  if (cld->jmethod_ids() == nullptr) {
-    cld->set_jmethod_ids(new JNIMethodBlock());
-  }
-  // jmethodID is a pointer to Method*
-  return (jmethodID)cld->jmethod_ids()->add_method(m);
+  // Add to growable array in CLD.
+  cld->add_jmethod_id(jmid);
+  return jmid;
 }
 
+// This looks in the InstanceKlass cache, then calls back to make_jmethod_id if not found.
 jmethodID Method::jmethod_id() {
-  methodHandle mh(Thread::current(), this);
-  return method_holder()->get_jmethod_id(mh);
+  return method_holder()->get_jmethod_id(this);
+}
+
+// Get the Method out of the table given the method id.
+Method* Method::resolve_jmethod_id(jmethodID mid) {
+  assert(mid != nullptr, "JNI method id should not be null");
+  return JmethodIDTable::resolve_jmethod_id(mid);
 }
 
 void Method::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {
@@ -2179,25 +2105,34 @@ void Method::change_method_associated_with_jmethod_id(jmethodID jmid, Method* ne
   // scratch method holder.
   assert(resolve_jmethod_id(jmid)->method_holder()->class_loader()
            == new_method->method_holder()->class_loader() ||
-           new_method->method_holder()->class_loader() == nullptr, // allow Unsafe substitution
+         new_method->method_holder()->class_loader() == nullptr, // allow substitution to Unsafe method
          "changing to a different class loader");
-  // Just change the method in place, jmethodID pointer doesn't change.
-  *((Method**)jmid) = new_method;
+  JmethodIDTable::change_method_associated_with_jmethod_id(jmid, new_method);
 }
 
-bool Method::is_method_id(jmethodID mid) {
+// If there's a jmethodID for this method, clear the Method
+// but leave jmethodID for this method in the table.
+// It's deallocated with class unloading.
+void Method::clear_jmethod_id() {
+  jmethodID mid = method_holder()->jmethod_id_or_null(this);
+  if (mid != nullptr) {
+    JmethodIDTable::clear_jmethod_id(mid, this);
+  }
+}
+
+bool Method::validate_jmethod_id(jmethodID mid) {
   Method* m = resolve_jmethod_id(mid);
   assert(m != nullptr, "should be called with non-null method");
   InstanceKlass* ik = m->method_holder();
   ClassLoaderData* cld = ik->class_loader_data();
   if (cld->jmethod_ids() == nullptr) return false;
-  return (cld->jmethod_ids()->contains((Method**)mid));
+  return (cld->jmethod_ids()->contains(mid));
 }
 
 Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
   if (mid == nullptr) return nullptr;
   Method* o = resolve_jmethod_id(mid);
-  if (o == nullptr || o == JNIMethodBlock::_free_method) {
+  if (o == nullptr) {
     return nullptr;
   }
   // Method should otherwise be valid. Assert for testing.
@@ -2206,7 +2141,7 @@ Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
   // unloaded, we need to return null here too because after a safepoint, its memory
   // will be reclaimed.
   return o->method_holder()->is_loader_alive() ? o : nullptr;
-};
+}
 
 void Method::set_on_stack(const bool value) {
   // Set both the method itself and its constant pool.  The constant pool
@@ -2227,25 +2162,6 @@ void Method::record_gc_epoch() {
   constants()->cache()->record_gc_epoch();
 }
 
-// Called when the class loader is unloaded to make all methods weak.
-void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
-  loader_data->jmethod_ids()->clear_all_methods();
-}
-
-void Method::clear_jmethod_id() {
-  // Being at a safepoint prevents racing against other class redefinitions
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  // The jmethodID is not stored in the Method instance, we need to look it up first
-  jmethodID methodid = find_jmethod_id_or_null();
-  // We need to make sure that jmethodID actually resolves to this method
-  // - multiple redefined versions may share jmethodID slots and if a method
-  //   has already been rewired to a newer version we could be removing reference
-  //   to a still existing method instance
-  if (methodid != nullptr && *((Method**)methodid) == this) {
-    *((Method**)methodid) = nullptr;
-  }
-}
-
 bool Method::has_method_vptr(const void* ptr) {
   Method m;
   // This assumes that the vtbl pointer is the first word of a C++ object.
@@ -2261,7 +2177,7 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   } else if (!os::is_readable_range(m, m + 1)) {
     return false;
-  } else if (m->is_shared()) {
+  } else if (m->in_aot_cache()) {
     return CppVtables::is_valid_shared_method(m);
   } else if (Metaspace::contains_non_shared(m)) {
     return has_method_vptr((const void*)m);
@@ -2269,13 +2185,6 @@ bool Method::is_valid_method(const Method* m) {
     return false;
   }
 }
-
-#ifndef PRODUCT
-void Method::print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) {
-  out->print("%d", loader_data->jmethod_ids()->count_methods());
-}
-#endif // PRODUCT
-
 
 // Printing
 

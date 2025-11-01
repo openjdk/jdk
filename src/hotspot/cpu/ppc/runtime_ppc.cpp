@@ -71,7 +71,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;

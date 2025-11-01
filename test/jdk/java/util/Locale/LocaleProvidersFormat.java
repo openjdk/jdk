@@ -85,7 +85,7 @@ public class LocaleProvidersFormat {
 
     /*
      * 8027289: Ensure if underlying system format locale is zh_CN, the Window's currency
-     * symbol under HOST provider is \u00A5, the yen (yuan) sign.
+     * symbol under HOST provider is ¥, the yen (yuan) sign.
      */
     @Test
     @EnabledOnOs(WINDOWS)

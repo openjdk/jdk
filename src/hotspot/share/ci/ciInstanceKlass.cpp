@@ -549,6 +549,11 @@ bool ciInstanceKlass::compute_has_trusted_loader() {
   return java_lang_ClassLoader::is_trusted_loader(loader_oop);
 }
 
+bool ciInstanceKlass::has_class_initializer() {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->class_initializer() != nullptr;
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::find_method
 //

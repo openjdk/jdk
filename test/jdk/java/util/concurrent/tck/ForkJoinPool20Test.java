@@ -546,11 +546,13 @@ public class ForkJoinPool20Test extends JSR166TestCase {
     public void testShutdownNow_delayedTasks() throws InterruptedException {
         final ForkJoinPool p = new ForkJoinPool(2);
         List<ScheduledFuture<?>> tasks = new ArrayList<>();
+        final int DELAY = 100;
+
         for (int i = 0; i < 3; i++) {
             Runnable r = new NoOpRunnable();
-            tasks.add(p.schedule(r, 9, SECONDS));
-            tasks.add(p.scheduleAtFixedRate(r, 9, 9, SECONDS));
-            tasks.add(p.scheduleWithFixedDelay(r, 9, 9, SECONDS));
+            tasks.add(p.schedule(r, DELAY, SECONDS));
+            tasks.add(p.scheduleAtFixedRate(r, DELAY, DELAY, SECONDS));
+            tasks.add(p.scheduleWithFixedDelay(r, DELAY, DELAY, SECONDS));
         }
         p.shutdownNow();
         assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
@@ -644,4 +646,22 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         }
     }
 
+    /**
+     * schedule throws RejectedExecutionException if shutdown before
+     * first delayed task is submitted
+     */
+    public void testInitialScheduleAfterShutdown() throws InterruptedException {
+        Runnable r = new NoOpRunnable();
+        boolean rje = false;
+        try (final ForkJoinPool p = new ForkJoinPool(1)) {
+            p.shutdown();
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+            try {
+                p.schedule(r, 1, MILLISECONDS);
+            } catch (RejectedExecutionException ok) {
+                rje = true;
+            }
+        }
+        assertTrue(rje);
+    }
 }

@@ -31,7 +31,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ kit.
@@ -53,6 +53,11 @@ class StringConcat : public ResourceObj {
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
 
+  static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
+                                                          // The value 256 was derived by measuring
+                                                          // compilation time on variable length sequences
+                                                          // of stackable concatenations and chosen to keep
+                                                          // a safe margin to any critical point.
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -256,6 +261,13 @@ void StringConcat::eliminate_unneeded_control() {
       assert(n->req() == 3 && n->in(2)->in(0) == iff, "not a diamond");
       assert(iff->is_If(), "no if for the diamond");
       Node* bol = iff->in(1);
+      if (bol->is_Con()) {
+        // A BoolNode shared by two diamond Region/If sub-graphs
+        // was replaced by a constant zero in a previous call to this method.
+        // Do nothing as the transformation in the previous call ensures both are folded away.
+        assert(bol == _stringopts->gvn()->intcon(0), "shared condition should have been set to false");
+        continue;
+      }
       assert(bol->is_Bool(), "unexpected if shape");
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
@@ -288,6 +300,8 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   }
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
+
+  uint arguments_appended = 0;
   for (int x = 0; x < num_arguments(); x++) {
     Node* argx = argument_uncast(x);
     if (argx == arg) {
@@ -296,8 +310,21 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       for (int y = 0; y < other->num_arguments(); y++) {
         result->append(other->argument(y), other->mode(y));
       }
+      arguments_appended += other->num_arguments();
     } else {
       result->append(argx, mode(x));
+      arguments_appended++;
+    }
+    // Check if this concatenation would result in an excessive number of arguments
+    // -- leading to high memory use, compilation time, and later, a large number of IR nodes
+    // -- and bail out in that case.
+    if (arguments_appended > STACKED_CONCAT_UPPER_BOUND) {
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print_cr("Merge candidate of length %d exceeds argument limit", arguments_appended);
+      }
+#endif
+      return nullptr;
     }
   }
   result->set_allocation(other->_begin);
@@ -402,7 +429,7 @@ Node_List PhaseStringOpts::collect_toString_calls() {
     }
   }
 #ifndef PRODUCT
-  Atomic::add(&_stropts_total, encountered);
+  AtomicAccess::add(&_stropts_total, encountered);
 #endif
   return string_calls;
 }
@@ -673,9 +700,9 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-            if (merged->validate_control_flow() && merged->validate_mem_flow()) {
+            if (merged != nullptr && merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
-              Atomic::inc(&_stropts_merged);
+              AtomicAccess::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {
                 tty->print_cr("stacking would succeed");
               }
@@ -987,12 +1014,21 @@ bool StringConcat::validate_control_flow() {
         continue;
       }
 
-      // A test which leads to an uncommon trap which should be safe.
-      // Later this trap will be converted into a trap that restarts
+      // A test which leads to an uncommon trap. It is safe to convert the trap
+      // into a trap that restarts at the beginning as long as its test does not
+      // depend on intermediate results of the candidate chain.
       // at the beginning.
       if (otherproj->outcnt() == 1) {
         CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
         if (call != nullptr && call->_name != nullptr && strcmp(call->_name, "uncommon_trap") == 0) {
+          // First check for dependency on a toString that is going away during stacked concats.
+          if (_multiple &&
+              ((v1->is_Proj() && is_SB_toString(v1->in(0)) && ctrl_path.member(v1->in(0))) ||
+               (v2->is_Proj() && is_SB_toString(v2->in(0)) && ctrl_path.member(v2->in(0))))) {
+            // iftrue -> if -> bool -> cmpp -> resproj -> tostring
+            fail = true;
+            break;
+          }
           // control flow leads to uct so should be ok
           _uncommon_traps.push(call);
           ctrl_path.push(call);
@@ -1457,9 +1493,14 @@ void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array,
 
   Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
   Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
-  // Check if destination address is aligned to HeapWordSize
-  const TypeInt* tdst = __ gvn().type(start)->is_int();
-  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Check if src array address is aligned to HeapWordSize
+  bool aligned = (arrayOopDesc::base_offset_in_bytes(T_BYTE) % HeapWordSize == 0);
+  // If true, then check if dst array address is aligned to HeapWordSize
+  if (aligned) {
+    const TypeInt* tdst = __ gvn().type(start)->is_int();
+    aligned = tdst->is_con() && ((arrayOopDesc::base_offset_in_bytes(T_BYTE) +
+                                  tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  }
   // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);
@@ -2020,7 +2061,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   string_sizes->disconnect_inputs(C);
   sc->cleanup();
 #ifndef PRODUCT
-  Atomic::inc(&_stropts_replaced);
+  AtomicAccess::inc(&_stropts_replaced);
 #endif
 }
 

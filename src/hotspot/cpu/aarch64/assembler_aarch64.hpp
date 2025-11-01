@@ -1136,6 +1136,10 @@ public:
     system(0b00, 0b011, 0b00011, SY, 0b110);
   }
 
+  void sb() {
+    system(0b00, 0b011, 0b00011, 0b0000, 0b111);
+  }
+
   void sys(int op1, int CRn, int CRm, int op2,
            Register rt = as_Register(0b11111)) {
     system(0b01, op1, CRn, CRm, op2, rt);
@@ -2743,26 +2747,26 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-// Advanced SIMD three same
-#define INSN(NAME, op1, op2, op3)                                                       \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
-    starti;                                                                             \
-    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                    \
-    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01110, 28, 24), f(op2, 23);            \
-    f(T==T2D ? 1:0, 22); f(1, 21), rf(Vm, 16), f(op3, 15, 10), rf(Vn, 5), rf(Vd, 0);    \
+  // Advanced SIMD three same
+  void adv_simd_three_same(Instruction_aarch64 &current_insn, FloatRegister Vd,
+                           SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm,
+                           int op1, int op2, int op3);
+#define INSN(NAME, op1, op2, op3)                                                             \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) {       \
+    starti;                                                                                   \
+    adv_simd_three_same(current_insn, Vd, T, Vn, Vm, op1, op2, op3);                          \
   }
-
-  INSN(fabd, 1, 1, 0b110101);
-  INSN(fadd, 0, 0, 0b110101);
-  INSN(fdiv, 1, 0, 0b111111);
-  INSN(faddp, 1, 0, 0b110101);
-  INSN(fmul, 1, 0, 0b110111);
-  INSN(fsub, 0, 1, 0b110101);
-  INSN(fmla, 0, 0, 0b110011);
-  INSN(fmls, 0, 1, 0b110011);
-  INSN(fmax, 0, 0, 0b111101);
-  INSN(fmin, 0, 1, 0b111101);
-  INSN(facgt, 1, 1, 0b111011);
+  INSN(fabd,  1, 1, 0b0101);
+  INSN(fadd,  0, 0, 0b0101);
+  INSN(fdiv,  1, 0, 0b1111);
+  INSN(faddp, 1, 0, 0b0101);
+  INSN(fmul,  1, 0, 0b0111);
+  INSN(fsub,  0, 1, 0b0101);
+  INSN(fmla,  0, 0, 0b0011);
+  INSN(fmls,  0, 1, 0b0011);
+  INSN(fmax,  0, 0, 0b1101);
+  INSN(fmin,  0, 1, 0b1101);
+  INSN(facgt, 1, 1, 0b1011);
 
 #undef INSN
 
@@ -3262,18 +3266,24 @@ public:
   // parameter "tmask" is a 2-bit mask used to indicate which bits in the size
   // field are determined by the SIMD_Arrangement. The bit of "tmask" should be
   // set to 1 if corresponding bit marked as "x" in the ArmARM.
-#define INSN(NAME, U, size, tmask, opcode)                                          \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {               \
-       starti;                                                                      \
-       assert((ASSERTION), MSG);                                                    \
-       f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24);                   \
-       f(size | ((int)(T >> 1) & tmask), 23, 22), f(0b10000, 21, 17);               \
-       f(opcode, 16, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);                    \
+#define INSN(NAME, U, size, tmask, opcode)                                      \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {           \
+    starti;                                                                     \
+    assert((ASSERTION), MSG);                                                   \
+    int op22 = (int)(T >> 1) & tmask;                                           \
+    int op19 = 0b00;                                                            \
+    if (tmask == 0b01 && (T == T4H || T == T8H)) {                              \
+      op22 = 0b1;                                                               \
+      op19 = 0b11;                                                              \
+    }                                                                           \
+    f(0, 31), f((int)T & 1, 30), f(U, 29), f(0b01110, 28, 24);                  \
+    f(size | op22, 23, 22), f(1, 21), f(op19, 20, 19), f(0b00, 18, 17);         \
+    f(opcode, 16, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);                   \
  }
 
 #define MSG "invalid arrangement"
 
-#define ASSERTION (T == T2S || T == T4S || T == T2D)
+#define ASSERTION (T == T4H || T == T8H || T == T2S || T == T4S || T == T2D)
   INSN(fsqrt,  1, 0b10, 0b01, 0b11111);
   INSN(fabs,   0, 0b10, 0b01, 0b01111);
   INSN(fneg,   1, 0b10, 0b01, 0b01111);
@@ -3400,7 +3410,7 @@ public:
 #define INSN(NAME, opcode)                                                             \
   void NAME(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
     starti;                                                                            \
-    assert(T == S || T == D, "invalid register variant");                              \
+    assert(T == H || T == S || T == D, "invalid register variant");                    \
     f(0b01100101, 31, 24), f(T, 23, 22), f(0, 21),                                     \
     rf(Zm, 16), f(0, 15, 13), f(opcode, 12, 10), rf(Zn, 5), rf(Zd, 0);                 \
   }
@@ -3476,6 +3486,7 @@ public:
   INSN(sve_smaxv, 0b00000100, 0b001000001); // signed maximum reduction to scalar
   INSN(sve_smin,  0b00000100, 0b001010000); // signed minimum vectors
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
+  INSN(sve_splice,0b00000101, 0b101100100); // splice two vectors under predicate control, destructive
   INSN(sve_sub,   0b00000100, 0b000001000); // vector sub
   INSN(sve_uaddv, 0b00000100, 0b000001001); // unsigned add reduction to scalar
   INSN(sve_umax,  0b00000100, 0b001001000); // unsigned maximum vectors
@@ -3485,7 +3496,7 @@ public:
 // SVE floating-point arithmetic - predicate
 #define INSN(NAME, op1, op2)                                                                          \
   void NAME(FloatRegister Zd_or_Zdn_or_Vd, SIMD_RegVariant T, PRegister Pg, FloatRegister Zn_or_Zm) { \
-    assert(T == S || T == D, "invalid register variant");                                             \
+    assert(T == H || T == S || T == D, "invalid register variant");                                   \
     sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
   }
 
@@ -3804,7 +3815,11 @@ private:
     starti;
     assert(T != Q, "invalid size");
     int sh = 0;
-    if (imm8 <= 127 && imm8 >= -128) {
+    if (isFloat) {
+      assert(T != B, "invalid size");
+      assert((imm8 >> 8) == 0, "invalid immediate");
+      sh = 0;
+    } else if (imm8 <= 127 && imm8 >= -128) {
       sh = 0;
     } else if (T != B && imm8 <= 32512 && imm8 >= -32768 && (imm8 & 0xff) == 0) {
       sh = 1;
@@ -3814,7 +3829,7 @@ private:
     }
     int m = isMerge ? 1 : 0;
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b01, 21, 20);
-    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), sf(imm8, 12, 5), rf(Zd, 0);
+    prf(Pg, 16), f(isFloat ? 1 : 0, 15), f(m, 14), f(sh, 13), f(imm8 & 0xff, 12, 5), rf(Zd, 0);
   }
 
 public:
@@ -3824,7 +3839,7 @@ public:
   }
   // SVE copy floating-point immediate to vector elements (predicated)
   void sve_cpy(FloatRegister Zd, SIMD_RegVariant T, PRegister Pg, double d) {
-    sve_cpy(Zd, T, Pg, checked_cast<int8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
+    sve_cpy(Zd, T, Pg, checked_cast<uint8_t>(pack(d)), /*isMerge*/true, /*isFloat*/true);
   }
 
   // SVE conditionally select elements from two vectors
@@ -4054,6 +4069,13 @@ public:
   INSN(sve_brkb, 0b10); // Break before first true condition
 #undef INSN
 
+  // SVE move prefix (unpredicated)
+  void sve_movprfx(FloatRegister Zd, FloatRegister Zn) {
+    starti;
+    f(0b00000100, 31, 24), f(0b00, 23, 22), f(0b1, 21), f(0b00000, 20, 16);
+    f(0b101111, 15, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
 // Element count and increment scalar (SVE)
 #define INSN(NAME, TYPE)                                                             \
   void NAME(Register Xdn, unsigned imm4 = 1, int pattern = 0b11111) {                \
@@ -4221,12 +4243,29 @@ public:
     sf(imm1, 9, 5), rf(Zd, 0);
   }
 
-  // SVE programmable table lookup/permute using vector of element indices
-  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+private:
+  void _sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, unsigned reg_count, FloatRegister Zm) {
     starti;
     assert(T != Q, "invalid size");
+    // Only supports one or two vector lookup. One vector lookup was introduced in SVE1
+    // and two vector lookup in SVE2
+    assert(0 < reg_count && reg_count <= 2, "invalid number of registers");
+
+    int op11 = (reg_count == 1) ? 0b10 : 0b01;
+
     f(0b00000101, 31, 24), f(T, 23, 22), f(0b1, 21), rf(Zm, 16);
-    f(0b001100, 15, 10), rf(Zn, 5), rf(Zd, 0);
+    f(0b001, 15, 13), f(op11, 12, 11), f(0b0, 10), rf(Zn, 5), rf(Zd, 0);
+  }
+
+public:
+  // SVE/SVE2 Programmable table lookup in one or two vector table (zeroing)
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) {
+    _sve_tbl(Zd, T, Zn, 1, Zm);
+  }
+
+  void sve_tbl(FloatRegister Zd, SIMD_RegVariant T, FloatRegister Zn1, FloatRegister Zn2, FloatRegister Zm) {
+    assert(Zn1->successor() == Zn2, "invalid order of registers");
+    _sve_tbl(Zd, T, Zn1, 2, Zm);
   }
 
   // Shuffle active elements of vector to the right and fill with zero
@@ -4297,6 +4336,7 @@ public:
   static bool operand_valid_for_sve_add_sub_immediate(int64_t imm);
   static bool operand_valid_for_float_immediate(double imm);
   static int  operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T);
+  static bool operand_valid_for_sve_dup_immediate(int64_t imm);
 
   void emit_data64(jlong data, relocInfo::relocType rtype, int format = 0);
   void emit_data64(jlong data, RelocationHolder const& rspec, int format = 0);
