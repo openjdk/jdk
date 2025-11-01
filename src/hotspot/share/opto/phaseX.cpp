@@ -3182,6 +3182,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     if( !n->is_Con() ) {
       if( t != Type::TOP ) {
         nn = makecon(t);        // ConNode::make(t);
+        C->record_optimization_event(OptEvent_ConditionalConstantPropagation);
         NOT_PRODUCT( inc_constants(); )
       } else if( n->is_Region() ) { // Unreachable region
         // Note: nn == C->top()

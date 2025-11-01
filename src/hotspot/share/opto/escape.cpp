@@ -118,6 +118,7 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (congraph->compute_escape()) {
     // There are non escaping objects.
     C->set_congraph(congraph);
+    C->record_optimization_event(OptEvent_EscapeAnalysis);
   }
   // Cleanup.
   if (oop_null->outcnt() == 0) {
@@ -3256,6 +3257,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
           }
         }
 #endif
+        C->record_optimization_event(OptEvent_OptimizePtrCompare);
         igvn->replace_node(n, cmp);
       }
     }
