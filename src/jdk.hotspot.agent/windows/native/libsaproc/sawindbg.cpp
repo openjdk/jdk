@@ -593,6 +593,50 @@ static bool addThreads(JNIEnv* env, jobject obj) {
 
     // Program counter
     ptrRegs[REG_INDEX(RIP)] = context.Rip;
+
+#elif _M_ARM64
+    #define REG_INDEX(x) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##x
+
+    context.ContextFlags = CONTEXT_FULL;
+    COM_VERIFY_OK_(ptrIDebugAdvanced->GetThreadContext(&context, sizeof(CONTEXT)),
+                   "Windbg Error: GetThreadContext failed!", false);
+
+    ptrRegs[REG_INDEX(R0)]  = context.X0;
+    ptrRegs[REG_INDEX(R1)]  = context.X1;
+    ptrRegs[REG_INDEX(R2)]  = context.X2;
+    ptrRegs[REG_INDEX(R3)]  = context.X3;
+    ptrRegs[REG_INDEX(R4)]  = context.X4;
+    ptrRegs[REG_INDEX(R5)]  = context.X5;
+    ptrRegs[REG_INDEX(R6)]  = context.X6;
+    ptrRegs[REG_INDEX(R7)]  = context.X7;
+    ptrRegs[REG_INDEX(R8)]  = context.X8;
+    ptrRegs[REG_INDEX(R9)]  = context.X9;
+    ptrRegs[REG_INDEX(R10)] = context.X10;
+    ptrRegs[REG_INDEX(R11)] = context.X11;
+    ptrRegs[REG_INDEX(R12)] = context.X12;
+    ptrRegs[REG_INDEX(R13)] = context.X13;
+    ptrRegs[REG_INDEX(R14)] = context.X14;
+    ptrRegs[REG_INDEX(R15)] = context.X15;
+    ptrRegs[REG_INDEX(R16)] = context.X16;
+    ptrRegs[REG_INDEX(R17)] = context.X17;
+    ptrRegs[REG_INDEX(R18)] = context.X18;
+    ptrRegs[REG_INDEX(R19)] = context.X19;
+    ptrRegs[REG_INDEX(R20)] = context.X20;
+    ptrRegs[REG_INDEX(R21)] = context.X21;
+    ptrRegs[REG_INDEX(R22)] = context.X22;
+    ptrRegs[REG_INDEX(R23)] = context.X23;
+    ptrRegs[REG_INDEX(R24)] = context.X24;
+    ptrRegs[REG_INDEX(R25)] = context.X25;
+    ptrRegs[REG_INDEX(R26)] = context.X26;
+    ptrRegs[REG_INDEX(R27)] = context.X27;
+    ptrRegs[REG_INDEX(R28)] = context.X28;
+
+    ptrRegs[REG_INDEX(FP)]  = context.Fp;
+    ptrRegs[REG_INDEX(LR)]  = context.Lr;
+    ptrRegs[REG_INDEX(SP)]  = context.Sp;
+    ptrRegs[REG_INDEX(PC)]  = context.Pc;
+    ptrRegs[REG_INDEX(PSTATE)] = context.Cpsr;
+
 #endif
 
     env->ReleaseLongArrayElements(regs, ptrRegs, 0);
