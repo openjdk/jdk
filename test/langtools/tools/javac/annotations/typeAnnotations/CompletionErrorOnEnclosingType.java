@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337998
+ * @bug 8337998 8370800
  * @summary CompletionFailure in getEnclosingType attaching type annotations
  * @library /tools/javac/lib /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -56,13 +56,16 @@ public class CompletionErrorOnEnclosingType {
                 class A<E> {}
 
                 class B {
-                  private @Anno A<String> a;
+                  public @Anno A<String> a;
                 }
                 """;
         String cSrc =
                 """
                 class C {
                   B b;
+                  public void test() {
+                    b.a.toString();
+                  }
                 }
                 """;
 
@@ -74,13 +77,15 @@ public class CompletionErrorOnEnclosingType {
         tb.createDirectories(out);
         new JavacTask(tb).outdir(out).files(tb.findJavaFiles(src)).run();
 
-        // now if we remove A.class there will be an error but javac should not crash
+        // now if we remove A.class javac should not crash
         tb.deleteFiles(out.resolve("A.class"));
+
         List<String> log =
                 new JavacTask(tb)
                         .outdir(out)
                         .classpath(out)
-                        .options("-XDrawDiagnostics")
+                        // DO NOT SUBMIT - this is a draft, see discussion in PR
+                        .options(/*"-Werror",*/ "-XDrawDiagnostics")
                         .files(src.resolve("C.java"))
                         .run(Expect.FAIL)
                         .writeAll()
@@ -88,9 +93,10 @@ public class CompletionErrorOnEnclosingType {
 
         var expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, a,"
-                            + " (compiler.misc.class.file.not.found: A)",
-                        "1 error");
+"B.class:-:-: compiler.warn.cant.attach.type.annotations: @Anno, B, a, (compiler.misc.class.file.not.found: A)",
+"C.java:4:8: compiler.err.cant.access: A, (compiler.misc.class.file.not.found: A)",
+"1 error",
+"1 warning");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
         }

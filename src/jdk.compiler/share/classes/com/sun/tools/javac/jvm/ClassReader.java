@@ -2325,15 +2325,18 @@ public class ClassReader {
      * 4.7.20.2 type_path to associate the annotation with the correct contained type.
      */
     private void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+        DeferredCompletionFailureHandler.Handler prevCFHandler = dcfh.setHandler(dcfh.speculativeCodeHandler);
         try {
             new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
         } catch (CompletionFailure ex) {
             JavaFileObject prev = log.useSource(currentClassFile);
             try {
-                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
+                log.warning(Warnings.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
             } finally {
                 log.useSource(prev);
             }
+        } finally {
+            dcfh.setHandler(prevCFHandler);
         }
     }
 
