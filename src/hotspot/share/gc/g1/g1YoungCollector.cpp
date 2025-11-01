@@ -1179,13 +1179,13 @@ void G1YoungCollector::collect() {
 
     // Refine the type of a concurrent mark operation now that we did the
     // evacuation, eventually aborting it.
-    _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP");
+    _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP", _allocation_word_size);
 
     // Need to report the collection pause now since record_collection_pause_end()
     // modifies it to the next state.
     jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
 
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed());
+    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }
   TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }
