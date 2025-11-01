@@ -256,15 +256,14 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     }
     // get the previous marked object, if any
     if (region->bottom() < left) {
-      // Whether this region was previously marked as young and was subsequently promoted in place, or was marked as old.
       // In the case that this region was most recently marked as young, the fact that this region has been promoted
-      // in place denotes that final mark (Young) has copmleted.  In the case that this region was most recently marked
+      // in place denotes that final mark (Young) has completed.  In the case that this region was most recently marked
       // as old, the fact that (ctx != nullptr) denotes that old marking has completed.  Otherwise, ctx would equal null.
-      //
-      // Given that marking has completed, if this object is only marked weakly, then this object is dead.  Its memory will
-      // be reclaimed momentarily.  Given that this object is dead, its class may also be reclaimed.  Therefore, we cannot
-      // rely on its size() method, and we should not scan its pointers.
+
       HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left);
+      // Given that marking has completed, if this object is only marked weakly, then this object is dead.  Its memory will
+      // be reclaimed momentarily.  Since this object is dead, its class may also be reclaimed.  Therefore, we cannot
+      // rely on its size() method, and we should not scan its pointers.
       if ((prev <= left) && ctx->is_marked_strong(prev)) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
@@ -280,9 +279,9 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     assert(!ctx->is_marked_strong(left), "Was dealt with above");
     HeapWord* right = MIN2(region->top(), ctx->top_at_mark_start(region));
     assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
-    HeapWord* next = left;
+    HeapWord* next = left - 1;
     do {
-      next = ctx->get_next_marked_addr(next, right);
+      next = ctx->get_next_marked_addr(next + 1, right);
     } while ((next <  right) && !ctx->is_marked_strong(next));
 #ifdef ASSERT
     if (next < right) {
