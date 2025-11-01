@@ -117,9 +117,8 @@ import java.util.stream.Stream;
  * The resources to control the process and for communication between the processes are retained
  * until there are no longer any references to the Process or the input, error, and output streams
  * or readers, or they have been closed. The Process {@linkplain Process#close close} method closes
- * all the streams and terminates the process to release the resources. Using try-with-resources to
- * {@linkplain ProcessBuilder#start() start} the process can ensure the process
- * is terminated when the try-with-resources block exits.
+ * all the streams and terminates the process to release the resources. Using try-with-resources
+ * will ensure the process is terminated when the try-with-resources block exits.
  *
  * <p>The process is not killed when there are no more references to the {@code Process} object,
  * but rather the process continues executing asynchronously.
@@ -196,12 +195,12 @@ public abstract class Process implements Closeable {
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
      * After the streams are closed this method {@linkplain #waitFor() waits for} the
-     * process to terminate. If interrupted while {@linkplain #waitFor() waiting}
+     * process to terminate. If {@linkplain Thread#interrupt interrupted} while waiting
      * the process is {@linkplain #destroyForcibly() forcibly destroyed} and
      * this method continues to wait for the process to terminate.
      * The interrupted status is re-asserted before this method returns or
      * any {@code IOExceptions} are thrown.
-     * <p>
+     * @apiNote
      * Try-with-resources example to write text to a process, read back the
      * response, and close the streams and process:
      * {@snippet file="ProcessExamples.java" region=example}
@@ -211,13 +210,11 @@ public abstract class Process implements Closeable {
      * override this method and invoke the superclass {@code close} method.
      *
      * @implSpec
-     * The {@code outputWriter} and {@code outputStream} to the process are closed.
-     * The {@code inputReader} and {@code inputStream} from the process are closed.
-     * The {@code errorReader} and {@code errorStream} from the process are closed.
-     * This method {@linkplain #waitFor() waits for} the process to terminate.
+     * This method closes the process I/O streams and then
+     * {@linkplain #waitFor() waits for} the process to terminate.
      * If {@link #waitFor() waitFor()} is {@linkplain Thread#interrupt() interrupted}
      * the process is {@linkplain #destroyForcibly() forcibly destroyed}
-     * and {@code close()} waits for the process to terminate.
+     * and then {@code close()} waits for the process to terminate.
      * @throws IOException if closing any of the streams throws an exception
      * @since 26
      */
