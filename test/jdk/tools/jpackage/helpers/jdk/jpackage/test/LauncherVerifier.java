@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.test.AdditionalLauncher.NO_ICON;
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static jdk.jpackage.test.LauncherShortcut.LINUX_SHORTCUT;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -70,6 +72,12 @@ public final class LauncherVerifier {
 
     static void executeMainLauncherAndVerifyOutput(JPackageCommand cmd) {
         new LauncherVerifier(cmd).verify(cmd, Action.EXECUTE_LAUNCHER);
+    }
+
+    static String launcherDescription(JPackageCommand cmd, String launcherName) {
+        return launcherDescription(cmd, launcherName, (theCmd, theLauncherName) -> {
+            return getAdditionalLauncherProperties(theCmd, theLauncherName);
+        });
     }
 
 
@@ -137,8 +145,8 @@ public final class LauncherVerifier {
     }
 
     private String getDescription(JPackageCommand cmd) {
-        return findProperty("description").orElseGet(() -> {
-            return cmd.getArgumentValue("--description", cmd::name);
+        return launcherDescription(cmd, name, (theCmd, theLauncherName) -> {
+            return properties.orElseThrow();
         });
     }
 
@@ -420,6 +428,24 @@ public final class LauncherVerifier {
                 return icon;
             } else {
                 return null;
+            }
+        });
+    }
+
+    private static String launcherDescription(
+            JPackageCommand cmd,
+            String launcherName,
+            BiFunction<JPackageCommand, String, PropertyFile> addLauncherPropertyFileGetter) {
+
+        return PropertyFinder.findLauncherProperty(cmd, launcherName,
+                PropertyFinder.cmdlineOptionWithValue("--description"),
+                PropertyFinder.launcherPropertyFile("description"),
+                PropertyFinder.appImageFileLauncher(cmd, launcherName, "description")
+        ).orElseGet(() -> {
+            if (cmd.isMainLauncher(launcherName)) {
+                return cmd.mainLauncherName();
+            } else {
+                return launcherDescription(cmd, null, addLauncherPropertyFileGetter);
             }
         });
     }
