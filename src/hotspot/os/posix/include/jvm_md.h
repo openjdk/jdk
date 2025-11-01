@@ -54,7 +54,7 @@
 //       cause problems if JVM and the rest of JDK are built on different
 //       Linux releases. Here we define JVM_MAXPATHLEN to be MAXPATHLEN + 1,
 //       so buffers declared in VM are always >= 4096.
-#define JVM_MAXPATHLEN MAXPATHLEN + 1
+#define JVM_MAXPATHLEN (MAXPATHLEN + 1)
 #endif
 
 #define JVM_R_OK    R_OK
