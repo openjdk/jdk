@@ -221,37 +221,20 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
     } else {
-      Label monitor_found;
+      Register cache_addr = t3_t;
 
-      // Load cache address
-      lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = 2;
-      for (int i = 0; i < num_unrolled; i++) {
-        ldr(t1, Address(t3_t));
-        cmp(obj, t1);
-        br(Assembler::EQ, monitor_found);
-        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      }
-
-      Label loop;
-
-      // Search for obj in cache.
-      bind(loop);
+      // Calculate the address to the thread local object monitor cache entry.
+      lsr(t2, t1_mark, (markWord::hash_shift    - OMCache::log_bytes_per_entry));
+      andr(t2, t2,     (OMCache::capacity_mask << OMCache::log_bytes_per_entry));
+      lea(t1, Address(rthread, JavaThread::om_cache_oops_offset()));
+      add(cache_addr, t1, t2);
 
       // Check for match.
-      ldr(t1, Address(t3_t));
+      ldr(t1, Address(cache_addr));
       cmp(obj, t1);
-      br(Assembler::EQ, monitor_found);
-
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      cbnz(t1, loop);
-      // Cache Miss, NE set from cmp above, cbnz does not set flags
-      b(slow_path);
-
-      bind(monitor_found);
-      ldr(t1_monitor, Address(t3_t, OMCache::oop_to_monitor_difference()));
+      br(Assembler::NE, slow_path);
+      // Cache hit.
+      ldr(t1_monitor, Address(cache_addr, OMCache::oop_to_monitor_difference()));
     }
 
     const Register t2_owner_addr = t2;

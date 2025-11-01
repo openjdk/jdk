@@ -119,7 +119,7 @@ void LockStack::print_on(outputStream* st) {
 OMCache::OMCache(JavaThread* jt) : _entries() {
   STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
   STATIC_ASSERT(std::is_standard_layout<OMCache::OMCacheEntry>::value);
-  STATIC_ASSERT(offsetof(OMCache, _null_sentinel) == offsetof(OMCache, _entries) +
-                offsetof(OMCache::OMCacheEntry, _oop) +
-                OMCache::CAPACITY * in_bytes(oop_to_oop_difference()));
+  STATIC_ASSERT((CAPACITY & (CAPACITY - 1)) == 0);
+  STATIC_ASSERT(sizeof(_entries[0]) == ((1 << log_ptrs_per_entry) * sizeof(void *)));
+  STATIC_ASSERT(sizeof(_entries[0]) == (1 << log_bytes_per_entry));
 }

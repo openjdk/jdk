@@ -2756,38 +2756,19 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
       addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
       mark = noreg;
     } else {
-      Label monitor_found;
       Register cache_addr = tmp2;
 
-      // Load cache address
-      addi(cache_addr, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = 2;
-      for (int i = 0; i < num_unrolled; i++) {
-        ld(R0, 0, cache_addr);
-        cmpd(CR0, R0, obj);
-        beq(CR0, monitor_found);
-        addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
-      }
-
-      Label loop;
-
-      // Search for obj in cache.
-      bind(loop);
+      // Calculate the address to the thread local object monitor cache entry.
+      srdi(tmp3, mark, (markWord::hash_shift    - OMCache::log_bytes_per_entry));
+      andi(tmp3, tmp3, (OMCache::capacity_mask << OMCache::log_bytes_per_entry));
+      addi(tmp1, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
+      add(cache_addr, tmp1, tmp3);
 
       // Check for match.
       ld(R0, 0, cache_addr);
       cmpd(CR0, R0, obj);
-      beq(CR0, monitor_found);
-
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
-      cmpdi(CR1, R0, 0);
-      bne(CR1, loop);
-      // Cache Miss, CR0.NE set from cmp above
-      b(slow_path);
-
-      bind(monitor_found);
+      bne(CR0, slow_path);
+      // Cache hit.
       ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
 
       // Compute owner address.

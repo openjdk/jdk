@@ -123,35 +123,19 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
     } else {
-      Label monitor_found;
+      Register cache_addr = tmp3_t;
 
-      // Load cache address
-      la(tmp3_t, Address(xthread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = 2;
-      for (int i = 0; i < num_unrolled; i++) {
-        ld(tmp1, Address(tmp3_t));
-        beq(obj, tmp1, monitor_found);
-        add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      }
-
-      Label loop;
-
-      // Search for obj in cache.
-      bind(loop);
+      // Calculate the address to the thread local object monitor cache entry.
+      srli(tmp2, tmp1_mark, (markWord::hash_shift    - OMCache::log_bytes_per_entry));
+      andi(tmp2, tmp2,      (OMCache::capacity_mask << OMCache::log_bytes_per_entry));
+      la(tmp1, Address(xthread, JavaThread::om_cache_oops_offset()));
+      add(cache_addr, tmp1, tmp2);
 
       // Check for match.
-      ld(tmp1, Address(tmp3_t));
-      beq(obj, tmp1, monitor_found);
-
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      bnez(tmp1, loop);
-      // Cache Miss. Take the slowpath.
-      j(slow_path);
-
-      bind(monitor_found);
-      ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
+      ld(tmp1, Address(cache_addr));
+      bne(obj, tmp1, slow_path);
+      // Cache hit.
+      ld(tmp1_monitor, Address(cache_addr, OMCache::oop_to_monitor_difference()));
     }
 
     const Register tmp2_owner_addr = tmp2;

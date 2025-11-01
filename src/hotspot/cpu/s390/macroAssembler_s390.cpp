@@ -6372,39 +6372,20 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == mark, "should be the same here");
     } else {
-      NearLabel monitor_found;
+      Register cache_addr = tmp2;
 
-      // load cache address
-      z_la(tmp1, Address(Z_thread, JavaThread::om_cache_oops_offset()));
-
-      const int num_unrolled = 2;
-      for (int i = 0; i < num_unrolled; i++) {
-        z_cg(obj, Address(tmp1));
-        z_bre(monitor_found);
-        add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
-      }
-
-      NearLabel loop;
-      // Search for obj in cache
-
-      bind(loop);
+      // Calculate the address to the thread local object monitor cache entry.
+      z_srlg(tmp1, mark, markWord::hash_shift);
+      z_nilf(tmp1,       OMCache::capacity_mask);
+      z_sllg(tmp1, tmp1, OMCache::log_bytes_per_entry);
+      z_la(cache_addr, Address(Z_thread, JavaThread::om_cache_oops_offset()));
+      z_agr(cache_addr, tmp1);
 
       // check for match.
-      z_cg(obj, Address(tmp1));
-      z_bre(monitor_found);
-
-      // search until null encountered, guaranteed _null_sentinel at end.
-      add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
-      z_cghsi(0, tmp1, 0);
-      z_brne(loop); // if not EQ to 0, go for another loop
-
-      // we reached to the end, cache miss
-      z_ltgr(obj, obj); // set CC to NE
-      z_bru(slow_path);
-
+      z_cg(obj, Address(cache_addr));
+      z_brne(slow_path);
       // cache hit
-      bind(monitor_found);
-      z_lg(tmp1_monitor, Address(tmp1, OMCache::oop_to_monitor_difference()));
+      z_lg(tmp1_monitor, Address(cache_addr, OMCache::oop_to_monitor_difference()));
     }
     NearLabel monitor_locked;
     // lock the monitor
