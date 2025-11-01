@@ -616,6 +616,16 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
       (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
     return bot;
 
+  // If the both inputs are constants
+  const TypeLong *longType1 = t1->is_long();
+  const TypeLong *longType2 = t2->is_long();
+  if(longType1 && longType2 && longType1->is_con() && longType2->is_con()){
+    // Compute the high part of the multiplication
+    jlong highResult = multiply_high_signed(longType1->get_con(), longType2->get_con());
+
+    return TypeLong::make(highResult);
+  }
+
   // It is not worth trying to constant fold this stuff!
   return TypeLong::LONG;
 }
