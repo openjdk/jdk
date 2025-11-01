@@ -1038,7 +1038,7 @@ Java_sun_font_FontConfigManager_getFontConfig
             return;
         }
         fontCount = 0;
-        minGlyphs = 20;
+        minGlyphs = 0;
         if (debugMinGlyphsStr != NULL) {
             int val = minGlyphs;
             sscanf(debugMinGlyphsStr, "%5d", &val);
@@ -1086,14 +1086,6 @@ Java_sun_font_FontConfigManager_getFontConfig
                 return;
             }
 
-            /* We don't want 20 or 30 fonts, so once we hit 10 fonts,
-             * then require that they really be adding value. Too many
-             * adversely affects load time for minimal value-add.
-             * This is still likely far more than we've had in the past.
-             */
-            if (j==10) {
-                minGlyphs = 50;
-            }
             if (unionCharset == NULL) {
                 unionCharset = charset;
             } else {
