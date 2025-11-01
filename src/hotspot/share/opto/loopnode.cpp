@@ -4588,6 +4588,16 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     // This allows the expression to be used within the loop and optimized by later passes
     Node* init2 = phi2->in(LoopNode::EntryControl);
     
+    // Safety check: ensure init2 is valid
+    if (init2 == nullptr || init2 == C->top()) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("    init2 is null or top, skipping\n");
+      }
+#endif
+      continue;
+    }
+    
     // Use the loop counter phi (from cl->phi()) which represents the iteration count
     // The phi value ranges from init to limit-1
     Node* loop_phi = phi;
@@ -4627,7 +4637,7 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
                       (Node*)new XorINode(init2_converted, xor_value) :
                       (Node*)new XorLNode(init2_converted, xor_value);
     _igvn.register_new_node_with_optimizer(final_xor);
-    set_ctrl(final_xor, cl);  // Control depends on loop since it uses loop phi
+    set_ctrl(final_xor, cl);
     
     _igvn.replace_node(phi2, final_xor);
 #ifndef PRODUCT
