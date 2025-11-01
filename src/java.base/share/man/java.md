@@ -1050,29 +1050,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     The existing heap related flags (such as `-Xmx` and `-Xms`) and
     garbage-collection related flags continue to work as before.
 
-`-XX:-CompactStrings`
-:   Disables the Compact Strings feature. By default, this option is enabled.
-    When this option is enabled, Java Strings containing only single-byte
-    characters are internally represented and stored as
-    single-byte-per-character Strings using ISO-8859-1 / Latin-1 encoding. This
-    reduces, by 50%, the amount of space required for Strings containing only
-    single-byte characters. For Java Strings containing at least one multibyte
-    character: these are represented and stored as 2 bytes per character using
-    UTF-16 encoding. Disabling the Compact Strings feature forces the use of
-    UTF-16 encoding as the internal representation for all Java Strings.
-
-    Cases where it may be beneficial to disable Compact Strings include the
-    following:
-
-    -   When it's known that an application overwhelmingly will be allocating
-        multibyte character Strings
-
-    -   In the unexpected event where a performance regression is observed in
-        migrating from Java SE 8 to Java SE 9 and an analysis shows that
-        Compact Strings introduces the regression
-
-    In both of these scenarios, disabling Compact Strings makes sense.
-
 `-XX:ErrorFile=`*filename*
 :   Specifies the path and file name to which error data is written when an
     irrecoverable error occurs. By default, this file is created in the current

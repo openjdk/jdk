@@ -32,8 +32,7 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is testing
  *          Integer/Long's methods related to String.
- * @run testng/othervm -XX:+CompactStrings Numbers
- * @run testng/othervm -XX:-CompactStrings Numbers
+ * @run testng/othervm Numbers
  */
 
 public class Numbers {

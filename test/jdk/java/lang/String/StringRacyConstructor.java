@@ -43,8 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8311906
  * @modules java.base/java.lang:open
  * @summary check String's racy constructors
- * @run junit/othervm -XX:+CompactStrings test.java.lang.String.StringRacyConstructor
- * @run junit/othervm -XX:-CompactStrings test.java.lang.String.StringRacyConstructor
+ * @run junit/othervm test.java.lang.String.StringRacyConstructor
  */
 
 public class StringRacyConstructor {

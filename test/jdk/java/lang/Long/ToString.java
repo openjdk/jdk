@@ -25,8 +25,7 @@
  * @test
  * @bug 8136500 8310929
  * @summary Test Long.toString method for both compact and non-compact strings
- * @run junit/othervm -XX:+CompactStrings ToString
- * @run junit/othervm -XX:-CompactStrings ToString
+ * @run junit/othervm ToString
  */
 
 import org.junit.jupiter.api.Test;

@@ -86,6 +86,7 @@
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/preserveException.hpp"
@@ -240,31 +241,8 @@ void java_lang_String::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-class CompactStringsFixup : public FieldClosure {
-private:
-  bool _value;
-
-public:
-  CompactStringsFixup(bool value) : _value(value) {}
-
-  void do_field(fieldDescriptor* fd) {
-    if (fd->name() == vmSymbols::compact_strings_name()) {
-      oop mirror = fd->field_holder()->java_mirror();
-      assert(fd->field_holder() == vmClasses::String_klass(), "Should be String");
-      assert(mirror != nullptr, "String must have mirror already");
-      mirror->bool_field_put(fd->offset(), _value);
-    }
-  }
-};
-
-void java_lang_String::set_compact_strings(bool value) {
-  CompactStringsFixup fix(value);
-  vmClasses::String_klass()->do_local_static_fields(&fix);
-}
-
 Handle java_lang_String::basic_create(int length, bool is_latin1, TRAPS) {
   assert(_initialized, "Must be initialized");
-  assert(CompactStrings || !is_latin1, "Must be UTF16 without CompactStrings");
 
   // Create the String object first, so there's a chance that the String
   // and the char array it points to end up in the same cache line.
@@ -286,7 +264,7 @@ Handle java_lang_String::basic_create(int length, bool is_latin1, TRAPS) {
 }
 
 Handle java_lang_String::create_from_unicode(const jchar* unicode, int length, TRAPS) {
-  bool is_latin1 = CompactStrings && UNICODE::is_latin1(unicode, length);
+  bool is_latin1 = UNICODE::is_latin1(unicode, length);
   Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   typeArrayOop buffer = value(h_obj());
   assert(TypeArrayKlass::cast(buffer->klass())->element_type() == T_BYTE, "only byte[]");
@@ -326,10 +304,6 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
   }
   bool has_multibyte, is_latin1;
   int length = UTF8::unicode_length(utf8_str, is_latin1, has_multibyte);
-  if (!CompactStrings) {
-    has_multibyte = true;
-    is_latin1 = false;
-  }
 
   Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   if (length > 0) {
@@ -370,10 +344,6 @@ Handle java_lang_String::create_from_symbol(const Symbol* symbol, TRAPS) {
 
   bool has_multibyte, is_latin1;
   int length = UTF8::unicode_length(utf8_str, utf8_len, is_latin1, has_multibyte);
-  if (!CompactStrings) {
-    has_multibyte = true;
-    is_latin1 = false;
-  }
 
   Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   if (length > 0) {
