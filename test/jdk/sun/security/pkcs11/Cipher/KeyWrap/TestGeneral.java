@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,23 @@
  * @library /test/lib ../..
  * @run main/othervm TestGeneral
  */
+import jtreg.SkippedException;
+
 import java.nio.ByteBuffer;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.security.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.util.List;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/TestGeneral.java
 public class TestGeneral extends PKCS11Test {
@@ -49,7 +60,7 @@ public class TestGeneral extends PKCS11Test {
     private static final int MAX_KWP_PAD_LEN = 7; // 0-7
 
     public static void testEnc(Cipher c, byte[] in, int startLen, int inc,
-            IvParameterSpec[] ivs, int maxPadLen) throws Exception {
+                               IvParameterSpec[] ivs, int maxPadLen) throws Exception {
 
         System.out.println("testEnc, input len=" + startLen + " w/ inc=" +
                 inc);
@@ -118,7 +129,7 @@ public class TestGeneral extends PKCS11Test {
     }
 
     public static void testWrap(Cipher c, Key[] inKeys, IvParameterSpec[] ivs,
-            int maxPadLen) throws Exception {
+                                int maxPadLen) throws Exception {
 
         for (Key inKey : inKeys) {
             System.out.println("testWrap, key: " + inKey);
@@ -251,9 +262,10 @@ public class TestGeneral extends PKCS11Test {
         String[] algos = {
             "AES/KW/PKCS5Padding", "AES/KW/NoPadding", "AES/KWP/NoPadding"
         };
+        List<String> skippedAlgoList = new ArrayList<>();
         for (String a : algos) {
             if (p.getService("Cipher", a) == null) {
-                System.out.println("Skip, due to no support:  " + a);
+                skippedAlgoList.add(a);
                 continue;
             }
 
@@ -329,6 +341,12 @@ public class TestGeneral extends PKCS11Test {
             testWrap(c, keys, ivs, padLen);
             testIv(c, ivLen, allowCustomIv);
         }
-        System.out.println("All Tests Passed");
+
+        //Check if tests were skipped.
+        if (skippedAlgoList.isEmpty()) {
+            System.out.println("All Tests Passed");
+        } else {
+            throw new SkippedException("Some tests were skipped due to no support : " + skippedAlgoList);
+        }
     }
 }

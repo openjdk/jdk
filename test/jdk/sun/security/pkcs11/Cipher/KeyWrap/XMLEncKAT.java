@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,16 @@
  * @library /test/lib ../..
  * @run main/othervm XMLEncKAT
  */
+import jtreg.SkippedException;
+
 import java.util.Base64;
 import java.security.Key;
-import java.security.AlgorithmParameters;
 import java.security.Provider;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/XMLEncKAT.java
 public class XMLEncKAT extends PKCS11Test {
@@ -129,12 +131,9 @@ public class XMLEncKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         String wrapAlg = "AESWrap";
-
         if (p.getService("Cipher", wrapAlg) == null) {
-            System.out.println("Skip, due to no support:  " + wrapAlg);
-            return;
+            throw new SkippedException("No support :  " + wrapAlg);
         }
-
         String keyAlg = "AES";
         testKeyWrap(p, wrapAlg, aes128Key_1, keyAlg, aes128WrappedKey_1);
         testKeyWrap(p, wrapAlg, aes128Key_2, keyAlg, aes128WrappedKey_2);
