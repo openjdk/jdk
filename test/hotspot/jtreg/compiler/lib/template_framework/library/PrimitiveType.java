@@ -62,6 +62,8 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
     static final PrimitiveType DOUBLES  = new PrimitiveType(Kind.DOUBLE );
     static final PrimitiveType BOOLEANS = new PrimitiveType(Kind.BOOLEAN);
 
+    // TODO: add short for Float16 and int for float and long for double.
+
     final Kind kind;
 
     // Private constructor so nobody can create duplicate instances.
@@ -93,6 +95,7 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
         return name();
     }
 
+    @Override
     public Object con() {
         return switch (kind) {
             case BYTE    -> "(byte)" + GEN_BYTE.next();
