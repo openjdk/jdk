@@ -2012,6 +2012,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
 
+  if (is_mismatched_access()) {
+    return _type;
+  }
+
   // If we are loading from a freshly-allocated object, produce a zero,
   // if the load is provably beyond the header of the object.
   // (Also allow a variable load from a fresh array to produce zero.)
