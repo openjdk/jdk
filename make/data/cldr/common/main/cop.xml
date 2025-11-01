@@ -10,9 +10,4199 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<version number="$Revision$"/>
 		<language type="cop"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af" draft="unconfirmed">ϯⲙⲉⲧⲁϥⲣⲓⲕⲁⲛⲍ</language>
+			<language type="ak" draft="unconfirmed">ϯⲙⲉⲧⲁⲕⲁⲛ</language>
+			<language type="am" draft="unconfirmed">ϯⲙⲉⲧⲁⲙϩⲁⲣⲓ</language>
+			<language type="ar" draft="unconfirmed">ϯⲙⲉⲧⲁⲣⲁⲃⲟⲥ</language>
+			<language type="ar_001" draft="unconfirmed">ϯⲙⲉⲧⲁⲣⲁⲃⲟⲥ</language>
+			<language type="as" draft="unconfirmed">ϯⲙⲉⲧⲁⲥⲥⲁⲙⲉⲥ</language>
+			<language type="ast" draft="unconfirmed">ϯⲙⲉⲧⲁⲥⲧⲟⲩⲣⲓ</language>
+			<language type="az" draft="unconfirmed">ϯⲙⲉⲧⲁⲍⲉⲣⲃⲁϫⲁⲛⲓ</language>
+			<language type="az" alt="short" draft="unconfirmed">ϯⲙⲉⲧⲁⲍⲉⲣⲓ</language>
+			<language type="bal" draft="unconfirmed">ϯⲙⲉⲧⲃⲁⲗⲟⲩϣⲓ</language>
+			<language type="be" draft="unconfirmed">ϯⲙⲉⲧⲃⲉⲗⲁⲣⲟⲩⲥⲓ</language>
+			<language type="bg" draft="unconfirmed">ϯⲙⲉⲧⲃⲟⲩⲗⲅⲁⲣⲓ</language>
+			<language type="bgc" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲣⲓⲁⲛⲃⲓ</language>
+			<language type="bho" draft="unconfirmed">ϯⲙⲉⲧⲃⲟϫⲡⲟⲩⲣⲓ</language>
+			<language type="blo" draft="unconfirmed">ϯⲙⲉⲧⲁⲛⲓⲓ</language>
+			<language type="bn" draft="unconfirmed">ϯⲙⲉⲧⲃⲁⲛⲅⲗⲓ</language>
+			<language type="br" draft="unconfirmed">ϯⲙⲉⲧⲃⲣⲉⲧⲟⲛ</language>
+			<language type="brx" draft="unconfirmed">ϯⲙⲉⲧⲃⲟⲇⲟ</language>
+			<language type="bs" draft="unconfirmed">ϯⲙⲉⲧⲃⲟⲥⲛⲓ</language>
+			<language type="ca" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲧⲁⲗⲁⲛ</language>
+			<language type="ceb" draft="unconfirmed">ϯⲙⲉⲧⲥⲉⲃⲟⲩⲁⲛ</language>
+			<language type="chr" draft="unconfirmed">ϯⲙⲉⲧϭⲉⲣⲟⲩⲕⲓ</language>
+			<language type="cop" draft="unconfirmed">ϯⲙⲉⲧⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</language>
+			<language type="cs" draft="unconfirmed">ϯⲙⲉⲧϭⲉⲕⲓ</language>
+			<language type="csw" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲩⲁⲙⲡⲓ ⲕⲣⲓ</language>
+			<language type="cv" draft="unconfirmed">ϯⲙⲉⲧϭⲟⲩⲃⲁϣ</language>
+			<language type="cy" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲉⲗϣⲓ</language>
+			<language type="da" draft="unconfirmed">ϯⲙⲉⲧⲇⲁⲛⲙⲁⲣⲕ</language>
+			<language type="de" draft="unconfirmed">ϯⲙⲉⲧϫⲉⲣⲙⲁⲛⲓⲟⲥ</language>
+			<language type="de_AT" draft="unconfirmed">ϯⲙⲉⲧⲁⲗⲙⲁⲛⲓ ⲛ̀ⲁⲩⲥⲑⲣⲓⲁ</language>
+			<language type="de_CH" draft="unconfirmed">ϯⲙⲉⲧⲁⲗⲙⲁⲛⲓ ⲛ̀ⲥⲟⲩⲓⲥⲣⲁ ⲉⲧϭⲟⲥⲓ</language>
+			<language type="doi" draft="unconfirmed">ϯⲙⲉⲧⲇⲟⲣⲓ</language>
+			<language type="dsb" draft="unconfirmed">ϯⲙⲉⲧⲥⲏⲧⲥⲟⲣⲃⲓ</language>
+			<language type="ee" draft="unconfirmed">ϯⲙⲉⲧⲉⲩⲉ</language>
+			<language type="el" draft="unconfirmed">ⲙⲉⲧⲟⲩⲉⲓⲛⲓⲛ</language>
+			<language type="en" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ</language>
+			<language type="en_AU" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ ⲛ̀ⲁⲩⲥⲑⲧⲣⲁⲗⲓⲁ</language>
+			<language type="en_CA" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ ⲛ̀ⲕⲁⲛⲁⲇⲁ</language>
+			<language type="en_GB" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ ⲙ̀ⲃⲣⲓⲑⲁⲛⲓⲁ</language>
+			<language type="en_GB" alt="short" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ ⲛ̀ϯⲙⲉⲧⲟⲩⲣⲟ ⲉⲧϩⲱⲧⲡ</language>
+			<language type="en_US" draft="unconfirmed">ϯⲙⲉⲧⲁⲅⲅⲗⲉⲕⲟⲥ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁ</language>
+			<language type="eo" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲡⲉⲣⲁⲛⲑⲟ</language>
+			<language type="es" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲡⲁⲛⲓ</language>
+			<language type="es_419" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲡⲁⲛⲓ ⲁⲙⲣⲓⲕⲁ ⲗⲁⲑⲓⲛⲓ</language>
+			<language type="es_ES" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲡⲁⲛⲓ ⲛ̀ⲉⲩⲣⲟⲡⲁ</language>
+			<language type="es_MX" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲡⲁⲛⲓ ⲙ̀ⲙⲉⲝⲓⲕⲟ</language>
+			<language type="et" draft="unconfirmed">ϯⲙⲉⲧⲉⲥⲑⲟⲛⲓⲁ</language>
+			<language type="eu" draft="unconfirmed">ϯⲙⲉⲧⲃⲁⲥⲕ</language>
+			<language type="fa" draft="unconfirmed">ϯⲙⲉⲧⲡⲉⲣⲥⲓⲥ</language>
+			<language type="ff" draft="unconfirmed">ϯⲙⲉⲧϥⲟⲩⲗⲁ</language>
+			<language type="fi" draft="unconfirmed">ϯⲙⲉⲧϥⲓⲛⲗⲁⲛⲇ</language>
+			<language type="fil" draft="unconfirmed">ϯⲙⲉⲧⲫⲓⲗⲓⲡⲓⲛ</language>
+			<language type="fo" draft="unconfirmed">ϯⲙⲉⲧϥⲁⲣⲟⲥⲉ</language>
+			<language type="fr" draft="unconfirmed">ϯⲙⲉⲧϥⲉⲣⲉⲛⲥⲉⲟⲥ</language>
+			<language type="fr_CA" draft="unconfirmed">ϯⲙⲉⲧϥⲉⲣⲉⲛⲥⲉⲟⲥ ⲛ̀ⲕⲁⲛⲁⲇⲁ</language>
+			<language type="fr_CH" draft="unconfirmed">ϯⲙⲉⲧϥⲉⲣⲉⲛⲥⲉⲟⲥ ⲛ̀ⲥⲟⲩⲓⲥⲣⲁ</language>
+			<language type="fy" draft="unconfirmed">ϯⲙⲉⲧϥⲣⲓⲍⲓ ⲛ̀ⲉⲙⲉⲛⲧ</language>
+			<language type="ga" draft="unconfirmed">ϯⲙⲉⲧⲁⲓⲉⲣⲗⲁⲛⲇⲓ</language>
+			<language type="gaa" draft="unconfirmed">ϯⲙⲉⲧϫⲁ</language>
+			<language type="gd" draft="unconfirmed">ϯⲙⲉⲧⲥⲕⲟⲧⲗⲁⲛⲇ ⲅⲁⲗⲓⲕⲓ</language>
+			<language type="gl" draft="unconfirmed">ϯⲙⲉⲧⲅⲁⲗⲉⲕⲟⲥ</language>
+			<language type="gu" draft="unconfirmed">ϯⲙⲉⲧⲅⲟⲩϫⲁⲣⲁⲑⲓ</language>
+			<language type="ha" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲩⲍⲁ</language>
+			<language type="he" draft="unconfirmed">ϯⲙⲉⲧϩⲉⲃⲣⲉⲟⲥ</language>
+			<language type="hi" draft="unconfirmed">ϯⲙⲉⲧϩⲉⲛⲧⲟⲩ</language>
+			<language type="hi_Latn" draft="unconfirmed">ϯⲙⲉⲧϩⲉⲛⲧⲟⲩ ⲛ̀ⲗⲁⲧⲓⲛⲓ</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">ϯⲙⲉⲧϩⲓⲛⲅⲗⲓϣ</language>
+			<language type="hr" draft="unconfirmed">ϯⲙⲉⲧⲕⲣⲟⲩⲁⲑⲓ</language>
+			<language type="hsb" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲣⲃⲓ ⲛ̀ϣⲱⲓ</language>
+			<language type="hu" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛⲅⲁⲣⲓ</language>
+			<language type="hy" draft="unconfirmed">ϯⲙⲉⲧⲁⲣⲙⲉⲛⲓⲟⲥ</language>
+			<language type="ia" draft="unconfirmed">ϯⲙⲉⲧⲓⲛⲑⲉⲣⲗⲓⲛⲅⲟⲩⲓ</language>
+			<language type="id" draft="unconfirmed">ϯⲙⲉⲧⲓⲛⲇⲟⲛⲓⲥⲓ</language>
+			<language type="ie" draft="unconfirmed">ϯⲙⲉⲧⲓⲛⲑⲉⲣⲗⲓⲛⲅⲟⲩⲓ</language>
+			<language type="ig" draft="unconfirmed">ϯⲙⲉⲧⲓⲅⲃⲟ</language>
+			<language type="ii" draft="unconfirmed">ϯⲙⲉⲧⲥⲓϣⲟⲩⲁⲛ</language>
+			<language type="is" draft="unconfirmed">ϯⲙⲉⲧⲁⲓⲥⲗⲁⲛⲇ</language>
+			<language type="it" draft="unconfirmed">ϯⲙⲉⲧϩⲓⲧⲁⲗⲓⲕⲟⲥ</language>
+			<language type="ja" draft="unconfirmed">ϯⲙⲉⲧⲓⲁⲡⲁⲛⲓ</language>
+			<language type="jv" draft="unconfirmed">ϯⲙⲉⲧϫⲁⲃⲁⲛⲓ</language>
+			<language type="ka" draft="unconfirmed">ϯⲙⲉⲧⲅⲉⲟⲣⲅⲓⲟⲥ</language>
+			<language type="kea" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲃⲟⲩⲃⲉⲣⲇⲓⲁⲛⲟⲩ</language>
+			<language type="kgp" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲓⲛⲅⲁⲛⲅⲓ</language>
+			<language type="kk" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲍⲁϧⲓ</language>
+			<language type="km" draft="unconfirmed">ϯⲙⲉⲧϧⲙⲉⲣⲓ</language>
+			<language type="kn" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲛⲛⲁⲇⲓ</language>
+			<language type="ko" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲣⲓ</language>
+			<language type="kok" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲛⲕⲁⲛⲓ</language>
+			<language type="ks" draft="unconfirmed">ϯⲙⲉⲧⲕⲁϣⲙⲓⲣⲓ</language>
+			<language type="ku" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲩⲣⲇⲓ</language>
+			<language type="ku" menu="core" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲩⲣⲇⲓ</language>
+			<language type="ku" menu="extension" draft="unconfirmed">ϯⲙⲉⲧⲕⲩⲣⲙⲁⲛϫⲓ</language>
+			<language type="kxv" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲩⲓ</language>
+			<language type="ky" draft="unconfirmed">ϯⲙⲉⲧⲕⲩⲣⲅⲩⲍⲓ</language>
+			<language type="lb" draft="unconfirmed">ϯⲙⲉⲧⲗⲟⲩⲝⲟⲙⲃⲟⲩⲣⲓ</language>
+			<language type="lij" draft="unconfirmed">ϯⲙⲉⲧⲗⲓⲅⲟⲩⲣⲓ</language>
+			<language type="lmo" draft="unconfirmed">ϯⲙⲉⲧⲗⲟⲙⲃⲁⲣⲇⲓ</language>
+			<language type="lo" draft="unconfirmed">ϯⲙⲉⲧⲗⲁⲟ</language>
+			<language type="lt" draft="unconfirmed">ϯⲙⲉⲧⲗⲓⲑⲟⲩⲁⲛⲓ</language>
+			<language type="lv" draft="unconfirmed">ϯⲙⲉⲧⲗⲁⲧⲃⲓ</language>
+			<language type="mai" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲓⲑⲓⲗⲓ</language>
+			<language type="mi" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲟⲣⲓ</language>
+			<language type="mk" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲕⲉⲇⲟⲛⲓ</language>
+			<language type="ml" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲗⲁⲓⲁⲗⲁⲙ</language>
+			<language type="mn" draft="unconfirmed">ϯⲙⲉⲧⲙⲟⲛⲅⲟⲗⲓ</language>
+			<language type="mni" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲛⲓⲡⲟⲩⲣⲓ</language>
+			<language type="mr" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲣⲁⲑⲓ</language>
+			<language type="ms" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲗⲁⲓ</language>
+			<language type="mt" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲗⲑⲓ</language>
+			<language type="mul" draft="unconfirmed">ϩⲁⲛⲙⲏϣ ⲛ̀ⲁⲥⲡⲓ</language>
+			<language type="my" draft="unconfirmed">ϯⲙⲉⲧⲃⲟⲩⲣⲙⲓ</language>
+			<language type="nds" draft="unconfirmed">ϯⲙⲉⲧⲥⲏⲧϫⲉⲣⲙⲁⲛⲓ</language>
+			<language type="ne" draft="unconfirmed">ϯⲙⲉⲧⲛⲉⲡⲁⲗⲓ</language>
+			<language type="nl" draft="unconfirmed">ϯⲙⲉⲧϩⲟⲗⲁⲛⲇ</language>
+			<language type="nl_BE" draft="unconfirmed">ϯⲙⲉϥⲗⲁⲙⲁⲛⲕ</language>
+			<language type="nn" draft="unconfirmed">ϯⲙⲉⲧⲛⲟⲣⲟⲩⲓⲅⲓ ⲛⲩⲛⲟⲣⲥⲕ</language>
+			<language type="no" draft="unconfirmed">ϯⲙⲉⲧⲛⲟⲣⲟⲩⲓⲅⲓ</language>
+			<language type="nqo" draft="unconfirmed">ϯⲙⲉⲧⲛ̀ⲕⲟ</language>
+			<language type="nso" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲑⲟⲛ̀ϩⲏⲧ</language>
+			<language type="oc" draft="unconfirmed">ϯⲙⲉⲧⲟⲕⲥⲓⲧⲁⲛ</language>
+			<language type="om" draft="unconfirmed">ϯⲙⲉⲧⲟⲣⲟⲙⲟ</language>
+			<language type="or" draft="unconfirmed">ϯⲙⲉⲧⲟⲇⲓ</language>
+			<language type="pa" draft="unconfirmed">ϯⲙⲉⲧⲡⲟⲩⲛϫⲁⲃⲓ</language>
+			<language type="pcm" draft="unconfirmed">ϯⲙⲉⲧⲛⲁⲓϫⲓⲣⲓ</language>
+			<language type="pl" draft="unconfirmed">ϯⲙⲉⲧⲡⲟⲗⲁⲛⲇⲓ</language>
+			<language type="prg" draft="unconfirmed">ϯⲙⲉⲧⲡⲣⲟⲩⲥⲓ</language>
+			<language type="ps" draft="unconfirmed">ϯⲙⲉⲧⲡⲁϣⲑⲟ</language>
+			<language type="pt" draft="unconfirmed">ϯⲙⲉⲧⲡⲟⲣⲧⲟⲩⲅⲁⲗⲓ</language>
+			<language type="pt_BR" draft="unconfirmed">ϯⲙⲉⲧⲡⲟⲣⲧⲟⲩⲅⲁⲗⲓ ⲙ̀ⲃⲣⲁⲍⲓⲗ</language>
+			<language type="pt_PT" draft="unconfirmed">ϯⲙⲉⲧⲡⲟⲣⲧⲟⲩⲅⲁⲗⲓ ⲛ̀ⲉⲩⲣⲟⲡⲁ</language>
+			<language type="qu" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲩⲉϣⲟⲩⲁ</language>
+			<language type="raj" draft="unconfirmed">ϯⲙⲉⲧⲣⲁϫⲁⲥⲑⲁⲛⲓ</language>
+			<language type="rm" draft="unconfirmed">ϯⲙⲉⲧⲣⲟⲙⲁⲛϣⲓ</language>
+			<language type="ro" draft="unconfirmed">ϯⲙⲉⲧⲣⲟⲙⲁⲛⲓ</language>
+			<language type="ru" draft="unconfirmed">ϯⲙⲉⲧⲣⲟⲩⲥⲓ</language>
+			<language type="rw" draft="unconfirmed">ϯⲙⲉⲧⲕⲓⲛⲓⲁⲣⲟⲩⲁⲛⲇⲓ</language>
+			<language type="sa" draft="unconfirmed">ϯⲙⲉⲧⲥⲁⲛⲥⲕⲣⲓⲑ</language>
+			<language type="sah" draft="unconfirmed">ϯⲙⲉⲧⲓⲁⲕⲟⲩⲧ</language>
+			<language type="sat" draft="unconfirmed">ϯⲙⲉⲧⲥⲁⲛⲑⲁⲗⲓ</language>
+			<language type="sc" draft="unconfirmed">ϯⲙⲉⲧⲥⲁⲣⲇⲓⲛⲓ</language>
+			<language type="sd" draft="unconfirmed">ϯⲙⲉⲧⲥⲓⲛⲇⲓ</language>
+			<language type="si" draft="unconfirmed">ϯⲙⲉⲧⲥⲓⲛϩⲁⲗⲁ</language>
+			<language type="sk" draft="unconfirmed">ϯⲙⲉⲧⲥⲗⲟⲃⲁⲕ</language>
+			<language type="sl" draft="unconfirmed">ϯⲙⲉⲧⲥⲗⲟⲃⲉⲛⲓ</language>
+			<language type="so" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲙⲁⲗⲓ</language>
+			<language type="sq" draft="unconfirmed">ϯⲙⲉⲧⲁⲗⲃⲁⲛⲓⲁ</language>
+			<language type="sr" draft="unconfirmed">ϯⲙⲉⲧⲥⲉⲣⲃⲓ</language>
+			<language type="st" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲑⲟ ⲛ̀ⲣⲏⲥ</language>
+			<language type="su" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲩⲇⲁⲛⲓ</language>
+			<language type="sv" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲩⲓⲇⲓ</language>
+			<language type="sw" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲩⲁϩⲓⲗⲓ</language>
+			<language type="syr" draft="unconfirmed">ϯⲙⲉⲧⲁⲥⲥⲩⲣⲟⲥ</language>
+			<language type="szl" draft="unconfirmed">ϯⲙⲉⲧⲥⲓⲗⲉⲥⲓⲁⲛ</language>
+			<language type="ta" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲙⲓⲗⲓ</language>
+			<language type="te" draft="unconfirmed">ϯⲙⲉⲧⲑⲉⲗⲟⲩⲅⲟⲩ</language>
+			<language type="tg" draft="unconfirmed">ϯⲙⲉⲧⲑⲁϫⲓⲕⲓ</language>
+			<language type="th" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲓⲗⲁⲛⲇⲓ</language>
+			<language type="ti" draft="unconfirmed">ϯⲙⲉⲧⲑⲓⲅⲣⲓⲛⲓ</language>
+			<language type="tk" draft="unconfirmed">ϯⲙⲉⲧⲑⲟⲩⲣⲕⲙⲁⲛⲓ</language>
+			<language type="tn" draft="unconfirmed">ϯⲙⲉⲧⲑ̀ⲥⲟⲩⲁⲛⲓ</language>
+			<language type="to" draft="unconfirmed">ϯⲙⲉⲧⲑⲟⲛⲅⲁⲛⲓ</language>
+			<language type="tr" draft="unconfirmed">ϯⲙⲉⲧⲭⲟⲝⲓⲥ</language>
+			<language type="tt" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲣⲑⲁⲣ</language>
+			<language type="ug" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲏⲅⲟⲩⲣ</language>
+			<language type="uk" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲕⲣⲁⲛⲓ</language>
+			<language type="und" draft="unconfirmed">ⲟⲩⲁⲥⲡⲓ ⲛ̀ⲁⲧⲥⲟⲩⲏⲛ</language>
+			<language type="ur" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲣⲇⲟⲩ</language>
+			<language type="uz" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲍⲃⲉⲕⲓ</language>
+			<language type="vec" draft="unconfirmed">ϯⲙⲉⲧⲃⲉⲛⲉⲑⲓ</language>
+			<language type="vi" draft="unconfirmed">ϯⲙⲉⲧⲃⲓⲉⲑⲛⲁⲙⲓ</language>
+			<language type="vmw" draft="unconfirmed">ϯⲙⲉⲧⲙⲁϧⲟⲩⲁ</language>
+			<language type="wo" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲟⲗⲟϥ</language>
+			<language type="xh" draft="unconfirmed">ϯⲙⲉⲧⲝⲟⲍⲁ</language>
+			<language type="xnr" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲛⲅⲣⲓ</language>
+			<language type="yo" draft="unconfirmed">ϯⲙⲉⲧⲓⲟⲣⲟⲩⲃⲁ</language>
+			<language type="yrl" draft="unconfirmed">ϯⲙⲉⲧⲛⲓⲛⲅⲁⲧⲟⲩ</language>
+			<language type="yue" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲛⲑⲟⲛⲓ</language>
+			<language type="yue" alt="menu" draft="unconfirmed">ϯⲙⲉⲧϭⲓⲛⲁ, ϯⲙⲉⲧⲕⲁⲛⲑⲟⲛⲓ</language>
+			<language type="za" draft="unconfirmed">ϯⲙⲉⲧⲍⲟⲩⲁⲛⲅ</language>
+			<language type="zh" draft="unconfirmed">ϯⲙⲉⲧϭⲓⲛⲁ</language>
+			<language type="zh" alt="menu" draft="unconfirmed">ϯⲙⲉⲧϭⲓⲛⲁ, ⲙⲁⲛⲇⲁⲣⲓⲛ</language>
+			<language type="zh_Hans" draft="unconfirmed">ϯⲙⲉⲧϭⲓⲛⲁ ⲛ̀ϩⲁⲡⲗⲟⲩⲥ</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲛⲇⲁⲣⲓⲛ ⲛ̀ϭⲓⲛⲁ ⲛ̀ⲁⲡⲗⲟⲩⲥ</language>
+			<language type="zh_Hant" draft="unconfirmed">ϯⲙⲉⲧϭⲛⲓⲁ ⲛ̀ⲣⲉⲙⲕⲁϩⲥ</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲛⲇⲁⲣⲓⲛ ⲛ̀ϭⲓⲛⲁ ⲛ̀ⲣⲉⲙⲕⲁϩⲥ</language>
+			<language type="zu" draft="unconfirmed">ϯⲙⲉⲧⲍⲟⲩⲗⲟⲩ</language>
+			<language type="zxx" draft="unconfirmed">ⲙ̀ⲙⲟⲛ ⲁⲥⲡⲓ</language>
+		</languages>
+		<scripts>
+			<script type="Adlm" draft="unconfirmed">ϯⲙⲉⲧⲁⲇⲗⲁⲙ</script>
+			<script type="Arab" draft="unconfirmed">ϯⲙⲉⲧⲁⲣⲁⲃⲟⲥ</script>
+			<script type="Aran" draft="unconfirmed">ϯⲙⲉⲧⲛⲁⲥⲑⲁⲗⲓⲕ</script>
+			<script type="Armn" draft="unconfirmed">ϯⲙⲉⲧⲁⲣⲙⲉⲛⲓⲟⲥ</script>
+			<script type="Beng" draft="unconfirmed">ϯⲙⲉⲧⲃⲁⲛⲅⲗⲁ</script>
+			<script type="Bopo" draft="unconfirmed">ϯⲙⲉⲧⲃⲟⲡⲟⲙⲟϥⲟ</script>
+			<script type="Brai" draft="unconfirmed">ϯⲙⲉⲧⲃⲣⲁⲓⲗ</script>
+			<script type="Cakm" draft="unconfirmed">ϯⲙⲉⲧϭⲁⲕⲙⲁ</script>
+			<script type="Cans" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲛⲁⲇⲁ ⲁⲃⲟⲣⲓϫⲓⲛ ⲉⲧϩⲱⲧⲡ</script>
+			<script type="Cher" draft="unconfirmed">ϯⲙⲉⲧϭⲉⲣⲟⲩⲕⲓ</script>
+			<script type="Cyrl" draft="unconfirmed">ϯⲙⲉⲧⲕⲩⲣⲓⲗⲗⲓ</script>
+			<script type="Deva" draft="unconfirmed">ϯⲙⲉⲧⲇⲉⲃⲁⲛⲁⲅⲁⲣⲓ</script>
+			<script type="Ethi" draft="unconfirmed">ϯⲙⲉⲧⲉⲑⲱϣⲓ</script>
+			<script type="Geor" draft="unconfirmed">ϯⲙⲉⲧⲅⲉⲟⲣⲅⲓ</script>
+			<script type="Grek" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲉⲓⲛⲓⲛ</script>
+			<script type="Gujr" draft="unconfirmed">ϯⲙⲉⲧⲅⲟⲩϫⲁⲣⲁⲑⲓ</script>
+			<script type="Guru" draft="unconfirmed">ϯⲙⲉⲧⲅⲟⲩⲣⲙⲟⲩϧⲓ</script>
+			<script type="Hanb" draft="unconfirmed">ϩⲁⲛ ⲛⲉⲙ ⲃⲟⲡⲟⲙⲟϥⲟ</script>
+			<script type="Hang" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛⲅⲟⲩⲗ</script>
+			<script type="Hani" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛ</script>
+			<script type="Hans" draft="unconfirmed">ϩⲁⲡⲗⲟⲩⲥ</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛ ⲛ̀ϩⲁⲡⲗⲟⲩⲥ</script>
+			<script type="Hant" draft="unconfirmed">ⲙⲉⲧⲣⲉⲙⲕⲁϩⲥ</script>
+			<script type="Hant" alt="stand-alone" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛ ⲛ̀ⲣⲉⲙⲕⲁϩⲥ</script>
+			<script type="Hebr" draft="unconfirmed">ϯⲙⲉⲧϩⲉⲃⲣⲉⲟⲥ</script>
+			<script type="Hira" draft="unconfirmed">ϯⲙⲉⲧϩⲓⲣⲁⲅⲁⲛⲁ</script>
+			<script type="Hrkt" draft="unconfirmed">ϯⲙⲉⲧⲓⲁⲡⲁⲛⲓ ⲛ̀ⲥⲩⲗⲗⲁⲃⲁⲣⲓⲥ</script>
+			<script type="Jamo" draft="unconfirmed">ϯⲙⲉⲧϫⲁⲙⲟ</script>
+			<script type="Jpan" draft="unconfirmed">ϯⲙⲉⲧⲓⲁⲡⲁⲛⲓ</script>
+			<script type="Kana" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲧⲁⲕⲁⲛⲁ</script>
+			<script type="Khmr" draft="unconfirmed">ϯⲙⲉⲧϧⲙⲉⲣ</script>
+			<script type="Knda" draft="unconfirmed">ϯⲙⲉⲧⲕⲁⲛⲛⲁⲇⲁ</script>
+			<script type="Kore" draft="unconfirmed">ϯⲙⲉⲧⲕⲟⲣⲓ</script>
+			<script type="Laoo" draft="unconfirmed">ϯⲙⲉⲧⲗⲁⲟ</script>
+			<script type="Latn" draft="unconfirmed">ϯⲙⲉⲧⲗⲁⲑⲓⲛⲓ</script>
+			<script type="Mlym" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲗⲁⲓⲁⲗⲁⲙⲓ</script>
+			<script type="Mong" draft="unconfirmed">ϯⲙⲉⲧⲙⲟⲛⲅⲟⲗⲓ</script>
+			<script type="Mtei" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲓⲑⲉⲓ ⲙⲁⲓⲉⲕ</script>
+			<script type="Mymr" draft="unconfirmed">ϯⲙⲉⲧⲙⲁⲓⲁⲛⲙⲁⲣⲓ</script>
+			<script type="Nkoo" draft="unconfirmed">ϯⲙⲉⲧⲛ̀ⲕⲟ</script>
+			<script type="Olck" draft="unconfirmed">ϯⲙⲉⲧⲟⲗ ϭⲓⲕⲓ</script>
+			<script type="Orya" draft="unconfirmed">ϯⲙⲉⲧⲟⲇⲓⲁ</script>
+			<script type="Rohg" draft="unconfirmed">ϯⲙⲉⲧϩⲁⲛⲓϥⲓ</script>
+			<script type="Sinh" draft="unconfirmed">ϯⲙⲉⲧⲥⲓⲛϩⲁⲗⲁ</script>
+			<script type="Sund" draft="unconfirmed">ϯⲙⲉⲧⲥⲟⲩⲇⲁⲛⲓ</script>
+			<script type="Syrc" draft="unconfirmed">ϯⲙⲉⲧⲁⲥⲥⲩⲣⲟⲥ</script>
+			<script type="Taml" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲙⲓⲗⲓ</script>
+			<script type="Telu" draft="unconfirmed">ϯⲙⲉⲧⲑⲉⲗⲟⲩⲅⲟⲩ</script>
+			<script type="Tfng" draft="unconfirmed">ϯⲙⲉⲧⲑⲓϥⲓⲛⲁⲅ</script>
+			<script type="Thaa" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲛⲁ</script>
+			<script type="Thai" draft="unconfirmed">ϯⲙⲉⲧⲑⲁⲓ</script>
+			<script type="Tibt" draft="unconfirmed">ϯⲙⲉⲧⲑⲓⲃⲉⲑⲓ</script>
+			<script type="Vaii" draft="unconfirmed">ϯⲙⲉⲧⲃⲁⲓ</script>
+			<script type="Yiii" draft="unconfirmed">ϯⲙⲉⲧⲩⲓ</script>
+			<script type="Zmth" draft="unconfirmed">ⲡⲓϫⲓⲛⲱⲡ ⲛ̀ⲥϧⲁⲓ</script>
+			<script type="Zsye" draft="unconfirmed">ⲉⲙⲟϫⲓ</script>
+			<script type="Zsym" draft="unconfirmed">ⲛⲓⲥⲩⲙⲃⲟⲗⲟⲛ</script>
+			<script type="Zxxx" draft="unconfirmed">ⲁⲧⲥ̀ϧⲏⲟⲩⲧ</script>
+			<script type="Zyyy" draft="unconfirmed">ⲛ̀ⲉⲣⲏⲟⲩ</script>
+			<script type="Zzzz" draft="unconfirmed">ⲟⲩⲥ̀ϧⲁⲓ ⲛ̀ⲁⲧⲥⲟⲩⲏⲛ</script>
+		</scripts>
+		<territories>
+			<territory type="001" draft="unconfirmed">ⲡⲓⲑⲟ</territory>
+			<territory type="002" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ</territory>
+			<territory type="003" draft="unconfirmed">ϯⲁⲙⲉⲣⲓⲕⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</territory>
+			<territory type="005" draft="unconfirmed">ϯⲁⲙⲉⲣⲓⲕⲁ ⲙ̀ⲡⲓⲣⲏⲥ</territory>
+			<territory type="009" draft="unconfirmed">ϯⲟⲥⲉⲁⲛⲓⲁ</territory>
+			<territory type="011" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲉⲙⲉⲛⲧ</territory>
+			<territory type="013" draft="unconfirmed">ϯⲁⲙⲉⲣⲓⲕⲁ ⲛ̀ⲑⲙⲏϯ</territory>
+			<territory type="014" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲉⲓⲉⲃⲧ</territory>
+			<territory type="015" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</territory>
+			<territory type="017" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲛ̀ⲑⲙⲏϯ</territory>
+			<territory type="018" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ</territory>
+			<territory type="019" draft="unconfirmed">ⲛⲓⲁⲙⲉⲣⲓⲕⲁ</territory>
+			<territory type="021" draft="unconfirmed">ϯⲁⲙⲉⲣⲓⲕⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</territory>
+			<territory type="029" draft="unconfirmed">ϯⲕⲁⲣⲓⲃⲓ</territory>
+			<territory type="030" draft="unconfirmed">ϯⲁⲥⲓⲁ ⲙ̀ⲡⲉⲓⲉⲃⲧ</territory>
+			<territory type="034" draft="unconfirmed">ϯⲁⲥⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ</territory>
+			<territory type="035" draft="unconfirmed">ϯⲁⲥⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ ⲓⲉⲃⲧ</territory>
+			<territory type="039" draft="unconfirmed">ϯⲉⲩⲣⲟⲡⲁ ⲙ̀ⲡⲓⲣⲏⲥ</territory>
+			<territory type="053" draft="unconfirmed">ϯⲁⲩⲥⲧⲣⲁⲗⲁⲍⲓⲁ</territory>
+			<territory type="054" draft="unconfirmed">ϯⲙⲁⲉⲗⲁⲛⲉⲍⲓⲁ</territory>
+			<territory type="057" draft="unconfirmed">ϯⲙⲓⲕⲣⲟⲛⲉⲍⲓⲁ</territory>
+			<territory type="061" draft="unconfirmed">ϯⲡⲟⲗⲩⲛⲉⲍⲓⲁ</territory>
+			<territory type="142" draft="unconfirmed">ϯⲁⲥⲓⲁ</territory>
+			<territory type="143" draft="unconfirmed">ϯⲁⲥⲓⲁ ⲛ̀ⲑⲙⲏϯ</territory>
+			<territory type="145" draft="unconfirmed">ϯⲁⲥⲓⲁ ⲙ̀ⲡⲉⲙⲉⲛⲧ</territory>
+			<territory type="150" draft="unconfirmed">ϯⲉⲩⲣⲟⲡⲁ</territory>
+			<territory type="151" draft="unconfirmed">ϯⲉⲩⲣⲟⲡⲁ ⲙ̀ⲡⲉⲓⲉⲃⲧ</territory>
+			<territory type="154" draft="unconfirmed">ϯⲉⲩⲣⲟⲡⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</territory>
+			<territory type="155" draft="unconfirmed">ϯⲉⲩⲣⲟⲡⲁ ⲙ̀ⲡⲉⲙⲉⲛⲧ</territory>
+			<territory type="202" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲉⲧⲥⲏⲧ ⲙ̀ⲡϣⲁϥⲉ</territory>
+			<territory type="419" draft="unconfirmed">ϯⲁⲙⲉⲣⲓⲕⲁ ⲛ̀ⲗⲁⲑⲓⲛⲓ</territory>
+			<territory type="AC" draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲁⲥⲉⲛϣⲓⲟⲛ</territory>
+			<territory type="AD" draft="unconfirmed">ϯⲁⲛⲇⲟⲣⲁ</territory>
+			<territory type="AE" draft="unconfirmed">ⲛⲓⲉⲙⲁⲣⲁⲧ ⲛ̀ⲁⲣⲁⲃⲟⲥ ⲉⲧϩⲱⲧⲡ</territory>
+			<territory type="AF" draft="unconfirmed">ϯⲁϥⲅⲁⲛⲓⲥⲑⲁⲛ</territory>
+			<territory type="AG" draft="unconfirmed">ⲁⲛⲧⲓⲅⲟⲩⲁ &amp; ⲃⲁⲣⲃⲟⲩⲇⲁ</territory>
+			<territory type="AI" draft="unconfirmed">ϯⲁⲛⲅⲟⲩⲓⲗⲗⲁ</territory>
+			<territory type="AL" draft="unconfirmed">ϯⲁⲗⲃⲁⲛⲓⲁ</territory>
+			<territory type="AM" draft="unconfirmed">ϯⲁⲣⲙⲉⲛⲓⲁ</territory>
+			<territory type="AO" draft="unconfirmed">ϯⲁⲛⲅⲟⲗⲁ</territory>
+			<territory type="AQ" draft="unconfirmed">ⲁⲛⲑⲁⲣⲕⲧⲓⲕⲁ</territory>
+			<territory type="AR" draft="unconfirmed">ϯⲁⲣϫⲉⲛⲧⲓⲛ</territory>
+			<territory type="AS" draft="unconfirmed">ⲥⲁⲙⲟⲩⲁ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</territory>
+			<territory type="AT" draft="unconfirmed">ϯⲁⲩⲥⲑⲣⲓⲁ</territory>
+			<territory type="AU" draft="unconfirmed">ϯⲁⲩⲥⲑⲧⲣⲁⲗⲓⲁ</territory>
+			<territory type="AW" draft="unconfirmed">ϯⲁⲣⲟⲩⲃⲁ</territory>
+			<territory type="AX" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲁⲗⲁⲛⲇ</territory>
+			<territory type="AZ" draft="unconfirmed">ⲁⲇⲟⲩⲣⲃⲁⲇⲁⲅⲁⲛ</territory>
+			<territory type="BA" draft="unconfirmed">ϯⲃⲟⲥⲛⲓⲁ &amp; ϩⲉⲣⲍⲉⲅⲟⲃⲓⲛⲁ</territory>
+			<territory type="BB" draft="unconfirmed">ϯⲃⲁⲣⲃⲁⲇⲟⲥ</territory>
+			<territory type="BD" draft="unconfirmed">ϯⲃⲁⲛⲅⲗⲁⲇⲉϣ</territory>
+			<territory type="BE" draft="unconfirmed">ϯⲃⲉⲗϫⲓⲕⲁ</territory>
+			<territory type="BF" draft="unconfirmed">ⲃⲟⲩⲣⲕⲓⲛⲁ ϥⲁⲥⲟ</territory>
+			<territory type="BG" draft="unconfirmed">ϯⲃⲟⲩⲗⲅⲁⲣⲓⲁ</territory>
+			<territory type="BH" draft="unconfirmed">ϯⲃⲁϩⲣⲉⲛ</territory>
+			<territory type="BI" draft="unconfirmed">ϯⲃⲟⲩⲣⲟⲩⲛⲇⲓ</territory>
+			<territory type="BJ" draft="unconfirmed">ϯⲃⲉⲛⲓⲛ</territory>
+			<territory type="BL" draft="unconfirmed">ⲥⲁⲛⲧ ⲃⲁⲣⲑⲉⲗⲉⲙⲓ</territory>
+			<territory type="BM" draft="unconfirmed">ϯⲃⲉⲣⲙⲟⲩⲇⲁ</territory>
+			<territory type="BN" draft="unconfirmed">ϯⲃⲣⲟⲩⲛⲉⲓ</territory>
+			<territory type="BO" draft="unconfirmed">ϯⲃⲟⲗⲓⲃⲓⲁ</territory>
+			<territory type="BQ" draft="unconfirmed">ϯⲕⲁⲣⲓⲃⲓ ⲛ̀ϩⲟⲗⲗⲁⲛⲇⲁ</territory>
+			<territory type="BR" draft="unconfirmed">ϯⲃⲣⲁⲍⲓⲗ</territory>
+			<territory type="BS" draft="unconfirmed">ϯⲃⲁϩⲁⲙⲁ</territory>
+			<territory type="BT" draft="unconfirmed">ϯⲃϩⲟⲩⲑⲁⲛ</territory>
+			<territory type="BV" draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲃⲟⲩⲃⲉⲧ</territory>
+			<territory type="BW" draft="unconfirmed">ϯⲃⲟⲑⲥⲟⲩⲁⲛⲁ</territory>
+			<territory type="BY" draft="unconfirmed">ϯⲃⲉⲗⲁⲣⲟⲩⲥ</territory>
+			<territory type="BZ" draft="unconfirmed">ϯⲃⲉⲗⲓⲍⲉ</territory>
+			<territory type="CA" draft="unconfirmed">ϯⲕⲁⲛⲁⲇⲁ</territory>
+			<territory type="CC" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲕⲟⲥ</territory>
+			<territory type="CD" draft="unconfirmed">ⲕⲟⲛⲅⲟ ⲕⲓⲛϣⲁⲥⲁ</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">ⲕⲟⲛⲅⲟ ⲇⲣⲥ</territory>
+			<territory type="CF" draft="unconfirmed">ϯⲙⲉⲧϣ̀ⲗⲟⲗ ⲙ̀ⲫⲣⲓⲕⲓⲁ ⲛ̀ⲑⲙⲏϯ</territory>
+			<territory type="CG" draft="unconfirmed">ⲕⲟⲛⲅⲟ - ⲃⲣⲁⲍⲁⲃⲓⲗ</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">ϯⲕⲟⲛⲅⲟ</territory>
+			<territory type="CH" draft="unconfirmed">ϯⲥⲟⲩⲓⲥⲣⲁ</territory>
+			<territory type="CI" draft="unconfirmed">ϯⲕⲟⲧ ⲇⲓⲃⲟⲩⲁⲣ</territory>
+			<territory type="CK" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲩⲕ</territory>
+			<territory type="CL" draft="unconfirmed">ϯϭⲓⲗⲉ</territory>
+			<territory type="CM" draft="unconfirmed">ϯⲕⲁⲙⲉⲣⲟⲩⲛ</territory>
+			<territory type="CN" draft="unconfirmed">ϯϭⲓⲛⲁ</territory>
+			<territory type="CO" draft="unconfirmed">ϯⲕⲟⲗⲟⲙⲃⲓⲁ</territory>
+			<territory type="CP" draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲕⲗⲓⲡⲉⲣⲑⲟⲛ</territory>
+			<territory type="CQ" draft="unconfirmed">ⲥⲁⲣⲕ</territory>
+			<territory type="CR" draft="unconfirmed">ⲕⲟⲥⲑⲁ ⲣⲓⲕⲁ</territory>
+			<territory type="CU" draft="unconfirmed">ϯⲕⲟⲩⲃⲁ</territory>
+			<territory type="CV" draft="unconfirmed">ϯⲕⲁⲡ ⲃⲉⲣⲇⲉ</territory>
+			<territory type="CW" draft="unconfirmed">ϯⲕⲟⲩⲣⲁⲥⲁⲟ</territory>
+			<territory type="CX" draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲭⲣⲓⲥⲧⲙⲁⲥ</territory>
+			<territory type="CY" draft="unconfirmed">ⲕⲩⲡⲣⲟⲥ</territory>
+			<territory type="CZ" draft="unconfirmed">ϯϭⲉⲕⲓⲁ</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">ϯⲙⲉⲧϣ̀ⲗⲟⲗ ⲛ̀ϭⲉⲕ</territory>
+			<territory type="DE" draft="unconfirmed">ϯⲁⲗⲙⲁⲛⲓⲁ</territory>
+			<territory type="DG" draft="unconfirmed">ⲇⲓⲉⲅⲟ ⲅⲁⲣⲥⲓⲁ</territory>
+			<territory type="DJ" draft="unconfirmed">ϯⲇϫⲓⲃⲟⲩⲑⲓ</territory>
+			<territory type="DK" draft="unconfirmed">ϯⲇⲉⲛⲙⲁⲣⲕ</territory>
+			<territory type="DM" draft="unconfirmed">ϯⲇⲟⲙⲓⲛⲓⲕⲁ</territory>
+			<territory type="DO" draft="unconfirmed">ϯⲇⲟⲙⲓⲛⲓⲕⲁⲛ</territory>
+			<territory type="DZ" draft="unconfirmed">ϯⲁⲗϫⲉⲣⲓⲁ</territory>
+			<territory type="EA" draft="unconfirmed">ⲥⲉⲩⲑⲁ &amp; ⲙⲉⲗⲓⲗⲗⲁ</territory>
+			<territory type="EC" draft="unconfirmed">ϯⲉⲕⲟⲩⲁⲇⲟⲣ</territory>
+			<territory type="EE" draft="unconfirmed">ϯⲉⲥⲑⲟⲛⲓⲁ</territory>
+			<territory type="EG" draft="unconfirmed">ⲭⲏⲙⲓ</territory>
+			<territory type="EH" draft="unconfirmed">ⲡⲓϣⲁϥⲉ ⲙ̀ⲡⲉⲙⲉⲛⲧ</territory>
+			<territory type="ER" draft="unconfirmed">ϯⲉⲣⲓⲑⲣⲓⲁ</territory>
+			<territory type="ES" draft="unconfirmed">ⲉⲥⲡⲁⲛⲓⲁ</territory>
+			<territory type="ET" draft="unconfirmed">ⲉⲑⲁⲩϣ</territory>
+			<territory type="EU" draft="unconfirmed">ϯⲙⲉⲧⲣⲉⲙⲉⲩⲣⲟⲡⲁ ⲉⲧϩⲱⲧⲡ</territory>
+			<territory type="EZ" draft="unconfirmed">ϯⲉⲩⲣⲟⲍⲟⲛ</territory>
+			<territory type="FI" draft="unconfirmed">ϯϥⲓⲛⲗⲁⲛⲇ</territory>
+			<territory type="FJ" draft="unconfirmed">ϥⲓⲇϫⲓ</territory>
+			<territory type="FK" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</territory>
+			<territory type="FK" alt="variant" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ (ⲓⲥⲗⲁⲥ ⲙⲁⲗⲃⲓⲛⲁⲥ)</territory>
+			<territory type="FM" draft="unconfirmed">ⲙⲓⲕⲣⲟⲛⲉⲍⲓⲁ</territory>
+			<territory type="FO" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲁⲣⲟⲉ</territory>
+			<territory type="FR" draft="unconfirmed">ϯϥⲉⲣⲉⲛⲥⲁ</territory>
+			<territory type="GA" draft="unconfirmed">ϯⲅⲁⲃⲟⲛ</territory>
+			<territory type="GB" draft="unconfirmed">ϯⲙⲉⲧⲟⲩⲣⲟ ⲉⲧϩⲱⲧⲡ</territory>
+			<territory type="GD" draft="unconfirmed">ϯⲅⲣⲉⲛⲁⲇⲁ</territory>
+			<territory type="GE" draft="unconfirmed">ϯⲅⲉⲟⲣⲅⲓⲁ</territory>
+			<territory type="GF" draft="unconfirmed">ϯⲅⲟⲩⲓⲁⲛⲁ ⲛ̀ϥⲉⲣⲉⲛⲥⲉⲟⲥ</territory>
+			<territory type="GG" draft="unconfirmed">ϯⲅⲟⲩⲉⲣⲛⲉⲥⲓ</territory>
+			<territory type="GH" draft="unconfirmed">ϯⲅⲁⲛⲁ</territory>
+			<territory type="GI" draft="unconfirmed">ϯϫⲓⲃⲣⲁⲗⲑⲁⲣ</territory>
+			<territory type="GL" draft="unconfirmed">ϯⲅⲣⲓⲛⲗⲁⲛⲇ</territory>
+			<territory type="GM" draft="unconfirmed">ϯⲅⲁⲙⲃⲓⲁ</territory>
+			<territory type="GN" draft="unconfirmed">ϯⲅⲓⲛⲉⲁ</territory>
+			<territory type="GP" draft="unconfirmed">ϯⲅⲟⲩⲁⲇⲉⲗⲟⲩⲡ</territory>
+			<territory type="GQ" draft="unconfirmed">ⲅⲓⲛⲉⲁ ⲛ̀ⲉⲕⲟⲩⲁⲑⲱⲣ</territory>
+			<territory type="GR" draft="unconfirmed">ϯⲉⲗⲗⲁⲥ</territory>
+			<territory type="GS" draft="unconfirmed">ϫⲉⲟⲣϫⲓⲁ ⲛ̀ⲣⲏⲥ &amp; ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲥⲁⲛⲇⲟⲩⲓϭ</territory>
+			<territory type="GT" draft="unconfirmed">ϯⲅⲟⲩⲁⲑⲉⲙⲁⲗⲁ</territory>
+			<territory type="GU" draft="unconfirmed">ⲅⲟⲩⲁⲙ</territory>
+			<territory type="GW" draft="unconfirmed">ϯⲅⲓⲛⲉⲁ ⲃⲓⲥⲁⲩ</territory>
+			<territory type="GY" draft="unconfirmed">ϯⲅⲩⲁⲛⲁ</territory>
+			<territory type="HK" draft="unconfirmed">ϩⲟⲛⲅ ⲕⲟⲛⲅ ⲥⲁⲣ ϭⲓⲛⲁ</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">ϯϩⲟⲛⲅ ⲕⲟⲛⲅ</territory>
+			<territory type="HM" draft="unconfirmed">ϩⲉⲣⲇ &amp; ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲙⲁⲕⲇⲟⲛⲁⲗⲇ</territory>
+			<territory type="HN" draft="unconfirmed">ϯϩⲟⲛⲇⲟⲩⲣⲁⲥ</territory>
+			<territory type="HR" draft="unconfirmed">ϯⲕⲣⲟⲁⲑⲓⲁ</territory>
+			<territory type="HT" draft="unconfirmed">ϯϩⲁⲓⲑⲓ</territory>
+			<territory type="HU" draft="unconfirmed">ϯϩⲁⲛⲅⲁⲣⲓⲁ</territory>
+			<territory type="IC" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲁⲛⲁⲣⲓ</territory>
+			<territory type="ID" draft="unconfirmed">ϯⲓⲛⲇⲟⲛⲉⲥⲓⲁ</territory>
+			<territory type="IE" draft="unconfirmed">ϯⲁⲓⲉⲣⲗⲁⲛⲇⲁ</territory>
+			<territory type="IL" draft="unconfirmed">ⲡⲓⲥⲣⲁⲏⲗ</territory>
+			<territory type="IM" draft="unconfirmed">ⲅⲟⲩⲉⲣⲛⲥⲓ</territory>
+			<territory type="IN" draft="unconfirmed">ϯϩⲉⲛⲧⲟⲩ</territory>
+			<territory type="IO" draft="unconfirmed">ⲛⲓⲑⲱϣ ⲙⲃⲣⲓⲑⲁⲛⲓⲁ ⲛ̀ⲱⲕⲉⲁⲛⲟⲥ ⲛ̀ϩⲉⲛⲧⲟⲩ</territory>
+			<territory type="IO" alt="chagos" draft="unconfirmed">ⲡⲓⲁⲣⲭⲏⲡⲉⲗⲁⲅⲟ ⲛ̀ϭⲁⲅⲟⲥ</territory>
+			<territory type="IQ" draft="unconfirmed">ⲓⲣⲁⲕ</territory>
+			<territory type="IR" draft="unconfirmed">ϯⲡⲉⲣⲥⲓⲁ</territory>
+			<territory type="IS" draft="unconfirmed">ϯⲁⲓⲥⲗⲁⲛⲇⲁ</territory>
+			<territory type="IT" draft="unconfirmed">ϯϩⲩⲧⲁⲗⲓⲁ</territory>
+			<territory type="JE" draft="unconfirmed">ϯϫⲉⲣⲥⲓ</territory>
+			<territory type="JM" draft="unconfirmed">ϯϫⲁⲙⲁⲓⲕⲁ</territory>
+			<territory type="JO" draft="unconfirmed">ⲡⲓⲓⲟⲣⲇⲁⲛⲏⲥ</territory>
+			<territory type="JP" draft="unconfirmed">ϯⲓⲁⲡⲁⲛ</territory>
+			<territory type="KE" draft="unconfirmed">ϯⲕⲉⲛⲓⲁ</territory>
+			<territory type="KG" draft="unconfirmed">ϯⲕⲩⲣⲅⲩⲥⲑⲁⲛ</territory>
+			<territory type="KH" draft="unconfirmed">ϯⲕⲁⲙⲃⲟⲇⲓⲁ</territory>
+			<territory type="KI" draft="unconfirmed">ⲕⲓⲣⲓⲃⲁⲑⲓ</territory>
+			<territory type="KM" draft="unconfirmed">ϯⲕⲟⲙⲟⲣⲟⲥ</territory>
+			<territory type="KN" draft="unconfirmed">ⲥⲁⲛⲧ ⲕⲓⲧⲥ &amp; ⲛⲉⲃⲓⲥ</territory>
+			<territory type="KP" draft="unconfirmed">ϯⲕⲟⲣⲉⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</territory>
+			<territory type="KR" draft="unconfirmed">ϯⲕⲟⲣⲉⲁ ⲙ̀ⲡⲓⲣⲏⲥ</territory>
+			<territory type="KW" draft="unconfirmed">ⲕⲟⲩⲉⲧ</territory>
+			<territory type="KY" draft="unconfirmed">ϯⲕⲁⲓⲙⲁⲛ ⲙⲟⲩⲓ</territory>
+			<territory type="KZ" draft="unconfirmed">ϯⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</territory>
+			<territory type="LA" draft="unconfirmed">ϯⲗⲁⲟⲥ</territory>
+			<territory type="LB" draft="unconfirmed">ⲡⲓⲖⲓⲃⲁⲛⲟⲥ</territory>
+			<territory type="LC" draft="unconfirmed">ⲥⲁⲛⲧ ⲗⲟⲩϭⲓⲁ</territory>
+			<territory type="LI" draft="unconfirmed">ϯⲗⲓϣⲑⲉⲛϣⲑⲁⲓⲛ</territory>
+			<territory type="LK" draft="unconfirmed">ϯⲥⲣⲓⲗⲁⲛⲕⲁ</territory>
+			<territory type="LR" draft="unconfirmed">ϯⲗⲓⲃⲉⲣⲓⲁ</territory>
+			<territory type="LS" draft="unconfirmed">ϯⲗⲉⲥⲟⲑⲟ</territory>
+			<territory type="LT" draft="unconfirmed">ϯⲗⲓⲑⲟⲩⲁⲛⲓⲁ</territory>
+			<territory type="LU" draft="unconfirmed">ϯⲗⲟⲩⲝⲟⲙⲃⲟⲩⲣⲅ</territory>
+			<territory type="LV" draft="unconfirmed">ϯⲗⲁⲑⲃⲓⲁ</territory>
+			<territory type="LY" draft="unconfirmed">ⲗⲩⲃⲓⲏ</territory>
+			<territory type="MA" draft="unconfirmed">ϯⲙⲁⲣⲁⲕⲉϣ</territory>
+			<territory type="MC" draft="unconfirmed">ϯⲙⲟⲛⲁⲕⲟ</territory>
+			<territory type="MD" draft="unconfirmed">ϯⲙⲟⲗⲇⲟⲃⲁ</territory>
+			<territory type="ME" draft="unconfirmed">ϯⲙⲟⲛⲑⲉⲛⲉⲅⲣⲟ</territory>
+			<territory type="MF" draft="unconfirmed">ⲥⲁⲛⲧ ⲙⲁⲣⲑⲓⲛ</territory>
+			<territory type="MG" draft="unconfirmed">ϯⲙⲁⲇⲁⲅⲁⲥⲕⲁⲣ</territory>
+			<territory type="MH" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲙⲁⲣϣⲁⲗ</territory>
+			<territory type="MK" draft="unconfirmed">ϯⲙⲁⲕⲉⲇⲟⲛⲓⲁ ⲛ̀ⲉⲙϩⲓⲧ</territory>
+			<territory type="ML" draft="unconfirmed">ϯⲙⲁⲗⲓ</territory>
+			<territory type="MM" draft="unconfirmed">ϯⲙⲩⲁⲛⲙⲁⲣ</territory>
+			<territory type="MN" draft="unconfirmed">ϯⲙⲁⲛⲅⲟⲗⲓⲁ</territory>
+			<territory type="MO" draft="unconfirmed">ⲙⲁⲕⲁⲟ ⲥⲁⲣ ϭⲓⲛⲁ</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">ϯⲙⲁⲕⲁⲟ</territory>
+			<territory type="MP" draft="unconfirmed">ⲛⲓⲙⲟⲓ ⲙ̀ⲡⲉⲙϩⲓⲧ ⲙ̀ⲙⲁⲣⲓⲁⲛⲁ</territory>
+			<territory type="MQ" draft="unconfirmed">ϯⲙⲁⲣⲑⲓⲛⲓⲕ</territory>
+			<territory type="MR" draft="unconfirmed">ϯⲙⲁⲩⲣⲓⲑⲁⲛⲓⲁ</territory>
+			<territory type="MS" draft="unconfirmed">ϯⲙⲟⲛⲥⲉⲣⲁⲧ</territory>
+			<territory type="MT" draft="unconfirmed">ϯⲙⲁⲗⲑⲁ</territory>
+			<territory type="MU" draft="unconfirmed">ϯⲙⲁⲩⲣⲓⲑⲓⲟⲩⲥ</territory>
+			<territory type="MV" draft="unconfirmed">ⲙⲁⲗⲇⲓⲃ</territory>
+			<territory type="MW" draft="unconfirmed">ϯⲙⲁⲗⲁⲩⲓ</territory>
+			<territory type="MX" draft="unconfirmed">ϯⲙⲉⲝⲓⲕⲟ</territory>
+			<territory type="MY" draft="unconfirmed">ϯⲙⲁⲗⲉⲍⲓⲁ</territory>
+			<territory type="MZ" draft="unconfirmed">ϯⲙⲟⲍⲁⲙⲃⲓⲕ</territory>
+			<territory type="NA" draft="unconfirmed">ϯⲛⲁⲙⲓⲃⲓⲁ</territory>
+			<territory type="NC" draft="unconfirmed">ⲛⲓⲟⲩ ⲕⲁⲗⲉⲇⲟⲛⲓⲁ</territory>
+			<territory type="NE" draft="unconfirmed">ϯⲛⲓϫⲉⲣ</territory>
+			<territory type="NF" draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛⲛ̀ⲟⲣϥⲟⲕ</territory>
+			<territory type="NG" draft="unconfirmed">ϯⲛⲓϫⲉⲣⲓⲁ</territory>
+			<territory type="NI" draft="unconfirmed">ϯⲛⲓⲕⲁⲣⲁⲅⲩⲟⲁ</territory>
+			<territory type="NL" draft="unconfirmed">ϯϩⲟⲗⲁⲛⲇⲁ</territory>
+			<territory type="NO" draft="unconfirmed">ϯⲛⲟⲣⲟⲩⲓϫⲓⲁ</territory>
+			<territory type="NP" draft="unconfirmed">ϯⲛⲉⲡⲁⲗ</territory>
+			<territory type="NR" draft="unconfirmed">ⲛⲁⲩⲣⲟⲩ</territory>
+			<territory type="NU" draft="unconfirmed">ⲛⲓⲟⲩⲉ</territory>
+			<territory type="NZ" draft="unconfirmed">ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</territory>
+			<territory type="NZ" alt="variant" draft="unconfirmed">ⲁⲟⲑⲉⲁⲣⲟⲁ ⲛⲓⲟⲩ ⲍⲓⲗⲁⲛⲇⲁ</territory>
+			<territory type="OM" draft="unconfirmed">ⲟⲙⲁⲛ</territory>
+			<territory type="PA" draft="unconfirmed">ϯⲡⲁⲛⲁⲙⲁ</territory>
+			<territory type="PE" draft="unconfirmed">ϯⲡⲉⲣⲟⲩ</territory>
+			<territory type="PF" draft="unconfirmed">ⲡⲟⲗⲓⲛⲉⲍⲓⲁ ⲛ̀ϥⲉⲣⲉⲛⲥⲟⲥ</territory>
+			<territory type="PG" draft="unconfirmed">ⲡⲁⲡⲟⲩⲁ ⲛⲓⲟⲩ ⲅⲓⲛⲉⲁ</territory>
+			<territory type="PH" draft="unconfirmed">ϯⲫⲓⲗⲓⲡⲡⲓⲛ</territory>
+			<territory type="PK" draft="unconfirmed">ϯⲡⲁⲕⲓⲥⲑⲁⲛ</territory>
+			<territory type="PL" draft="unconfirmed">ϯⲡⲟⲗⲁⲛⲇⲁ</territory>
+			<territory type="PM" draft="unconfirmed">ⲥⲁⲛⲧ ⲡⲓⲉⲣ &amp; ⲙⲓⲕⲉⲗⲟⲛ</territory>
+			<territory type="PN" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲡⲓⲑⲕⲉⲣⲛ</territory>
+			<territory type="PR" draft="unconfirmed">ⲡⲟⲩⲉⲣⲑⲟ ⲣⲓⲕⲟ</territory>
+			<territory type="PS" draft="unconfirmed">ⲫⲩⲗⲓⲥⲧⲓⲓⲙ</territory>
+			<territory type="PT" draft="unconfirmed">ϯⲡⲟⲣⲑⲟⲩⲅⲁⲗ</territory>
+			<territory type="PW" draft="unconfirmed">ⲡⲁⲗⲁⲩ</territory>
+			<territory type="PY" draft="unconfirmed">ϯⲡⲁⲣⲁⲅⲟⲩⲁⲓ</territory>
+			<territory type="QA" draft="unconfirmed">ⲕⲁⲑⲁⲣ</territory>
+			<territory type="QO" draft="unconfirmed">ϯⲟⲥⲉⲁⲛⲓⲁ</territory>
+			<territory type="RE" draft="unconfirmed">ϯⲣⲉⲓⲟⲩⲛⲓⲟⲛ</territory>
+			<territory type="RO" draft="unconfirmed">ϯⲣⲟⲙⲁⲛⲓⲁ</territory>
+			<territory type="RS" draft="unconfirmed">ϯⲥⲉⲣⲃⲓⲁ</territory>
+			<territory type="RU" draft="unconfirmed">ϯⲣⲟⲩⲥⲓⲁ</territory>
+			<territory type="RW" draft="unconfirmed">ϯⲣⲟⲩⲁⲛⲇⲁ</territory>
+			<territory type="SA" draft="unconfirmed">ϯⲥⲁⲟⲩⲇⲓ ⲛ̀ⲁⲣⲁⲃⲟⲥ</territory>
+			<territory type="SB" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲥⲟⲗⲟⲙⲟⲛ</territory>
+			<territory type="SC" draft="unconfirmed">ϯⲥⲓϭⲉⲗ</territory>
+			<territory type="SD" draft="unconfirmed">ϯⲥⲟⲩⲇⲁⲛ</territory>
+			<territory type="SE" draft="unconfirmed">ϯⲥⲟⲩⲉⲇ</territory>
+			<territory type="SG" draft="unconfirmed">ϯⲥⲓⲛⲅⲁⲡⲟⲣ</territory>
+			<territory type="SH" draft="unconfirmed">ⲥⲁⲛⲧ ϩⲉⲗⲁⲛⲁ</territory>
+			<territory type="SI" draft="unconfirmed">ϯⲥⲗⲟⲃⲉⲛⲓⲁ</territory>
+			<territory type="SJ" draft="unconfirmed">ⲥⲃⲁⲗⲃⲁⲣⲇ &amp; ⲓⲁⲛ ⲙⲁⲩⲉⲛ</territory>
+			<territory type="SK" draft="unconfirmed">ϯⲥⲗⲟⲃⲁⲕⲓⲁ</territory>
+			<territory type="SL" draft="unconfirmed">ϯⲥⲓⲉⲣⲁ ⲗⲉⲟⲛ</territory>
+			<territory type="SM" draft="unconfirmed">ⲥⲁⲛ ⲙⲁⲣⲓⲛⲟ</territory>
+			<territory type="SN" draft="unconfirmed">ϯⲥⲉⲛⲉⲅⲁⲗ</territory>
+			<territory type="SO" draft="unconfirmed">ϯⲥⲟⲙⲁⲗⲓⲁ</territory>
+			<territory type="SR" draft="unconfirmed">ϯⲥⲟⲩⲣⲓⲛⲁⲙ</territory>
+			<territory type="SS" draft="unconfirmed">ϯⲥⲟⲩⲇⲁⲛ ⲛ̀ⲣⲏⲥ</territory>
+			<territory type="ST" draft="unconfirmed">ⲥⲁⲟ ⲑⲟⲙⲉ &amp; ⲡⲣⲓⲛⲥⲓⲡ</territory>
+			<territory type="SV" draft="unconfirmed">ⲉⲗ ⲥⲁⲗⲃⲁⲇⲟⲣ</territory>
+			<territory type="SX" draft="unconfirmed">ⲥⲓⲛⲧ ⲙⲁⲁⲣⲑⲉⲛ</territory>
+			<territory type="SY" draft="unconfirmed">ϯⲥⲩⲣⲓⲁ</territory>
+			<territory type="SZ" draft="unconfirmed">ϯⲉⲥⲟⲩⲁⲑⲓⲛⲓ</territory>
+			<territory type="SZ" alt="variant" draft="unconfirmed">ϯⲥⲟⲩⲁⲍⲓⲗⲁⲛⲇ</territory>
+			<territory type="TA" draft="unconfirmed">ⲑⲣⲓⲥⲑⲁⲛ ⲇⲁ ⲕⲟⲩⲛϩⲁ</territory>
+			<territory type="TC" draft="unconfirmed">ⲑⲟⲩⲣⲕϣ &amp; ⲕⲁⲓⲕⲟⲥ</territory>
+			<territory type="TD" draft="unconfirmed">ϯϭⲁⲇ</territory>
+			<territory type="TF" draft="unconfirmed">ⲛⲓⲑⲱϣ ⲛ̀ϥⲉⲣⲉⲛⲥⲟⲥ ⲙ̀ⲙⲁⲣⲏⲥ</territory>
+			<territory type="TG" draft="unconfirmed">ϯⲑⲟⲅⲟ</territory>
+			<territory type="TH" draft="unconfirmed">ϯⲑⲁⲓⲗⲁⲛⲇ</territory>
+			<territory type="TJ" draft="unconfirmed">ϯⲑⲁϫⲓⲕⲓⲥⲑⲁⲛ</territory>
+			<territory type="TK" draft="unconfirmed">ⲑⲟⲕⲉⲗⲁⲩ</territory>
+			<territory type="TL" draft="unconfirmed">ϯⲑⲙⲟⲣ - ⲗⲉⲥⲑⲉ</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">ϯⲑⲓⲙⲟⲣ ⲙ̀ⲡⲉⲓⲉⲃⲧ</territory>
+			<territory type="TM" draft="unconfirmed">ϯⲑⲟⲩⲣⲕⲙⲁⲛⲓⲥⲑⲁⲛ</territory>
+			<territory type="TN" draft="unconfirmed">ϯⲑⲟⲩⲛⲓⲥ</territory>
+			<territory type="TO" draft="unconfirmed">ⲑⲟⲛⲅⲁ</territory>
+			<territory type="TR" draft="unconfirmed">ϯⲑⲟⲩⲣⲕⲓⲁ</territory>
+			<territory type="TT" draft="unconfirmed">ⲧⲣⲓⲛⲓⲇⲁⲇ &amp; ⲧⲟⲃⲁⲅⲟ</territory>
+			<territory type="TV" draft="unconfirmed">ⲑⲟⲩⲃⲁⲗⲟⲩ</territory>
+			<territory type="TW" draft="unconfirmed">ϯⲑⲁⲓⲟⲩⲁⲛ</territory>
+			<territory type="TZ" draft="unconfirmed">ϯⲑⲁⲛⲍⲁⲛⲓⲁ</territory>
+			<territory type="UA" draft="unconfirmed">ϯⲟⲩⲕⲣⲁⲛⲓⲁ</territory>
+			<territory type="UG" draft="unconfirmed">ϯⲟⲩⲅⲁⲛⲇⲁ</territory>
+			<territory type="UM" draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲁⲩⲑⲗⲁⲓⲛⲅ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁ</territory>
+			<territory type="UN" draft="unconfirmed">ⲛⲓϣ̀ⲗⲟⲗ ⲉⲧϩⲱⲧⲡ</territory>
+			<territory type="US" draft="unconfirmed">ⲛⲓⲑⲱϣ ⲉⲧϩⲱⲧⲡ</territory>
+			<territory type="UY" draft="unconfirmed">ϯⲟⲩⲣⲟⲅⲟⲩⲁⲓ</territory>
+			<territory type="UZ" draft="unconfirmed">ϯⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</territory>
+			<territory type="VA" draft="unconfirmed">ϯⲃⲁⲧⲓⲕⲁⲛ</territory>
+			<territory type="VC" draft="unconfirmed">ⲥⲁⲛ ⲃⲓⲛⲥⲉⲛⲧ &amp; ⲅⲣⲉⲛⲁⲇⲓⲛⲍ</territory>
+			<territory type="VE" draft="unconfirmed">ϯⲃⲉⲛⲉⲍⲟⲩⲉⲗⲁ</territory>
+			<territory type="VG" draft="unconfirmed">ⲃⲓⲣϫⲓⲛ ⲙⲟⲩⲓ ⲃⲣⲓⲑⲁⲛⲓⲁ</territory>
+			<territory type="VI" draft="unconfirmed">ⲃⲓⲣϫⲓⲛ ⲙⲟⲩⲓ ⲁⲙⲉⲣⲓⲕⲁ</territory>
+			<territory type="VN" draft="unconfirmed">ϯⲃⲓⲉⲑⲛⲁⲙ</territory>
+			<territory type="VU" draft="unconfirmed">ⲃⲁⲛⲁⲑⲟⲩ</territory>
+			<territory type="WF" draft="unconfirmed">ⲟⲩⲁⲗⲗⲓⲥ &amp; ϥⲟⲩⲧⲟⲩⲛⲁ</territory>
+			<territory type="WS" draft="unconfirmed">ⲥⲁⲙⲟⲁ</territory>
+			<territory type="XA" draft="unconfirmed">ⲯⲉⲩⲇⲟ ϫⲓⲛⲧⲁⲟⲩⲟ</territory>
+			<territory type="XB" draft="unconfirmed">ⲯⲉⲩⲇⲟ ⲃⲓⲇⲓ</territory>
+			<territory type="XK" draft="unconfirmed">ϯⲕⲟⲥⲟⲃⲟ</territory>
+			<territory type="YE" draft="unconfirmed">ⲓⲉⲙⲉⲛ</territory>
+			<territory type="YT" draft="unconfirmed">ϯⲙⲁⲓⲟⲧ</territory>
+			<territory type="ZA" draft="unconfirmed">ϯⲫⲣⲓⲕⲓⲁ ⲛ̀ⲣⲏⲥ</territory>
+			<territory type="ZM" draft="unconfirmed">ϯⲍⲁⲙⲃⲓⲁ</territory>
+			<territory type="ZW" draft="unconfirmed">ϯⲍⲓⲙⲃⲁⲃⲟⲩⲉ</territory>
+			<territory type="ZZ" draft="unconfirmed">ⲟⲩⲙⲁ ⲛ̀ⲁⲧⲥⲟⲩⲏⲛ</territory>
+		</territories>
+		<keys>
+			<key type="calendar" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲙ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲇⲁ</type>
+			<type key="calendar" type="buddhist" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲃⲟⲩⲇⲁ</type>
+			<type key="calendar" type="chinese" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</type>
+			<type key="calendar" type="chinese" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</type>
+			<type key="calendar" type="coptic" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</type>
+			<type key="calendar" type="coptic" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</type>
+			<type key="calendar" type="dangi" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲇⲁⲛⲅⲓ</type>
+			<type key="calendar" type="dangi" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲇⲁⲛⲅⲓ</type>
+			<type key="calendar" type="ethiopic" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ</type>
+			<type key="calendar" type="ethiopic" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ ⲛ̀ⲁⲙⲉⲑⲉ ⲁⲗⲉⲙ</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ ⲛ̀ⲁⲙⲉⲑⲉ ⲁⲗⲉⲙ</type>
+			<type key="calendar" type="gregorian" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲙ̀ⲙⲉⲧⲅⲣⲩⲅⲟⲣⲓⲟⲥ</type>
+			<type key="calendar" type="gregorian" scope="core" draft="unconfirmed">ⲙⲉⲧⲅⲣⲩⲅⲟⲣⲓⲟⲥ</type>
+			<type key="calendar" type="hebrew" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲉⲃⲣⲉⲟⲥ</type>
+			<type key="calendar" type="hebrew" scope="core" draft="unconfirmed">ⲙⲉⲧϩⲉⲃⲣⲉⲟⲥ</type>
+			<type key="calendar" type="islamic" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲓϫⲣⲓ</type>
+			<type key="calendar" type="islamic" scope="core" draft="unconfirmed">ϯⲙⲉⲧϩⲓϫⲣⲓ</type>
+			<type key="calendar" type="islamic-civil" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲓϫⲣⲁ (ⲑⲁⲃⲩⲗⲁⲣ, ⲉⲡⲟϧ)</type>
+			<type key="calendar" type="islamic-civil" scope="core" draft="unconfirmed">ⲣⲉⲙⲛⲛ̀ϩⲓϫⲣⲓ (ⲑⲁⲃⲩⲗⲁⲣ, ⲉⲡⲟϧ)</type>
+			<type key="calendar" type="islamic-tbla" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲓϫⲣⲓ</type>
+			<type key="calendar" type="islamic-tbla" scope="core" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲓϫⲣⲓ</type>
+			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ϩⲓϫⲣⲓ</type>
+			<type key="calendar" type="islamic-umalqura" scope="core" draft="unconfirmed">ϯⲙⲉⲧϩⲓϫⲣⲓ (ⲟⲩⲙ ⲁⲗ ⲕⲟⲩⲣⲁ)</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲙ̀ⲙⲉⲧⲅⲣⲩⲅⲟⲣⲓⲟⲥ (ⲣⲟⲙⲡⲓ ⲛ̀ϣⲱⲣⲡ)</type>
+			<type key="calendar" type="japanese" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲁⲡⲁⲛⲓ</type>
+			<type key="calendar" type="japanese" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲓⲁⲡⲁⲛⲓ</type>
+			<type key="calendar" type="persian" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲉⲣⲥⲟⲥ</type>
+			<type key="calendar" type="persian" scope="core" draft="unconfirmed">ⲣⲉⲙⲛ̀ⲡⲉⲣⲥⲟⲥ</type>
+			<type key="calendar" type="roc" draft="unconfirmed">ϯⲙⲉⲧⲥⲱⲟⲩⲧⲉⲛ ⲙ̀ⲙⲓⲛⲅⲟⲩⲟ</type>
+			<type key="calendar" type="roc" scope="core" draft="unconfirmed">ⲙⲓⲛⲅⲟⲩⲟ</type>
+		</types>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">ϯⲁⲥⲡⲓ: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">ⲡ̀ϫⲓⲛⲥ̀ϧⲁⲓ: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">ϯⲭⲱⲣⲁ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[ⲁ ⲃ ⲅ ⲇ ⲉ ⲋ ⲍ ⲏ ⲑ ⲓ ⲕ ⲗ ⲙ ⲛ ⲝ ⲟ ⲡ ⲣ ⲥ ⲧ ⲩ ⲫ ⲭ ⲯ ⲱ ϣ ϥ ϧ ϩ ϫ ϭ ϯ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[⳥ ⳦ ⳧ ⳨ ⳩ ⳪ ⳤ]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[– ⸗ , ; \: . ⳹ ⳾ ⳼ ⳿ ( )]</exemplarCharacters>
 	</characters>
+	<dates>
+		<calendars>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Ⲑⲱⲟⲩⲧ</month>
+							<month type="2" draft="unconfirmed">Ⲡⲁⲟⲡⲓ</month>
+							<month type="3" draft="unconfirmed">Ⲁⲑⲱⲣ</month>
+							<month type="4" draft="unconfirmed">Ⲭⲟⲓⲁⲕ</month>
+							<month type="5" draft="unconfirmed">Ⲧⲱⲃⲓ</month>
+							<month type="6" draft="unconfirmed">Ⲙⲉϣⲓⲣ</month>
+							<month type="7" draft="unconfirmed">Ⲡⲁⲣⲉⲙϩⲁⲧ</month>
+							<month type="8" draft="unconfirmed">Ⲫⲁⲣⲙⲟⲩⲑⲓ</month>
+							<month type="9" draft="unconfirmed">Ⲡⲁϣⲟⲛⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲡⲁⲱⲛⲓ</month>
+							<month type="11" draft="unconfirmed">Ⲉⲡⲓⲡ</month>
+							<month type="12" draft="unconfirmed">Ⲙⲉⲥⲱⲣⲓ</month>
+							<month type="13" draft="unconfirmed">Ⲡⲓⲕⲟⲩϫⲓ ⲛ̀ⲁ̀ⲃⲟⲧ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">ⲁ̅</month>
+							<month type="2" draft="unconfirmed">ⲃ̅</month>
+							<month type="3" draft="unconfirmed">ⲅ̅</month>
+							<month type="4" draft="unconfirmed">ⲇ̅</month>
+							<month type="5" draft="unconfirmed">ⲉ̅</month>
+							<month type="6" draft="unconfirmed">ⲋ̅</month>
+							<month type="7" draft="unconfirmed">ⲍ̅</month>
+							<month type="8" draft="unconfirmed">ⲏ̅</month>
+							<month type="9" draft="unconfirmed">ⲑ̅</month>
+							<month type="10" draft="unconfirmed">ⲓ̅</month>
+							<month type="11" draft="unconfirmed">ⲓ̅ⲁ̅</month>
+							<month type="12" draft="unconfirmed">ⲓ̅ⲃ̅</month>
+							<month type="13" draft="unconfirmed">ⲓ̅ⲅ̅</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Ⲑⲱⲟⲩⲧ</month>
+							<month type="2" draft="unconfirmed">Ⲡⲁⲟⲡⲓ</month>
+							<month type="3" draft="unconfirmed">Ⲁⲑⲱⲣ</month>
+							<month type="4" draft="unconfirmed">Ⲭⲟⲓⲁⲕ</month>
+							<month type="5" draft="unconfirmed">Ⲧⲱⲃⲓ</month>
+							<month type="6" draft="unconfirmed">Ⲙⲉϣⲓⲣ</month>
+							<month type="7" draft="unconfirmed">Ⲡⲁⲣⲉⲙϩⲁⲧ</month>
+							<month type="8" draft="unconfirmed">Ⲫⲁⲣⲙⲟⲩⲑⲓ</month>
+							<month type="9" draft="unconfirmed">Ⲡⲁϣⲟⲛⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲡⲁⲱⲛⲓ</month>
+							<month type="11" draft="unconfirmed">Ⲉⲡⲓⲡ</month>
+							<month type="12" draft="unconfirmed">Ⲙⲉⲥⲱⲣⲓ</month>
+							<month type="13" draft="unconfirmed">Ⲡⲓⲕⲟⲩϫⲓ ⲛ̀ⲁ̀ⲃⲟⲧ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Ⲑⲱⲟⲩⲧ</month>
+							<month type="2" draft="unconfirmed">Ⲡⲁⲟⲡⲓ</month>
+							<month type="3" draft="unconfirmed">Ⲁⲑⲱⲣ</month>
+							<month type="4" draft="unconfirmed">Ⲭⲟⲓⲁⲕ</month>
+							<month type="5" draft="unconfirmed">Ⲧⲱⲃⲓ</month>
+							<month type="6" draft="unconfirmed">Ⲙⲉϣⲓⲣ</month>
+							<month type="7" draft="unconfirmed">Ⲡⲁⲣⲉⲙϩⲁⲧ</month>
+							<month type="8" draft="unconfirmed">Ⲫⲁⲣⲙⲟⲩⲑⲓ</month>
+							<month type="9" draft="unconfirmed">Ⲡⲁϣⲟⲛⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲡⲁⲱⲛⲓ</month>
+							<month type="11" draft="unconfirmed">Ⲉⲡⲓⲡ</month>
+							<month type="12" draft="unconfirmed">Ⲙⲉⲥⲱⲣⲓ</month>
+							<month type="13" draft="unconfirmed">Ⲡⲓⲕⲟⲩϫⲓ ⲛ̀ⲁ̀ⲃⲟⲧ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">ⲁ̅</month>
+							<month type="2" draft="unconfirmed">ⲃ̅</month>
+							<month type="3" draft="unconfirmed">ⲅ̅</month>
+							<month type="4" draft="unconfirmed">ⲇ̅</month>
+							<month type="5" draft="unconfirmed">ⲉ̅</month>
+							<month type="6" draft="unconfirmed">ⲋ̅</month>
+							<month type="7" draft="unconfirmed">ⲍ̅</month>
+							<month type="8" draft="unconfirmed">ⲏ̅</month>
+							<month type="9" draft="unconfirmed">ⲑ̅</month>
+							<month type="10" draft="unconfirmed">ⲓ̅</month>
+							<month type="11" draft="unconfirmed">ⲓ̅ⲁ̅</month>
+							<month type="12" draft="unconfirmed">ⲓ̅ⲃ̅</month>
+							<month type="13" draft="unconfirmed">ⲓ̅ⲅ̅</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Ⲑⲱⲟⲩⲧ</month>
+							<month type="2" draft="unconfirmed">Ⲡⲁⲟⲡⲓ</month>
+							<month type="3" draft="unconfirmed">Ⲁⲑⲱⲣ</month>
+							<month type="4" draft="unconfirmed">Ⲭⲟⲓⲁⲕ</month>
+							<month type="5" draft="unconfirmed">Ⲧⲱⲃⲓ</month>
+							<month type="6" draft="unconfirmed">Ⲙⲉϣⲓⲣ</month>
+							<month type="7" draft="unconfirmed">Ⲡⲁⲣⲉⲙϩⲁⲧ</month>
+							<month type="8" draft="unconfirmed">Ⲫⲁⲣⲙⲟⲩⲑⲓ</month>
+							<month type="9" draft="unconfirmed">Ⲡⲁϣⲟⲛⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲡⲁⲱⲛⲓ</month>
+							<month type="11" draft="unconfirmed">Ⲉⲡⲓⲡ</month>
+							<month type="12" draft="unconfirmed">Ⲙⲉⲥⲱⲣⲓ</month>
+							<month type="13" draft="unconfirmed">Ⲡⲓⲕⲟⲩϫⲓ ⲛ̀ⲁ̀ⲃⲟⲧ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ⲓⲁⲛⲟⲩⲁⲣⲓ</month>
+							<month type="2" draft="unconfirmed">ⲫⲉⲃⲣⲟⲩⲁⲣⲓ</month>
+							<month type="3" draft="unconfirmed">ⲙⲁⲣⲧⲓ</month>
+							<month type="4" draft="unconfirmed">ⲁⲡⲣⲓⲗⲓ</month>
+							<month type="5" draft="unconfirmed">ⲙⲁⲓⲟ</month>
+							<month type="6" draft="unconfirmed">ⲓⲟⲩⲛⲓⲟⲩ</month>
+							<month type="7" draft="unconfirmed">ⲓⲟⲩⲗⲓⲟⲩ</month>
+							<month type="8" draft="unconfirmed">ⲁⲩⲅⲟⲩⲥⲑⲟⲩ</month>
+							<month type="9" draft="unconfirmed">ⲥⲉⲡⲧⲉⲙⲃⲣⲓ</month>
+							<month type="10" draft="unconfirmed">ⲟⲕⲧⲱⲃⲣⲓ</month>
+							<month type="11" draft="unconfirmed">ⲛⲟⲉⲙⲃⲣⲓ</month>
+							<month type="12" draft="unconfirmed">ⲇⲉⲕⲉⲙⲃⲣⲓ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">Ⲓ</month>
+							<month type="2" draft="unconfirmed">Ⲫ</month>
+							<month type="3" draft="unconfirmed">Ⲙ</month>
+							<month type="4" draft="unconfirmed">Ⲁ</month>
+							<month type="5" draft="unconfirmed">Ⲙ</month>
+							<month type="6" draft="unconfirmed">Ⲓ</month>
+							<month type="7" draft="unconfirmed">Ⲓ</month>
+							<month type="8" draft="unconfirmed">Ⲁ</month>
+							<month type="9" draft="unconfirmed">Ⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲟ</month>
+							<month type="11" draft="unconfirmed">Ⲛ</month>
+							<month type="12" draft="unconfirmed">Ⲇ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ⲓⲁⲛⲟⲩⲁⲣⲓ</month>
+							<month type="2" draft="unconfirmed">ⲫⲉⲃⲣⲟⲩⲁⲣⲓ</month>
+							<month type="3" draft="unconfirmed">ⲙⲁⲣⲧⲓ</month>
+							<month type="4" draft="unconfirmed">ⲁⲡⲣⲓⲗⲓ</month>
+							<month type="5" draft="unconfirmed">ⲙⲁⲓⲟ</month>
+							<month type="6" draft="unconfirmed">ⲓⲟⲩⲛⲓⲟⲩ</month>
+							<month type="7" draft="unconfirmed">ⲓⲟⲩⲗⲓⲟⲩ</month>
+							<month type="8" draft="unconfirmed">ⲁⲩⲅⲟⲩⲥⲑⲟⲩ</month>
+							<month type="9" draft="unconfirmed">ⲥⲉⲡⲧⲉⲙⲃⲣⲓ</month>
+							<month type="10" draft="unconfirmed">ⲟⲕⲧⲱⲃⲣⲓ</month>
+							<month type="11" draft="unconfirmed">ⲛⲟⲉⲙⲃⲣⲓ</month>
+							<month type="12" draft="unconfirmed">ⲇⲉⲕⲉⲙⲃⲣⲓ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ⲓⲁⲛⲟⲩⲁⲣⲓ</month>
+							<month type="2" draft="unconfirmed">ⲫⲉⲃⲣⲟⲩⲁⲣⲓ</month>
+							<month type="3" draft="unconfirmed">ⲙⲁⲣⲧⲓ</month>
+							<month type="4" draft="unconfirmed">ⲁⲡⲣⲓⲗⲓ</month>
+							<month type="5" draft="unconfirmed">ⲙⲁⲓⲟ</month>
+							<month type="6" draft="unconfirmed">ⲓⲟⲩⲛⲓⲟⲩ</month>
+							<month type="7" draft="unconfirmed">ⲓⲟⲩⲗⲓⲟⲩ</month>
+							<month type="8" draft="unconfirmed">ⲁⲩⲅⲟⲩⲥⲑⲟⲩ</month>
+							<month type="9" draft="unconfirmed">ⲥⲉⲡⲧⲉⲙⲃⲣⲓ</month>
+							<month type="10" draft="unconfirmed">ⲟⲕⲧⲱⲃⲣⲓ</month>
+							<month type="11" draft="unconfirmed">ⲛⲟⲉⲙⲃⲣⲓ</month>
+							<month type="12" draft="unconfirmed">ⲇⲉⲕⲉⲙⲃⲣⲓ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">Ⲓ</month>
+							<month type="2" draft="unconfirmed">Ⲫ</month>
+							<month type="3" draft="unconfirmed">Ⲙ</month>
+							<month type="4" draft="unconfirmed">Ⲁ</month>
+							<month type="5" draft="unconfirmed">Ⲙ</month>
+							<month type="6" draft="unconfirmed">Ⲓ</month>
+							<month type="7" draft="unconfirmed">Ⲓ</month>
+							<month type="8" draft="unconfirmed">Ⲁ</month>
+							<month type="9" draft="unconfirmed">Ⲥ</month>
+							<month type="10" draft="unconfirmed">Ⲟ</month>
+							<month type="11" draft="unconfirmed">Ⲛ</month>
+							<month type="12" draft="unconfirmed">Ⲇ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ⲓⲁⲛⲟⲩⲁⲣⲓ</month>
+							<month type="2" draft="unconfirmed">ⲫⲉⲃⲣⲟⲩⲁⲣⲓ</month>
+							<month type="3" draft="unconfirmed">ⲙⲁⲣⲧⲓ</month>
+							<month type="4" draft="unconfirmed">ⲁⲡⲣⲓⲗⲓ</month>
+							<month type="5" draft="unconfirmed">ⲙⲁⲓⲟ</month>
+							<month type="6" draft="unconfirmed">ⲓⲟⲩⲛⲓⲟⲩ</month>
+							<month type="7" draft="unconfirmed">ⲓⲟⲩⲗⲓⲟⲩ</month>
+							<month type="8" draft="unconfirmed">ⲁⲩⲅⲟⲩⲥⲑⲟⲩ</month>
+							<month type="9" draft="unconfirmed">ⲥⲉⲡⲧⲉⲙⲃⲣⲓ</month>
+							<month type="10" draft="unconfirmed">ⲟⲕⲧⲱⲃⲣⲓ</month>
+							<month type="11" draft="unconfirmed">ⲛⲟⲉⲙⲃⲣⲓ</month>
+							<month type="12" draft="unconfirmed">ⲇⲉⲕⲉⲙⲃⲣⲓ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲟⲩⲁⲓ</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲥ̀ⲛⲁⲩ</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓϣⲟⲙⲧ</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓϥ̀ⲧⲟⲩ</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲧ̀ⲓⲟⲩ</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲥⲟⲟⲩ</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓϣⲁϣϥ</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲁ̅</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲃ̅</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓⲅ̅</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓⲇ̅</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲉ̅</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲋ̅</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓⲍ̅</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">ⲡⲓⲟⲩⲁⲓ</day>
+							<day type="mon" draft="unconfirmed">ⲡⲓⲥ̀ⲛⲁⲩ</day>
+							<day type="tue" draft="unconfirmed">ⲡⲓϣⲟⲙⲧ</day>
+							<day type="wed" draft="unconfirmed">ⲡⲓϥ̀ⲧⲟⲩ</day>
+							<day type="thu" draft="unconfirmed">ⲡⲓⲧ̀ⲓⲟⲩ</day>
+							<day type="fri" draft="unconfirmed">ⲡⲓⲥⲟⲟⲩ</day>
+							<day type="sat" draft="unconfirmed">ⲡⲓϣⲁϣϥ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">ⲡⲓⲁ̅ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="2" draft="unconfirmed">ⲡⲓⲙⲁϩⲃ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="3" draft="unconfirmed">ⲡⲓⲙⲁϩⲅ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="4" draft="unconfirmed">ⲡⲓⲙⲁϩⲇ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">ⲁ̅</quarter>
+							<quarter type="2" draft="unconfirmed">ⲃ̅</quarter>
+							<quarter type="3" draft="unconfirmed">ⲅ̅</quarter>
+							<quarter type="4" draft="unconfirmed">ⲇ̅</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">ⲡⲓϩⲟⲩⲓⲧ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="2" draft="unconfirmed">ⲡⲓⲙⲁϩⲥ̀ⲛⲁⲩ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="3" draft="unconfirmed">ⲡⲓⲙⲁϩϣⲟⲙⲧ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="4" draft="unconfirmed">ⲡⲓⲙⲁϩϥ̀ⲧⲟⲩ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">ⲡⲓⲁ̅ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="2" draft="unconfirmed">ⲡⲓⲙⲁϩⲃ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="3" draft="unconfirmed">ⲡⲓⲙⲁϩⲅ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="4" draft="unconfirmed">ⲡⲓⲙⲁϩⲇ︦ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">ⲁ̅</quarter>
+							<quarter type="2" draft="unconfirmed">ⲃ̅</quarter>
+							<quarter type="3" draft="unconfirmed">ⲅ̅</quarter>
+							<quarter type="4" draft="unconfirmed">ⲇ̅</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">ⲡⲓϩⲟⲩⲓⲧ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="2" draft="unconfirmed">ⲡⲓⲙⲁϩⲥ̀ⲛⲁⲩ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="3" draft="unconfirmed">ⲡⲓⲙⲁϩϣⲟⲙⲧ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+							<quarter type="4" draft="unconfirmed">ⲡⲓⲙⲁϩϥ̀ⲧⲟⲩ ⲛ̀ⲣⲉϥⲧⲟⲩ</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">Ϧ︦Ⲙ︦</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Ⲙ︦Ⲙ︦</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">Ϧ︦Ⲙ︦</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Ⲙ︦Ⲙ︦</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">ϧⲁϫⲉⲛ ⲙⲉⲣⲓ</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">ⲙⲉⲛⲉⲛⲥⲁ ⲙⲉⲣⲓ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">Ϧ︦Ⲙ︦</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Ⲙ︦Ⲙ︦</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">Ϧ︦Ⲙ︦</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">Ⲙ︦Ⲙ︦</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">ϧⲁϫⲉⲛ ⲙⲉⲣⲓ</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">ⲙⲉⲛⲉⲛⲥⲁ ⲙⲉⲣⲓ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">ϧⲁϫⲉⲛ ⲡⲓⲭⲣⲓⲥⲧⲟⲥ</era>
+						<era type="0" alt="variant" draft="unconfirmed">ϧⲁϫⲉⲛ ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲓⲛⲟⲛ</era>
+						<era type="1" draft="unconfirmed">ⲙⲉⲛⲉⲛⲥⲁ ⲡⲓⲭⲣⲓⲥⲧⲟⲥ</era>
+						<era type="1" alt="variant" draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲓⲛⲟⲛ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">ϧⲁϫⲉⲛ ⲡⲭ︦ⲥ︦</era>
+						<era type="0" alt="variant" draft="unconfirmed">Ϧ︦Ⲥ︦Ⲕ︦</era>
+						<era type="1" draft="unconfirmed">ⲙⲉⲛⲉⲛⲥⲁ ⲡⲭ︦ⲥ︦</era>
+						<era type="1" alt="variant" draft="unconfirmed">Ⲥ︦Ⲕ︦</era>
+					</eraAbbr>
+				</eras>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ehm" draft="unconfirmed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="unconfirmed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ⲙⲟⲩϩ.</month>
+							<month type="2" draft="unconfirmed">ⲥⲁϥ.</month>
+							<month type="3" draft="unconfirmed">ⲣⲁⲃ. I</month>
+							<month type="4" draft="unconfirmed">ⲣⲁⲃ. II</month>
+							<month type="5" draft="unconfirmed">ϫⲟⲩⲙ. I</month>
+							<month type="6" draft="unconfirmed">ϫⲟⲩⲙ. II</month>
+							<month type="7" draft="unconfirmed">ⲣⲁϫ.</month>
+							<month type="8" draft="unconfirmed">ϣⲁ.</month>
+							<month type="9" draft="unconfirmed">ⲣⲁⲙ.</month>
+							<month type="10" draft="unconfirmed">ϣⲁⲩ.</month>
+							<month type="11" draft="unconfirmed">ⲇⲟⲩⲗ-ⲕ.</month>
+							<month type="12" draft="unconfirmed">ⲇⲟⲩⲗ-ϩ.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">ⲁ̅</month>
+							<month type="2" draft="unconfirmed">ⲃ̅</month>
+							<month type="3" draft="unconfirmed">ⲅ̅</month>
+							<month type="4" draft="unconfirmed">ⲇ̅</month>
+							<month type="5" draft="unconfirmed">ⲉ̅</month>
+							<month type="6" draft="unconfirmed">ⲋ̅</month>
+							<month type="7" draft="unconfirmed">ⲍ̅</month>
+							<month type="8" draft="unconfirmed">ⲏ̅</month>
+							<month type="9" draft="unconfirmed">ⲑ̅</month>
+							<month type="10" draft="unconfirmed">ⲓ̅</month>
+							<month type="11" draft="unconfirmed">ⲓ̅ⲁ̅</month>
+							<month type="12" draft="unconfirmed">ⲓ̅ⲃ̅</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ⲙⲟⲩϩⲁⲣⲣⲁⲙ</month>
+							<month type="2" draft="unconfirmed">ⲥⲁϥⲁⲣ</month>
+							<month type="3" draft="unconfirmed">ⲣⲁⲃⲓʻ I</month>
+							<month type="4" draft="unconfirmed">ⲣⲁⲃⲓʻ II</month>
+							<month type="5" draft="unconfirmed">ϫⲟⲩⲙⲁⲇⲁ I</month>
+							<month type="6" draft="unconfirmed">ϫⲟⲩⲙⲁⲇⲁ II</month>
+							<month type="7" draft="unconfirmed">ⲣⲁϫⲁⲃ</month>
+							<month type="8" draft="unconfirmed">ϣⲁʻⲃⲁⲛ</month>
+							<month type="9" draft="unconfirmed">ⲣⲁⲙⲁⲇⲁⲛ</month>
+							<month type="10" draft="unconfirmed">ϣⲁⲟⲩⲁⲗ</month>
+							<month type="11" draft="unconfirmed">ⲇⲟⲩⲗ-ⲕⲓʻⲇⲁϩ</month>
+							<month type="12" draft="unconfirmed">ⲇⲟⲩⲗ-ϩⲓϫϫⲁ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">ⲙⲟⲩϩ.</month>
+							<month type="2" draft="unconfirmed">ⲥⲁϥ.</month>
+							<month type="3" draft="unconfirmed">ⲣⲁⲃ. I</month>
+							<month type="4" draft="unconfirmed">ⲣⲁⲃ. II</month>
+							<month type="5" draft="unconfirmed">ϫⲟⲩⲙ. I</month>
+							<month type="6" draft="unconfirmed">ϫⲟⲩⲙ. II</month>
+							<month type="7" draft="unconfirmed">ⲣⲁϫ.</month>
+							<month type="8" draft="unconfirmed">ϣⲁ.</month>
+							<month type="9" draft="unconfirmed">ⲣⲁⲙ.</month>
+							<month type="10" draft="unconfirmed">ϣⲁⲩ.</month>
+							<month type="11" draft="unconfirmed">ⲇⲟⲩⲗ-ⲕ.</month>
+							<month type="12" draft="unconfirmed">ⲇⲟⲩⲗ-ϩ.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">ⲁ̅</month>
+							<month type="2" draft="unconfirmed">ⲃ̅</month>
+							<month type="3" draft="unconfirmed">ⲅ̅</month>
+							<month type="4" draft="unconfirmed">ⲇ̅</month>
+							<month type="5" draft="unconfirmed">ⲉ̅</month>
+							<month type="6" draft="unconfirmed">ⲋ̅</month>
+							<month type="7" draft="unconfirmed">ⲍ̅</month>
+							<month type="8" draft="unconfirmed">ⲏ̅</month>
+							<month type="9" draft="unconfirmed">ⲑ̅</month>
+							<month type="10" draft="unconfirmed">ⲓ̅</month>
+							<month type="11" draft="unconfirmed">ⲓ̅ⲁ̅</month>
+							<month type="12" draft="unconfirmed">ⲓ̅ⲃ̅</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">ⲙⲟⲩϩⲁⲣⲣⲁⲙ</month>
+							<month type="2" draft="unconfirmed">ⲥⲁϥⲁⲣ</month>
+							<month type="3" draft="unconfirmed">ⲣⲁⲃⲓʻ I</month>
+							<month type="4" draft="unconfirmed">ⲣⲁⲃⲓʻ II</month>
+							<month type="5" draft="unconfirmed">ϫⲟⲩⲙⲁⲇⲁ I</month>
+							<month type="6" draft="unconfirmed">ϫⲟⲩⲙⲁⲇⲁ II</month>
+							<month type="7" draft="unconfirmed">ⲣⲁϫⲁⲃ</month>
+							<month type="8" draft="unconfirmed">ϣⲁʻⲃⲁⲛ</month>
+							<month type="9" draft="unconfirmed">ⲣⲁⲙⲁⲇⲁⲛ</month>
+							<month type="10" draft="unconfirmed">ϣⲁⲟⲩⲁⲗ</month>
+							<month type="11" draft="unconfirmed">ⲇⲟⲩⲗ-ⲕⲓʻⲇⲁϩ</month>
+							<month type="12" draft="unconfirmed">ⲇⲟⲩⲗ-ϩⲓϫϫⲁ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">ⲁϩ</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ</displayName>
+			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="unconfirmed">ⲣⲟⲙⲡⲓ</displayName>
+				<relative type="-1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲧⲁⲥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲧⲁⲓⲣⲟⲙⲡⲓ ⲑⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="year-short">
+				<displayName draft="unconfirmed">ⲣⲟⲙⲡⲓ</displayName>
+				<relative type="-1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲧⲁⲥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲧⲁⲓⲣⲟⲙⲡⲓ ⲑⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName draft="unconfirmed">ⲣⲟⲙⲡⲓ</displayName>
+				<relative type="-1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲧⲁⲥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲧⲁⲓⲣⲟⲙⲡⲓ ⲑⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ϯⲣⲟⲙⲡⲓ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">ⲣⲉϥⲧⲟⲩ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲣⲉϥⲧⲟⲩ ⲛ̀ϧⲁⲉ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲣⲉϥⲧⲟⲩ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲣⲉϥⲧⲟⲩ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">ⲣⲉϥⲧⲟⲩ</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">ⲣⲉϥⲧⲟⲩ</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="unconfirmed">ⲁⲃⲟⲧ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲃⲟⲧ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="month-short">
+				<displayName draft="unconfirmed">ⲁⲃⲟⲧ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲃⲟⲧ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="month-narrow">
+				<displayName draft="unconfirmed">ⲁⲃⲟⲧ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲃⲟⲧ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲃⲟⲧ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="week">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲛϣⲁϣϥ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="week-short">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲛϣⲁϣϥ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="week-narrow">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁⲛϣⲁϣϥ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁⲛϣⲁϣϥ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="weekOfMonth">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">ⲁⲛϣⲁϣϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲛ̀ⲥⲁϥ</relative>
+				<relative type="0" draft="unconfirmed">ⲙ̀ⲫⲟⲟⲩ</relative>
+				<relative type="1" draft="unconfirmed">ⲛ̀ⲣⲁⲥϯ</relative>
+			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲛ̀ⲥⲁϥ</relative>
+				<relative type="0" draft="unconfirmed">ⲙ̀ⲫⲟⲟⲩ</relative>
+				<relative type="1" draft="unconfirmed">ⲛ̀ⲣⲁⲥϯ</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ</displayName>
+				<relative type="-1" draft="unconfirmed">ⲛ̀ⲥⲁϥ</relative>
+				<relative type="0" draft="unconfirmed">ⲙ̀ⲫⲟⲟⲩ</relative>
+				<relative type="1" draft="unconfirmed">ⲛ̀ⲣⲁⲥϯ</relative>
+			</field>
+			<field type="dayOfYear">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲛ̀ϯⲣⲟⲙⲡⲓ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲛ̀ϯⲣⲟⲙⲡⲓ</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲛ̀ϯⲣⲟⲙⲡⲓ</displayName>
+			</field>
+			<field type="weekday">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϣϥ</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϣϥ</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">ⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϣϥ</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName draft="unconfirmed">ⲛⲓⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">ⲛⲓⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName draft="unconfirmed">ⲛⲓⲉϩⲟⲟⲩ ⲙ̀ⲡⲓⲁⲛϣⲁϥ ⲙ̀ⲡⲓⲁⲃⲟⲧ</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲟⲩⲁⲓ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲟⲩⲁⲓ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲟⲩⲁⲓ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲁ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲁ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲁ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="mon">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲥ̀ⲛⲁⲩ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲥⲛⲁⲩ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲥ̀ⲛⲁⲩ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="mon-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲃ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲃ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲃ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲃ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲃ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲃ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="tue">
+				<relative type="-1" draft="unconfirmed">ⲡⲓϣⲟⲙⲧ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓϣⲟⲙⲧ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓϣⲟⲙⲧ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="tue-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲅ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲅ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲅ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲅ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲅ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲅ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="wed">
+				<relative type="-1" draft="unconfirmed">ⲡⲓϥ̀ⲧⲟⲩ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓϥ̀ⲧⲟⲩ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓϥ̀ⲧⲟⲩ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲇ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲇ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲇ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲇ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲇ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲇ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="thu">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲧ̀ⲓⲟⲩ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲧ̀ⲓⲟⲩ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲧ̀ⲓⲟⲩ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="thu-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲉ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲉ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲉ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲉ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲉ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲉ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="fri">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲥⲟⲟⲩ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲥⲟⲟⲩ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲥⲟⲟⲩ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="fri-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲋ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲋ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲋ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲋ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲋ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲋ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="sat">
+				<relative type="-1" draft="unconfirmed">ⲡⲓϣⲁϣϥ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓϣⲁϣϥ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓϣⲁϣϥ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲍ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲍ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲍ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1" draft="unconfirmed">ⲡⲓⲍ̅ ⲉⲧⲁϥⲥⲓⲛⲓ</relative>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲍ̅ ⲫⲁⲓ</relative>
+				<relative type="1" draft="unconfirmed">ⲡⲓⲍ̅ ⲉⲑⲛⲏⲟⲩ</relative>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">ϧⲁϫⲉⲛ ⲙⲉⲣⲓ/ⲙⲉⲛⲉⲛⲥⲁ ⲙⲉⲣⲓ</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="unconfirmed">ϧⲁϫⲉⲛ ⲙⲉⲣⲓ/ⲙⲉⲛⲉⲛⲥⲁ ⲙⲉⲣⲓ</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">ϧⲁϫⲉⲛ ⲙⲉⲣⲓ/ⲙⲉⲛⲉⲛⲥⲁ ⲙⲉⲣⲓ</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="unconfirmed">ⲟⲩⲛⲟⲩ</displayName>
+				<relative type="0" draft="unconfirmed">ⲧⲁⲓⲟⲩⲛⲟⲩ ⲑⲁⲓ</relative>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">ⲟⲩⲛⲟⲩ</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">ⲟⲩⲛⲟⲩ</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="unconfirmed">ⲥⲟⲩⲥⲟⲩ</displayName>
+				<relative type="0" draft="unconfirmed">ⲡⲁⲓⲥⲟⲩⲥⲟⲩ ⲫⲁⲓ</relative>
+			</field>
+			<field type="minute-short">
+				<displayName draft="unconfirmed">ⲥⲟⲩⲥⲟⲩ</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName draft="unconfirmed">ⲥⲟⲩⲥⲟⲩ</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="unconfirmed">ⲙⲁϩⲥ̀ⲛⲁⲩ</displayName>
+				<relative type="0" draft="unconfirmed">ϯⲛⲟⲩ</relative>
+			</field>
+			<field type="second-short">
+				<displayName draft="unconfirmed">ⲙⲁϩⲥ̀ⲛⲁⲩ</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName draft="unconfirmed">ⲙⲁϩⲥ̀ⲛⲁⲩ</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="unconfirmed">ϯⲍⲱⲛⲏ ⲙ̀ⲡⲓⲥⲏⲟⲩ</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">ϯⲍⲱⲛⲏ</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName draft="unconfirmed">ϯⲍⲱⲛⲏ</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ {0}</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ {0}</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ {0}</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲁⲑⲟⲗⲓⲕⲟⲛ</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">ⲁⲧⲥⲱⲟⲩⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲇⲟⲣⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity draft="unconfirmed">ⲇⲟⲩⲃⲁⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲃⲟⲩⲗ</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲑⲓⲅⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲅⲓⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity draft="unconfirmed">ⲑⲓⲣⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity draft="unconfirmed">ⲓⲉⲣⲉⲃⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲩⲁⲛⲇⲁ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲣⲟⲑⲉⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲗⲙⲉⲣ ⲗⲁⲛⲇ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲑⲣⲟⲗⲗ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ϣⲟⲩⲁ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲙⲁⲩⲥⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲃⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲃⲟⲥⲑⲟⲕ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲕⲁⲍⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲇⲟⲩⲙⲟⲛⲧ ⲇⲟⲩⲣⲃⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲙⲁⲛ̀ⲟϩⲓ ⲛ̀ⲙⲕⲙⲟⲩⲣⲇⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity draft="unconfirmed">ⲣⲓⲟ ⲅⲁⲗⲗⲉⲅⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲛⲇⲟⲍⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛ ⲓⲟⲩⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity draft="unconfirmed">ⲟⲩϣⲟⲩⲟⲩⲁⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity draft="unconfirmed">ⲗⲁ ⲣⲓⲟϫⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛ ⲗⲟⲩⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲑⲁⲙⲁⲣⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲗⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity draft="unconfirmed">ϫⲟⲩϫⲟⲩⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲩⲕⲟⲩⲙⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲣⲇⲟⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩⲉⲛⲟⲥ ⲁⲓⲣⲉⲥ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲅⲟ ⲡⲁⲅⲟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity draft="unconfirmed">ⲃⲓⲉⲛⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">ⲡⲉⲣⲑ</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="unconfirmed">ⲉⲩⲕⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲣⲟⲩⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">ⲁⲇⲉⲗⲁⲓⲇ</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲟⲕⲉⲛ ϩⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲗⲃⲟⲩⲣⲛ</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="unconfirmed">ϩⲟⲃⲁⲣⲧ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity draft="unconfirmed">ⲗⲓⲛⲇⲉⲙⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">ⲥⲓⲇⲛⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲓⲥⲃⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity draft="unconfirmed">ϯⲙⲟⲩⲓ ⲙ̀ⲙⲁⲕⲟⲩⲁⲣⲓ</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲗⲟⲣⲇ ϩⲟⲩⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity draft="unconfirmed">ⲁⲣⲟⲩⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲣⲓⲉϩⲁⲙⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲕⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲣⲁⲓⲉⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲣⲃⲁⲇⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲟⲩⲝⲉⲗ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲁⲅⲁⲇⲟⲩⲅⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity draft="unconfirmed">ⲥⲟϥⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity draft="unconfirmed">ⲃⲁϩⲣⲁⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩϫⲟⲩⲙⲃⲟⲩⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲣⲑⲟ-ⲛⲟⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ⲃⲁⲣⲑⲉⲗⲉⲙⲓ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲣⲙⲟⲩⲇⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲟⲩⲛⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity draft="unconfirmed">ⲗⲁ ⲡⲁⲍ</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity draft="unconfirmed">ⲕⲣⲁⲗⲉⲛⲇⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity draft="unconfirmed">ⲉⲓⲣⲟⲩⲛⲉⲡⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="unconfirmed">ⲣⲓⲟ ⲃⲣⲁⲛⲕⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲣⲑⲟ ⲃⲉⲗϩⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲁ ⲃⲓⲥⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲛⲁⲩⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩⲓⲁⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲑⲁⲣⲉⲙ</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲙⲡⲟ ⲅⲣⲁⲛⲇⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲗⲉⲙ</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity draft="unconfirmed">ⲁⲣⲁⲅⲟⲩⲁⲓⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲟ ⲡⲁⲩⲗⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity draft="unconfirmed">ⲃⲁϩⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity draft="unconfirmed">ϥⲟⲣⲑⲁⲗⲉⲍⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲥⲉⲓⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity draft="unconfirmed">ⲣⲉⲥⲓϥⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity draft="unconfirmed">ϥⲉⲣⲛⲁⲛⲇⲟ ⲇⲉ ⲛⲟⲣⲟⲛϩⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity draft="unconfirmed">ⲛⲁⲥⲥⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">ⲑⲓⲙⲫⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="unconfirmed">ⲅⲁⲃⲟⲣⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity draft="unconfirmed">ⲙⲓⲛⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲗⲓⲍⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲩⲥⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲁⲓⲑϩⲱⲣⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity draft="unconfirmed">ⲓⲛⲟⲩⲃⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲛⲕⲟⲩⲃⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">ϥⲟⲣⲧ ⲛⲉⲗⲥⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲩⲥⲟⲛ ⲕⲣⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity draft="unconfirmed">ⲕⲣⲉⲥⲑⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity draft="unconfirmed">ⲉⲇⲙⲟⲛⲑⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity draft="unconfirmed">ⲥⲟⲩⲓϥⲧ ⲕⲁⲣⲉⲛⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity draft="unconfirmed">ⲧ̀ⲕⲟⲧⲥⲓ ⲛ̀ⲕⲁⲙⲃⲣⲓⲇϫ</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity draft="unconfirmed">ⲣⲉϫⲓⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲓⲛⲛⲓⲡⲉⲅ</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity draft="unconfirmed">ⲣⲉⲍⲟⲗⲟⲩⲑⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity draft="unconfirmed">ⲣⲁⲛⲕⲓⲛ ⲓⲛⲗⲉⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity draft="unconfirmed">ⲁⲑⲓⲕⲟⲕⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲣⲟⲛⲑⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity draft="unconfirmed">ⲓⲕⲁⲗⲟⲩⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲕⲑⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity draft="unconfirmed">ϩⲁⲗⲓϥⲁⲝ</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲥ ⲃⲁⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity draft="unconfirmed">ⲅⲗⲁⲥ ⲃⲁⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity draft="unconfirmed">ⲃⲗⲁⲛⲕ-ⲥⲁⲃⲗⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ϫⲟⲛⲍ</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲕⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲛϣⲁⲥⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲩⲃⲟⲩⲙⲃⲁϣⲓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲛⲅⲟⲩⲓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲁⲍⲁⲃⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity draft="unconfirmed">ⲍⲟⲩⲣⲓϧ</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity draft="unconfirmed">ⲁⲃⲓϫⲓⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity draft="unconfirmed">ⲣⲁⲣⲟⲑⲟⲛⲅⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲩⲓ ⲛ̀ⲓⲥⲑⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩϩⲁⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲩⲛⲑⲁ ⲁⲣⲉⲛⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲑⲓⲁⲅⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity draft="unconfirmed">ⲇⲟⲩⲁⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲣⲟⲩⲙⲕⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity draft="unconfirmed">ϣⲁⲛⲅⲁⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲅⲟⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲥⲑⲁ ⲣⲓⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity draft="unconfirmed">ϩⲁⲃⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲡ ⲃⲉⲣⲇ</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩⲣⲁⲕⲁⲟ</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲣⲓⲥⲧⲙⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲕⲟⲥⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity draft="unconfirmed">ϥⲁⲙⲁⲅⲟⲩⲥⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">ⲡⲣⲁⲅ</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩⲍⲓⲛⲅⲉⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲣⲗⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity draft="unconfirmed">ϫⲓⲃⲟⲩⲑⲓ</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲡⲉⲛϩⲁⲅⲉⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity draft="unconfirmed">ⲇⲟⲙⲓⲛⲓⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲑⲟ ⲇⲟⲙⲓⲛⲅⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="unconfirmed">ⲁⲗϫⲓⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲩⲓ ⲛ̀ⲅⲁⲗⲁⲡⲁⲅⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲁⲓⲁⲕⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity draft="unconfirmed">ⲑⲁⲗⲗⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity draft="unconfirmed">ⲕⲁϩⲓⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity draft="unconfirmed">ⲉⲗ ⲁⲓⲟⲩⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity draft="unconfirmed">ⲁⲥⲙⲁⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲛⲁⲣⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity draft="unconfirmed">ⲥⲉⲩⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲇⲣⲓⲇ</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity draft="unconfirmed">ⲁⲇⲓⲥ ⲁⲃⲁⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">ϩⲉⲗⲥⲉⲛⲕⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">ϥⲓϫⲓ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity draft="unconfirmed">ⲥⲑⲁⲛⲗⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="unconfirmed">ϭⲟⲩⲕ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲛϩⲡⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲥⲣⲁⲉ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity draft="unconfirmed">ϥⲁⲣⲟⲉⲥ</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲣⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity draft="unconfirmed">ⲗⲓⲃⲣⲉⲃⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲙⲃⲣⲓⲑⲁⲛⲓⲁ</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">ⲗⲟⲛⲇⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity draft="unconfirmed">ⲅⲣⲉⲛⲁⲇⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity draft="unconfirmed">ⲑⲉⲃⲗⲓⲥⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲓⲉⲛⲛⲉ</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲉⲣⲛⲥⲓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity draft="unconfirmed">ⲁⲕⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity draft="unconfirmed">ϫⲓⲃⲣⲁⲗⲑⲁⲣ</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲩⲗⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲩⲟⲩⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity draft="unconfirmed">ⲓⲑⲟⲕⲟⲣⲧⲟⲣⲙⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲛⲙⲁⲣⲕϣⲁⲃⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲛϫⲟⲩⲗ</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲛⲁⲕⲣⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲁⲇⲉⲗⲟⲩⲡ</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲗⲁⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity draft="unconfirmed">ⲁⲑⲏⲛⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity draft="unconfirmed">ⲅⲉⲟⲣⲅⲓⲁ ⲙ̀ⲙⲁⲣⲏⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲁⲑⲉⲙⲁⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲁⲙ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="unconfirmed">ⲃⲓⲥⲥⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="unconfirmed">ⲅⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">ϩⲟⲛⲅ ⲕⲟⲛⲅ</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity draft="unconfirmed">ⲑⲉⲅⲟⲩⲥⲓⲅⲁⲗⲡⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity draft="unconfirmed">ⲍⲁⲅⲣⲉⲃ</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲣⲧ-ⲁⲩ-ⲡⲣⲓⲛⲥ</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩⲇⲁⲡⲉⲥⲧ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="unconfirmed">ϫⲁⲕⲁⲣⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲛⲑⲓⲁⲛⲁⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲕⲁⲥⲥⲁⲣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="unconfirmed">ϫⲁⲓⲁⲡⲟⲩⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲓⲉⲣⲗⲁⲛⲇⲁ</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">ⲇⲟⲩⲃⲗⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity draft="unconfirmed">ⲓⲉⲣⲟⲩⲥⲁⲗⲏⲙ</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity draft="unconfirmed">ⲁⲓⲥⲉⲗ ⲛ̀ⲙⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲗⲕⲟⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity draft="unconfirmed">ϣⲁⲅⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲅⲇⲁⲇ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">ⲑⲉϩⲣⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity draft="unconfirmed">ⲣⲉⲕⲓⲁⲃⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">ⲣⲱⲙⲏ</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">ϫⲉⲣⲥⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity draft="unconfirmed">ϫⲁⲙⲁⲓⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity draft="unconfirmed">ⲁⲙⲙⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲕⲓⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity draft="unconfirmed">ⲛⲁⲓⲣⲟⲃⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">ⲃⲓϣⲕⲉⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">ⲫⲛⲟⲙ ⲡⲉⲛϩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲛⲑⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲣⲓⲑⲙⲁⲑⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="unconfirmed">ⲑⲁⲣⲁⲟⲩⲁ</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲙⲟⲣⲉⲥ</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ⲕⲓⲑⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="unconfirmed">ⲡⲓⲟⲛⲅⲓⲁⲛⲅ</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">ⲥⲉⲟⲩⲗ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩⲁⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲓⲙⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">ⲁⲕⲑⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="unconfirmed">ⲟⲣⲁⲗ</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="unconfirmed">ⲁⲑⲓⲣⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">ⲁⲕⲑⲟⲃ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲥⲑⲁⲛⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲍⲓⲗⲟⲣⲇⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="unconfirmed">ⲁⲗⲙⲁⲑⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">ⲃⲓⲉⲛⲑⲓⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲓⲣⲟⲩⲧ</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ⲗⲟⲩϭⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲇⲟⲩⲍ</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲗⲟⲙⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲣⲟⲃⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲥⲉⲣⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity draft="unconfirmed">ⲃⲓⲗⲛⲓⲟⲩⲥ</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲩⲝⲟⲙⲃⲟⲩⲣⲅ</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity draft="unconfirmed">ⲣⲓⲅⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity draft="unconfirmed">ⲑⲣⲓⲡⲟⲗⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲍⲁⲃⲗⲁⲛⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲁⲕⲟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">ϭⲓⲍⲓⲛⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲇⲅⲟⲣⲓⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲣⲓⲅⲟⲧ</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲑⲁⲛⲁⲛⲁⲣⲓⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩⲁϫⲁⲗⲉⲓⲛ ⲁⲑⲟⲗⲗ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity draft="unconfirmed">ⲙⲁϫⲟⲩⲣⲟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity draft="unconfirmed">ⲥⲕⲟⲡⲓⲉ</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲙⲁⲕⲟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity draft="unconfirmed">ⲓⲁⲛⲅⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity draft="unconfirmed">ϧⲟⲃⲇ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲗⲁⲛⲃⲁⲑⲁⲣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲕⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲓⲡⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲣⲑⲓⲛⲓⲕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲩⲁⲕϣⲟⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲑⲥⲉⲣⲁⲧ</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲗⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲩⲣⲓⲑⲓⲟⲩⲥ</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲗⲇⲓⲃ</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity draft="unconfirmed">ⲃⲗⲁⲛⲑⲓⲣ</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity draft="unconfirmed">ⲑⲓϫⲟⲩⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity draft="unconfirmed">ϩⲉⲣⲙⲟⲍⲓⲗⲗⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity draft="unconfirmed">ⲥⲓⲟⲩⲇⲁⲇ ⲓⲟⲩⲁⲣⲉⲍ</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲍⲁⲑⲗⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity draft="unconfirmed">ϣⲓϩⲟⲩⲁϩⲟⲩⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲓⲁ ⲇⲉ ⲃⲁⲛⲇⲉⲣⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity draft="unconfirmed">ⲟϫⲓⲛⲁⲅⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲑⲉⲣⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲝⲓⲕⲟ ⲡⲟⲗⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲑⲁⲙⲟⲣⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲣⲓⲇⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲛⲕⲟⲩⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩⲁⲗⲁ ⲗⲟⲩⲙⲡⲟⲩⲣ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="unconfirmed">ⲕⲟⲩϭⲓⲛⲅ</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲡⲟⲩⲑⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲓⲛⲇϩⲟⲕ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲩⲙⲉⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲁⲙⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛⲛ̀ⲟⲣϥⲟⲗⲕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity draft="unconfirmed">ⲗⲁⲅⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲛⲁⲅⲟⲩⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity draft="unconfirmed">ⲁⲙⲥⲑⲉⲣⲇⲁⲙ</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity draft="unconfirmed">ⲟⲥⲗⲟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲑⲙⲁⲛⲇⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity draft="unconfirmed">ⲛⲁⲩⲣⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲟⲩⲉ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲛ̀ϭⲁⲑⲁⲙ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity draft="unconfirmed">ⲁⲩⲕⲗⲁⲛⲇ</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲥⲕⲁⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲛⲁⲙⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity draft="unconfirmed">ⲗⲓⲙⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity draft="unconfirmed">ⲑⲁϩⲓⲑⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲙⲁⲣⲕⲉⲥⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="unconfirmed">ⲅⲁⲙⲃⲓⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲣⲑ ⲙⲟⲣⲉⲥⲃⲓ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩⲅⲁⲓⲛⲃⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲛⲓⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲣⲁϭⲓ</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲁⲣⲥⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛ-ⲡⲓⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲡⲓⲑⲕⲉⲣⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲩⲉⲣⲑⲟ ⲣⲓⲕⲟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity draft="unconfirmed">ⲅⲁⲍⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity draft="unconfirmed">ϩⲉⲃⲣⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity draft="unconfirmed">ⲁⲍⲟⲣⲉⲥ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲇⲉⲓⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">ⲗⲓϣⲃⲟⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲗⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity draft="unconfirmed">ⲁⲥⲟⲩⲛⲥⲓⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲑⲁⲣ</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">ⲣⲉⲓⲟⲩⲛⲓⲟⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲩϧⲁⲣⲉⲥⲧ</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲗⲅⲣⲁⲇ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲗⲓⲛⲓⲛⲅⲣⲁⲇ</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲥⲕⲟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲗⲅⲟⲅⲣⲁⲇ</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲣⲁⲑⲟⲃ</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">ⲁⲥⲑⲣⲁϧⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲗⲓⲁⲛⲟⲃⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲣⲟⲃ</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲙⲁⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity draft="unconfirmed">ⲓⲉⲕⲁⲑⲣⲓⲛⲃⲟⲩⲣⲅ</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity draft="unconfirmed">ⲟⲙⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲃⲟⲥⲓⲃⲓⲣⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲣⲛⲁⲩⲗ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲙⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲃⲟⲕⲟⲩⲍⲛⲉⲑⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity draft="unconfirmed">ⲕⲣⲁⲥⲛⲟⲓⲁⲣⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity draft="unconfirmed">ⲓⲣⲕⲟⲩⲑⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity draft="unconfirmed">ϭⲓⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity draft="unconfirmed">ⲓⲁⲕⲟⲩⲑⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity draft="unconfirmed">ⲃⲗⲁⲇⲓⲃⲟⲥⲑⲟⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity draft="unconfirmed">ϧⲁⲛⲇⲓⲅⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity draft="unconfirmed">ⲥⲁϧⲁⲗⲓⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲥⲧ-ⲛⲉⲣⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲅⲁⲇⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity draft="unconfirmed">ⲥⲣⲉⲇⲛⲉⲕⲟⲗⲓⲙⲥⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲙϭⲁⲑⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲁⲇⲓⲣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲅⲁⲗⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity draft="unconfirmed">ⲣⲓⲁⲇ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity draft="unconfirmed">ⲅⲟⲩⲁⲇⲁⲗⲕⲁⲛⲁⲗ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity draft="unconfirmed">ⲙⲁϩⲉ</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity draft="unconfirmed">ϧⲁⲣⲑⲟⲩⲙ</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity draft="unconfirmed">ⲥⲑⲟⲕϩⲟⲗⲙ</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">ⲥⲓⲛⲅⲁⲡⲟⲣ</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ϩⲉⲗⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity draft="unconfirmed">ⲗϫⲟⲩⲃⲗϫⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲛⲅⲓⲏⲣⲃⲁⲓⲉⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity draft="unconfirmed">ⲃⲣⲁⲑⲓⲥⲗⲁⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity draft="unconfirmed">ϥⲣⲓⲑⲁⲩⲛ</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛ ⲙⲁⲣⲓⲛⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲕⲁⲣ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲅⲁⲇⲓϣⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity draft="unconfirmed">ⲡⲁⲣⲁⲙⲁⲣⲓⲃⲟ</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity draft="unconfirmed">ϫⲟⲩⲃⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲟ ⲑⲟⲙⲉ</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity draft="unconfirmed">ⲉⲗ ⲥⲁⲗⲃⲁⲇⲟⲣ</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲩⲉⲣ ⲡⲣⲓⲛⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲙⲁⲥⲕⲟⲥ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity draft="unconfirmed">ⲙⲃⲁⲃⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity draft="unconfirmed">ⲅⲣⲁⲛⲇ ⲑⲟⲩⲣⲕ</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity draft="unconfirmed">ⲛϫⲁⲙⲉⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲩⲓ ⲛ̀ⲕⲉⲣⲅⲉⲗⲉⲛ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲙⲉ</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲛⲕⲟⲕ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">ⲇⲟⲩϣⲁⲛⲃ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity draft="unconfirmed">ϥⲁⲕⲁⲟϥⲟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity draft="unconfirmed">ⲇⲓⲗⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">ⲁϣⲅⲁⲃⲁⲧ</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲩⲛⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲛⲅⲁⲑⲁⲡⲟⲩ</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity draft="unconfirmed">ⲓⲥⲑⲁⲙⲃⲟⲩⲗ</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity draft="unconfirmed">ⲡⲟⲣⲧ ⲛ̀ⲉⲥⲡⲁⲛⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity draft="unconfirmed">ϥⲟⲩⲛⲁϥⲟⲩⲑⲓ</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity draft="unconfirmed">ⲑⲁⲓⲡⲉⲓ</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity draft="unconfirmed">ⲇⲁⲣ ⲉⲥ ⲥⲁⲗⲁⲙ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity draft="unconfirmed">ⲕⲓⲉⲃ</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity draft="unconfirmed">ⲥⲓⲙϥⲉⲣⲟⲡⲟⲗ</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲙⲡⲁⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="unconfirmed">ⲙⲓⲇⲟⲩⲁⲓ ⲁⲑⲟⲗⲗ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">ϯⲙⲟⲩⲓ ⲛ̀ⲟⲩⲁⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity draft="unconfirmed">ⲁⲇⲁⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲙⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="unconfirmed">ⲁⲛⲕⲟⲣⲁϫ</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity draft="unconfirmed">ⲓⲁⲕⲟⲩⲑⲁⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity draft="unconfirmed">ⲥⲓⲑⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity draft="unconfirmed">ϫⲟⲩⲛⲉⲁⲩ</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲧⲗⲁⲕⲁⲗⲑⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲥ ⲁⲅⲅⲉⲗⲉⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity draft="unconfirmed">ⲃⲟⲓⲍⲉ</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="unconfirmed">ⲫⲓⲛⲓⲝ</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="unconfirmed">ⲇⲉⲛⲃⲉⲣ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲩⲗⲁ, ⲇⲁⲕⲟⲑⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲟⲩ ⲥⲁⲗⲉⲙ, ⲇⲁⲕⲟⲑⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity draft="unconfirmed">ⲥⲉⲛⲑⲉⲣ, ⲇⲁⲕⲟⲑⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="unconfirmed">ϣⲓⲕⲁⲅⲟ</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity draft="unconfirmed">ⲙⲉⲛⲟⲙⲓⲛⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity draft="unconfirmed">ⲃⲓⲛⲥⲉⲛⲛⲉⲥ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity draft="unconfirmed">ⲡⲉⲑⲉⲣⲥⲃⲟⲩⲣⲅ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity draft="unconfirmed">ⲑⲉⲗ ⲥⲓⲑⲓ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity draft="unconfirmed">ⲛⲟⲝ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲓⲛⲁⲙⲁⲕ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲣⲉⲛⲅⲟ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="unconfirmed">ⲓⲛⲇⲓⲁⲛⲁⲡⲟⲗⲓⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲓⲥⲃⲓⲗ</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity draft="unconfirmed">ⲃⲉⲃⲉⲁⲓ, ⲓⲛⲇⲓⲁⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲑⲓⲥⲉⲗⲗⲟ, ⲕⲉⲛⲧⲁⲕⲓ</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity draft="unconfirmed">ⲇⲉⲑⲣⲟⲓⲧ</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="unconfirmed">ⲛⲓⲟⲩ ⲓⲟⲣⲕ</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity draft="unconfirmed">ⲙⲟⲛⲑⲉⲃⲓⲇⲉⲟ</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲙⲁⲣⲕⲁⲛⲇ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="unconfirmed">ⲑⲁϣⲕⲉⲛⲧ</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity draft="unconfirmed">ⲃⲁⲑⲓⲕⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ⲃⲓⲛⲥⲉⲛⲧ</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity draft="unconfirmed">ⲕⲁⲣⲁⲕⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity draft="unconfirmed">ⲑⲟⲣⲟⲗⲁ</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity draft="unconfirmed">ⲥⲁⲛⲧ ⲑⲟⲙⲁⲥ</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">ϩⲟ ϭⲓ ⲙⲓⲛϩ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity draft="unconfirmed">ⲉϥⲁⲧ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">ⲟⲩⲁⲗⲗⲓⲥ &amp; ϥⲟⲩⲑⲟⲩⲛⲁ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity draft="unconfirmed">ⲁⲡⲓⲁ</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity draft="unconfirmed">ⲁⲇⲁⲛ</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity draft="unconfirmed">ⲙⲁⲓⲟⲧ</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity draft="unconfirmed">ⲓⲟϩⲁⲛⲥⲃⲟⲩⲣⲅ</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity draft="unconfirmed">ⲗⲟⲩⲍⲁⲕⲁ</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity draft="unconfirmed">ϩⲁⲣⲁⲣⲉ</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁϥⲅⲁⲛⲓⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲛ̀̀ⲑⲙⲏϯ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲉⲓⲉⲃⲧ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟϩⲣⲟⲥ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲗⲁⲥⲕⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲗⲁⲥⲕⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲁⲗⲁⲥⲕⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲙⲁⲍⲟⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲙⲁⲍⲟⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲁⲙⲁⲍⲟⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲙⲏϯ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲑⲙⲏϯ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲑⲙⲏϯ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲓⲉⲃⲧ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲉⲓⲉⲃⲧ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲧⲱⲟⲩ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲓⲧⲱⲟⲩ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲓⲧⲱⲟⲩ</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲁⲙⲟⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲥⲁⲙⲟⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲥⲁⲙⲟⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲣⲁⲃⲟⲥ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲣⲁⲃⲟⲥ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲁⲣⲁⲃⲟⲥ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲣⲙⲉⲛⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲣⲙⲉⲛⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲁⲣⲙⲉⲛⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲑⲗⲁⲛⲑⲓⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲑⲗⲁⲛⲑⲓⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲁⲑⲗⲁⲛⲑⲓⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲁⲩⲥⲧⲣⲁⲗⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲍⲉⲣⲃⲁⲓϫⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲍⲉⲣⲃⲁⲓϫⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲁⲍⲉⲣⲃⲁⲓϫⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲍⲟⲣⲉⲥ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲁⲍⲟⲣⲉⲥ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲁⲍⲟⲣⲉⲥ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲁⲛⲅⲗⲁⲇⲉϣ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲃⲁⲛⲅⲗⲁⲇⲉϣ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲃⲁⲛⲅⲗⲁⲇⲉϣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲟⲩⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲟⲗⲓⲃⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲣⲁⲍⲓⲗ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲃⲣⲁⲍⲓⲗ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲃⲣⲁⲍⲓⲗ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲣⲟⲩⲛⲉⲓ</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲁⲡ ⲃⲉⲣⲇⲉ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲕⲁⲡ ⲃⲉⲣⲇⲉ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲕⲁⲡ ⲃⲉⲣⲇⲉ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϭⲁⲙⲟⲣⲟ</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲁⲑⲁⲙ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϣⲁⲑⲁⲙ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ϣⲁⲑⲁⲙ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϭⲓⲗⲉ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϭⲓⲗⲉ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ϭⲓⲗⲉ</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϭⲓⲛⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϭⲓⲛⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛⲧⲟⲟⲩⲓ ⲛ̀ϭⲓⲛⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲙⲟⲩⲓ ⲛ̀ⲭⲣⲓⲥⲧⲙⲁⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲕⲟⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲟⲗⲟⲙⲃⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲕⲟⲗⲟⲙⲃⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲕⲟⲗⲟⲙⲃⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲩⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲩⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲟⲩⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲉ ⲕⲟⲩⲃⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲧⲉ ⲕⲟⲩⲃⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲧⲉ ⲕⲟⲩⲃⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲇⲁⲩⲓⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲇⲟⲩⲣⲙⲟⲛⲧ ⲇⲟⲩⲣⲃⲓⲗ</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲓⲙⲟⲣ-ⲗⲉⲥⲧ</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲥⲑⲉⲣ ⲁⲓⲥⲗⲁⲛⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲥⲑⲉⲣ ⲁⲓⲥⲗⲁⲛⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲓⲥⲑⲉⲣ ⲁⲓⲥⲗⲁⲛⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲉⲕⲟⲩⲁⲇⲟⲣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲉⲩⲣⲟⲡⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲉⲩⲣⲟⲡⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲉⲩⲣⲟⲡⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="unconfirmed">ⲟⲩⲕⲉ ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="unconfirmed">ⲡⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</generic>
+					<standard draft="unconfirmed">ⲡⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</standard>
+					<daylight draft="unconfirmed">ⲡⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲉⲩⲣⲟⲡⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϥⲓⲇϫⲓ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϥⲓⲇϫⲓ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ϥⲓⲇϫⲓ</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲅⲩⲁⲛⲁ ⲛ̀ϥⲉⲣⲉⲛⲥⲟⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϥⲉⲣⲉⲛⲥⲟⲥ ⲙ̀ⲡⲓⲣⲏⲥ &amp; ⲁⲛⲧⲁⲣⲕⲑⲓⲕⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲅⲁⲗⲁⲡⲁⲅⲟⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">̀ⲡⲥⲟⲏⲩ ⲛ̀ⲅⲁⲙⲃⲓⲉⲣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ϫⲓⲗⲃⲉⲣⲧ</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲙⲏϯ ⲛ̀ⲅⲣⲓⲛⲓϭ</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡϣⲱⲙ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</standard>
+					<daylight draft="unconfirmed">̀ⲡⲥⲏⲟⲩ ⲙ̀̀ⲡϣⲱⲙ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲧⲉ ⲅⲣⲓⲛⲗⲁⲛⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲅⲟⲗϥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲅⲩⲁⲛⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϩⲁⲟⲩⲁⲓ-ⲁⲗⲉⲩⲑⲓⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲁⲟⲩⲁⲓ-ⲁⲗⲉⲩⲑⲓⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϩⲁⲟⲩⲁⲓ-ⲁⲗⲉⲩⲑⲓⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ϩⲁⲟⲩⲁⲓ-ⲁⲗⲉⲩⲑⲓⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲛⲅ ⲕⲟⲛⲅ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϩⲟⲛⲅ ⲕⲟⲛⲅ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ϩⲟⲛⲅ ⲕⲟⲛⲅ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϧⲟⲃⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϧⲟⲃⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ϧⲟⲃⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϩⲉⲛⲧⲟⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲱⲕⲉⲁⲛⲟⲥ ⲛ̀ϩⲉⲛⲧⲟⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲛⲇⲟϭⲓⲛⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀̀ⲑⲙⲏϯ ⲛ̀ⲓⲛⲇⲟⲛⲉⲥⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲓⲛⲇⲟⲛⲉⲥⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲓⲛⲇⲟⲛⲉⲥⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲣⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲣⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲓⲣⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲣⲕⲟⲩⲧⲥⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲣⲕⲟⲩⲧⲥⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲓⲣⲕⲟⲩⲧⲥⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲥⲣⲁⲏⲗ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲓⲥⲣⲁⲏⲗ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲡⲓⲥⲣⲁⲏⲗ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲁⲡⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲁⲡⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲓⲁⲡⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲟⲣⲉⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲕⲟⲣⲉⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲕⲟⲣⲉⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲟⲥⲣⲁⲉ</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲣⲁⲥⲛⲟⲓⲁⲣⲥⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲕⲣⲁⲥⲛⲟⲓⲁⲣⲥⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲕⲣⲁⲥⲛⲟⲓⲁⲣⲥⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲩⲣⲅⲩⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲗⲓⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲗⲟⲣⲇ ϩⲟⲩⲉ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲗⲟⲣⲇ ϩⲟⲩⲉ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲗⲟⲣⲇ ϩⲟⲩⲉ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲅⲁⲇⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲙⲁⲅⲁⲇⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲙⲁⲅⲁⲇⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲗⲉⲍⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲗⲇⲓⲃ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲣⲕⲉⲥⲁⲥ</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲙⲁⲣϣⲁⲗ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲩⲣⲓⲑⲓⲟⲩⲥ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲙⲁⲩⲣⲓⲑⲓⲟⲩⲥ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲙⲁⲩⲣⲓⲑⲓⲟⲩⲥ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲁⲩⲥⲟⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲉⲝⲓⲕⲟ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲙⲉⲝⲓⲕⲟ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲙ̀ⲙⲉⲝⲓⲕⲟ ⲙ̀ⲡⲁⲥⲓϥⲓⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟⲩⲗⲁⲛⲃⲁⲧⲁⲣ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲟⲩⲗⲁⲛⲃⲁⲧⲁⲣ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲟⲩⲗⲁⲛⲃⲁⲧⲁⲣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲟⲥⲕⲟ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲙⲟⲥⲕⲟ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲙⲟⲥⲕⲟ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲓⲁⲛⲙⲁⲣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲁⲩⲣⲟⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲉⲡⲁⲗ</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲟⲩⲕⲁⲗⲉⲇⲟⲛⲓⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲓⲟⲩⲕⲁⲗⲉⲇⲟⲛⲓⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲛⲓⲟⲩⲕⲁⲗⲉⲇⲟⲛⲓⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛⲛ̀ⲓⲟⲩϥⲁⲩⲛⲇⲗⲁⲛⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛⲛ̀ⲓⲟⲩϥⲁⲩⲛⲇⲗⲁⲛⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛⲛ̀ⲓⲟⲩϥⲁⲩⲛⲇⲗⲁⲛⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲟⲩⲉ</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲛⲟⲣϥⲟⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲛⲟⲣϥⲟⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲛⲟⲣϥⲟⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϥⲉⲣⲛⲁⲛⲇⲟ ⲇⲉ ⲛⲟⲣⲟⲛϩⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ϥⲉⲣⲛⲁⲛⲇⲟ ⲇⲉ ⲛⲟⲣⲟⲛϩⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ϥⲉⲣⲛⲁⲛⲇⲟ ⲇⲉ ⲛⲟⲣⲟⲛϩⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲟⲃⲟⲥⲓⲃⲓⲣⲥⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲛⲟⲃⲟⲥⲓⲃⲓⲣⲥⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲛⲟⲃⲟⲥⲓⲃⲓⲣⲥⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟⲙⲥⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲟⲙⲥⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲟⲙⲥⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲁⲕⲓⲥⲑⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲁⲕⲓⲥⲑⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲁⲕⲓⲥⲑⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲙⲡⲁⲗⲁⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲁⲡⲟⲩⲁ ⲛⲓⲟⲩⲅⲓⲛⲉⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲁⲣⲁⲅⲟⲩⲁⲓ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲁⲣⲁⲅⲟⲩⲁⲓ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲁⲣⲁⲅⲟⲩⲁⲓ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲉⲣⲟⲩ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲡⲉⲣⲟⲩ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲡⲉⲣⲟⲩ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲫⲓⲗⲓⲡⲡⲓⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲫⲓⲗⲓⲡⲡⲓⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲫⲓⲗⲓⲡⲡⲓⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲙ̀ⲫⲓⲛⲓⲝ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲁⲛⲧ ⲡⲓⲉⲣ &amp; ⲙⲓⲕⲉⲗⲟⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲥⲁⲛⲧ ⲡⲓⲉⲣ &amp; ⲙⲓⲕⲉⲗⲟⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲥⲁⲛⲧ ⲡⲓⲉⲣ &amp; ⲙⲓⲕⲉⲗⲟⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲑⲕⲁⲓⲣⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲟϩⲛⲡⲉⲓ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲕⲟⲣⲉⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲣⲉⲓⲟⲩⲛⲓⲟⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲣⲟⲑⲉⲣⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲁϧⲁⲗⲓⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲥⲁϧⲁⲗⲓⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲥⲁϧⲁⲗⲓⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲁⲙⲟⲣⲁ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲥⲁⲙⲟⲣⲁ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲥⲁⲙⲟⲣⲁ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲩϣⲉⲗ</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲥⲓⲛⲅⲁⲡⲟⲣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲥⲟⲗⲟⲙⲟⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲣⲏⲥ ⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲟⲩⲣⲓⲛⲁⲙ</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲥⲩⲟⲩⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲁϩⲓⲑⲓ</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲁⲓⲟⲩⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲑⲁⲓⲟⲩⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲧⲟⲟⲩⲓ ⲛ̀ⲑⲁⲓⲟⲩⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲁϫⲓⲕⲓⲥⲑⲁⲛ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲟⲕⲉⲗⲁⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲟⲛⲅⲁ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲑⲟⲛⲅⲁ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲑⲟⲛⲅⲁ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϭⲟⲩⲕ</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲟⲩⲣⲕⲙⲉⲛⲓⲥⲑⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲑⲟⲩⲣⲕⲙⲉⲛⲓⲥⲑⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲑⲟⲩⲣⲕⲙⲉⲛⲓⲥⲑⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲑⲟⲩⲃⲁⲗⲟⲩ</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟⲩⲣⲟⲩⲅⲩⲟⲁⲓ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲟⲩⲣⲟⲩⲅⲟⲩⲁⲓ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲟⲩⲣⲟⲩⲅⲟⲩⲁⲓ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲁⲛⲁⲑⲟⲩ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲃⲁⲛⲁⲑⲟⲩ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲃⲁⲛⲁⲑⲟⲩ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲉⲛⲉⲍⲟⲩⲉⲗⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲗⲁⲇⲓⲃⲟⲥⲑⲟⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲃⲗⲁⲇⲓⲃⲟⲥⲑⲟⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲃⲗⲁⲇⲓⲃⲟⲥⲑⲟⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲃⲟⲗⲅⲟⲅⲣⲁⲇ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲙ̀ⲃⲟⲗⲅⲟⲅⲣⲁⲇ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲙ̀ⲃⲟⲗⲅⲟⲅⲣⲁⲇ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲃⲟⲥⲑⲟⲕ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲙ̀ⲡⲓⲙⲟⲩⲓ ⲛ̀ⲟⲩⲁⲕ</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲟⲩⲁⲗⲓⲥ &amp; ϥⲟⲩⲑⲟⲩⲛⲁ</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲁⲕⲟⲩⲧⲥⲕ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲁⲕⲟⲩⲧⲥⲕ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲓⲁⲕⲟⲩⲧⲥⲕ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲉⲕⲁⲑⲉⲣⲓⲛⲃⲟⲩⲣⲅ</generic>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϩⲟⲣⲟⲥ ⲛ̀ⲓⲉⲕⲁⲑⲉⲣⲓⲛⲃⲟⲩⲣⲅ</standard>
+					<daylight draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ϣⲱⲙ ⲛ̀ⲓⲉⲕⲁⲑⲉⲣⲓⲛⲃⲟⲩⲣⲅ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">ⲡ̀ⲥⲏⲟⲩ ⲛ̀ⲓⲟⲩⲕⲟⲛ</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲉⲣϩⲁⲙ ⲛ̀ⲧⲉ ⲛⲓⲉⲙⲁⲣⲁⲧ ⲛ̀ⲁⲣⲁⲃⲟⲥ ⲉⲧϩⲱⲧⲡ</displayName>
+				<displayName count="other" draft="unconfirmed">nⲓⲇⲉⲣϩⲁⲙ ⲛ̀ⲧⲉ ⲛⲓⲉⲙⲁⲣⲁⲧ ⲛ̀ⲁⲣⲁⲃⲟⲥ ⲉⲧϩⲱⲧⲡ</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">ⲡⲓⲁϥⲅⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲁϥⲅⲁⲛⲓⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲁϥⲅⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲁϥⲅⲁⲛⲓⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲗⲃⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲗⲉⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲗⲃⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲣⲁⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣⲙⲉⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲣⲁⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣⲙⲉⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲓⲗⲇⲉⲣ ⲛ̀ⲣⲉⲙⲛ̀ϩⲟⲗⲁⲛⲇⲁ ⲁⲛⲑⲓⲗⲉⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲓⲗⲇⲉⲣ ⲛ̀ⲣⲉⲙⲛ̀ϩⲟⲗⲁⲛⲇⲁ ⲁⲛⲑⲓⲗⲉⲁ</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲩⲁⲛⲍⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲛⲅⲟⲗⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲩⲁⲛⲍⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲛⲅⲟⲗⲁ</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣϫⲉⲛⲑⲓⲛ</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲩⲥⲑⲧⲣⲁⲗⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲩⲥⲑⲧⲣⲁⲗⲓⲁ</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">ⲡⲓϥⲗⲟⲣⲓⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣⲟⲩⲃⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲗⲟⲣⲓⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲣⲟⲩⲃⲁ</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">ⲡⲓⲙⲁⲛⲁⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲍⲉⲣⲃⲁⲓϫⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲙⲁⲛⲁⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲍⲉⲣⲃⲁⲓϫⲁⲛ</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">ⲡⲓⲙⲁⲣⲕ ⲛ̀ⲧⲉ ⲃⲟⲥⲛⲓⲁ-ϩⲉⲣⲍⲉⲅⲟⲃⲓⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲙⲁⲣⲕ ⲛ̀ⲧⲉ ⲃⲟⲥⲛⲓⲁ-ϩⲉⲣⲍⲉⲅⲟⲃⲓⲛⲁ</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁⲣⲃⲁⲇⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁⲣⲃⲁⲇⲓⲁ</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">ⲡⲓⲑⲁⲕⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁⲛⲅⲗⲁⲇⲉϣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲑⲁⲕⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁⲛⲅⲗⲁⲇⲉϣ</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲃ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲗⲅⲁⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲗⲉⲃ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲗⲅⲁⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁϩⲣⲁⲓⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁϩⲣⲁⲓⲛ</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲣⲟⲩⲛⲇⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲣⲟⲩⲛⲇⲓ</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲣⲙⲟⲩⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲣⲙⲟⲩⲇⲁ</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲃⲣⲟⲩⲛⲉⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲃⲣⲟⲩⲛⲉⲓ</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲟⲗⲓⲃⲓⲁⲛⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲗⲓⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲃⲟⲗⲓⲃⲓⲁⲛⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲗⲓⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲉⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲣⲁⲍⲓⲗ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲉⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲣⲁⲍⲓⲗ</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁϩⲁⲙⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲁϩⲁⲙⲁ</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">ⲡⲓⲛⲅⲟⲩⲗⲑⲣⲟⲩⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲑⲁⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲛⲅⲟⲩⲗⲑⲣⲟⲩⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲩⲑⲁⲛⲁ</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲟⲩⲗⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲑⲥⲟⲩⲁⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲟⲩⲗⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲟⲑⲥⲟⲩⲁⲛⲁ</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲃⲉⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲗⲁⲣⲟⲩⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲃⲉⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲗⲁⲣⲟⲩⲥ</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲙ̀ⲃⲉⲗⲓⲍⲉ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲙ̀ⲃⲉⲗⲓⲍⲉ</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲛⲁⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲛⲁⲇⲁ</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲛⲅⲟ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲛⲅⲟ</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲓⲥⲣⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲓⲥⲣⲁ</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲗⲉ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲗⲉ</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">ⲡⲓⲓⲟⲩⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲓⲟⲩⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">ⲡⲓⲓⲟⲩⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲓⲟⲩⲁⲛ ⲛ̀ⲣⲉⲙⲛ̀ϭⲓⲛⲁ</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲗⲟⲙⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲗⲟⲙⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲗⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲥⲑⲁⲣⲓⲕⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲗⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲥⲑⲁⲣⲓⲕⲁ</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲃⲁ ̀ⲛⲣⲉϥϣⲓⲃϯ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲃⲁ ̀ⲛⲣⲉϥϣⲓⲃϯ</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲃⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲃⲁ</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">ⲡⲓⲉⲥⲕⲟⲩⲇⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲡⲃⲉⲣⲇⲉ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲉⲥⲕⲟⲩⲇⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲡⲃⲉⲣⲇⲉ</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲣⲟⲩⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ϭⲉⲕ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲣⲟⲩⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ϭⲉⲕ</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲉⲣⲉⲙⲛ̀ⲇϫⲓⲃⲟⲩⲑⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ⲉⲣⲉⲙⲛ̀ⲇϫⲓⲃⲟⲩⲑⲓ</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲣⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲇⲁⲛⲙⲁⲣⲕ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲕⲣⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲇⲁⲛⲙⲁⲣⲕ</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲇⲟⲙⲓⲛⲓⲕⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲇⲟⲙⲓⲛⲓⲕⲁⲛ</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲗϫⲉⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲗϫⲉⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲭⲏⲙⲓ</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">ⲡⲓⲛⲁⲕϥⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲣⲓⲑⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲛⲁⲕϥⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲣⲓⲑⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲓⲣⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲃⲓⲣⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲉⲑⲁⲩϣ</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="unconfirmed">ⲉⲩⲣⲟ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲉⲩⲣⲟ</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ϥⲓⲇϫⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ϥⲓⲇϫⲓ</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲛⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲛⲙⲟⲩⲓ ⲛ̀ϥⲟⲕⲗⲁⲛⲇ</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲣⲓⲑⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲣⲓⲑⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲁⲣⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲗⲁⲣⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲉⲟⲣⲅⲓⲁ</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">ⲡⲓⲥⲉⲇⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲁⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲥⲉⲇⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲁⲛⲁ</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲅⲓⲃⲣⲁⲗⲑⲁⲣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲅⲓⲃⲣⲁⲗⲑⲁⲣ</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲁⲗⲁⲥⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲁⲙⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲁⲗⲁⲥⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲁⲙⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲓⲛⲉⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲓⲛⲉⲁ</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲉⲑⲍⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲟⲩⲁⲑⲉⲙⲁⲗⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲉⲑⲍⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲟⲩⲁⲑⲉⲙⲁⲗⲁ</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲩⲁⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲅⲩⲁⲛⲁ</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ϩⲟⲛⲅ ⲕⲟⲛⲅ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ϩⲟⲛⲅ ⲕⲟⲛⲅ</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲙⲡⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ϩⲟⲛⲇⲟⲩⲣⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲗⲉⲙⲡⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ϩⲟⲛⲇⲟⲩⲣⲁ</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲩⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲣⲟⲩⲁⲑⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲩⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲣⲟⲩⲁⲑⲓⲁ</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲟⲩⲣⲇ ⲛ̀ⲣⲉⲙⲛ̀ϩⲁⲓⲑⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲟⲩⲣⲇ ⲛ̀ⲣⲉⲙⲛ̀ϩⲁⲓⲑⲓ</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲟⲣⲓⲛⲧ ⲛ̀ⲣⲉⲙⲛ̀ϩⲁⲛⲅⲁⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲟⲣⲓⲛⲧ ⲛ̀ⲣⲉⲙⲛ̀ϩⲁⲛⲅⲁⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓⲁϩ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲛⲇⲟⲛⲉⲥⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓⲁϩ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲛⲇⲟⲛⲉⲥⲓⲁ</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">ⲡⲓϣⲉⲕⲉⲗ ⲙ̀ⲃⲉⲣⲓ ⲙ̀ⲡⲓⲥⲣⲁⲏⲗ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϣⲉⲕⲉⲗ ⲙ̀ⲃⲉⲣⲓ ⲙ̀ⲡⲓⲥⲣⲁⲏⲗ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙ̀ⲛ̀ϩⲉⲛⲧⲟⲩ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙ̀ⲛ̀ϩⲉⲛⲧⲟⲩ</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲣⲁⲕ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲣⲁⲕ</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲣⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲣⲁⲛ</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲣⲟⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲓⲥⲗⲁⲛⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲕⲣⲟⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲁⲓⲥⲗⲁⲛⲇⲁ</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ϫⲁⲙⲁⲓⲕⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ϫⲁⲙⲁⲓⲕⲁ</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲟⲣⲇⲁⲛⲏⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲟⲣⲇⲁⲛⲏⲥ</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">ⲡⲓⲓⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲁⲡⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲓⲉⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲁⲡⲁⲛ</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">ⲡⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲉⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲉⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">ⲡⲓⲥⲟⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲩⲣⲅⲩⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲥⲟⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲩⲣⲅⲩⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲉⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲙⲃⲟⲩⲇⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲉⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲙⲃⲟⲩⲇⲓⲁ</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲙⲟⲣⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲙⲟⲣⲓ</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">ⲡⲓⲟⲩⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲣⲉⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲟⲩⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲣⲉⲁ ⲙ̀ⲡⲉⲙϩⲓⲧ</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">ⲡⲓⲟⲩⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲣⲉⲁ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲟⲩⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲣⲉⲁ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲁⲓⲧ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲟⲩⲁⲓⲧ</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲁⲓⲙⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲕⲁⲓⲙⲁⲛ</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">ⲡⲓⲑⲉⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲑⲉⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲍⲁϧⲉⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲓⲡ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲁⲟ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲓⲡ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲁⲟ</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲓⲃⲁⲛⲟⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲓⲃⲁⲛⲟⲛ</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲣⲓⲗⲁⲛⲕⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲣⲓⲗⲁⲛⲕⲁ</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲁⲓⲃⲉⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲁⲓⲃⲉⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲓⲗⲁⲛⲅⲉⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲁⲍⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲗⲓⲗⲁⲛⲅⲉⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲁⲍⲓ</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲓⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲗⲓⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲣⲁⲕⲉϣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲣⲁⲕⲉϣ</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲩ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲟⲗⲇⲟⲃⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲗⲉⲩ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲟⲗⲇⲟⲃⲁ</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">ⲡⲓⲁⲣⲓⲁⲣⲓ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲁⲅⲁⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲁⲣⲓⲁⲣⲓ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲁⲅⲁⲥ</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲉⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲕⲉⲇⲟⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲇⲉⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲕⲉⲇⲟⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲩⲁⲧ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲩⲁⲛⲙⲁⲣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲩⲁⲧ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲩⲁⲛⲙⲁⲣ</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">ⲡⲓⲑⲟⲩⲅⲣⲓⲕ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲟⲛⲅⲟⲗⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲑⲟⲩⲅⲣⲓⲕ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲟⲛⲅⲟⲗⲓⲁ</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲑⲁⲕⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲕⲁⲛⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲑⲁⲕⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲕⲁⲛⲓ</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName draft="unconfirmed">ⲡⲓⲟⲩⲅⲟⲩⲓⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲩⲣⲓⲑⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲟⲩⲅⲟⲩⲓⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲩⲣⲓⲑⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲩⲣⲓⲑⲓⲟⲩⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲩⲣⲓⲑⲓⲟⲩⲥ</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩϥⲓⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲇⲓⲃ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩϥⲓⲁ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲇⲓⲃ</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲩⲁϭⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲙⲁⲗⲁⲩⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲩⲁϭⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲙⲁⲗⲁⲩⲓ</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲙⲉⲝⲓⲕⲟ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲙⲉⲝⲓⲕⲟ</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲛⲅⲓⲧ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲉⲍⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲛⲅⲓⲧ ⲛ̀ⲣⲉⲙⲛⲙ̀ⲁⲗⲉⲍⲓⲁ</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="unconfirmed">ⲡⲓⲙⲉⲑⲓⲕⲁⲗ ⲛ̀ⲣⲉⲛⲙ̀ⲟⲍⲁⲙⲃⲓⲕ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲙⲉⲑⲓⲕⲁⲗ ⲛ̀ⲣⲉⲛⲙ̀ⲟⲍⲁⲙⲃⲓⲕ</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲁⲙⲓⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲁⲙⲓⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">ⲡⲓⲛⲁⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲁⲓⲅⲉⲣⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲛⲁⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲁⲓⲅⲉⲣⲓⲁ</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲣⲇⲟⲃⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲓⲕⲁⲣⲁⲅⲟⲩⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲣⲇⲟⲃⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲓⲕⲁⲣⲁⲅⲟⲩⲁ</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲣⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲟⲣⲟⲩⲓⲅ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲕⲣⲟⲛ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲟⲣⲟⲩⲓⲅ</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲉⲡⲁⲗ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲉⲡⲁⲗ</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲛⲓⲟⲩⲍⲓⲗⲁⲛⲇⲁ</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲙⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲙⲁⲛ</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲁⲗⲃⲟⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲛⲁⲙⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲃⲁⲗⲃⲟⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲛⲁⲙⲁ</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲟⲩⲁⲣⲁⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲣⲁⲅⲟⲩⲁⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲟⲩⲁⲣⲁⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲣⲁⲅⲟⲩⲁⲓ</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲓⲛⲁ ⲛ̀ⲧⲉ ⲡⲁⲡⲟⲩⲁ ⲛⲓⲟⲩ ⲅⲓⲛⲉⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲓⲛⲁ ⲛ̀ⲧⲉ ⲡⲁⲡⲟⲩⲁ ⲛⲓⲟⲩ ⲅⲓⲛⲉⲁ</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲫⲓⲗⲓⲡⲡⲓⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲫⲓⲗⲓⲡⲡⲓⲛ</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲕⲓⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲁⲕⲓⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">ⲡⲓⲍⲗⲟⲑⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲟⲗⲁⲛⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲍⲗⲟⲑⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲟⲗⲁⲛⲇⲁ</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">ⲡⲓⲥⲟⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲉⲣⲟⲩ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲥⲟⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲡⲉⲣⲟⲩ</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲑⲁⲣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲑⲁⲣ</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲩ ⲛ̀ⲣⲉⲙⲛ̀ⲣⲟⲙⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲗⲉⲩ ⲛ̀ⲣⲉⲙⲛ̀ⲣⲟⲙⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲉⲣⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲉⲣⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲃⲉⲗ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲣⲟⲩⲥⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲃⲉⲗ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲣⲟⲩⲥⲓⲁ</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲣⲟⲩⲁⲛⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ⲣⲉⲙⲛ̀ⲣⲟⲩⲁⲛⲇⲁ</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲁⲟⲩⲇⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲁⲟⲩⲇⲓ</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲥⲟⲗⲟⲙⲟⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲛⲓⲙⲟⲩⲓ ⲛ̀ⲥⲟⲗⲟⲙⲟⲛ</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲟⲩⲡⲓ ⲣ̀ⲉⲙⲛ̀ⲥⲓϣⲉⲗ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲟⲩⲡⲓ ⲣ̀ⲉⲙⲛ̀ⲥⲓϣⲉⲗ</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲇⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲇⲁⲛ</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲣⲟⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲓⲇ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲕⲣⲟⲛⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲓⲇ</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲓⲛⲅⲁⲡⲟⲣ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲓⲛⲅⲁⲡⲟⲣ</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲧⲉ ⲥⲁⲛⲧ ϩⲉⲗⲉⲛⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲧⲉ ⲥⲁⲛⲧ ϩⲉⲗⲉⲛⲁ</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲟⲛ ⲛ̀ⲧⲉ ⲥⲓⲉⲣⲁⲗⲉⲟⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲗⲉⲟⲛ ⲛ̀ⲧⲉ ⲥⲓⲉⲣⲁⲗⲉⲟⲛ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲉⲟⲛ ⲛ̀ⲧⲉ ⲥⲓⲉⲣⲁⲗⲉⲟⲛ (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲗⲉⲟⲛ ⲛ̀ⲧⲉ ⲥⲓⲉⲣⲁⲗⲉⲟⲛ (1964—2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">ⲡⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲙⲁⲗⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲙⲁⲗⲓⲁ</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲣⲓⲛⲁⲙ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲣⲓⲛⲁⲙ</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲇⲁⲛ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲉⲛⲉϩ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲇⲁⲛ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲃⲣⲁ ⲛ̀ⲧⲉ ⲥⲁⲟ ⲑⲟⲙⲉ &amp; ⲡⲣⲓⲛⲥⲓⲡ ⲇⲟⲃⲣⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲃⲣⲁ ⲛ̀ⲧⲉ ⲥⲁⲟ ⲑⲟⲙⲉ &amp; ⲡⲣⲓⲛⲥⲓⲡ ⲇⲟⲃⲣⲁ</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲁⲥⲥⲩⲣⲟⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲁⲩⲛⲇ ⲛ̀ⲣⲉⲙ̀ⲛ̀ⲁⲥⲥⲩⲣⲟⲥ</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲓⲗⲁⲛⲅⲉⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲁⲍⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲉ̀ⲙⲁⲗⲁⲛⲅⲉⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲟⲩⲁⲍⲓ</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲁϩⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁⲓⲗⲁⲛⲇ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲃⲁϩⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁⲓⲗⲁⲛⲇ</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">ⲡⲓⲥⲟⲙⲟⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁϫⲓⲕⲓⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲥⲟⲙⲟⲛⲓ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁϫⲓⲕⲓⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">ⲡⲓⲙⲁⲛⲁⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲣⲕⲙⲉⲛⲓⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲙⲁⲛⲁⲧ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲣⲕⲙⲉⲛⲓⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲛⲓⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲓⲛⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲛⲓⲥ</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲁʻⲁⲛⲅⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲛⲅⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲡⲁʻⲁⲛⲅⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲛⲅⲁ</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">ⲡⲓⲗⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲣⲕⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲗⲓⲣⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲟⲩⲣⲕⲓⲁ</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲑⲣⲓⲛⲓⲇⲁⲇ &amp; ⲑⲟⲃⲁⲅⲟ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲑⲣⲓⲛⲓⲇⲁⲇ &amp; ⲑⲟⲃⲁⲅⲟ</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲛⲓⲟⲩ ⲑⲁⲓⲟⲩⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲧⲉ ⲛⲓⲟⲩ ⲑⲁⲓⲟⲩⲁⲛ</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">ⲡⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁⲛⲍⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲑⲁⲛⲍⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">ⲡⲓϩⲣⲩⲃⲛⲓⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲕⲣⲁⲛⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϩⲣⲩⲃⲛⲓⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲕⲣⲁⲛⲓⲁ</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">ⲡⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲅⲁⲛⲇⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϣⲓⲗⲓⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲅⲁⲛⲇⲁ</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲛ̀ⲁⲙⲉⲣⲓⲕⲁⲛⲟⲥ</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">ⲡⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲣⲟⲩⲅⲟⲩⲁⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲡⲉⲥⲟ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲣⲟⲩⲅⲟⲩⲁⲓ</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">ⲡⲓⲥⲟⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲥⲟⲙ ⲛ̀ⲣⲉⲙⲛ̀ⲟⲩⲍⲃⲉⲕⲓⲥⲑⲁⲛ</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲟⲗⲓⲃⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲛⲉⲍⲟⲩⲉⲗⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲃⲟⲗⲓⲃⲁⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲉⲛⲉⲍⲟⲩⲉⲗⲁ</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲓⲉⲑⲛⲁⲙ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲇⲟⲛⲅ ⲛ̀ⲣⲉⲙⲛ̀ⲃⲓⲉⲑⲛⲁⲙ</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">ⲡⲓⲃⲁⲑⲟⲩ ⲛ̀ⲧⲉ ⲃⲁⲛⲁⲑⲟⲩ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲃⲁⲑⲟⲩ ⲛ̀ⲧⲉ ⲃⲁⲛⲁⲑⲟⲩ</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">ⲡⲓⲑⲁⲗⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲁⲙⲟⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲑⲁⲗⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲥⲁⲙⲟⲁ</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲛ̀̀ⲑⲙⲏϯ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲛ̀̀ⲑⲙⲏϯ</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">ⲡⲓⲇⲟⲗⲗⲁⲣ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲕⲁⲣⲓⲃⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲇⲟⲗⲗⲁⲣ ⲙ̀ⲡⲉⲓⲉⲃⲧ ⲛ̀ⲕⲁⲣⲓⲃⲓ</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName draft="unconfirmed">ⲡⲓⲅⲓⲗⲇⲉⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲣⲓⲃⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲅⲓⲗⲇⲉⲣ ⲛ̀ⲣⲉⲙⲛ̀ⲕⲁⲣⲓⲃⲓ</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲙ̀ⲡⲉⲙⲉⲛⲧ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="unconfirmed">ⲡⲓϥⲣⲁⲛⲕ ⲥϥⲡ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓϥⲣⲁⲛⲕ ⲥϥⲡ</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="unconfirmed">ⲟⲩϩⲁⲧ ⲛ̀ⲁⲧⲥⲟⲩⲏⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">(ⲟⲩϩⲁⲧ ⲛ̀ⲁⲧⲥⲟⲩⲏⲛ)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲉⲙⲉⲛ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲣⲓⲁⲗ ⲛ̀ⲣⲉⲙⲛ̀ⲓⲉⲙⲉⲛ</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">ⲡⲓⲣⲁⲛⲇ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲣⲁⲛⲇ ⲛ̀ϯⲫⲣⲓⲕⲓⲁ ⲙ̀ⲡⲓⲣⲏⲥ</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="unconfirmed">ⲡⲓⲕⲟⲩⲁϭⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲍⲁⲙⲃⲓⲁ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲛⲓⲕⲟⲩⲁϭⲁ ⲛ̀ⲣⲉⲙⲛ̀ⲍⲁⲙⲃⲓⲁ</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName draft="unconfirmed">ⲡⲓⲛⲟⲩⲃ ⲛ̀ⲣⲉⲙⲛ̀ⲍⲓⲙⲃⲁⲃⲟⲩⲉⲓ</displayName>
+				<displayName count="other" draft="unconfirmed">ⲡⲓⲛⲟⲩⲃ ⲛ̀ⲣⲉⲙⲛ̀ⲍⲓⲙⲃⲁⲃⲟⲩⲉⲓ</displayName>
+			</currency>
+		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="unconfirmed">{0} ⲛⲓⲉϩⲟⲟⲩ</pluralMinimalPairs>
+		</minimalPairs>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end" draft="unconfirmed">{0}, ⲛⲉⲙ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ⲛⲉⲙ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0}, ⲓⲉ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ⲓⲉ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0}, ⲓⲉ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ⲓⲉ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, ⲓⲉ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ⲓⲉ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0}, &amp; {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} &amp; {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 </ldml>

@@ -861,9 +861,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="islamic-civil" draft="provisional">Kalendarju Islamiku-Ċivili</type>
 			<type key="calendar" type="iso8601">Kalendarju ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendarju Ġappuniż</type>
-			<type key="collation" type="big5han">Ordni Ċiniż Tradizzjonali (Big5)</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">Ordni tad-Dizzjunarju</type>
-			<type key="collation" type="gb2312han">Ordni Ċiniż Sempliċi (GB2312)</type>
 			<type key="collation" type="phonebook">Ordni Telefonika</type>
 			<type key="collation" type="pinyin">Ordni tal-Pinjin</type>
 			<type key="collation" type="standard">Ordni Standard</type>
@@ -1765,9 +1763,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity>il-Ġamajka</exemplarCity>
-			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>il-Belt tal-Kuwajt</exemplarCity>

@@ -29,7 +29,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="an">арагон тілі</language>
 			<language type="ann">оболо тілі</language>
 			<language type="anp">ангика тілі</language>
-			<language type="apc" draft="unconfirmed">араб тілі (леватин)</language>
+			<language type="apc" draft="contributed">араб тілі (леватин)</language>
 			<language type="ar">араб тілі</language>
 			<language type="ar_001">қазіргі стандартты араб тілі</language>
 			<language type="arn">мапуче тілі</language>
@@ -44,12 +44,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ay">аймара тілі</language>
 			<language type="az">әзірбайжан тілі</language>
 			<language type="ba">башқұрт тілі</language>
-			<language type="bal" draft="unconfirmed">балучи тілі</language>
+			<language type="bal">балучи тілі</language>
 			<language type="ban">бали тілі</language>
 			<language type="bas">баса тілі</language>
 			<language type="be">беларусь тілі</language>
 			<language type="bem">бемба тілі</language>
-			<language type="bew" draft="unconfirmed">бетауи тілі</language>
+			<language type="bew" draft="contributed">бетауи тілі</language>
 			<language type="bez">бена тілі</language>
 			<language type="bg">болгар тілі</language>
 			<language type="bgc">хариани тілі</language>
@@ -59,20 +59,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">бини тілі</language>
 			<language type="bla">сиксика тілі</language>
 			<language type="blo">ании тілі</language>
-			<language type="blt" draft="unconfirmed">тай дам тілі</language>
+			<language type="blt" draft="contributed">тай дам тілі</language>
 			<language type="bm">бамбара тілі</language>
 			<language type="bn">бенгал тілі</language>
 			<language type="bo">тибет тілі</language>
+			<language type="bqi" draft="contributed">бахтияр тілі</language>
 			<language type="br">бретон тілі</language>
 			<language type="brx">бодо тілі</language>
 			<language type="bs">босния тілі</language>
-			<language type="bss" draft="unconfirmed">акусе тілі</language>
+			<language type="bss" draft="contributed">акусе тілі</language>
+			<language type="bua" draft="contributed">бурят тілі</language>
 			<language type="bug">бугис тілі</language>
 			<language type="byn">блин тілі</language>
 			<language type="ca">каталан тілі</language>
-			<language type="cad" draft="unconfirmed">каддо тілі</language>
+			<language type="cad" draft="contributed">каддо тілі</language>
 			<language type="cay">кайюга тілі</language>
-			<language type="cch" draft="unconfirmed">атсам тілі</language>
+			<language type="cch" draft="contributed">атсам тілі</language>
 			<language type="ccp">чакма тілі</language>
 			<language type="ce">шешен тілі</language>
 			<language type="ceb">себуано тілі</language>
@@ -84,10 +86,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">чипевайан тілі</language>
 			<language type="chr">чероки тілі</language>
 			<language type="chy">шайен тілі</language>
-			<language type="cic" draft="unconfirmed">чикасау тілі</language>
+			<language type="cic" draft="contributed">чикасау тілі</language>
 			<language type="ckb">сорани тілі</language>
 			<language type="clc">чилкотин тілі</language>
 			<language type="co">корсика тілі</language>
+			<language type="cop" draft="contributed">копт тілі</language>
 			<language type="crg">мичиф тілі</language>
 			<language type="crj">оңтүстік-шығыс кри тілі</language>
 			<language type="crk">жазықтағы кри тілі</language>
@@ -121,6 +124,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eka">экаджук тілі</language>
 			<language type="el">грек тілі</language>
 			<language type="en">ағылшын тілі</language>
+			<language type="en_GB" alt="short">ағылшын тілі (Біріккен Корольдік)</language>
 			<language type="eo">эсперанто тілі</language>
 			<language type="es">испан тілі</language>
 			<language type="et">эстон тілі</language>
@@ -162,7 +166,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hi_Latn" alt="variant">хинглиш</language>
 			<language type="hil">хилигайнон тілі</language>
 			<language type="hmn">хмонг тілі</language>
-			<language type="hnj" draft="unconfirmed">хмоң ниуа тілі</language>
+			<language type="hnj" draft="contributed">хмоң ниуа тілі</language>
 			<language type="hr">хорват тілі</language>
 			<language type="hsb">жоғарғы лужица тілі</language>
 			<language type="ht">гаити тілі</language>
@@ -191,7 +195,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="jmc">мачаме тілі</language>
 			<language type="jv">ява тілі</language>
 			<language type="ka">грузин тілі</language>
-			<language type="kaa" draft="unconfirmed">қарақалпақ тілі</language>
+			<language type="kaa" draft="contributed">қарақалпақ тілі</language>
 			<language type="kab">кабил тілі</language>
 			<language type="kac">качин тілі</language>
 			<language type="kaj">каджи тілі</language>
@@ -200,7 +204,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kcg">тьяп тілі</language>
 			<language type="kde">маконде тілі</language>
 			<language type="kea">кабувердьяну тілі</language>
-			<language type="ken" draft="unconfirmed">кеняң тілі</language>
+			<language type="kek" draft="contributed">кекчи тілі</language>
+			<language type="ken" draft="contributed">кеняң тілі</language>
 			<language type="kfo">коро тілі</language>
 			<language type="kgp">кайнганг тілі</language>
 			<language type="kha">кхаси тілі</language>
@@ -227,6 +232,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ksf">бафиа тілі</language>
 			<language type="ksh">кёльн тілі</language>
 			<language type="ku">күрд тілі</language>
+			<language type="ku" menu="core">күрд тілі</language>
+			<language type="ku" menu="extension">күрд тілі (күрмәнжі)</language>
 			<language type="kum">құмық тілі</language>
 			<language type="kv">коми тілі</language>
 			<language type="kw">корн тілі</language>
@@ -243,7 +250,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lij">лигур тілі</language>
 			<language type="lil">лиллуэт тілі</language>
 			<language type="lkt">лакота тілі</language>
-			<language type="lld" draft="unconfirmed">ладин тілі</language>
+			<language type="lld" draft="contributed">ладин тілі</language>
 			<language type="lmo">ломбард тілі</language>
 			<language type="ln">лингала тілі</language>
 			<language type="lo">лаос тілі</language>
@@ -252,7 +259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lrc">солтүстік люри тілі</language>
 			<language type="lsm">самия тілі</language>
 			<language type="lt">литва тілі</language>
-			<language type="ltg" draft="unconfirmed">латгалиан тілі</language>
+			<language type="ltg" draft="contributed">латгалиан тілі</language>
 			<language type="lu">луба-катанга тілі</language>
 			<language type="lua">луба-лулуа тілі</language>
 			<language type="lun">лунда тілі</language>
@@ -260,6 +267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lus">мизо тілі</language>
 			<language type="luy">лухиа тілі</language>
 			<language type="lv">латыш тілі</language>
+			<language type="lzz" draft="contributed">Лаз тілі</language>
 			<language type="mad">мадур тілі</language>
 			<language type="mag">магахи тілі</language>
 			<language type="mai">майтхили тілі</language>
@@ -273,7 +281,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mgh">макуа-меетто тілі</language>
 			<language type="mgo">мета тілі</language>
 			<language type="mh">маршалл тілі</language>
-			<language type="mhn" draft="unconfirmed">мокено тілі</language>
+			<language type="mhn" draft="contributed">мокено тілі</language>
 			<language type="mi">маори тілі</language>
 			<language type="mic">микмак тілі</language>
 			<language type="min">минангкабау тілі</language>
@@ -336,8 +344,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">папьяменто тілі</language>
 			<language type="pau">палау тілі</language>
 			<language type="pcm">нигериялық пиджин тілі</language>
+			<language type="pi" draft="contributed">пали тілі</language>
 			<language type="pis">пиджин тілі</language>
 			<language type="pl">поляк тілі</language>
+			<language type="pms" draft="contributed">пьемонт тілі</language>
 			<language type="pqm">малесит-пассамакводди тілі</language>
 			<language type="prg">пруссия тілі</language>
 			<language type="ps">пушту тілі</language>
@@ -350,7 +360,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="rap">рапануй тілі</language>
 			<language type="rar">раротонган тілі</language>
 			<language type="rhg">рохинджа</language>
-			<language type="rif" draft="unconfirmed">риффиан тілі</language>
+			<language type="rif" draft="contributed">риффиан тілі</language>
 			<language type="rm">романш тілі</language>
 			<language type="rn">рунди тілі</language>
 			<language type="ro">румын тілі</language>
@@ -376,13 +386,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="seh">сена тілі</language>
 			<language type="ses">койраборо сенни тілі</language>
 			<language type="sg">санго тілі</language>
+			<language type="sgs" draft="contributed">самогития тілі</language>
 			<language type="sh">серб-хорват тілі</language>
 			<language type="shi">ташелхит тілі</language>
 			<language type="shn">шан тілі</language>
 			<language type="si">сингал тілі</language>
-			<language type="sid" draft="unconfirmed">сидамо тілі</language>
+			<language type="sid" draft="contributed">сидамо тілі</language>
 			<language type="sk">словак тілі</language>
-			<language type="skr" draft="unconfirmed">сарайки тілі</language>
+			<language type="skr" draft="contributed">сарайки тілі</language>
 			<language type="sl">словен тілі</language>
 			<language type="slh">оңтүстік лушуцид тілі</language>
 			<language type="sm">самоа тілі</language>
@@ -429,7 +440,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tpi">ток-писин тілі</language>
 			<language type="tr">түрік тілі</language>
 			<language type="trv">тароко тілі</language>
-			<language type="trw" draft="unconfirmed">торуали тілі</language>
+			<language type="trw" draft="contributed">торуали тілі</language>
 			<language type="ts">тсонга тілі</language>
 			<language type="tt">татар тілі</language>
 			<language type="ttm">солтүстік тутчоне тілі</language>
@@ -751,6 +762,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CN">Қытай</territory>
 			<territory type="CO">Колумбия</territory>
 			<territory type="CP">Клиппертон аралы</territory>
+			<territory type="CQ">Сарк</territory>
 			<territory type="CR">Коста-Рика</territory>
 			<territory type="CU">Куба</territory>
 			<territory type="CV">Кабо-Верде</territory>
@@ -1097,59 +1109,96 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="cf">Валюта форматы</key>
 			<key type="collation">Сұрыптау реті</key>
 			<key type="currency">Валюта</key>
+			<key type="em">Эмоджи көрсетілімі</key>
 			<key type="hc">Уақыт форматы (12 не 24)</key>
 			<key type="lb">Жолды тасымалдау стилі</key>
+			<key type="lw">Сөздердегі жол бөліністері</key>
 			<key type="ms">Өлшемдер жүйесі</key>
 			<key type="numbers">Сандар</key>
+			<key type="ss">Қысқарған сөзден кейінгі сөйлем бөлінісі</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Будда күнтізбесі</type>
+			<type key="calendar" type="buddhist" scope="core">Будда</type>
 			<type key="calendar" type="chinese">Қытай күнтізбесі</type>
+			<type key="calendar" type="chinese" scope="core">Қытай</type>
 			<type key="calendar" type="coptic">Копт күнтізбесі</type>
+			<type key="calendar" type="coptic" scope="core">Копт</type>
 			<type key="calendar" type="dangi">Данги күнтізбесі</type>
+			<type key="calendar" type="dangi" scope="core">Данги</type>
 			<type key="calendar" type="ethiopic">Эфиопия күнтізбесі</type>
+			<type key="calendar" type="ethiopic" scope="core">Эфиопия</type>
 			<type key="calendar" type="ethiopic-amete-alem">Эфиопияның Амете-Алем күнтізбесі</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">Эфиопияның Амете-Алем</type>
 			<type key="calendar" type="gregorian">Грегориандық күнтізбе</type>
+			<type key="calendar" type="gregorian" scope="core">Грегориан</type>
 			<type key="calendar" type="hebrew">Көне еврей күнтізбесі</type>
+			<type key="calendar" type="hebrew" scope="core">Көне еврей</type>
 			<type key="calendar" type="indian" draft="contributed">Үндістанның ұлттық күнтізбесі</type>
 			<type key="calendar" type="islamic">Ислам күнтізбесі</type>
+			<type key="calendar" type="islamic" scope="core">Ислам</type>
 			<type key="calendar" type="islamic-civil">Ислам күнтізбесі (кестелік, азаматтық дәуір)</type>
+			<type key="calendar" type="islamic-civil" scope="core">Ислам (кестелік, азаматтық дәуір)</type>
 			<type key="calendar" type="islamic-rgsa" draft="contributed">Ислам күнтізбесі (Сауд Арабиясы, жаңа ай)</type>
 			<type key="calendar" type="islamic-tbla" draft="contributed">Ислам күнтізбесі (кестелік, астрономиялық дәуір)</type>
 			<type key="calendar" type="islamic-umalqura">Ислам күнтізбесі (Умм аль-Кура)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">Ислам (Умм аль-Кура)</type>
 			<type key="calendar" type="iso8601">ISO-8601 күнтізбесі</type>
 			<type key="calendar" type="japanese">Жапон күнтізбесі</type>
+			<type key="calendar" type="japanese" scope="core">Жапон</type>
 			<type key="calendar" type="persian">Парсы күнтізбесі</type>
+			<type key="calendar" type="persian" scope="core">Парсы</type>
 			<type key="calendar" type="roc">Мингуо күнтізбесі</type>
+			<type key="calendar" type="roc" scope="core">Мингуо</type>
 			<type key="cf" type="account">Есептік валюта форматы</type>
+			<type key="cf" type="account" scope="core">Есептік</type>
 			<type key="cf" type="standard">Стандартты валюта форматы</type>
-			<type key="collation" type="big5han" draft="contributed">Дәстүрлі қытай тілінің сұрыптау реті - Big5</type>
+			<type key="cf" type="standard" scope="core">Стандартты</type>
 			<type key="collation" type="compat" draft="contributed">Сәйкестікке арналған алдыңғы сұрыптау реті</type>
 			<type key="collation" type="dictionary" draft="contributed">Сөздік бойынша сұрыптау реті</type>
 			<type key="collation" type="ducet">Әдепкі уникод сұрыптау реті</type>
+			<type key="collation" type="ducet" scope="core">Әдепкі уникод</type>
 			<type key="collation" type="emoji" draft="contributed">Эмоджи сұрыптау реті</type>
 			<type key="collation" type="eor" draft="contributed">Еуропалық реттеу ережелері</type>
-			<type key="collation" type="gb2312han" draft="contributed">Жеңілдетілген қытай тілінің сұрыптау реті - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">Телефон кітапшасының сұрыптау реті</type>
 			<type key="collation" type="pinyin" draft="contributed">Пиньинь сұрыптау реті</type>
 			<type key="collation" type="reformed" draft="contributed">Қайта қарастырылған сұрыптау реті</type>
 			<type key="collation" type="search">Жалпы мақсаттағы іздеу</type>
+			<type key="collation" type="search" scope="core">Іздеу</type>
 			<type key="collation" type="searchjl" draft="contributed">Корей тілінің бастапқы дауыссызы бойынша іздеу</type>
 			<type key="collation" type="standard">Стандартты сұрыптау реті</type>
+			<type key="collation" type="standard" scope="core">Стандартты</type>
 			<type key="collation" type="stroke" draft="contributed">Иероглифтер сызықтарын сұрыптау реті</type>
 			<type key="collation" type="traditional" draft="contributed">Дәстүрлі сұрыптау реті</type>
 			<type key="collation" type="unihan" draft="contributed">Иероглифтер сызықтарын түбегейлі сұрыптау реті</type>
 			<type key="collation" type="zhuyin" draft="contributed">Чжуинь сұрыптау реті</type>
+			<type key="em" type="default" scope="core">Әдепкі</type>
+			<type key="em" type="emoji" scope="core">Эмоджи</type>
+			<type key="em" type="text" scope="core">Мәтін</type>
 			<type key="hc" type="h11">12 сағаттық жүйе (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11)</type>
 			<type key="hc" type="h12">12 сағаттық жүйе (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12)</type>
 			<type key="hc" type="h23">24 сағаттық жүйе (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">24 сағаттық жүйе (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">Жолды тасымалдаудың еркін стилі</type>
+			<type key="lb" type="loose" scope="core">Еркін</type>
 			<type key="lb" type="normal">Жолды тасымалдаудың қалыпты стилі</type>
+			<type key="lb" type="normal" scope="core">Қалыпты</type>
 			<type key="lb" type="strict">Жолды тасымалдаудың қатаң стилі</type>
+			<type key="lb" type="strict" scope="core">Қатаң</type>
+			<type key="lw" type="breakall" scope="core">Бәрін тасымалдау</type>
+			<type key="lw" type="keepall" scope="core">Бәрін қалдыру</type>
+			<type key="lw" type="normal" scope="core">Қалыпты</type>
+			<type key="lw" type="phrase" scope="core">Фразаларда қалдыру</type>
 			<type key="ms" type="metric">Метрлік жүйе</type>
+			<type key="ms" type="metric" scope="core">Метрлік</type>
 			<type key="ms" type="uksystem">Британиялық өлшемдер жүйесі</type>
+			<type key="ms" type="uksystem" scope="core">Британиялық</type>
 			<type key="ms" type="ussystem">Америкалық өлшемдер жүйесі</type>
+			<type key="ms" type="ussystem" scope="core">Америкалық</type>
 			<type key="numbers" type="ahom" draft="contributed">Ахом цифрлары</type>
 			<type key="numbers" type="arab">Үнді-араб сандары</type>
 			<type key="numbers" type="arabext">Үнді-араб сандарының кеңейтілген жүйесі</type>
@@ -1232,6 +1281,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="vaii">Вай цифрлары</type>
 			<type key="numbers" type="wara" draft="contributed">Варанг сити цифрлары</type>
 			<type key="numbers" type="wcho" draft="contributed">Ванчо цифрлары</type>
+			<type key="ss" type="none" scope="core">Өшіру</type>
+			<type key="ss" type="standard" scope="core">Қосу</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Метрлік</measurementSystemName>
@@ -1261,36 +1312,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="chinese">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">1-ай</month>
-							<month type="2">2-ай</month>
-							<month type="3">3-ай</month>
-							<month type="4">4-ай</month>
-							<month type="5">5-ай</month>
-							<month type="6">6-ай</month>
-							<month type="7">7-ай</month>
-							<month type="8">8-ай</month>
-							<month type="9">9-ай</month>
-							<month type="10">10-ай</month>
-							<month type="11">11-ай</month>
-							<month type="12">12-ай</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Бірінші ай</month>
-							<month type="2">Екінші ай</month>
-							<month type="3">Үшінші ай</month>
-							<month type="4">Төртінші ай</month>
-							<month type="5">Бесінші ай</month>
-							<month type="6">Алтыншы ай</month>
-							<month type="7">Жетінші ай</month>
-							<month type="8">Сегізінші ай</month>
-							<month type="9">Тоғызыншы ай</month>
-							<month type="10">Оныншы ай</month>
-							<month type="11">Он бірінші ай</month>
-							<month type="12">Он екінші ай</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1">1-ай</month>
 							<month type="2">2-ай</month>
@@ -1414,18 +1435,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="GyM">M/y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hv">h a, v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h', v</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd">dd.MM, E</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1464,9 +1489,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
 							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h">h–h a</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
@@ -1474,9 +1496,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1770,20 +1789,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EBh">E, B h</dateFormatItem>
 						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Eh">E, h a</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="GyM">MM-GGGGG y</dateFormatItem>
 						<dateFormatItem id="GyMd">dd-MM-GGGGG y</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, MM-dd-G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hv">h a, v</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd">dd.MM, E</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1806,11 +1829,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="B">B h – B h</greatestDifference>
+							<greatestDifference id="h">B h – h</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="B">B h:mm – B h:mm</greatestDifference>
+							<greatestDifference id="h">B h:mm – h:mm</greatestDifference>
+							<greatestDifference id="m">B h:mm – h:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
@@ -1826,7 +1851,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -1840,7 +1864,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1988,32 +2011,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">Зұлқ.</month>
 							<month type="12">Зұлх.</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Мұхаррам</month>
-							<month type="2">Сафар</month>
-							<month type="3">Рабиғул әууәл</month>
-							<month type="4">Рабиғул ахир</month>
-							<month type="5">Жұмадәл аууәл</month>
-							<month type="6">Жұмадәл ахир</month>
-							<month type="7">Ережеп</month>
-							<month type="8">Шағбан</month>
-							<month type="9">Рамазан</month>
-							<month type="10">Шәууал</month>
-							<month type="11">Зұлқағда</month>
-							<month type="12">Зұлхижжа</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
-					<eraNames>
-						<era type="0">ХЖ</era>
-					</eraNames>
 					<eraAbbr>
 						<era type="0">ХЖ</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">ХЖ</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="persian">
@@ -2877,6 +2880,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Easter">
 				<exemplarCity>Пасха аралы</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>Койайке</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>Пунта-Аренас</exemplarCity>
 			</zone>
@@ -3142,9 +3148,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>Пномпень</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Эндербери</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>Кантон</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3814,9 +3817,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Батыс Африка уақыты</generic>
-					<standard>Батыс Африка стандартты уақыты</standard>
-					<daylight>Батыс Африка жазғы уақыты</daylight>
+					<standard>Батыс Африка уақыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -4169,6 +4170,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Guyana">
 				<long>
 					<standard>Гайана уақыты</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Гавай және Алеут аралдары стандартты уақыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4735,13 +4741,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4750,8 +4769,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="1000" count="other">0 мың ¤</pattern>
 					<pattern type="10000" count="one">00 мың ¤</pattern>
 					<pattern type="10000" count="other">00 мың ¤</pattern>
-					<pattern type="100000" count="one">000 мың ¤</pattern>
-					<pattern type="100000" count="other">000 мың ¤</pattern>
+					<pattern type="100000" count="one">000 м'.' ¤</pattern>
+					<pattern type="100000" count="other">000 м'.' ¤</pattern>
 					<pattern type="1000000" count="one">0 млн ¤</pattern>
 					<pattern type="1000000" count="other">0 млн ¤</pattern>
 					<pattern type="10000000" count="one">00 млн ¤</pattern>
@@ -5265,6 +5284,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>Шығыс Кариб доллары</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>Кариб гульдені</displayName>
+				<displayName count="one">Кариб гульдені</displayName>
+				<displayName count="other">Кариб гульдені</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Батыс Африканың КФА франкі</displayName>
 			</currency>
@@ -5284,6 +5308,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZMW">
 				<displayName>Замбия квачасы</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>Зимбабве алтыны</displayName>
+				<displayName count="one">Зимбабве алтыны</displayName>
+				<displayName count="other">Зимбабве алтыны</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5486,10 +5515,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} миллимоль/литр</unitPattern>
 				<unitPattern count="other">{0} миллимоль/литр</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
-				<displayName>миллиондық үлес</displayName>
-				<unitPattern count="one">{0} миллиондық үлес</unitPattern>
-				<unitPattern count="other">{0} миллиондық үлес</unitPattern>
+			<unit type="concentr-part">
+				<displayName>бөлік</displayName>
+				<unitPattern count="one">{0} бөлік</unitPattern>
+				<unitPattern count="other">{0} бөлік</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>миллиондағы бөлік</displayName>
+				<unitPattern count="one">{0} б/млн</unitPattern>
+				<unitPattern count="other">{0} б/млн</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<unitPattern count="one">{0} пайыз</unitPattern>
@@ -5502,6 +5536,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permyriad">
 				<unitPattern count="one">{0} промириад</unitPattern>
 				<unitPattern count="other">{0} промириад</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>глюкоза</displayName>
+				<unitPattern count="one">{0} глюкоза</unitPattern>
+				<unitPattern count="other">{0} глюкоза</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>литр/километр</displayName>
@@ -5908,6 +5947,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} миллиметр сынап бағанасы</unitPattern>
 				<unitPattern count="other">{0} миллиметр сынап бағанасы</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>сынап бағанасы</displayName>
+				<unitPattern count="one">{0} сынап бағанасы</unitPattern>
+				<unitPattern count="other">{0} с. б.</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>фунт-күш/шаршы дюйм</displayName>
 				<unitPattern count="one">{0} фунт-күш/шаршы дюйм</unitPattern>
@@ -6072,6 +6116,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} метрлік кесе</unitPattern>
 				<unitPattern count="other">{0} метрлік кесе</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>метрлік сұйық унция</displayName>
+				<unitPattern count="one">{0} метрлік сұйық унция</unitPattern>
+				<unitPattern count="other">{0} метрлік сұйық унция</unitPattern>
+			</unit>
 			<unit type="volume-bushel">
 				<unitPattern count="one">{0} бушель</unitPattern>
 				<unitPattern count="other">{0} бушель</unitPattern>
@@ -6132,21 +6181,73 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} британдық кварта</unitPattern>
 				<unitPattern count="other">{0} брит. кварта</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>жарық</displayName>
-				<unitPattern count="one">{0} жарық</unitPattern>
-				<unitPattern count="other">{0} жарық</unitPattern>
+			<unit type="angle-steradian">
+				<displayName>стерадиан</displayName>
+				<unitPattern count="one">{0} стерадиан</unitPattern>
+				<unitPattern count="other">{0} стерадиан</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-katal">
+				<displayName>катал</displayName>
+				<unitPattern count="one">{0} катал</unitPattern>
+				<unitPattern count="other">{0} катал</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>кулон</displayName>
+				<unitPattern count="one">{0} кулон</unitPattern>
+				<unitPattern count="other">{0} кулон</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>фарад</displayName>
+				<unitPattern count="one">{0} фарад</unitPattern>
+				<unitPattern count="other">{0} фарад</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>генри</displayName>
+				<unitPattern count="one">{0} генри</unitPattern>
+				<unitPattern count="other">{0} генри</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>сименс</displayName>
+				<unitPattern count="one">{0} сименс</unitPattern>
+				<unitPattern count="other">{0} сименс</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>калория [халықаралық]</displayName>
+				<unitPattern count="one">{0} калория [халықаралық]</unitPattern>
+				<unitPattern count="other">{0} калория [халықаралық]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>беккерель</displayName>
+				<unitPattern count="one">{0} беккерель</unitPattern>
+				<unitPattern count="other">{0} Бк</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>зиверт</displayName>
+				<unitPattern count="one">{0} Зв</unitPattern>
+				<unitPattern count="other">{0} Зв</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Гр</displayName>
+				<unitPattern count="one">{0} Гр</unitPattern>
+				<unitPattern count="other">{0} Гр</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>килограмм-күш</displayName>
+				<unitPattern count="one">{0} кг-күш</unitPattern>
+				<unitPattern count="other">{0} кг-күш</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>тесла</displayName>
+				<unitPattern count="one">{0} тесла</unitPattern>
+				<unitPattern count="other">{0} тесла</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>вебер</displayName>
+				<unitPattern count="one">{0} вебер</unitPattern>
+				<unitPattern count="other">{0} вебер</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>миллиардтағы бөлік</displayName>
-				<unitPattern count="one">{0} б/млрд</unitPattern>
-				<unitPattern count="other">{0} б/млрд</unitPattern>
-			</unit>
-			<unit type="duration-night">
-				<displayName>түн</displayName>
-				<unitPattern count="one">{0} түн</unitPattern>
-				<unitPattern count="other">{0} түн</unitPattern>
-				<perUnitPattern>{0}/түн</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>негізгі бағыт</displayName>
@@ -6361,6 +6462,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} элемент</unitPattern>
 				<unitPattern count="other">{0} элемент</unitPattern>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>бөлік</displayName>
+				<unitPattern count="one">{0} бөлік</unitPattern>
+				<unitPattern count="other">{0} бөлік</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>бөлік/миллион</displayName>
+				<unitPattern count="one">{0} б/млн</unitPattern>
+				<unitPattern count="other">{0} б/млн</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>пайыз</displayName>
 			</unit>
@@ -6374,6 +6485,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>моль</displayName>
 				<unitPattern count="one">{0} моль</unitPattern>
 				<unitPattern count="other">{0} моль</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>глюкоза</displayName>
+				<unitPattern count="one">{0} Глк</unitPattern>
+				<unitPattern count="other">{0} Глк</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>литр/км</displayName>
@@ -6880,6 +6996,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} мм с.б.</unitPattern>
 				<unitPattern count="other">{0} мм с.б.</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>с. б.</displayName>
+				<unitPattern count="one">{0} с. б.</unitPattern>
+				<unitPattern count="other">{0} с. б.</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>дюйм сынап бағанасы</displayName>
 				<unitPattern count="one">{0} дюйм с.б.</unitPattern>
@@ -7038,6 +7159,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} мк</unitPattern>
 				<unitPattern count="other">{0} мк</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>метрлік сұйық унция</displayName>
+				<unitPattern count="one">{0} метрлік сұйық унция</unitPattern>
+				<unitPattern count="other">{0} метрлік сұйық унция</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>акр-фут</displayName>
 				<unitPattern count="one">{0} aкр-фут</unitPattern>
@@ -7135,12 +7261,77 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} брит. кварта</unitPattern>
 				<unitPattern count="other">{0} брит. кварта</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ср</displayName>
+				<unitPattern count="one">{0} ср</unitPattern>
+				<unitPattern count="other">{0} ср</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>кат</displayName>
+				<unitPattern count="one">{0} кат</unitPattern>
+				<unitPattern count="other">{0} кат</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>Кл</displayName>
+				<unitPattern count="one">{0} Кл</unitPattern>
+				<unitPattern count="other">{0} Кл</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>Ф</displayName>
+				<unitPattern count="one">{0} Ф</unitPattern>
+				<unitPattern count="other">{0} Ф</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>Г</displayName>
+				<unitPattern count="one">{0} Г</unitPattern>
+				<unitPattern count="other">{0} Г</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>Си</displayName>
+				<unitPattern count="one">{0} Си</unitPattern>
+				<unitPattern count="other">{0} Си</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>халықаралық калория</displayName>
+				<unitPattern count="one">{0} халықаралық калория</unitPattern>
+				<unitPattern count="other">{0} халықаралық калория</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Бк</displayName>
+				<unitPattern count="one">{0} Бк</unitPattern>
+				<unitPattern count="other">{0} Бк</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Зв</displayName>
+				<unitPattern count="one">{0} Зв</unitPattern>
+				<unitPattern count="other">{0} Зв</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Гр</displayName>
+				<unitPattern count="one">{0} Гр</unitPattern>
+				<unitPattern count="other">{0} Гр</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>кг-күш</displayName>
+				<unitPattern count="one">{0} кг-күш</unitPattern>
+				<unitPattern count="other">{0} кг-күш</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>Тл</displayName>
+				<unitPattern count="one">{0} Т</unitPattern>
+				<unitPattern count="other">{0} Т</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Вб</displayName>
+				<unitPattern count="one">{0} Вб</unitPattern>
+				<unitPattern count="other">{0} Вб</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>жарық</displayName>
 				<unitPattern count="one">{0} жарық</unitPattern>
 				<unitPattern count="other">{0} жарық</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>бөлік/миллиард</displayName>
 				<unitPattern count="one">{0} б/млрд</unitPattern>
 				<unitPattern count="other">{0} б/млрд</unitPattern>
@@ -7187,11 +7378,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-foot">
 				<displayName>фут²</displayName>
 			</unit>
+			<unit type="concentr-part">
+				<displayName>бөлік</displayName>
+				<unitPattern count="one">{0} бөлік</unitPattern>
+				<unitPattern count="other">{0} бөлік</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
+				<displayName>б/млн</displayName>
+				<unitPattern count="one">{0} б/млн</unitPattern>
+				<unitPattern count="other">{0} б/млн</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>глюкоза</displayName>
+				<unitPattern count="one">{0} Глк</unitPattern>
+				<unitPattern count="other">{0} Глк</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>л/км</displayName>
@@ -7264,6 +7470,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} унция</unitPattern>
 				<unitPattern count="other">{0} унция</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>с. б.</displayName>
+				<unitPattern count="one">{0} с. б.</unitPattern>
+				<unitPattern count="other">{0} с. б.</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>дюйм с.б.</displayName>
 			</unit>
@@ -7288,26 +7499,87 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>метрлік сұйық унция</displayName>
+				<unitPattern count="one">{0} метрлік сұйық унция</unitPattern>
+				<unitPattern count="other">{0} метрлік сұйық унция</unitPattern>
+			</unit>
 			<unit type="volume-fluid-ounce-imperial">
 				<displayName>имп. сұй. унц.</displayName>
 				<unitPattern count="one">{0} имп. сұй. унц.</unitPattern>
 				<unitPattern count="other">{0} имп. сұй. унц.</unitPattern>
 			</unit>
-			<unit type="speed-light-speed">
-				<displayName>жарық</displayName>
-				<unitPattern count="one">{0} жарық</unitPattern>
-				<unitPattern count="other">{0} жарық</unitPattern>
+			<unit type="angle-steradian">
+				<displayName>ср</displayName>
+				<unitPattern count="one">{0} ср</unitPattern>
+				<unitPattern count="other">{0} ср</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-katal">
+				<displayName>кат</displayName>
+				<unitPattern count="one">{0} кат</unitPattern>
+				<unitPattern count="other">{0} кат</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>Кл</displayName>
+				<unitPattern count="one">{0} Кл</unitPattern>
+				<unitPattern count="other">{0} Кл</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>Ф</displayName>
+				<unitPattern count="one">{0} Ф</unitPattern>
+				<unitPattern count="other">{0} Ф</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>Г</displayName>
+				<unitPattern count="one">{0} Г</unitPattern>
+				<unitPattern count="other">{0} Г</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>Си</displayName>
+				<unitPattern count="one">{0} Си</unitPattern>
+				<unitPattern count="other">{0} Си</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>халықаралық калория</displayName>
+				<unitPattern count="one">{0} халықаралық калория</unitPattern>
+				<unitPattern count="other">{0} халықаралық калория</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>Бк</displayName>
+				<unitPattern count="one">{0} Бк</unitPattern>
+				<unitPattern count="other">{0} Бк</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>Зв</displayName>
+				<unitPattern count="one">{0} Зв</unitPattern>
+				<unitPattern count="other">{0} Зв</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>Гр</displayName>
+				<unitPattern count="one">{0} Гр</unitPattern>
+				<unitPattern count="other">{0} Гр</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>кг-күш</displayName>
+				<unitPattern count="one">{0} кг-күш</unitPattern>
+				<unitPattern count="other">{0} кг-күш</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>Тл</displayName>
+				<unitPattern count="one">{0} Т</unitPattern>
+				<unitPattern count="other">{0} Т</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>Вб</displayName>
+				<unitPattern count="one">{0} Вб</unitPattern>
+				<unitPattern count="other">{0} Вб</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e9">
 				<displayName>б/млрд</displayName>
-				<unitPattern count="one">{0} б/млрд</unitPattern>
-				<unitPattern count="other">{0} б/млрд</unitPattern>
 			</unit>
 			<unit type="duration-night">
-				<displayName>түн</displayName>
 				<unitPattern count="one">{0}түн</unitPattern>
 				<unitPattern count="other">{0}түн</unitPattern>
-				<perUnitPattern>{0}/түн</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

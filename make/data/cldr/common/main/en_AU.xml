@@ -24,11 +24,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</scripts>
 		<territories>
 			<territory type="001">World</territory>
-			<territory type="BL">St. Barthélemy</territory>
-			<territory type="KN">St. Kitts &amp; Nevis</territory>
-			<territory type="LC">St. Lucia</territory>
-			<territory type="MF">St. Martin</territory>
-			<territory type="VC">St. Vincent &amp; Grenadines</territory>
+			<territory type="AG">Antigua and Barbuda</territory>
+			<territory type="BA">Bosnia and Herzegovina</territory>
+			<territory type="EA">Ceuta and Melilla</territory>
+			<territory type="GS">South Georgia and South Sandwich Islands</territory>
+			<territory type="HM">Heard Island and McDonald Islands</territory>
+			<territory type="KN">St Kitts and Nevis</territory>
+			<territory type="PM">St Pierre and Miquelon</territory>
+			<territory type="SJ">Svalbard and Jan Mayen</territory>
+			<territory type="ST">São Tomé and Príncipe</territory>
+			<territory type="TC">Turks and Caicos Islands</territory>
+			<territory type="TT">Trinidad and Tobago</territory>
+			<territory type="VC">St Vincent and the Grenadines</territory>
+			<territory type="WF">Wallis and Futuna</territory>
 		</territories>
 		<keys>
 			<key type="colCaseFirst">Upper case / Lower case Ordering</key>
@@ -43,50 +51,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<dates>
 		<calendars>
 			<calendar type="generic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE d MMMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="long">
-						<dateFormat>
-							<pattern>d MMMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>d MMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>dd/MM/y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
 				<dateTimeFormats>
-					<dateTimeFormatLength type="full">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="long">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="medium">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
-					<dateTimeFormatLength type="short">
-						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE d MMM y G</dateFormatItem>
 						<dateFormatItem id="MMMEEEEd">EEEE d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMEEEEd">EEEE d MMMM</dateFormatItem>
@@ -139,22 +106,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">Jan</month>
-							<month type="2">Feb</month>
-							<month type="3">Mar</month>
-							<month type="4">Apr</month>
-							<month type="5">May</month>
-							<month type="6">June</month>
-							<month type="7">July</month>
-							<month type="8">Aug</month>
-							<month type="9">Sept</month>
-							<month type="10">Oct</month>
-							<month type="11">Nov</month>
-							<month type="12">Dec</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1">Jan</month>
 							<month type="2">Feb</month>
@@ -335,10 +286,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="islamic">
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -466,6 +414,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>Wallis and Futuna</exemplarCity>
+			</zone>
 			<metazone type="Australia_Central">
 				<short>
 					<generic>ACT</generic>
@@ -499,6 +450,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>China Time</generic>
 					<standard>China Standard Time</standard>
 					<daylight>China Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>French Southern and Antarctic Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -765,13 +721,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="short">
 			<unit type="angle-arc-minute">
 				<displayName>arcmin.</displayName>
-				<unitPattern count="one">{0} arcmin.</unitPattern>
-				<unitPattern count="other">{0} arcmin.</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<displayName>arcsec.</displayName>
-				<unitPattern count="one">{0} arcsec.</unitPattern>
-				<unitPattern count="other">{0} arcsec.</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dL</displayName>
@@ -793,16 +742,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>L/100 km</displayName>
 				<unitPattern count="one">{0} L/100 km</unitPattern>
 				<unitPattern count="other">{0} L/100 km</unitPattern>
-			</unit>
-			<unit type="consumption-mile-per-gallon">
-				<displayName>miles/gal. US</displayName>
-				<unitPattern count="one">{0} m.p.g. US</unitPattern>
-				<unitPattern count="other">{0} m.p.g. US</unitPattern>
-			</unit>
-			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>miles/gal.</displayName>
-				<unitPattern count="one">{0} m.p.g.</unitPattern>
-				<unitPattern count="other">{0} m.p.g.</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>C</displayName>
@@ -826,16 +765,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} CM</unitPattern>
 				<unitPattern count="other">{0} CM</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<displayName>in Hg</displayName>
-			</unit>
 			<unit type="pressure-millibar">
-				<displayName>mb</displayName>
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>

@@ -1595,7 +1595,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>pnom penh</exemplarCity>
 			</zone>
-			<zone type="Pacific/Kanton">
+			<zone type="Pacific/Enderbury">
 				<exemplarCity>kanṭon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -2262,9 +2262,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>veḍakuṇpu aaprika belā</generic>
-					<standard>veḍa kuṇpu aaprika mananka belā</standard>
-					<daylight>veḍa kuṇpu aaprika karã belā</daylight>
+					<standard>veḍakuṇpu aaprika belā</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2612,6 +2610,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>guyān belā</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>hāwāe- aalūsān mānānka belā</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3149,30 +3152,56 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other">¤0h</pattern>
-					<pattern type="10000" count="other">¤00h</pattern>
-					<pattern type="100000" count="other">¤000h</pattern>
-					<pattern type="1000000" count="other">¤0mi</pattern>
-					<pattern type="10000000" count="other">¤00mi</pattern>
-					<pattern type="100000000" count="other">¤000mi</pattern>
-					<pattern type="1000000000" count="other">¤0bi</pattern>
-					<pattern type="10000000000" count="other">¤00bi</pattern>
-					<pattern type="100000000000" count="other">¤000bi</pattern>
-					<pattern type="1000000000000" count="other">¤0tri</pattern>
-					<pattern type="10000000000000" count="other">¤00tri</pattern>
-					<pattern type="100000000000000" count="other">¤000tri</pattern>
+					<pattern type="1000" count="other">¤0 h</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 h</pattern>
+					<pattern type="10000" count="other">¤00 h</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 h</pattern>
+					<pattern type="100000" count="other">¤000 h</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 h</pattern>
+					<pattern type="1000000" count="other">¤0 mi</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 mi</pattern>
+					<pattern type="10000000" count="other">¤00 mi</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 mi</pattern>
+					<pattern type="100000000" count="other">¤000 mi</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 mi</pattern>
+					<pattern type="1000000000" count="other">¤0 bi</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 bi</pattern>
+					<pattern type="10000000000" count="other">¤00 bi</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 bi</pattern>
+					<pattern type="100000000000" count="other">¤000 bi</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 bi</pattern>
+					<pattern type="1000000000000" count="other">¤0 tri</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 tri</pattern>
+					<pattern type="10000000000000" count="other">¤00 tri</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 tri</pattern>
+					<pattern type="100000000000000" count="other">¤000 tri</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 tri</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

@@ -17,7 +17,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</localeDisplayPattern>
 		<languages>
 			<language type="ar">ꀊꇁꀨꉙ</language>
-			<language type="ar_001">ꀊꇁꀨꉙ（ꋧꃅ）</language>
 			<language type="de">ꄓꇩꉙ</language>
 			<language type="en">ꑱꇩꉙ</language>
 			<language type="es">ꑭꀠꑸꉙ</language>
@@ -95,6 +94,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="index" draft="contributed">[A B {BB} C {CH} D {DD} E F G {GG} H {HL} {HM} {HN} {HX} I {IE} J {JJ} K L M {MG} N {NB} {ND} {NG} {NJ} {NR} {NY} {NZ} O P Q R {RR} S {SH} {SS} T {UO} V W X Y Z {ZH} {ZZ}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . {\\\-} % ‰ + 0 1 2 3 4 5 6 7 8 9 {ꋍꑍꌕꇖꉬꃘꏃꉆꈬ}]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[﹉﹊﹋﹌ _＿﹍﹎﹏︳︴ \-－﹣ ‐‑ – —︱ ― ,，﹐ 、﹑ ;；﹔ \:：﹕ !！﹗ ?？﹖ .．﹒ ‥︰ … 。 · ＇‘’ ＂“”〝〞 (（﹙︵ )）﹚︶ \[［ \]］ \{｛﹛︷ \}｝﹜︸ 〈︿ 〉﹀ 《︽ 》︾ 「﹁ 」﹂ 『﹃ 』﹄ 【︻ 】︼ 〔﹝︹ 〕﹞︺ 〖 〗 ‖ § @＠﹫ *＊﹡ /／ \\＼﹨ \&amp;＆﹠ #＃﹟ %％﹪ ‰ ′ ″ ‵ 〃 ※]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person" draft="contributed">[\- ‐‑ ・ . · ⸱]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

@@ -1056,11 +1056,9 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<type key="calendar" type="japanese" draft="contributed">ياپونىيە يىلنامەسى</type>
 			<type key="calendar" type="persian" draft="contributed">پارىس يىلنامەسى</type>
 			<type key="calendar" type="roc" draft="contributed">مىنگو يىلنامەسى</type>
-			<type key="collation" type="big5han" draft="contributed">مۇرەككەپ خەنچە تىزىش تەرتىپى - Big5</type>
 			<type key="collation" type="dictionary" draft="contributed">لۇغەت تىزىش تەرتىپى</type>
 			<type key="collation" type="ducet" draft="contributed">كۆڭۈلدىكى يۇنىكود تىزىش تەرتىپى</type>
 			<type key="collation" type="eor" draft="contributed">ياۋروپا تەرتىپلەش قائىدىسى</type>
-			<type key="collation" type="gb2312han" draft="contributed">ئاددىي خەنچە تىزىش تەرتىپى - GB2312</type>
 			<type key="collation" type="phonebook" draft="contributed">تېلېفون نومۇر تىزىش تەرتىپى</type>
 			<type key="collation" type="pinyin" draft="contributed">پىنيىن تىزىش تەرتىپى</type>
 			<type key="collation" type="reformed" draft="contributed">ياخشىلانغان تەرتىپلەش تەرتىپى</type>
@@ -1968,9 +1966,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="contributed">غەربىي ئافرىقا ۋاقتى</generic>
-					<standard draft="contributed">غەربىي ئافرىقا ئۆلچەملىك ۋاقتى</standard>
-					<daylight draft="contributed">غەربىي ئافرىقا يازلىق ۋاقتى</daylight>
+					<standard draft="contributed">غەربىي ئافرىقا ۋاقتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2344,6 +2340,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<metazone type="Guyana">
 				<long>
 					<standard draft="contributed">گىۋىيانا ۋاقتى</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="contributed">ھاۋاي-ئالېيۇت ئۆلچەملىك ۋاقتى</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

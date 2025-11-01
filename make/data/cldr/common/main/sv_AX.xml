@@ -11,4 +11,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="sv"/>
 		<territory type="AX"/>
 	</identity>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d.M.y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d.M.y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<intervalFormats>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d.M.y–d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M">d.M.y–d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d.M.y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d.M.y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d.M.y–d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="G">d.M.y GGGGG–d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M">d.M.y–d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y">d.M.y–d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E, d.M.y–E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d.M.y GGGGG–E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d.M.y–E, d.M.y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d.M.y–E, d.M.y GGGGG</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
 </ldml>

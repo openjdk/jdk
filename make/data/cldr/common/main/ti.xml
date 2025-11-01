@@ -16,7 +16,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}፦ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="aa">አፋር</language>
+			<language type="aa">ዓፋር</language>
 			<language type="ab">ኣብካዝኛ</language>
 			<language type="ace">ኣቸኒዝኛ</language>
 			<language type="ada">ኣዳንግሜ</language>
@@ -39,7 +39,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ars">ናጅዲ ዓረብኛ</language>
 			<language type="as">ኣሳሜዝኛ</language>
 			<language type="asa">ኣሱ</language>
-			<language type="ast">ኣስቱርያን</language>
+			<language type="ast">ኣስቱርኛ</language>
 			<language type="atj">ኣቲካመክ</language>
 			<language type="av">ኣቫርኛ</language>
 			<language type="awa">ኣዋዲ</language>
@@ -66,14 +66,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bm">ባምባራ</language>
 			<language type="bn">በንጋሊ</language>
 			<language type="bo">ቲበታንኛ</language>
+			<language type="bqi">ባኽትያሪ</language>
 			<language type="br">ብረቶንኛ</language>
 			<language type="brx">ቦዶ</language>
 			<language type="bs">ቦዝንኛ</language>
 			<language type="bss">ኣኮስ</language>
+			<language type="bua">ቡርያትኛ</language>
 			<language type="bug">ቡጊንኛ</language>
 			<language type="byn">ብሊን</language>
 			<language type="ca">ካታላን</language>
-			<language type="cad">ካድዶ</language>
+			<language type="cad">ካዶ</language>
 			<language type="cay">ካዩጋ</language>
 			<language type="cch">ኣትሳም</language>
 			<language type="ccp">ቻክማ</language>
@@ -88,17 +90,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chr">ቸሮኪ</language>
 			<language type="chy">ሻያን</language>
 			<language type="cic">ቺካሳው</language>
-			<language type="ckb">ማእከላይ ኩርዲሽ</language>
-			<language type="ckb" alt="menu">ኩርዲሽ፣ ማእከላይ</language>
-			<language type="ckb" alt="variant">ኩርዲሽ፣ ሶራኒ</language>
+			<language type="ckb">ኩርዲሽ ሶራኒ</language>
 			<language type="clc">ቺልኮቲን</language>
 			<language type="co">ኮርስኛ</language>
+			<language type="cop">ቁብጥኛ</language>
 			<language type="crg">ሚቺፍ</language>
 			<language type="crj">ደቡባዊ ምብራቕ ክሪ</language>
-			<language type="crk">ክሪ ፕሌንስ</language>
+			<language type="crk">ክሪ ቆላታት</language>
 			<language type="crl">ሰሜናዊ ምብራቕ ክሪ</language>
 			<language type="crm">ሙስ ክሪ</language>
-			<language type="crr">ካሮሊና አልጎንጉያኛ</language>
+			<language type="crr">ኣልጎንክኛ ካሮሊና</language>
 			<language type="cs">ቸክኛ</language>
 			<language type="csw">ክሪ ረግረግ</language>
 			<language type="cu">ቤተ-ክርስትያን ስላቭኛ</language>
@@ -109,6 +110,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dar">ዳርግዋ</language>
 			<language type="dav">ታይታ</language>
 			<language type="de">ጀርመን</language>
+			<language type="de_AT">ኦስትርያዊ ጀርመን</language>
+			<language type="de_CH">ስዊዘርላንዳዊ ላዕለዋይ ጀርመን</language>
 			<language type="dgr">ዶግሪብ</language>
 			<language type="dje">ዛርማ</language>
 			<language type="doi">ዶግሪ</language>
@@ -124,10 +127,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">ኤካጁክ</language>
 			<language type="el">ግሪኽኛ</language>
 			<language type="en">እንግሊዝኛ</language>
-			<language type="en_US" alt="short">እንግሊዝኛ (ሕ.መ.)</language>
+			<language type="en_AU">ኣውስትራልያዊ እንግሊዝኛ</language>
+			<language type="en_CA">ካናዳዊ እንግሊዝኛ</language>
+			<language type="en_GB">ብሪጣንያዊ እንግሊዝኛ</language>
+			<language type="en_US">ኣመሪካዊ እንግሊዝኛ</language>
 			<language type="eo">ኤስፐራንቶ</language>
 			<language type="es">ስጳንኛ</language>
+			<language type="es_419">ላቲን ኣመሪካዊ ስጳንኛ</language>
 			<language type="es_ES">ስጳንኛ (ኤውሮጳዊ)</language>
+			<language type="es_MX">ስጳንኛ ሜክሲኮ</language>
 			<language type="et">ኤስቶንኛ</language>
 			<language type="eu">ባስክኛ</language>
 			<language type="ewo">ኤዎንዶ</language>
@@ -140,7 +148,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo">ፋሮእይና</language>
 			<language type="fon">ፎን</language>
 			<language type="fr">ፈረንሳይኛ</language>
-			<language type="frc">ካጁን ፈረንሳይ</language>
+			<language type="fr_CA">ካናዳዊ ፈረንሳይኛ</language>
+			<language type="fr_CH">ስዊዘርላንዳዊ ፈረንሳይኛ</language>
+			<language type="frc">ካጁን ፈረንሳይኛ</language>
 			<language type="frr">ሰሜናዊ ፍሪስኛ</language>
 			<language type="fur">ፍርዩልኛ</language>
 			<language type="fy">ምዕራባዊ ፍሪስኛ</language>
@@ -204,6 +214,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kcg">ታያፕ</language>
 			<language type="kde">ማኮንደ</language>
 			<language type="kea">ክርዮል ኬፕ ቨርድኛ</language>
+			<language type="kek">ቄቅቺ</language>
 			<language type="ken">ኬንያንግ</language>
 			<language type="kfo">ኮሮ</language>
 			<language type="kgp">ካይንጋንግ</language>
@@ -228,8 +239,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ks">ካሽሚሪ</language>
 			<language type="ksb">ሻምባላ</language>
 			<language type="ksf">ባፍያ</language>
-			<language type="ksh">ኮሎግኒያን</language>
+			<language type="ksh">ኮልሽ</language>
 			<language type="ku">ኩርዲሽ</language>
+			<language type="ku" menu="core">ኩርዲሽ</language>
+			<language type="ku" menu="extension">ኰርማንጂ</language>
 			<language type="kum">ኩሚይክ</language>
 			<language type="kv">ኮሚ</language>
 			<language type="kw">ኮርንኛ</language>
@@ -254,7 +267,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lrc">ሰሜናዊ ሉሪ</language>
 			<language type="lsm">ሳምያ</language>
 			<language type="lt">ሊትዌንኛ</language>
-			<language type="ltg">ላትጋላዊ</language>
+			<language type="ltg">ላትጋልኛ</language>
 			<language type="lu">ሉባ-ካታንጋ</language>
 			<language type="lua">ሉባ-ሉልዋ</language>
 			<language type="lun">ሉንዳ</language>
@@ -296,7 +309,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="myv">ኤርዝያ</language>
 			<language type="mzn">ማዛንደራኒ</language>
 			<language type="na">ናውርዋንኛ</language>
-			<language type="nap">ኒያፖሊታንኛ</language>
+			<language type="nap">ናፖሊታንኛ</language>
 			<language type="naq">ናማ</language>
 			<language type="nb">ኖርወያዊ ቦክማል</language>
 			<language type="nd">ሰሜን ኤንደበለ</language>
@@ -337,12 +350,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pap">ፓፕያመንቶ</language>
 			<language type="pau">ፓላውኛ</language>
 			<language type="pcm">ፒጂን ናይጀርያ</language>
+			<language type="pi">ፓሊ</language>
 			<language type="pis">ፒጂን</language>
 			<language type="pl">ፖሊሽ</language>
+			<language type="pms">ፒድሞንትኛ</language>
 			<language type="pqm">ማሊሲት-ፓሳማኳዲ</language>
 			<language type="prg">ፕሩስኛ</language>
 			<language type="ps">ፓሽቶ</language>
 			<language type="pt">ፖርቱጊዝኛ</language>
+			<language type="pt_BR">ፖርቱጊዝኛ ብራዚል</language>
+			<language type="pt_PT">ፖርቱጊዝኛ ፖርቱጋል</language>
 			<language type="qu">ቀችዋ</language>
 			<language type="quc">ኪቼ</language>
 			<language type="raj">ራጃስታኒ</language>
@@ -375,11 +392,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="seh">ሰና</language>
 			<language type="ses">ኮይራቦሮ ሰኒ</language>
 			<language type="sg">ሳንጎ</language>
+			<language type="sgs">ሳሞጂትኛ</language>
 			<language type="sh">ሰርቦ-ክሮኤሽያኛ</language>
 			<language type="shi">ታቸልሂት</language>
 			<language type="shn">ሻን</language>
 			<language type="si">ሲንሃላ</language>
-			<language type="sid">ሲዳመኛ</language>
+			<language type="sid">ሲዳሞ</language>
 			<language type="sk">ስሎቫክኛ</language>
 			<language type="sl">ስሎቬንኛ</language>
 			<language type="slh">ደቡባዊ ሉሹትሲድ</language>
@@ -392,7 +410,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="snk">ሶኒንከ</language>
 			<language type="so">ሶማሊ</language>
 			<language type="sq">ኣልባንኛ</language>
-			<language type="sr">ሰርቢያኛ</language>
+			<language type="sr">ሰርብኛ</language>
 			<language type="srn">ስራናን ቶንጎ</language>
 			<language type="ss">ስዋዚ</language>
 			<language type="ssy">ሳሆ</language>
@@ -402,10 +420,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="suk">ሱኩማ</language>
 			<language type="sv">ስዊድንኛ</language>
 			<language type="sw">ስዋሂሊ</language>
-			<language type="sw_CD">ስዋሂሊ (ኮንጎ)</language>
+			<language type="sw_CD">ስዋሂሊ ኮንጎ</language>
 			<language type="swb">ኮሞርኛ</language>
-			<language type="syr">ሶርያኛ</language>
-			<language type="szl">ሲሌሲያን</language>
+			<language type="syr">ሶርይኛ</language>
+			<language type="szl">ሲለዝኛ</language>
 			<language type="ta">ታሚል</language>
 			<language type="tce">ደቡባዊ ታትቾን</language>
 			<language type="te">ተሉጉ</language>
@@ -427,7 +445,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tpi">ቶክ ፒሲን</language>
 			<language type="tr">ቱርክኛ</language>
 			<language type="trv">ታሮኮ</language>
-			<language type="trw">ቶርዋሊኛ</language>
+			<language type="trw">ቶርዋሊ</language>
 			<language type="ts">ሶንጋ</language>
 			<language type="tt">ታታር</language>
 			<language type="ttm">ሰሜናዊ ታትቾን</language>
@@ -447,21 +465,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">ኡዝበክኛ</language>
 			<language type="vai">ቫይ</language>
 			<language type="ve">ቨንዳ</language>
-			<language type="vec">ቬንቲያንኛ</language>
+			<language type="vec">ቬነትኛ</language>
 			<language type="vi">ቬትናምኛ</language>
 			<language type="vmw">ማክሁዋ</language>
 			<language type="vo">ቮላፑክ</language>
 			<language type="vun">ቩንጆ</language>
 			<language type="wa">ዋሎን</language>
 			<language type="wae">ዋልሰር</language>
-			<language type="wal">ዎላይታኛ</language>
+			<language type="wal">ወላይታ</language>
 			<language type="war">ዋራይ</language>
 			<language type="wbp">ዋርልፒሪ</language>
 			<language type="wo">ዎሎፍ</language>
 			<language type="wuu">ቻይናዊ ዉ</language>
 			<language type="xal">ካልምይክ</language>
 			<language type="xh">ኮሳ</language>
-			<language type="xnr">ካንጋሪኛ</language>
+			<language type="xnr">ካንግሪ</language>
 			<language type="xog">ሶጋ</language>
 			<language type="yav">ያንግበን</language>
 			<language type="ybb">የምባ</language>
@@ -861,43 +879,83 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="cf">ቅርጺ ባጤራ</key>
 			<key type="collation">ስርዓት ምድላው</key>
 			<key type="currency">ባጤራ</key>
+			<key type="em">ኣቀራርባ ኢሞጂ</key>
 			<key type="hc">ዑደት ሰዓት (12 ኣንጻር 24)</key>
 			<key type="lb">ቅዲ ምብታኽ መስመር</key>
+			<key type="lw">መስመር ምብታኽ ኣብ ውሽጢ ቃላት</key>
 			<key type="ms">ስርዓት መለክዒ</key>
 			<key type="numbers">ቁጽርታት</key>
+			<key type="ss">ምቁራጽ ሓረግ ድሕሪ ኣሕጽሮተ ቃል</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">ናይ ቡድሃ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="buddhist" scope="core">ቡድሃ</type>
 			<type key="calendar" type="chinese">ናይ ቻይናዊ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="chinese" scope="core">ቻይናዊ</type>
 			<type key="calendar" type="coptic">ናይ ቅብጣዊ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="coptic" scope="core">ቅብጣዊ</type>
 			<type key="calendar" type="dangi">ናይ ዳንጊ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="dangi" scope="core">ዳንጊ</type>
 			<type key="calendar" type="ethiopic">ናይ ግእዝ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="ethiopic" scope="core">ግእዝ</type>
 			<type key="calendar" type="ethiopic-amete-alem">ግእዝ ኣመተ ኣለም ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="ethiopic-amete-alem" scope="core">ግእዝ ኣመተ ኣለም</type>
 			<type key="calendar" type="gregorian">ጎርጎርዮሳዊ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="gregorian" scope="core">ጎርጎርዮሳዊ</type>
 			<type key="calendar" type="hebrew">ናይ እብራይስጢ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="hebrew" scope="core">እብራይስጢ</type>
 			<type key="calendar" type="islamic">ናይ ሂጅሪ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="islamic" scope="core">ሂጅሪ</type>
 			<type key="calendar" type="islamic-civil">ናይ ሂጅሪ ዓውደ ኣዋርሕ (ሰንጠረዥ፣ ሲቪላዊ ዘመን)</type>
+			<type key="calendar" type="islamic-civil" scope="core">ሂጅሪ ዓውደ ኣዋርሕ (ሰንጠረዥ፣ ሲቪላዊ ዘመን)</type>
 			<type key="calendar" type="islamic-tbla">ናይ ሂጅሪ ዓውደ ኣዋርሕ (ሰንጠረዥ፣ ስነ-ፍልጠታዊ ዘመን)</type>
+			<type key="calendar" type="islamic-tbla" scope="core">ሂጅሪ (ሰንጠረዥ፣ ስነ-ፍልጠታዊ ዘመን)</type>
 			<type key="calendar" type="islamic-umalqura">ናይ ሂጅሪ ዓውደ ኣዋርሕ (ኡም ኣል-ቁራ)</type>
+			<type key="calendar" type="islamic-umalqura" scope="core">ሂጅሪ (ኡም ኣል-ቁራ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 ዓውደ ኣዋርሕ</type>
 			<type key="calendar" type="japanese">ናይ ጃፓናዊ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="japanese" scope="core">ጃፓናዊ</type>
 			<type key="calendar" type="persian">ናይ ፋርስ ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="persian" scope="core">ፋርስ</type>
 			<type key="calendar" type="roc">ናይ ሪፓብሊክ ቻይና ዓውደ ኣዋርሕ</type>
+			<type key="calendar" type="roc" scope="core">ሪፓብሊክ ቻይና</type>
 			<type key="cf" type="account">ቅርጺ ባጤራ ሕሳብ</type>
+			<type key="cf" type="account" scope="core">ሕሳብ</type>
 			<type key="cf" type="standard">መደበኛ ቅርጺ ባጤራ</type>
+			<type key="cf" type="standard" scope="core">መደበኛ</type>
 			<type key="collation" type="ducet">ነባሪ ዩኒኮድ ስርዓት ምድላው</type>
+			<type key="collation" type="ducet" scope="core">ነባሪ ዩኒኮድ</type>
 			<type key="collation" type="search">ሓፈሻዊ-ዕላማ ምድላይ</type>
+			<type key="collation" type="search" scope="core">ምድላይ</type>
 			<type key="collation" type="standard">መደበኛ ምድላው ስርዓት</type>
+			<type key="collation" type="standard" scope="core">መደበኛ</type>
+			<type key="em" type="default" scope="core">ነባሪ</type>
+			<type key="em" type="emoji" scope="core">ኢሞጂ</type>
+			<type key="em" type="text" scope="core">ጽሑፍ</type>
 			<type key="hc" type="h11">ስርዓት 12 ሰዓታት (0–11)</type>
+			<type key="hc" type="h11" scope="core">12 (0–11) 12 (0–11)</type>
 			<type key="hc" type="h12">ስርዓት 12 ሰዓታት (1–12)</type>
+			<type key="hc" type="h12" scope="core">12 (1–12) 12 (1–12)</type>
 			<type key="hc" type="h23">ናይ 24 ሰዓታት ስርዓት (0–23)</type>
+			<type key="hc" type="h23" scope="core">24 (0–23)</type>
 			<type key="hc" type="h24">ናይ 24 ሰዓታት ስርዓት (1–24)</type>
+			<type key="hc" type="h24" scope="core">24 (1–24)</type>
 			<type key="lb" type="loose">ልሕሉሕ መስመር ምብታኽ ቅዲ</type>
+			<type key="lb" type="loose" scope="core">ልሕሉሕ</type>
 			<type key="lb" type="normal">ንቡር ቅዲ ምብታኽ መስመር</type>
+			<type key="lb" type="normal" scope="core">ንቡር</type>
 			<type key="lb" type="strict">ቅዲ ስጡም መስመር ምብታኽ</type>
+			<type key="lb" type="strict" scope="core">ስጡም</type>
+			<type key="lw" type="breakall" scope="core">ኩሉ ስበር</type>
+			<type key="lw" type="keepall" scope="core">ኩሉ ሓልዎ</type>
+			<type key="lw" type="normal" scope="core">ንቡር</type>
+			<type key="lw" type="phrase" scope="core">ብሓረጋት ምሓዝ</type>
 			<type key="ms" type="metric">ሜትሪክ ስርዓት</type>
+			<type key="ms" type="metric" scope="core">ሜትሪክ</type>
 			<type key="ms" type="uksystem">ስርዓተ መለክዒ ሃጸያዊ</type>
+			<type key="ms" type="uksystem" scope="core">ዓባይ ብሪጣንያ</type>
 			<type key="ms" type="ussystem">ስርዓት መለክዒ ኣሜሪካ</type>
+			<type key="ms" type="ussystem" scope="core">ኣሜሪካ</type>
 			<type key="numbers" type="arab">ዓረብ-ህንዳዊ ኣሃዛት</type>
 			<type key="numbers" type="arabext">ዝተዘርግሐ ኣሃዛት ዓረብ-ህንዳዊ</type>
 			<type key="numbers" type="armn">ኣርመንያዊ ቁጽርታት</type>
@@ -938,6 +996,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="thai">ናይ ታይላንዳዊ ኣሃዛት</type>
 			<type key="numbers" type="tibt">ናይ ትቤቲ ኣሃዛት</type>
 			<type key="numbers" type="vaii">ቫይ ኣሃዛት</type>
+			<type key="ss" type="none" scope="core">ጠፊኡ</type>
+			<type key="ss" type="standard" scope="core">በሪሑ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ሜትሪክ</measurementSystemName>
@@ -954,6 +1014,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[፟ ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሏ ሐ ሑ ሒ ሓ ሔ ሕ ሖ ሗ መ ሙ ሚ ማ ሜ ም ሞ ሟ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ሧ ረ ሩ ሪ ራ ሬ ር ሮ ሯ ሰ ሱ ሲ ሳ ሴ ስ ሶ ሷ ሸ ሹ ሺ ሻ ሼ ሽ ሾ ሿ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ ቐ ቑ ቒ ቓ ቔ ቕ ቖ ቘ ቚ ቛ ቜ ቝ በ ቡ ቢ ባ ቤ ብ ቦ ቧ ቨ ቩ ቪ ቫ ቬ ቭ ቮ ቯ ተ ቱ ቲ ታ ቴ ት ቶ ቷ ቸ ቹ ቺ ቻ ቼ ች ቾ ቿ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ ኗ ኘ ኙ ኚ ኛ ኜ ኝ ኞ ኟ አ ኡ ኢ ኣ ኤ እ ኦ ኧ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ኸ ኹ ኺ ኻ ኼ ኽ ኾ ዀ ዂ ዃ ዄ ዅ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ ዟ ዠ ዡ ዢ ዣ ዤ ዥ ዦ ዧ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ዷ ጀ ጁ ጂ ጃ ጄ ጅ ጆ ጇ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጧ ጨ ጩ ጪ ጫ ጬ ጭ ጮ ጯ ጰ ጱ ጲ ጳ ጴ ጵ ጶ ጷ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ጿ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፇ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፏ ፐ ፑ ፒ ፓ ፔ ፕ ፖ ፗ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሇ ⶀ ᎀ ᎁ ᎂ ᎃ ⶁ ⶂ ⶃ ⶄ ቇ ᎄ ᎅ ᎆ ᎇ ⶅ ⶆ ⶇ ኇ ⶈ ⶉ ⶊ ኯ ዏ ⶋ ዯ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ⶏ ⶐ ⶑ ᎈ ᎉ ᎊ ᎋ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ሀ ለ ሐ መ ሠ ረ ሰ ሸ ቀ ቈ ቐ ቘ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ዀ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
+		<exemplarCharacters type="numbers-auxiliary" draft="contributed">[% ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-auxiliary" draft="contributed">[፣ ፤ ፦]</exemplarCharacters>
+		<exemplarCharacters type="punctuation-person" draft="contributed">[\- ‐‑ ፣ ። /]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -1065,6 +1128,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} ሰዓት {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -1073,24 +1139,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} ሰዓት {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}፣ {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}፣ {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y-MM-dd፣ E</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
+						<dateFormatItem id="Hv">HHሰ v</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
@@ -1420,10 +1497,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}፣ {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}፣ {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1434,6 +1517,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EHms">E፣ HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E፣ M/d/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
@@ -1587,6 +1671,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">G y-MM-dd፣ E</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
@@ -1819,8 +1904,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ቅድሚ {0} ቀዳም</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayperiod-short">
+				<displayName>ኤ.ኤም/ፒ.ኤም</displayName>
+			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
+				<displayName>ኤ.ኤም/ፒ.ኤም</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ኤ.ኤም/ፒ.ኤም</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
@@ -2231,6 +2322,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Easter">
 				<exemplarCity>ደሴት ፋሲካ</exemplarCity>
 			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity>ኮሃይክ</exemplarCity>
+			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity>ፑንታ ኣረናስ</exemplarCity>
 			</zone>
@@ -2496,9 +2590,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity>ፕኖም ፐን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>ኤንደርበሪ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kanton">
 				<exemplarCity>ካንቶን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
@@ -3175,9 +3266,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>ግዜ ምዕራብ ኣፍሪቃ</generic>
-					<standard>ናይ መደበኛ ግዘ ምዕራብ ኣፍሪቃ</standard>
-					<daylight>ግዜ ክረምቲ ምዕራብ ኣፍሪቃ</daylight>
+					<standard>ግዜ ምዕራብ ኣፍሪቃ</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3525,6 +3614,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>ግዜ ጉያና</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>ናይ መደበኛ ሃዋይ-ኣሌውቲያን ግዘ</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -4935,6 +5029,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">ምብራቕ ካሪብያን ዶላር</displayName>
 				<displayName count="other">ምብራቕ ካሪብያን ዶላር</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>ካሪብያን ጊልደር</displayName>
+				<displayName count="one">ካሪብያን ጊልደር</displayName>
+				<displayName count="other">ካሪብያን ጊልደር</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>ምዕራብ ኣፍሪቃ CFA ፍራንክ</displayName>
 				<displayName count="one">ምዕራብ ኣፍሪቃ ሲኤፍኤ ፍራንክ</displayName>
@@ -4964,6 +5063,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ዛምብያዊ ኳቻ</displayName>
 				<displayName count="one">ዛምብያዊ ኳቻ</displayName>
 				<displayName count="other">ዛምብያዊ ኳቻ</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>ዚምባብወ ወርቂ</displayName>
+				<displayName count="one">ዚምባብወ ወርቂ</displayName>
+				<displayName count="other">ዚምባብወ ወርቂ</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -5192,7 +5296,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ኣቕሓ</unitPattern>
 				<unitPattern count="other">{0} ኣቕሑ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ክፋል</displayName>
+				<unitPattern count="one">{0} ክፋል</unitPattern>
+				<unitPattern count="other">{0} ክፋል</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ክፍልታት ኣብ ሚልዮን</displayName>
 				<unitPattern count="one">{0} ክፍልታት ኣብ ሚልዮን</unitPattern>
 				<unitPattern count="other">{0} ክፍልታት ኣብ ሚልዮን</unitPattern>
@@ -5216,6 +5325,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ሞል</displayName>
 				<unitPattern count="one">{0} ሞል</unitPattern>
 				<unitPattern count="other">{0} ሞል</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ግሉኮስ</displayName>
+				<unitPattern count="one">{0} ግሉኮስ</unitPattern>
+				<unitPattern count="other">{0} ግሉኮስ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊትሮ ኣብ ኪሎሜትር</displayName>
@@ -5301,7 +5415,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ዓሰርተታት ዓመታት</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>ዓመታት</displayName>
 				<unitPattern count="one">{0} ዓመት</unitPattern>
 				<unitPattern count="other">{0} ዓመታት</unitPattern>
 				<perUnitPattern>{0}/ዓመታት</perUnitPattern>
@@ -5314,7 +5427,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-month">
 				<displayName>ኣዋርሕ</displayName>
-				<unitPattern count="one">{0}/ወርሒ</unitPattern>
+				<unitPattern count="one">{0} ወርሒ</unitPattern>
 				<unitPattern count="other">{0}/ኣዋርሕ</unitPattern>
 				<perUnitPattern>{0}/ወርሒ</perUnitPattern>
 			</unit>
@@ -5702,6 +5815,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ሚሊሜተር ሜርኩሪ</unitPattern>
 				<unitPattern count="other">{0} ሚሊሜተር ሜርኩሪ</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ሜርኩሪ</displayName>
+				<unitPattern count="one">{0} ሜርኩሪ</unitPattern>
+				<unitPattern count="other">{0} ሜርኩሪ</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ፓውንድ-ሓይሊ ኣብ ሓደ ካሬ ኢንች</displayName>
 				<unitPattern count="one">{0} ፓውንድ-ሓይሊ ኣብ ሓደ ካሬ ኢንች</unitPattern>
@@ -5870,6 +5988,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ሜትሪክ ፓይንት</unitPattern>
 				<unitPattern count="other">{0} ሜትሪክ ፓይንት</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-metric">
+				<displayName>ሜትሪክ ፈሳሲ ኦውንስ</displayName>
+				<unitPattern count="one">{0} ሜትሪክ ፈሳሲ ኦውንስ</unitPattern>
+				<unitPattern count="other">{0} ሜትሪክ ፈሳሲ ኦውንስ</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acre-ጫማ</displayName>
 				<unitPattern count="one">{0} acre ጫማ</unitPattern>
@@ -5967,12 +6090,77 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ኢምፒ. ርብዒ ጋሎን</unitPattern>
 				<unitPattern count="other">{0} ኢምፒ. ርብዒ ጋሎን</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ስትራዲያን</displayName>
+				<unitPattern count="one">{0} ስትራዲያን</unitPattern>
+				<unitPattern count="other">{0} ስትራዲያን</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>ካታል</displayName>
+				<unitPattern count="one">{0} ካታል</unitPattern>
+				<unitPattern count="other">{0} ካታል</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>ኮለምብ</displayName>
+				<unitPattern count="one">{0} ኮለምብ</unitPattern>
+				<unitPattern count="other">{0} ኮለምብ</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>ፋራድ</displayName>
+				<unitPattern count="one">{0} ፋራድ</unitPattern>
+				<unitPattern count="other">{0} ፋራድ</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ሄነሪ</displayName>
+				<unitPattern count="one">{0} ሄነሪ</unitPattern>
+				<unitPattern count="other">{0} ሄነሪ</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>ሲመን</displayName>
+				<unitPattern count="one">{0} ሲመን</unitPattern>
+				<unitPattern count="other">{0} ሲመን</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ካሎሪ [IT]</displayName>
+				<unitPattern count="one">{0} ካሎሪ [IT]</unitPattern>
+				<unitPattern count="other">{0} ካሎሪ [IT]</unitPattern>
+			</unit>
+			<unit type="energy-becquerel">
+				<displayName>ቤክዌርሌስ</displayName>
+				<unitPattern count="one">{0} ቤክዌርሌስ</unitPattern>
+				<unitPattern count="other">{0} ቤክዌርሌስ</unitPattern>
+			</unit>
+			<unit type="energy-sievert">
+				<displayName>ሴቨርትስ</displayName>
+				<unitPattern count="one">{0} ሴቨርት</unitPattern>
+				<unitPattern count="other">{0} ሴቨርትስ</unitPattern>
+			</unit>
+			<unit type="energy-gray">
+				<displayName>ግሬይስ</displayName>
+				<unitPattern count="one">{0} ግሬይ</unitPattern>
+				<unitPattern count="other">{0} ግሬይስ</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ኪሎግራም-ሓይሊ</displayName>
+				<unitPattern count="one">{0} ኪሎግራም-ሓይሊ</unitPattern>
+				<unitPattern count="other">{0} ኪሎግራም-ሓይሊ</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>ቴስላ</displayName>
+				<unitPattern count="one">{0} ቴስላ</unitPattern>
+				<unitPattern count="other">{0} ቴስላ</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ዌበር</displayName>
+				<unitPattern count="one">{0} ዌበር</unitPattern>
+				<unitPattern count="other">{0} ዌበር</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ብርሃን</displayName>
 				<unitPattern count="one">{0} ብርሃን</unitPattern>
 				<unitPattern count="other">{0} ብርሃን</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ክፍልታት ኣብ ሓደ ቢልዮን</displayName>
 				<unitPattern count="one">{0} ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
 				<unitPattern count="other">{0} ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
@@ -6190,7 +6378,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ኣቕሓ</unitPattern>
 				<unitPattern count="other">{0} ኣቕሑ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ክፋል</displayName>
+				<unitPattern count="one">{0} ክፋል</unitPattern>
+				<unitPattern count="other">{0} ክፋል</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ክፍልታት/ሚልዮን</displayName>
 				<unitPattern count="one">{0} ክፍልታት ኣብ ሚልዮን</unitPattern>
 				<unitPattern count="other">{0} ክፍልታት ኣብ ሚልዮን</unitPattern>
@@ -6208,6 +6401,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ሞል</displayName>
 				<unitPattern count="one">{0} ሞል</unitPattern>
 				<unitPattern count="other">{0} ሞል</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ግሉኮስ</displayName>
+				<unitPattern count="one">{0} ግሉኮስ</unitPattern>
+				<unitPattern count="other">{0} ግሉኮስ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊትሮ/ኪሎሜትር</displayName>
@@ -6667,6 +6865,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ሚሜ ሜርኩሪ</unitPattern>
 				<unitPattern count="other">{0} ሚሜ ሜርኩሪ</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ሜርኩሪ</displayName>
+				<unitPattern count="one">{0} ሜርኩሪ</unitPattern>
+				<unitPattern count="other">{0} ሜርኩሪ</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>ፒ.ኤስ.አይ</displayName>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>ኢንች ሜርኩሪ</displayName>
 				<unitPattern count="one">{0} ኢንች ሜርኩሪ</unitPattern>
@@ -6925,12 +7131,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ኢምፒ. ርብዒ ጋሎን</unitPattern>
 				<unitPattern count="other">{0} ኢምፒ. ርብዒ ጋሎን</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ስትራዲያን</displayName>
+				<unitPattern count="one">{0} ስትራዲያን</unitPattern>
+				<unitPattern count="other">{0} ስትራዲያን</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>ካታል</displayName>
+				<unitPattern count="one">{0} ካታል</unitPattern>
+				<unitPattern count="other">{0} ካታል</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>ኮለምብ</displayName>
+				<unitPattern count="one">{0} ኮለምብ</unitPattern>
+				<unitPattern count="other">{0} ኮለምብ</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>ፋራድ</displayName>
+				<unitPattern count="one">{0} ፋራድ</unitPattern>
+				<unitPattern count="other">{0} ፋራድ</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ሄነሪ</displayName>
+				<unitPattern count="one">{0} ሄነሪ</unitPattern>
+				<unitPattern count="other">{0} ሄነሪ</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>ሲመን</displayName>
+				<unitPattern count="one">{0} ሲመን</unitPattern>
+				<unitPattern count="other">{0} ሲመን</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ካል-IT</displayName>
+				<unitPattern count="one">{0} ካል-IT</unitPattern>
+				<unitPattern count="other">{0} ካል-IT</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ኪሎግ-ሓ</displayName>
+				<unitPattern count="one">{0} ኪሎግ-ሓ</unitPattern>
+				<unitPattern count="other">{0} ኪሎግ-ሓ</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>ቴስላ</displayName>
+				<unitPattern count="one">{0} ቴስላ</unitPattern>
+				<unitPattern count="other">{0} ቴስላ</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ዌበር</displayName>
+				<unitPattern count="one">{0} ዌበር</unitPattern>
+				<unitPattern count="other">{0} ዌበር</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ብርሃን</displayName>
 				<unitPattern count="one">{0} ብርሃን</unitPattern>
 				<unitPattern count="other">{0} ብርሃን</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ክፍልታት/ሓደ ቢልዮን</displayName>
 				<unitPattern count="one">{0} ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
 				<unitPattern count="other">{0} ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
@@ -7144,7 +7400,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ኣቕሓ</unitPattern>
 				<unitPattern count="other">{0}ኣቕሑ</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part">
+				<displayName>ክፋል</displayName>
+				<unitPattern count="one">{0} ክፋል</unitPattern>
+				<unitPattern count="other">{0} ክፋል</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-1e6">
 				<displayName>ክፍልታት ኣብ ሚልዮን</displayName>
 				<unitPattern count="one">{0}ክፍልታት ኣብ ሚልዮን</unitPattern>
 				<unitPattern count="other">{0}ክፍልታት ኣብ ሚልዮን</unitPattern>
@@ -7153,6 +7414,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ሞል</displayName>
 				<unitPattern count="one">{0}ሞል</unitPattern>
 				<unitPattern count="other">{0}ሞል</unitPattern>
+			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>ግሉኮስ</displayName>
+				<unitPattern count="one">{0} ግሉኮስ</unitPattern>
+				<unitPattern count="other">{0} ግሉኮስ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ሊትሮ/ኪሜ</displayName>
@@ -7608,6 +7874,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ሚሜ ሜርኩሪ</unitPattern>
 				<unitPattern count="other">{0}ሚሜ ሜርኩሪ</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>ሜርኩሪ</displayName>
+				<unitPattern count="one">{0} ሜርኩሪ</unitPattern>
+				<unitPattern count="other">{0} ሜርኩሪ</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>ፒ.ኤስ.አይ</displayName>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>″ ሜርኩሪ</displayName>
 				<unitPattern count="one">{0}″ ሜርኩሪ</unitPattern>
@@ -7866,12 +8140,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ኢምፒ. ርብዒ ጋሎን</unitPattern>
 				<unitPattern count="other">{0}ኢምፒ. ርብዒ ጋሎን</unitPattern>
 			</unit>
+			<unit type="angle-steradian">
+				<displayName>ስትራዲያን</displayName>
+				<unitPattern count="one">{0} ስትራዲያን</unitPattern>
+				<unitPattern count="other">{0} ስትራዲያን</unitPattern>
+			</unit>
+			<unit type="concentr-katal">
+				<displayName>ካታል</displayName>
+				<unitPattern count="one">{0} ካታል</unitPattern>
+				<unitPattern count="other">{0} ካታል</unitPattern>
+			</unit>
+			<unit type="electric-coulomb">
+				<displayName>ኮለምብ</displayName>
+				<unitPattern count="one">{0} ኮለምብ</unitPattern>
+				<unitPattern count="other">{0} ኮለምብ</unitPattern>
+			</unit>
+			<unit type="electric-farad">
+				<displayName>ፋራድ</displayName>
+				<unitPattern count="one">{0} ፋራድ</unitPattern>
+				<unitPattern count="other">{0} ፋራድ</unitPattern>
+			</unit>
+			<unit type="electric-henry">
+				<displayName>ሄነሪ</displayName>
+				<unitPattern count="one">{0} ሄነሪ</unitPattern>
+				<unitPattern count="other">{0} ሄነሪ</unitPattern>
+			</unit>
+			<unit type="electric-siemens">
+				<displayName>ሲመን</displayName>
+				<unitPattern count="one">{0} ሲመን</unitPattern>
+				<unitPattern count="other">{0} ሲመን</unitPattern>
+			</unit>
+			<unit type="energy-calorie-it">
+				<displayName>ካል-IT</displayName>
+				<unitPattern count="one">{0} ካል-IT</unitPattern>
+				<unitPattern count="other">{0} ካል-IT</unitPattern>
+			</unit>
+			<unit type="force-kilogram-force">
+				<displayName>ኪሎግ-ሓ</displayName>
+				<unitPattern count="one">{0} ኪሎግ-ሓ</unitPattern>
+				<unitPattern count="other">{0} ኪሎግ-ሓ</unitPattern>
+			</unit>
+			<unit type="magnetic-tesla">
+				<displayName>ቴስላ</displayName>
+				<unitPattern count="one">{0} ቴስላ</unitPattern>
+				<unitPattern count="other">{0} ቴስላ</unitPattern>
+			</unit>
+			<unit type="magnetic-weber">
+				<displayName>ዌበር</displayName>
+				<unitPattern count="one">{0} ዌበር</unitPattern>
+				<unitPattern count="other">{0} ዌበር</unitPattern>
+			</unit>
 			<unit type="speed-light-speed">
 				<displayName>ብርሃን</displayName>
 				<unitPattern count="one">{0}ብርሃን</unitPattern>
 				<unitPattern count="other">{0}ብርሃን</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>ክፍልታት ኣብ ሓደ ቢልዮን</displayName>
 				<unitPattern count="one">{0}ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
 				<unitPattern count="other">{0}ክፍልታት ኣብ ሓደ ቢልዮን</unitPattern>
@@ -8183,13 +8507,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-core}፣ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern>{surname}፣ {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern>{surname-core}፣ {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
+			<namePattern>{surname}፣ {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
 			<namePattern>{surname-core}፣ {given} {given2} {surname-prefix}</namePattern>

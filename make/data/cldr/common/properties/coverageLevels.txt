@@ -9,29 +9,31 @@
 		
 		
 af ;	modern ;	Afrikaans
-ak ;	moderate ;	Akan
+ak ;	modern ;	Akan
 am ;	modern ;	Amharic
 ar ;	modern ;	Arabic
 as ;	modern ;	Assamese
 ast ;	basic ;	Asturian
 az ;	modern ;	Azerbaijani
-bal_Latn ;	moderate ;	Baluchi (Latin)
+ba ;	modern ;	Bashkir
+bal_Latn ;	basic ;	Baluchi (Latin)
 be ;	modern ;	Belarusian
 bg ;	modern ;	Bulgarian
 bgc ;	basic ;	Haryanvi
 bho ;	basic ;	Bhojpuri
-blo ;	basic ;	Anii
+blo ;	moderate ;	Anii
 bn ;	modern ;	Bangla
 br ;	moderate ;	Breton
 brx ;	basic ;	Bodo
 bs ;	modern ;	Bosnian
 bs_Cyrl ;	basic ;	Bosnian (Cyrillic)
+bua ;	basic ;	Buriat
 ca ;	modern ;	Catalan
 ceb ;	moderate ;	Cebuano
 chr ;	modern ;	Cherokee
 cs ;	modern ;	Czech
 csw ;	basic ;	Swampy Cree
-cv ;	basic ;	Chuvash
+cv ;	modern ;	Chuvash
 cy ;	modern ;	Welsh
 da ;	modern ;	Danish
 de ;	modern ;	German
@@ -40,7 +42,7 @@ dsb ;	modern ;	Lower Sorbian
 ee ;	basic ;	Ewe
 el ;	modern ;	Greek
 en ;	modern ;	English
-eo ;	basic ;	Esperanto
+eo ;	moderate ;	Esperanto
 es ;	modern ;	Spanish
 et ;	modern ;	Estonian
 eu ;	modern ;	Basque
@@ -77,6 +79,7 @@ ka ;	modern ;	Georgian
 kea ;	basic ;	Kabuverdianu
 kgp ;	basic ;	Kaingang
 kk ;	modern ;	Kazakh
+kk_Arab ;	modern ;	Kazakh (Arabic)
 km ;	modern ;	Khmer
 kn ;	modern ;	Kannada
 ko ;	modern ;	Korean
@@ -84,7 +87,7 @@ kok ;	modern ;	Konkani
 kok_Latn ;	basic ;	Konkani (Latin)
 ks ;	basic ;	Kashmiri
 ks_Deva ;	basic ;	Kashmiri (Devanagari)
-ku ;	moderate ;	Kurdish
+ku ;	basic ;	Kurdish
 kxv ;	basic ;	Kuvi
 kxv_Deva ;	basic ;	Kuvi (Devanagari)
 kxv_Orya ;	basic ;	Kuvi (Odia)
@@ -119,11 +122,12 @@ or ;	modern ;	Odia
 pa ;	modern ;	Punjabi
 pcm ;	modern ;	Nigerian Pidgin
 pl ;	modern ;	Polish
+pms ;	basic ;	Piedmontese
 ps ;	modern ;	Pashto
 pt ;	modern ;	Portuguese
-qu ;	moderate ;	Quechua
+qu ;	modern ;	Quechua
 raj ;	basic ;	Rajasthani
-rm ;	basic ;	Romansh
+rm ;	modern ;	Romansh
 ro ;	modern ;	Romanian
 ru ;	modern ;	Russian
 rw ;	basic ;	Kinyarwanda
@@ -131,8 +135,10 @@ sa ;	basic ;	Sanskrit
 sah ;	basic ;	Yakut
 sat ;	basic ;	Santali
 sc ;	moderate ;	Sardinian
+scn ;	basic ;	Sicilian
 sd ;	modern ;	Sindhi
 sd_Deva ;	basic ;	Sindhi (Devanagari)
+shn ;	modern ;	Shan
 si ;	modern ;	Sinhala
 sk ;	modern ;	Slovak
 sl ;	modern ;	Slovenian
@@ -156,6 +162,7 @@ tn ;	basic ;	Tswana
 to ;	basic ;	Tongan
 tr ;	modern ;	Turkish
 tt ;	moderate ;	Tatar
+tyv ;	basic ;	Tuvinian
 ug ;	basic ;	Uyghur
 uk ;	modern ;	Ukrainian
 ur ;	modern ;	Urdu

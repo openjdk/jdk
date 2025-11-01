@@ -35,30 +35,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[c q v z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>‘</quotationStart>
-		<quotationEnd>’</quotationEnd>
-		<alternateQuotationStart>“</alternateQuotationStart>
-		<alternateQuotationEnd>”</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">Phere</month>
-							<month type="2">Dibo</month>
-							<month type="3">Hlak</month>
-							<month type="4">Mora</month>
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mat</month>
+							<month type="4">Apo</month>
 							<month type="5">Mei</month>
-							<month type="6">June</month>
-							<month type="7">Mose</month>
-							<month type="8">Agosetose</month>
-							<month type="9">Lewe</month>
-							<month type="10">Dipha</month>
-							<month type="11">Diba</month>
-							<month type="12">Manth</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Ago</month>
+							<month type="9">Sep</month>
+							<month type="10">Okt</month>
+							<month type="11">Nof</month>
+							<month type="12">Dis</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Janeware</month>
@@ -127,6 +121,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Kotara 1</quarter>
+							<quarter type="2">Kotara 2</quarter>
+							<quarter type="3">Kotara 3</quarter>
+							<quarter type="4">Kotara 4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1st Kotara</quarter>
 							<quarter type="2">2nd Kotara</quarter>
@@ -227,6 +227,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'beke' W 'ya' MMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'beke' 'ya' 'bo' W 'ya' MMM</dateFormatItem>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'beke' 'ya' 'bo' w 'ya' Y</dateFormatItem>
 					</availableFormats>
@@ -297,6 +299,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">ngwaga wa go feta</relative>
+				<relative type="0">ngwaga wo</relative>
+				<relative type="1">ngwaga wo o tlago</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">kgwedi ye e fetilego</relative>
+				<relative type="0">kgwedi ye</relative>
+				<relative type="1">kgwedi ye e tlago</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">beke ye e fetilego</relative>
+				<relative type="0">beke ye</relative>
+				<relative type="1">beke ye e tlago</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">maabane</relative>
+				<relative type="0">lehono</relative>
+				<relative type="1">gosasa</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">LaMorena le fetilego</relative>
+				<relative type="0">LaMorena le</relative>
+				<relative type="1">LaMorena le latelago</relative>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<metazone type="GMT">
 				<long>
@@ -306,9 +335,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<group> </group>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
