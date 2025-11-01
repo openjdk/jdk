@@ -322,7 +322,7 @@ final class DigitList implements Cloneable {
     void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         assert Double.isFinite(source);
 
-        FloatingDecimal.BinaryToASCIIConverter fdConverter =
+        FloatingDecimal.BinaryToASCIIBuffer fdConverter =
                 FloatingDecimal.getBinaryToASCIIConverter(source, COMPAT);
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
