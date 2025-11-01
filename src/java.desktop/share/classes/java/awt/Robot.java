@@ -127,6 +127,20 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
+     * Default delay in milliseconds for mouse
+     * {@link #glide(int, int, int, int) glide},
+     * {@link #type(int) type}, and
+     * {@link #click(int) click}.
+     */
+    public static final int DEFAULT_DELAY = 20;
+
+    /**
+     * Default pixel step-length for mouse
+     * {@link #glide(int, int, int, int) glide}.
+     */
+    public static final int DEFAULT_STEP_LENGTH = 2;
+
+    /**
      * Constructs a Robot object in the coordinate system of the primary screen.
      *
      * @throws  AWTException if the platform configuration does not allow
@@ -772,5 +786,218 @@ public class Robot {
     public synchronized String toString() {
         String params = "autoDelay = "+getAutoDelay()+", "+"autoWaitForIdle = "+isAutoWaitForIdle();
         return getClass().getName() + "[ " + params + " ]";
+    }
+
+    /**
+     * A convenience method that simulates clicking a mouse button by calling {@code mousePress},
+     * {@code mouseRelease} and {@code waitForIdle}. Invokes {@code waitForIdle} with a default
+     * delay of {@value #DEFAULT_DELAY} milliseconds after {@code mousePress} and {@code mouseRelease}
+     * calls. For specifics on valid inputs see {@link java.awt.Robot#mousePress(int)}.
+     *
+     * @param   buttons The button mask; a combination of one or more mouse button masks.
+     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
+     *          extra mouse button and support for extended mouse buttons is
+     *          {@linkplain Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
+     *          extra mouse button that does not exist on the mouse and support for extended
+     *          mouse buttons is {@linkplain Toolkit#areExtraMouseButtonsEnabled() enabled}
+     *          by Java
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
+     * @see     #mousePress(int)
+     * @see     #mouseRelease(int)
+     * @see     InputEvent#getMaskForButton(int)
+     * @see     Toolkit#areExtraMouseButtonsEnabled()
+     * @see     java.awt.event.MouseEvent
+     * @since   26
+     */
+    public void click(int buttons) {
+        try {
+            mousePress(buttons);
+            waitForIdle(DEFAULT_DELAY);
+        } finally {
+            mouseRelease(buttons);
+            waitForIdle(DEFAULT_DELAY);
+        }
+    }
+
+    /**
+     * A convenience method that clicks mouse button 1.
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #click(int)
+     * @since   26
+     */
+    public void click() {
+        click(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
+    /**
+     * A convenience method that calls {@code waitForIdle} then waits an additional specified
+     * {@code delayValue} time in milliseconds.
+     *
+     * @param   delayValue  Additional delay length in milliseconds to wait until thread
+     *                      sync been completed
+     * @throws  IllegalThreadStateException if called on the AWT event
+     *          dispatching thread
+     * @throws  IllegalArgumentException if {@code delayValue} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @since   26
+     */
+    public void waitForIdle(int delayValue) {
+        waitForIdle();
+        delay(delayValue);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple
+     * steps from its current location to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
+     *
+     * @param   x   Destination point x coordinate
+     * @param   y   Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_DELAY
+     * @see     #glide(int, int, int, int, int, int)
+     * @since   26
+     */
+    public void glide(int x, int y) {
+        Point p = MouseInfo.getPointerInfo().getLocation();
+        glide(p.x, p.y, x, y);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple steps
+     * from source coordinates to the destination coordinates.
+     *
+     * @implSpec Invokes {@link #mouseMove(int, int) mouseMove} with a step-length
+     * of {@value #DEFAULT_STEP_LENGTH} and a step-delay of {@value #DEFAULT_DELAY}.
+     *
+     * @param   srcX   Source point x coordinate
+     * @param   srcY   Source point y coordinate
+     * @param   dstX   Destination point x coordinate
+     * @param   dstY   Destination point y coordinate
+     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_DELAY
+     * @see     #glide(int, int, int, int, int, int)
+     * @since   26
+     */
+    public void glide(int srcX, int srcY, int dstX, int dstY) {
+        glide(srcX, srcY, dstX, dstY, DEFAULT_STEP_LENGTH, DEFAULT_DELAY);
+    }
+
+    /**
+     * A convenience method that moves the mouse in multiple
+     * steps from source point to the destination point with a
+     * given {@code stepLength} and {@code stepDelay}.
+     *
+     * @param   srcX        Source point x coordinate
+     * @param   srcY        Source point y coordinate
+     * @param   destX       Destination point x coordinate
+     * @param   destY       Destination point y coordinate
+     * @param   stepLength  Preferred length of one step in pixels
+     * @param   stepDelay   Delay between steps in milliseconds
+     *
+     * @throws  IllegalArgumentException if {@code stepLength} is not greater than zero
+     * @throws  IllegalArgumentException if {@code stepDelay} is not between {@code 0}
+     *          and {@code 60,000} milliseconds inclusive
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching
+     *          thread and {@code isAutoWaitForIdle} would return true
+     * @see     #mouseMove(int, int)
+     * @see     #delay(int)
+     * @since   26
+     */
+    public void glide(int srcX, int srcY, int destX, int destY, int stepLength, int stepDelay) {
+        if (stepLength <= 0) {
+            throw new IllegalArgumentException("Step length must be greater than zero");
+        }
+        if (stepDelay <= 0 || stepDelay > 60000) {
+            throw new IllegalArgumentException("Step delay must be between 0 and 60,000 milliseconds");
+        }
+
+        int stepNum;
+        double tDx, tDy;
+        double dx, dy, ds;
+        double x, y;
+
+        dx = (destX - srcX);
+        dy = (destY - srcY);
+        ds = Math.sqrt(dx*dx + dy*dy);
+
+        tDx = dx / ds * stepLength;
+        tDy = dy / ds * stepLength;
+
+        int stepsCount = (int) ds / stepLength;
+
+        // Walk the mouse to the destination one step at a time
+        mouseMove(srcX, srcY);
+
+        for (x = srcX, y = srcY, stepNum = 0;
+             stepNum < stepsCount;
+             stepNum++) {
+            x += tDx;
+            y += tDy;
+            mouseMove((int)x, (int)y);
+            delay(stepDelay);
+        }
+
+        // Ensure the mouse moves to the right destination.
+        // The steps may have led the mouse to a slightly wrong place.
+        if (x != destX || y != destY) {
+            mouseMove(destX, destY);
+        }
+    }
+
+    /**
+     * A convenience method that simulates typing a key by calling {@code keyPress}
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a delay of {@value #DEFAULT_DELAY}
+     * milliseconds after {@code keyPress} and {@code keyRelease} calls.
+     * <p>
+     * Key codes that have more than one physical key associated with them
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
+     * left or right shift key) will map to the left key.
+     *
+     * @param   keycode Key to type (e.g. {@code KeyEvent.VK_A})
+     * @throws  IllegalArgumentException if {@code keycode} is not
+     *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #DEFAULT_DELAY
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
+     * @see     java.awt.event.KeyEvent
+     * @since   26
+     */
+    public synchronized void type(int keycode) {
+        keyPress(keycode);
+        waitForIdle(DEFAULT_DELAY);
+        keyRelease(keycode);
+        waitForIdle(DEFAULT_DELAY);
+    }
+
+    /**
+     * A convenience method that simulates typing a char by calling {@code keyPress}
+     * and {@code keyRelease}. Gets the ExtendedKeyCode for the char and calls
+     * {@code type(int keycode)}.
+     *
+     * @param   c   Character to be typed (e.g. {@code 'a'})
+     * @throws  IllegalArgumentException if {@code keycode} is not
+     *          a valid key
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     * @see     #type(int)
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
+     * @see     java.awt.event.KeyEvent
+     * @since   26
+     */
+    public synchronized void type(char c) {
+        type(KeyEvent.getExtendedKeyCodeForChar(c));
     }
 }
