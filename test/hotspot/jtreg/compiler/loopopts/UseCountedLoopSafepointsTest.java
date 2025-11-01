@@ -73,6 +73,8 @@ public class UseCountedLoopSafepointsTest {
         // parse output in seach of SafePoint and CountedLoopEnd nodes
         List<Node> safePoints = new ArrayList<>();
         List<Node> loopEnds = new ArrayList<>();
+        List<Node> reachabilityFences = new ArrayList<>();
+        List<Node> projections = new ArrayList<>();
         for (String line : oa.getOutput().split("\\n")) {
             int separatorIndex = line.indexOf("  ===");
             if (separatorIndex > -1) {
@@ -81,17 +83,28 @@ public class UseCountedLoopSafepointsTest {
                     safePoints.add(new Node("SafePoint", line));
                 } else if (header.endsWith("CountedLoopEnd")) {
                     loopEnds.add(new Node("CountedLoopEnd", line));
+                } else if (header.endsWith("ReachabilityFence")) {
+                    reachabilityFences.add(new Node("ReachabilityFence", line));
+                } else if (header.endsWith("Proj")) {
+                    projections.add(new Node("Proj", line));
                 }
             }
         }
         // now, find CountedLoopEnd -> SafePoint edge
         boolean found = false;
-        for (Node loopEnd : loopEnds) {
-            found |= loopEnd.to.stream()
-                                 .filter(id -> nodeListHasElementWithId(safePoints, id))
-                                 .findAny()
-                                 .isPresent();
-        }
+
+        // CountedLoopEnd -> SafePoint
+        found |= loopEnds.stream()
+                .flatMap(n -> n.to.stream()).flatMap(id -> safePoints.stream().filter(node -> node.id == id))
+                .findAny().isPresent();
+
+        // CountedLoopEnd -> Proj -> ReachabilityFence -> SafePoint
+        found |= loopEnds.stream()
+                .flatMap(n -> n.to.stream()).flatMap(id -> projections.stream().filter(node -> node.id == id))
+                .flatMap(n -> n.to.stream()).flatMap(id -> reachabilityFences.stream().filter(node -> node.id == id))
+                .flatMap(n -> n.to.stream()).flatMap(id -> safePoints.stream().filter(node -> node.id == id))
+                .findAny().isPresent();
+
         Asserts.assertEQ(enabled, found, "Safepoint " + (found ? "" : "not ") + "found");
     }
 
