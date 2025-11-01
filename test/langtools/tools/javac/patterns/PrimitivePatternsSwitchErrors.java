@@ -59,7 +59,7 @@ public class PrimitivePatternsSwitchErrors {
         int i = 42;
         return switch (i) {
             case Integer ib  -> ib;
-            case byte ip     -> ip; // OK - not dominated!
+            case byte ip     -> ip; // Error - dominated!
         };
     }
 
@@ -264,5 +264,70 @@ public class PrimitivePatternsSwitchErrors {
 
     public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndNarrowingPrimitive(T i) {
         return i instanceof byte b;  // not allowed as a conversion
+    }
+
+    public static void dominanceIntFloat() {
+        int ii = 42;
+        switch (ii) {
+            case int i -> {}
+            case float f -> {} // Error - dominated!
+        }
+    }
+
+    public static void noDominanceIntFloat() {
+        int ii = 42;
+        switch (ii) {
+            case float f -> {}
+            case int i -> {} // ok
+        }
+    }
+
+    public static void strengtheningDominance() {
+        byte x = 42;
+        switch (x) {
+            case short s -> {}
+            case 42      -> {}    // error: dominated
+        }
+
+        long l = 42l;
+        switch (l) {
+            case short s -> {}
+            case 42l     -> {}    // error: dominated
+            case long _  -> {}
+        }
+
+        char c = 'a';
+        switch (c) {
+            case short s -> {}
+            case 42      -> {}    // error: dominated
+            case char _  -> {}
+        }
+
+        int x2 = 42;
+        switch(x2) {
+            case float f -> {}
+            case 16_777_216 -> {}  // error: dominated
+            default -> {}
+        }
+
+        switch(x2) {
+            case float f -> {}
+            case 16_777_217 -> {} // OK
+            default -> {}
+        }
+
+        switch(x2) {
+            case int ii   -> {}
+            case float f -> {}    // error: dominated
+        }
+    }
+
+    public static void unconditionalFollowedByDefault() {
+        int ii = 42;
+        switch (ii) {
+            case int i -> {}
+            case float f -> {} // Error - dominated!
+            default -> {}      // Error - unconditional and default
+        }
     }
 }

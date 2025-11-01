@@ -36,7 +36,6 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
-import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -2835,7 +2834,7 @@ public class Lower extends TreeTranslator {
             JCExpression exactnessCheck;
             JCExpression instanceOfExpr = translate(tree.expr);
 
-            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+            if (types.isUnconditionallyExactTypeBased(tree.expr.type, tree.pattern.type)) {
                 // instanceOfExpr; true
                 prefixStatement = make.Exec(instanceOfExpr);
                 exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1));
@@ -2844,7 +2843,7 @@ public class Lower extends TreeTranslator {
                 prefixStatement = null;
                 exactnessCheck = getExactnessCheck(tree, instanceOfExpr);
             } else if (tree.expr.type.isReference()) {
-                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                if (types.isUnconditionallyExactTypeBased(types.unboxedType(tree.expr.type), tree.pattern.type)) {
                     // instanceOfExpr != null
                     prefixStatement = null;
                     exactnessCheck = makeBinary(NE, instanceOfExpr, makeNull());
