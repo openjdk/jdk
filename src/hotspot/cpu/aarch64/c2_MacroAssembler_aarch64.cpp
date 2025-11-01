@@ -2722,9 +2722,8 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   assert_different_registers(dst, src1, src2, index, tmp);
 
   // The cases that can reach this method are -
-  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 2, vector_length_in_bytes >= 8
+  // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
+  // - UseSVE = 2, vector_length_in_bytes >= 8, for all types
   //
   // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
   // and UseSVE = 2 with vector_length_in_bytes >= 8
