@@ -150,6 +150,7 @@ public final class Verify {
             default -> {
                 if (isVectorAPIClass(ca)) {
                     checkEQForVectorAPIClass(a, b, field, aParent, bParent);
+                // TODO: handle Float16
                 } else {
                     checkEQArbitraryClasses(a, b);
                 }
