@@ -60,7 +60,7 @@ public class TestMethodArguments {
                 : IntStream.range(0, numberOfArguments)
                         .mapToObj(i -> "x" + i)
                         .collect(Collectors.joining(" + "));
-        return Template.make(() -> Template.body(
+        return Template.make(() -> Template.scope(
                 Template.let("type", type.name()),
                 Template.let("boxedType", type.boxedTypeName()),
                 Template.let("arguments", arguments),
@@ -115,7 +115,7 @@ public class TestMethodArguments {
             tests.add(generateTest(CodeGenerationDataNameType.longs(), i / 2).asToken());
             tests.add(generateTest(CodeGenerationDataNameType.doubles(), i / 2).asToken());
         }
-        return Template.make(() -> Template.body(
+        return Template.make(() -> Template.scope(
                 Template.let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
                 """
                 import java.util.Arrays;
