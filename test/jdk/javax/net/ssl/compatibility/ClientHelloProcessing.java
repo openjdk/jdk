@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,17 @@ import java.util.Objects;
  */
 
 public class ClientHelloProcessing {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl:handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     private static final ByteBuffer SERVOUTBUF =
             ByteBuffer.wrap("Server Side".getBytes());
@@ -476,7 +487,11 @@ public class ClientHelloProcessing {
 
     public static void main(String[] args) throws Exception {
         boolean allGood = true;
-        System.setProperty("javax.net.debug", "ssl:handshake");
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl:handshake");
+        }
+
         trustMgrFac = makeTrustManagerFactory(trustFilename, passwd);
         keyMgrFac = makeKeyManagerFactory(keyFilename, passwd);
 
