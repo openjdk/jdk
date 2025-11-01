@@ -94,9 +94,9 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    }
 
    private boolean isValidFrame(Address nextCFA, boolean isNative) {
-     // CFA should not be null even if it is Java frame.
-     // nextCFA should be greater than (current) cfa between native call.
-     // It is ok if the frame is Java-related call.
+     // CFA should never be null.
+     // nextCFA must be greater than current CFA, if frame is native.
+     // Java interpreter frames can share the CFA (frame pointer).
      return nextCFA != null &&
          (!isNative || (isNative && nextCFA.greaterThan(cfa)));
    }
