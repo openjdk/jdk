@@ -67,7 +67,7 @@ class StressCancellation {
     void test(ThreadFactory factory, int beforeCancel, int afterCancel) throws Exception {
         var joiner = new Joiner<Boolean, Void>() {
             @Override
-            public boolean onComplete(Subtask<? extends Boolean> subtask) {
+            public boolean onComplete(Subtask<Boolean> subtask) {
                 boolean cancel = subtask.get();
                 return cancel;
             }
