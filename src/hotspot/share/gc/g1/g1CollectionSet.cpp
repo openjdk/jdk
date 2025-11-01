@@ -126,8 +126,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
   assert(!hr->rem_set()->has_cset_group(), "Should have already uninstalled group remset");
 
-  assert(!hr->in_collection_set(), "should not already be in the collection set");
-  _g1h->register_old_region_with_region_attr(hr);
+  _g1h->register_old_collection_set_region_with_region_attr(hr);
 
   assert(_regions_cur_length < _regions_max_length, "Collection set now larger than maximum size.");
   _regions[_regions_cur_length++] = hr->hrm_index();
@@ -724,7 +723,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   stop_incremental_building();
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 
   return num_regions_selected > 0;
 }
@@ -736,7 +735,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
       // Clear collection set marker and make sure that the remembered set information
       // is correct as we still need it later.
       _g1h->clear_region_attr(r);
-      _g1h->register_region_with_region_attr(r);
+      _g1h->update_region_attr(r);
       r->clear_index_in_opt_cset();
     };
 
@@ -745,7 +744,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
     _optional_groups.remove_selected(_optional_groups.length(), _optional_groups.num_regions());
   }
 
-  _g1h->verify_region_attr_remset_is_tracked();
+  _g1h->verify_region_attr_is_remset_tracked();
 }
 
 #ifdef ASSERT

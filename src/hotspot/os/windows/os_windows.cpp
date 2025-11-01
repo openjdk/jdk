@@ -1827,12 +1827,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load %s-bit .dll on a %s-bit platform",
                          lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                          lib_arch, running_arch_str);
   }
@@ -4159,11 +4159,6 @@ void os::win32::initialize_system_info() {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
   _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
-
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Adjust MaxRAM according to the maximum virtual address space available.
-    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
-  }
 
   _is_windows_server = IsWindowsServer();
 
