@@ -2607,6 +2607,195 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void increase_counter_128(Register counter, Register tmp1, Register tmp2) {
+    __ ld(tmp1, Address(counter, 8));  // load low 64-bit from counter
+    __ rev8(tmp1, tmp1);               // change to little endian for add
+    __ addi(tmp1, tmp1, 1);
+    __ rev8(tmp1, tmp1);               // change back to big endian
+    __ sd(tmp1, Address(counter, 8));  // store the result back
+    __ seqz(tmp2, tmp1);               // Check for result overflow,
+                                       // set tmp2 = 1 if overflow, else tmp2 = 0
+    __ ld(tmp1, Address(counter));     // load high 64-bit from counter
+    __ rev8(tmp1, tmp1);
+    __ add(tmp1, tmp1, tmp2);          // add 1 if overflow, else add 0
+    __ rev8(tmp1, tmp1);
+    __ sd(tmp1, Address(counter));
+  }
+
+  // CTR AES crypt.
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //   c_rarg5   - saved encryptedCounter start
+  //   c_rarg6   - saved used length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_counterMode_AESCrypt() {
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseZvbb, "need vector bit manipulation (Zvbb extension) support");
+    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in                  = c_rarg0;
+    const Register out                 = c_rarg1;
+    const Register key                 = c_rarg2;
+    const Register counter             = c_rarg3;
+    const Register input_len           = c_rarg4;
+    const Register saved_encrypted_ctr = c_rarg5;
+    const Register used_ptr            = c_rarg6;
+
+    const Register keylen              = x31;
+    const Register used                = x30;
+    const Register len                 = x29;
+    const Register tmp1                = x28;
+    const Register tmp2                = t1;
+    const Register blk_size            = t2;
+
+    const unsigned char block_size = 16;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
+    const address start = __ pc();
+    __ enter();
+
+    // Algorithm:
+    //
+    // if (len == 0) {
+    //   goto L_exit;
+    // } else {
+    //   generate_aes_loadkeys();
+    //
+    //   L_encrypt_next:
+    //     while (used < block_size) {
+    //       if (len == 0) goto L_exit;
+    //       out[outOff++] = (byte)(in[inOff++] ^ saved_encrypted_ctr[used++]);
+    //       len--;
+    //     }
+    //
+    //   L_main:
+    //     saved_encrypted_ctr = aes_encrypt(counter);
+    //     increase_counter(counter);
+    //     if (len < block_size) {
+    //       used = 0;
+    //       goto L_encrypt_next;
+    //     }
+    //     v_in = load_16Byte(in);
+    //     v_out = load_16Byte(out);
+    //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
+    //     v_out = v_in ^ v_saved_encrypted_ctr;
+    //     out += block_size;
+    //     in += block_size;
+    //     len -= block_size;
+    //     goto L_main;
+    // }
+    //
+    // L_exit:
+    //   return result;
+
+    Label L_exit;
+    __ lw(used, Address(used_ptr));
+    __ beqz(input_len, L_exit);
+    __ mv(len, input_len);
+    __ mv(blk_size, block_size);
+
+    Label L_aes128_loadkeys, L_aes192_loadkeys, L_exit_loadkeys;
+    // Compute #rounds for AES based on the length of the key array
+    __ lw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loadkeys);
+    __ beq(keylen, t0, L_aes192_loadkeys);
+
+    // Load aes keys into working_vregs according to the keylen
+    generate_aes_loadkeys(key, working_vregs, 15);
+    __ j(L_exit_loadkeys);
+
+    __ bind(L_aes192_loadkeys);
+    generate_aes_loadkeys(key, working_vregs, 13);
+    __ j(L_exit_loadkeys);
+
+    __ bind(L_aes128_loadkeys);
+    generate_aes_loadkeys(key, working_vregs, 11);
+    __ bind(L_exit_loadkeys);
+
+    Label L_next, L_encrypt_next, L_main;
+
+    // Encrypt bytes left with last encryptedCounter
+    __ bind(L_next);
+    __ bge(used, blk_size, L_main);
+
+    __ bind(L_encrypt_next);
+    __ add(tmp1, saved_encrypted_ctr, used);
+    __ lbu(t0, Address(tmp1));
+    __ lbu(tmp1, Address(in));
+    __ xorr(t0, t0, tmp1);
+    __ sb(t0, Address(out));
+    __ addi(in, in, 1);
+    __ addi(out, out, 1);
+    __ addi(used, used, 1);
+    __ subi(len, len, 1);
+    __ beqz(len, L_exit);
+    __ j(L_next);
+
+    __ bind(L_main);
+    __ vle32_v(v16, counter);
+
+    Label L_aes128_loop_next, L_aes192_loop_next, L_exit_aes_loop_next;
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128_loop_next);
+    __ beq(keylen, t0, L_aes192_loop_next);
+
+    generate_aes_encrypt(v16, working_vregs, 15);
+    __ j(L_exit_aes_loop_next);
+
+    __ bind(L_aes192_loop_next);
+    generate_aes_encrypt(v16, working_vregs, 13);
+    __ j(L_exit_aes_loop_next);
+
+    __ bind(L_aes128_loop_next);
+    generate_aes_encrypt(v16, working_vregs, 11);
+    __ bind(L_exit_aes_loop_next);
+
+    __ vse32_v(v16, saved_encrypted_ctr);
+    __ mv(used, 0);
+
+    // Increase counter
+    increase_counter_128(counter, tmp1, tmp2);
+
+    __ beqz(len, L_exit);
+
+    __ blt(len, blk_size, L_encrypt_next);
+
+    __ vle32_v(v17, in);
+    __ vxor_vv(v16, v16, v17);
+    __ vse32_v(v16, out);
+    __ add(out, out, blk_size);
+    __ add(in, in, blk_size);
+    __ sub(len, len, blk_size);
+    __ j(L_main);
+
+    __ bind(L_exit);
+    __ sw(used, Address(used_ptr));
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
                              Register strL, Register strU, Label& DIFF) {
@@ -6825,6 +7014,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    }
+
+    if (UseAESCTRIntrinsics) {
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
     }
 
     if (UsePoly1305Intrinsics) {
