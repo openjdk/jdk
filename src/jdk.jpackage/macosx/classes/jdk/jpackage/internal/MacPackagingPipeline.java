@@ -133,7 +133,7 @@ final class MacPackagingPipeline {
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
-                        .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist)
+                        .noaction()
                         .addDependencies(CopyAppImageTaskID.COPY)
                         .addDependents(PrimaryTaskID.COPY_APP_IMAGE).add()
                 .task(MacCopyAppImageTaskID.COPY_RUNTIME_JLILIB)
@@ -186,14 +186,18 @@ final class MacPackagingPipeline {
                 disabledTasks.add(MacCopyAppImageTaskID.COPY_PACKAGE_FILE);
 
                 if (predefinedRuntimeBundle.isPresent()) {
-                    // The predefined app image is a macOS bundle.
+                    // The input runtime image is a macOS bundle.
                     // Disable all alterations of the input bundle, but keep the signing enabled.
                     disabledTasks.addAll(List.of(MacCopyAppImageTaskID.values()));
                     disabledTasks.remove(MacCopyAppImageTaskID.COPY_SIGN);
+                } else {
+                    // The input runtime is not a macOS bundle and doesn't have the plist file. Create one.
+                    builder.task(MacCopyAppImageTaskID.COPY_RUNTIME_INFO_PLIST)
+                            .appImageAction(MacPackagingPipeline::writeRuntimeInfoPlist).add();
                 }
 
                 if (predefinedRuntimeBundle.map(MacBundle::isSigned).orElse(false) && !((MacPackage)p).app().sign()) {
-                    // The predefined app image is a signed bundle; explicit signing is not requested for the package.
+                    // The input runtime is a signed bundle; explicit signing is not requested for the package.
                     // Disable the signing, i.e. don't re-sign the input bundle.
                     disabledTasks.add(MacCopyAppImageTaskID.COPY_SIGN);
                 }

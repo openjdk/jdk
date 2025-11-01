@@ -431,6 +431,10 @@ final class PackagingPipeline {
         this.taskGraph = Objects.requireNonNull(taskGraph);
         this.taskConfig = Objects.requireNonNull(taskConfig);
         this.contextMapper = Objects.requireNonNull(contextMapper);
+
+        if (TRACE_TASK_GRAPTH) {
+            taskGraph.dumpToStdout();
+        }
     }
 
     private TaskContext createTaskContext(BuildEnv env, Application app) {
@@ -630,9 +634,27 @@ final class PackagingPipeline {
         Objects.requireNonNull(id);
         Objects.requireNonNull(config);
         return () -> {
-            if (config.action.isPresent() && context.test(id)) {
+
+            final var withAction = config.action.isPresent();
+            final var accepted = withAction && context.test(id);
+
+            if (TRACE_TASK_ACTION) {
+                var sb = new StringBuffer();
+                sb.append("Execute task=[").append(id).append("]: ");
+                if (!withAction) {
+                    sb.append("no action");
+                } else if (!accepted) {
+                    sb.append("rejected");
+                } else {
+                    sb.append("run");
+                }
+                System.out.println(sb);
+            }
+
+            if (accepted) {
                 context.execute(config.action.orElseThrow());
             }
+
             return null;
         };
     }
@@ -640,4 +662,7 @@ final class PackagingPipeline {
     private final FixedDAG<TaskID> taskGraph;
     private final Map<TaskID, TaskConfig> taskConfig;
     private final UnaryOperator<TaskContext> contextMapper;
+
+    private static final boolean TRACE_TASK_GRAPTH = false;
+    private static final boolean TRACE_TASK_ACTION = false;
 }
