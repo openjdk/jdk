@@ -67,6 +67,10 @@ class MemoryImpl extends NotificationEmitterSupport
         Runtime.getRuntime().gc();
     }
 
+    public long getTotalGcCpuTime() {
+        return jvm.getTotalGcCpuTime();
+    }
+
     // Need to make a VM call to get coherent value
     public MemoryUsage getHeapMemoryUsage() {
         return getMemoryUsage0(true);
