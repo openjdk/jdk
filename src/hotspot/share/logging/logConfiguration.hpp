@@ -88,7 +88,7 @@ private:
   static size_t find_output(const char* name);
 
   // Configure output (add or update existing configuration) to log on tag-level combination using specified decorators.
-  static void configure_output(size_t idx, const LogSelectionList& tag_level_expression, const LogDecorators& decorators);
+  static void configure_output(size_t idx, const LogSelectionList& tag_level_expression, const LogDecorators& decorators, bool is_user_provided);
 
   // This should be called after any configuration change while still holding ConfigurationLock
   static void notify_update_listeners();
@@ -125,6 +125,9 @@ private:
   // Tags should be specified using the LOG_TAGS macro, e.g.
   // LogConfiguration::configure_stdout(LogLevel::<level>, <true/false>, LOG_TAGS(<tags>));
   static void configure_stdout(LogLevelType level, int exact_match, ...);
+
+  // Configures logging on stdout for the given tags to be the default level, not specified by users
+  static void reset_stdout(int exact_match, ...);
 
   // Parse command line configuration. Parameter 'opts' is the string immediately following the -Xlog: argument ("gc" for -Xlog:gc).
   static bool parse_command_line_arguments(const char* opts = "all");
