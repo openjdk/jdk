@@ -25,15 +25,23 @@
 #ifndef SHARE_GC_SHARED_C2_CARDTABLEBARRIERSETC2_HPP
 #define SHARE_GC_SHARED_C2_CARDTABLEBARRIERSETC2_HPP
 
-#include "gc/shared/c2/modRefBarrierSetC2.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 
-class CardTableBarrierSetC2: public ModRefBarrierSetC2 {
+class CardTableBarrierSetC2: public BarrierSetC2 {
 protected:
   virtual void post_barrier(GraphKit* kit,
                             Node* obj,
                             Node* adr,
                             Node* val,
                             bool use_precise) const;
+
+  virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
+
+  virtual Node* atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
+                                               Node* new_val, const Type* value_type) const;
+  virtual Node* atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
+                                                Node* new_val, const Type* value_type) const;
+  virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const;
 
   Node* byte_map_base_node(GraphKit* kit) const;
 

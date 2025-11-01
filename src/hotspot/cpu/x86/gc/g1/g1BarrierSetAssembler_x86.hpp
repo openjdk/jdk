@@ -26,7 +26,7 @@
 #define CPU_X86_GC_G1_G1BARRIERSETASSEMBLER_X86_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 
 class LIR_Assembler;
 class StubAssembler;
@@ -34,7 +34,7 @@ class G1PreBarrierStub;
 class G1BarrierStubC2;
 class G1PreBarrierStubC2;
 
-class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
+class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
  protected:
   virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count);
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count, Register tmp);

@@ -27,17 +27,30 @@
 #define CPU_S390_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_S390_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 
-class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
+class CardTableBarrierSetAssembler: public BarrierSetAssembler {
 protected:
   void store_check(MacroAssembler* masm, Register store_addr, Register tmp);
+
+  virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count) {}
 
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr, Register count,
                                                 bool do_return);
 
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3);
+public:
+  virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  Register src, Register dst, Register count);
+
+  virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  Register dst, Register count, bool do_return = false);
+
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3);
+
+  virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 };
 
 #endif // CPU_S390_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_S390_HPP

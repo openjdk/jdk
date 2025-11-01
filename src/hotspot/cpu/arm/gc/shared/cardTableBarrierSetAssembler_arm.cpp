@@ -40,6 +40,30 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register addr, Register count, int callee_saved_regs) {
+
+  if (is_oop) {
+    gen_write_ref_array_pre_barrier(masm, decorators, addr, count, callee_saved_regs);
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                      Register addr, Register count, Register tmp) {
+  if (is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, addr, count, tmp);
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
+  if (type == T_OBJECT || type == T_ARRAY) {
+    oop_store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  }
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BLOCK_COMMENT("CardTablePostBarrier");

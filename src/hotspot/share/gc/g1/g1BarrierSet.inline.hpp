@@ -94,7 +94,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_not_in_heap(T* addr) {
-  oop value = ModRef::oop_load_not_in_heap(addr);
+  oop value = CardTableBS::oop_load_not_in_heap(addr);
   enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
@@ -103,7 +103,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap(T* addr) {
-  oop value = ModRef::oop_load_in_heap(addr);
+  oop value = CardTableBS::oop_load_in_heap(addr);
   enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
@@ -111,7 +111,7 @@ oop_load_in_heap(T* addr) {
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap_at(oop base, ptrdiff_t offset) {
-  oop value = ModRef::oop_load_in_heap_at(base, offset);
+  oop value = CardTableBS::oop_load_in_heap_at(base, offset);
   enqueue_preloaded_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
   return value;
 }

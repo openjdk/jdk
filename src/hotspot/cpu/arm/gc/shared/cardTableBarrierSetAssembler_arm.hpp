@@ -26,9 +26,9 @@
 #define CPU_ARM_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 
-class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
+class CardTableBarrierSetAssembler: public BarrierSetAssembler {
 private:
   void store_check(MacroAssembler* masm, Register obj, Address dst);
   void store_check_part1(MacroAssembler* masm, Register card_table_base);
@@ -37,10 +37,23 @@ private:
   void set_card(MacroAssembler* masm, Register card_table_base, Address card_table_addr, Register tmp);
 
 protected:
+  virtual void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                               Register addr, Register count, int callee_saved_regs) {}
+
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                 Register addr, Register count, Register tmp);
+
   virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                             Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
+
+public:
+  virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                  Register addr, Register count, int callee_saved_regs);
+  virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                  Register addr, Register count, Register tmp);
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        Address obj, Register val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
+
 };
 
 #endif // CPU_ARM_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_ARM_HPP

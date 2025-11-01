@@ -132,8 +132,7 @@
   declare_toplevel_type(CollectedHeap)                                    \
   declare_toplevel_type(ContiguousSpace)                                  \
   declare_toplevel_type(BarrierSet)                                       \
-           declare_type(ModRefBarrierSet,             BarrierSet)         \
-           declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
+           declare_type(CardTableBarrierSet,             BarrierSet)      \
   declare_toplevel_type(CardTable)                                        \
   declare_toplevel_type(BarrierSet::Name)                                 \
                                                                           \
@@ -183,7 +182,6 @@
                                                                             \
   declare_constant(AgeTable::table_size)                                    \
                                                                             \
-  declare_constant(BarrierSet::ModRef)                                      \
   declare_constant(BarrierSet::CardTableBarrierSet)                         \
                                                                             \
   declare_constant(BOTConstants::LogBase)                                   \

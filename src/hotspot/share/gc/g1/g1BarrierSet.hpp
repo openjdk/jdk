@@ -117,8 +117,8 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>
-  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
-    typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
+  class AccessBarrier: public CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> CardTableBS;
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
   public:

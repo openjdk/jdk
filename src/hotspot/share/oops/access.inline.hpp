@@ -219,7 +219,7 @@ namespace AccessInternal {
             AccessBarrier<ds>, barrier_type, ds>::oop_access_barrier; \
         }                                                               \
         break;
-        FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+        FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
       default:
@@ -242,7 +242,7 @@ namespace AccessInternal {
             AccessBarrier<ds>, barrier_type, ds>::access_barrier; \
         }                                                                 \
         break;
-        FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+        FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
       default:

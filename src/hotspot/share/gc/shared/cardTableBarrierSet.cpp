@@ -53,18 +53,22 @@ CardTableBarrierSet::CardTableBarrierSet(BarrierSetAssembler* barrier_set_assemb
                                          BarrierSetC2* barrier_set_c2,
                                          CardTable* card_table,
                                          const BarrierSet::FakeRtti& fake_rtti) :
-  ModRefBarrierSet(barrier_set_assembler,
-                   barrier_set_c1,
-                   barrier_set_c2,
-                   fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
+  BarrierSet(barrier_set_assembler,
+             barrier_set_c1,
+             barrier_set_c2,
+             nullptr /* barrier_set_nmethod */,
+             nullptr /* barrier_set_stack_chunk */,
+             fake_rtti.add_tag(BarrierSet::CardTableBarrierSet)),
   _card_table(card_table)
 {}
 
 CardTableBarrierSet::CardTableBarrierSet(CardTable* card_table) :
-  ModRefBarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
-                   make_barrier_set_c1<CardTableBarrierSetC1>(),
-                   make_barrier_set_c2<CardTableBarrierSetC2>(),
-                   BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
+  BarrierSet(make_barrier_set_assembler<CardTableBarrierSetAssembler>(),
+             make_barrier_set_c1<CardTableBarrierSetC1>(),
+             make_barrier_set_c2<CardTableBarrierSetC2>(),
+             nullptr /* barrier_set_nmethod */,
+             nullptr /* barrier_set_stack_chunk */,
+             BarrierSet::FakeRtti(BarrierSet::CardTableBarrierSet)),
   _card_table(card_table)
 {}
 

@@ -144,7 +144,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
