@@ -327,7 +327,7 @@ public final class FileServerHandler implements HttpHandler {
         }
         String rangesPart = rangeHeader.substring("bytes=".length());
         List<RangeEntry> ranges = new ArrayList<>();
-        for (String spec : rangesPart.split(",")) {
+        for (String spec : rangesPart.split(",", -1)) {
             spec = spec.trim();
             int dashPos = spec.indexOf('-');
             if (dashPos == -1) {
