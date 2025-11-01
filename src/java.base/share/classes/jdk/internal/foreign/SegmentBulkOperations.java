@@ -50,6 +50,7 @@ public final class SegmentBulkOperations {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
     private static final long LONG_MASK = ~7L; // The last three bits are zero
+    private static final long BYTE_REPLICATOR = 0x0101010101010101L;
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
@@ -68,7 +69,7 @@ public final class SegmentBulkOperations {
 
             // Handle smaller segments directly without transitioning to native code
             final long u = Byte.toUnsignedLong(value);
-            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+            final long longValue = BYTE_REPLICATOR * u;
 
             int offset = 0;
             // 0...0X...X000
