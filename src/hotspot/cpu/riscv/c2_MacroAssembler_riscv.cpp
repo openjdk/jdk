@@ -2223,12 +2223,25 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
-static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<FloatRegister, Register, Register>& stub) {
+class C2Float16ToFloatStub final : public C2CodeStub {
+  FloatRegister _dst;
+  Register _src;
+  Register _tmp;
+
+public:
+  C2Float16ToFloatStub(FloatRegister dst, Register src, Register tmp)
+    : _dst(dst), _src(src), _tmp(tmp) {}
+
+  int max_size() const override { return 20; }
+  void emit(C2_MacroAssembler& masm) override;
+};
+
+void C2Float16ToFloatStub::emit(C2_MacroAssembler& masm) {
 #define __ masm.
-  FloatRegister dst = stub.data<0>();
-  Register src = stub.data<1>();
-  Register tmp = stub.data<2>();
-  __ bind(stub.entry());
+  FloatRegister dst = _dst;
+  Register src = _src;
+  Register tmp = _tmp;
+  __ bind(entry());
 
   // following instructions mainly focus on NaN, as riscv does not handle
   // NaN well with fcvt, but the code also works for Inf at the same time.
@@ -2241,13 +2254,13 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
   __ orr(tmp, t0, tmp);
   __ fmv_w_x(dst, tmp);
 
-  __ j(stub.continuation());
+  __ j(continuation());
 #undef __
 }
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
-  auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
+  C2CodeStub* stub = C2CodeStub::make<C2Float16ToFloatStub>(dst, src, tmp);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
   // On riscv, Inf does not need a special process as fcvt can handle it correctly.
@@ -2269,22 +2282,35 @@ void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Regist
   bind(stub->continuation());
 }
 
-static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Register, FloatRegister, Register>& stub) {
+class C2FloatToFloat16Stub final : public C2CodeStub {
+  Register _dst;
+  FloatRegister _src;
+  Register _tmp;
+
+public:
+  C2FloatToFloat16Stub(Register dst, FloatRegister src, Register tmp)
+    : _dst(dst), _src(src), _tmp(tmp) {}
+
+  int max_size() const override { return 64; }
+  void emit(C2_MacroAssembler& masm) override;
+};
+
+void C2FloatToFloat16Stub::emit(C2_MacroAssembler& masm) {
 #define __ masm.
-  Register dst = stub.data<0>();
-  FloatRegister src = stub.data<1>();
-  Register tmp = stub.data<2>();
-  __ bind(stub.entry());
+  Register dst = _dst;
+  FloatRegister src = _src;
+  Register tmp = _tmp;
+  __ bind(entry());
 
   __ float_to_float16_NaN(dst, src, t0, tmp);
 
-  __ j(stub.continuation());
+  __ j(continuation());
 #undef __
 }
 
 // j.l.Float.floatToFloat16
 void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
-  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 64, float_to_float16_slow_path);
+  C2CodeStub* stub = C2CodeStub::make<C2FloatToFloat16Stub>(dst, src, xtmp);
 
   // On riscv, NaN needs a special process as fcvt does not work in that case.
 
@@ -2301,12 +2327,27 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   bind(stub->continuation());
 }
 
-static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<VectorRegister, VectorRegister, uint>& stub) {
+class C2VectorFloat16ToFloatStub final : public C2CodeStub {
+  VectorRegister _dst;
+  VectorRegister _src;
+  uint _vector_length;
+
+public:
+  C2VectorFloat16ToFloatStub(VectorRegister dst,
+                             VectorRegister src,
+                             uint vector_length)
+    : _dst(dst), _src(src), _vector_length(vector_length) {}
+
+  int max_size() const override { return 24; }
+  void emit(C2_MacroAssembler& masm) override;
+};
+
+void C2VectorFloat16ToFloatStub::emit(C2_MacroAssembler& masm) {
 #define __ masm.
-  VectorRegister dst = stub.data<0>();
-  VectorRegister src = stub.data<1>();
-  uint vector_length = stub.data<2>();
-  __ bind(stub.entry());
+  VectorRegister dst = _dst;
+  VectorRegister src = _src;
+  uint vector_length = _vector_length;
+  __ bind(entry());
 
   // following instructions mainly focus on NaN, as riscv does not handle
   // NaN well with vfwcvt_f_f_v, but the code also works for Inf at the same time.
@@ -2323,14 +2364,13 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
   __ vsll_vi(dst, dst, 13, Assembler::v0_t);
   __ vor_vx(dst, dst, t0, Assembler::v0_t);
 
-  __ j(stub.continuation());
+  __ j(continuation());
 #undef __
 }
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length) {
-  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, uint>
-              (dst, src, vector_length, 24, float16_to_float_v_slow_path);
+  C2CodeStub* stub = C2CodeStub::make<C2VectorFloat16ToFloatStub>(dst, src, vector_length);
   assert_different_registers(dst, src);
 
   // On riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
@@ -2358,15 +2398,29 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   bind(stub->continuation());
 }
 
-static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
-                                         C2GeneralStub<VectorRegister, VectorRegister, VectorRegister>& stub) {
+class C2VectorFloatToFloat16Stub final : public C2CodeStub {
+  VectorRegister _dst;
+  VectorRegister _src;
+  VectorRegister _vtmp;
+
+public:
+  C2VectorFloatToFloat16Stub(VectorRegister dst,
+                             VectorRegister src,
+                             VectorRegister vtmp)
+    : _dst(dst), _src(src), _vtmp(vtmp) {}
+
+  int max_size() const override { return 56; }
+  void emit(C2_MacroAssembler& masm) override;
+};
+
+void C2VectorFloatToFloat16Stub::emit(C2_MacroAssembler& masm) {
 #define __ masm.
-  VectorRegister dst = stub.data<0>();
-  VectorRegister src = stub.data<1>();
-  VectorRegister vtmp = stub.data<2>();
+  VectorRegister dst = _dst;
+  VectorRegister src = _src;
+  VectorRegister vtmp = _vtmp;
   assert_different_registers(dst, src, vtmp);
 
-  __ bind(stub.entry());
+  __ bind(entry());
 
   // Active elements (NaNs) are marked in v0 mask register.
   // mul is already set to mf2 in float_to_float16_v.
@@ -2419,7 +2473,7 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
   __ vand_vi(vtmp, vtmp, 0xf, Assembler::v0_t);
   __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
 
-  __ j(stub.continuation());
+  __ j(continuation());
 #undef __
 }
 
@@ -2428,8 +2482,7 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
                                            VectorRegister vtmp, Register tmp, uint vector_length) {
   assert_different_registers(dst, src, vtmp);
 
-  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister>
-              (dst, src, vtmp, 56, float_to_float16_v_slow_path);
+  C2CodeStub* stub = C2CodeStub::make<C2VectorFloatToFloat16Stub>(dst, src, vtmp);
 
   // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
 

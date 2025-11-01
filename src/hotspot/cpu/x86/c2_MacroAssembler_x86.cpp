@@ -4455,18 +4455,36 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   }
 }
 
-static void convertF2I_slowpath(C2_MacroAssembler& masm, C2GeneralStub<Register, XMMRegister, address>& stub) {
+class C2ConvertF2IStub final : public C2CodeStub {
+  Register _dst;
+  XMMRegister _src;
+  address _target;
+
+public:
+  C2ConvertF2IStub(Register dst, XMMRegister src, address target)
+    : _dst(dst), _src(src), _target(target) {}
+
+  void emit(C2_MacroAssembler& masm) override;
+
+  int max_size() const override {
+    // Using the APX extended general purpose registers increases the
+    // instruction encoding size by 1 byte.
+    return 23 + (UseAPX ? 1 : 0);
+  }
+};
+
+void C2ConvertF2IStub::emit(C2_MacroAssembler& masm) {
 #define __ masm.
-  Register dst = stub.data<0>();
-  XMMRegister src = stub.data<1>();
-  address target = stub.data<2>();
-  __ bind(stub.entry());
+  Register dst = _dst;
+  XMMRegister src = _src;
+  address target = _target;
+  __ bind(entry());
   __ subptr(rsp, 8);
   __ movdbl(Address(rsp), src);
   __ call(RuntimeAddress(target));
   // APX REX2 encoding for pop(dst) increases the stub size by 1 byte.
   __ pop(dst);
-  __ jmp(stub.continuation());
+  __ jmp(continuation());
 #undef __
 }
 
@@ -4497,9 +4515,7 @@ void C2_MacroAssembler::convertF2I(BasicType dst_bt, BasicType src_bt, Register 
     }
   }
 
-  // Using the APX extended general purpose registers increases the instruction encoding size by 1 byte.
-  int max_size = 23 + (UseAPX ? 1 : 0);
-  auto stub = C2CodeStub::make<Register, XMMRegister, address>(dst, src, slowpath_target, max_size, convertF2I_slowpath);
+  C2CodeStub* stub = C2CodeStub::make<C2ConvertF2IStub>(dst, src, slowpath_target);
   jcc(Assembler::equal, stub->entry());
   bind(stub->continuation());
 }
