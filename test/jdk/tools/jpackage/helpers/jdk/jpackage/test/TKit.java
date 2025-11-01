@@ -314,8 +314,11 @@ public final class TKit {
     public static void createTextFile(Path filename, Stream<String> lines) {
         trace(String.format("Create [%s] text file...",
                 filename.toAbsolutePath().normalize()));
-        ThrowingRunnable.toRunnable(() -> Files.write(filename,
-                lines.peek(TKit::trace).collect(Collectors.toList()))).run();
+        try {
+            Files.write(filename, lines.peek(TKit::trace).toList());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 
@@ -323,16 +326,24 @@ public final class TKit {
             Collection<Map.Entry<String, String>> props) {
         trace(String.format("Create [%s] properties file...",
                 propsFilename.toAbsolutePath().normalize()));
-        ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
-                props.stream().map(e -> String.join("=", e.getKey(),
-                e.getValue())).peek(TKit::trace).collect(Collectors.toList()))).run();
+        try {
+            Files.write(propsFilename, props.stream().map(e -> {
+                return String.join("=", e.getKey(), e.getValue());
+            }).peek(TKit::trace).toList());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 
-    public static void traceFileContents(Path path, String label) throws IOException {
+    public static void traceFileContents(Path path, String label) {
         assertFileExists(path);
         trace(String.format("Dump [%s] %s...", path, label));
-        Files.readAllLines(path).forEach(TKit::trace);
+        try {
+            Files.readAllLines(path).forEach(TKit::trace);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 

@@ -103,9 +103,7 @@ public enum LauncherShortcut {
     Optional<StartupDirectory> expectShortcut(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, String launcherName) {
         Objects.requireNonNull(predefinedAppImage);
 
-        final var name = Optional.ofNullable(launcherName).orElseGet(cmd::name);
-
-        if (name.equals(cmd.name())) {
+        if (cmd.isMainLauncher(launcherName)) {
             return findMainLauncherShortcut(cmd);
         } else {
             String[] propertyName = new String[1];
