@@ -93,7 +93,7 @@ public class SquareRootTests {
         int failures = 0;
 
         for (int i = -100; i < 100; i++) {
-            BigDecimal expected = BigDecimal.valueOf(0L, i/2);
+            BigDecimal expected = BigDecimal.valueOf(0L, Math.ceilDiv(i, 2));
             // These results are independent of rounding mode
             failures += compare(BigDecimal.valueOf(0L, i).sqrt(MathContext.UNLIMITED),
                                 expected, true, "zeros");
