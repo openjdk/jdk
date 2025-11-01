@@ -132,6 +132,11 @@ enum OptimizationEvent {
   OptEvent_LoopPredication,
   OptEvent_AutoVectorization,
   OptEvent_PartialPeeling,
+  OptEvent_IterGVNIteration,
+  OptEvent_LoopIterationSplit,
+  OptEvent_ReassociateInvariants,
+  OptEvent_LoopIntrinsification,
+  OptEvent_Peephole,
   OptEvent_Count
 };
 
