@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -93,8 +94,16 @@ class BadEnclosingMethodTest {
      */
     @Test
     void testMalformedTypes() throws Exception {
-        assertThrows(ClassFormatError.class, () -> loadTestClass("methodName", "(L[;)V"));
-        assertThrows(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "(L[;)V"));
+        assertThrowsExactly(ClassFormatError.class, () -> loadTestClass("methodName", "(L[;)V"));
+        assertThrowsExactly(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "(L[;)V"));
+        assertThrowsExactly(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "(Lmissing/;)V"));
+        assertThrowsExactly(ClassFormatError.class, () -> loadTestClass(INIT_NAME, "()L/Missing;"));
+        // only throw if the query type match the method/constructor type
+        assertDoesNotThrow(() -> loadTestClass(INIT_NAME, "Ljava/lang/Object;").getEnclosingMethod());
+        assertDoesNotThrow(() -> loadTestClass("method", "[I").getEnclosingConstructor());
+        // We have to manually intercept field-typed "methods"
+        assertThrows(GenericSignatureFormatError.class, () -> loadTestClass(INIT_NAME, "Ljava/lang/Object;").getEnclosingConstructor());
+        assertThrows(GenericSignatureFormatError.class, () -> loadTestClass("method", "[I").getEnclosingMethod());
     }
 
     /**

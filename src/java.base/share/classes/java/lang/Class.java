@@ -43,6 +43,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -1445,7 +1446,6 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isMethod())
                 return null;
 
-            // Descriptor already validated by VM
             List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
             Class<?>   returnType       = types.removeLast();
             Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
@@ -1533,8 +1533,15 @@ public final class Class<T> implements java.io.Serializable,
 
         String getName() { return name; }
 
-        String getDescriptor() { return descriptor; }
-
+        String getDescriptor() {
+            // hotspot validates this descriptor to be either a field or method
+            // descriptor as the "type" in a NameAndType in verification.
+            // So this can still be a field descriptor
+            if (descriptor.isEmpty() || descriptor.charAt(0) != '(') {
+                throw new GenericSignatureFormatError("Bad method signature: " + descriptor);
+            }
+            return descriptor;
+        }
     }
 
     private static Class<?> toClass(Type o) {
@@ -1567,7 +1574,6 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isConstructor())
                 return null;
 
-            // Descriptor already validated by VM
             List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
             types.removeLast();
             Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
