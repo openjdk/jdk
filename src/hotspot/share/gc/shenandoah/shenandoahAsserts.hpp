@@ -48,6 +48,14 @@ public:
 
   static void print_obj_safe(ShenandoahMessageBuffer &msg, void *loc);
 
+  static void vprintf_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
+                              const char *phase, const char *file, int line, const char *fmt,
+                              va_list args) ATTRIBUTE_PRINTF(8, 0);
+
+  static void printf_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
+                              const char *phase, const char *file, int line, const char *fmt, ...)
+                              ATTRIBUTE_PRINTF(8, 9);
+
   static void print_failure(SafeLevel level, oop obj, void *interior_loc, oop loc,
                             const char *phase, const char *label,
                             const char *file, int line);
