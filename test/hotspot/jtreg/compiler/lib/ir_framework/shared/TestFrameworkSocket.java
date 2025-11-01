@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -59,7 +60,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     private final ServerSocket serverSocket;
     private boolean receivedStdOut = false;
 
-    public TestFrameworkSocket() {
+    public TestFrameworkSocket(PrintStream printStream) {
         try {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
@@ -68,7 +69,7 @@ public class TestFrameworkSocket implements AutoCloseable {
         }
         int port = serverSocket.getLocalPort();
         if (TestFramework.VERBOSE) {
-            System.out.println("TestFramework server socket uses port " + port);
+            printStream.println("TestFramework server socket uses port " + port);
         }
         serverPortPropertyFlag = "-D" + SERVER_PORT_PROPERTY + "=" + port;
         start();
