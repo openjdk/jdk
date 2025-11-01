@@ -82,6 +82,8 @@ public interface ClassHierarchyResolver {
      * @param classDesc descriptor of the class
      * @throws IllegalArgumentException if a class shouldn't be queried for
      *         hierarchy, such as when it is inaccessible
+     * @throws RuntimeException if the resolution runs into exceptions when
+     *         the classDesc is supported, such as due to I/O failures
      */
     ClassHierarchyInfo getClassInfo(ClassDesc classDesc);
 
