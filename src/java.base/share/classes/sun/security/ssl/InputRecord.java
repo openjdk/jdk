@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,10 @@ abstract class InputRecord implements Record, Closeable {
     // and the first message we read is a ClientHello in V2 format, we convert
     // it to V3. Otherwise, we throw an exception when encountering a V2 hello.
     ProtocolVersion     helloVersion;
+
+    // needed for TLS13 boundary check for handshake messages that immediately precede
+    // a key change
+    private boolean t13keyChangeHsExceedsRecordBoundary = false;
 
     // fragment size
     int                 fragmentSize;
@@ -148,6 +152,14 @@ abstract class InputRecord implements Record, Closeable {
     // apply to SSLSocket only
     int bytesInCompletePacket() throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    public final boolean t13keyChangeHsExceedsRecordBoundary() {
+        return t13keyChangeHsExceedsRecordBoundary;
+    }
+
+    protected final void markT13keyChangeHsExceedsRecordBoundary() {
+        t13keyChangeHsExceedsRecordBoundary = true;
     }
 
     // apply to SSLSocket only
