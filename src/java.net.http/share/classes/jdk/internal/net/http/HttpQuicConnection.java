@@ -499,22 +499,28 @@ abstract class HttpQuicConnection extends HttpConnection {
                 }, exchange.parentExecutor.safeDelegate());
             }
 
-            Optional<Duration> timeout = client().connectTimeout();
             CompletableFuture<CompletableFuture<Void>> fxi = handshakeCfCf;
 
             // In case of connection timeout, set up a timeout on the handshakeCfCf.
             // Note: this is a different timeout than the direct connection timeout.
-            if (timeout.isPresent()) {
+            Duration timeout = client().connectTimeout().orElse(null);
+            if (timeout != null) {
                 // In case of timeout we need to close the quic connection
-                debug.log("setting up quic connect timeout: " + timeout.get().toMillis());
+                debug.log("setting up quic connect timeout: " + timeout);
+                long timeoutMillis;
+                try {
+                    timeoutMillis = timeout.toMillis();
+                } catch (ArithmeticException _) {
+                    timeoutMillis = Long.MAX_VALUE;
+                }
                 fxi = handshakeCfCf.completeOnTimeout(
                         MinimalFuture.failedFuture(new HttpConnectTimeoutException("quic connect timeout")),
-                        timeout.get().toMillis(), TimeUnit.MILLISECONDS);
+                        timeoutMillis, TimeUnit.MILLISECONDS);
             }
 
             // If we have set up any timeout, arrange to close the quicConnection
             // if one of the timeout expires
-            if (timeout.isPresent() || directTimeout.isPresent()) {
+            if (timeout != null || directTimeout.isPresent()) {
                 fxi = fxi.handleAsync(this::handleTimeout, exchange.parentExecutor.safeDelegate());
             }
             return fxi.thenCompose(Function.identity());
