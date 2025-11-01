@@ -25,11 +25,12 @@
 
 package sun.net.httpserver.simpleserver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.UncheckedIOException;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpHandlers;
+
+import java.io.*;
 import java.lang.System.Logger;
 import java.net.URI;
 import java.nio.file.Files;
@@ -41,10 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpHandlers;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -361,6 +359,7 @@ public final class FileServerHandler implements HttpHandler {
             if (start < 0 || start > end)
                 return null;  // invalid range values
 
+            assert end < fileSize;  // If end >= fileSize, it is adjusted above.
             ranges.add(new RangeEntry(start, end));
         }
         return ranges;
