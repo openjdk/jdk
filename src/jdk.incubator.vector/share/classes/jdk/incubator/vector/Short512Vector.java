@@ -54,7 +54,11 @@ final class Short512Vector extends ShortVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Short> ETYPE = short.class; // used by the JVM
+    static final Class<Short> CTYPE = short.class; // carrier type used by the JVM
+
+    static final Class<Short> ETYPE = short.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     Short512Vector(short[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class Short512Vector extends ShortVector {
     }
 
     @ForceInline
+    final Class<Short> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Short> elementType() { return short.class; }
+    public final Class<Short> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -557,7 +564,7 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     public short laneHelper(int i) {
         return (short) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     short[] vecarr = vec.vec();
@@ -608,7 +615,7 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     public Short512Vector withLaneHelper(int i, short e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     short[] res = v.vec().clone();
@@ -621,7 +628,7 @@ final class Short512Vector extends ShortVector {
 
     static final class Short512Mask extends AbstractMask<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         Short512Mask(boolean[] bits) {
             this(bits, 0);
@@ -723,7 +730,7 @@ final class Short512Vector extends ShortVector {
         /*package-private*/
         Short512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Short512Mask) VectorSupport.indexPartiallyInUpperRange(
-                Short512Mask.class, short.class, VLENGTH, offset, limit,
+                Short512Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (Short512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -739,8 +746,9 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         public Short512Mask compress() {
             return (Short512Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Short512Vector.class, Short512Mask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                Short512Vector.class, Short512Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -751,7 +759,7 @@ final class Short512Vector extends ShortVector {
         public Short512Mask and(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short512Mask m = (Short512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Short512Mask.class, null, short.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Short512Mask.class, null, short.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -761,7 +769,7 @@ final class Short512Vector extends ShortVector {
         public Short512Mask or(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short512Mask m = (Short512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Short512Mask.class, null, short.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Short512Mask.class, null, short.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -771,7 +779,7 @@ final class Short512Vector extends ShortVector {
         public Short512Mask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             Short512Mask m = (Short512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Short512Mask.class, null, short.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Short512Mask.class, null, short.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -781,22 +789,25 @@ final class Short512Vector extends ShortVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short512Mask.class, short.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Short512Mask.class, short.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short512Mask.class, short.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Short512Mask.class, short.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short512Mask.class, short.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Short512Mask.class, short.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -805,7 +816,8 @@ final class Short512Vector extends ShortVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Short512Mask.class, short.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Short512Mask.class, short.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -815,7 +827,7 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Short512Mask.class, short.class, VLENGTH,
+            return VectorSupport.extract(Short512Mask.class, short.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -824,23 +836,23 @@ final class Short512Vector extends ShortVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Short512Mask.class, short.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Short512Mask)m).getBits()));
+            return VectorSupport.test(BT_ne, Short512Mask.class, short.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((Short512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Short512Mask.class, short.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Short512Mask)m).getBits()));
+            return VectorSupport.test(BT_overflow, Short512Mask.class, short.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((Short512Mask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static Short512Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Short512Mask.class, short.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Short512Mask.class, short.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -853,7 +865,7 @@ final class Short512Vector extends ShortVector {
 
     static final class Short512Shuffle extends AbstractShuffle<Short> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Short> ETYPE = short.class; // used by the JVM
+        static final Class<Short> CTYPE = short.class; // used by the JVM
 
         Short512Shuffle(short[] indices) {
             super(indices);

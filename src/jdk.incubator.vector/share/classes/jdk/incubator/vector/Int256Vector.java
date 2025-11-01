@@ -54,7 +54,11 @@ final class Int256Vector extends IntVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Integer> ETYPE = int.class; // used by the JVM
+    static final Class<Integer> CTYPE = int.class; // carrier type used by the JVM
+
+    static final Class<Integer> ETYPE = int.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     Int256Vector(int[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class Int256Vector extends IntVector {
     }
 
     @ForceInline
+    final Class<Integer> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Integer> elementType() { return int.class; }
+    public final Class<Integer> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -533,7 +540,7 @@ final class Int256Vector extends IntVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     int[] vecarr = vec.vec();
@@ -560,7 +567,7 @@ final class Int256Vector extends IntVector {
     @ForceInline
     public Int256Vector withLaneHelper(int i, int e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     int[] res = v.vec().clone();
@@ -573,7 +580,7 @@ final class Int256Vector extends IntVector {
 
     static final class Int256Mask extends AbstractMask<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         Int256Mask(boolean[] bits) {
             this(bits, 0);
@@ -675,7 +682,7 @@ final class Int256Vector extends IntVector {
         /*package-private*/
         Int256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Int256Mask) VectorSupport.indexPartiallyInUpperRange(
-                Int256Mask.class, int.class, VLENGTH, offset, limit,
+                Int256Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (Int256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -691,8 +698,9 @@ final class Int256Vector extends IntVector {
         @ForceInline
         public Int256Mask compress() {
             return (Int256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Int256Vector.class, Int256Mask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                Int256Vector.class, Int256Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -703,7 +711,7 @@ final class Int256Vector extends IntVector {
         public Int256Mask and(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int256Mask m = (Int256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Int256Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Int256Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -713,7 +721,7 @@ final class Int256Vector extends IntVector {
         public Int256Mask or(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int256Mask m = (Int256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Int256Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Int256Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -723,7 +731,7 @@ final class Int256Vector extends IntVector {
         public Int256Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int256Mask m = (Int256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Int256Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Int256Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -733,22 +741,25 @@ final class Int256Vector extends IntVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Int256Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Int256Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Int256Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Int256Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Int256Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Int256Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -757,7 +768,8 @@ final class Int256Vector extends IntVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Int256Mask.class, int.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Int256Mask.class, int.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -767,7 +779,7 @@ final class Int256Vector extends IntVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Int256Mask.class, int.class, VLENGTH,
+            return VectorSupport.extract(Int256Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -776,23 +788,23 @@ final class Int256Vector extends IntVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Int256Mask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Int256Mask)m).getBits()));
+            return VectorSupport.test(BT_ne, Int256Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((Int256Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Int256Mask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Int256Mask)m).getBits()));
+            return VectorSupport.test(BT_overflow, Int256Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((Int256Mask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static Int256Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Int256Mask.class, int.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Int256Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -805,7 +817,7 @@ final class Int256Vector extends IntVector {
 
     static final class Int256Shuffle extends AbstractShuffle<Integer> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         Int256Shuffle(int[] indices) {
             super(indices);

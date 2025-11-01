@@ -54,7 +54,11 @@ final class Float512Vector extends FloatVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Float> ETYPE = float.class; // used by the JVM
+    static final Class<Float> CTYPE = float.class; // carrier type used by the JVM
+
+    static final Class<Float> ETYPE = float.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     Float512Vector(float[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class Float512Vector extends FloatVector {
     }
 
     @ForceInline
+    final Class<Float> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Float> elementType() { return float.class; }
+    public final Class<Float> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -530,7 +537,7 @@ final class Float512Vector extends FloatVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                     VCLASS, ETYPE, VLENGTH,
+                     VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
@@ -565,7 +572,7 @@ final class Float512Vector extends FloatVector {
     @ForceInline
     public Float512Vector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
@@ -578,7 +585,7 @@ final class Float512Vector extends FloatVector {
 
     static final class Float512Mask extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Float> CTYPE = float.class; // used by the JVM
 
         Float512Mask(boolean[] bits) {
             this(bits, 0);
@@ -680,7 +687,7 @@ final class Float512Vector extends FloatVector {
         /*package-private*/
         Float512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Float512Mask) VectorSupport.indexPartiallyInUpperRange(
-                Float512Mask.class, float.class, VLENGTH, offset, limit,
+                Float512Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (Float512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -696,8 +703,9 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         public Float512Mask compress() {
             return (Float512Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Float512Vector.class, Float512Mask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                Float512Vector.class, Float512Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -708,7 +716,7 @@ final class Float512Vector extends FloatVector {
         public Float512Mask and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float512Mask m = (Float512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Float512Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Float512Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -718,7 +726,7 @@ final class Float512Vector extends FloatVector {
         public Float512Mask or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float512Mask m = (Float512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Float512Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Float512Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -728,7 +736,7 @@ final class Float512Vector extends FloatVector {
         public Float512Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float512Mask m = (Float512Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float512Mask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float512Mask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -738,22 +746,25 @@ final class Float512Vector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float512Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float512Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float512Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float512Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float512Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float512Mask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -762,7 +773,8 @@ final class Float512Vector extends FloatVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float512Mask.class, int.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float512Mask.class, int.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -772,7 +784,7 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Float512Mask.class, float.class, VLENGTH,
+            return VectorSupport.extract(Float512Mask.class, float.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -781,23 +793,23 @@ final class Float512Vector extends FloatVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Float512Mask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Float512Mask)m).getBits()));
+            return VectorSupport.test(BT_ne, Float512Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((Float512Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Float512Mask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Float512Mask)m).getBits()));
+            return VectorSupport.test(BT_overflow, Float512Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((Float512Mask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static Float512Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Float512Mask.class, int.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Float512Mask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -810,7 +822,7 @@ final class Float512Vector extends FloatVector {
 
     static final class Float512Shuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         Float512Shuffle(int[] indices) {
             super(indices);

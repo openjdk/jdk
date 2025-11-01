@@ -272,6 +272,9 @@ public enum VectorShape {
         // VectorSupport.getMaxLaneCount may return -1 if C2 is not enabled,
         // or a value smaller than the S_64_BIT.vectorBitSize / elementSizeInBits if MaxVectorSize < 16
         // If so default to S_64_BIT
+        if (etype == Float16.class) {
+            etype = short.class;
+        }
         int maxLaneCount = VectorSupport.getMaxLaneCount(etype);
         int elementSizeInBits = LaneType.of(etype).elementSize;
         return Math.max(maxLaneCount * elementSizeInBits, S_64_BIT.vectorBitSize);

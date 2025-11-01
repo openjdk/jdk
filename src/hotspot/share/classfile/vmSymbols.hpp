@@ -99,6 +99,7 @@ class SerializeClosure;
   template(jdk_internal_vm_vector_VectorShuffle,      "jdk/internal/vm/vector/VectorSupport$VectorShuffle") \
   template(payload_name,                              "payload")                                            \
   template(ETYPE_name,                                "ETYPE")                                              \
+  template(CTYPE_name,                                "CTYPE")                                              \
   template(VLENGTH_name,                              "VLENGTH")                                            \
                                                                                                   \
   template(jdk_internal_vm_FillerObject,              "jdk/internal/vm/FillerObject")             \

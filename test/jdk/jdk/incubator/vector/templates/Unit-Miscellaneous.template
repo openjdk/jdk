@@ -10,7 +10,11 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
+#if[Halffloat]
+                Assert.assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
+#else[Halffloat]
                 Assert.assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+#end[Halffloat]
             }
         }
     }
@@ -26,7 +30,11 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
+#if[Halffloat]
+                Assert.assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
+#else[Halffloat]
                 Assert.assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+#end[Halffloat]
             }
         }
     }
@@ -123,7 +131,11 @@
     static long ADDReduceLong($type$[] a, int idx) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
+#if[Halffloat]
+            res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
+#else[Halffloat]
             res += a[i];
+#end[Halffloat]
         }
 
         return (long)res;
@@ -132,7 +144,11 @@
     static long ADDReduceAllLong($type$[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
+#if[Halffloat]
+            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLong(a, i)));
+#else[Halffloat]
             res += ADDReduceLong(a, i);
+#end[Halffloat]
         }
 
         return res;
@@ -150,8 +166,12 @@
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
+#if[Halffloat]
+            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
+#else[Halffloat]
             ra += r[i];
+#end[Halffloat]
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -162,7 +182,11 @@
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if(mask[i % SPECIES.length()])
+#if[Halffloat]
+                res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
+#else[Halffloat]
                 res += a[i];
+#end[Halffloat]
         }
 
         return (long)res;
@@ -171,7 +195,11 @@
     static long ADDReduceAllLongMasked($type$[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
+#if[Halffloat]
+            res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLongMasked(a, i, mask)));
+#else[Halffloat]
             res += ADDReduceLongMasked(a, i, mask);
+#end[Halffloat]
         }
 
         return res;
@@ -191,8 +219,12 @@
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
+#if[Halffloat]
+            ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
+#else[Halffloat]
             ra += r[i];
+#end[Halffloat]
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,
@@ -699,14 +731,14 @@
     static void ShapeWithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         VectorShape vsh = av.shape();
-        VectorSpecies species = vsh.withLanes($type$.class);
+        VectorSpecies species = vsh.withLanes($ClassType$.class);
         assert(species.equals(SPECIES));
     }
 
     @Test
     static void ElementType$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        assert(av.species().elementType() == $type$.class);
+        assert(av.species().elementType() == $ClassType$.class);
     }
 
     @Test
@@ -724,7 +756,7 @@
     @Test
     static void WithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        VectorSpecies species = av.species().withLanes($type$.class);
+        VectorSpecies species = av.species().withLanes($ClassType$.class);
         assert(species.equals(SPECIES));
     }
 

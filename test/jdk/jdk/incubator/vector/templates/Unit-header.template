@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,10 @@ import jdk.incubator.vector.ByteVector;
 #if[Float]
 import jdk.incubator.vector.FloatVector;
 #end[Float]
+#if[Halffloat]
+import jdk.incubator.vector.Float16;
+import jdk.incubator.vector.HalffloatVector;
+#end[Halffloat]
 #if[Int]
 import jdk.incubator.vector.IntVector;
 #end[Int]
@@ -79,13 +83,95 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #if[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $Type$Vector.SPECIES_MAX;
+                $ElementType$Vector.SPECIES_MAX;
 #else[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $Type$Vector.SPECIES_$bits$;
+                $ElementType$Vector.SPECIES_$bits$;
 #end[MaxBit]
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static $abstractvectortype$ bcast_vec = $abstractvectortype$.broadcast(SPECIES, ($type$)10);
+
+#if[FP16]
+    static void AssertEquals($type$ actual, $type$ expected) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected));
+    }
+    static void AssertEquals($type$ actual, $type$ expected, String msg) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected), msg);
+    }
+    static void AssertEquals($type$ actual, $type$ expected, $type$ delta) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected), Float.float16ToFloat((short)delta));
+    }
+    static void AssertEquals($type$ actual, $type$ expected, $type$ delta, String msg) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected), Float.float16ToFloat((short)delta), msg);
+    }
+    static void AssertEquals($type$ [] actual, $type$ [] expected) {
+        Assert.assertEquals(actual.length, expected.length);
+        for (int i = 0; i < actual.length; i++) {
+            Assert.assertEquals(Float.float16ToFloat((short)actual[i]), Float.float16ToFloat((short)expected[i]));
+        }
+    }
+    static void AssertEquals($type$ [] actual, $type$ [] expected, String msg) {
+        Assert.assertEquals(actual.length, expected.length);
+        for (int i = 0; i < actual.length; i++) {
+            Assert.assertEquals(Float.float16ToFloat((short)actual[i]), Float.float16ToFloat((short)expected[i]), msg);
+        }
+    }
+    static void AssertEquals(long actual, long expected) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected));
+    }
+    static void AssertEquals(long actual, long expected, String msg) {
+        Assert.assertEquals(Float.float16ToFloat((short)actual), Float.float16ToFloat((short)expected), msg);
+    }
+#else[FP16]
+    static void AssertEquals($type$ actual, $type$ expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals($type$ actual, $type$ expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+    static void AssertEquals($type$ actual, $type$ expected, $type$ delta) {
+        Assert.assertEquals(actual, expected, delta);
+    }
+    static void AssertEquals($type$ actual, $type$ expected, $type$ delta, String msg) {
+        Assert.assertEquals(actual, expected, delta, msg);
+    }
+    static void AssertEquals($type$ [] actual, $type$ [] expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals($type$ [] actual, $type$ [] expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+#if[!long]
+    static void AssertEquals(long actual, long expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(long actual, long expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+#end[!long]
+#end[FP16]
+    static void AssertEquals(String actual, String expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(Object actual, Object expected) {
+        Assert.assertEquals(actual, expected);
+    }
+#if[!FP64]
+    static void AssertEquals(double actual, double expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(double actual, double expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
+#end[!FP64]
+    static void AssertEquals(boolean actual, boolean expected) {
+        Assert.assertEquals(actual, expected);
+    }
+    static void AssertEquals(boolean actual, boolean expected, String msg) {
+        Assert.assertEquals(actual, expected, msg);
+    }
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
@@ -111,8 +197,8 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static void assertArraysStrictlyEquals($type$[] r, $type$[] a) {
         for (int i = 0; i < a.length; i++) {
 #if[FP]
-            $bitstype$ ir = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i]);
-            $bitstype$ ia = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i]);
+            $bitstype$ ir = {#if[FP16]?r[i]:$Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i])};
+            $bitstype$ ia = {#if[FP16]?a[i]:$Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i])};
             if (ir != ia) {
 #if[Float]
                 Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
@@ -136,10 +222,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i]));
+                AssertEquals(r[i], f.apply(a[i]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i]), "at index #" + i + ", input = " + a[i]);
+            AssertEquals(r[i], f.apply(a[i]), "at index #" + i + ", input = " + a[i]);
         }
     }
 
@@ -151,13 +237,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a[i]));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a[i]);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i);
         }
@@ -167,10 +253,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? f.apply(a[i]) : a[i]);
+                AssertEquals(r[i], mask[i % SPECIES.length()] ? f.apply(a[i]) : a[i]);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? f.apply(a[i]) : a[i], "at index #" + i + ", input = " + a[i] + ", mask = " + mask[i % SPECIES.length()]);
+            AssertEquals(r[i], mask[i % SPECIES.length()] ? f.apply(a[i]) : a[i], "at index #" + i + ", input = " + a[i] + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -189,13 +275,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #else[FP]
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a));
+            AssertEquals(rc, fa.apply(a));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
+                AssertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+            AssertEquals(rc, fa.apply(a), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
 #end[FP]
     }
@@ -206,13 +292,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                             $type$ relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
+            AssertEquals(rc, fa.apply(a), {#if[FP16]?Float16.float16ToRawShortBits(Float16.multiply(Float16.ulp(Float16.shortBitsToFloat16(rc)), Float16.shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor});
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
+                AssertEquals(r[i], f.apply(a, i), {#if[FP16]?Float16.float16ToRawShortBits(Float16.multiply(Float16.ulp(Float16.shortBitsToFloat16(r[i])), Float16.shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor});
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
+            AssertEquals(rc, fa.apply(a), {#if[FP16]?Float16.float16ToRawShortBits(Float16.multiply(Float16.ulp(Float16.shortBitsToFloat16(rc)), Float16.shortBitsToFloat16(relativeErrorFactor))):Math.ulp(rc) * relativeErrorFactor}, "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i), {#if[FP16]?Float16.float16ToRawShortBits(Float16.multiply(Float16.ulp(Float16.shortBitsToFloat16(r[i])), Float16.shortBitsToFloat16(relativeErrorFactor))):Math.ulp(r[i]) * relativeErrorFactor}, "at index #" + i);
         }
     }
 #end[FP]
@@ -232,13 +318,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #else[FP]
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a, mask));
+            AssertEquals(rc, fa.apply(a, mask));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i, mask));
+                AssertEquals(r[i], f.apply(a, i, mask));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
+            AssertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
         }
 #end[FP]
     }
@@ -249,14 +335,13 @@ public class $vectorteststype$ extends AbstractVectorTest {
                                             $type$ relativeError) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
+            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?Float16.float16ToRawShortBits(Float16.abs(Float16.multiply(Float16.shortBitsToFloat16(rc), Float16.shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)});
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
-relativeError));
+                AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?Float16.float16ToRawShortBits(Float16.abs(Float16.multiply(Float16.shortBitsToFloat16(r[i]), Float16.shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)});
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
+            AssertEquals(rc, fa.apply(a, mask), {#if[FP16]?Float16.float16ToRawShortBits(Float16.abs(Float16.multiply(Float16.shortBitsToFloat16(rc), Float16.shortBitsToFloat16(relativeError)))):Math.abs(rc * relativeError)}, "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i, mask), {#if[FP16]?Float16.float16ToRawShortBits(Float16.abs(Float16.multiply(Float16.shortBitsToFloat16(r[i]), Float16.shortBitsToFloat16(relativeError)))):Math.abs(r[i] * relativeError)}, "at index #" + i);
         }
     }
 #end[FP]
@@ -274,13 +359,13 @@ relativeError));
                                             FReductionOpLong f, FReductionAllOpLong fa) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a));
+            AssertEquals(rc, fa.apply(a));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
+                AssertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+            AssertEquals(rc, fa.apply(a), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
@@ -296,13 +381,13 @@ relativeError));
                                             FReductionMaskedOpLong f, FReductionAllMaskedOpLong fa) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a, mask));
+            AssertEquals(rc, fa.apply(a, mask));
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i, mask));
+                AssertEquals(r[i], f.apply(a, i, mask));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
+            AssertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
+            AssertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
         }
     }
 #end[!Long]
@@ -315,10 +400,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
+                AssertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+            AssertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
@@ -330,10 +415,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i));
+                AssertEquals(r[i], f.apply(a, i));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
+            AssertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
 
@@ -342,12 +427,12 @@ relativeError));
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+order[i+j]]);
+                    AssertEquals(r[i+j], a[i+order[i+j]]);
                 }
             }
         } catch (AssertionError e) {
             int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+order[i+j]], "at index #" + idx + ", input = " + a[i+order[i+j]]);
+            AssertEquals(r[i+j], a[i+order[i+j]], "at index #" + idx + ", input = " + a[i+order[i+j]]);
         }
     }
 
@@ -358,20 +443,20 @@ relativeError));
                 k = 0;
                 for (j = 0; j < vector_len; j++) {
                     if (m[(i + j) % SPECIES.length()]) {
-                        Assert.assertEquals(r[i + k], a[i + j]);
+                        AssertEquals(r[i + k], a[i + j]);
                         k++;
                     }
                 }
                 for (; k < vector_len; k++) {
-                    Assert.assertEquals(r[i + k], ($type$)0);
+                    AssertEquals(r[i + k], ($type$)0);
                 }
             }
         } catch (AssertionError e) {
             int idx = i + k;
             if (m[(i + j) % SPECIES.length()]) {
-                Assert.assertEquals(r[idx], a[i + j], "at index #" + idx);
+                AssertEquals(r[idx], a[i + j], "at index #" + idx);
             } else {
-                Assert.assertEquals(r[idx], ($type$)0, "at index #" + idx);
+                AssertEquals(r[idx], ($type$)0, "at index #" + idx);
             }
         }
     }
@@ -383,19 +468,19 @@ relativeError));
                 k = 0;
                 for (j = 0; j < vector_len; j++) {
                     if (m[(i + j) % SPECIES.length()]) {
-                        Assert.assertEquals(r[i + j], a[i + k]);
+                        AssertEquals(r[i + j], a[i + k]);
                         k++;
                     } else {
-                        Assert.assertEquals(r[i + j], ($type$)0);
+                        AssertEquals(r[i + j], ($type$)0);
                     }
                 }
             }
         } catch (AssertionError e) {
             int idx = i + j;
             if (m[idx % SPECIES.length()]) {
-                Assert.assertEquals(r[idx], a[i + k], "at index #" + idx);
+                AssertEquals(r[idx], a[i + k], "at index #" + idx);
             } else {
-                Assert.assertEquals(r[idx], ($type$)0, "at index #" + idx);
+                AssertEquals(r[idx], ($type$)0, "at index #" + idx);
             }
         }
     }
@@ -408,28 +493,30 @@ relativeError));
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
                     idx = i + j;
-                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    wrapped_index = Math.floorMod({#if[FP16]?Float16.shortBitsToFloat16(order[idx]).intValue():(int)order[idx]}, 2 * vector_len);
                     is_exceptional_idx = wrapped_index >= vector_len;
                     oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
-                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                    AssertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
+            AssertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
     static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = {#if[FP16]?Float16.shortBitsToFloat16(order[i+j]).intValue():(int)order[i+j]};
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    AssertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            AssertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -439,37 +526,39 @@ relativeError));
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+order[i+j]]);
+                         AssertEquals(r[i+j], a[i+order[i+j]]);
                     else
-                         Assert.assertEquals(r[i+j], ($type$)0);
+                         AssertEquals(r[i+j], ($type$)0);
                 }
             }
         } catch (AssertionError e) {
             int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+order[i+j]], "at index #" + idx + ", input = " + a[i+order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                AssertEquals(r[i+j], a[i+order[i+j]], "at index #" + idx + ", input = " + a[i+order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                AssertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
     static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = {#if[FP16]?Float16.shortBitsToFloat16(order[i+j]).intValue():(int)order[i+j]};
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         AssertEquals(r[i+j], a[i+wrapped_index]);
                     else
-                         Assert.assertEquals(r[i+j], ($type$)0);
+                         AssertEquals(r[i+j], ($type$)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                AssertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                AssertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -483,10 +572,10 @@ relativeError));
 
         try {
             for (i = 0; i < a.length; i++) {
-                Assert.assertEquals(r[i], a[i]);
+                AssertEquals(r[i], a[i]);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], a[i], "at index #" + i + ", input = " + a[i]);
+            AssertEquals(r[i], a[i], "at index #" + i + ", input = " + a[i]);
         }
     }
 
@@ -507,18 +596,18 @@ relativeError));
         try {
             for (; i < a.length; i++) {
                 //Left associative
-                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]));
+                AssertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]));
 
                 //Right associative
-                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])));
+                AssertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])));
 
                 //Results equal sanity check
-                Assert.assertEquals(rl[i], rr[i]);
+                AssertEquals(rl[i], rr[i]);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]), "left associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
-            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])), "right associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
-            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+            AssertEquals(rl[i], f.apply(f.apply(a[i], b[i]), c[i]), "left associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            AssertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i])), "right associative test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            AssertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
         }
     }
 
@@ -533,18 +622,18 @@ relativeError));
             for (; i < a.length; i++) {
                 mask_bit = mask[i % SPECIES.length()];
                 //Left associative
-                Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit));
+                AssertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit));
 
                 //Right associative
-                Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit));
+                AssertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit));
 
                 //Results equal sanity check
-                Assert.assertEquals(rl[i], rr[i]);
+                AssertEquals(rl[i], rr[i]);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit), "left associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
-            Assert.assertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit), "right associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
-            Assert.assertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
+            AssertEquals(rl[i], f.apply(f.apply(a[i], b[i], mask_bit), c[i], mask_bit), "left associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            AssertEquals(rr[i], f.apply(a[i], f.apply(b[i], c[i], mask_bit), mask_bit), "right associative masked test at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i] + ", mask = " + mask_bit);
+            AssertEquals(rl[i], rr[i], "Result checks not equal at index #" + i + "leftRes = " + rl[i] + ", rightRes = " + rr[i]);
         }
     }
 
@@ -552,10 +641,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i]));
+                AssertEquals(r[i], f.apply(a[i], b[i]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
+            AssertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
         }
     }
 
@@ -563,10 +652,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b));
+                AssertEquals(r[i], f.apply(a[i], b));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
+            AssertEquals(r[i], f.apply(a[i], b), "(" + a[i] + ", " + b + ") at index #" + i);
         }
     }
 
@@ -574,10 +663,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -586,10 +675,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
+                AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
+            AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()])),
                                 "(" + a[i] + ", " + b[(i / SPECIES.length()) * SPECIES.length()] + ") at index #" + i);
         }
     }
@@ -602,10 +691,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
+            AssertEquals(r[i], f.apply(a[i], b[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -617,10 +706,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
+            AssertEquals(r[i], f.apply(a[i], b, mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
 
@@ -632,10 +721,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -650,10 +739,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]), mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
+            AssertEquals(r[i], f.apply(a[i], ($type$)((long)b[(i / SPECIES.length()) * SPECIES.length()]),
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -666,11 +755,11 @@ relativeError));
         try {
             for (; j < a.length; j += SPECIES.length()) {
                 for (i = 0; i < SPECIES.length(); i++) {
-                    Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j]));
+                    AssertEquals(r[i+j], f.apply(a[i+j], b[j]));
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j]), "at index #" + i + ", " + j);
+            AssertEquals(r[i+j], f.apply(a[i+j], b[j]), "at index #" + i + ", " + j);
         }
     }
 
@@ -684,11 +773,11 @@ relativeError));
         try {
             for (; j < a.length; j += SPECIES.length()) {
                 for (i = 0; i < SPECIES.length(); i++) {
-                    Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]));
+                    AssertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]));
                 }
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", input2 = " + b[j] + ", mask = " + mask[i]);
+            AssertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", input2 = " + b[j] + ", mask = " + mask[i]);
         }
     }
 
@@ -710,11 +799,11 @@ relativeError));
         try {
             for (; j < a.length; j += SPECIES.length()) {
                 for (i = 0; i < SPECIES.length(); i++) {
-                    Assert.assertEquals(r[i+j], f.apply(a[i+j]));
+                    AssertEquals(r[i+j], f.apply(a[i+j]));
                 }
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i+j], f.apply(a[i+j]), "at index #" + i + ", " + j);
+            AssertEquals(r[i+j], f.apply(a[i+j]), "at index #" + i + ", " + j);
         }
     }
 
@@ -728,11 +817,11 @@ relativeError));
         try {
             for (; j < a.length; j += SPECIES.length()) {
                 for (i = 0; i < SPECIES.length(); i++) {
-                    Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]));
+                    AssertEquals(r[i+j], f.apply(a[i+j], mask[i]));
                 }
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", mask = " + mask[i]);
+            AssertEquals(r[i+j], f.apply(a[i+j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", mask = " + mask[i]);
         }
     }
 
@@ -752,10 +841,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+                AssertEquals(r[i], f.apply(a[i], b[i], c[i]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
+            AssertEquals(r[i], f.apply(a[i], b[i], c[i]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " + c[i]);
         }
     }
 
@@ -767,10 +856,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i], mask[i % SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b[i], c[i], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = "
+            AssertEquals(r[i], f.apply(a[i], b[i], c[i], mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = "
               + b[i] + ", input3 = " + c[i] + ", mask = " + mask[i % SPECIES.length()]);
         }
     }
@@ -779,10 +868,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()]));
+                AssertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()]), "at index #" +
+            AssertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()]), "at index #" +
                                 i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", input3 = " +
                                 c[(i / SPECIES.length()) * SPECIES.length()]);
         }
@@ -792,10 +881,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i]));
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i]), "at index #" +
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i]), "at index #" +
                                 i + ", input1 = " + a[i] + ", input2 = " +
                                 b[(i / SPECIES.length()) * SPECIES.length()] + ",  input3 = " + c[i]);
         }
@@ -811,11 +900,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()],
+                AssertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()],
                                     mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()],
+            AssertEquals(r[i], f.apply(a[i], b[i], c[(i / SPECIES.length()) * SPECIES.length()],
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] + ", input2 = " +
                                 b[i] + ", input3 = " + c[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
                                 mask[i % SPECIES.length()]);
@@ -832,11 +921,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i],
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i],
                                     mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i],
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()], c[i],
                                 mask[i % SPECIES.length()]), "at index #" + i + ", input1 = " + a[i] +
                                 ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] +
                                 ", input3 = " + c[i] + ", mask = " + mask[i % SPECIES.length()]);
@@ -847,11 +936,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
                                     c[(i / SPECIES.length()) * SPECIES.length()]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
                                 c[(i / SPECIES.length()) * SPECIES.length()]), "at index #" + i + ", input1 = " + a[i]
                                 + ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] + ", input3 = " +
                                 c[(i / SPECIES.length()) * SPECIES.length()]);
@@ -868,11 +957,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
+                AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
                                     c[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]));
             }
         } catch (AssertionError err) {
-            Assert.assertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
+            AssertEquals(r[i], f.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()],
                                 c[(i / SPECIES.length()) * SPECIES.length()], mask[i % SPECIES.length()]), "at index #"
                                 + i + ", input1 = " + a[i] + ", input2 = " + b[(i / SPECIES.length()) * SPECIES.length()] +
                                 ", input3 = " + c[(i / SPECIES.length()) * SPECIES.length()] + ", mask = " +
@@ -883,6 +972,26 @@ relativeError));
 
 #if[FP]
     static boolean isWithin1Ulp($type$ actual, $type$ expected) {
+#if[Halffloat]
+        Float16 act = Float16.shortBitsToFloat16(actual);
+        Float16 exp = Float16.shortBitsToFloat16(expected);
+        if (Float16.isNaN(exp) && !Float16.isNaN(act)) {
+            return false;
+        } else if (!Float16.isNaN(exp) && Float16.isNaN(act)) {
+             return false;
+        }
+
+        Float16 low = Float16.nextDown(exp);
+        Float16 high = Float16.nextUp(exp);
+
+        if (Float16.compare(low, exp) > 0) {
+            return false;
+        }
+
+        if (Float16.compare(high, exp) < 0) {
+            return false;
+        }
+#else[Halffloat]
         if ($Type$.isNaN(expected) && !$Type$.isNaN(actual)) {
             return false;
         } else if (!$Type$.isNaN(expected) && $Type$.isNaN(actual)) {
@@ -899,6 +1008,7 @@ relativeError));
         if ($Type$.compare(high, expected) < 0) {
             return false;
         }
+#end[Halffloat]
 
         return true;
     }
@@ -908,11 +1018,11 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i])):mathf.apply(a[i])}) == 0 ||
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i])) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i]));
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i])):mathf.apply(a[i])}) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i])), "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i]));
         }
     }
@@ -922,11 +1032,11 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i], b[i])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[i])):mathf.apply(a[i], b[i])}) == 0 ||
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[i])):mathf.apply(a[i], b[i])}) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i], b[i]));
         }
     }
@@ -937,14 +1047,14 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i],
-                                  mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]},
+                                  {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])):mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])}) == 0 ||
                                   isWithin1Ulp(r[i],
                                   strictmathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i],
-                              mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])) == 0,
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]},
+                              {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])):mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])}) == 0,
                               "at index #" + i + ", input1 = " + a[i] + ", input2 = " +
                               b[(i / SPECIES.length()) * SPECIES.length()] + ", actual = " + r[i] +
                               ", expected = " + mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]));
@@ -966,13 +1076,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, i, b, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, i, b, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref,
+            AssertEquals(res, ref,
               "(ref: " + Arrays.toString(ref) + ", res: " + Arrays.toString(res) + ", a: "
               + Arrays.toString(Arrays.copyOfRange(a, i, i+SPECIES.length()))
               + ", b: "
@@ -993,13 +1103,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, i, mask, b, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, i, mask, b, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref,
+            AssertEquals(res, ref,
               "(ref: " + Arrays.toString(ref) + ", res: " + Arrays.toString(res) + ", a: "
               + Arrays.toString(Arrays.copyOfRange(a, i, i+SPECIES.length()))
               + ", b: "
@@ -1014,13 +1124,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(r, a, i, mask, b, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(r, a, i, mask, b, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref,
+            AssertEquals(res, ref,
               "(ref: " + Arrays.toString(ref) + ", res: " + Arrays.toString(res) + ", a: "
               + Arrays.toString(Arrays.copyOfRange(a, i, i+SPECIES.length()))
               + ", b: "
@@ -1041,13 +1151,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, origin, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, origin, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i);
         }
@@ -1061,13 +1171,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, b, origin, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin);
@@ -1082,13 +1192,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, b, origin, mask, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, mask, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin);
@@ -1103,13 +1213,13 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, b, origin, part, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, part, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin
@@ -1125,18 +1235,26 @@ relativeError));
         int i = 0;
         try {
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
+                AssertEquals(Arrays.copyOfRange(r, i, i+SPECIES.length()),
                   f.apply(a, b, origin, part, mask, i));
             }
         } catch (AssertionError e) {
             $type$[] ref = f.apply(a, b, origin, part, mask, i);
             $type$[] res = Arrays.copyOfRange(r, i, i+SPECIES.length());
-            Assert.assertEquals(res, ref, "(ref: " + Arrays.toString(ref)
+            AssertEquals(res, ref, "(ref: " + Arrays.toString(ref)
               + ", res: " + Arrays.toString(res)
               + "), at index #" + i
               + ", at origin #" + origin
               + ", with part #" + part);
         }
+    }
+
+    static $type$ genValue(int i) {
+#if[Halffloat]
+        return Float16.float16ToRawShortBits(Float16.valueOf(i));
+#else[Halffloat]
+        return ($type$) i;
+#end[Halffloat]
     }
 
 #if[!Int]
@@ -1157,19 +1275,19 @@ relativeError));
     }
 
     static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
-            withToString("$type$[intCornerCaseValue(i)]", (int s) -> {
+            withToString("$ClassType$[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)intCornerCaseValue(i));
             })
@@ -1181,10 +1299,14 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
-                Assert.assertEquals(r[i], (int)(a[i+offs]));
+#if[Halffloat]
+                AssertEquals(r[i], (int)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
+                AssertEquals(r[i], (int)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+            AssertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
         }
     }
 
@@ -1205,20 +1327,28 @@ relativeError));
         }
     }
 
+    static $type$ genValue(long i) {
+#if[Halffloat]
+        return Float16.float16ToRawShortBits(Float16.valueOf(i));
+#else[Halffloat]
+        return ($type$) i;
+#end[Halffloat]
+    }
+
     static final List<IntFunction<$type$[]>> LONG_$TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
-            withToString("$type$[cornerCaseValue(i)]", (int s) -> {
+            withToString("$ClassType$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)longCornerCaseValue(i));
             })
@@ -1231,10 +1361,10 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
-                Assert.assertEquals(r[i], (long)(a[i+offs]));
+                AssertEquals(r[i], (long)(a[i+offs]));
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+            AssertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
         }
     }
 #end[byte]
@@ -1243,10 +1373,14 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
-                Assert.assertEquals(r[i], (long)(a[i+offs]));
+#if[Halffloat]
+                AssertEquals(r[i], (long)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
+                AssertEquals(r[i], (long)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+            AssertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
         }
     }
 #if[!Double]
@@ -1255,40 +1389,59 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
-                Assert.assertEquals(r[i], (double)(a[i+offs]));
+#if[Halffloat]
+                AssertEquals(r[i], (double)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
+                AssertEquals(r[i], (double)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
+            AssertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
         }
     }
 #end[!Double]
 
     static $bitstype$ bits($type$ e) {
-        return {#if[FP]? $Type$.$type$To$Bitstype$Bits(e): e};
+#if[FP16]
+        return e;
+#else[FP16]
+        return {#if[FP]?$Wideboxtype$.$type$To$Bitstype$Bits(e): e};
+#end[FP16]
     }
 
     static final List<IntFunction<$type$[]>> $TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
 #if[FP]
+#if[FP16]
+            withToString("$Wideboxtype$[0.01 + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
+            }),
+            withToString("$Wideboxtype$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
+            }),
+#else[FP16]
             withToString("$type$[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)0.01 + (($type$)i / (i + 1)));
+                            i -> (($type$)0.01 + (($type$)i / (i + 1))));
             }),
             withToString("$type$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> i % 17 == 0 ? cornerCaseValue(i) : ($type$)0.01 + (($type$)i / (i + 1)));
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : (($type$)0.01 + (($type$)i / (i + 1))));
             }),
+#end[FP16]
 #end[FP]
             withToString("$type$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1678,6 +1831,18 @@ relativeError));
 
     static $type$ cornerCaseValue(int i) {
 #if[FP]
+#if[FP16]
+        return switch(i % 8) {
+            case 0  -> Float16.float16ToRawShortBits($Wideboxtype$.MAX_VALUE);
+            case 1  -> Float16.float16ToRawShortBits($Wideboxtype$.MIN_VALUE);
+            case 2  -> Float16.float16ToRawShortBits($Wideboxtype$.NEGATIVE_INFINITY);
+            case 3  -> Float16.float16ToRawShortBits($Wideboxtype$.POSITIVE_INFINITY);
+            case 4  -> Float16.float16ToRawShortBits($Wideboxtype$.NaN);
+            case 5  -> Float16.float16ToRawShortBits(Float16.shortBitsToFloat16((short)0x7FFA));
+            case 6  -> (($type$)0.0);
+            default -> (($type$)-0.0);
+        };
+#else[FP16]
         return switch(i % 8) {
             case 0  -> $Wideboxtype$.MAX_VALUE;
             case 1  -> $Wideboxtype$.MIN_VALUE;
@@ -1692,6 +1857,7 @@ relativeError));
             case 6  -> ($type$)0.0;
             default -> ($type$)-0.0;
         };
+#end[FP16]
 #else[FP]
         switch(i % 5) {
             case 0:
@@ -1809,6 +1975,44 @@ relativeError));
 #end[intOrLong]
     }
 #end[BITWISE]
+#if[Halffloat]
+
+    static boolean eq(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() == bt.floatValue();
+    }
+
+    static boolean neq(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() != bt.floatValue();
+    }
+
+    static boolean lt(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() < bt.floatValue();
+    }
+
+    static boolean le(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() <= bt.floatValue();
+    }
+
+    static boolean gt(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() > bt.floatValue();
+    }
+
+    static boolean ge(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() >= bt.floatValue();
+    }
+#else[Halffloat]
 
     static boolean eq($type$ a, $type$ b) {
         return a == b;
@@ -1833,6 +2037,7 @@ relativeError));
     static boolean ge($type$ a, $type$ b) {
         return a >= b;
     }
+#end[Halffloat]
 #if[!FP]
 
     static boolean ult($type$ a, $type$ b) {
@@ -1853,11 +2058,28 @@ relativeError));
 #end[!FP]
 
     static $type$ firstNonZero($type$ a, $type$ b) {
-        return $Boxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+        return $VecEleType$.compare(a, ($type$) 0) != 0 ? a : b;
     }
 
     @Test
     static void smokeTest1() {
+#if[Halffloat]
+        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        assert(three.eq(three2).allTrue());
+        $abstractvectortype$ three3 = three2.broadcast(Float16.float16ToRawShortBits(Float16.valueOf(1))).broadcast(Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        assert(three.eq(three3).allTrue());
+        int scale = 2;
+        $abstractvectortype$ higher = three.addIndex(scale);
+        VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
+        assert(m.allTrue());
+        m = higher.min((Float16.float16ToRawShortBits(Float16.valueOf(-1)))).test(VectorOperators.IS_NEGATIVE);
+        assert(m.allTrue());
+        m = higher.test(VectorOperators.IS_FINITE);
+        assert(m.allTrue());
+        $type$ max = higher.reduceLanes(VectorOperators.MAX);
+        assert((short) Float.float16ToFloat(max) == -3 + scale * (SPECIES.length()-1));
+#else[Halffloat]
         $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, (byte)-3);
         $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(-3);
         assert(three.eq(three2).allTrue());
@@ -1870,7 +2092,7 @@ relativeError));
         else if (ETYPE == byte.class && SPECIES.length() >= 64)
             scale = 1;
         $abstractvectortype$ higher = three.addIndex(scale);
-        VectorMask<$Boxtype$> m = three.compare(VectorOperators.LE, higher);
+        VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
         m = higher.min(($type$)-1).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
@@ -1880,6 +2102,7 @@ relativeError));
 #end[FP]
         $type$ max = higher.reduceLanes(VectorOperators.MAX);
         assert(max == -3 + scale * (SPECIES.length()-1));
+#end[Halffloat]
     }
 
     private static $type$[]
@@ -1895,12 +2118,12 @@ relativeError));
         // Do some zipping and shuffling.
         $abstractvectortype$ io = ($abstractvectortype$) SPECIES.broadcast(0).addIndex(1);
         $abstractvectortype$ io2 = ($abstractvectortype$) VectorShuffle.iota(SPECIES,0,1,false).toVector();
-        Assert.assertEquals(io, io2);
+        AssertEquals(io, io2);
         $abstractvectortype$ a = io.add(($type$)1); //[1,2]
         $abstractvectortype$ b = a.neg();  //[-1,-2]
         $type$[] abValues = bothToArray(a,b); //[1,2,-1,-2]
-        VectorShuffle<$Boxtype$> zip0 = VectorShuffle.makeZip(SPECIES, 0);
-        VectorShuffle<$Boxtype$> zip1 = VectorShuffle.makeZip(SPECIES, 1);
+        VectorShuffle<$Wideboxtype$> zip0 = VectorShuffle.makeZip(SPECIES, 0);
+        VectorShuffle<$Wideboxtype$> zip1 = VectorShuffle.makeZip(SPECIES, 1);
         $abstractvectortype$ zab0 = a.rearrange(zip0,b); //[1,-1]
         $abstractvectortype$ zab1 = a.rearrange(zip1,b); //[2,-2]
         $type$[] zabValues = bothToArray(zab0, zab1); //[1,-1,2,-2]
@@ -1910,19 +2133,19 @@ relativeError));
             manual[i+0] = abValues[i/2];
             manual[i+1] = abValues[a.length() + i/2];
         }
-        Assert.assertEquals(Arrays.toString(zabValues), Arrays.toString(manual));
-        VectorShuffle<$Boxtype$> unz0 = VectorShuffle.makeUnzip(SPECIES, 0);
-        VectorShuffle<$Boxtype$> unz1 = VectorShuffle.makeUnzip(SPECIES, 1);
+        AssertEquals(Arrays.toString(zabValues), Arrays.toString(manual));
+        VectorShuffle<$Wideboxtype$> unz0 = VectorShuffle.makeUnzip(SPECIES, 0);
+        VectorShuffle<$Wideboxtype$> unz1 = VectorShuffle.makeUnzip(SPECIES, 1);
         $abstractvectortype$ uab0 = zab0.rearrange(unz0,zab1);
         $abstractvectortype$ uab1 = zab0.rearrange(unz1,zab1);
         $type$[] abValues1 = bothToArray(uab0, uab1);
-        Assert.assertEquals(Arrays.toString(abValues), Arrays.toString(abValues1));
+        AssertEquals(Arrays.toString(abValues), Arrays.toString(abValues1));
     }
 
     static void iotaShuffle() {
         $abstractvectortype$ io = ($abstractvectortype$) SPECIES.broadcast(0).addIndex(1);
         $abstractvectortype$ io2 = ($abstractvectortype$) VectorShuffle.iota(SPECIES, 0 , 1, false).toVector();
-        Assert.assertEquals(io, io2);
+        AssertEquals(io, io2);
     }
 
     @Test
@@ -1940,12 +2163,12 @@ relativeError));
         Vector<?> asIntegral = SPECIES.zero().viewAsIntegralLanes();
         VectorSpecies<?> asIntegralSpecies = asIntegral.species();
         Assert.assertNotEquals(asIntegralSpecies.elementType(), SPECIES.elementType());
-        Assert.assertEquals(asIntegralSpecies.vectorShape(), SPECIES.vectorShape());
-        Assert.assertEquals(asIntegralSpecies.length(), SPECIES.length());
-        Assert.assertEquals(asIntegral.viewAsFloatingLanes().species(), SPECIES);
+        AssertEquals(asIntegralSpecies.vectorShape(), SPECIES.vectorShape());
+        AssertEquals(asIntegralSpecies.length(), SPECIES.length());
+        AssertEquals(asIntegral.viewAsFloatingLanes().species(), SPECIES);
 #else[FP]
         Vector<?> asIntegral = SPECIES.zero().viewAsIntegralLanes();
-        Assert.assertEquals(asIntegral.species(), SPECIES);
+        AssertEquals(asIntegral.species(), SPECIES);
 #end[FP]
     }
 #if[FP]
@@ -1953,27 +2176,27 @@ relativeError));
     @Test
     void viewAsFloatingLanesTest() {
         Vector<?> asFloating = SPECIES.zero().viewAsFloatingLanes();
-        Assert.assertEquals(asFloating.species(), SPECIES);
+        AssertEquals(asFloating.species(), SPECIES);
     }
 #else[FP]
-#if[byteOrShort]
+#if[byte]
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     void viewAsFloatingLanesTest() {
         SPECIES.zero().viewAsFloatingLanes();
     }
-#else[byteOrShort]
+#else[byte]
 
     @Test
     void viewAsFloatingLanesTest() {
         Vector<?> asFloating = SPECIES.zero().viewAsFloatingLanes();
         VectorSpecies<?> asFloatingSpecies = asFloating.species();
         Assert.assertNotEquals(asFloatingSpecies.elementType(), SPECIES.elementType());
-        Assert.assertEquals(asFloatingSpecies.vectorShape(), SPECIES.vectorShape());
-        Assert.assertEquals(asFloatingSpecies.length(), SPECIES.length());
-        Assert.assertEquals(asFloating.viewAsIntegralLanes().species(), SPECIES);
+        AssertEquals(asFloatingSpecies.vectorShape(), SPECIES.vectorShape());
+        AssertEquals(asFloatingSpecies.length(), SPECIES.length());
+        AssertEquals(asFloating.viewAsIntegralLanes().species(), SPECIES);
     }
-#end[byteOrShort]
+#end[byte]
 #end[FP]
 #if[BITWISE]
 

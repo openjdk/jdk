@@ -54,7 +54,11 @@ final class Byte256Vector extends ByteVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Byte> ETYPE = byte.class; // used by the JVM
+    static final Class<Byte> CTYPE = byte.class; // carrier type used by the JVM
+
+    static final Class<Byte> ETYPE = byte.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     Byte256Vector(byte[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class Byte256Vector extends ByteVector {
     }
 
     @ForceInline
+    final Class<Byte> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Byte> elementType() { return byte.class; }
+    public final Class<Byte> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -557,7 +564,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public byte laneHelper(int i) {
         return (byte) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     byte[] vecarr = vec.vec();
@@ -608,7 +615,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public Byte256Vector withLaneHelper(int i, byte e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     byte[] res = v.vec().clone();
@@ -621,7 +628,7 @@ final class Byte256Vector extends ByteVector {
 
     static final class Byte256Mask extends AbstractMask<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         Byte256Mask(boolean[] bits) {
             this(bits, 0);
@@ -723,7 +730,7 @@ final class Byte256Vector extends ByteVector {
         /*package-private*/
         Byte256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Byte256Mask) VectorSupport.indexPartiallyInUpperRange(
-                Byte256Mask.class, byte.class, VLENGTH, offset, limit,
+                Byte256Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (Byte256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -739,8 +746,9 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         public Byte256Mask compress() {
             return (Byte256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                Byte256Vector.class, Byte256Mask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                Byte256Vector.class, Byte256Mask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -751,7 +759,7 @@ final class Byte256Vector extends ByteVector {
         public Byte256Mask and(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte256Mask.class, null, byte.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte256Mask.class, null, byte.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -761,7 +769,7 @@ final class Byte256Vector extends ByteVector {
         public Byte256Mask or(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte256Mask.class, null, byte.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte256Mask.class, null, byte.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -771,7 +779,7 @@ final class Byte256Vector extends ByteVector {
         public Byte256Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte256Mask.class, null, byte.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte256Mask.class, null, byte.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -781,22 +789,25 @@ final class Byte256Vector extends ByteVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte256Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte256Mask.class, byte.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte256Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte256Mask.class, byte.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte256Mask.class, byte.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte256Mask.class, byte.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -805,7 +816,8 @@ final class Byte256Vector extends ByteVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Byte256Mask.class, byte.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Byte256Mask.class, byte.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -815,7 +827,7 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(Byte256Mask.class, byte.class, VLENGTH,
+            return VectorSupport.extract(Byte256Mask.class, byte.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -824,23 +836,23 @@ final class Byte256Vector extends ByteVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, Byte256Mask.class, byte.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((Byte256Mask)m).getBits()));
+            return VectorSupport.test(BT_ne, Byte256Mask.class, byte.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((Byte256Mask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, Byte256Mask.class, byte.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((Byte256Mask)m).getBits()));
+            return VectorSupport.test(BT_overflow, Byte256Mask.class, byte.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((Byte256Mask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static Byte256Mask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(Byte256Mask.class, byte.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(Byte256Mask.class, byte.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -853,7 +865,7 @@ final class Byte256Vector extends ByteVector {
 
     static final class Byte256Shuffle extends AbstractShuffle<Byte> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Byte> ETYPE = byte.class; // used by the JVM
+        static final Class<Byte> CTYPE = byte.class; // used by the JVM
 
         Byte256Shuffle(byte[] indices) {
             super(indices);
