@@ -2368,7 +2368,7 @@ void SharedRuntime::generate_deopt_blob() {
 // EPILOG must remove this many slots.
 // RISCV needs two words for RA (return address) and FP (frame pointer).
 uint SharedRuntime::in_preserve_stack_slots() {
-  return 2 * VMRegImpl::slots_per_word;
+  return 2 * VMRegImpl::slots_per_word + (VerifyStackAtCalls ? 0 : 2) ;
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {
