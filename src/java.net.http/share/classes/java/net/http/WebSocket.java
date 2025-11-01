@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,12 @@ public interface WebSocket {
          * duration then building of the {@code WebSocket} will fail with
          * {@link HttpTimeoutException}. If this method is not invoked then the
          * infinite timeout is assumed.
+         *
+         * @implSpec
+         * When a connection timeout value is present, a {@link WebSocket}
+         * implementation should apply it over the duration measured from the
+         * instant a connection is requested to the instant that one is
+         * established. This duration includes SSL handshakes, if required.
          *
          * @param timeout
          *         the timeout, non-{@linkplain Duration#isNegative() negative},

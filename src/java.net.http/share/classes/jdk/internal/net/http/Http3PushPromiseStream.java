@@ -242,6 +242,12 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
         protected void register() {
             registerResponseSubscriber(this);
         }
+
+        @Override
+        protected void onTermination() {
+            exchange.multi.cancelTimer();
+        }
+
     }
 
     Http3PushStreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,

@@ -1969,6 +1969,11 @@ class Stream<T> extends ExchangeImpl<T> {
             unregisterResponseSubscriber(this);
         }
 
+        @Override
+        protected void onTermination() {
+            exchange.multi.cancelTimer();
+        }
+
     }
 
     private static final VarHandle DEREGISTERED;

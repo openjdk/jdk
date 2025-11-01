@@ -569,6 +569,11 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
 
         @Override
+        protected void onTermination() {
+            exchange.multi.cancelTimer();
+        }
+
+        @Override
         protected void logComplete(Throwable error) {
             if (error == null) {
                 if (Log.requests()) {

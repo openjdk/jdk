@@ -220,6 +220,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         protected void unregister() {
             exchange.unregisterResponseSubscriber(this);
         }
+
+        @Override
+        protected void onTermination() {
+            exchange.exchange.multi.cancelTimer();
+        }
+
     }
 
     @Override
