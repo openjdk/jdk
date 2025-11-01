@@ -52,11 +52,11 @@ final class ReflectAccess implements JavaLangReflectAccess {
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
     //
-    public Method      copyMethod(Method arg) {
+    public Method copyMethod(Method arg) {
         return arg.copy();
     }
 
-    public Field       copyField(Field arg) {
+    public Field copyField(Field arg) {
         return arg.copy();
     }
 
