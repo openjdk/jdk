@@ -4449,6 +4449,200 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
 }
 
+//---------------------------replace_xor_parallel_iv---------------------------
+// Replace XOR-based parallel induction variables
+// This optimization recognizes patterns like:
+//
+//    bool result = init;
+//    for (int iv = 0; iv < n; iv += 1) {
+//      result = result ^ true;  // or result ^ 1 for booleans
+//    }
+//
+// and transforms it to:
+//
+//    result = init ^ (n & 1)
+//
+// For integer XOR with -1:
+//    int result = init;
+//    for (int iv = 0; iv < n; iv += 1) {
+//      result = result ^ -1;
+//    }
+//
+// transforms to:
+//
+//    result = init ^ (-(n & 1))  // which is 0 if n is even, -1 if n is odd
+//
+// This is based on the mathematical property that:
+// - XOR with 1: init ^ 1 ^ 1 ^ ... (n times) = init ^ (n & 1)
+// - XOR with -1: init ^ -1 ^ -1 ^ ... (n times) = init ^ (n is odd ? -1 : 0) = init ^ (-(n & 1))
+//
+void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
+  assert(loop->_head->is_CountedLoop(), "");
+  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return;         // skip malformed counted loop
+  }
+  Node *phi = cl->phi();
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("replace_xor_parallel_iv: checking loop %d\n", cl->_idx);
+  }
+#endif
+  
+  // Visit all children, looking for Phis that are XORed with a constant
+  for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
+    Node *out = cl->out(i);
+    // Look for other phis (secondary IVs). Skip dead ones
+    if (!out->is_Phi() || out == phi || !has_node(out)) {
+      continue;
+    }
+
+    PhiNode* phi2 = out->as_Phi();
+    Node* xor_node = phi2->in(LoopNode::LoopBackControl);
+    
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("  Found phi %d, checking backedge\n", phi2->_idx);
+    }
+#endif
+    
+    // Check for null before using xor_node
+    if (xor_node == nullptr) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("    Backedge is null, skipping\n");
+      }
+#endif
+      continue;
+    }
+    
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("    Backedge node %d, opcode %d\n", xor_node->_idx, xor_node->Opcode());
+    }
+#endif
+    
+    // Look for XOR pattern: phi2 ^ constant
+    // XOR is commutative, so check both input orders
+    int phi_input_idx = -1;
+    int const_input_idx = -1;
+    
+    if (phi2->region() != loop->_head ||
+        xor_node->req() != 3 ||
+        (xor_node->Opcode() != Op_XorI && xor_node->Opcode() != Op_XorL)) {
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("    Pattern check failed: region=%d head=%d, req=%d, opcode=%d\n",
+                   phi2->region()->_idx, loop->_head->_idx, xor_node->req(), xor_node->Opcode());
+      }
+#endif
+      continue;
+    }
+    
+    // Check which input is the phi and which is the constant
+    if (xor_node->in(1)->uncast() == phi2 && xor_node->in(2)->is_Con()) {
+      phi_input_idx = 1;
+      const_input_idx = 2;
+    } else if (xor_node->in(2)->uncast() == phi2 && xor_node->in(1)->is_Con()) {
+      phi_input_idx = 2;
+      const_input_idx = 1;
+    } else {
+      continue;  // Pattern doesn't match
+    }
+
+    if (xor_node->in(phi_input_idx)->is_ConstraintCast() &&
+        !(xor_node->in(phi_input_idx)->in(0)->is_IfProj() && xor_node->in(phi_input_idx)->in(0)->in(0)->is_RangeCheck())) {
+      // Skip XorI->CastII->Phi case if CastII is not controlled by local RangeCheck
+      continue;
+    }
+
+    // Get the XOR constant
+    BasicType xor_bt = xor_node->Opcode() == Op_XorI ? T_INT : T_LONG;
+    jlong xor_const = xor_node->in(const_input_idx)->get_integer_as_long(xor_bt);
+    
+    // Check if the constant is -1 (all bits set) or 1 (for boolean toggle)
+    // The comparison works for both int and long due to sign extension
+    bool is_valid_xor_const = (xor_const == -1 || xor_const == 1);
+    
+    if (!is_valid_xor_const) {
+      continue;
+    }
+
+    // Check if the loop increments by 1
+    jlong stride_con = cl->stride_con();
+    
+    if (stride_con != 1) {
+      continue; // Only handle stride of 1 for now
+    }
+
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("XOR Parallel IV: %d ", phi2->_idx);
+      loop->dump_head();
+    }
+#endif
+
+    // Transform: result = init2 ^ ((phi & 1) ? xor_const : 0)
+    // where phi is the loop counter (iteration count)
+    // This allows the expression to be used within the loop and optimized by later passes
+    Node* init2 = phi2->in(LoopNode::EntryControl);
+    
+    // Use the loop counter phi (from cl->phi()) which represents the iteration count
+    // The phi value ranges from init to limit-1
+    Node* loop_phi = phi;
+    
+    // Create: loop_phi & 1
+    Node* one_const = _igvn.intcon(1);
+    Node* and_node = new AndINode(loop_phi, one_const);
+    _igvn.register_new_node_with_optimizer(and_node, loop_phi);
+    set_ctrl(and_node, cl);
+    
+    // For XOR with constant c, the result after n iterations is:
+    // - init2 ^ (c * (n & 1))
+    // - For c = 1: init2 ^ (n & 1)
+    // - For c = -1: init2 ^ ((n & 1) ? -1 : 0) = init2 ^ (-(n & 1))
+    
+    Node* xor_value;
+    if (xor_const == 1 || xor_const == 1L) {
+      // Simple case: XOR with 1, just use (phi & 1)
+      xor_value = insert_convert_node_if_needed(xor_bt, and_node);
+    } else {
+      // XOR with -1: need to negate (phi & 1) to get either 0 or -1
+      // This is: 0 - (phi & 1) = -(phi & 1)
+      Node* zero_const = xor_bt == T_INT ? (Node*)_igvn.intcon(0) : (Node*)_igvn.longcon(0L);
+      Node* and_converted = insert_convert_node_if_needed(xor_bt, and_node);
+      xor_value = xor_bt == T_INT ? 
+                  (Node*)new SubINode(zero_const, and_converted) :
+                  (Node*)new SubLNode(zero_const, and_converted);
+      _igvn.register_new_node_with_optimizer(xor_value);
+      set_ctrl(xor_value, cl);
+    }
+    
+    // Convert init2 to the target type if needed  
+    Node* init2_converted = insert_convert_node_if_needed(xor_bt, init2);
+    
+    // Create: init2 ^ xor_value
+    Node* final_xor = xor_bt == T_INT ? 
+                      (Node*)new XorINode(init2_converted, xor_value) :
+                      (Node*)new XorLNode(init2_converted, xor_value);
+    _igvn.register_new_node_with_optimizer(final_xor);
+    set_ctrl(final_xor, cl);  // Control depends on loop since it uses loop phi
+    
+    _igvn.replace_node(phi2, final_xor);
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("  Replaced phi %d with final_xor %d\n", phi2->_idx, final_xor->_idx);
+    }
+#endif
+    // Sometimes an induction variable is unused
+    if (final_xor->outcnt() == 0) {
+      _igvn.remove_dead_node(final_xor);
+    }
+    --i; // deleted this phi; rescan starting with next position
+  }
+}
+
 Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* input) {
   BasicType source = _igvn.type(input)->basic_type();
   if (source == target) {
@@ -4517,6 +4711,9 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
     // Look for induction variables
     phase->replace_parallel_iv(this);
+    
+    // Look for XOR-based induction variables
+    phase->replace_xor_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() ||
              phase->is_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
