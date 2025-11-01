@@ -23,17 +23,23 @@
 package org.openjdk.bench.javax.crypto.full;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import javax.crypto.DecapsulateException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.KEM;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
 
 public class KEMBench extends CryptoBase {
 
@@ -42,15 +48,37 @@ public class KEMBench extends CryptoBase {
     @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024" })
     private String algorithm;
 
+    @Param({""})        // Used when the KeyPairGenerator Alg != KEM Alg
+    private String kpgSpec;
+
     private KeyPair[] keys;
     private byte[][] messages;
 
     private KEM kem;
 
     @Setup
-    public void setup() throws NoSuchAlgorithmException, InvalidKeyException {
+    public void setup() throws NoSuchAlgorithmException, InvalidKeyException,
+            InvalidAlgorithmParameterException {
+        String kpgAlg;
+        String kpgParams;
         kem = (prov == null) ? KEM.getInstance(algorithm) : KEM.getInstance(algorithm, prov);
-        KeyPairGenerator generator = (prov == null) ? KeyPairGenerator.getInstance(algorithm) : KeyPairGenerator.getInstance(algorithm, prov);
+
+        Provider kpgProv = prov;    // By default use the same provider for KEM and KPG
+        if (kpgSpec.isEmpty()) {
+            kpgAlg = algorithm;
+            kpgParams = "";
+        } else {
+            String[] kpgTok = kpgSpec.split(":");
+            kpgProv = Security.getProvider(kpgTok[0]); // kpgTok[0] = provider name
+            kpgAlg = kpgTok[1];
+            kpgParams = kpgTok[2];
+        }
+        KeyPairGenerator generator = (kpgProv == null) ?
+                    KeyPairGenerator.getInstance(kpgAlg) :
+                    KeyPairGenerator.getInstance(kpgAlg, kpgProv);
+        if (kpgParams != null && !kpgParams.isEmpty()) {
+            generator.initialize(new ECGenParameterSpec(kpgParams));
+        }
         keys = new KeyPair[SET_SIZE];
         for (int i = 0; i < keys.length; i++) {
             keys[i] = generator.generateKeyPair();
@@ -60,6 +88,15 @@ public class KEMBench extends CryptoBase {
             KEM.Encapsulator enc = kem.newEncapsulator(keys[i].getPublic());
             KEM.Encapsulated encap = enc.encapsulate();
             messages[i] = encap.encapsulation();
+        }
+    }
+
+    protected static Provider getInternalJce() {
+        try {
+            Class<?> dhClazz = Class.forName("com.sun.crypto.provider.DH");
+            return (Provider) (dhClazz.getField("PROVIDER").get(null));
+        } catch (ReflectiveOperationException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
@@ -79,4 +116,49 @@ public class KEMBench extends CryptoBase {
         }
     }
 
+    public static class MLKEM extends KEMBench {
+        @Param({"ML-KEM-512", "ML-KEM-768", "ML-KEM-1024" })
+        private String algorithm;
+
+        @Param({""})            // ML-KEM uses the same alg for KPG and KEM
+        private String kpgSpec;
+    }
+
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
+    public static class InternalDH extends KEMBench {
+        @Setup
+        public void init() {
+            try {
+                prov = getInternalJce();
+                super.setup();
+            } catch (GeneralSecurityException gse) {
+                throw new RuntimeException(gse);
+            }
+        }
+
+        @Param({"DH"})
+        private String algorithm;
+
+        @Param({"SunEC:XDH:x25519", "SunEC:EC:secp256r1", "SunEC:EC:secp384r1"})
+        private String kpgSpec;
+    }
+
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
+    public static class Hybrid extends KEMBench {
+        @Setup
+        public void init() {
+            try {
+                prov = getInternalJce();
+                super.setup();
+            } catch (GeneralSecurityException gse) {
+                throw new RuntimeException(gse);
+            }
+        }
+
+        @Param({"X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024"})
+        private String algorithm;
+
+        @Param({""})            // ML-KEM uses the same alg for KPG and KEM
+        private String kpgSpec;
+    }
 }
