@@ -360,12 +360,19 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
+        // We should use full runtime info plist for standalone runtime and for
+        // embedded runtime if it contains "bin" folder, so embedded runtime
+        // can act as standalone runtime.
+        final var useRuntimeInfoPlist =
+                Files.isDirectory(env.resolvedLayout().runtimeDirectory().resolve("bin")) ||
+                app.isRuntime();
+
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
         data.put("CF_BUNDLE_NAME", app.bundleName());
         data.put("CF_BUNDLE_VERSION", app.version());
         data.put("CF_BUNDLE_SHORT_VERSION_STRING", app.shortVersion().toString());
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             data.put("CF_BUNDLE_VENDOR", app.vendor());
         }
 
@@ -373,12 +380,18 @@ final class MacPackagingPipeline {
         final String publicName;
         final String category;
 
-        if (app.isRuntime()) {
+        if (useRuntimeInfoPlist) {
             template = "Runtime-Info.plist.template";
+        } else {
+            template = "ApplicationRuntime-Info.plist.template";
+        }
+
+        // Public name and category should be based on standalone runtime vs
+        // embedded runtime.
+        if (app.isRuntime()) {
             publicName = "Info.plist";
             category = "resource.runtime-info-plist";
         } else {
-            template = "ApplicationRuntime-Info.plist.template";
             publicName = "Runtime-Info.plist";
             category = "resource.app-runtime-info-plist";
         }
