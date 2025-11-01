@@ -712,16 +712,18 @@ public:
     if (tams > r->bottom()) {
       HeapWord* start = r->bottom();
       HeapWord* addr = start;
+      addr--;
       do {
-        addr = ctx->get_next_marked_addr(addr, tams);
+        addr = ctx->get_next_marked_addr(addr + 1, tams);
       } while (!ctx->is_marked_strong(addr) && (addr < tams));
 
       while (addr < tams) {
         verify_and_follow(addr, stack, cl, &processed);
         addr += 1;
         if (addr < tams) {
+          addr--;
           do {
-            addr = ctx->get_next_marked_addr(addr, tams);
+            addr = ctx->get_next_marked_addr(addr + 1, tams);
           } while (!ctx->is_marked_strong(addr) && (addr < tams));
         }
       }
@@ -1334,8 +1336,9 @@ void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, Shenandoah
       } else {
         // This object is not live so we don't verify dirty cards contained therein
         HeapWord* tams = ctx->top_at_mark_start(r);
+        obj_addr--;
         do {
-          obj_addr = ctx->get_next_marked_addr(obj_addr, tams);
+          obj_addr = ctx->get_next_marked_addr(obj_addr + 1, tams);
         } while (!ctx->is_marked_strong(obj_addr) && (obj_addr < tams));
       }
     }

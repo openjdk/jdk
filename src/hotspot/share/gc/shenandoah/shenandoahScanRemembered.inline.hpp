@@ -214,8 +214,9 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
             } else {
               assert(p < tams, "Error 1 in ctx/marking/tams logic");
               // Skip over any intermediate dead objects
+              p--;
               do {
-                p = ctx->get_next_marked_addr(p, tams);
+                p = ctx->get_next_marked_addr(p + 1, tams);
               } while (!ctx->is_marked_strong(p) && (p < tams));
               assert(p <= tams, "Error 2 in ctx/marking/tams logic");
             }
@@ -244,8 +245,9 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           last_p = nullptr;
           assert(p < tams, "Tams and above are implicitly marked in ctx");
           // object under tams isn't marked: skip to next live object
+          p--;
           do {
-            p = ctx->get_next_marked_addr(p, tams);
+            p = ctx->get_next_marked_addr(p + 1, tams);
           } while (!ctx->is_marked_strong(p) && (p < tams));
           assert(p <= tams, "Error 3 in ctx/marking/tams logic");
         }

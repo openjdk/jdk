@@ -377,8 +377,9 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
       // If this object is not live, don't trust its size(); all objects above tams are live.
       ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
       HeapWord* tams = ctx->top_at_mark_start(r);
+      offset--;
       do {
-        offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
+        offset = ctx->get_next_marked_addr(base_addr + offset + 1, tams) - base_addr;
       } while (!ctx->is_marked_strong(base_addr + offset) && (base_addr + offset < tams));
     }
   }
@@ -445,8 +446,9 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
         offset += obj->size();
         last_obj = obj;
       } else {
+        offset--;
         do {
-          offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
+          offset = ctx->get_next_marked_addr(base_addr + offset + 1, tams) - base_addr;
         } while (!ctx->is_marked_strong(base_addr + offset) && (base_addr + offset < tams));
         // If there are no marked objects remaining in this region, offset equals tams - base_addr.  If this offset is
         // greater than max_offset, we will immediately exit this loop.  Otherwise, the next iteration of the loop will

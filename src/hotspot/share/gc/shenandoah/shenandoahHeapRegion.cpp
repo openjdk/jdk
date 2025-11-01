@@ -483,8 +483,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
     } else {
       // Object is not marked.  Coalesce and fill dead object with dead neighbors.
       HeapWord* next_marked_obj = obj_addr;
+      next_marked_obj--;
       do {
-        next_marked_obj = marking_context->get_next_marked_addr(next_marked_obj, t);
+        next_marked_obj = marking_context->get_next_marked_addr(next_marked_obj + 1, t);
       } while (!marking_context->is_marked_strong(next_marked_obj) && (next_marked_obj < t));
       assert(next_marked_obj <= t, "next marked object cannot exceed top");
       size_t fill_size = next_marked_obj - obj_addr;
