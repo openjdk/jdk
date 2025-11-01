@@ -28,6 +28,12 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 /**
  * Provides analysis utilities for source code input.
@@ -63,6 +69,18 @@ public abstract class SourceCodeAnalysis {
      * @return list of candidate continuations of the given input.
      */
     public abstract List<Suggestion> completionSuggestions(String input, int cursor, int[] anchor);
+
+    /**
+     * Compute possible follow-ups for the given input.
+     * Uses information from the current {@code JShell} state, including
+     * type information, to filter the suggestions.
+     * @param input the user input, so far
+     * @param cursor the current position of the cursors in the given {@code input} text
+     * @param convertor convert the given {@linkplain ElementSuggestion} to a custom completion suggestions.
+     * @return list of candidate continuations of the given input.
+     * @since 26
+     */
+    public abstract <S> List<S> completionSuggestions(String input, int cursor, ElementSuggestionConvertor<S> convertor);
 
     /**
      * Compute documentation for the given user's input. Multiple {@code Documentation} objects may
@@ -316,6 +334,135 @@ public abstract class SourceCodeAnalysis {
     }
 
     /**
+     * A description of an {@linkplain Element} that is a possible continuation of
+     * a given snippet.
+     *
+     * @apiNote Instances of this interface and instances of the returned {@linkplain Elements}
+     * should only be used and held during the execution of the
+     * {@link #completionSuggestions(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.ElementSuggestionConvertor) }
+     * method. Their use outside of the context of the method is not supported and
+     * the effect is undefined.
+     *
+     * @since 26
+     */
+    public sealed interface ElementSuggestion permits SourceCodeAnalysisImpl.ElementSuggestionImpl {
+        /**
+         * {@return a possible continuation {@linkplain Element}, or {@code null}
+         *  if this item does not represent an {@linkplain Element}.}
+         */
+        Element element();
+        /**
+         * {@return a possible continuation keyword, or {@code null}
+         *  if this item does not represent a keyword.}
+         */
+        String keyword();
+        /**
+         * {@return {@code true} if this {@linkplain Element}'s type fits into
+         *  the context.}
+         *
+         * Typically used when the type of the element fits the expected type.
+         */
+        boolean matchesType();
+        /**
+         * {@return the offset in the original snippet at which point this {@linkplain Element}
+         *  should be inserted.}
+         */
+        int anchor();
+        /**
+         * {@return a {@linkplain Supplier} for the javadoc documentation for this Element.}
+         *
+         * @apiNote The instance returned from this method is safe to hold for extended
+         * periods of time, and can be called outside of the context of the
+         * {@link #completionSuggestions(java.lang.String, int, jdk.jshell.SourceCodeAnalysis.ElementSuggestionConvertor) } method.
+         */
+        Supplier<String> documentation();
+    }
+
+    /**
+     * Permit access to completion state.
+     *
+     * @since 26
+     */
+    public sealed interface CompletionState permits SourceCodeAnalysisImpl.CompletionStateImpl {
+        /**
+         * {@return true if the given element is available using the simple name at
+         *  the place of the cursor.}
+         *
+         * @param el {@linkplain Element} to check
+         */
+        public boolean availableUsingSimpleName(Element el);
+        /**
+         * {@return flags describing the overall completion context.}
+         */
+        public Set<CompletionContext> completionContext();
+        /**
+         * {@return if the context is a qualified expression
+         * (i.e. {@link CompletionContext#QUALIFIED} is set),
+         * the type of the selector expression; {@code null} otherwise.}
+         */
+        public TypeMirror selectorType();
+        /**
+         * {@return an implementation of some utility methods for
+         * operating on elements}
+         */
+        Elements elementUtils();
+        /**
+         * {@return an implementation of some utility methods for
+         * operating on types}
+         */
+        Types typeUtils();
+    }
+
+    /**
+     * Various flags describing the context in which the completion happens.
+     *
+     * @since 26
+     */
+    public enum CompletionContext {
+        /**
+         * The context is inside annotation attributes.
+         */
+        ANNOTATION_ATTRIBUTE,
+        /**
+         * Parentheses should not be filled for methods and constructor
+         * in the current context.
+         *
+         * Typically used in the import or method reference contexts.
+         */
+        NO_PAREN,
+        /**
+         * Interpret {@link ElementKind#ANNOTATION_TYPE}s as annotation uses. Typically means
+         * they should be prefixed with {@code @}.
+         */
+        TYPES_AS_ANNOTATIONS,
+        /**
+         * The context is in a qualified expression (like member access). Simple
+         * names only should be used.
+         */
+        QUALIFIED,
+        ;
+    }
+
+    /**
+     * A convertor from a list of {@linkplain ElementSuggestion} to a list
+     * of custom target completion items.
+     *
+     * @param <S> a custom target completion type.
+     * @since 26
+     */
+    public interface ElementSuggestionConvertor<S> {
+        /**
+         * Convert a list of {@linkplain ElementSuggestion} to a list
+         * of custom completion items.
+         *
+         * @param state the state of the completion
+         * @param suggestions the input suggestions
+         * @return the converted suggestions
+         */
+        public List<S> convert(CompletionState state, List<? extends ElementSuggestion> suggestions);
+    }
+
+    /**
      * A documentation for a candidate for continuation of the given user's input.
      */
     public interface Documentation {
@@ -333,6 +480,18 @@ public abstract class SourceCodeAnalysis {
          * @return the javadoc, or null if not found or not requested
          */
         String javadoc();
+
+        /**
+         * If this {@code Documentation} is created for a method invocation,
+         * return the current parameter index.
+         *
+         * @implNote the default implementation returns {@code -1}
+         * @return the active parameter index, or {@code -1} if not available
+         * @since 26
+         */
+        default int activeParameterIndex() {
+            return -1;
+        }
     }
 
     /**
