@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8343020 8357425
+ * @bug 4313887 6838333 8343020 8357425 8356493
  * @summary Unit test for java.nio.file.SecureDirectoryStream
  * @requires (os.family == "linux" | os.family == "mac" | os.family == "aix")
  * @library .. /test/lib
@@ -31,13 +31,14 @@
  */
 
 import java.nio.file.*;
-import static java.nio.file.Files.*;
-import static java.nio.file.StandardOpenOption.*;
-import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
 import java.nio.channels.*;
 import java.io.IOException;
 import java.util.*;
+
+import static java.nio.file.Files.*;
+import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.LinkOption.*;
 
 import jdk.test.lib.Platform;
 
@@ -45,7 +46,9 @@ public class SecureDS {
     static boolean supportsSymbolicLinks;
 
     public static void main(String[] args) throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
+        String cwd = System.getProperty("user.dir");
+        Path dir = TestUtil.createTemporaryDirectory(cwd);
+        System.err.println("Top level test directory: " + dir);
         try {
             DirectoryStream<Path> stream = newDirectoryStream(dir);
             stream.close();
@@ -162,6 +165,141 @@ public class SecureDS {
                     .close();
                 shouldNotGetHere();
             } catch (IOException x) { }
+        }
+
+        // Test: createFile
+        Path somefile = Path.of("somefile");
+        // - absolute -
+        Path absfile = dir.resolve(somefile);
+        stream.createFile(absfile);
+        assertTrue(exists(absfile));
+        assertTrue(isRegularFile(absfile));
+        try {
+            stream.createFile(absfile);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteFile(absfile);
+        // - relative -
+        Path relfile = dir2.resolve(somefile);
+        stream.createFile(relfile);
+        assertTrue(exists(relfile));
+        assertTrue(isRegularFile(relfile));
+        try {
+            stream.createFile(relfile);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteFile(relfile);
+
+        // Test: createDirectory
+        Path somedir = Path.of("somedir");
+        // - absolute -
+        Path absdir = dir.resolve(somedir);
+        stream.createDirectory(absdir);
+        assertTrue(exists(absdir));
+        assertTrue(isDirectory(absdir));
+        try {
+            stream.createDirectory(absdir);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteDirectory(absdir);
+        // - relative -
+        Path reldir = dir2.resolve(somedir);
+        stream.createDirectory(somedir);
+        assertTrue(exists(reldir));
+        assertTrue(isDirectory(reldir));
+        try {
+            stream.createDirectory(reldir);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteDirectory(reldir);
+
+        // Test: createLink
+        Path somehardlink = Path.of("somehardlink");
+        Path someexisting = Path.of("someexisting");
+
+        // - absolute -
+        Path abshardlink = dir.resolve(somehardlink);
+        Path absexisting = dir.resolve(someexisting);
+        createFile(absexisting);
+        String text1 = "I simply don't know what to say.";
+        writeString(absexisting, text1);
+        stream.createLink(abshardlink, stream, absexisting);
+        assertTrue(exists(abshardlink));
+        assertTrue(text1.equals(readString(abshardlink)));
+        try {
+            stream.createLink(abshardlink, stream, absexisting);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteFile(absexisting);
+        try {
+            stream.createLink(abshardlink, stream, absexisting);
+            shouldNotGetHere();
+        } catch (NoSuchFileException x) {
+        }
+        stream.deleteFile(abshardlink);
+        // - relative -
+        Path relhardlink = dir2.resolve(somehardlink);
+        Path relexisting = dir2.resolve(someexisting);
+        createFile(relexisting);
+        String text2 = "I still don't know what to say.";
+        writeString(relexisting, text2);
+        stream.createLink(somehardlink, stream, someexisting);
+        assertTrue(exists(relhardlink));
+        assertTrue(text2.equals(readString(relhardlink)));
+        try {
+            stream.createLink(somehardlink, stream, someexisting);
+            shouldNotGetHere();
+        } catch (FileAlreadyExistsException x) {
+        }
+        stream.deleteFile(relexisting);
+        try {
+            stream.createLink(somehardlink, stream, someexisting);
+            shouldNotGetHere();
+        } catch (NoSuchFileException x) {
+        }
+        stream.deleteFile(relhardlink);
+
+        if (supportsSymbolicLinks) {
+            // Tests: createSymbolicLink and readSymbolicLink
+            Path target = dir.resolve(Path.of("target"));
+            assertTrue(exists(createFile(target)));
+            Path somesymlink = Path.of("somesymlink");
+
+            // - absolute -
+            Path abssymlink = dir.resolve(somesymlink);
+            stream.createSymbolicLink(abssymlink, target);
+            assertTrue(exists(abssymlink, NOFOLLOW_LINKS));
+            assertTrue(isSymbolicLink(abssymlink));
+            try {
+                stream.createSymbolicLink(abssymlink, target);
+                shouldNotGetHere();
+            } catch (FileAlreadyExistsException x) {
+            }
+            assertTrue(target.equals(stream.readSymbolicLink(abssymlink)));
+            try {
+                stream.readSymbolicLink(target);
+                shouldNotGetHere();
+            } catch (NotLinkException x) {
+            }
+            delete(target);
+            stream.deleteFile(abssymlink);
+            // - relative -
+            Path relsymlink = dir2.resolve(somesymlink);
+            stream.createSymbolicLink(somesymlink, target);
+            assertTrue(exists(relsymlink, NOFOLLOW_LINKS));
+            assertTrue(isSymbolicLink(relsymlink));
+            try {
+                stream.createSymbolicLink(relsymlink, target);
+                shouldNotGetHere();
+            } catch (FileAlreadyExistsException x) {
+            }
+            assertTrue(target.equals(stream.readSymbolicLink(relsymlink)));
+            stream.deleteFile(relsymlink);
         }
 
         // Test: delete
@@ -347,6 +485,38 @@ public class SecureDS {
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {
+            stream.createFile(null);
+            shouldNotGetHere();
+        } catch (NullPointerException x) { }
+        try {
+            stream.createDirectory(null);
+            shouldNotGetHere();
+        } catch (NullPointerException x) { }
+        Path link = Path.of("link");
+        try {
+            stream.createLink(null, stream, file);
+            shouldNotGetHere();
+        } catch (NullPointerException x) { }
+        try {
+            stream.createLink(link, stream, null);
+            shouldNotGetHere();
+        } catch (NullPointerException x) { }
+        if (supportsSymbolicLinks) {
+            Path symlink = Path.of("symlink");
+            try {
+                stream.createSymbolicLink(null, file);
+                shouldNotGetHere();
+            } catch (NullPointerException x) { }
+            try {
+                stream.createSymbolicLink(symlink, null);
+                shouldNotGetHere();
+            } catch (NullPointerException x) { }
+            try {
+                stream.readSymbolicLink(null);
+                shouldNotGetHere();
+            } catch (NullPointerException x) { }
+        }
+        try {
             stream.deleteFile(null);
             shouldNotGetHere();
         } catch (NullPointerException x) { }
@@ -373,6 +543,32 @@ public class SecureDS {
             shouldNotGetHere();
         } catch (ClosedDirectoryStreamException x) { }
         try {
+            stream.createFile(Path.of("nofile"));
+            shouldNotGetHere();
+        } catch (ClosedDirectoryStreamException x) { }
+        try {
+            stream.createDirectory(Path.of("nodir"));
+            shouldNotGetHere();
+        } catch (ClosedDirectoryStreamException x) { }
+        link = Path.of("nohardlink");
+        Path target = Path.of("nohardtarget");
+        try {
+            stream.createLink(link, null, target);
+            shouldNotGetHere();
+        } catch (ClosedDirectoryStreamException x) { }
+        if (supportsSymbolicLinks) {
+            link = Path.of("nosymlink");
+            target = Path.of("nosofttarget");
+            try {
+                stream.createSymbolicLink(link, target);
+                shouldNotGetHere();
+            } catch (ClosedDirectoryStreamException x) { }
+            try {
+                stream.readSymbolicLink(link);
+                shouldNotGetHere();
+            } catch (ClosedDirectoryStreamException x) { }
+        }
+        try {
             stream.deleteFile(file);
             shouldNotGetHere();
         } catch (ClosedDirectoryStreamException x) { }
@@ -383,6 +579,10 @@ public class SecureDS {
 
     static void assertTrue(boolean b) {
         if (!b) throw new RuntimeException("Assertion failed");
+    }
+
+    static void assertFalse(boolean b) {
+        if (b) throw new RuntimeException("Assertion failed");
     }
 
     static void shouldNotGetHere() {
