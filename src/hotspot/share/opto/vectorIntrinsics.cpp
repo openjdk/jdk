@@ -622,7 +622,7 @@ bool LibraryCallKit::inline_vector_mask_operation() {
     return false;
   }
 
-  if (mask_vec->bottom_type()->isa_vectmask() == nullptr) {
+  if (!Matcher::mask_op_prefers_predicate(mopc, mask_vec->bottom_type()->is_vect())) {
     mask_vec = gvn().transform(VectorStoreMaskNode::make(gvn(), mask_vec, elem_bt, num_elem));
   }
   const Type* maskoper_ty = mopc == Op_VectorMaskToLong ? (const Type*)TypeLong::LONG : (const Type*)TypeInt::INT;
@@ -708,7 +708,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
 
   if (opc == Op_VectorLongToMask) {
     const TypeVect* vt = TypeVect::makemask(elem_bt, num_elem);
-    if (vt->isa_vectmask()) {
+    if (Matcher::mask_op_prefers_predicate(opc, vt)) {
       broadcast = gvn().transform(new VectorLongToMaskNode(elem, vt));
     } else {
       const TypeVect* mvt = TypeVect::make(T_BOOLEAN, num_elem);
@@ -2545,7 +2545,7 @@ bool LibraryCallKit::inline_vector_extract() {
         return false;
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
-      if (opd->bottom_type()->isa_vectmask() == nullptr) {
+      if (!Matcher::mask_op_prefers_predicate(Op_VectorMaskToLong, opd->bottom_type()->is_vect())) {
         opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
       }
       // ((toLong() >>> pos) & 1L
