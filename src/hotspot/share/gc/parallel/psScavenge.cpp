@@ -51,7 +51,6 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -99,7 +98,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingNMethodClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
+        NMethodToOopClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -216,25 +215,24 @@ public:
 };
 
 class PSThreadRootsTaskClosure : public ThreadClosure {
-  uint _worker_id;
+  PSPromotionManager* _pm;
 public:
-  PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  PSThreadRootsTaskClosure(PSPromotionManager* pm) : _pm(pm) {}
   virtual void do_thread(Thread* thread) {
     assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
-    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
-    PSScavengeRootsClosure roots_closure(pm);
+    PSScavengeRootsClosure roots_closure(_pm);
 
     // No need to visit nmethods, because they are handled by ScavengableNMethods.
     thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
-    pm->drain_stacks(false);
+    _pm->drain_stacks(false);
   }
 };
 
 class ScavengeRootsTask : public WorkerTask {
-  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
   PSOldGen* _old_gen;
@@ -247,7 +245,7 @@ public:
   ScavengeRootsTask(PSOldGen* old_gen,
                     uint active_workers) :
     WorkerTask("ScavengeRootsTask"),
-    _strong_roots_scope(active_workers),
+    _threads_claim_token_scope(),
     _subtasks(ParallelRootType::sentinel),
     _old_gen(old_gen),
     _gen_top(old_gen->object_space()->top()),
@@ -263,12 +261,12 @@ public:
   virtual void work(uint worker_id) {
     assert(worker_id < _active_workers, "Sanity");
     ResourceMark rm;
+    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
 
     if (!_is_old_gen_empty) {
       // There are only old-to-young pointers if there are objects
       // in the old gen.
       {
-        PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
         // The top of the old gen changes during scavenge when objects are promoted.
@@ -288,14 +286,14 @@ public:
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
 
-    PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
+    PSThreadRootsTaskClosure thread_closure(pm);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &thread_closure);
 
     // Scavenge OopStorages
     {
-      PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-      PSScavengeRootsClosure closure(pm);
-      _oop_storage_strong_par_state.oops_do(&closure);
+      PSScavengeRootsClosure root_closure(pm);
+      _oop_storage_strong_par_state.oops_do(&root_closure);
+
       // Do the real work
       pm->drain_stacks(false);
     }
@@ -523,31 +521,56 @@ void PSScavenge::clean_up_failed_promotion() {
 }
 
 bool PSScavenge::should_attempt_scavenge() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  const bool ShouldRunYoungGC = true;
+  const bool ShouldRunFullGC = false;
 
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 
   if (!young_gen->to_space()->is_empty()) {
-    log_debug(gc, ergo)("To-space is not empty; should run full-gc instead.");
-    return false;
+    log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
+    return ShouldRunFullGC;
   }
 
-  // Test to see if the scavenge will likely fail.
+  // Check if the predicted promoted bytes will overflow free space in old-gen.
   PSAdaptiveSizePolicy* policy = heap->size_policy();
 
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
   // Total free size after possible old gen expansion
-  size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
-  bool result = promotion_estimate < free_in_old_gen;
+  size_t free_in_old_gen_with_expansion = old_gen->max_gen_size() - old_gen->used_in_bytes();
 
-  log_trace(gc, ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
-                result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
-                (size_t) policy->padded_average_promoted_in_bytes(),
-                free_in_old_gen);
+  log_trace(gc, ergo)("average_promoted %zu; padded_average_promoted %zu",
+              (size_t) policy->average_promoted_in_bytes(),
+              (size_t) policy->padded_average_promoted_in_bytes());
 
-  return result;
+  if (promotion_estimate >= free_in_old_gen_with_expansion) {
+    log_debug(gc, ergo)("Run full-gc; predicted promotion size >= max free space in old-gen: %zu >= %zu",
+      promotion_estimate, free_in_old_gen_with_expansion);
+    return ShouldRunFullGC;
+  }
+
+  if (UseAdaptiveSizePolicy) {
+    // Also checking OS has enough free memory to commit and expand old-gen.
+    // Otherwise, the recorded gc-pause-time might be inflated to include time
+    // of OS preparing free memory, resulting in inaccurate young-gen resizing.
+    assert(old_gen->committed().byte_size() >= old_gen->used_in_bytes(), "inv");
+    // Use uint64_t instead of size_t for 32bit compatibility.
+    uint64_t free_mem_in_os;
+    if (os::free_memory(free_mem_in_os)) {
+      size_t actual_free = (size_t)MIN2(old_gen->committed().byte_size() - old_gen->used_in_bytes() + free_mem_in_os,
+                                        (uint64_t)SIZE_MAX);
+      if (promotion_estimate > actual_free) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
+          promotion_estimate, actual_free);
+        return ShouldRunFullGC;
+      }
+    }
+  }
+
+  // No particular reasons to run full-gc, so young-gc.
+  return ShouldRunYoungGC;
 }
 
 // Adaptive size policy support.

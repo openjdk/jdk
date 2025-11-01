@@ -111,7 +111,7 @@ bool VM_GC_Operation::doit_prologue() {
   VM_Heap_Sync_Operation::doit_prologue();
 
   // Check invocations
-  if (skip_operation()) {
+  if (skip_operation() || Universe::is_shutting_down()) {
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {

@@ -168,7 +168,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
@@ -245,6 +244,13 @@ protected:
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
+
+  bool is_shutting_down() const;
+
+  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
+  // In this case, stall the allocation request briefly in the hope that
+  // the VM shutdown completes before the allocation request returns.
+  void stall_for_vm_shutdown();
 
   void before_exit();
 

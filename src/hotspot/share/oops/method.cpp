@@ -1287,7 +1287,9 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     h_method->_from_compiled_entry = SharedRuntime::get_handle_wrong_method_abstract_stub();
   } else if (_adapter == nullptr) {
     (void) make_adapters(h_method, CHECK);
+#ifndef ZERO
     assert(adapter()->is_linked(), "Adapter must have been linked");
+#endif
     h_method->_from_compiled_entry = adapter()->get_c2i_entry();
   }
 

@@ -364,7 +364,7 @@ public:
   virtual void do_nmethod(nmethod* nm) {
     // If ClassUnloading is turned off, all nmethods are considered strong,
     // not only those on the call stacks. The heap iteration might happen
-    // before the concurrent processign of the code cache, make sure that
+    // before the concurrent processing of the code cache, make sure that
     // all nmethods have been processed before visiting the oops.
     _bs_nm->nmethod_entry_barrier(nm);
 
