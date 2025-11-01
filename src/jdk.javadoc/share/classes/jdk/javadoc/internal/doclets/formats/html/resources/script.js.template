@@ -17,7 +17,9 @@ const sortAsc = "sort-asc";
 const sortDesc = "sort-desc";
 const tableTab = "table-tab";
 const activeTableTab = "active-table-tab";
-const THEMES = Object.freeze(["theme-light", "theme-dark", "theme-os"]);
+const THEME_LIGHT = "theme-light";
+const THEME_DARK = "theme-dark";
+const THEME_OS = "theme-os";
 
 const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
@@ -320,12 +322,21 @@ function makeFilterWidget(sidebar, updateToc) {
     return sidebar;
 }
 
+const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
+osDarkTheme.addEventListener("change", e => {
+    if (getTheme() === THEME_OS) {
+        setTheme(THEME_OS);
+    }
+});
 function getTheme() {
-    return localStorage.getItem('theme') || THEMES[0];
+    return localStorage.getItem("theme") || THEME_LIGHT;
 }
-
+function setTheme(theme) {
+    var value = theme !== THEME_OS ? theme : osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
+    document.documentElement.setAttribute("data-theme", value);
+}
 function initTheme() {
-    document.body.classList.add(getTheme());
+    setTheme(getTheme());
 }
 
 function setTopMargin() {
@@ -401,16 +412,19 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
         input.addEventListener("change", e => {
             setTheme(e.target.value);
+            localStorage.setItem("theme", e.target.value);
         })
     });
-    function setTheme(theme) {
-        THEMES.forEach(t => {
-            if (t !== theme) document.body.classList.remove(t);
-        });
-        document.body.classList.add(theme);
-        localStorage.setItem("theme", theme);
-        document.getElementById(theme).checked = true;
-    }
+    themePanel.addEventListener("focusout", e => {
+        if (e.relatedTarget && !themePanel.contains(e.relatedTarget) && !themeButton.contains(e.relatedTarget)) {
+            closeThemePanel();
+        }
+    });
+    themePanel.addEventListener("keydown", e => {
+        if (e.key === "Escape" || e.key === "Enter") {
+            closeThemePanel();
+        }
+    });
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
         navbar.appendChild(tocMenu);
@@ -454,7 +468,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
-        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
