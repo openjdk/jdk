@@ -56,6 +56,7 @@ import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
@@ -332,14 +333,33 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand usePredefinedAppImage(Path predefinedAppImagePath) {
+        return setArgumentValue("--app-image", Objects.requireNonNull(predefinedAppImagePath))
+                .removeArgumentWithValue("--input");
+    }
+
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
         prerequisiteActions.add(action);
         return this;
     }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action) {
-        verifyActions.add(action);
+        return addVerifyAction(action, ActionRole.DEFAULT);
+    }
+
+    enum ActionRole {
+        DEFAULT,
+        LAUNCHER_VERIFIER,
+        ;
+    };
+
+    JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
+        verifyActions.add(action, actionRole);
         return this;
+    }
+
+    Stream<ThrowingConsumer<JPackageCommand>> getVerifyActionsWithRole(ActionRole actionRole) {
+        return verifyActions.actionsWithRole(actionRole);
     }
 
     /**
@@ -676,10 +696,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return Collections.unmodifiableList(names);
     }
 
-    private void verifyNotRuntime() {
+    JPackageCommand verifyNotRuntime() {
         if (isRuntime()) {
-            throw new IllegalArgumentException("Java runtime packaging");
+            throw new UnsupportedOperationException("Java runtime packaging");
         }
+        return this;
     }
 
     /**
@@ -1440,29 +1461,35 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return getPrintableCommandLine();
     }
 
-    public void verifyIsOfType(Collection<PackageType> types) {
-        verifyIsOfType(types.toArray(PackageType[]::new));
+    public JPackageCommand verifyIsOfType(PackageType ... types) {
+        return verifyIsOfType(Set.of(types));
     }
 
-    public void verifyIsOfType(PackageType ... types) {
-        final var typesSet = Stream.of(types).collect(Collectors.toSet());
+    public JPackageCommand verifyIsOfType(Iterable<PackageType> types) {
+        return verifyIsOfType(StreamSupport.stream(types.spliterator(), false).collect(toSet()));
+    }
+
+    public JPackageCommand verifyIsOfType(Set<PackageType> types) {
+        Objects.requireNonNull(types);
         if (!hasArgument("--type")) {
             if (!isImagePackageType()) {
-                if ((TKit.isLinux() && typesSet.equals(PackageType.LINUX)) || (TKit.isWindows() && typesSet.equals(PackageType.WINDOWS))) {
-                    return;
+                if ((TKit.isLinux() && types.equals(PackageType.LINUX)) || (TKit.isWindows() && types.equals(PackageType.WINDOWS))) {
+                    return this;
                 }
 
-                if (TKit.isOSX() && typesSet.equals(PackageType.MAC)) {
-                    return;
+                if (TKit.isOSX() && types.equals(PackageType.MAC)) {
+                    return this;
                 }
-            } else if (typesSet.equals(Set.of(PackageType.IMAGE))) {
-                return;
+            } else if (types.equals(Set.of(PackageType.IMAGE))) {
+                return this;
             }
         }
 
-        if (!typesSet.contains(packageType())) {
-            throw new IllegalArgumentException("Unexpected type");
+        if (!types.contains(packageType())) {
+            throw new UnsupportedOperationException(String.format("Unsupported operation for type [%s]", packageType().getType()));
         }
+
+        return this;
     }
 
     public CfgFile readLauncherCfgFile() {
@@ -1558,18 +1585,47 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         void add(ThrowingConsumer<JPackageCommand> action) {
-            Objects.requireNonNull(action);
+            add(action, ActionRole.DEFAULT);
+        }
+
+        void add(ThrowingConsumer<JPackageCommand> action, ActionRole role) {
             verifyMutable();
-            actions.add(new Consumer<JPackageCommand>() {
-                @Override
-                public void accept(JPackageCommand t) {
-                    if (!executed) {
-                        executed = true;
-                        ThrowingConsumer.toConsumer(action).accept(t);
-                    }
+            actions.add(new Action(action, role));
+        }
+
+        Stream<ThrowingConsumer<JPackageCommand>> actionsWithRole(ActionRole role) {
+            Objects.requireNonNull(role);
+            return actions.stream().filter(action -> {
+                return Objects.equals(action.role(), role);
+            }).map(Action::impl);
+        }
+
+        private static final class Action implements Consumer<JPackageCommand> {
+
+            Action(ThrowingConsumer<JPackageCommand> impl, ActionRole role) {
+                this.impl = Objects.requireNonNull(impl);
+                this.role = Objects.requireNonNull(role);
+            }
+
+            ActionRole role() {
+                return role;
+            }
+
+            ThrowingConsumer<JPackageCommand> impl() {
+                return impl;
+            }
+
+            @Override
+            public void accept(JPackageCommand cmd) {
+                if (!executed) {
+                    executed = true;
+                    ThrowingConsumer.toConsumer(impl).accept(cmd);
                 }
-                private boolean executed;
-            });
+            }
+
+            private final ActionRole role;
+            private final ThrowingConsumer<JPackageCommand> impl;
+            private boolean executed;
         }
 
         @Override
@@ -1578,7 +1634,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             actions.forEach(action -> action.accept(JPackageCommand.this));
         }
 
-        private final List<Consumer<JPackageCommand>> actions;
+        private final List<Action> actions;
     }
 
     private Boolean withToolProvider;
