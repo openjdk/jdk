@@ -31,7 +31,7 @@ import java.io.Writer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -105,7 +105,11 @@ public final class XmlUtils {
         }
     }
 
-    public static void mergeXmls(XMLStreamWriter xml, Collection<Source> sources)
+    public static void concatXml(XMLStreamWriter xml, Source... sources) throws XMLStreamException, IOException {
+        concatXml(xml, List.of(sources));
+    }
+
+    public static void concatXml(XMLStreamWriter xml, Iterable<? extends Source> sources)
             throws XMLStreamException, IOException {
         xml = (XMLStreamWriter) Proxy.newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                 new Class<?>[]{XMLStreamWriter.class},
