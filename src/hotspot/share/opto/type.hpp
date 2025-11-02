@@ -174,11 +174,13 @@ private:
     return Compile::current()->type_dict();
   }
 
+#ifdef ASSERT
   // DUAL operation: reflect around lattice centerline.  Used instead of
   // join to ensure my lattice is symmetric up and down.  Dual is computed
   // lazily, on demand, and cached in _dual. Use to verify the result of the
   // new implementation of JOIN, to be removed later.
   const Type *_dual; // Cached dual value
+#endif
 
   template <class F>
   static const Type* meet_join_helper(F op, const Type* t1, const Type* t2, bool include_speculative);
@@ -193,7 +195,7 @@ private:
   // Compute meet dependent on base type
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
 friend class VerifyMeetResult;
 
@@ -201,7 +203,7 @@ protected:
   // Each class of type is also identified by its base.
   const TYPES _base;            // Enum of Types type
 
-  Type( TYPES t ) : _dual(nullptr),  _base(t) {} // Simple types
+  Type(TYPES t) : DEBUG_ONLY(_dual(nullptr) COMMA)  _base(t) {} // Simple types
   // ~Type();                   // Use fast deallocation
   const Type *hashcons();       // Hash-cons the type
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
@@ -258,9 +260,11 @@ public:
   // NARROW: complement for widen, used by pessimistic phases
   virtual const Type *narrow( const Type *old ) const { return this; }
 
+#ifdef ASSERT
   // DUAL operation: reflect around lattice centerline.  Used instead of
   // join to ensure my lattice is symmetric up and down.
   const Type *dual() const { return _dual; }
+#endif // ASSERT
 
   // JOIN operations
   // Variant that drops the speculative part of the types
@@ -530,7 +534,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // Convenience common pre-built types.
   static const TypeF *MAX;
   static const TypeF *MIN;
@@ -563,7 +567,7 @@ public:
   virtual float getf() const;
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // Convenience common pre-built types.
   static const TypeH* MAX;
   static const TypeH* MIN;
@@ -595,7 +599,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // Convenience common pre-built types.
   static const TypeD *MAX;
   static const TypeD *MIN;
@@ -819,7 +823,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   virtual const Type* widen(const Type* t, const Type* limit_type) const;
   virtual const Type* narrow(const Type* t) const;
 
@@ -907,7 +911,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   virtual const Type* widen(const Type* t, const Type* limit_type) const;
   virtual const Type* narrow(const Type* t) const;
   // Convenience common pre-built types.
@@ -970,7 +974,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // Convenience common pre-built types.
   static const TypeTuple *IFBOTH;
   static const TypeTuple *IFFALSE;
@@ -1011,7 +1015,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   static const Type* meet_elem(const Type* elem_type1, const Type* elem_type2);
   static const Type* join_elem(const Type* elem_type1, const Type* elem_type2);
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
@@ -1047,7 +1051,7 @@ public:
   static const TypeVect* make(const BasicType elem_bt, uint length, bool is_mask = false);
   static const TypeVect* makemask(const BasicType elem_bt, uint length);
 
-  virtual const Type* xdual() const; // Compute dual right now
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   static const TypeVect* VECTA;
   static const TypeVect* VECTS;
@@ -1121,7 +1125,7 @@ public:
   bool eq(const Type* other) const;
   bool eq(ciInstanceKlass* k) const;
   uint hash() const;
-  const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   void dump(outputStream* st) const;
   const TypeInterfaces* union_with(const TypeInterfaces* other) const;
   const TypeInterfaces* intersection_with(const TypeInterfaces* other) const;
@@ -1255,7 +1259,7 @@ public:
   virtual const Type* xmeet_helper(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
   virtual const Type* xjoin_helper(const Type* t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   int meet_offset(int offset) const;
   int join_offset(int offset) const;
   int dual_offset() const;
@@ -1322,7 +1326,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // Convenience common pre-built types.
   static const TypeRawPtr *BOTTOM;
   static const TypeRawPtr *NOTNULL;
@@ -1472,7 +1476,7 @@ public:
 
   virtual const TypePtr* with_instance_id(int instance_id) const;
 
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   // the core of the computation of the meet for TypeOopPtr and for its subclasses
   virtual const Type* xmeet_helper(const Type* t) const;
   virtual const Type* xjoin_helper(const Type* t) const;
@@ -1599,7 +1603,7 @@ public:
   virtual const Type* xmeet_helper(const Type *t) const;
   virtual const TypeInstPtr* xmeet_unloaded(const TypeInstPtr *tinst, const TypeInterfaces* interfaces) const;
   virtual const Type* xjoin_helper(const Type *t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
@@ -1712,7 +1716,7 @@ public:
   // the core of the computation of the meet of 2 types
   virtual const Type* xmeet_helper(const Type* t) const;
   virtual const Type* xjoin_helper(const Type *t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   const TypeAryPtr* cast_to_stable(bool stable, int stable_dimension = 1) const;
   int stable_dimension() const;
@@ -1777,7 +1781,7 @@ public:
 
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   virtual intptr_t get_con() const;
 
@@ -1850,7 +1854,7 @@ public:
   virtual const TypePtr* add_offset(intptr_t offset) const { ShouldNotReachHere(); return nullptr; }
   virtual const Type*    xmeet(const Type* t)        const { ShouldNotReachHere(); return nullptr; }
   virtual const Type*    xjoin(const Type* t)        const { ShouldNotReachHere(); return nullptr; }
-  virtual const Type*    xdual()                     const { ShouldNotReachHere(); return nullptr; }
+  DEBUG_ONLY(virtual const Type* xdual()             const { ShouldNotReachHere(); return nullptr; })
 
   virtual intptr_t get_con() const;
 
@@ -1933,7 +1937,7 @@ public:
   virtual const TypePtr *add_offset( intptr_t offset ) const;
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
   virtual const TypeInstKlassPtr* with_offset(intptr_t offset) const;
 
   virtual const TypeKlassPtr* try_improve() const;
@@ -1996,7 +2000,7 @@ public:
   virtual const TypePtr* add_offset(intptr_t offset) const;
   virtual const Type* xmeet(const Type* t) const;
   virtual const Type* xjoin(const Type* t) const;
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   virtual const TypeAryKlassPtr* with_offset(intptr_t offset) const;
 
@@ -2033,7 +2037,7 @@ public:
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
 
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   virtual intptr_t get_con() const;
 
@@ -2166,7 +2170,7 @@ public:
   static const TypeFunc *make(ciSignature signature, const Type* extra);
   static const TypeFunc *make(const TypeTuple* domain, const TypeTuple* range);
 
-  virtual const Type* xdual() const;
+  DEBUG_ONLY(virtual const Type* xdual() const;)
 
   BasicType return_type() const;
 
