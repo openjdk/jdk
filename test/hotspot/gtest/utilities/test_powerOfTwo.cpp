@@ -23,11 +23,10 @@
 
 
 #include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "unittest.hpp"
-
-#include <type_traits>
 
 struct StaticTestIsPowerOf2Result {
   uint64_t _value;
