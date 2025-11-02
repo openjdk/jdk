@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.test.lib.net.SimpleSSLContext;
+import jdk.test.lib.net.URIBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+/*
+ * @test
+ * @bug 8326498 8361091
+ * @summary verify that the HttpClient does not leak connections when dealing with
+ *          sudden rush of HTTP/2 requests
+ * @modules java.net.http/jdk.internal.net.http:+open
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ *          java.net.http/jdk.internal.net.http.quic
+ *          java.net.http/jdk.internal.net.http.quic.packets
+ *          java.net.http/jdk.internal.net.http.quic.frames
+ *          java.net.http/jdk.internal.net.http.quic.streams
+ *          java.net.http/jdk.internal.net.http.http3.streams
+ *          java.net.http/jdk.internal.net.http.http3.frames
+ *          java.net.http/jdk.internal.net.http.http3
+ *          java.net.http/jdk.internal.net.http.qpack
+ *          java.net.http/jdk.internal.net.http.qpack.readers
+ *          java.net.http/jdk.internal.net.http.qpack.writers
+ *          java.logging
+ *          java.base/jdk.internal.net.quic
+ *          java.base/jdk.internal.util
+ *          java.base/sun.net.www.http
+ *          java.base/sun.net.www
+ *          java.base/sun.net
+ *
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2Handler
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier
+ * @run junit ${test.main.class}
+ */
+class BurstyRequestsTest {
+
+    private static final String HANDLER_PATH = "/8326498/";
+
+    private static Field openConnections; // jdk.internal.net.http.HttpClientImpl#openedConnections
+
+    private static SSLContext sslContext;
+    private static Http2TestServer h2server;
+
+    @BeforeAll
+    static void beforeAll() throws Exception {
+        openConnections = Class.forName("jdk.internal.net.http.HttpClientImpl")
+                .getDeclaredField("openedConnections");
+        openConnections.setAccessible(true);
+
+        sslContext = new SimpleSSLContext().get();
+        h2server = new Http2TestServer(true, sslContext);
+        h2server.setExchangeSupplier(new ExchangeSupplier());
+        h2server.addHandler(new Handler(), HANDLER_PATH);
+        h2server.start();
+        System.err.println("started HTTP/2 server " + h2server.getAddress());
+    }
+
+    @AfterAll
+    static void afterAll() {
+        if (h2server != null) {
+            System.err.println("stopping server " + h2server.getAddress());
+            h2server.stop();
+        }
+    }
+
+    /*
+     * Issues a burst of 100 HTTP/2 requests to the same server (host/port) and expects all of
+     * them to complete normally.
+     * Once these requests have completed, the test then peeks into an internal field of the
+     * HttpClientImpl to verify that the client is holding on to at most 1 connection.
+     */
+    @Test
+    void testOpenConnections() throws Exception {
+        final URI reqURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .host(h2server.getAddress().getAddress())
+                .port(h2server.getAddress().getPort())
+                .path(HANDLER_PATH)
+                .build();
+        final HttpRequest req = HttpRequest.newBuilder().uri(reqURI).build();
+
+        final int numRequests = 100;
+        // latch for the tasks to wait on, before issuing the requests
+        final CountDownLatch startLatch = new CountDownLatch(numRequests);
+        final List<Future<Void>> futures = new ArrayList<>();
+
+        try (final ExecutorService executor = Executors.newCachedThreadPool();
+             final HttpClient client = HttpClient.newBuilder()
+                     .sslContext(sslContext)
+                     .proxy(NO_PROXY)
+                     .version(HTTP_2)
+                     .build()) {
+            // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl,
+            // so we skip the test if the HttpClient isn't of the expected type
+            final Object clientImpl = reflectHttpClientImplInstance(client);
+            assumeTrue(clientImpl != null,
+                    "skipping test against HttpClient of type " + client.getClass().getName());
+
+            for (int i = 0; i < numRequests; i++) {
+                final Future<Void> f = executor.submit(new RequestIssuer(startLatch, client, req));
+                futures.add(f);
+            }
+            // wait for the requests to complete
+            for (final Future<Void> f : futures) {
+                f.get();
+            }
+
+            // all requests are done, now verify that the current open TCP connections
+            // is not more than 1.
+            final Set<?> currentOpenConns = (Set<?>) openConnections.get(clientImpl);
+            System.err.println("current open connections: " + currentOpenConns);
+            final int size = currentOpenConns.size();
+            // we expect at most 1 connection will stay open
+            assertTrue((size == 0 || size == 1),
+                    "unexpected number of current open connections: " + size);
+        }
+    }
+
+    // using reflection, return the jdk.internal.net.http.HttpClientImpl instance held
+    // by the given client
+    private static Object reflectHttpClientImplInstance(final HttpClient client) throws Exception {
+        if (!client.getClass().getName().equals("jdk.internal.net.http.HttpClientFacade")) {
+            return null;
+        }
+        final Field implField = client.getClass().getDeclaredField("impl");
+        implField.setAccessible(true);
+        final Object clientImpl = implField.get(client);
+        if (clientImpl == null) {
+            return null;
+        }
+        if (!clientImpl.getClass().getName().equals("jdk.internal.net.http.HttpClientImpl")) {
+            return null;
+        }
+        return clientImpl; // the expected HttpClientImpl instance
+    }
+
+    private static final class RequestIssuer implements Callable<Void> {
+        private final CountDownLatch startLatch;
+        private final HttpClient client;
+        private final HttpRequest request;
+
+        private RequestIssuer(final CountDownLatch startLatch, final HttpClient client,
+                              final HttpRequest request) {
+            this.startLatch = startLatch;
+            this.client = client;
+            this.request = request;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            this.startLatch.countDown(); // announce our arrival
+            this.startLatch.await(); // wait for other threads to arrive
+            // issue the request
+            final HttpResponse<Void> resp = this.client.send(request, BodyHandlers.discarding());
+            if (resp.statusCode() != 200) {
+                throw new AssertionError("unexpected response status code: " + resp.statusCode());
+            }
+            return null;
+        }
+    }
+
+    private static final class Handler implements Http2Handler {
+        private static final int NO_RESP_BODY = -1;
+
+        @Override
+        public void handle(final Http2TestExchange exchange) throws IOException {
+            System.err.println("handling request " + exchange.getRequestURI());
+            exchange.sendResponseHeaders(200, NO_RESP_BODY);
+        }
+    }
+
+    private static final class ExchangeSupplier implements Http2TestExchangeSupplier {
+
+        @Override
+        public Http2TestExchange get(int streamid, String method, HttpHeaders reqheaders,
+                                     HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is,
+                                     SSLSession sslSession, BodyOutputStream os,
+                                     Http2TestServerConnection conn, boolean pushAllowed) {
+            // don't close the connection when/if the client sends a GOAWAY
+            conn.closeConnOnIncomingGoAway = false;
+            return Http2TestExchangeSupplier.ofDefault().get(streamid, method, reqheaders,
+                    rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
+        }
+    }
+}
