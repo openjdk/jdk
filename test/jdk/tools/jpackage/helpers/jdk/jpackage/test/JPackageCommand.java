@@ -376,7 +376,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return cmd;
     }
 
-    public static Path createInputRuntimeImage() throws IOException {
+    public static Path createInputRuntimeImage() {
 
         final Path runtimeImageDir;
 
@@ -406,7 +406,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setDefaultAppName() {
-        return addArguments("--name", TKit.getCurrentDefaultAppName());
+        return setArgumentValue("--name", TKit.getCurrentDefaultAppName());
     }
 
     /**
