@@ -1424,7 +1424,7 @@ Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Ty
   bool require_atomic_access = (op == Op_StoreL && ((StoreLNode*)this)->require_atomic_access()) ||
                                (op == Op_StoreD && ((StoreDNode*)this)->require_atomic_access());
   StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                                  raw_adr_type(), val, bt, _mo, require_atomic_access);
+                                  val, bt, _mo, require_atomic_access);
 
   bool is_mismatched = is_mismatched_access();
   const TypeRawPtr* raw_type = gvn.type(in(MemNode::Memory))->isa_rawptr();
@@ -2687,9 +2687,10 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 //---------------------------StoreNode::make-----------------------------------
 // Polymorphic factory method:
-StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
+StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, Node* val, BasicType bt, MemOrd mo, bool require_atomic_access) {
   assert((mo == unordered || mo == release), "unexpected");
   Compile* C = gvn.C;
+  const TypePtr* adr_type = gvn.type(adr)->isa_ptr();
   assert(C->get_alias_index(adr_type) != Compile::AliasIdxRaw ||
          ctl != nullptr, "raw memory operations should have control edge");
 
@@ -3333,8 +3334,6 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   Node* first_mem   = first_store->in(MemNode::Memory);
   Node* first_adr   = first_store->in(MemNode::Address);
 
-  const TypePtr* new_adr_type = _store->adr_type();
-
   int new_memory_size = _store->memory_size() * merge_list.size();
   BasicType bt = T_ILLEGAL;
   switch (new_memory_size) {
@@ -3344,7 +3343,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   }
 
   StoreNode* merged_store = StoreNode::make(*_phase, last_ctrl, first_mem, first_adr,
-                                            new_adr_type, merged_input_value, bt, MemNode::unordered);
+                                            merged_input_value, bt, MemNode::unordered);
 
   // Marking the store mismatched is sufficient to prevent reordering, since array stores
   // are all on the same slice. Hence, we need no barriers.
@@ -3910,10 +3909,9 @@ const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 
 //=============================================================================
 //----------------------------------LoadStoreNode------------------------------
-LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const TypePtr* at, const Type* rt, uint required )
+LoadStoreNode::LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Type* rt, uint required )
   : Node(required),
     _type(rt),
-    _adr_type(at),
     _barrier_data(0)
 {
   init_req(MemNode::Control, c  );
@@ -3997,7 +3995,7 @@ uint LoadStoreNode::size_of() const { return sizeof(*this); }
 
 //=============================================================================
 //----------------------------------LoadStoreConditionalNode--------------------
-LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, nullptr, TypeInt::BOOL, 5) {
+LoadStoreConditionalNode::LoadStoreConditionalNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex ) : LoadStoreNode(c, mem, adr, val, TypeInt::BOOL, 5) {
   init_req(ExpectedIn, ex );
 }
 
@@ -4119,8 +4117,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   if ((offset % unit) != 0) {
     Node* adr = new AddPNode(dest, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
+    mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     offset += BytesPerInt;
   }
@@ -4178,8 +4175,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   if (done_offset < end_offset) { // emit the final 32-bit store
     Node* adr = new AddPNode(dest, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
+    mem = StoreNode::make(*phase, ctl, mem, adr, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     done_offset += BytesPerInt;
   }
@@ -5178,7 +5174,6 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
 
     Node* ctl = old->in(MemNode::Control);
     Node* adr = make_raw_address(offset, phase);
-    const TypePtr* atp = TypeRawPtr::BOTTOM;
 
     // One or two coalesced stores to plop down.
     Node*    st[2];
@@ -5187,14 +5182,14 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
     if (!split) {
       ++new_long;
       off[nst] = offset;
-      st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+      st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                   phase->longcon(con), T_LONG, MemNode::unordered);
     } else {
       // Omit either if it is a zero.
       if (con0 != 0) {
         ++new_int;
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                     phase->intcon(con0), T_INT, MemNode::unordered);
       }
       if (con1 != 0) {
@@ -5202,7 +5197,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
         offset += BytesPerInt;
         adr = make_raw_address(offset, phase);
         off[nst]  = offset;
-        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
+        st[nst++] = StoreNode::make(*phase, ctl, zmem, adr,
                                     phase->intcon(con1), T_INT, MemNode::unordered);
       }
     }

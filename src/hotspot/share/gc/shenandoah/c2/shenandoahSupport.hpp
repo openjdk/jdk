@@ -185,12 +185,12 @@ public:
 
 class ShenandoahCompareAndExchangePNode : public CompareAndExchangePNode {
 public:
-  ShenandoahCompareAndExchangePNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord)
-    : CompareAndExchangePNode(c, mem, adr, val, ex, at, t, mem_ord) { }
+  ShenandoahCompareAndExchangePNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex, const Type* t, MemNode::MemOrd mem_ord)
+    : CompareAndExchangePNode(c, mem, adr, val, ex, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypePtr::NULL_PTR) {
-      return new CompareAndExchangePNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
+      return new CompareAndExchangePNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), bottom_type(), order());
     }
     return nullptr;
   }
@@ -200,12 +200,12 @@ public:
 
 class ShenandoahCompareAndExchangeNNode : public CompareAndExchangeNNode {
 public:
-  ShenandoahCompareAndExchangeNNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex, const TypePtr* at, const Type* t, MemNode::MemOrd mem_ord)
-    : CompareAndExchangeNNode(c, mem, adr, val, ex, at, t, mem_ord) { }
+  ShenandoahCompareAndExchangeNNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex, const Type* t, MemNode::MemOrd mem_ord)
+    : CompareAndExchangeNNode(c, mem, adr, val, ex, t, mem_ord) { }
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(ExpectedIn) != nullptr && phase->type(in(ExpectedIn)) == TypeNarrowOop::NULL_PTR) {
-      return new CompareAndExchangeNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), adr_type(), bottom_type(), order());
+      return new CompareAndExchangeNNode(in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address), in(MemNode::ValueIn), in(ExpectedIn), bottom_type(), order());
     }
     return nullptr;
   }

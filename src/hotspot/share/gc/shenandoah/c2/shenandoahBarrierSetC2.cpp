@@ -559,7 +559,6 @@ const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
 Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
-  const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
@@ -576,8 +575,8 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
-
-    uint adr_idx = kit->C->get_alias_index(adr_type);
+    PhaseGVN& gvn = kit->gvn();
+    uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->is_ptr());
     assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
     shenandoah_write_barrier_pre(kit, true /* do_load */, /*kit->control(),*/ access.base(), adr, adr_idx, val.node(),
                                  static_cast<const TypeOopPtr*>(val.type()), nullptr /* pre_val */, access.type());
@@ -677,7 +676,6 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
     MemNode::MemOrd mo = access.mem_node_mo();
     Node* mem = access.memory();
     Node* adr = access.addr().node();
-    const TypePtr* adr_type = access.addr().type();
     Node* load_store = nullptr;
 
 #ifdef _LP64
@@ -685,17 +683,17 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
       Node *oldval_enc = kit->gvn().transform(new EncodePNode(expected_val, expected_val->bottom_type()->make_narrowoop()));
       if (ShenandoahCASBarrier) {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, value_type->make_narrowoop(), mo));
       } else {
-        load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, adr_type, value_type->make_narrowoop(), mo));
+        load_store = kit->gvn().transform(new CompareAndExchangeNNode(kit->control(), mem, adr, newval_enc, oldval_enc, value_type->make_narrowoop(), mo));
       }
     } else
 #endif
     {
       if (ShenandoahCASBarrier) {
-        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+        load_store = kit->gvn().transform(new ShenandoahCompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, value_type->is_oopptr(), mo));
       } else {
-        load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, adr_type, value_type->is_oopptr(), mo));
+        load_store = kit->gvn().transform(new CompareAndExchangePNode(kit->control(), mem, adr, new_val, expected_val, value_type->is_oopptr(), mo));
       }
     }
 

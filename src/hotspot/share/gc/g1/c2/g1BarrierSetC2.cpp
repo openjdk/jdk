@@ -477,9 +477,10 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
     return G1C2BarrierPre | G1C2BarrierPost;
   }
   GraphKit* kit = (static_cast<C2ParseAccess&>(access)).kit();
+  PhaseGVN& gvn = kit->gvn();
   Node* ctl = kit->control();
   Node* adr = access.addr().node();
-  uint adr_idx = kit->C->get_alias_index(access.addr().type());
+  uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->is_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
 
   bool can_remove_pre_barrier = g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx);
