@@ -41,6 +41,7 @@
 #include "opto/macro.hpp"
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
@@ -192,7 +193,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
     assert(pre_val->bottom_type()->basic_type() == T_OBJECT, "or we shouldn't be here");
   }
   assert(bt == T_OBJECT, "or we shouldn't be here");
-
+  PhaseGVN& gvn = kit->gvn();
   IdealKit ideal(kit, true);
 
   Node* tls = __ thread(); // ThreadLocalStorage
@@ -215,7 +216,8 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   // Now some of the values
   Node* marking;
   Node* gc_state = __ AddP(no_base, tls, __ ConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset())));
-  Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE);
+  assert(kit->C->get_alias_index(gvn.type(gc_state)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
+  Node *ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE);
   marking = __ AndI(ld, __ ConI(ShenandoahHeap::MARKING));
   assert(ShenandoahBarrierC2Support::is_gc_state_load(ld), "Should match the shape");
 
@@ -223,6 +225,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
     assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading Shenandoah SATBMarkQueue::_index with wrong size.");
+    assert(kit->C->get_alias_index(gvn.type(index_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt);
 
     if (do_load) {
@@ -233,6 +236,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
     // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
+      assert(kit->C->get_alias_index(gvn.type(buffer_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
       Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
       // is the queue for this thread full?
@@ -243,8 +247,10 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
         // Now get the buffer location we will log the previous value into and store it
         Node *log_addr = __ AddP(no_base, buffer, next_index);
+        assert(kit->C->get_alias_index(gvn.type(log_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
         __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, MemNode::unordered);
         // update the index
+        assert(kit->C->get_alias_index(gvn.type(index_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
         __ store(__ ctrl(), index_adr, next_index, index_bt, MemNode::unordered);
 
       } __ else_(); {
@@ -472,7 +478,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
   }
   // (Else it's an array (or unknown), and we want more precise card marks.)
   assert(adr != nullptr, "");
-
+  PhaseGVN& gvn = kit->gvn();
   IdealKit ideal(kit, true);
 
   Node* tls = __ thread(); // ThreadLocalStorage
@@ -482,6 +488,8 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   Node* curr_ct_holder_offset = __ ConX(in_bytes(ShenandoahThreadLocalData::card_table_offset()));
   Node* curr_ct_holder_addr  = __ AddP(__ top(), tls, curr_ct_holder_offset);
+
+  assert(kit->C->get_alias_index(gvn.type(curr_ct_holder_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   Node* curr_ct_base_addr = __ load( __ ctrl(), curr_ct_holder_addr, TypeRawPtr::NOTNULL, T_ADDRESS);
 
   // Divide by card size
@@ -492,6 +500,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   Node*   zero = __ ConI(0); // Dirty card value
 
+  assert(kit->C->get_alias_index(gvn.type(card_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately
@@ -576,7 +585,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
     GraphKit* kit = parse_access.kit();
     PhaseGVN& gvn = kit->gvn();
-    uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->is_ptr());
+    uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->isa_ptr());
     assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
     shenandoah_write_barrier_pre(kit, true /* do_load */, /*kit->control(),*/ access.base(), adr, adr_idx, val.node(),
                                  static_cast<const TypeOopPtr*>(val.type()), nullptr /* pre_val */, access.type());

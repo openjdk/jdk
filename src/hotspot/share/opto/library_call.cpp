@@ -3057,6 +3057,8 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
   Node* ONE = ideal.ConI(1);
   Node* hide = is_start ? ideal.ConI(0) : (is_end ? ideal.ConI(1) : _gvn.transform(argument(1)));
   Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
+
+  assert(C->get_alias_index(gvn().type(addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
@@ -3139,9 +3141,13 @@ bool LibraryCallKit::inline_native_classID() {
 
   __ if_then(kls, BoolTest::ne, null()); {
     Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+
+    assert(C->get_alias_index(gvn().type(kls_trace_id_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG);
 
     Node* epoch_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_address()));
+
+    assert(C->get_alias_index(gvn().type(epoch_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN);
     epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
     Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
@@ -3167,6 +3173,8 @@ bool LibraryCallKit::inline_native_classID() {
                                                    TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
     __ if_then(array_kls, BoolTest::ne, null()); {
       Node* array_kls_trace_id_addr = basic_plus_adr(array_kls, in_bytes(KLASS_TRACE_ID_OFFSET));
+
+      assert(C->get_alias_index(gvn().type(array_kls_trace_id_addr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
       Node* array_kls_trace_id_raw = ideal.load(ideal.ctrl(), array_kls_trace_id_addr, TypeLong::LONG, T_LONG);
       Node* array_kls_trace_id = _gvn.transform(new URShiftLNode(array_kls_trace_id_raw, ideal.ConI(TRACE_ID_SHIFT)));
       ideal.set(result, _gvn.transform(new AddLNode(array_kls_trace_id, longcon(1))));
@@ -3176,8 +3184,11 @@ bool LibraryCallKit::inline_native_classID() {
     } __ end_if();
 
     Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
+
+    assert(C->get_alias_index(gvn().type(signaled_flag_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, true, MemNode::acquire);
     __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
+      assert(C->get_alias_index(gvn().type(signaled_flag_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
       ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, MemNode::release, true);
     } __ end_if();
   } __ end_if();

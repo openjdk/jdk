@@ -94,6 +94,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   // Dirty card value to store
   Node* dirty = __ ConI(CardTable::dirty_card_val());
 
+  assert(kit->C->get_alias_index(kit->gvn().type(card_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   if (UseCondCardMark) {
     // The classic GC reference write barrier is typically implemented
     // as a store into the global card mark table.  Unfortunately

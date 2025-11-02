@@ -159,7 +159,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     Node* ctl = opt_access.ctl();
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
-    int alias = gvn.C->get_alias_index(gvn.type(adr)->is_ptr());
+    int alias = gvn.C->get_alias_index(gvn.type(adr)->isa_ptr());
     Node* mem = mm->memory_at(alias);
 
     StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), val.node(), bt, mo, requires_atomic_access);
@@ -220,7 +220,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? opt_access.ctl() : nullptr;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
-    Node* mem = mm->memory_at(gvn.C->get_alias_index(gvn.type(adr)->is_ptr()));
+    Node* mem = mm->memory_at(gvn.C->get_alias_index(gvn.type(adr)->isa_ptr()));
     load = LoadNode::make(gvn, control, mem, adr, val_type, access.type(), mo, dep,
                           requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);

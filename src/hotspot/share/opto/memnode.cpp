@@ -5179,6 +5179,8 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
     Node*    st[2];
     intptr_t off[2];
     int  nst = 0;
+
+    assert(phase->C->get_alias_index(phase->type(adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     if (!split) {
       ++new_long;
       off[nst] = offset;
