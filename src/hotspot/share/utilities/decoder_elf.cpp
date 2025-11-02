@@ -77,6 +77,13 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
     return false;
   }
 
+  // Do not find source file and line number if the function in vDSO.
+  // See vDSO(7) manpage to check vDSO names in each architectures.
+  if (strcmp(filepath, "linux-vdso.so.1") == 0 /* aarch64, x86-64, riscv */ ||
+      strcmp(filepath, "linux-vdso64.so.1") == 0 /* ppc/64, s390x */ ) {
+    return false;
+  }
+
   const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
 
   ElfFile* file = get_elf_file(filepath);
