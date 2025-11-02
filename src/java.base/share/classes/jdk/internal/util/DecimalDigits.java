@@ -456,10 +456,11 @@ public final class DecimalDigits {
      *
      * @param buf the {@code StringBuilder} to append to.
      * @param v the {@code int} value (should be between 0 and 99 inclusive).
-     * @see jdk.internal.access.JavaLangAccess#appendPair(StringBuilder, int)
+     * @see jdk.internal.access.JavaLangAccess#append(StringBuilder, char c1, char c2)
      */
     public static void appendPair(StringBuilder buf, int v) {
+        int packed = DIGITS[v & 0x7f];
         SharedSecrets.getJavaLangAccess()
-                     .appendPair(buf, v);
+                     .appendLatin1(buf, (char) (packed & 0xFF), (char) (packed >> 8));
     }
 }

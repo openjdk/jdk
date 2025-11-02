@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
 
 import java.nio.CharBuffer;
@@ -906,28 +907,19 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return this;
     }
 
-    /**
-     * Appends the two-digit string representation of the {@code int}
-     * argument to this sequence.
-     * <p>
-     * The integer {@code i} is formatted as two decimal digits.
-     * If the value is between 0 and 9, it is formatted with a leading zero
-     * (e.g., 5 becomes "05"). If the value is outside the range 0-99,
-     * the behavior is unspecified and may result in unexpected output.
-     *
-     * @param   i   an {@code int} (should be between 0 and 99 inclusive).
-     * @throws  IndexOutOfBoundsException if {@code i} is outside the range 0-99.
-     */
-    void appendPair(int i) {
-        byte coder = this.coder;
+    void appendLatin1(char c1, char c2) {
+        assert !isLatin1(StringLatin1.coderFromChar((char) (c1 | c2))) : "must be latin1";
+
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
         if (isLatin1(coder)) {
-            DecimalDigits.uncheckedPutPairLatin1(value, count, i);
+            Unsafe unsafe = Unsafe.getUnsafe();
+            unsafe.putChar(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + count, c1);
+            unsafe.putChar(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + count + 1, c2);
         } else {
-            DecimalDigits.uncheckedPutPairUTF16(value, count, i);
+            StringUTF16.putChar(value, count, c1);
+            StringUTF16.putChar(value, count + 1, c2);
         }
-        this.value = value;
         this.count = count + 2;
     }
 
