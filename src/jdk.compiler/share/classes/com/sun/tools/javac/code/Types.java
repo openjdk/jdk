@@ -1346,7 +1346,8 @@ public class Types {
          * Type-equality relation - type variables are considered
          * equals if they share the same object identity.
          */
-        TypeRelation isSameTypeVisitor = new TypeRelation() {
+        SameTypeVisitor isSameTypeVisitor = new SameTypeVisitor();
+        class SameTypeVisitor extends TypeRelation {
 
             public Boolean visitType(Type t, Type s) {
                 if (t.equalsIgnoreMetadata(s))
@@ -1385,8 +1386,12 @@ public class Types {
                 } else {
                     WildcardType t2 = (WildcardType)s;
                     return (t.kind == t2.kind || (t.isExtendsBound() && s.isExtendsBound())) &&
-                            isSameType(t.type, t2.type);
+                            sameTypeComparator(t.type, t2.type);
                 }
+            }
+
+            boolean sameTypeComparator(Type t, Type s) {
+                return isSameType(t, s);
             }
 
             @Override
@@ -1419,7 +1424,11 @@ public class Types {
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())
-                    && containsTypeEquivalent(t.getTypeArguments(), s.getTypeArguments());
+                    && sameTypeArguments(t.getTypeArguments(), s.getTypeArguments());
+            }
+
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                return containsTypeEquivalent(ts, ss);
             }
 
             @Override
@@ -3862,7 +3871,7 @@ public class Types {
     // where
         class TypePair {
             final Type t1;
-            final Type t2;;
+            final Type t2;
 
             TypePair(Type t1, Type t2) {
                 this.t1 = t1;
@@ -3875,10 +3884,27 @@ public class Types {
             @Override
             public boolean equals(Object obj) {
                 return (obj instanceof TypePair typePair)
-                        && isSameType(t1, typePair.t1)
-                        && isSameType(t2, typePair.t2);
+                        && exactTypeVisitor.visit(t1, typePair.t1)
+                        && exactTypeVisitor.visit(t2, typePair.t2);
             }
         }
+        SameTypeVisitor exactTypeVisitor = new SameTypeVisitor() {
+            @Override
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                while (ts.nonEmpty() && ss.nonEmpty()
+                        && exactTypeVisitor.visit(ts.head, ss.head)) {
+                    ts = ts.tail;
+                    ss = ss.tail;
+                }
+                return ts.isEmpty() && ss.isEmpty();
+            }
+
+            @Override
+            boolean sameTypeComparator(Type t, Type s) {
+                return exactTypeVisitor.visit(t, s);
+            }
+        };
+
         Set<TypePair> mergeCache = new HashSet<>();
         private Type merge(Type c1, Type c2) {
             ClassType class1 = (ClassType) c1;
