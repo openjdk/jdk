@@ -394,10 +394,10 @@ public interface JavaLangAccess {
      * the behavior is unspecified.
      *
      * @param buf the {@code StringBuilder} to append to.
-     * @param v the {@code int} value (should be between 0 and 99 inclusive).
-     * @see jdk.internal.util.DecimalDigits#appendPair(StringBuilder, int)
+     * @param c1 the first char to append.
+     * @param c2 the second char to append.
      */
-    void appendPair(StringBuilder buf, int v);
+    void append(StringBuilder buf, char c1, char c2);
 
     /**
      * {@return the sequence of bytes obtained by encoding the given string in UTF-8}

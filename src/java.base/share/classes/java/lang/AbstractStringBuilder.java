@@ -906,6 +906,25 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return this;
     }
 
+    void append(char c1, char c2) {
+        byte coder = this.coder;
+        int count = this.count;
+        byte[] value = this.value;
+        byte newCoder = (byte) (coder | StringLatin1.coderFromChar(c1) | StringLatin1.coderFromChar(c2));
+        if (needsNewBuffer(value, coder, count + 2, newCoder)) {
+            this.value = value = ensureCapacityNewCoder(value, coder, count, count + 2, newCoder);
+            this.coder = coder = newCoder;
+        }
+        if (isLatin1(coder)) {
+            value[count] = (byte) c1;
+            value[count + 1] = (byte) c2;
+        } else {
+            StringUTF16.putChar(value, count, c1);
+            StringUTF16.putChar(value, count + 1, c2);
+        }
+        this.count = count + 2;
+    }
+
     /**
      * Appends the two-digit string representation of the {@code int}
      * argument to this sequence.
