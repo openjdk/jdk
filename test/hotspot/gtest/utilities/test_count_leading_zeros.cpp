@@ -22,11 +22,11 @@
  *
  */
 
+#include "cppstdlib/limits.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
-#include <limits>
 #include <type_traits>
 
 template <typename T> void one_or_two_set_bits() {
