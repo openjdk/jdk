@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 #ifndef SHARE_GC_SHARED_BUFFERNODE_HPP
 #define SHARE_GC_SHARED_BUFFERNODE_HPP
 
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/freeListAllocator.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/macros.hpp"
-
-#include <limits>
 
 class BufferNode {
   using InternalSizeType = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);

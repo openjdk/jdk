@@ -27,6 +27,7 @@
 
 #include "utilities/concurrentHashTable.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
@@ -36,8 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
-
-#include <type_traits>
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/oopStorage.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
@@ -34,8 +35,6 @@
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // Array of all active blocks.  Refcounted for lock-free reclaim of
 // old array when a new array is allocated for expansion.

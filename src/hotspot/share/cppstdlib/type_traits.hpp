@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,25 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_INTPOW_HPP
-#define SHARE_UTILITIES_INTPOW_HPP
+#ifndef SHARE_CPPSTDLIB_TYPE_TRAITS_HPP
+#define SHARE_CPPSTDLIB_TYPE_TRAITS_HPP
 
-#include "cppstdlib/limits.hpp"
-#include "cppstdlib/type_traits.hpp"
-#include "metaprogramming/enableIf.hpp"
+#include "utilities/compilerWarnings.hpp"
 
-// Raise v to the power p mod 2**N, where N is the width of the type T.
-template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>
-static constexpr T intpow(T v, unsigned p) {
-  if (p == 0) {
-    return 1;
-  }
+// HotSpot usage for <type_traits>:
+// * Use the `alignof` operator instead of `std::alignment_of<>`.
+// * Do not use `std::aligned_storage<>` or `std::aligned_union<>`. These are
+//   deprecated in C++23, with the rationale that the `alignas` operator
+//   provides a better mechanism for accomplishing the same task.
+//
+// Other than the above, no restrictions on the facilities in this header.
 
-  // We use exponentiation by squaring to calculate the required power.
-  T a = intpow(v, p / 2);
-  T b = (p % 2) ? v : 1;
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+#include "utilities/vmassert_uninstall.hpp"
 
-  return a * a * b;
-}
+#include <type_traits>
 
-#endif // SHARE_UTILITIES_INTPOW_HPP
+#include "utilities/vmassert_reinstall.hpp" // don't reorder
+END_ALLOW_FORBIDDEN_FUNCTIONS
+
+#endif // SHARE_CPPSTDLIB_TYPE_TRAITS_HPP
