@@ -33,27 +33,27 @@ import java.net.http.HttpRequest;
 
 public class RequestBuilderNullBodyTest {
 
-	public static void main(String[] args) {
-		test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
-			.POST(null)
-			.build(), "POST");
-		test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
-			.PUT(null)
-			.build(), "PUT");
-		test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
-			.method("PATCH", null)
-			.build(), "method");
-	}
+    public static void main(String[] args) {
+        test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
+            .POST(null)
+            .build(), "POST");
+        test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
+            .PUT(null)
+            .build(), "PUT");
+        test(() -> HttpRequest.newBuilder(URI.create("https://example.com"))
+            .method("PATCH", null)
+            .build(), "method");
+    }
 
-	private static void test(Runnable r, String label) {
-		try {
-			r.run();
-			throw new AssertionError(label + " should have thrown NullPointerException");
-		} catch (NullPointerException e) {
-			if (e.getMessage() == null || !e.getMessage().contains("BodyPublisher")) {
-				throw new AssertionError(label + " NPE message missing or incorrect: " + e.getMessage());
-			}
-			System.out.println(label + " threw expected NPE with message: " + e.getMessage());
-		}
-	}
+    private static void test(Runnable r, String label) {
+        try {
+            r.run();
+            throw new AssertionError(label + " should have thrown NullPointerException");
+        } catch (NullPointerException e) {
+            if (e.getMessage() == null || !e.getMessage().contains("BodyPublisher")) {
+                throw new AssertionError(label + " NPE message missing or incorrect: " + e.getMessage());
+            }
+            System.out.println(label + " threw expected NPE with message: " + e.getMessage());
+        }
+    }
 }
