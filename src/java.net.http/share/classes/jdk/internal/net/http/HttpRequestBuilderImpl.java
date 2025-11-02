@@ -203,7 +203,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder POST(BodyPublisher body) {
-        return method0("POST", requireNonNull(body));
+        return method0("POST", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
@@ -218,7 +218,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder PUT(BodyPublisher body) {
-        return method0("PUT", requireNonNull(body));
+        return method0("PUT", requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     @Override
@@ -234,7 +234,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
                     .replace("\r", "\\r")
                     .replace("\t", "\\t")
                     + "\"");
-        return method0(method, requireNonNull(body));
+        return method0(method, requireNonNull(body, "BodyPublisher must be non-null"));
     }
 
     private HttpRequest.Builder method0(String method, BodyPublisher body) {
