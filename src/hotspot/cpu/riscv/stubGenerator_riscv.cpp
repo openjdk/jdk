@@ -2607,7 +2607,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void increase_counter_128(Register counter, Register tmp1, Register tmp2) {
+  void be_inc_counter_128(Register counter, Register tmp1, Register tmp2) {
     __ ld(tmp1, Address(counter, 8));  // load low 64-bit from counter
     __ rev8(tmp1, tmp1);               // change to little endian for add
     __ addi(tmp1, tmp1, 1);
@@ -2654,14 +2654,14 @@ class StubGenerator: public StubCodeGenerator {
     const Register saved_encrypted_ctr = c_rarg5;
     const Register used_ptr            = c_rarg6;
 
-    const Register keylen              = x31;
-    const Register used                = x30;
-    const Register len                 = x29;
-    const Register tmp1                = x28;
-    const Register tmp2                = t1;
-    const Register blk_size            = t2;
+    const Register keylen              = x28;
+    const Register used                = x29;
+    const Register len                 = x30;
+    const Register block_size          = x31;
+    const Register tmp1                = t1;
+    const Register tmp2                = t2;
 
-    const unsigned char block_size = 16;
+    const int BLOCK_SIZE = 16;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -2679,7 +2679,7 @@ class StubGenerator: public StubCodeGenerator {
     //   generate_aes_loadkeys();
     //
     //   L_encrypt_next:
-    //     while (used < block_size) {
+    //     while (used < BLOCK_SIZE) {
     //       if (len == 0) goto L_exit;
     //       out[outOff++] = (byte)(in[inOff++] ^ saved_encrypted_ctr[used++]);
     //       len--;
@@ -2688,7 +2688,7 @@ class StubGenerator: public StubCodeGenerator {
     //   L_main:
     //     saved_encrypted_ctr = aes_encrypt(counter);
     //     increase_counter(counter);
-    //     if (len < block_size) {
+    //     if (len < BLOCK_SIZE) {
     //       used = 0;
     //       goto L_encrypt_next;
     //     }
@@ -2696,9 +2696,9 @@ class StubGenerator: public StubCodeGenerator {
     //     v_out = load_16Byte(out);
     //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
     //     v_out = v_in ^ v_saved_encrypted_ctr;
-    //     out += block_size;
-    //     in += block_size;
-    //     len -= block_size;
+    //     out += BLOCK_SIZE;
+    //     in += BLOCK_SIZE;
+    //     len -= BLOCK_SIZE;
     //     goto L_main;
     // }
     //
@@ -2709,7 +2709,7 @@ class StubGenerator: public StubCodeGenerator {
     __ lw(used, Address(used_ptr));
     __ beqz(input_len, L_exit);
     __ mv(len, input_len);
-    __ mv(blk_size, block_size);
+    __ mv(block_size, BLOCK_SIZE);
 
     Label L_aes128_loadkeys, L_aes192_loadkeys, L_exit_loadkeys;
     // Compute #rounds for AES based on the length of the key array
@@ -2735,7 +2735,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Encrypt bytes left with last encryptedCounter
     __ bind(L_next);
-    __ bge(used, blk_size, L_main);
+    __ bge(used, block_size, L_main);
 
     __ bind(L_encrypt_next);
     __ add(tmp1, saved_encrypted_ctr, used);
@@ -2773,18 +2773,18 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(used, 0);
 
     // Increase counter
-    increase_counter_128(counter, tmp1, tmp2);
+    be_inc_counter_128(counter, tmp1, tmp2);
 
     __ beqz(len, L_exit);
 
-    __ blt(len, blk_size, L_encrypt_next);
+    __ blt(len, block_size, L_encrypt_next);
 
     __ vle32_v(v17, in);
     __ vxor_vv(v16, v16, v17);
     __ vse32_v(v16, out);
-    __ add(out, out, blk_size);
-    __ add(in, in, blk_size);
-    __ sub(len, len, blk_size);
+    __ add(out, out, block_size);
+    __ add(in, in, block_size);
+    __ sub(len, len, block_size);
     __ j(L_main);
 
     __ bind(L_exit);
