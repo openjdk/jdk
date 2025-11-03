@@ -1417,21 +1417,6 @@ private:
     return res->as_NarrowMemProj();
   }
 
-  // Same but with default iterator
-  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(Callback callback) const;
-  // Same but only for NarrowMem proj whose adr_type matches
-  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
-
-  // Run callback on all NarrowMem proj uses using passed iterator
-  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
-    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
-  }
-
-  template <class Callback> NarrowMemProjNode* apply_to_narrow_mem_projs_with_new_uses(Callback callback) const {
-    DUIterator i = outs();
-    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
-  }
-
 public:
 
   template <class Callback> void for_each_narrow_mem_proj_with_new_uses(Callback callback) const {
@@ -1439,7 +1424,8 @@ public:
       callback(proj);
       return MultiNode::CONTINUE;
     };
-    apply_to_narrow_mem_projs_with_new_uses(callback_always_continue);
+    DUIterator i = outs();
+    apply_to_narrow_mem_projs_any_iterator(UsesIterator(i, this), callback_always_continue);
   }
 };
 

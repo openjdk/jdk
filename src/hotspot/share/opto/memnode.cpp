@@ -5467,27 +5467,15 @@ void InitializeNode::replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn) {
   apply_to_projs(imax, i, replace_proj, TypeFunc::Memory);
 }
 
-template <class Callback> NarrowMemProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback) const {
-  DUIterator_Fast imax, i = fast_outs(imax);
-  return apply_to_narrow_mem_projs_any_iterator(UsesIteratorFast(imax, i, this), callback);
-}
-
-
-template<class Callback> NarrowMemProjNode* InitializeNode::apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const {
-  auto filter = [&](NarrowMemProjNode* proj) {
-    if (proj->adr_type() == adr_type && callback(proj->as_NarrowMemProj()) == BREAK_AND_RETURN_CURRENT_PROJ) {
+bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
+  auto find_proj = [&](ProjNode* proj) {
+    if (proj->adr_type() == adr_type) {
       return BREAK_AND_RETURN_CURRENT_PROJ;
     }
     return CONTINUE;
   };
-  return apply_to_narrow_mem_projs(filter);
-}
-
-bool InitializeNode::already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const {
-  auto find_proj = [](ProjNode* proj) {
-    return BREAK_AND_RETURN_CURRENT_PROJ;
-  };
-  return apply_to_narrow_mem_projs(find_proj, adr_type) != nullptr;
+  DUIterator_Fast imax, i = fast_outs(imax);
+  return apply_to_narrow_mem_projs_any_iterator(UsesIteratorFast(imax, i, this), find_proj) != nullptr;
 }
 
 MachProjNode* InitializeNode::mem_mach_proj() const {

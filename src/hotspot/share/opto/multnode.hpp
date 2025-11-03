@@ -111,27 +111,15 @@ protected:
     }
     return nullptr;
   }
-public:
   enum ApplyToProjs {
     CONTINUE,
     BREAK_AND_RETURN_CURRENT_PROJ
   };
 
   // Run callback on projections with iterator passed as argument
-  template<class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
-    return apply_to_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
-  }
-
-  // Same but with default iterator
-  template<class Callback> ProjNode* apply_to_projs(Callback callback) const {
-    DUIterator_Fast imax, i = fast_outs(imax);
-    return apply_to_projs(imax, i, callback);
-  }
-
-  // Same but only for Proj node whose _con matches which_proj
   template <class Callback> ProjNode* apply_to_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback, uint which_proj) const;
 
-  // Same but with default iterator
+  // Same but with default iterator and for matching _con
   template<class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj) const {
     DUIterator_Fast imax, i = fast_outs(imax);
     return apply_to_projs(imax, i, callback, which_proj);
@@ -140,6 +128,7 @@ public:
   // Same but for matching _con and _is_io_use
   template <class Callback> ProjNode* apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const;
 
+public:
   template<class Callback> void for_each_proj(Callback callback, uint which_proj) const {
     auto callback_always_continue = [&](ProjNode* proj) {
       callback(proj);
@@ -155,6 +144,7 @@ public:
     };
     apply_to_projs(callback_always_continue, which_proj, is_io_use);
   }
+
 
   ProjNode* find_first(uint which_proj) const;
   ProjNode* find_first(uint which_proj, bool is_io_use) const;
@@ -250,7 +240,7 @@ template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& i
     }
     return CONTINUE;
   };
-  return apply_to_projs(imax, i, filter);
+  return apply_to_projs_any_iterator(UsesIteratorFast(imax, i, this), filter);
 }
 
 /* Tuples are used to avoid manual graph surgery. When a node with Proj outputs (such as a call)
