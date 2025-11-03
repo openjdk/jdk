@@ -502,8 +502,9 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_ArrayCopy()) {
       done = true;
     } else if (mem->is_top()) {
-      // The slice is on a dead path. Returning top prevents bailing out
-      // from the elimination, and IGVN can later clean up.
+      // The slice is on a dead path. Returning nullptr would lead to elimination
+      // bailout, but we want to prevent that. Just forwarding the top is also legal,
+      // and IGVN can just clean things up, and remove whatever receives top.
       return mem;
     } else {
       DEBUG_ONLY( mem->dump(); )
