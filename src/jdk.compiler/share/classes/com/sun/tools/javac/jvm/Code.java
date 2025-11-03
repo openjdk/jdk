@@ -34,10 +34,12 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToIntFunction;
 
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.DOUBLE;
 import static com.sun.tools.javac.code.TypeTag.INT;
 import static com.sun.tools.javac.code.TypeTag.LONG;
+import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Class;
 import static com.sun.tools.javac.jvm.ClassFile.CONSTANT_Double;
@@ -1824,14 +1826,42 @@ public class Code {
             } else if (types.isSubtype(t2, t1)) {
                 return t1;
             } else {
-                Type lub = types.lub(t1, t2);
-
-                if (lub.hasTag(BOT)) {
+                /* the most semantically correct approach here would be to invoke Types::lub
+                 * and then erase the result.
+                 * But this approach can be too slow for some complex cases, see JDK-8369654.
+                 * This is why the method below leverages the fact that the result
+                 * will be erased to produce a correct supertype using a simpler approach compared
+                 * to a full blown lub.
+                 */
+                Type es = erasedSuper(t1, t2);
+                if (es == null || es.hasTag(BOT)) {
                     throw Assert.error("Cannot find a common super class of: " +
                                        t1 + " and " + t2);
                 }
+                return es;
+            }
+        }
 
-                return types.erasure(lub);
+        private Type erasedSuper(Type t1, Type t2) {
+            if (t1.hasTag(ARRAY) && t2.hasTag(ARRAY)) {
+                Type elem1 = types.elemtype(t1);
+                Type elem2 = types.elemtype(t2);
+                if (elem1.isPrimitive() || elem2.isPrimitive()) {
+                    return (elem1.tsym == elem2.tsym) ? t1 : syms.serializableType;
+                } else { // both are arrays of references
+                    return new ArrayType(erasedSuper(elem1, elem2), syms.arrayClass);
+                }
+            } else {
+                t1 = types.skipTypeVars(t1, false);
+                t2 = types.skipTypeVars(t2, false);
+                List<Type> intersection = types.intersect(
+                        t1.hasTag(ARRAY) ?
+                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                types.erasedSupertypes(t1),
+                        t2.hasTag(ARRAY) ?
+                                List.of(syms.serializableType, syms.cloneableType, syms.objectType) :
+                                types.erasedSupertypes(t2));
+                return intersection.head;
             }
         }
 
