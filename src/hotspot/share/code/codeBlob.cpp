@@ -28,6 +28,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -52,8 +53,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-
-#include <type_traits>
 
 // Virtual methods are not allowed in code blobs to simplify caching compiled code.
 // Check all "leaf" subclasses of CodeBlob class.
@@ -910,6 +909,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       nm->print_nmethod(true);
     } else {
       nm->print_on(st);
+      nm->print_code_snippet(st, addr);
     }
     return;
   }

@@ -102,6 +102,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                        (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual) ||
                                        (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
 
+  const bool check_access = !orig_callee->is_method_handle_intrinsic(); // method handle intrinsics don't perform access checks
+
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
     allow_inline = false;
@@ -239,7 +241,8 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // this invoke because it may lead to bimorphic inlining which
           // a speculative type should help us avoid.
           receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                   speculative_receiver_type);
+                                                   speculative_receiver_type,
+                                                   check_access);
           if (receiver_method == nullptr) {
             speculative_receiver_type = nullptr;
           } else {
@@ -256,8 +259,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
            (morphism == 2 && UseBimorphicInlining))) {
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
+        assert(check_access, "required");
         receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                      profile.receiver(0));
+                                                 profile.receiver(0));
       }
       if (receiver_method != nullptr) {
         // The single majority receiver sufficiently outweighs the minority.
@@ -268,8 +272,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           CallGenerator* next_hit_cg = nullptr;
           ciMethod* next_receiver_method = nullptr;
           if (morphism == 2 && UseBimorphicInlining) {
+            assert(check_access, "required");
             next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                               profile.receiver(1));
+                                                          profile.receiver(1));
             if (next_receiver_method != nullptr) {
               next_hit_cg = this->call_generator(next_receiver_method,
                                   vtable_index, !call_does_dispatch, jvms,
@@ -342,6 +347,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (singleton != nullptr) {
         assert(singleton != declared_interface, "not a unique implementor");
 
+        assert(check_access, "required");
         ciMethod* cha_monomorphic_target =
             callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
 
