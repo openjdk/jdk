@@ -26,10 +26,10 @@
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -38,7 +38,7 @@
 #include "runtime/vframe.inline.hpp"
 
 template<typename Func>
-static void for_scoped_methods(JavaThread* jt, const Func& func) {
+static void for_scoped_methods(JavaThread* jt, bool agents_loaded, const Func& func) {
   ResourceMark rm;
 #ifdef ASSERT
   LogMessage(foreign) msg;
@@ -50,7 +50,6 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
   bool would_have_bailed = false;
 #endif
 
-  bool agents_loaded = JvmtiAgentList::has_agents();
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
 
@@ -91,14 +90,15 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 }
 
 static bool is_accessing_session(JavaThread* jt, oop session, bool& in_scoped) {
-  if (jt->is_throwing_unsafe_access_error()) {
+  bool agents_loaded = JvmtiEnv::environments_might_exist();
+  if (!agents_loaded && jt->is_throwing_unsafe_access_error()) {
     // Ignore this thread. It is in the process of throwing another exception
     // already.
     return false;
   }
 
   bool is_accessing_session = false;
-  for_scoped_methods(jt, [&](vframeStream& stream){
+  for_scoped_methods(jt, agents_loaded, [&](vframeStream& stream){
     in_scoped = true;
     StackValueCollection* locals = stream.asJavaVFrame()->locals();
     for (int i = 0; i < locals->size(); i++) {

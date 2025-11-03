@@ -1360,12 +1360,15 @@ class ThreadInClassInitializer : public StackObj {
 
 class ThrowingUnsafeAccessError : public StackObj {
   JavaThread* _thread;
+  bool _prev;
 public:
-  ThrowingUnsafeAccessError(JavaThread* thread) : _thread(thread) {
+  ThrowingUnsafeAccessError(JavaThread* thread) :
+      _thread(thread),
+      _prev(thread->is_throwing_unsafe_access_error()) {
     _thread->set_throwing_unsafe_access_error(true);
   }
   ~ThrowingUnsafeAccessError() {
-    _thread->set_throwing_unsafe_access_error(false);
+    _thread->set_throwing_unsafe_access_error(_prev);
   }
 };
 
