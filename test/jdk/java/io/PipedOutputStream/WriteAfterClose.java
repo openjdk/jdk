@@ -32,19 +32,24 @@ import java.io.PipedOutputStream;
 
 public class WriteAfterClose {
     public static void main(String argv[]) throws Exception {
-        PipedInputStream in = new PipedInputStream();
-        PipedOutputStream out = new PipedOutputStream(in);
-
-        in.close();
-        try {
-            out.write('a');
-            throw new Exception("Should not allow write after close");
-        } catch (IOException e) {
+        try (PipedInputStream in = new PipedInputStream();
+             PipedOutputStream out = new PipedOutputStream(in)) {
+            in.close();
+            try {
+                out.write('a');
+                throw new Exception("Should not allow write after close");
+            } catch (IOException e) {
+            }
         }
-        try {
-            out.write(new byte[7], 3, 0);
-        } catch (IOException e) {
-            throw new Exception("Should not fail 0-length write after close");
+
+        try (PipedInputStream in = new PipedInputStream();
+             PipedOutputStream out = new PipedOutputStream(in)) {
+            out.close();
+            try {
+                out.write(new byte[7], 3, 0);
+            } catch (IOException e) {
+                throw new Exception("Should not fail 0-length write after close");
+            }
         }
     }
 }

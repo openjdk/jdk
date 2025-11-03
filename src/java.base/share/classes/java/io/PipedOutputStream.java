@@ -129,8 +129,8 @@ public class PipedOutputStream extends OutputStream {
     /**
      * Writes {@code len} bytes from the specified byte array
      * starting at offset {@code off} to this piped output stream.
-     * This method blocks until all the bytes are written to the output
-     * stream.
+     * If {@code len} is not zero, this method blocks until all the
+     * bytes are written to the output stream.
      *
      * @param   b     {@inheritDoc}
      * @param   off   {@inheritDoc}
