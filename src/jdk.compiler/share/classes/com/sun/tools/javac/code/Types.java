@@ -3898,7 +3898,7 @@ public class Types {
             @Override
             boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
                 while (ts.nonEmpty() && ss.nonEmpty()
-                        && exactTypeVisitor.visit(ts.head, ss.head)) {
+                        && sameTypeComparator(ts.head, ss.head)) {
                     ts = ts.tail;
                     ss = ss.tail;
                 }
