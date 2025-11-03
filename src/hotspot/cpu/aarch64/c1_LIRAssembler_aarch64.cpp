@@ -3052,27 +3052,27 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 
   switch(type) {
   case T_INT:
-    xchg = &MacroAssembler::atomic_xchgalw;
-    add = &MacroAssembler::atomic_addalw;
+    xchg = &MacroAssembler::atomic_xchgalw_barrier;
+    add = &MacroAssembler::atomic_addalw_barrier;
     break;
   case T_LONG:
-    xchg = &MacroAssembler::atomic_xchgal;
-    add = &MacroAssembler::atomic_addal;
+    xchg = &MacroAssembler::atomic_xchgal_barrier;
+    add = &MacroAssembler::atomic_addal_barrier;
     break;
   case T_OBJECT:
   case T_ARRAY:
     if (UseCompressedOops) {
-      xchg = &MacroAssembler::atomic_xchgalw;
-      add = &MacroAssembler::atomic_addalw;
+      xchg = &MacroAssembler::atomic_xchgalw_barrier;
+      add = &MacroAssembler::atomic_addalw_barrier;
     } else {
-      xchg = &MacroAssembler::atomic_xchgal;
-      add = &MacroAssembler::atomic_addal;
+      xchg = &MacroAssembler::atomic_xchgal_barrier;
+      add = &MacroAssembler::atomic_addal_barrier;
     }
     break;
   default:
     ShouldNotReachHere();
-    xchg = &MacroAssembler::atomic_xchgal;
-    add = &MacroAssembler::atomic_addal; // unreachable
+    xchg = &MacroAssembler::atomic_xchgal_barrier;
+    add = &MacroAssembler::atomic_addal_barrier; // unreachable
   }
 
   switch (code) {
@@ -3114,9 +3114,6 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     break;
   default:
     ShouldNotReachHere();
-  }
-  if(!UseLSE) {
-    __ membar(__ AnyAny);
   }
 }
 
