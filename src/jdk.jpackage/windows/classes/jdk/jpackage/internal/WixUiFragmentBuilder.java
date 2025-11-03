@@ -120,7 +120,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         super.addFilesToConfigRoot();
 
         if (withCustomActionsDll) {
-            String fname = "wixhelper.dll"; // CA dll
+            String fname = "msica.dll"; // CA dll
             try (InputStream is = ResourceLocator.class.getResourceAsStream(fname)) {
                 Files.copy(is, getConfigRoot().resolve(fname));
             }

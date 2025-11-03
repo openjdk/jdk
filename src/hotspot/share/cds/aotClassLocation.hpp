@@ -28,8 +28,8 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/growableArray.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 

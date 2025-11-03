@@ -40,7 +40,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
+public final class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     final AquaPainter<JRSUIState> painter = AquaPainter.create(JRSUIStateFactory.getSplitPaneDivider());
 
     public AquaSplitPaneDividerUI(final AquaSplitPaneUI ui) {
@@ -52,6 +52,7 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
      * Property change event, presumably from the JSplitPane, will message
      * updateOrientation if necessary.
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent e) {
         if (e.getSource() == splitPane) {
             final String propName = e.getPropertyName();
@@ -80,6 +81,7 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     /**
      * Paints the divider.
      */
+    @Override
     public void paint(final Graphics g) {
         final Dimension size = getSize();
         int x = 0;
@@ -118,10 +120,12 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
         return splitPane.isEnabled() ? State.ACTIVE : State.DISABLED;
     }
 
+    @Override
     protected JButton createLeftOneTouchButton() {
         return createButtonForDirection(getDirection(true));
     }
 
+    @Override
     protected JButton createRightOneTouchButton() {
         return createButtonForDirection(getDirection(false));
     }
@@ -156,7 +160,8 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
     }
 
     static final int kMaxPopupArrowSize = 9;
-    protected class DividerLayout extends BasicSplitPaneDivider.DividerLayout {
+    protected final class DividerLayout extends BasicSplitPaneDivider.DividerLayout {
+        @Override
         public void layoutContainer(final Container c) {
             final int maxSize = getMaxDividerSize();
             final Dimension size = getSize();
@@ -204,7 +209,7 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
         return HorizontalSplitDividerGradientPainter.instance();
     }
 
-    static class HorizontalSplitDividerGradientPainter implements Border {
+    static final class HorizontalSplitDividerGradientPainter implements Border {
         private static final RecyclableSingleton<HorizontalSplitDividerGradientPainter> instance = new RecyclableSingletonFromDefaultConstructor<HorizontalSplitDividerGradientPainter>(HorizontalSplitDividerGradientPainter.class);
         static HorizontalSplitDividerGradientPainter instance() {
             return instance.get();
@@ -214,14 +219,17 @@ public class AquaSplitPaneDividerUI extends BasicSplitPaneDivider {
         final Color endColor = new Color(217, 217, 217);
         final Color borderLines = Color.lightGray;
 
+        @Override
         public Insets getBorderInsets(final Component c) {
             return new Insets(0, 0, 0, 0);
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return true;
         }
 
+        @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
             if (!(g instanceof Graphics2D)) return;
 

@@ -30,6 +30,7 @@
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <limits>
 #include <type_traits>
 

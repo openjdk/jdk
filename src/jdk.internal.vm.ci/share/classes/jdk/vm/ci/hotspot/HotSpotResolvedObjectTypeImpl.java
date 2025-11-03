@@ -672,12 +672,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    JavaConstant getJavaMirror() {
+    public JavaConstant getJavaMirror() {
         return mirror;
     }
 
     @Override
-    HotSpotResolvedObjectTypeImpl getArrayType() {
+    protected HotSpotResolvedObjectTypeImpl getArrayType() {
         return runtime().compilerToVm.getArrayType((char) 0, this);
     }
 

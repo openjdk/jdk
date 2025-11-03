@@ -29,7 +29,6 @@
 #include "gc/epsilon/epsilonBarrierSet.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
 #include "services/memoryManager.hpp"
@@ -49,6 +48,9 @@ private:
   volatile size_t _last_counter_update;
   volatile size_t _last_heap_print;
 
+  void print_tracing_info() const override;
+  void stop() override {};
+
 public:
   static EpsilonHeap* heap();
 
@@ -67,8 +69,6 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
 
-  void stop() override {};
-
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;
 
@@ -84,7 +84,7 @@ public:
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
@@ -130,7 +130,6 @@ public:
 
   void print_heap_on(outputStream* st) const override;
   void print_gc_on(outputStream* st) const override {}
-  void print_tracing_info() const override;
   bool print_location(outputStream* st, void* addr) const override;
 
 private:

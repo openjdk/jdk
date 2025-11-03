@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_INTPOW_HPP
 
 #include "metaprogramming/enableIf.hpp"
+
 #include <limits>
 #include <type_traits>
 

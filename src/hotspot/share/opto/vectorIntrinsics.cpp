@@ -383,7 +383,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   // When using mask, mask use type needs to be VecMaskUseLoad.
   VectorMaskUseType mask_use_type = is_vector_mask(vbox_klass) ? VecMaskUseAll
                                       : is_masked_op ? VecMaskUseLoad : VecMaskNotUsed;
-  if ((sopc != 0) && !arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
+  if (!arch_supports_vector(sopc, num_elem, elem_bt, mask_use_type)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=%d is_masked_op=%d",
                     n, sopc, num_elem, type2name(elem_bt),
                     is_vector_mask(vbox_klass) ? 1 : 0, is_masked_op ? 1 : 0);
@@ -391,7 +391,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   // Return true if current platform has implemented the masked operation with predicate feature.
-  bool use_predicate = is_masked_op && sopc != 0 && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
+  bool use_predicate = is_masked_op && arch_supports_vector(sopc, num_elem, elem_bt, VecMaskUsePred);
   if (is_masked_op && !use_predicate && !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
     log_if_needed("  ** not supported: arity=%d opc=%d vlen=%d etype=%s ismask=0 is_masked_op=1",
                     n, sopc, num_elem, type2name(elem_bt));
@@ -686,11 +686,20 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
-    log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
-                    num_elem, type2name(elem_bt),
-                    is_mask ? 1 : 0,
-                    bcast_mode);
-    return false; // not supported
+    // If the input long sets or unsets all lanes and Replicate is supported,
+    // generate a MaskAll or Replicate instead.
+
+    // The "maskAll" API uses the corresponding integer types for floating-point data.
+    BasicType maskall_bt = elem_bt == T_DOUBLE ? T_LONG : (elem_bt == T_FLOAT ? T_INT: elem_bt);
+    if (!(opc == Op_VectorLongToMask &&
+          VectorNode::is_maskall_type(bits_type, num_elem) &&
+          arch_supports_vector(Op_Replicate, num_elem, maskall_bt, checkFlags, true /*has_scalar_args*/))) {
+      log_if_needed("  ** not supported: arity=0 op=broadcast vlen=%d etype=%s ismask=%d bcast_mode=%d",
+                      num_elem, type2name(elem_bt),
+                      is_mask ? 1 : 0,
+                      bcast_mode);
+      return false; // not supported
+    }
   }
 
   Node* broadcast = nullptr;
@@ -822,8 +831,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   Node* offset = ConvL2X(argument(4));
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
 
   Node* addr = make_unsafe_address(base, offset, (is_mask ? T_BOOLEAN : elem_bt), true);
 
@@ -860,8 +868,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_store, is_store ? "store" : "load",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -873,8 +879,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
         log_if_needed("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
                         is_store, "store",
                         num_elem, type2name(elem_bt));
-        set_map(old_map);
-        set_sp(old_sp);
         return false; // not supported
       }
     } else {
@@ -883,8 +887,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
         log_if_needed("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
                         is_store, "load",
                         mem_num_elem, type2name(mem_elem_bt));
-        set_map(old_map);
-        set_sp(old_sp);
         return false; // not supported
       }
     }
@@ -892,14 +894,10 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   if (is_mask) {
     if (!is_store) {
       if (!arch_supports_vector(Op_LoadVector, num_elem, elem_bt, VecMaskUseLoad)) {
-        set_map(old_map);
-        set_sp(old_sp);
         return false; // not supported
       }
     } else {
       if (!arch_supports_vector(Op_StoreVector, num_elem, elem_bt, VecMaskUseStore)) {
-        set_map(old_map);
-        set_sp(old_sp);
         return false; // not supported
       }
     }
@@ -914,8 +912,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   if (is_store) {
     Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
-      set_map(old_map);
-      set_sp(old_sp);
       return false; // operand unboxing failed
     }
     set_all_memory(reset_memory());
@@ -952,7 +948,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     set_result(box);
   }
 
-  destruct_map_clone(old_map);
+  old_state.discard();
 
   if (needs_cpu_membar) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1029,8 +1025,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   Node* offset = ConvL2X(argument(5));
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
 
   Node* addr = make_unsafe_address(base, offset, elem_bt, true);
   const TypePtr *addr_type = gvn().type(addr)->isa_ptr();
@@ -1043,8 +1038,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s",
                     is_store, is_store ? "storeMasked" : "loadMasked",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1066,8 +1059,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       if (!offset_in_range->is_con()) {
         log_if_needed("  ** missing constant: offsetInRange=%s",
                         NodeClassNames[argument(8)->Opcode()]);
-        set_map(old_map);
-        set_sp(old_sp);
         return false;
       }
       needs_predicate = (offset_in_range->get_con() == 0);
@@ -1077,8 +1068,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       log_if_needed("  ** not supported: op=%s vlen=%d etype=%s mismatched_ms=%d",
                       is_store ? "storeMasked" : "loadMasked",
                       num_elem, type2name(elem_bt), mismatched_ms ? 1 : 0);
-      set_map(old_map);
-      set_sp(old_sp);
       return false;
     }
   }
@@ -1089,8 +1078,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       !arch_supports_vector(Op_VectorBlend, mem_num_elem, mem_elem_bt, VecMaskUseLoad))) {
     log_if_needed("  ** not supported: op=loadMasked vlen=%d etype=%s mismatched_ms=%d",
                     num_elem, type2name(elem_bt), mismatched_ms ? 1 : 0);
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1101,8 +1088,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s mismatched_ms=1",
                       is_store, is_store ? "storeMasked" : "loadMasked",
                       num_elem, type2name(elem_bt));
-      set_map(old_map);
-      set_sp(old_sp);
       return false;
     }
   }
@@ -1113,8 +1098,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s",
                       is_store, is_store ? "storeMasked" : "loadMasked",
                       num_elem, type2name(elem_bt));
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1135,8 +1118,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     log_if_needed("  ** unbox failed mask=%s",
                     is_store ? NodeClassNames[argument(9)->Opcode()]
                              : NodeClassNames[argument(8)->Opcode()]);
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1145,8 +1126,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     if (val == nullptr) {
       log_if_needed("  ** unbox failed vector=%s",
                       NodeClassNames[argument(8)->Opcode()]);
-      set_map(old_map);
-      set_sp(old_sp);
       return false; // operand unboxing failed
     }
     set_all_memory(reset_memory());
@@ -1193,7 +1172,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     set_result(box);
   }
 
-  destruct_map_clone(old_map);
+  old_state.discard();
 
   if (can_access_non_heap) {
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -1316,8 +1295,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   Node* offset = ConvL2X(argument(7));
 
   // Save state and restore on bailout
-  uint old_sp = sp();
-  SafePointNode* old_map = clone_map();
+  SavedState old_state(this);
 
   Node* addr = nullptr;
   if (!is_subword_type(elem_bt)) {
@@ -1339,8 +1317,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1348,8 +1324,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   ciKlass* vbox_idx_klass = vector_idx_klass->const_oop()->as_instance()->java_lang_Class_klass();
   if (vbox_idx_klass == nullptr) {
-    set_map(old_map);
-    set_sp(old_sp);
     return false;
   }
 
@@ -1364,8 +1338,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     // Get the first index vector.
     indexes = unbox_vector(argument(9), vbox_idx_type, T_INT, idx_num_elem);
     if (indexes == nullptr) {
-      set_map(old_map);
-      set_sp(old_sp);
       return false;
     }
   }
@@ -1378,8 +1350,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     mask = unbox_vector(m, mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
       log_if_needed("  ** unbox failed mask=%s", NodeClassNames[m->Opcode()]);
-      set_map(old_map);
-      set_sp(old_sp);
       return false;
     }
   }
@@ -1388,8 +1358,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   if (is_scatter) {
     Node* val = unbox_vector(argument(10), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
-      set_map(old_map);
-      set_sp(old_sp);
       return false; // operand unboxing failed
     }
     set_all_memory(reset_memory());
@@ -1412,7 +1380,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     set_result(box);
   }
 
-  destruct_map_clone(old_map);
+  old_state.discard();
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
@@ -2534,7 +2502,7 @@ bool LibraryCallKit::inline_vector_extract() {
   if (vector_klass == nullptr || vector_klass->const_oop() == nullptr ||
       elem_klass   == nullptr || elem_klass->const_oop()   == nullptr ||
       vlen         == nullptr || !vlen->is_con() ||
-      idx          == nullptr || !idx->is_con()) {
+      idx          == nullptr) {
     log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
@@ -2747,6 +2715,9 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     index_elem_bt = T_LONG;
   }
 
+  // Check if the platform requires a VectorLoadShuffle node to be generated
+  bool need_load_shuffle = Matcher::vector_rearrange_requires_load_shuffle(index_elem_bt, num_elem);
+
   bool lowerSelectFromOp = false;
   if (!arch_supports_vector(Op_SelectFromTwoVector, num_elem, elem_bt, VecMaskNotUsed)) {
     int cast_vopc = VectorCastNode::opcode(-1, elem_bt, true);
@@ -2756,7 +2727,7 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
         !arch_supports_vector(Op_VectorMaskCast, num_elem, elem_bt, VecMaskNotUsed)          ||
         !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)             ||
         !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed)         ||
-        !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        (need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed)) ||
         !arch_supports_vector(Op_Replicate, num_elem, index_elem_bt, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
                     Op_SelectFromTwoVector, num_elem, type2name(elem_bt));

@@ -35,14 +35,13 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @compile InputUITest.java
- * @run testng/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
+ * @run junit/othervm -Dstderr.encoding=UTF-8 -Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 InputUITest
  */
 
 import java.util.Map;
 import java.util.function.Function;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class InputUITest extends UITesting {
 
     static final String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -53,6 +52,7 @@ public class InputUITest extends UITesting {
         super(true);
     }
 
+    @Test
     public void testUserInputWithSurrogates() throws Exception {
         Function<Integer, String> genSnippet =
                 realCharsToRead -> "new String(System.in.readNBytes(" +
@@ -68,6 +68,7 @@ public class InputUITest extends UITesting {
         }, false);
     }
 
+    @Test
     public void testCloseInputSinkWhileReadingUserInputSimulatingCtrlD() throws Exception {
         var snippets = Map.of(
                 "System.in.read()",                 " ==> -1",
@@ -79,10 +80,23 @@ public class InputUITest extends UITesting {
             );
         for (var snippet : snippets.entrySet()) {
             doRunTest((inputSink, out) -> {
-                inputSink.write(snippet.getKey() + "\n");
-                inputSink.close(); // Does not work: inputSink.write("\u0004"); // CTRL + D
+                inputSink.write(snippet.getKey() + "\n" + CTRL_D);
                 waitOutput(out, patternQuote(snippet.getValue()), patternQuote("EndOfFileException"));
             }, false);
         }
+    }
+
+    @Test
+    public void testUserInputWithCtrlDAndMultipleSnippets() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("IO.readln()\n" + CTRL_D);
+            waitOutput(out, patternQuote("==> null"));
+            inputSink.write("IO.readln()\nAB\n");
+            waitOutput(out, patternQuote("==> \"AB\""));
+            inputSink.write("System.in.read()\n" + CTRL_D);
+            waitOutput(out, patternQuote("==> -1"));
+            inputSink.write("System.in.read()\nA\n");
+            waitOutput(out, patternQuote("==> 65"));
+        }, false);
     }
 }

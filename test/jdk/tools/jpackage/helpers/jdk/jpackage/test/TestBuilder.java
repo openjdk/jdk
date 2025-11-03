@@ -369,7 +369,7 @@ final class TestBuilder implements AutoCloseable {
     }
 
     static void trace(String msg) {
-        if (TKit.VERBOSE_TEST_SETUP) {
+        if (TKit.verboseTestSetup()) {
             TKit.log(msg);
         }
     }

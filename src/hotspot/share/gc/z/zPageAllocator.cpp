@@ -412,7 +412,7 @@ private:
   const Ticks                _start_timestamp;
   const uint32_t             _young_seqnum;
   const uint32_t             _old_seqnum;
-  const uint32_t             _initiating_numa_id;
+  const uint32_t             _preferred_partition;
   bool                       _is_multi_partition;
   ZSinglePartitionAllocation _single_partition_allocation;
   ZMultiPartitionAllocation  _multi_partition_allocation;
@@ -420,7 +420,7 @@ private:
   ZFuture<bool>              _stall_result;
 
 public:
-  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age)
+  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition)
     : _type(type),
       _requested_size(size),
       _flags(flags),
@@ -428,12 +428,14 @@ public:
       _start_timestamp(Ticks::now()),
       _young_seqnum(ZGeneration::young()->seqnum()),
       _old_seqnum(ZGeneration::old()->seqnum()),
-      _initiating_numa_id(ZNUMA::id()),
+      _preferred_partition(preferred_partition),
       _is_multi_partition(false),
       _single_partition_allocation(size),
       _multi_partition_allocation(size),
       _node(),
-      _stall_result() {}
+      _stall_result() {
+    assert(_preferred_partition < ZNUMA::count(), "Preferred partition out-of-bounds (0 <= %d < %d)", _preferred_partition, ZNUMA::count());
+  }
 
   void reset_for_retry() {
     _is_multi_partition = false;
@@ -474,8 +476,8 @@ public:
     return _old_seqnum;
   }
 
-  uint32_t initiating_numa_id() const {
-    return _initiating_numa_id;
+  uint32_t preferred_partition() const {
+    return _preferred_partition;
   }
 
   bool is_multi_partition() const {
@@ -547,21 +549,24 @@ public:
   }
 
   void send_event(bool successful) {
-    EventZPageAllocation event;
+    if (!EventZPageAllocation::is_enabled()) {
+      // Event not enabled, exit early
+      return;
+    }
 
     Ticks end_timestamp = Ticks::now();
     const ZPageAllocationStats st = stats();
 
-    event.commit(_start_timestamp,
-                 end_timestamp,
-                 (u8)_type,
-                 size(),
-                 st._total_harvested,
-                 st._total_committed_capacity,
-                 (unsigned)st._num_harvested_vmems,
-                 _is_multi_partition,
-                 successful,
-                 _flags.non_blocking());
+    EventZPageAllocation::commit(_start_timestamp,
+                                 end_timestamp,
+                                 (u8)_type,
+                                 size(),
+                                 st._total_harvested,
+                                 st._total_committed_capacity,
+                                 (unsigned)st._num_harvested_vmems,
+                                 _is_multi_partition,
+                                 successful,
+                                 _flags.non_blocking());
   }
 };
 
@@ -645,7 +650,7 @@ size_t ZPartition::increase_capacity(size_t size) {
 
   if (increased > 0) {
     // Update atomically since we have concurrent readers
-    Atomic::add(&_capacity, increased);
+    AtomicAccess::add(&_capacity, increased);
 
     _uncommitter.cancel_uncommit_cycle();
   }
@@ -655,12 +660,12 @@ size_t ZPartition::increase_capacity(size_t size) {
 
 void ZPartition::decrease_capacity(size_t size, bool set_max_capacity) {
   // Update capacity atomically since we have concurrent readers
-  Atomic::sub(&_capacity, size);
+  AtomicAccess::sub(&_capacity, size);
 
   // Adjust current max capacity to avoid further attempts to increase capacity
   if (set_max_capacity) {
     const size_t current_max_capacity_before = _current_max_capacity;
-    Atomic::store(&_current_max_capacity, _capacity);
+    AtomicAccess::store(&_current_max_capacity, _capacity);
 
     log_debug_p(gc)("Forced to lower max partition (%u) capacity from "
                     "%zuM(%.0f%%) to %zuM(%.0f%%)",
@@ -930,7 +935,7 @@ public:
 
     for (;;) {
       // Claim an offset for this thread
-      const uintptr_t claimed = Atomic::fetch_then_add(&_current, size);
+      const uintptr_t claimed = AtomicAccess::fetch_then_add(&_current, size);
       if (claimed >= _end) {
         // Done
         break;
@@ -1046,7 +1051,6 @@ void ZPartition::copy_physical_segments_from_partition(const ZVirtualMemory& at,
 
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
-
   // Copy segments
   manager.copy_physical_segments(to, at);
 }
@@ -1056,7 +1060,6 @@ void ZPartition::commit_increased_capacity(ZMemoryAllocation* allocation, const 
 
   const size_t already_committed = allocation->harvested();
 
-  const ZVirtualMemory already_committed_vmem = vmem.first_part(already_committed);
   const ZVirtualMemory to_be_committed_vmem = vmem.last_part(already_committed);
 
   // Try to commit the uncommitted physical memory
@@ -1087,7 +1090,8 @@ void ZPartition::free_memory_alloc_failed(ZMemoryAllocation* allocation) {
     freed += vmem.size();
     _cache.insert(vmem);
   }
-  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all");
+  assert(allocation->harvested() + allocation->committed_capacity() == freed, "must have freed all"
+         " %zu + %zu == %zu", allocation->harvested(), allocation->committed_capacity(), freed);
 
   // Adjust capacity to reflect the failed capacity increase
   const size_t remaining = allocation->size() - freed;
@@ -1274,7 +1278,7 @@ size_t ZPageAllocator::max_capacity() const {
 
 size_t ZPageAllocator::soft_max_capacity() const {
   const size_t current_max_capacity = ZPageAllocator::current_max_capacity();
-  const size_t soft_max_heapsize = Atomic::load(&SoftMaxHeapSize);
+  const size_t soft_max_heapsize = AtomicAccess::load(&SoftMaxHeapSize);
   return MIN2(soft_max_heapsize, current_max_capacity);
 }
 
@@ -1283,7 +1287,7 @@ size_t ZPageAllocator::current_max_capacity() const {
 
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    current_max_capacity += Atomic::load(&partition->_current_max_capacity);
+    current_max_capacity += AtomicAccess::load(&partition->_current_max_capacity);
   }
 
   return current_max_capacity;
@@ -1294,18 +1298,18 @@ size_t ZPageAllocator::capacity() const {
 
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    capacity += Atomic::load(&partition->_capacity);
+    capacity += AtomicAccess::load(&partition->_capacity);
   }
 
   return capacity;
 }
 
 size_t ZPageAllocator::used() const {
-  return Atomic::load(&_used);
+  return AtomicAccess::load(&_used);
 }
 
 size_t ZPageAllocator::used_generation(ZGenerationId id) const {
-  return Atomic::load(&_used_generations[(int)id]);
+  return AtomicAccess::load(&_used_generations[(int)id]);
 }
 
 size_t ZPageAllocator::unused() const {
@@ -1315,8 +1319,8 @@ size_t ZPageAllocator::unused() const {
 
   ZPartitionConstIterator iter = partition_iterator();
   for (const ZPartition* partition; iter.next(&partition);) {
-    capacity += (ssize_t)Atomic::load(&partition->_capacity);
-    claimed += (ssize_t)Atomic::load(&partition->_claimed);
+    capacity += (ssize_t)AtomicAccess::load(&partition->_capacity);
+    claimed += (ssize_t)AtomicAccess::load(&partition->_claimed);
   }
 
   const ssize_t unused = capacity - used - claimed;
@@ -1370,12 +1374,12 @@ ZPageAllocatorStats ZPageAllocator::update_and_stats(ZGeneration* generation) {
 
 void ZPageAllocator::increase_used_generation(ZGenerationId id, size_t size) {
   // Update atomically since we have concurrent readers and writers
-  Atomic::add(&_used_generations[(int)id], size, memory_order_relaxed);
+  AtomicAccess::add(&_used_generations[(int)id], size, memory_order_relaxed);
 }
 
 void ZPageAllocator::decrease_used_generation(ZGenerationId id, size_t size) {
   // Update atomically since we have concurrent readers and writers
-  Atomic::sub(&_used_generations[(int)id], size, memory_order_relaxed);
+  AtomicAccess::sub(&_used_generations[(int)id], size, memory_order_relaxed);
 }
 
 void ZPageAllocator::promote_used(const ZPage* from, const ZPage* to) {
@@ -1394,10 +1398,10 @@ static void check_out_of_memory_during_initialization() {
   }
 }
 
-ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age) {
+ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition) {
   EventZPageAllocation event;
 
-  ZPageAllocation allocation(type, size, flags, age);
+  ZPageAllocation allocation(type, size, flags, age, preferred_partition);
 
   // Allocate the page
   ZPage* const page = alloc_page_inner(&allocation);
@@ -1417,7 +1421,6 @@ ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags 
   const ZPageAllocationStats stats = allocation.stats();
   const int num_harvested_vmems = stats._num_harvested_vmems;
   const size_t harvested = stats._total_harvested;
-  const size_t committed = stats._total_committed_capacity;
 
   if (harvested > 0) {
     ZStatInc(ZCounterMappedCacheHarvest, harvested);
@@ -1545,7 +1548,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
   }
 
   // Round robin single-partition claiming
-  const uint32_t start_numa_id = allocation->initiating_numa_id();
+  const uint32_t start_numa_id = allocation->preferred_partition();
   const uint32_t start_partition = start_numa_id;
   const uint32_t num_partitions = _partitions.count();
 
@@ -1557,7 +1560,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
     }
   }
 
-  if (!is_multi_partition_enabled() || sum_available() < allocation->size()) {
+  if (!is_multi_partition_allowed(allocation)) {
     // Multi-partition claiming is not possible
     return false;
   }
@@ -1575,7 +1578,7 @@ bool ZPageAllocator::claim_capacity(ZPageAllocation* allocation) {
 }
 
 bool ZPageAllocator::claim_capacity_fast_medium(ZPageAllocation* allocation) {
-  const uint32_t start_node = allocation->initiating_numa_id();
+  const uint32_t start_node = allocation->preferred_partition();
   const uint32_t numa_nodes = ZNUMA::count();
 
   for (uint32_t i = 0; i < numa_nodes; ++i) {
@@ -1904,23 +1907,27 @@ void ZPageAllocator::cleanup_failed_commit_single_partition(ZSinglePartitionAllo
   ZMemoryAllocation* const allocation = single_partition_allocation->allocation();
 
   assert(allocation->commit_failed(), "Must have failed to commit");
+  assert(allocation->partial_vmems()->is_empty(), "Invariant for single partition commit failure");
 
-  const size_t committed = allocation->committed_capacity();
-  const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
-  const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
-  const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
+  // For a single partition we have unmapped the harvested memory before we
+  // started committing, and moved its physical memory association to the start
+  // of the vmem. As such, the partial_vmems is empty. All the harvested and
+  // partially successfully committed memory is mapped in the first part of vmem.
+  const size_t harvested_and_committed_capacity = allocation->harvested() + allocation->committed_capacity();
+  const ZVirtualMemory succeeded_vmem = vmem.first_part(harvested_and_committed_capacity);
+  const ZVirtualMemory failed_vmem = vmem.last_part(harvested_and_committed_capacity);
 
-  if (committed_vmem.size() > 0) {
+  if (succeeded_vmem.size() > 0) {
     // Register the committed and mapped memory. We insert the committed
     // memory into partial_vmems so that it will be inserted into the cache
     // in a subsequent step.
-    allocation->partial_vmems()->append(committed_vmem);
+    allocation->partial_vmems()->append(succeeded_vmem);
   }
 
   // Free the virtual and physical memory we fetched to use but failed to commit
   ZPartition& partition = allocation->partition();
-  partition.free_physical(non_committed_vmem);
-  partition.free_virtual(non_committed_vmem);
+  partition.free_physical(failed_vmem);
+  partition.free_virtual(failed_vmem);
 }
 
 void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAllocation* multi_partition_allocation, const ZVirtualMemory& vmem) {
@@ -1936,7 +1943,7 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
     }
 
     const size_t committed = allocation->committed_capacity();
-    const ZVirtualMemory non_harvested_vmem = vmem.last_part(allocation->harvested());
+    const ZVirtualMemory non_harvested_vmem = partial_vmem.last_part(allocation->harvested());
     const ZVirtualMemory committed_vmem = non_harvested_vmem.first_part(committed);
     const ZVirtualMemory non_committed_vmem = non_harvested_vmem.last_part(committed);
 
@@ -1953,9 +1960,6 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
       // Nothing committed, nothing more to cleanup
       continue;
     }
-
-    // Remove the harvested part
-    const ZVirtualMemory non_harvest_vmem = partial_vmem.last_part(allocation->harvested());
 
     ZArray<ZVirtualMemory>* const partial_vmems = allocation->partial_vmems();
 
@@ -2188,6 +2192,12 @@ bool ZPageAllocator::is_multi_partition_enabled() const {
   return _virtual.is_multi_partition_enabled();
 }
 
+bool ZPageAllocator::is_multi_partition_allowed(const ZPageAllocation* allocation) const {
+  return is_multi_partition_enabled() &&
+         allocation->type() == ZPageType::large &&
+         allocation->size() <= sum_available();
+}
+
 const ZPartition& ZPageAllocator::partition_from_partition_id(uint32_t numa_id) const {
   return _partitions.get(numa_id);
 }
@@ -2213,7 +2223,7 @@ size_t ZPageAllocator::sum_available() const {
 
 void ZPageAllocator::increase_used(size_t size) {
   // Update atomically since we have concurrent readers
-  const size_t used = Atomic::add(&_used, size);
+  const size_t used = AtomicAccess::add(&_used, size);
 
   // Update used high
   for (auto& stats : _collection_stats) {
@@ -2225,7 +2235,7 @@ void ZPageAllocator::increase_used(size_t size) {
 
 void ZPageAllocator::decrease_used(size_t size) {
   // Update atomically since we have concurrent readers
-  const size_t used = Atomic::sub(&_used, size);
+  const size_t used = AtomicAccess::sub(&_used, size);
 
   // Update used low
   for (auto& stats : _collection_stats) {

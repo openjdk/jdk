@@ -25,6 +25,8 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
+#include "runtime/stubInfo.hpp"
+
 /*
  * AOT Code Cache collects code from Code Cache and corresponding metadata
  * during application training run.
@@ -327,16 +329,21 @@ public:
   bool write_dbg_strings(CodeBlob& cb);
 #endif // PRODUCT
 
+  // save and restore API for non-enumerable code blobs
   static bool store_code_blob(CodeBlob& blob,
                               AOTCodeEntry::Kind entry_kind,
-                              uint id, const char* name,
-                              int entry_offset_count = 0,
-                              int* entry_offsets = nullptr) NOT_CDS_RETURN_(false);
+                              uint id, const char* name) NOT_CDS_RETURN_(false);
 
   static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  uint id, const char* name,
-                                  int entry_offset_count = 0,
-                                  int* entry_offsets = nullptr) NOT_CDS_RETURN_(nullptr);
+                                  uint id, const char* name) NOT_CDS_RETURN_(nullptr);
+
+  // save and restore API for enumerable code blobs
+  static bool store_code_blob(CodeBlob& blob,
+                              AOTCodeEntry::Kind entry_kind,
+                              BlobId id) NOT_CDS_RETURN_(false);
+
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
+                                  BlobId id) NOT_CDS_RETURN_(nullptr);
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
@@ -364,8 +371,8 @@ public:
   static void init2() NOT_CDS_RETURN;
   static void close() NOT_CDS_RETURN;
   static bool is_on() CDS_ONLY({ return cache() != nullptr && !_cache->closing(); }) NOT_CDS_RETURN_(false);
-  static bool is_on_for_use()  { return is_on() && _cache->for_use(); }
-  static bool is_on_for_dump() { return is_on() && _cache->for_dump(); }
+  static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
+  static bool is_on_for_dump() CDS_ONLY({ return is_on() && _cache->for_dump(); }) NOT_CDS_RETURN_(false);
   static bool is_dumping_stub() NOT_CDS_RETURN_(false);
   static bool is_dumping_adapter() NOT_CDS_RETURN_(false);
   static bool is_using_stub() NOT_CDS_RETURN_(false);
@@ -399,7 +406,7 @@ private:
 public:
   AOTCodeReader(AOTCodeCache* cache, AOTCodeEntry* entry);
 
-  CodeBlob* compile_code_blob(const char* name, int entry_offset_count, int* entry_offsets);
+  CodeBlob* compile_code_blob(const char* name);
 
   ImmutableOopMapSet* read_oop_map_set();
 

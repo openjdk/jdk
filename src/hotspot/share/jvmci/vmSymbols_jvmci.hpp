@@ -102,7 +102,7 @@
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \
   template(forPrimitive_name,                                     "forPrimitive")                                                         \
   template(forPrimitive_signature,                                "(CJ)Ljdk/vm/ci/meta/PrimitiveConstant;")                               \
-  template(method_string_bool_long_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
+  template(method_string_bool_bool_long_signature,                "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZZJ)V") \
 
 #endif
 

@@ -29,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+
 #include <string.h>
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
@@ -64,7 +65,7 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
                               decorations.decoration(decorator, buf, sizeof(buf)));
     if (written <= 0) {
       return -1;
-    } else if (static_cast<size_t>(written - 2) > _decorator_padding[decorator]) {
+    } else if ((written - 2) > _decorator_padding[decorator]) {
       _decorator_padding[decorator] = written - 2;
     }
     total_written += written;

@@ -32,9 +32,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
-using RegeneratedObjTable = ResourceHashtable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
+using RegeneratedObjTable = HashTable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
 static RegeneratedObjTable* _regenerated_objs = nullptr; // InstanceKlass* and Method*  orig_obj  -> regen_obj
 static RegeneratedObjTable* _original_objs = nullptr;    // InstanceKlass* and Method*  regen_obj -> orig_obj
 static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors = nullptr;

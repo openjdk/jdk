@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2020, 2022 THL A29 Limited, a Tencent company. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2020, 2022, Tencent. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @build GetFreeSwapSpaceSize
- * @run driver TestGetFreeSwapSpaceSize
+ * @run driver/timeout=480 TestGetFreeSwapSpaceSize
  */
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;

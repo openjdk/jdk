@@ -35,6 +35,7 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.Note;
@@ -205,7 +206,7 @@ class WarningAggregator {
     }
 
     private void addNote(List<JCDiagnostic> list, JavaFileObject file, String msg, Object... args) {
-        list.add(log.diags.mandatoryNote(log.getSource(file), new Note(null, "compiler", msg, args)));
+        list.add(log.diags.note(DiagnosticFlag.MANDATORY, log.getSource(file), null, new Note(null, "compiler", msg, args)));
     }
 
     /**
