@@ -420,9 +420,6 @@ bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms)
     }
     assert(!cg->is_late_inline() || cg->is_mh_late_inline() || AlwaysIncrementalInline || StressIncrementalInlining, "we're doing late inlining");
     _inline_cg = cg;
-    if (C->inlining_incrementally()) {
-      C->dec_number_of_mh_late_inlines();
-    }
     return true;
   } else {
     // Method handle call which has a constant appendix argument should be either inlined or replaced with a direct call

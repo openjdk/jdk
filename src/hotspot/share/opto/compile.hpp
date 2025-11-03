@@ -1088,7 +1088,6 @@ public:
   }
 
   void inc_number_of_mh_late_inlines() { _number_of_mh_late_inlines++; }
-  void dec_number_of_mh_late_inlines() { assert(_number_of_mh_late_inlines > 0, "_number_of_mh_late_inlines < 0 !"); _number_of_mh_late_inlines--; }
   bool has_mh_late_inlines() const     { return _number_of_mh_late_inlines > 0; }
 
   bool inline_incrementally_one();
