@@ -34,20 +34,6 @@
     --nav-height: calc(var(--top-nav-height) + var(--sub-nav-height));
     --max-content-width: 1500px;
     --content-margin: 0 auto;
-    /* Inline SVG icons for dark theme */
-    --right-svg-dark: url('data:image/svg+xml; utf8, \
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"> \
-    <path d="m35.763 5.058 38.675 36.885a12.596 12.596 90 0 1 0 18.23L35.763 97.058v-18.32l27.055-25.431a2.975 2.975 90.09 0 0 .007-4.33L35.763 23.38Z" \
-    style="fill:%23fff;stroke-width:.285806" transform="translate(-5.292 -1.058)"/> \
-    </svg>');
-    --glass-svg-dark: url('data:image/svg+xml; utf8, \
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"> \
-    <path d="M66.37 55.005C64.415 58.958 60.147 63.321 56.153 66l32.478 33.456L99.377 88.99Z" style="fill:%23a1d3ff"/>\
-    <circle cx="35.072" cy="35.072" r="30.635" style="fill:none;stroke:%23a1d3ff;stroke-width:8"/></svg>');
-    --x-svg-dark: url('data:image/svg+xml; utf8, \
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
-    <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
-    <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
     /* Text colors for body and block elements */
     --body-text-color: #181818;
     --block-text-color: #181818;
@@ -109,6 +95,17 @@
     --invalid-tag-text-color: #000000;
     --icon-filter: none;
     --caption-link-color: var(--subnav-link-color);
+    /* SVG icons for light theme */
+    --right-svg: url("right.svg");
+    --glass-svg: url("glass.svg");
+    --x-svg: url("x.svg");
+    /* Show light theme icon */
+    button#theme-button img.light-theme-icon {
+        display: inline;
+    }
+    button#theme-button img.dark-theme-icon {
+        display: none;
+    }
 }
 /* Dark theme variables */
 :root[data-theme="theme-dark"] {
@@ -157,6 +154,27 @@
     --invalid-tag-text-color: #000000;
     --icon-filter: invert(100%) brightness(160%);
     --caption-link-color: var(--link-color);
+    /* Inline SVG icons for dark theme */
+    --right-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"> \
+    <path d="m35.763 5.058 38.675 36.885a12.596 12.596 90 0 1 0 18.23L35.763 97.058v-18.32l27.055-25.431a2.975 2.975 90.09 0 0 .007-4.33L35.763 23.38Z" \
+    style="fill:%23fff;stroke-width:.285806" transform="translate(-5.292 -1.058)"/> \
+    </svg>');
+    --glass-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"> \
+    <path d="M66.37 55.005C64.415 58.958 60.147 63.321 56.153 66l32.478 33.456L99.377 88.99Z" style="fill:%23a1d3ff"/>\
+    <circle cx="35.072" cy="35.072" r="30.635" style="fill:none;stroke:%23a1d3ff;stroke-width:8"/></svg>');
+    --x-svg: url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
+    <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
+    <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
+    /* Show dark theme icon */
+    button#theme-button img.light-theme-icon {
+        display: none;
+    }
+    button#theme-button img.dark-theme-icon {
+        display: inline;
+    }
 }
 /*
  * Styles for individual HTML elements.
@@ -325,12 +343,6 @@ button#theme-button img {
     display: none;
     width: 18px;
 }
-:root[data-theme="theme-light"] button#theme-button img.light-theme-icon {
-    display: inline;
-}
-:root[data-theme="theme-dark"] button#theme-button img.dark-theme-icon {
-    display: inline;
-}
 div#theme-panel {
     display: none;
     position: fixed;
@@ -394,13 +406,10 @@ ol.sub-nav-list li {
     margin-right: -4px;
 }
 ol.sub-nav-list li:not(:first-child) {
-    background: url("right.svg") no-repeat 3px;
+    background: var(--right-svg) no-repeat 3px;
     background-size: 10px;
     padding-left: 17px;
     list-style: none;
-}
-:root[data-theme="theme-dark"] ol.sub-nav-list li:not(:first-child) {
-    background-image: var(--right-svg-dark);
 }
 ol.sub-nav-list a {
     padding: 3px;
@@ -576,6 +585,7 @@ dl.name-value > dd {
     padding: 6px 10px;
     white-space: nowrap;
     border: 1px solid transparent;
+    border-radius: 3px;
 }
 .main-grid nav.toc button > img {
     vertical-align: middle;
@@ -595,7 +605,7 @@ dl.name-value > dd {
 .main-grid nav.toc button:hover,
 .main-grid nav.toc button:focus {
     color: var(--body-text-color);
-    border: 1px solid var(--subnav-background-color);
+    border: 1px solid var(--button-border-color);
 }
 .main-grid nav.toc button:active {
     background-color: var(--subnav-background-color);
@@ -1160,7 +1170,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     padding: 3px 4px;
 }
 input[type="text"] {
-    background-image:url('glass.svg');
+    background-image:var(--glass-svg);
     background-size:13px;
     background-repeat:no-repeat;
     background-position:3px 4px;
@@ -1172,9 +1182,6 @@ input[type="text"] {
     padding-right: 18px;
     font-size: var(--nav-font-size);
     height: 19px;
-}
-:root[data-theme="theme-dark"] input[type="text"] {
-    background-image: var(--glass-svg-dark);
 }
 input#page-search-input {
     width: calc(180px + 10vw);
@@ -1191,7 +1198,7 @@ input.filter-input {
 }
 input#reset-search, input.reset-filter, input#page-search-reset {
     background-color: transparent;
-    background-image:url('x.svg');
+    background-image:var(--x-svg);
     background-repeat:no-repeat;
     background-size:contain;
     border:0;
@@ -1202,11 +1209,6 @@ input#reset-search, input.reset-filter, input#page-search-reset {
     min-height:12px;
     font-size:0;
     visibility:hidden;
-}
-:root[data-theme="theme-dark"] input#reset-search,
-:root[data-theme="theme-dark"] input.reset-filter,
-:root[data-theme="theme-dark"] input#page-search-reset {
-    background-image: var(--x-svg-dark);
 }
 input#reset-search {
     position:absolute;
