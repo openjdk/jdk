@@ -4268,22 +4268,24 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       return false;
     }
 
+    Node* loop_incr = loop_exit.incr();
+
     // With an extra phi for the candidate iv?
     // Or the region node is the loop head
-    if (!loop_exit.incr()->is_Phi() || loop_exit.incr()->in(0) == head) {
+    if (!loop_incr->is_Phi() || loop_incr->in(0) == head) {
       return false;
     }
 
     PathFrequency pf(head, this);
-    region = loop_exit.incr()->in(0);
+    region = loop_incr->in(0);
 
     // Go over all paths for the extra phi's region and see if that
     // path is frequent enough and would match the expected iv shape
     // if the extra phi is removed
     inner = 0;
-    for (uint i = 1; i < loop_exit.incr()->req(); ++i) {
+    for (uint i = 1; i < loop_incr->req(); ++i) {
       CountedLoopNode::TruncatedIncrement increment(T_INT);
-      increment.build(loop_exit.incr()->in(i));
+      increment.build(loop_incr->in(i));
       if (!increment.is_valid()) {
         continue;
       }

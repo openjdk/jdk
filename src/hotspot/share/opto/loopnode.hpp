@@ -1338,7 +1338,7 @@ public:
       _phase(phase) {}
 
     void build();
-    bool canonicalize_mask(jlong stride_con);
+    void canonicalize_mask(jlong stride_con);
 
     bool is_valid_with_bt(BasicType bt) const {
       return _is_valid && _cmp != nullptr && _cmp->Opcode() == Op_Cmp(bt);
@@ -1381,7 +1381,7 @@ public:
   class LoopIVStride {
     bool _is_valid = false;
 
-    Node* _node = nullptr;
+    Node* _stride_node = nullptr;
     Node* _xphi = nullptr;
 
   public:
@@ -1389,8 +1389,8 @@ public:
 
     void build(const Node* incr);
 
-    bool is_valid() const { return _is_valid && _node != nullptr; }
-    Node* node() const { return _node; }
+    bool is_valid() const { return _is_valid && _stride_node != nullptr; }
+    Node* stride_node() const { return _stride_node; }
     Node* xphi() const { return _xphi; }
 
     jlong compute_non_zero_stride_con(BoolTest::mask mask, BasicType iv_bt) const;
@@ -2018,7 +2018,7 @@ class CountedLoopConverter {
     CountedLoopNode::TruncatedIncrement _truncated_increment;
     PhaseIdealLoop::LoopIVStride _stride;
     PhiNode* _phi = nullptr;
-    SafePointNode* _sfpt = nullptr;
+    SafePointNode* _safepoint = nullptr;
 
   public:
     LoopStructure(const Node* head, const IdealLoopTree* loop, PhaseIdealLoop* phase, const BasicType iv_bt) :
@@ -2026,16 +2026,16 @@ class CountedLoopConverter {
       _loop(loop),
       _phase(phase),
       _iv_bt(iv_bt),
-      _exit_test(PhaseIdealLoop::LoopExitTest(_phase->loop_exit_control(_head, _loop), _loop, _phase)),
-      _iv_incr(PhaseIdealLoop::LoopIVIncr(_head, _loop)),
-      _truncated_increment(CountedLoopNode::TruncatedIncrement(_iv_bt)),
+      _back_control(_phase->loop_exit_control(_head, _loop)),
+      _exit_test(_back_control, _loop, _phase),
+      _iv_incr(_head, _loop),
+      _truncated_increment(_iv_bt),
       _stride(PhaseIdealLoop::LoopIVStride()) {}
 
     void build();
 
     jlong final_limit_correction() const; // compute adjusted loop limit correction
     bool is_infinite_loop(const TypeInteger* limit_t) const;
-
 
     bool is_valid() const { return _is_valid; }
 
@@ -2045,7 +2045,9 @@ class CountedLoopConverter {
     CountedLoopNode::TruncatedIncrement& truncated_increment() { return _truncated_increment; }
     PhaseIdealLoop::LoopIVStride& stride() { return _stride; }
     PhiNode* phi() const { return _phi; }
-    SafePointNode* sfpt() const { return _sfpt; }
+    SafePointNode* sfpt() const { return _safepoint; }
+    jlong stride_con() const { return _stride.compute_non_zero_stride_con(_exit_test.mask(), _iv_bt); }
+    Node* limit() const { return _exit_test.limit(); }
   };
 
   PhaseIdealLoop* const _phase;
@@ -2057,9 +2059,7 @@ class CountedLoopConverter {
   bool _insert_stride_overflow_limit_check = false;
   bool _insert_init_trip_limit_check = false;
 
-#ifdef ASSERT
-  bool _checked_for_counted_loop = false;
-#endif
+  DEBUG_ONLY(bool _checked_for_counted_loop = false;)
 
   // stats for PhaseIdealLoop::print_statistics()
   static volatile int _long_loop_counted_loops;
@@ -2073,12 +2073,12 @@ class CountedLoopConverter {
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol) const;
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
-                                       Node* loop_entry);
+                                       Node* loop_entry) const;
 
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask) const;
   bool has_truncation_wrap(CountedLoopNode::TruncatedIncrement truncation, Node* phi, jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
-  bool is_safepoint_invalid(SafePointNode* sfpt);
+  bool is_safepoint_invalid(SafePointNode* sfpt) const;
 
  public:
   CountedLoopConverter(PhaseIdealLoop* phase, Node* head, IdealLoopTree* loop, const BasicType iv_bt)
@@ -2096,10 +2096,8 @@ class CountedLoopConverter {
   bool is_counted_loop();
   IdealLoopTree* convert();
 
-#ifdef ASSERT
-  bool should_stress_long_counted_loop();
-  bool stress_long_counted_loop();
-#endif
+  DEBUG_ONLY(bool should_stress_long_counted_loop();)
+  DEBUG_ONLY(bool stress_long_counted_loop();)
 };
 
 class AutoNodeBudget : public StackObj

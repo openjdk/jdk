@@ -1695,8 +1695,9 @@ void PhaseIdealLoop::LoopExitTest::build() {
     swap(_incr, _limit);   // Then reverse order into the CmpI
     _mask = BoolTest(_mask).commute(); // And commute the exit test
   }
-  if (_phase->is_member(_loop, _phase->get_ctrl(_limit))) { // Limit must be loop-invariant
-    return;
+
+  if (!_loop->is_invariant(_limit)) { // Limit must be loop-invariant
+     return;
   }
   if (!_phase->is_member(_loop, _phase->get_ctrl(_incr))) { // Trip counter must be loop-variant
     return;
@@ -1706,9 +1707,9 @@ void PhaseIdealLoop::LoopExitTest::build() {
 }
 
 // Canonicalize the loop condition if it is 'ne'.
-bool PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
+void PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
   if (_mask != BoolTest::ne) {
-    return false;
+    return;
   }
 
   assert(stride_con == 1 || stride_con == -1, "simple increment only - checked in CountedLoopConverter");
@@ -1717,18 +1718,11 @@ bool PhaseIdealLoop::LoopExitTest::canonicalize_mask(jlong stride_con) {
     // 'ne' can be replaced with 'lt' only when init < limit.
     // This is ensured by the inserted predicate in CountedLoopConverter
     _mask = BoolTest::lt;
-    return true;
-  }
-
-  if (stride_con == -1) {
+  } else {
     // 'ne' can be replaced with 'gt' only when init > limit.
     // This is ensured by the inserted predicate in CountedLoopConverter.
     _mask = BoolTest::gt;
-    return true;
   }
-
-  // Should not reach
-  return false;
 }
 
 void PhaseIdealLoop::LoopIVIncr::build(Node* old_incr) {
@@ -1761,20 +1755,20 @@ void PhaseIdealLoop::LoopIVStride::build(const Node* incr) {
   assert(incr->Opcode() == Op_AddI || incr->Opcode() == Op_AddL, "caller resp.");
   // Get merge point
   _xphi = incr->in(1);
-  _node = incr->in(2);
-  if (!_node->is_Con()) {     // Oops, swap these
+  _stride_node = incr->in(2);
+  if (!_stride_node->is_Con()) {     // Oops, swap these
     if (!_xphi->is_Con()) {     // Is the other guy a constant?
       return;            // Nope, unknown stride, bail out
     }
 
-    swap(_xphi, _node);        // 'incr' is commutative, so ok to swap
+    swap(_xphi, _stride_node);        // 'incr' is commutative, so ok to swap
   }
 
   _is_valid = true;
 }
 
 jlong PhaseIdealLoop::LoopIVStride::compute_non_zero_stride_con(const BoolTest::mask mask, const BasicType iv_bt) const {
-  jlong stride_con = node()->get_integer_as_long(iv_bt);
+  jlong stride_con = stride_node()->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt"); // stride constant can never be 0!
 
   // If the condition is inverted and we will be rolling
@@ -1816,9 +1810,6 @@ void CountedLoopConverter::LoopStructure::build() {
   }
 
   _iv_incr.build(incr);
-  // if (!_iv_incr.is_valid_with_bt(_iv_bt)) {
-  //   return;
-  // }
   if (!_iv_incr.is_valid()) {
     return;
   }
@@ -1850,9 +1841,9 @@ void CountedLoopConverter::LoopStructure::build() {
 
   Node* sfpt = _back_control->in(0)->in(0);
   if (_loop->_child != nullptr && sfpt->Opcode() == Op_SafePoint) {
-    _sfpt = sfpt->as_SafePoint();
+    _safepoint = sfpt->as_SafePoint();
   } else {
-    _sfpt = _phase->find_safepoint(_back_control, _head, _loop);
+    _safepoint = _phase->find_safepoint(_back_control, _head, _loop);
   }
 
   _is_valid = true;
@@ -2042,13 +2033,13 @@ bool CountedLoopConverter::is_counted_loop() {
   // ---- Is the loop trip counted? ----
 
   // Check trip counter will end up higher than the limit
-  const TypeInteger* limit_t = igvn->type(_structure.exit_test().limit())->is_integer(_iv_bt);
+  const TypeInteger* limit_t = igvn->type(_structure.limit())->is_integer(_iv_bt);
   if (_structure.is_infinite_loop(limit_t)) {
     return false;
   }
 
   // Stride must be constant
-  const jlong stride_con = _structure.stride().compute_non_zero_stride_con(_structure.exit_test().mask(), _iv_bt);
+  const jlong stride_con = _structure.stride_con();
   if (stride_con == 0) {
     return false;
   }
@@ -2138,6 +2129,7 @@ bool CountedLoopConverter::is_counted_loop() {
   //
   // If that is not the case, we need to canonicalize the loop exit check by using different values for adjusted_limit
   // (see LoopStructure::final_limit_correction()).
+  //
   // Note that after canonicalization:
   //     (AL) limit <= adjusted_limit.
   //
@@ -2289,7 +2281,7 @@ bool CountedLoopConverter::is_counted_loop() {
     }
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
-    if (!_phase->is_dominator(_phase->get_ctrl(_structure.exit_test().limit()), loop_limit_check_parse_predicate->in(0))) {
+    if (!_phase->is_dominator(_phase->get_ctrl(_structure.limit()), loop_limit_check_parse_predicate->in(0))) {
       return false;
     }
 
@@ -2310,7 +2302,7 @@ bool CountedLoopConverter::is_counted_loop() {
   if (init_gte_limit && // (2.1)
       ((_structure.exit_test().mask() == BoolTest::ne || init_plus_stride_could_overflow) && // (2.3)
           !has_dominating_loop_limit_check(init_trip,
-                                           _structure.exit_test().limit(),
+                                           _structure.limit(),
                                            stride_con,
                                            _iv_bt,
                                            init_control))) { // (2.2)
@@ -2337,7 +2329,7 @@ bool CountedLoopConverter::is_counted_loop() {
 
     ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
     Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
-    if (!_phase->is_dominator(_phase->get_ctrl(_structure.exit_test().limit()), parse_predicate_entry) ||
+    if (!_phase->is_dominator(_phase->get_ctrl(_structure.limit()), parse_predicate_entry) ||
         !_phase->is_dominator(_phase->get_ctrl(init_trip), parse_predicate_entry)) {
       return false;
     }
@@ -2402,14 +2394,14 @@ bool CountedLoopConverter::LoopStructure::is_infinite_loop(const TypeInteger* li
     //    i = i && 0x7fff;
     //  }
     //
-    // If the array is shorter than 0x8000 this exits through a AIOOB
+    // If the array is shorter than 0x8000 this exits through an AIOOB
     //  - Counted loop transformation is ok
     // If the array is longer then this is an endless loop
     //  - No transformation can be done.
 
     const TypeInteger* incr_t = igvn.type(_iv_incr.incr())->is_integer(_iv_bt);
     if (limit_t->hi_as_long() > incr_t->hi_as_long()) {
-      // if the limit can have a higher value than the increment (before the0 phi)
+      // if the limit can have a higher value than the increment (before the phi)
       return true;
     }
   }
@@ -2474,7 +2466,7 @@ SafePointNode* CountedLoopConverter::find_safepoint(Node* iftrue) {
   return nullptr;
 }
 
-bool CountedLoopConverter::is_safepoint_invalid(SafePointNode* sfpt) {
+bool CountedLoopConverter::is_safepoint_invalid(SafePointNode* sfpt) const {
   if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
     if (((_iv_bt == T_INT && LoopStripMiningIter != 0) ||
         _iv_bt == T_LONG) &&
@@ -2497,20 +2489,21 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
   PhaseIterGVN* igvn = &_phase->igvn();
   Node* init_control = _head->in(LoopNode::EntryControl);
-  const jlong stride_con = _structure.stride().compute_non_zero_stride_con(_structure.exit_test().mask(), _iv_bt);
+  const jlong stride_con = _structure.stride_con();
 
   if (_insert_stride_overflow_limit_check) {
-    Node* cmp_limit = CmpNode::make(_structure.exit_test().limit(), igvn->integercon((stride_con > 0
-                                                              ? max_signed_integer(_iv_bt)
-                                                              : min_signed_integer(_iv_bt))
-                                                                 - _structure.final_limit_correction(), _iv_bt), _iv_bt);
+    jlong adjusted_stride_con = (stride_con > 0
+                               ? max_signed_integer(_iv_bt)
+                               : min_signed_integer(_iv_bt)) - _structure.final_limit_correction();
+
+    Node* cmp_limit = CmpNode::make(_structure.limit(), igvn->integercon(adjusted_stride_con, _iv_bt), _iv_bt);
     Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::le : BoolTest::ge);
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
   Node* init_trip = _structure.phi()->in(LoopNode::EntryControl);
   if (_insert_init_trip_limit_check) {
-    Node* cmp_limit = CmpNode::make(init_trip, _structure.exit_test().limit(), _iv_bt);
+    Node* cmp_limit = CmpNode::make(init_trip, _structure.limit(), _iv_bt);
     Node* bol = new BoolNode(cmp_limit, stride_con > 0 ? BoolTest::lt : BoolTest::gt);
     insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
@@ -2527,7 +2520,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
     }
   }
 
-  Node* adjusted_limit = _structure.exit_test().limit();
+  Node* adjusted_limit = _structure.limit();
   if (_structure.iv_incr().phi_incr() != nullptr) {
     // If compare points directly to the phi we need to adjust
     // the compare so that it points to the incr. Limit have
@@ -2538,7 +2531,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
     // is converted to
     //   i = init; do {} while(++i < limit+1);
     //
-    adjusted_limit = igvn->transform(AddNode::make(_structure.exit_test().limit(), _structure.stride().node(), _iv_bt));
+    adjusted_limit = igvn->transform(AddNode::make(_structure.limit(), _structure.stride().stride_node(), _iv_bt));
   }
 
   BoolTest::mask mask = _structure.exit_test().mask();
@@ -2556,13 +2549,12 @@ IdealLoopTree* CountedLoopConverter::convert() {
       ShouldNotReachHere();
   }
   _phase->set_subtree_ctrl(adjusted_limit, false);
-  _phase->set_subtree_ctrl(adjusted_limit, false);
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
   Node* incr = _structure.truncated_increment().incr()->clone();
   incr->set_req(1, _structure.phi());
-  incr->set_req(2, _structure.stride().node());
+  incr->set_req(2, _structure.stride().stride_node());
   incr = igvn->register_new_node_with_optimizer(incr);
   _phase->set_early_ctrl(incr, false);
   igvn->rehash_node_delayed(_structure.phi());
@@ -2612,7 +2604,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   // Get the loop-exit control
   Node* iffalse = iff->as_If()->proj_out(!(iftrue_op == Op_IfTrue));
 
-// Need to swap loop-exit and loop-back control?
+  // Need to swap loop-exit and loop-back control?
   if (iftrue_op == Op_IfFalse) {
     Node* ift2 = igvn->register_new_node_with_optimizer(new IfTrueNode(le));
     Node* iff2 = igvn->register_new_node_with_optimizer(new IfFalseNode(le));
@@ -2744,7 +2736,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
 // Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
 // If there is one, then we do not need to create an additional Loop Limit Check Predicate.
 bool CountedLoopConverter::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
-                                                     const BasicType iv_bt, Node* loop_entry) {
+                                                     const BasicType iv_bt, Node* loop_entry) const {
   PhaseIterGVN& _igvn = _phase->igvn();
 
   // Eagerly call transform() on the Cmp and Bool node to common them up if possible. This is required in order to
