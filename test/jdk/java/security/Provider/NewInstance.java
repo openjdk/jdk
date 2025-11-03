@@ -26,8 +26,7 @@
  * @bug 8039853
  * @summary Provider.Service.newInstance() does not work with current
             JDK JGSS Mechanisms
- * @library /test/lib ../..
- * @run main/othervm NewInstance
+ * @library /test/lib
  */
 
 

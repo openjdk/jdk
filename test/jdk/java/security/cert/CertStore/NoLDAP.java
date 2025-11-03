@@ -25,8 +25,7 @@
  * @bug 8004502
  * @summary Sanity check that NoSuchAlgorithmException is thrown when requesting
  *   a CertStore of type "LDAP" and LDAP is not available.
- * @library /test/lib ../..
- * @run main/othervm NoLDAP
+ * @library /test/lib
  */
 
 import java.security.NoSuchAlgorithmException;
@@ -41,7 +40,7 @@ public class NoLDAP {
             Class.forName("javax.naming.ldap.LdapName");
             throw new SkippedException("Test skipped :: LDAP is present");
         } catch (ClassNotFoundException ignore) {
-            System.err.println("Class not found exception" + ignore.getMessage());
+            System.err.println("Class not found exception occur " + ignore.getMessage());
         }
 
         try {
