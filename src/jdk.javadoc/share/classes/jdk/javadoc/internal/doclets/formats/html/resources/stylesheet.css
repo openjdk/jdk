@@ -571,13 +571,10 @@ dl.name-value > dd {
     padding: 15px 20px;
 }
 .main-grid nav.toc > ol.toc-list {
-    max-height: calc(100vh - var(--nav-height) - 100px);
+    max-height: calc(100vh - var(--nav-height) - 110px);
     padding-left: 12px;
 }
 .main-grid nav.toc button {
-    position: absolute;
-    bottom: 16px;
-    z-index: 3;
     background-color: var(--toc-background-color);
     color: #666666;
     font-size: 0.76rem;
@@ -591,6 +588,12 @@ dl.name-value > dd {
     vertical-align: middle;
     width: 16px;
     height: 16px;
+}
+.main-grid nav.toc button.hide-sidebar,
+.main-grid nav.toc button.show-sidebar {
+    position: absolute;
+    bottom: 15px;
+    z-index: 3;
 }
 .main-grid nav.toc button.hide-sidebar {
     right: 0;
