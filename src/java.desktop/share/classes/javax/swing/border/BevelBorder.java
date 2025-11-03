@@ -79,7 +79,7 @@ public class BevelBorder extends AbstractBorder
      * component passed into the paintBorder method.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no border will be painted.
+     * no bevel border will be painted.
      *
      * @param bevelType the type of bevel for the border
      */
@@ -96,7 +96,7 @@ public class BevelBorder extends AbstractBorder
      * will be derived from specified shadow color.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no border will be painted.
+     * no bevel border will be painted.
      *
      * @param bevelType the type of bevel for the border
      * @param highlight the color to use for the bevel highlight
@@ -112,7 +112,7 @@ public class BevelBorder extends AbstractBorder
      * shadow colors.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no border will be painted.
+     * no bevel border will be painted.
      *
      * @param bevelType the type of bevel for the border
      * @param highlightOuterColor the color to use for the bevel outer highlight

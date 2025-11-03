@@ -146,7 +146,7 @@ public class BorderFactory
      * uses a brighter shade of the shadow color.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}
-     * no border will be painted.
+     * no bevel border will be painted.
      *
      * @param type  an integer specifying either
      *                  <code>BevelBorder.LOWERED</code> or
