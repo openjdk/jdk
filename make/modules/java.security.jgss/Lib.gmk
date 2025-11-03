@@ -98,8 +98,8 @@ ifneq ($(BUILD_CRYPTO), false)
   endif
 
   ifeq ($(call isTargetOs, linux), true)
-    ifeq ($(ENABLE_LIBLINUXKRB5), true)
-      $(eval $(call SetupJdkLibrary, BUILD_LIBLINUXKRB5, \
+    ifeq ($(ENABLE_LIBKRB5_LINUX), true)
+      $(eval $(call SetupJdkLibrary, BUILD_LIBKRB5_LINUX, \
           NAME := linuxkrb5, \
           OPTIMIZATION := LOW, \
           DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
@@ -109,7 +109,7 @@ ifneq ($(BUILD_CRYPTO), false)
           LIBS_linux := $(KRB5_LIBS) $(COM_ERR_LIBS), \
       ))
 
-      TARGETS += $(BUILD_LIBLINUXKRB5)
+      TARGETS += $(BUILD_LIBKRB5_LINUX)
     endif
   endif
 

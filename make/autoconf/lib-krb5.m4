@@ -41,6 +41,9 @@ AC_DEFUN_ONCE([LIB_SETUP_KRB5],
 
   if test "x$OPENJDK_TARGET_OS" != "xlinux" && test "x${with_krb5}" = "xyes"; then
     AC_MSG_ERROR([krb5 support is only available on Linux])
+  elif test "x${with_krb5}" = "xno"; then
+    AC_MSG_CHECKING([for krb5])
+    AC_MSG_RESULT([disabled])
   else
     KRB5_FOUND=no
 
@@ -129,7 +132,14 @@ AC_DEFUN_ONCE([LIB_SETUP_KRB5],
         fi
         AC_MSG_RESULT([$KRB5_FOUND])
       else
-        PKG_CHECK_MODULES(KRB5, krb5, [KRB5_FOUND=yes], [KRB5_FOUND=no])
+        if test "x$PKG_CONFIG" != "x" ; then
+          PKG_CHECK_MODULES(KRB5, krb5, [KRB5_FOUND=yes], [KRB5_FOUND=no])
+          if test "x$KRB5_FOUND" = "xyes" ; then
+            AC_MSG_CHECKING([for krb5])
+            AC_MSG_RESULT([yes (using pkg-config)])
+          fi
+        fi
+
         if test "x$KRB5_FOUND" = "xno"; then
           UTIL_LOOKUP_PROGS(KRB5CONF, krb5-config)
           if test "x$KRB5CONF" != "x"; then
