@@ -5253,6 +5253,18 @@ public final class Collections {
         public int hashCode() {
             return Objects.hashCode(element);
         }
+        public Object[] toArray() {
+            return new Object[] {element};
+        }
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            if (a.length < 1)
+                a = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 1);
+            a[0] = (T)element;
+            if (a.length > 1)
+                a[1] = null;
+            return a;
+        }
     }
 
     /**

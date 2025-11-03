@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -750,6 +750,22 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public boolean addAll(Collection<? extends E> c) {
+        if (c.getClass() == ArrayList.class) {
+            ArrayList<?> src = (ArrayList<?>) c;
+            Object[] a = src.elementData;
+            int numNew = src.size;
+            if (numNew == 0)
+                return false;
+            modCount++;
+            Object[] elementData;
+            final int s;
+            if (numNew > (elementData = this.elementData).length - (s = size))
+                elementData = grow(s + numNew);
+            System.arraycopy(a, 0, elementData, s, numNew);
+            size = s + numNew;
+            return true;
+        }
+
         Object[] a = c.toArray();
         modCount++;
         int numNew = a.length;
