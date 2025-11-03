@@ -77,6 +77,8 @@ public class EventNames {
     public static final String ThreadAllocationStatistics = PREFIX + "ThreadAllocationStatistics";
     public static final String ExecutionSample = PREFIX + "ExecutionSample";
     public static final String NativeMethodSample = PREFIX + "NativeMethodSample";
+    public static final String CPUTimeSample = PREFIX + "CPUTimeSample";
+    public static final String CPUTimeSamplesLost = PREFIX + "CPUTimeSamplesLost";
     public static final String ThreadDump = PREFIX + "ThreadDump";
     public static final String OldObjectSample = PREFIX + "OldObjectSample";
     public static final String SymbolTableStatistics = PREFIX + "SymbolTableStatistics";
@@ -90,6 +92,9 @@ public class EventNames {
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
     public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
+    public static final String SafepointLatency = PREFIX + "SafepointLatency";
+    public static final String MethodTiming = PREFIX + "MethodTiming";
+    public static final String MethodTrace = PREFIX + "MethodTrace";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

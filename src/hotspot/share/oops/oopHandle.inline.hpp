@@ -27,8 +27,8 @@
 
 #include "oops/oopHandle.hpp"
 
-#include "oops/access.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
+#include "oops/access.inline.hpp"
 
 inline oop OopHandle::resolve() const {
   if (_obj == nullptr) {

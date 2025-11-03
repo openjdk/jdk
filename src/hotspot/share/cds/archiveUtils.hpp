@@ -30,11 +30,11 @@
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -136,12 +136,12 @@ class SharedDataRelocator: public BitMapClosure {
     _valid_old_base(valid_old_base), _valid_old_end(valid_old_end),
     _valid_new_base(valid_new_base), _valid_new_end(valid_new_end),
     _delta(delta) {
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
   }
 
   bool do_bit(size_t offset);
@@ -275,7 +275,7 @@ public:
   }
 
   // The following functions translate between a u4 offset and an address in the
-  // the range of the mapped CDS archive (e.g., Metaspace::is_in_shared_metaspace()).
+  // the range of the mapped CDS archive (e.g., Metaspace::in_aot_cache()).
   // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
   // we know that offset 0 never represents a valid object. As a result, an offset of 0
   // is used to encode a nullptr.
@@ -287,7 +287,7 @@ public:
   template <typename T> T static offset_to_archived_address(u4 offset) {
     assert(offset != 0, "sanity");
     T p = (T)(SharedBaseAddress + offset);
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     return p;
   }
 
@@ -303,7 +303,7 @@ public:
   template <typename T> static u4 archived_address_to_offset(T p) {
     uintx pn = (uintx)p;
     uintx base = (uintx)SharedBaseAddress;
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
     uintx offset = pn - base;
     assert(offset <= MAX_SHARED_DELTA, "range check");

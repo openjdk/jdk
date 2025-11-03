@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,5 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native -agentlib:rawmnwait001 nsk.jvmti.RawMonitorWait.rawmnwait001
+ * @run main/othervm/native/timeout=480 -agentlib:rawmnwait001 nsk.jvmti.RawMonitorWait.rawmnwait001
  */
-

@@ -34,7 +34,6 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/regalloc.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -46,6 +45,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/traceMergeStoresTag.hpp"
@@ -1981,13 +1981,11 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
          "must not happen");
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
-    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
     return TypeInt::make(klass->misc_flags());
   }
@@ -4231,10 +4229,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 }
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
-  if (outcnt() != 2) {
-    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
-    assert(outcnt() == 1, "Only control then");
-  }
+  assert(outcnt() > 0 && outcnt() <= 2, "Only one or two out edges allowed");
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
     if (leading != nullptr) {
@@ -4330,7 +4325,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
   switch (proj->_con) {
   case TypeFunc::Control:
   case TypeFunc::Memory:
-    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this, proj->_con, RegMask::EMPTY, MachProjNode::unmatched_proj);
   }
   ShouldNotReachHere();
   return nullptr;
@@ -4577,7 +4572,7 @@ const RegMask &InitializeNode::in_RegMask(uint idx) const {
   // This edge should be set to top, by the set_complete.  But be conservative.
   if (idx == InitializeNode::RawAddress)
     return *(Compile::current()->matcher()->idealreg2spillmask[in(idx)->ideal_reg()]);
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 Node* InitializeNode::memory(uint alias_idx) {
@@ -5789,7 +5784,7 @@ void MergeMemNode::set_base_memory(Node *new_base) {
 
 //------------------------------out_RegMask------------------------------------
 const RegMask &MergeMemNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------dump_spec--------------------------------------

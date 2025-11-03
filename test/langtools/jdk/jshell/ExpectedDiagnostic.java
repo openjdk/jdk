@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 import javax.tools.Diagnostic;
 
 import jdk.jshell.Diag;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ExpectedDiagnostic {
 
@@ -79,16 +79,16 @@ public class ExpectedDiagnostic {
 
     public void assertDiagnostic(Diag diagnostic) {
         String code = diagnostic.getCode();
-        assertEquals(code, this.code, "Expected error: " + this.code + ", got: " + code);
-        assertEquals(diagnostic.isError(), kind == Diagnostic.Kind.ERROR);
+        assertEquals(this.code, code, "Expected error: " + this.code + ", got: " + code);
+        assertEquals(kind == Diagnostic.Kind.ERROR, diagnostic.isError());
         if (startPosition != -1) {
-            assertEquals(diagnostic.getStartPosition(), startPosition, "Start position");
+            assertEquals(startPosition, diagnostic.getStartPosition(), "Start position");
         }
         if (endPosition != -1) {
-            assertEquals(diagnostic.getEndPosition(), endPosition, "End position");
+            assertEquals(endPosition, diagnostic.getEndPosition(), "End position");
         }
         if (position != -1) {
-            assertEquals(diagnostic.getPosition(), position, "Position");
+            assertEquals(position, diagnostic.getPosition(), "Position");
         }
     }
 }

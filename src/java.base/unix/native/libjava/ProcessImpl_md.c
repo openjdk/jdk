@@ -328,7 +328,7 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
   "  - Restart JVM, especially after in-place JDK updates\n" \
   "  - Check system logs for JDK-related errors\n" \
   "  - Re-install JDK to fix permission/versioning problems\n" \
-  "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=VFORK\n"
+  "  - Switch to legacy launch mechanism with -Djdk.lang.Process.launchMechanism=FORK\n"
 
 static void
 throwIOExceptionImpl(JNIEnv *env, int errnum, const char *externalDetail, const char *internalDetail)
@@ -732,7 +732,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
         (fds[2] == -1 && pipe(err) < 0) ||
         (pipe(childenv) < 0) ||
         (pipe(fail) < 0)) {
-        throwInternalIOException(env, errno, "Bad file descriptor", c->mode);
+        throwInternalIOException(env, errno, "Bad file descriptor", mode);
         goto Catch;
     }
     c->fds[0] = fds[0];

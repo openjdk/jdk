@@ -33,15 +33,17 @@ import javax.swing.event.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuUI;
 
-public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
+public final class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
     public static ComponentUI createUI(final JComponent x) {
         return new AquaMenuUI();
     }
 
+    @Override
     protected ChangeListener createChangeListener(final JComponent c) {
         return new ChangeHandler((JMenu)c, this);
     }
 
+    @Override
     protected void installDefaults() {
         super.installDefaults();
 
@@ -51,16 +53,19 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
         ((JMenu)menuItem).setDelay(8 * 1000 / 60);
     }
 
+    @Override
     protected void paintMenuItem(final Graphics g, final JComponent c, final Icon localCheckIcon, final Icon localArrowIcon, final Color background, final Color foreground, final int localDefaultTextIconGap) {
         AquaMenuPainter.instance().paintMenuItem(this, g, c, localCheckIcon, localArrowIcon, background, foreground, disabledForeground, selectionForeground, localDefaultTextIconGap, acceleratorFont);
     }
 
+    @Override
     protected Dimension getPreferredMenuItemSize(final JComponent c, final Icon localCheckIcon, final Icon localArrowIcon, final int localDefaultTextIconGap) {
         final Dimension d = AquaMenuPainter.instance().getPreferredMenuItemSize(c, localCheckIcon, localArrowIcon, localDefaultTextIconGap, acceleratorFont);
         if (c.getParent() instanceof JMenuBar) d.height = Math.max(d.height, 21);
         return d;
     }
 
+    @Override
     public void paintBackground(final Graphics g, final JComponent c, final int menuWidth, final int menuHeight) {
         final Container parent = c.getParent();
         final boolean parentIsMenuBar = parent instanceof JMenuBar;
@@ -82,16 +87,19 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
         }
     }
 
+    @Override
     protected MouseInputListener createMouseInputListener(final JComponent c) {
         return new AquaMouseInputHandler();
     }
 
+    @Override
     protected MenuDragMouseListener createMenuDragMouseListener(final JComponent c) {
         //return super.createMenuDragMouseListener(c);
         return new MenuDragMouseHandler();
     }
 
-    class MenuDragMouseHandler implements MenuDragMouseListener {
+    final class MenuDragMouseHandler implements MenuDragMouseListener {
+        @Override
         public void menuDragMouseDragged(final MenuDragMouseEvent e) {
             if (menuItem.isEnabled() == false) return;
 
@@ -118,8 +126,11 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
             }
         }
 
+        @Override
         public void menuDragMouseEntered(final MenuDragMouseEvent e) { }
+        @Override
         public void menuDragMouseExited(final MenuDragMouseEvent e) { }
+        @Override
         public void menuDragMouseReleased(final MenuDragMouseEvent e) { }
     }
 
@@ -130,7 +141,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
         MenuSelectionManager.defaultManager().setSelectedPath(newPath);
     }
 
-    protected class AquaMouseInputHandler extends MouseInputHandler {
+    protected final class AquaMouseInputHandler extends MouseInputHandler {
         /**
          * Invoked when the cursor enters the menu. This method sets the selected
          * path for the MenuSelectionManager and handles the case
@@ -139,6 +150,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
          *
          * @param e the mouse event; not used
          */
+        @Override
         public void mouseEntered(final MouseEvent e) {
             final JMenu menu = (JMenu)menuItem;
             if (!menu.isEnabled()) return;

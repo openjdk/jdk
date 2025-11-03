@@ -25,12 +25,11 @@
 
 package java.lang.ref;
 
-import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.access.JavaLangRefAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.ref.Cleaner;
 
 /**
  * Abstract base class for reference objects.  This class defines the
@@ -43,8 +42,8 @@ import jdk.internal.ref.Cleaner;
  * @since    1.2
  * @sealedGraph
  */
-
-public abstract sealed class Reference<T>
+@AOTSafeClassInitializer
+public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     permits PhantomReference, SoftReference, WeakReference, FinalReference {
 
     /* The state of a Reference object is characterized by two attributes.  It
@@ -199,11 +198,6 @@ public abstract sealed class Reference<T>
         }
 
         public void run() {
-            // pre-load and initialize Cleaner class so that we don't
-            // get into trouble later in the run loop if there's
-            // memory shortage while loading/initializing it lazily.
-            Unsafe.getUnsafe().ensureClassInitialized(Cleaner.class);
-
             while (true) {
                 processPendingReferences();
             }
@@ -253,18 +247,7 @@ public abstract sealed class Reference<T>
             Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
-
-            if (ref instanceof Cleaner) {
-                ((Cleaner)ref).clean();
-                // Notify any waiters that progress has been made.
-                // This improves latency for nio.Bits waiters, which
-                // are the only important ones.
-                synchronized (processPendingLock) {
-                    processPendingLock.notifyAll();
-                }
-            } else {
-                ref.enqueueFromPending();
-            }
+            ref.enqueueFromPending();
         }
         // Notify any waiters of completion of current round.
         synchronized (processPendingLock) {
@@ -307,11 +290,6 @@ public abstract sealed class Reference<T>
     }
 
     static {
-        runtimeSetup();
-    }
-
-    // Also called from JVM when loading an AOT cache
-    private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
             @Override
@@ -357,10 +335,17 @@ public abstract sealed class Reference<T>
      *           {@code null} if this reference object has been cleared
      * @see #refersTo
      */
-    @IntrinsicCandidate
     public T get() {
-        return this.referent;
+        return get0();
     }
+
+    /* Implementation of get().  This method exists to avoid making get() all
+     * of virtual, native, and intrinsic candidate. That could have the
+     * undesirable effect of having the native method used instead of the
+     * intrinsic when devirtualization fails.
+     */
+    @IntrinsicCandidate
+    private native T get0();
 
     /**
      * Tests if the referent of this reference object is {@code obj}.

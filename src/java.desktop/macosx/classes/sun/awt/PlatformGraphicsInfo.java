@@ -29,7 +29,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
 @SuppressWarnings({"restricted"})
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     static {
             System.loadLibrary("awt");

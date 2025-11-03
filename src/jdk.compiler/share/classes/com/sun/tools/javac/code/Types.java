@@ -42,14 +42,12 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.comp.LambdaToMethod;
 import com.sun.tools.javac.jvm.ClassFile;
 import com.sun.tools.javac.util.*;
 
@@ -2236,60 +2234,64 @@ public class Types {
         };
 
     /**
-     * Return the base type of t or any of its outer types that starts
-     * with the given symbol.  If none exists, return null.
+     *  This method returns the first type in a sequence (starting at `t`) that is
+     *  a subclass of `sym`. The next type in the sequence is obtained by calling
+     *  `getEnclosingType()` on the previous type in the sequence. Note, this is
+     *  typically used to compute the implicit qualifier in a method/field access
+     *  expression. Example:
      *
-     * @param t a type
-     * @param sym a symbol
+     *  static class Sup<F> { public F f; }
+     *   class Outer {
+     *    static class Sub extends Sup<String> {
+     *        class I {
+     *          void test() {
+     *              String f2 = f; // Sup<String>::f
+     *          }
+     *        }
+     *    }
+     *  }
+     *
+     *  @param t a type
+     *  @param sym a symbol
      */
     public Type asOuterSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-        case CLASS:
-            do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                t = t.getEnclosingType();
-            } while (t.hasTag(CLASS));
-            return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
+            if (s != null) return s;
+            t1 = t1.getEnclosingType();
         }
+        return null;
     }
 
     /**
-     * Return the base type of t or any of its enclosing types that
-     * starts with the given symbol.  If none exists, return null.
+     * This method returns the first type in a sequence (starting at `t`) that is
+     * a subclass of `sym`. The next type in the sequence is obtained by obtaining
+     * innermost lexically enclosing class type of the previous type in the sequence.
+     * Note, this is typically used to compute the implicit qualifier in
+     * a type expression. Example:
+     *
+     * class A<T> { class B { } }
+     *
+     * class C extends A<String> {
+     *   static class D {
+     *      B b; // A<String>.B
+     *   }
+     * }
      *
      * @param t a type
      * @param sym a symbol
      */
     public Type asEnclosingSuper(Type t, Symbol sym) {
-        switch (t.getTag()) {
-        case CLASS:
-            do {
-                Type s = asSuper(t, sym);
-                if (s != null) return s;
-                Type outer = t.getEnclosingType();
-                t = (outer.hasTag(CLASS)) ? outer :
-                    (t.tsym.owner.enclClass() != null) ? t.tsym.owner.enclClass().type :
-                    Type.noType;
-            } while (t.hasTag(CLASS));
-            return null;
-        case ARRAY:
-            return isSubtype(t, sym.type) ? sym.type : null;
-        case TYPEVAR:
-            return asSuper(t, sym);
-        case ERROR:
-            return t;
-        default:
-            return null;
+        Type t1 = t;
+        while (!t1.hasTag(NONE)) {
+            Type s = asSuper(t1, sym);
+            if (s != null) return s;
+            t1 = (t1.tsym.owner.enclClass() != null)
+                    ? t1.tsym.owner.enclClass().type
+                    : noType;
         }
+        return null;
     }
     // </editor-fold>
 
@@ -4514,7 +4516,7 @@ public class Types {
             to = from;
             from = target;
         }
-        List<Type> commonSupers = superClosure(to, erasure(from));
+        List<Type> commonSupers = supertypeClosure(to, erasure(from));
         boolean giveWarning = commonSupers.isEmpty();
         // The arguments to the supers could be unified here to
         // get a more accurate analysis
@@ -4572,13 +4574,13 @@ public class Types {
         return false;
     }
 
-    private List<Type> superClosure(Type t, Type s) {
+    private List<Type> supertypeClosure(Type t, Type s) {
         List<Type> cl = List.nil();
         for (List<Type> l = interfaces(t); l.nonEmpty(); l = l.tail) {
             if (isSubtype(s, erasure(l.head))) {
                 cl = insert(cl, l.head);
             } else {
-                cl = union(cl, superClosure(l.head, s));
+                cl = union(cl, supertypeClosure(l.head, s));
             }
         }
         return cl;
@@ -5085,16 +5087,12 @@ public class Types {
      *  @param targetType       Target type
      */
     public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
-        if (isSameType(selectorType, targetType)) {
-            return true;
-        }
-
-        return (selectorType.isPrimitive() && targetType.isPrimitive()) &&
-                ((selectorType.hasTag(BYTE) && !targetType.hasTag(CHAR)) ||
-                 (selectorType.hasTag(SHORT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))) ||
-                 (selectorType.hasTag(CHAR)  && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag())))  ||
-                 (selectorType.hasTag(INT)   && (targetType.hasTag(DOUBLE) || targetType.hasTag(LONG))) ||
-                 (selectorType.hasTag(FLOAT) && (selectorType.getTag().isStrictSubRangeOf(targetType.getTag()))));
+        return isSameType(selectorType, targetType) ||
+                (selectorType.isPrimitive() && targetType.isPrimitive()) &&
+                ((selectorType.getTag().isStrictSubRangeOf(targetType.getTag())) &&
+                        !((selectorType.hasTag(BYTE) && targetType.hasTag(CHAR)) ||
+                          (selectorType.hasTag(INT)  && targetType.hasTag(FLOAT)) ||
+                          (selectorType.hasTag(LONG) && (targetType.hasTag(DOUBLE) || targetType.hasTag(FLOAT)))));
     }
     // </editor-fold>
 

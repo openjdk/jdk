@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -1165,7 +1164,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #setShowHorizontalLines
      */
     @BeanProperty(description
-            = "The color used to draw the grid lines.")
+            = "Whether grid lines are drawn around the cells.")
     public void setShowGrid(boolean showGrid) {
         setShowHorizontalLines(showGrid);
         setShowVerticalLines(showGrid);
@@ -6122,7 +6121,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.focusManager = fm;
         }
 
-        @SuppressWarnings("removal")
         public void propertyChange(PropertyChangeEvent ev) {
             if (!isEditing() || getClientProperty("terminateEditOnFocusLost") != Boolean.TRUE) {
                 return;
@@ -6133,8 +6131,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (c == JTable.this) {
                     // focus remains inside the table
                     return;
-                } else if ((c instanceof Window) ||
-                           (c instanceof Applet && c.getParent() == null)) {
+                } else if (c instanceof Window) {
                     if (c == SwingUtilities.getRoot(JTable.this)) {
                         if (!getCellEditor().stopCellEditing()) {
                             getCellEditor().cancelCellEditing();

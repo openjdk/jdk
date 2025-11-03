@@ -1,0 +1,6 @@
+T8347530.java:10:33: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.implement.sealed: kindname.class, T8347530.B0)
+T8347530.java:13:33: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.implement.sealed: kindname.record, T8347530.B1)
+T8347530.java:16:33: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.implement.sealed: kindname.enum, T8347530.B2)
+T8347530.java:19:33: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.implement.sealed: kindname.interface, T8347530.B3)
+T8347530.java:23:29: compiler.err.invalid.permits.clause: (compiler.misc.doesnt.extend.sealed: T8347530.S0)
+5 errors

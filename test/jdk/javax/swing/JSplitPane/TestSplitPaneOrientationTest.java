@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4265389
+ * @bug 4265389 8365886
  * @summary  Verifies JSplitPane support ComponentOrientation
  * @run main TestSplitPaneOrientationTest
  */
@@ -48,6 +48,33 @@ public class TestSplitPaneOrientationTest {
         }
     }
 
+    private static void testSwitchOrientation() {
+        JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                        new JButton("Red"), new JButton("Green"));
+        for (int i = 0; i < 3; i++) {
+            ComponentOrientation co = jsp.getComponentOrientation();
+            if (co.isLeftToRight()) {
+                jsp.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+            } else {
+                jsp.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Left=");
+            if (jsp.getLeftComponent() instanceof JButton leftButton) {
+                sb.append(leftButton.getText());
+            }
+            sb.append(" Right=");
+            if (jsp.getRightComponent() instanceof JButton rightButton) {
+                sb.append(rightButton.getText());
+            }
+            System.out.println(sb);
+        }
+        if (jsp.getLeftComponent() == null) {
+            throw new RuntimeException("JSplitPane repeated orientation change not working");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
@@ -63,6 +90,7 @@ public class TestSplitPaneOrientationTest {
                         throw new RuntimeException("JSplitPane did not support ComponentOrientation");
                     }
                 }
+                testSwitchOrientation();
             });
         }
     }

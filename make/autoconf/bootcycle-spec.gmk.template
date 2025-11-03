@@ -44,7 +44,3 @@ JAVAC_CMD := $(FIXPATH) $(BOOT_JDK)/bin/javac
 JAR_CMD := $(FIXPATH) $(BOOT_JDK)/bin/jar
 # The bootcycle JVM arguments may differ from the original boot jdk.
 JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
-# Any CDS settings generated for the bootjdk are invalid in the bootcycle build.
-# By filtering out those JVM args, the bootcycle JVM will use its default
-# settings for CDS.
-JAVA_FLAGS := $(filter-out -XX:SharedArchiveFile% -Xshare%, $(JAVA_FLAGS))

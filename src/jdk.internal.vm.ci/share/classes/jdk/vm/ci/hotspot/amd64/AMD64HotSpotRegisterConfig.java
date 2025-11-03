@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.code.RegisterArray;
 import jdk.vm.ci.code.RegisterAttributes;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
@@ -69,24 +68,24 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
     private final TargetDescription target;
 
-    private final RegisterArray allocatable;
+    private final List<Register> allocatable;
 
     /**
      * The caller saved registers always include all parameter registers.
      */
-    private final RegisterArray callerSaved;
+    private final List<Register> callerSaved;
 
     private final boolean allAllocatableAreCallerSaved;
 
-    private final RegisterAttributes[] attributesMap;
+    private final List<RegisterAttributes> attributesMap;
 
     @Override
-    public RegisterArray getAllocatableRegisters() {
+    public List<Register> getAllocatableRegisters() {
         return allocatable;
     }
 
     @Override
-    public RegisterArray filterAllocatableRegisters(PlatformKind kind, RegisterArray registers) {
+    public List<Register> filterAllocatableRegisters(PlatformKind kind, List<Register> registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
             if (target.arch.canStoreValue(reg.getRegisterCategory(), kind)) {
@@ -94,19 +93,19 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             }
         }
 
-        RegisterArray ret = new RegisterArray(list);
+        List<Register> ret = List.copyOf(list);
         return ret;
     }
 
     @Override
-    public RegisterAttributes[] getAttributesMap() {
-        return attributesMap.clone();
+    public List<RegisterAttributes> getAttributesMap() {
+        return attributesMap;
     }
 
-    private final RegisterArray javaGeneralParameterRegisters;
-    private final RegisterArray nativeGeneralParameterRegisters;
-    private final RegisterArray javaXMMParameterRegisters;
-    private final RegisterArray nativeXMMParameterRegisters;
+    private final List<Register> javaGeneralParameterRegisters;
+    private final List<Register> nativeGeneralParameterRegisters;
+    private final List<Register> javaXMMParameterRegisters;
+    private final List<Register> nativeXMMParameterRegisters;
     private final boolean windowsOS;
 
     /*
@@ -115,16 +114,15 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      */
     private final boolean needsNativeStackHomeSpace;
 
-    private static final RegisterArray reservedRegisters = new RegisterArray(rsp, r15);
+    private static final List<Register> reservedRegisters = List.of(rsp, r15);
 
-    private static RegisterArray initAllocatable(Architecture arch, boolean reserveForHeapBase) {
-        RegisterArray allRegisters = arch.getAvailableValueRegisters();
+    private static List<Register> initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+        List<Register> allRegisters = arch.getAvailableValueRegisters();
         Register[] registers = new Register[allRegisters.size() - reservedRegisters.size() - (reserveForHeapBase ? 1 : 0)];
-        List<Register> reservedRegistersList = reservedRegisters.asList();
 
         int idx = 0;
         for (Register reg : allRegisters) {
-            if (reservedRegistersList.contains(reg)) {
+            if (reservedRegisters.contains(reg)) {
                 // skip reserved registers
                 continue;
             }
@@ -137,7 +135,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         }
 
         assert idx == registers.length;
-        return new RegisterArray(registers);
+        return List.of(registers);
     }
 
     public AMD64HotSpotRegisterConfig(TargetDescription target, boolean useCompressedOops, boolean windowsOs) {
@@ -145,42 +143,42 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         assert callerSaved.size() >= allocatable.size();
     }
 
-    public AMD64HotSpotRegisterConfig(TargetDescription target, RegisterArray allocatable, boolean windowsOS) {
+    public AMD64HotSpotRegisterConfig(TargetDescription target, List<Register> allocatable, boolean windowsOS) {
         this.target = target;
         this.windowsOS = windowsOS;
 
         if (windowsOS) {
-            javaGeneralParameterRegisters = new RegisterArray(rdx, r8, r9, rdi, rsi, rcx);
-            nativeGeneralParameterRegisters = new RegisterArray(rcx, rdx, r8, r9);
-            nativeXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3);
+            javaGeneralParameterRegisters = List.of(rdx, r8, r9, rdi, rsi, rcx);
+            nativeGeneralParameterRegisters = List.of(rcx, rdx, r8, r9);
+            nativeXMMParameterRegisters = List.of(xmm0, xmm1, xmm2, xmm3);
             this.needsNativeStackHomeSpace = true;
         } else {
-            javaGeneralParameterRegisters = new RegisterArray(rsi, rdx, rcx, r8, r9, rdi);
-            nativeGeneralParameterRegisters = new RegisterArray(rdi, rsi, rdx, rcx, r8, r9);
-            nativeXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
+            javaGeneralParameterRegisters = List.of(rsi, rdx, rcx, r8, r9, rdi);
+            nativeGeneralParameterRegisters = List.of(rdi, rsi, rdx, rcx, r8, r9);
+            nativeXMMParameterRegisters = List.of(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
             this.needsNativeStackHomeSpace = false;
         }
-        javaXMMParameterRegisters = new RegisterArray(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
+        javaXMMParameterRegisters = List.of(xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7);
 
         this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
-        allocatable.addTo(callerSaveSet);
-        javaXMMParameterRegisters.addTo(callerSaveSet);
-        callerSaveSet.addAll(javaGeneralParameterRegisters.asList());
-        nativeGeneralParameterRegisters.addTo(callerSaveSet);
-        callerSaved = new RegisterArray(callerSaveSet);
+        callerSaveSet.addAll(allocatable);
+        callerSaveSet.addAll(javaXMMParameterRegisters);
+        callerSaveSet.addAll(javaGeneralParameterRegisters);
+        callerSaveSet.addAll(nativeGeneralParameterRegisters);
+        callerSaved = List.copyOf(callerSaveSet);
 
         allAllocatableAreCallerSaved = true;
         attributesMap = RegisterAttributes.createMap(this, target.arch.getRegisters());
     }
 
     @Override
-    public RegisterArray getCallerSaveRegisters() {
+    public List<Register> getCallerSaveRegisters() {
         return callerSaved;
     }
 
     @Override
-    public RegisterArray getCalleeSaveRegisters() {
+    public List<Register> getCalleeSaveRegisters() {
         return null;
     }
 
@@ -201,7 +199,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public RegisterArray getCallingConventionRegisters(Type type, JavaKind kind) {
+    public List<Register> getCallingConventionRegisters(Type type, JavaKind kind) {
         HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         switch (kind) {
             case Boolean:
@@ -237,7 +235,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      * @param valueKindFactory
      * @return the resulting calling convention
      */
-    private CallingConvention callingConvention(RegisterArray generalParameterRegisters, RegisterArray xmmParameterRegisters, boolean unified, JavaType returnType, JavaType[] parameterTypes,
+    private CallingConvention callingConvention(List<Register> generalParameterRegisters, List<Register> xmmParameterRegisters, boolean unified, JavaType returnType, JavaType[] parameterTypes,
                     HotSpotCallingConventionType type,
                     ValueKindFactory<?> valueKindFactory) {
         assert !unified || generalParameterRegisters.size() == xmmParameterRegisters.size() : "must be same size in unified mode";

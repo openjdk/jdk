@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
  * @build KullaTesting TestingInputStream toolbox.Task.ExpectedDiagnostic
- * @run testng ImportTest
+ * @run junit ImportTest
  */
 
 import java.lang.reflect.Method;
@@ -42,7 +42,6 @@ import javax.tools.Diagnostic;
 import jdk.jshell.JShell;
 
 import jdk.jshell.Snippet;
-import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.OVERWRITTEN;
@@ -51,10 +50,13 @@ import static jdk.jshell.Snippet.SubKind.SINGLE_TYPE_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.SINGLE_STATIC_IMPORT_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.TYPE_IMPORT_ON_DEMAND_SUBKIND;
 import static jdk.jshell.Snippet.SubKind.STATIC_IMPORT_ON_DEMAND_SUBKIND;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
-@Test
 public class ImportTest extends KullaTesting {
 
+    @Test
     public void testImport() {
         assertImportKeyMatch("import java.util.List;", "List", SINGLE_TYPE_IMPORT_SUBKIND, added(VALID));
         assertImportKeyMatch("import java.util.ArrayList;", "ArrayList", SINGLE_TYPE_IMPORT_SUBKIND, added(VALID));
@@ -63,6 +65,7 @@ public class ImportTest extends KullaTesting {
         assertEval("list.size();", "1");
     }
 
+    @Test
     public void testImportOnDemand() {
         assertImportKeyMatch("import java.util.*;", "java.util.*", TYPE_IMPORT_ON_DEMAND_SUBKIND, added(VALID));
         assertEval("List<Integer> list = new ArrayList<>();");
@@ -70,16 +73,19 @@ public class ImportTest extends KullaTesting {
         assertEval("list.size();", "1");
     }
 
+    @Test
     public void testImportStatic() {
         assertImportKeyMatch("import static java.lang.Math.PI;", "PI", SINGLE_STATIC_IMPORT_SUBKIND, added(VALID));
         assertEval("Double.valueOf(PI).toString().substring(0, 16).equals(\"3.14159265358979\");", "true");
     }
 
+    @Test
     public void testImportStaticOnDemand() {
         assertImportKeyMatch("import static java.lang.Math.*;", "java.lang.Math.*", STATIC_IMPORT_ON_DEMAND_SUBKIND, added(VALID));
         assertEval("abs(cos(PI / 2)) < 0.00001;", "true");
     }
 
+    @Test
     public void testUnknownPackage() {
         assertDeclareFail("import unknown.qqq;",
                 new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 18, 14, -1, -1, Diagnostic.Kind.ERROR));
@@ -87,22 +93,26 @@ public class ImportTest extends KullaTesting {
                 new ExpectedDiagnostic("compiler.err.doesnt.exist", 7, 14, 7, -1, -1, Diagnostic.Kind.ERROR));
     }
 
+    @Test
     public void testBogusImportIgnoredInFuture() {
         assertDeclareFail("import unknown.qqq;", "compiler.err.doesnt.exist");
         assertDeclareFail("import unknown.*;", "compiler.err.doesnt.exist");
         assertEval("2 + 2;");
     }
 
+    @Test
     public void testBadImport() {
         assertDeclareFail("import static java.lang.reflect.Modifier;",
                 new ExpectedDiagnostic("compiler.err.cant.resolve.location", 14, 31, 23, -1, -1, Diagnostic.Kind.ERROR));
     }
 
+    @Test
     public void testBadSyntaxImport() {
         assertDeclareFail("import not found.*;",
                 new ExpectedDiagnostic("compiler.err.expected", 10, 10, 10, -1, -1, Diagnostic.Kind.ERROR));
     }
 
+    @Test
     public void testImportRedefinition() {
         Compiler compiler = new Compiler();
         Path path = Paths.get("testImport");
@@ -143,6 +153,7 @@ public class ImportTest extends KullaTesting {
         assertEval("new ArrayList();", "MyInnerList");
     }
 
+    @Test
     public void testImportMemberRedefinition() {
         Compiler compiler = new Compiler();
         Path path = Paths.get("testImport");
@@ -167,19 +178,21 @@ public class ImportTest extends KullaTesting {
         assertEval("method();", "\"A\"");
     }
 
+    @Test
     public void testImportWithComment() {
         assertImportKeyMatch("import java.util.List;//comment", "List", SINGLE_TYPE_IMPORT_SUBKIND, added(VALID));
         assertEval("List l = null;");
     }
 
+    @Test
     public void testImportModule() {
         assertImportKeyMatch("import module java.base;", "java.base", MODULE_IMPORT_SUBKIND, added(VALID));
         assertEval("MethodHandle m;");
     }
 
-    @org.testng.annotations.BeforeMethod
-    public void setUp(Method m) {
-        switch (m.getName()) {
+    @BeforeEach
+    public void setUp(TestInfo testInfo) {
+        switch (testInfo.getTestMethod().orElseThrow().getName()) {
             case "testImportModule" ->
                 super.setUp(bc -> bc.compilerOptions("--source", System.getProperty("java.specification.version"), "--enable-preview").remoteVMOptions("--enable-preview"));
             default ->

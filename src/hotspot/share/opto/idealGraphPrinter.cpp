@@ -155,13 +155,13 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   // in the mach where kill projections have no users but should
   // appear in the dump.
   _traverse_outs = true;
-  _should_send_method = true;
   _output = nullptr;
   buffer[0] = 0;
   _depth = 0;
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
+  _parse = nullptr;
 
   if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files);
@@ -300,13 +300,11 @@ void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
 void IdealGraphPrinter::print_inlining() {
 
   // Print inline tree
-  if (_should_send_method) {
-    InlineTree *inlineTree = C->ilt();
-    if (inlineTree != nullptr) {
-      print_inline_tree(inlineTree);
-    } else {
-      // print this method only
-    }
+  InlineTree *inlineTree = C->ilt();
+  if (inlineTree != nullptr) {
+    print_inline_tree(inlineTree);
+  } else {
+    // print this method only
   }
 }
 
@@ -382,7 +380,6 @@ void IdealGraphPrinter::begin_method() {
 
   tail(PROPERTIES_ELEMENT);
 
-  _should_send_method = true;
   this->_current_method = method;
 
   _xml->flush();
@@ -401,6 +398,14 @@ bool IdealGraphPrinter::traverse_outs() {
 
 void IdealGraphPrinter::set_traverse_outs(bool b) {
   _traverse_outs = b;
+}
+
+const Parse* IdealGraphPrinter::parse() {
+  return _parse;
+}
+
+void IdealGraphPrinter::set_parse(const Parse* parse) {
+  _parse = parse;
 }
 
 void IdealGraphPrinter::visit_node(Node* n, bool edges) {
@@ -452,6 +457,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
+    if (n->adr_type() != nullptr) {
+      stringStream adr_type_stream;
+      n->adr_type()->dump_on(&adr_type_stream);
+      print_prop("adr_type", adr_type_stream.freeze());
+    }
 
     if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);
@@ -474,6 +484,10 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         // Enforce dots as decimal separators, as required by IGV.
         StringUtils::replace_no_expand(buffer, ",", ".");
         print_prop("frequency", buffer);
+        // Print block index for nodes that are placed in blocks and scheduled locally.
+        if (block->contains(node)) {
+          print_prop("block_index", block->find_node(node));
+        }
       }
     }
 
@@ -626,12 +640,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;
-      if (index >= 10) {
-        print_prop(short_name, "PA");
-      } else {
-        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
-        print_prop(short_name, buffer);
-      }
+      os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
+      print_prop(short_name, buffer);
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
       print_prop(short_name, "T");
     } else if (strcmp(node->Name(), "IfFalse") == 0) {
@@ -643,9 +653,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeInt->is_con(), "must be constant");
         jint value = typeInt->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
+        // Only use up to 4 chars and fall back to a generic "I" to keep it short.
+        int written_chars = os::snprintf(buffer, sizeof(buffer), "%d", value);
+        if (written_chars > 0 && written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -657,9 +667,9 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         assert(typeLong->is_con(), "must be constant");
         jlong value = typeLong->get_con();
 
-        // max. 2 chars allowed
-        if (value >= -9 && value <= 99) {
-          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        // Only use up to 4 chars and fall back to a generic "L" to keep it short.
+        int written_chars = os::snprintf(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        if (written_chars > 0 && written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -676,11 +686,17 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       } else if (t->base() == Type::Return_Address) {
         print_prop(short_name, "RA");
       } else if (t->base() == Type::AnyPtr) {
-        print_prop(short_name, "P");
+        if (t->is_ptr()->ptr() == TypePtr::Null) {
+          print_prop(short_name, "Null");
+        } else {
+          print_prop(short_name, "P");
+        }
       } else if (t->base() == Type::RawPtr) {
         print_prop(short_name, "RP");
       } else if (t->base() == Type::AryPtr) {
         print_prop(short_name, "AP");
+      } else if (t->base() == Type::NarrowOop && t->is_narrowoop() == TypeNarrowOop::NULL_PTR) {
+        print_prop(short_name, "Null");
       }
     }
 
@@ -969,7 +985,7 @@ void IdealGraphPrinter::print_graph(const char* name, const frame* fr) {
 // Print current ideal graph
 void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes, const frame* fr) {
 
-  if (!_current_method || !_should_send_method || node == nullptr) return;
+  if (!_current_method || node == nullptr) return;
 
   if (name == nullptr) {
     stringStream graph_name;
@@ -989,6 +1005,17 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
 
   head(PROPERTIES_ELEMENT);
   print_stack(fr, nullptr);
+  if (_parse != nullptr) {
+    if (_parse->map() == nullptr) {
+      print_prop("map", "-");
+    } else {
+      print_prop("map", _parse->map()->_idx);
+    }
+    print_prop("block", _parse->block()->rpo());
+    stringStream shortStr;
+    _parse->flow()->method()->print_short_name(&shortStr);
+    print_prop("method", shortStr.freeze());
+  }
   tail(PROPERTIES_ELEMENT);
 
   head(NODES_ELEMENT);

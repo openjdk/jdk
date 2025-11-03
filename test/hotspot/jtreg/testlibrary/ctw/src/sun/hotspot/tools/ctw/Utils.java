@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,10 +186,10 @@ public class Utils {
     }
 
     /**
-     * Converts the filename to classname.
+     * Converts the {@code /}-separated filename to its corresponding class name.
      *
      * @param filename filename to convert
-     * @return corresponding classname
+     * @return corresponding class name
      * @throws AssertionError if filename isn't valid filename for class file -
      *                        {@link #isClassFile(String)}
      */
@@ -200,6 +200,12 @@ public class Utils {
                        .replace(nameSeparator, '.');
     }
 
+    /**
+     * Converts a fully qualified class name to a {@code /}-separated filename.
+     *
+     * @param classname fully qualified class name to convert
+     * @return corresponding filename
+     */
     public static String classNameToFileName(String classname) {
         return classname.replace('.', '/')
                         .concat(CLASSFILE_EXT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 8198928
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @run main CloseDuringConnect
+ * @run main/timeout=480 CloseDuringConnect
  * @summary Attempt to cause a deadlock by closing a SocketChannel in one thread
  *     where another thread is closing the channel after a connect fail
  */

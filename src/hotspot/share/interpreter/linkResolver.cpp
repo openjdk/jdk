@@ -1126,6 +1126,10 @@ void LinkResolver::resolve_static_call(CallInfo& result,
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
+void LinkResolver::cds_resolve_static_call(CallInfo& result, const LinkInfo& link_info, TRAPS) {
+  resolve_static_call(result, link_info, /*initialize_class*/false, CHECK);
+}
+
 // throws linktime exceptions
 Method* LinkResolver::linktime_resolve_static_method(const LinkInfo& link_info, TRAPS) {
 
@@ -1200,7 +1204,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   }
 
   // ensure that invokespecial's interface method reference is in
-  // a direct superinterface, not an indirect superinterface
+  // a direct superinterface, not an indirect superinterface or unrelated interface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
@@ -1209,7 +1213,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
       stringStream ss;
       ss.print("Interface method reference: '");
       resolved_method->print_external_name(&ss);
-      ss.print("', is in an indirect superinterface of %s",
+      ss.print("', is not in a direct superinterface of %s",
                current_klass->external_name());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }

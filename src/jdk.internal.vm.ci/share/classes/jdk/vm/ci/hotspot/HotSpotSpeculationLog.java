@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.common.JVMCIError;
@@ -130,7 +131,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
         private final byte[] encoding;
 
-        HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding) {
+        public HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding) {
             super(reason);
             this.id = id;
             this.encoding = encoding;
@@ -140,12 +141,33 @@ public class HotSpotSpeculationLog implements SpeculationLog {
             return id;
         }
 
+        /**
+         * Returns a copy of the speculation reason encoding.
+         */
+        public byte[] getReasonEncoding() {
+            return (encoding == null) ? null : encoding.clone();
+        }
+
         @Override
         public String toString() {
             long indexAndLength = id.asLong();
             int index = decodeIndex(indexAndLength);
             int length = decodeLength(indexAndLength);
             return String.format("{0x%016x[index: %d, len: %d, hash: 0x%x]: %s}", indexAndLength, index, length, Arrays.hashCode(encoding), getReason());
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof HotSpotSpeculation that) {
+                return getReason().equals(that.getReason()) && id.equals(that.id) && Arrays.equals(encoding, that.encoding);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getReason(), id, Arrays.hashCode(encoding));
         }
     }
 

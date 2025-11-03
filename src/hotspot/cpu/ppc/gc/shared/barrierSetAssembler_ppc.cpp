@@ -183,12 +183,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert_different_registers(tmp, R0);
 
-  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
+  __ align(8); // must align the following block which requires atomic updates
 
-  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
-  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
-                                       true, true, false); // 2 instructions
-  __ mtctr(tmp);
+  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
   // This is a compound instruction. Patching support is provided by NativeMovRegMem.
   // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
@@ -196,9 +193,19 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
 
   // Low order half of 64 bit value is currently used.
   __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
-  __ cmpw(CR0, R0, tmp);
 
-  __ bnectrl(CR0);
+  if (TrapBasedNMethodEntryBarriers) {
+    __ tw(Assembler::traptoLessThanUnsigned | Assembler::traptoGreaterThanUnsigned, R0, tmp);
+  } else {
+    __ cmpw(CR0, R0, tmp);
+
+    // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+    __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
+                                         true, true, false); // 2 instructions
+    __ mtctr(tmp);
+
+    __ bnectrl(CR0);
+  }
 
   // Oops may have been changed. Make those updates observable.
   // "isync" can serve both, data and instruction patching.
@@ -333,9 +340,9 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_ConditionRegister()) {
       // NOP. Conditions registers are covered by save_LR_CR
-    } else if (vm_reg->is_VectorSRegister()) {
+    } else if (vm_reg->is_VectorRegister()) {
       assert(SuperwordUseVSX, "or should not reach here");
-      VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+      VectorSRegister vs_reg = (vm_reg->as_VectorRegister()).to_vsr();
       if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
         reg_save_index += (2 + (reg_save_index & 1)); // 2 slots + alignment if needed
 

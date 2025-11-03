@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 4290704
+  @bug 4290704 8357598
   @summary Test use of AWTEventListenerProxyTest class
 */
 
@@ -38,33 +38,31 @@ public class AWTEventListenerProxyTest {
     public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
             Toolkit tk = Toolkit.getDefaultToolkit();
-            if ("sun.awt.X11.XToolkit".equals(tk.getClass().getName())) {
-                System.out.println("Do not test for XAWT Toolkit.");
-                System.out.println("Passing automatically.");
-                return;
-            }
 
             // check that if no listeners added, returns a 0-length array,
             // not null
-            AWTEventListener[] array1 = tk.getAWTEventListeners();
-            if (array1 == null || array1.length != 0) {
-                System.out.println("[Empty array test failed!!]");
-                throw new RuntimeException("Test failed -" +
-                    " didn't return 0-sized array");
-            }
+            verify(tk, 0);
             System.out.println("[Empty array test passed]");
+
+            // check that if a null listener is added, returns an empty array
+            tk.addAWTEventListener(null, AWTEvent.ACTION_EVENT_MASK);
+            verify(tk, 0);
+            NullProxyListener nl = new NullProxyListener();
+            tk.addAWTEventListener(nl, AWTEvent.ACTION_EVENT_MASK);
+            verify(tk, 0);
+            // check that if a null listener is removed, returns an empty array
+            tk.removeAWTEventListener(null);
+            verify(tk, 0);
+            tk.removeAWTEventListener(nl);
+            verify(tk, 0);
 
             // simple add/get test
             DumbListener dl1 = new DumbListener();
             final long dl1MASK = AWTEvent.ACTION_EVENT_MASK;
             tk.addAWTEventListener(dl1, dl1MASK);
+            verify(tk, 1);
 
-            array1 = tk.getAWTEventListeners();
-            if (array1 == null || array1.length != 1) {
-                System.out.println("[Simple add/get test failed!!]");
-                throw new RuntimeException("Test failed - didn't " +
-                    "return array of 1");
-            }
+            AWTEventListener[] array1 = tk.getAWTEventListeners();
             AWTEventListenerProxy dp1 = (AWTEventListenerProxy) array1[0];
             EventListener getdl1 = dp1.getListener();
             if (getdl1 != dl1) {
@@ -165,8 +163,23 @@ public class AWTEventListenerProxyTest {
         });
     }
 
+    private static void verify(Toolkit tk, int expected) {
+        AWTEventListener[] array = tk.getAWTEventListeners();
+        if (array == null || array.length != expected) {
+            System.out.println("[Simple test failed!!]");
+            throw new RuntimeException(
+                    "Test didn't return " + expected + "-sized array");
+        }
+    }
+
     public static class DumbListener implements AWTEventListener {
         public DumbListener() {}
         public void eventDispatched(AWTEvent e) {}
+    }
+
+    public final static class NullProxyListener extends AWTEventListenerProxy {
+        public NullProxyListener() {
+            super(0, null);
+        }
     }
 }

@@ -45,16 +45,16 @@ public class TestCastX2NotProcessedIGVN {
     public static void main(String[] args) {
         // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:-UseCompactObjectHeaders",
                                    "-XX:-AlignVector");
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:-UseCompactObjectHeaders",
                                    "-XX:+AlignVector");
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:+UseCompactObjectHeaders",
                                    "-XX:-AlignVector");
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:+UseCompactObjectHeaders",
                                    "-XX:+AlignVector");
     }
 

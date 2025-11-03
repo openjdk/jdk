@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ D3DGlyphCache::CreateInstance(D3DContext *pCtx, GlyphCacheType gcType,
 
 D3DGlyphCache::D3DGlyphCache(GlyphCacheType type)
 {
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DGlyphCache::D3DGlyphCache gcType=%d", type);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DGlyphCache::D3DGlyphCache gcType=%d", type);
 
     pCtx = NULL;
     gcType = type;
@@ -90,7 +90,7 @@ D3DGlyphCache::Init(D3DContext *pCtx)
 
     RETURN_STATUS_IF_NULL(pCtx, E_FAIL);
 
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DGlyphCache::Init pCtx=%x", pCtx);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DGlyphCache::Init pCtx=%x", pCtx);
 
     this->pCtx = pCtx;
 

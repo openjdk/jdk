@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,12 +421,27 @@ public final class ChunkParser {
             return o.getClass().getName();
         }
         if (o.getClass().isArray()) {
-            Object[] array = (Object[]) o;
-            if (array.length > 0) {
-                return textify(array[0]) + "[]"; // can it be recursive?
-            }
+            return textifyArray((Object[])o);
         }
         return String.valueOf(o);
+    }
+
+    private String textifyArray(Object[] array) {
+        int length = array.length;
+        if (length > 0) {
+            Object element = array[0];
+            if (element != null) {
+                if (element instanceof String s) {
+                    // Probably an enumeration type, e.g. ThreadState. Remove array indirection
+                    return textify(s);
+                }
+                if (element.getClass().isArray()) {
+                    Object[] subArray = (Object[]) element;
+                    return element.getClass().getComponentType().getName() + "[" + subArray.length + "]" + "[" + length + "]";
+                }
+            }
+        }
+        return array.getClass().getComponentType().getName() + "[" + length + "]";
     }
 
     private String getName(long id) {

@@ -210,17 +210,8 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
     fi
-  elif test "x$TOOLCHAIN_PATH" != x; then
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
-    if test "x$XCODEBUILD" != x; then
-      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
-      if test $? -ne 0; then
-        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
-        XCODEBUILD=
-      fi
-    fi
   else
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(XCODEBUILD, xcodebuild)
     if test "x$XCODEBUILD" != x; then
       XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
       if test $? -ne 0; then
@@ -348,19 +339,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
-  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [alias for --with-sysroot for backwards compatibility])],
-      [SYSROOT=$with_sys_root]
-  )
-
   AC_ARG_WITH(sysroot, [AS_HELP_STRING([--with-sysroot],
       [use this directory as sysroot])],
       [SYSROOT=$with_sysroot]
-  )
-
-  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-      [alias for --with-toolchain-path for backwards compatibility])],
-      [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_tools_dir)]
   )
 
   AC_ARG_WITH([toolchain-path], [AS_HELP_STRING([--with-toolchain-path],
@@ -370,6 +351,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
       [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  UTIL_DEPRECATED_ARG_WITH(sys-root)
+  UTIL_DEPRECATED_ARG_WITH(tools-dir)
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
@@ -415,11 +399,21 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
 
   # Test from where we are running configure, in or outside of src root.
+  if test "x$OPENJDK_BUILD_OS" = xwindows || test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    # These systems have case insensitive paths, so convert them to lower case.
+    [ cmp_configure_start_dir=`$ECHO $CONFIGURE_START_DIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_topdir=`$ECHO $TOPDIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_custom_root=`$ECHO $CUSTOM_ROOT | $TR '[:upper:]' '[:lower:]'` ]
+  else
+    cmp_configure_start_dir="$CONFIGURE_START_DIR"
+    cmp_topdir="$TOPDIR"
+    cmp_custom_root="$CUSTOM_ROOT"
+  fi
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CONFIGURE_START_DIR" = "x$TOPDIR" \
-      || test "x$CONFIGURE_START_DIR" = "x$CUSTOM_ROOT" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make/autoconf" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make" ; then
+  if test "x$cmp_configure_start_dir" = "x$cmp_topdir" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_custom_root" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make/autoconf" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -440,7 +434,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CONFIGURE_START_DIR | $SED -e "s!^${TOPDIR}/build/!!"`
+      [ if [[ "$cmp_configure_start_dir" =~ ^${cmp_topdir}/build/[^/]+$ ||
+          "$cmp_configure_start_dir" =~ ^${cmp_custom_root}/build/[^/]+$ ]]; then ]
+          CONF_NAME="${CONFIGURE_START_DIR##*/}"
+      else
+          CONF_NAME="$CONFIGURE_START_DIR"
+      fi
     fi
     OUTPUTDIR="$CONFIGURE_START_DIR"
     AC_MSG_RESULT([in current directory])

@@ -128,8 +128,7 @@ public:
     static LRESULT CALLBACK MouseHookProc(int code,
                                           WPARAM wParam, LPARAM lParam);
     // WM_MOUSE hook procedure used in modality, similar to
-    // MouseHookProc but installed on non-toolkit threads, for
-    // example on browser's thread when running in Java Plugin
+    // MouseHookProc but installed on non-toolkit threads
     static LRESULT CALLBACK MouseHookProc_NonTT(int code,
                                                 WPARAM wParam, LPARAM lParam);
 

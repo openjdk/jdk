@@ -77,6 +77,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 import static sun.net.www.protocol.http.AuthScheme.BASIC;
 import static sun.net.www.protocol.http.AuthScheme.DIGEST;
 import static sun.net.www.protocol.http.AuthScheme.NTLM;
@@ -621,10 +622,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
-            String reqHost = requests.findValue("Host");
-            if (reqHost == null || !reqHost.equalsIgnoreCase(host)) {
-                requests.set("Host", host);
-            }
+            // if the "Host" header hasn't been explicitly set, then set its
+            // value to the one determined through the request URL
+            requests.setIfNotSet("Host", host);
+
             requests.setIfNotSet("Accept", acceptString);
 
             /*
@@ -854,7 +855,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         responses = new MessageHeader(maxHeaderSize);
         userHeaders = new MessageHeader();
         this.handler = handler;
-        instProxy = p;
+        instProxy = copyProxy(p);
         cookieHandler = CookieHandler.getDefault();
         cacheHandler = ResponseCache.getDefault();
     }
@@ -956,7 +957,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     final Iterator<Proxy> it = proxies.iterator();
                     Proxy p;
                     while (it.hasNext()) {
-                        p = it.next();
+                        p = copyProxy(it.next());
                         try {
                             if (!failedOnce) {
                                 http = getNewHttpClient(url, p, connectTimeout);
@@ -1078,6 +1079,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         responseCode = Integer.parseInt(sa[1]);
                     if (logger.isLoggable(PlatformLogger.Level.FINE)) {
                         logger.fine("response code received " + responseCode);
+                    }
+                    if (sa.length > 2)
+                        responseMessage = String.join(" ", Arrays.copyOfRange(sa, 2, sa.length));
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                        logger.fine("response message received " + responseMessage);
                     }
                 } catch (NumberFormatException numberFormatException) {
                 }

@@ -37,19 +37,18 @@
 #include "utilities/align.hpp"
 
 PSOldGen::PSOldGen(ReservedSpace rs, size_t initial_size, size_t min_size,
-                   size_t max_size, const char* perf_data_name, int level):
+                   size_t max_size):
   _min_gen_size(min_size),
   _max_gen_size(max_size)
 {
-  initialize(rs, initial_size, GenAlignment, perf_data_name, level);
+  initialize(rs, initial_size, SpaceAlignment);
 }
 
-void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment,
-                          const char* perf_data_name, int level) {
+void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignment) {
   initialize_virtual_space(rs, initial_size, alignment);
-  initialize_work(perf_data_name, level);
+  initialize_work();
 
-  initialize_performance_counters(perf_data_name, level);
+  initialize_performance_counters();
 }
 
 void PSOldGen::initialize_virtual_space(ReservedSpace rs,
@@ -63,12 +62,9 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
   }
 }
 
-void PSOldGen::initialize_work(const char* perf_data_name, int level) {
+void PSOldGen::initialize_work() {
   MemRegion const reserved_mr = reserved();
   assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
-
-  // Object start stuff: for all reserved memory
-  start_array()->initialize(reserved_mr);
 
   // Card table stuff: for all committed memory
   MemRegion committed_mr((HeapWord*)virtual_space()->low(),
@@ -100,7 +96,7 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   // ObjectSpace stuff
   //
 
-  _object_space = new MutableSpace(virtual_space()->alignment());
+  _object_space = new MutableSpace(virtual_space()->page_size());
   object_space()->initialize(committed_mr,
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle,
@@ -108,12 +104,13 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
                              &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
+  _start_array = new ObjectStartArray(reserved_mr);
   start_array()->set_covered_region(committed_mr);
 }
 
-void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
-  // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new GenerationCounters(perf_data_name, level, 1, min_gen_size(),
+void PSOldGen::initialize_performance_counters() {
+  const char* perf_data_name = "old";
+  _gen_counters = new GenerationCounters(perf_data_name, 1, 1, min_gen_size(),
                                          max_gen_size(), virtual_space()->committed_size());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
@@ -175,10 +172,22 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
       result = expand(word_size*HeapWordSize);
     }
   }
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
   return result;
+}
+
+void PSOldGen::try_expand_till_size(size_t target_capacity_bytes) {
+  if (target_capacity_bytes <= capacity_in_bytes()) {
+    // Current capacity is enough
+    return;
+  }
+
+  if (capacity_in_bytes() == max_gen_size()) {
+    // Already at max size
+    return;
+  }
+
+  size_t to_expand_bytes = target_capacity_bytes - capacity_in_bytes();
+  expand(to_expand_bytes);
 }
 
 bool PSOldGen::expand(size_t bytes) {
@@ -237,7 +246,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     post_resize();
     if (UsePerfData) {
       _space_counters->update_capacity();
-      _gen_counters->update_all(_virtual_space->committed_size());
+      _gen_counters->update_capacity(_virtual_space->committed_size());
     }
   }
 
@@ -282,19 +291,15 @@ void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = archive_space.start();
   while (cur < archive_space.end()) {
     size_t word_size = cast_to_oop(cur)->size();
-    _start_array.update_for_block(cur, cur + word_size);
+    _start_array->update_for_block(cur, cur + word_size);
     cur += word_size;
   }
 }
 
-void PSOldGen::resize(size_t desired_free_space) {
+void PSOldGen::resize(size_t desired_capacity) {
   const size_t alignment = virtual_space()->alignment();
   const size_t size_before = virtual_space()->committed_size();
-  size_t new_size = used_in_bytes() + desired_free_space;
-  if (new_size < used_in_bytes()) {
-    // Overflowed the addition.
-    new_size = max_gen_size();
-  }
+  size_t new_size = desired_capacity;
   // Adjust according to our min and max
   new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
@@ -303,10 +308,10 @@ void PSOldGen::resize(size_t desired_free_space) {
   const size_t current_size = capacity_in_bytes();
 
   log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: "
-    "desired free: %zu used: %zu"
-    " new size: %zu current size %zu"
+    "used: %zu"
+    " capacity %zu -> %zu"
     " gen limits: %zu / %zu",
-    desired_free_space, used_in_bytes(), new_size, current_size,
+    used_in_bytes(), current_size, new_size,
     max_gen_size(), min_gen_size());
 
   if (new_size == current_size) {
@@ -369,7 +374,7 @@ void PSOldGen::print_on(outputStream* st) const {
 void PSOldGen::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space->committed_size());
+    _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }
 

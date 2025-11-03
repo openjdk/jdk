@@ -70,7 +70,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 2048, 1024);
   if (buffer.blob() == nullptr) {
     return nullptr;
@@ -118,7 +118,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ z_lgr(Z_SP, saved_sp);
 
   // [Z_RET] isn't null was possible in hotspot5 but not in sapjvm6.
-  // C2I adapter extensions are now removed by a resize in the frame manager
+  // C2I adapter extensions are now removed by a resize in the template interpreter
   // (unwind_initial_activation_pending_exception).
 #ifdef ASSERT
   __ z_ltgr(handle_exception, handle_exception);

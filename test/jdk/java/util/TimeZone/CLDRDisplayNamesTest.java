@@ -26,7 +26,7 @@
  * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490 8220037
  *      8234347 8236548 8317979
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
+ * @run main CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
  */

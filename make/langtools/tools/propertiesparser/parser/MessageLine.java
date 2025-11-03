@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package propertiesparser.parser;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,7 @@ public class MessageLine {
     static final Pattern infoPattern = Pattern.compile(String.format("# ([0-9]+: %s, )*[0-9]+: %s",
             typePattern.pattern(), typePattern.pattern()));
     static final Pattern lintPattern = Pattern.compile("# lint: ([a-z\\-]+)");
+    static final Pattern diagnosticFlagsPattern = Pattern.compile("# flags: ([a-z\\-]+(, ([a-z\\-]+))*)");
 
     public String text;
     MessageLine prev;
@@ -64,6 +66,19 @@ public class MessageLine {
         Matcher matcher = lintPattern.matcher(text);
         if (matcher.matches()) {
             return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    public boolean isDiagnosticFlags() {
+        return diagnosticFlagsPattern.matcher(text).matches();
+    }
+
+    public String[] diagnosticFlags() {
+        Matcher matcher = diagnosticFlagsPattern.matcher(text);
+        if (matcher.matches()) {
+            return matcher.group(1).split(", ", -1);
         } else {
             return null;
         }

@@ -404,115 +404,22 @@ alias sun.gc.lastCause                            // 1.5.0 b39
         hotspot.gc.last_cause                     // 1.4.2_02
 
 // sun.gc.policy
-alias sun.gc.policy.avgMajorIntervalTime          // 1.5.0 b39
-	hotspot.gc.policy.avg_major_interval      // 1.5.0 b21
-alias sun.gc.policy.avgMajorPauseTime             // 1.5.0 b39
-	hotspot.gc.policy.avg_major_pause         // 1.5.0 b21
-alias sun.gc.policy.avgMinorIntervalTime          // 1.5.0 b39
-	hotspot.gc.policy.avg_minor_interval      // 1.5.0 b21
-alias sun.gc.policy.avgMinorPauseTime             // 1.5.0 b39
-	hotspot.gc.policy.avg_minor_pause         // 1.5.0 b21
-alias sun.gc.policy.avgOldLive                    // 1.5.0 b39
-	hotspot.gc.policy.avg_old_live            // 1.5.0 b21
-alias sun.gc.policy.avgPretenuredPaddedAvg          // 1.5.0 b39
-	hotspot.gc.policy.avg_pretenured_padded_avg // 1.5.0 b21
-alias sun.gc.policy.avgPromotedAvg                // 1.5.0 b39
-	hotspot.gc.policy.avg_promoted_avg        // 1.5.0 b21
-alias sun.gc.policy.avgPromotedDev                // 1.5.0 b39
-	hotspot.gc.policy.avg_promoted_dev        // 1.5.0 b21
-alias sun.gc.policy.avgPromotedPaddedAvg          // 1.5.0 b39
-	hotspot.gc.policy.avg_promoted_padded_avg // 1.5.0 b21
-alias sun.gc.policy.avgSurvivedAvg                // 1.5.0 b39
-	hotspot.gc.policy.avg_survived_avg        // 1.5.0 b21
-alias sun.gc.policy.avgSurvivedDev                // 1.5.0 b39
-	hotspot.gc.policy.avg_survived_dev        // 1.5.0 b21
-alias sun.gc.policy.avgSurvivedPaddedAvg          // 1.5.0 b39
-	hotspot.gc.policy.avg_survived_padded_avg // 1.5.0 b21
-alias sun.gc.policy.avgYoungLive                  // 1.5.0 b39
-	hotspot.gc.policy.avg_young_live          // 1.5.0 b21
-alias sun.gc.policy.boundaryMoved                 // 1.5.0 b39
-	hotspot.gc.policy.boundary_moved          // 1.5.0 b21
-alias sun.gc.policy.changeOldGenForMajPauses               // 1.5.0 b39
-	hotspot.gc.policy.change_old_gen_for_maj_pauses    // 1.5.0 b21
-alias sun.gc.policy.changeOldGenForMinPauses               // 1.5.0 b39
-	hotspot.gc.policy.change_old_gen_for_min_pauses    // 1.5.0 b21
-alias sun.gc.policy.changeYoungGenForMajPauses               // 1.5.0 b39
-	hotspot.gc.policy.change_young_gen_for_maj_pauses    // 1.5.0 b21
-alias sun.gc.policy.changeYoungGenForMinPauses               // 1.5.0 b39
-	hotspot.gc.policy.change_young_gen_for_min_pauses    // 1.5.0 b21
 alias sun.gc.policy.collectors                    // 1.5.0 b39
 	hotspot.gc.policy.collectors              // 1.4.2
-alias sun.gc.policy.decideAtFullGc                // 1.5.0 b39
-	hotspot.gc.policy.decide_at_full_gc       // 1.5.0 b21
-alias sun.gc.policy.decreaseForFootprint          // 1.5.0 b39
-	hotspot.gc.policy.decrease_for_footprint  // 1.5.0 b21
-alias sun.gc.policy.decrementTenuringThresholdForGcCost             // 1.5.0 b39
-	hotspot.gc.policy.decrement_tenuring_threshold_for_gc_cost  // 1.5.0 b21
-alias sun.gc.policy.decrementTenuringThresholdForSurvivorLimit             // 1.5.0 b39
-	hotspot.gc.policy.decrement_tenuring_threshold_for_survivor_limit  // 1.5.0 b21
 alias sun.gc.policy.desiredSurvivorSize           // 1.5.0 b39
 	hotspot.gc.policy.desired_survivor_size   // 1.5.0 b21
 	hotspot.gc.agetable.dss                   // 1.4.1
-alias sun.gc.policy.edenSize                      // 1.5.0 b39
-	hotspot.gc.policy.eden_size               // 1.5.0 b21
-alias sun.gc.policy.freeSpace                     // 1.5.0 b39
-	hotspot.gc.policy.free_space              // 1.5.0 b21
 alias sun.gc.policy.gcTimeLimitExceeded           // 1.5.0 b39
 	hotspot.gc.policy.gc_time_limit_exceeded  // 1.5.0 b21
 alias sun.gc.policy.generations                   // 1.5.0 b39
 	hotspot.gc.policy.generations             // 1.4.2
-alias sun.gc.policy.increaseOldGenForThroughput           // 1.5.0 b39
-	hotspot.gc.policy.increase_old_gen_for_throughput // 1.5.0 b21
-alias sun.gc.policy.increaseYoungGenForThroughput           // 1.5.0 b39
-	hotspot.gc.policy.increase_young_gen_for_throughput // 1.5.0 b21
-alias sun.gc.policy.incrementTenuringThresholdForGcCost            // 1.5.0 b39
-	hotspot.gc.policy.increment_tenuring_threshold_for_gc_cost // 1.5.0 b21
-alias sun.gc.policy.liveAtLastFullGc              // 1.5.0 b39
-	hotspot.gc.policy.live_at_last_full_gc    // 1.5.0 b21
-alias sun.gc.policy.liveSpace                     // 1.5.0 b39
-	hotspot.gc.policy.live_space              // 1.5.0 b21
-alias sun.gc.policy.majorCollectionSlope          // 1.5.0 b39
-	hotspot.gc.policy.major_collection_slope  // 1.5.0 b21
-alias sun.gc.policy.majorGcCost                   // 1.5.0 b39
-	hotspot.gc.policy.major_gc_cost           // 1.5.0 b21
-alias sun.gc.policy.majorPauseOldSlope            // 1.5.0 b39
-	hotspot.gc.policy.major_pause_old_slope   // 1.5.0 b21
-alias sun.gc.policy.majorPauseYoungSlope          // 1.5.0 b39
-	hotspot.gc.policy.major_pause_young_slope // 1.5.0 b21
 alias sun.gc.policy.maxTenuringThreshold          // 1.5.0 b39
 	hotspot.gc.max_tenuring_threshold         // 1.5.0 b21
 	hotspot.gc.agetable.mtt                   // 1.4.1
-alias sun.gc.policy.minorCollectionSlope          // 1.5.0 b39
-	hotspot.gc.policy.minor_collection_slope  // 1.5.0 b21
-alias sun.gc.policy.minorGcCost                   // 1.5.0 b39
-	hotspot.gc.policy.minor_gc_cost           // 1.5.0 b21
-alias sun.gc.policy.minorPauseOldSlope            // 1.5.0 b39
-	hotspot.gc.policy.minor_pause_old_slope   // 1.5.0 b21
-alias sun.gc.policy.minorPauseYoungSlope          // 1.5.0 b39
-	hotspot.gc.policy.minor_pause_young_slope // 1.5.0 b21
-alias sun.gc.policy.mutatorCost                   // 1.5.0 b39
-	hotspot.gc.policy.mutator_cost            // 1.5.0 b21
 alias sun.gc.policy.name                          // 1.5.0 b39
 	hotspot.gc.policy.name                    // 1.5.0 b21
-alias sun.gc.policy.oldCapacity                   // 1.5.0 b39
-	hotspot.gc.policy.old_capacity            // 1.5.0 b21
-alias sun.gc.policy.oldEdenSize                   // 1.5.0 b39
-	hotspot.gc.policy.old_eden_size           // 1.5.0 b21
-alias sun.gc.policy.oldPromoSize                  // 1.5.0 b39
-	hotspot.gc.policy.old_promo_size          // 1.5.0 b21
-alias sun.gc.policy.promoSize                     // 1.5.0 b39
-	hotspot.gc.policy.promo_size              // 1.5.0 b21
-alias sun.gc.policy.promoted                      // 1.5.0 b39
-	hotspot.gc.policy.promoted                // 1.5.0 b21
-alias sun.gc.policy.survived                      // 1.5.0 b39
-	hotspot.gc.policy.survived                // 1.5.0 b21
-alias sun.gc.policy.survivorOverflowed            // 1.5.0 b39
-	hotspot.gc.policy.survivor_overflowed     // 1.5.0 b21
 alias sun.gc.policy.tenuringThreshold             // 1.5.0 b39
 	hotspot.gc.policy.tenuring_threshold      // 1.5.0 b21
-	hotspot.gc.agetable.tt                    // 1.4.1
-alias sun.gc.policy.youngCapacity                 // 1.5.0 b39
-	hotspot.gc.policy.young_capacity          // 1.5.0 b21
 
 // sun.gc.tlab
 alias sun.gc.tlab.alloc                           // 1.5.0 b39
@@ -541,8 +448,6 @@ alias sun.gc.tlab.refillWaste                     // 17
 // sun.os
 alias sun.os.hrt.frequency                        // 1.5.0 b39
 	hotspot.rt.hrt.frequency                  // 1.4.1
-alias sun.os.hrt.ticks                            // 1.5.0 b39
-	hotspot.rt.hrt.ticks                      // 1.4.1
 
 // sun.perfdata
 alias sun.perfdata.overflow                       // 1.5.0 b39

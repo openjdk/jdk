@@ -52,6 +52,7 @@ private:
 
   // Grow vector to required word capacity
   void maybe_grow(uint new_word_capacity) {
+    _nesting.check(_set_arena); // Check if a potential reallocation in the arena is safe
     if (new_word_capacity >= _size) {
       grow(new_word_capacity);
     }

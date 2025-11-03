@@ -48,7 +48,7 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.PrinterName;
 
 
-public class CUPSPrinter  {
+public final class CUPSPrinter  {
     private static final String debugPrefix = "CUPSPrinter>> ";
     private static final double PRINTER_DPI = 72.0;
     private boolean initialized;

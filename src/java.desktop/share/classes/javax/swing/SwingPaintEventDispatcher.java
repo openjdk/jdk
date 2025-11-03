@@ -34,7 +34,7 @@ import sun.awt.event.IgnorePaintEvent;
 
 /**
  * Swing's PaintEventDispatcher.  If the component specified by the PaintEvent
- * is a top level Swing component (JFrame, JWindow, JDialog, JApplet), this
+ * is a top level Swing component (JFrame, JWindow, JDialog), this
  * will forward the request to the RepaintManager for eventual painting.
  *
  */

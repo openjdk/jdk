@@ -57,7 +57,7 @@ TEST(GuardedMemory, size) {
 }
 
 // Test the basic characteristics
-TEST(GuardedMemory, basic) {
+TEST_VM(GuardedMemory, basic) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
   GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
@@ -78,7 +78,7 @@ TEST(GuardedMemory, basic) {
 }
 
 // Test a number of odd sizes
-TEST(GuardedMemory, odd_sizes) {
+TEST_VM(GuardedMemory, odd_sizes) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
   GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
@@ -99,7 +99,7 @@ TEST(GuardedMemory, odd_sizes) {
 }
 
 // Test buffer overrun into head...
-TEST(GuardedMemory, buffer_overrun_head) {
+TEST_VM(GuardedMemory, buffer_overrun_head) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
   GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
@@ -111,7 +111,7 @@ TEST(GuardedMemory, buffer_overrun_head) {
 }
 
 // Test buffer overrun into tail with a number of odd sizes
-TEST(GuardedMemory, buffer_overrun_tail) {
+TEST_VM(GuardedMemory, buffer_overrun_tail) {
   u_char* basep =
           (u_char*) os::malloc(GuardedMemory::get_total_size(1), mtInternal);
   GuardedMemory guarded(basep, 1, GEN_PURPOSE_TAG);
@@ -128,7 +128,7 @@ TEST(GuardedMemory, buffer_overrun_tail) {
 }
 
 // Test wrap_copy/wrap_free
-TEST(GuardedMemory, wrap) {
+TEST_VM(GuardedMemory, wrap) {
   EXPECT_TRUE(GuardedMemory::free_copy(nullptr)) << "Expected free nullptr to be OK";
 
   const char* str = "Check my bounds out";
@@ -145,4 +145,11 @@ TEST(GuardedMemory, wrap) {
   void* no_data_copy = GuardedMemory::wrap_copy(no_data, 0);
   EXPECT_TRUE(GuardedMemory::free_copy(no_data_copy))
           << "Expected valid guards even for no data copy";
+}
+
+// Test passing back a bogus GuardedMemory region
+TEST_VM(GuardedMemory, unmapped) {
+  char* unmapped_base = (char*) (GuardedMemoryTest::get_guard_header_size() + 0x1000 + 1); // Avoids assert in constructor
+  GuardedMemory guarded(unmapped_base);
+  EXPECT_FALSE(guarded.verify_guards()) << "Guard was not broken as expected";
 }
