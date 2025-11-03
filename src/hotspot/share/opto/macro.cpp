@@ -880,6 +880,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, GrowableArray<Saf
   while (safepoints.length() > 0) {
     SafePointNode* sfpt = safepoints.pop();
 
+    // All sfpt inputs are implicitly included into debug info during the scalarisaction process below.
+    // Keep non-debug inputs separately, so they stay non-debug.
     sfpt->remove_non_debug_edges(non_debug_edges_worklist);
 
     SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);

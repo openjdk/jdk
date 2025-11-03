@@ -1227,6 +1227,8 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   for (uint spi = 0; spi < safepoints.size(); spi++) {
     SafePointNode* sfpt = safepoints.at(spi)->as_SafePoint();
 
+    // All sfpt inputs are implicitly included into debug info during the scalarisaction process below.
+    // Keep non-debug inputs separately, so they stay non-debug.
     sfpt->remove_non_debug_edges(non_debug_edges_worklist);
 
     JVMState* jvms  = sfpt->jvms();

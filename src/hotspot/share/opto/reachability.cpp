@@ -86,7 +86,10 @@
 // RF is redundant for some referent oop when the referent has another user which keeps it alive across the RF.
 // In terms of dominance relation it can be formulated as "a referent has a user which is dominated by the redundant RF".
 // Until loop opts are over, only RF nodes are considered as usages (controlled by rf_only flag).
-static bool is_redundant_rf_helper(Node* ctrl, Node* referent, PhaseIdealLoop* phase, PhaseGVN& gvn, bool rf_only) {
+static bool is_redundant_rf_helper(ReachabilityFenceNode* rf, PhaseIdealLoop* phase, PhaseGVN& gvn, bool rf_only) {
+  assert(phase != nullptr || rf_only, "only RFs during GVN");
+
+  Node* referent = rf->referent();
   const Type* t = gvn.type(referent);
   if (!PreserveReachabilityFencesOnConstants && t->singleton()) {
     return true; // no-op fence
@@ -108,15 +111,15 @@ static bool is_redundant_rf_helper(Node* ctrl, Node* referent, PhaseIdealLoop* p
       if (rf_only && !use->is_ReachabilityFence()) {
         continue; // skip non-RF uses
       }
-      if (use != ctrl) {
+      if (use != rf) {
         if (phase != nullptr) {
           Node* use_ctrl = (rf_only ? use : phase->ctrl_or_self(use));
-          if (phase->is_dominator(ctrl, use_ctrl)) {
+          if (phase->is_dominator(rf, use_ctrl)) {
             return true;
           }
         } else {
-          assert(rf_only, "");
-          if (gvn.is_dominator(ctrl, use)) {
+          assert(use->is_ReachabilityFence(), "only RFs during GVN");
+          if (gvn.is_dominator(rf, use)) {
             return true;
           }
         }
@@ -131,7 +134,7 @@ Node* ReachabilityFenceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* ReachabilityFenceNode::Identity(PhaseGVN* phase) {
-  if (is_redundant_rf_helper(this, in(1), nullptr, *phase, true /*rf_only*/)) {
+  if (is_redundant_rf_helper(this, nullptr, *phase, true /*rf_only*/)) {
     return in(0);
   }
   return this;
@@ -140,7 +143,7 @@ Node* ReachabilityFenceNode::Identity(PhaseGVN* phase) {
 // Turn the RF node into a no-op by setting it's referent to null.
 // Subsequent IGVN pass removes cleared nodes.
 bool ReachabilityFenceNode::clear_referent(PhaseIterGVN& phase) {
-  if (phase.type(in(1)) == TypePtr::NULL_PTR) {
+  if (phase.type(referent()) == TypePtr::NULL_PTR) {
     return false;
   } else {
     phase.replace_input_of(this, 1, phase.makecon(TypePtr::NULL_PTR));
@@ -151,7 +154,7 @@ bool ReachabilityFenceNode::clear_referent(PhaseIterGVN& phase) {
 #ifndef PRODUCT
 static void rf_desc(outputStream* st, const ReachabilityFenceNode* rf, PhaseRegAlloc* ra) {
   char buf[50];
-  ra->dump_register(rf->in(1), buf, sizeof(buf));
+  ra->dump_register(rf->referent(), buf, sizeof(buf));
   st->print("reachability fence [%s]", buf);
 }
 
@@ -221,7 +224,7 @@ void PhaseIdealLoop::replace_rf(Node* old_node, Node* new_node) {
 }
 
 void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
-  Node* referent = rf->in(1);
+  Node* referent = rf->referent();
   if (igvn().type(referent) != TypePtr::NULL_PTR) {
     igvn().replace_input_of(rf, 1, makecon(TypePtr::NULL_PTR));
     if (referent->outcnt() == 0) {
@@ -233,8 +236,7 @@ void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
 }
 
 bool PhaseIdealLoop::is_redundant_rf(ReachabilityFenceNode* rf, bool rf_only) {
-  Node* referent = rf->in(1);
-  return is_redundant_rf_helper(rf, referent, this, igvn(), rf_only);
+  return is_redundant_rf_helper(rf, this, igvn(), rf_only);
 }
 
 // Updates the unique list of redundant RFs.
@@ -243,7 +245,6 @@ bool PhaseIdealLoop::find_redundant_rfs(Unique_Node_List& redundant_rfs) {
   bool found = false;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     ReachabilityFenceNode* rf = C->reachability_fence(i);
-    Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
     if (!redundant_rfs.member(rf) && is_redundant_rf(rf, true /*rf_only*/)) {
       redundant_rfs.push(rf);
@@ -256,10 +257,10 @@ bool PhaseIdealLoop::find_redundant_rfs(Unique_Node_List& redundant_rfs) {
 #ifdef ASSERT
 static void dump_rfs_on(outputStream* st, PhaseIdealLoop* phase, Unique_Node_List& redundant_rfs, bool rf_only) {
   for (int i = 0; i < phase->C->reachability_fences_count(); i++) {
-    Node* rf = phase->C->reachability_fence(i);
-    Node* referent = rf->in(1);
+    ReachabilityFenceNode* rf = phase->C->reachability_fence(i);
+    Node* referent = rf->referent();
     bool detected = redundant_rfs.member(rf);
-    bool redundant = is_redundant_rf_helper(rf, referent, phase, phase->igvn(), rf_only);
+    bool redundant = is_redundant_rf_helper(rf, phase, phase->igvn(), rf_only);
 
     st->print(" %3d: %s%s ", i, (redundant ? "R" : " "), (detected ? "D" : " "));
     rf->dump("", false, st);
@@ -300,7 +301,6 @@ static void dump_rfs_on(outputStream* st, PhaseIdealLoop* phase, Unique_Node_Lis
 bool PhaseIdealLoop::has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only) {
   for (int i = 0; i < C->reachability_fences_count(); i++) {
     ReachabilityFenceNode* rf = C->reachability_fence(i);
-    Node* referent = rf->in(1);
     assert(rf->outcnt() > 0, "dead node");
     if (ignored_rfs.member(rf)) {
       continue; // skip
@@ -328,11 +328,11 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
 
   Node_List worklist;
   for (int i = 0; i < C->reachability_fences_count(); i++) {
-    Node* rf = C->reachability_fence(i);
+    ReachabilityFenceNode* rf = C->reachability_fence(i);
     if (!redundant_rfs.member(rf)) {
       // Move RFs out of counted loops when possible.
       IdealLoopTree* lpt = get_loop(rf);
-      Node* referent = rf->in(1);
+      Node* referent = rf->referent();
       Node* loop_exit = lpt->unique_loop_exit_or_null();
       if (lpt->is_invariant(referent) && loop_exit != nullptr) {
         // Switch to the outermost loop.
@@ -397,8 +397,8 @@ static void linear_traversal(Node* n, Node_Stack& worklist, VectorSet& visited, 
 
 // Enumerate all safepoints which are reachable from the RF to its referent through CFG.
 // Start at RF node and traverse CFG upwards until referent's control node is reached.
-static void enumerate_interfering_sfpts(Node* rf, PhaseIdealLoop* phase, Node_List& safepoints) {
-  Node* referent = rf->in(1);
+static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoop* phase, Node_List& safepoints) {
+  Node* referent = rf->referent();
   Node* referent_ctrl = phase->get_ctrl(referent);
   assert(phase->is_dominator(referent_ctrl, rf), "sanity");
 
@@ -447,7 +447,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
     ReachabilityFenceNode* rf = C->reachability_fence(i);
     assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
     if (PreserveReachabilityFencesOnConstants) {
-      const Type* referent_t = igvn().type(rf->in(1));
+      const Type* referent_t = igvn().type(rf->referent());
       assert(referent_t != TypePtr::NULL_PTR, "redundant rf");
       bool is_constant_rf = referent_t->singleton();
       if (is_constant_rf) {
@@ -459,7 +459,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
       Node_List safepoints;
       enumerate_interfering_sfpts(rf, this, safepoints);
 
-      Node* referent = rf->in(1);
+      Node* referent = rf->referent();
       while (safepoints.size() > 0) {
         SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
         assert(is_dominator(get_ctrl(referent), sfpt), "");

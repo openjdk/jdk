@@ -70,6 +70,7 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
 
+  Node* referent() const { return in(1); }
   bool clear_referent(PhaseIterGVN& phase);
 
 #ifndef PRODUCT
