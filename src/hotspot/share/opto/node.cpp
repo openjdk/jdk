@@ -563,9 +563,6 @@ Node *Node::clone() const {
     if (cg != nullptr) {
       CallGenerator* cloned_cg = cg->with_call_node(n->as_Call());
       n->as_Call()->set_generator(cloned_cg);
-      if (cloned_cg->is_mh_late_inline()) {
-        C->inc_number_of_mh_late_inlines();
-      }
     }
   }
   if (n->is_SafePoint()) {
