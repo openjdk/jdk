@@ -64,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -1270,30 +1271,72 @@ public final class TKit {
         }).map(PrintStream::new).orElse(null);
     }
 
-    public record PathSnapshot(List<String> contentHashes) {
+    public record PathSnapshot(List<PathHash> contentHashes) {
         public PathSnapshot {
             contentHashes.forEach(Objects::requireNonNull);
         }
 
-        public PathSnapshot(Path path) {
-            this(hashRecursive(path));
-        }
-
         public void assertEquals(PathSnapshot other, String msg) {
-            assertStringListEquals(contentHashes(), other.contentHashes(), msg);
+            assertStringListEquals(toStringList(), other.toStringList(), msg);
         }
 
-        private static List<String> hashRecursive(Path path) {
+        public record PathHash(Path path, String hash) {
+            public PathHash {
+                Objects.requireNonNull(path);
+                Objects.requireNonNull(hash);
+            }
+
+            @Override
+            public String toString() {
+                return String.format("%s#%s", path, hash);
+            }
+        }
+
+        public static Builder build() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+
+            public PathSnapshot create(Path path) {
+                return new PathSnapshot(hashRecursive(
+                        path,
+                        Optional.ofNullable(hasher).orElse(PathSnapshot::lastModifiedTime),
+                        Optional.ofNullable(filter)));
+            }
+
+            public Builder filter(Predicate<Path> v) {
+                filter = v;
+                return this;
+            }
+
+            public Builder hasher(Function<Path, String> v) {
+                hasher = v;
+                return this;
+            }
+
+            private Predicate<Path> filter;
+            private Function<Path, String> hasher;
+        }
+
+        private List<String> toStringList() {
+            return contentHashes.stream().map(PathHash::toString).toList();
+        }
+
+        private static List<PathHash> hashRecursive(Path path, Function<Path, String> hasher, Optional<Predicate<Path>> pathFilter) {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(hasher);
+            Objects.requireNonNull(pathFilter);
             try {
                 try (final var walk = Files.walk(path)) {
-                    return walk.sorted().map(p -> {
+                    return pathFilter.map(walk::filter).orElse(walk).sorted().map(p -> {
                         final String hash;
                         if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
                             hash = "";
                         } else {
-                            hash = hashFile(p);
+                            hash = hasher.apply(p);
                         }
-                        return String.format("%s#%s", path.relativize(p), hash);
+                        return new PathHash(path.relativize(p), hash);
                     }).toList();
                 }
             } catch (IOException ex) {
@@ -1301,7 +1344,7 @@ public final class TKit {
             }
         }
 
-        private static String hashFile(Path path) {
+        private static String lastModifiedTime(Path path) {
             try {
                 final var time = Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS);
                 return time.toString();

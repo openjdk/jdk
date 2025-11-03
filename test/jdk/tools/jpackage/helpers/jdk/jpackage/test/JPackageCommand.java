@@ -36,10 +36,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -86,7 +88,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
         this.immutable = immutable;
-        dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
         standardAsserts = cmd.standardAsserts;
@@ -164,11 +165,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             return defaultValueSupplier.apply(this);
         }
         return null;
-    }
-
-    public String getArgumentValue(String argName,
-            Function<JPackageCommand, String> defaultValueSupplier) {
-        return getArgumentValue(argName, defaultValueSupplier, v -> v);
     }
 
     public <T> T getArgumentValue(String argName,
@@ -570,11 +566,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }
 
         if (TKit.isOSX()) {
-            if (packageType() == PackageType.MAC_DMG && dmgInstallDir != null) {
-                return dmgInstallDir;
-            } else {
-                return MacHelper.getInstallationDirectory(this);
-            }
+            return MacHelper.getInstallationDirectory(this);
         }
 
         throw TKit.throwUnknownPlatformError();
@@ -1080,7 +1072,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> createSnapshots() {
             return asserts.entrySet().stream()
                     .map(e -> {
-                        return Map.entry(e.getKey(), e.getValue().stream().map(TKit.PathSnapshot::new).toList());
+                        return Map.entry(e.getKey(), e.getValue().stream().map(TKit.PathSnapshot.build()::create).toList());
                     }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
@@ -1233,6 +1225,53 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
+        PREDEFINED_APP_IMAGE_COPY(cmd -> {
+            Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
+                return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
+            }).map(Path::of).ifPresent(predefinedAppImage -> {
+
+                Function<Path, String> computeDigest = ThrowingFunction.toFunction(path -> {
+                    var md = MessageDigest.getInstance("MD5");
+                    md.update(Files.readAllBytes(path));
+                    return HexFormat.of().formatHex(md.digest());
+                });
+
+                var snapshotBuilder = TKit.PathSnapshot.build().hasher(computeDigest);
+
+                if (!cmd.expectAppImageFile()) {
+                    var appImageFile = AppImageFile.getPathInAppImage(predefinedAppImage);
+                    // Exclude ".jpackage.xml" as it should no be in the output bundle.
+                    var pred = Predicate.<Path>isEqual(appImageFile).negate();
+                    if (TKit.isOSX()) {
+                        // On MacOS exclude files that can be signed as their digests change.
+                        pred = pred.and(path -> {
+                            return MacHelper.isVerbatimCopyFromPredefinedAppImage(cmd, path);
+                        });
+                    }
+
+                    snapshotBuilder.filter(pred);
+                }
+
+                var fromSnapshot = snapshotBuilder.create(predefinedAppImage);
+
+                var outputAppImageDir = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+
+                var toSnapshot = new TKit.PathSnapshot(fromSnapshot.contentHashes().stream().map(pathHash -> {
+                    if (pathHash.hash().isEmpty()) {
+                        // path is a directory
+                        return pathHash;
+                    } else {
+                        return new TKit.PathSnapshot.PathHash(
+                                pathHash.path(),
+                                computeDigest.apply(outputAppImageDir.resolve(pathHash.path())));
+                    }
+                }).toList());
+
+                toSnapshot.assertEquals(fromSnapshot,
+                        String.format("Check contents of the predefined app image [%s] copied verbatim",
+                                predefinedAppImage));
+            });
+        })
         ;
 
         StandardAssert(Consumer<JPackageCommand> action) {
@@ -1241,9 +1280,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         private static JPackageCommand convertFromRuntime(JPackageCommand cmd) {
             var copy = cmd.createMutableCopy();
-            copy.immutable = false;
             copy.removeArgumentWithValue("--runtime-image");
-            copy.dmgInstallDir = cmd.appInstallationDirectory();
             if (!copy.hasArgument("--name")) {
                 copy.addArguments("--name", cmd.nameFromRuntimeImage().orElseThrow());
             }
@@ -1645,7 +1682,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
     private boolean immutable;
-    private Path dmgInstallDir;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;
     private Path executeInDirectory;
