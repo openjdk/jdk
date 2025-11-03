@@ -223,7 +223,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest.Builder method(String method, BodyPublisher body) {
-        requireNonNull(method);
+        requireNonNull(method, "HTTP method must be non-null");
         if (method.isEmpty())
             throw newIAE("illegal method <empty string>");
         if (method.equals("CONNECT"))
