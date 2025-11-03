@@ -846,10 +846,6 @@ static void *thread_native_entry(Thread *thread) {
 
   osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
-  if (UseNUMA) {
-    thread->update_lgrp_id();
-  }
-
   // initialize signal mask for this thread
   PosixSignals::hotspot_sigmask(thread);
 
@@ -1174,10 +1170,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-  if (UseNUMA) {
-    thread->update_lgrp_id();
-  }
 
   if (os::is_primordial_thread()) {
     // If current thread is primordial thread, its stack is mapped on demand,
