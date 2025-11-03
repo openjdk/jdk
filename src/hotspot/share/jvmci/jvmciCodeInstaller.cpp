@@ -1141,7 +1141,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool return_oop, JVMCI_TRAPS) {
   if (full_info) {
     read_virtual_objects(stream, JVMCI_CHECK);
   }
@@ -1184,7 +1184,7 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
       // has_ea_local_in_scope and arg_escape should be added to JVMCI
       const bool has_ea_local_in_scope = false;
       const bool arg_escape            = false;
-      _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, is_mh_invoke, return_oop,
+      _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, return_oop,
                                       has_ea_local_in_scope, arg_escape,
                                       locals_token, stack_token, monitors_token);
     }
@@ -1242,14 +1242,8 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     _debug_recorder->add_safepoint(next_pc_offset, map);
 
     if (!method.is_null()) {
-      vmIntrinsics::ID iid = method->intrinsic_id();
-      bool is_mh_invoke = false;
-      if (direct_call) {
-        is_mh_invoke = !method->is_static() && (iid == vmIntrinsics::_compiledLambdaForm ||
-                (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
-      }
       bool return_oop = method->is_returning_oop();
-      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, return_oop, JVMCI_CHECK);
     } else {
       record_scope(next_pc_offset, stream, flags, true, JVMCI_CHECK);
     }
@@ -1339,9 +1333,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case DEOPT_HANDLER_ENTRY:
       _offsets.set_value(CodeOffsets::Deopt, pc_offset);
       break;
-    case DEOPT_MH_HANDLER_ENTRY:
-      _offsets.set_value(CodeOffsets::DeoptMH, pc_offset);
-      break;
     case FRAME_COMPLETE:
       _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
       break;
@@ -1369,6 +1360,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_BITS:
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
+    case DEOPT_MH_HANDLER_ENTRY:
       break;
 
     default:
