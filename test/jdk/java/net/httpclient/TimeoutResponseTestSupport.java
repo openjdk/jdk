@@ -21,7 +21,9 @@
  * questions.
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.ErrorFrame;
@@ -53,6 +55,7 @@ import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -132,10 +135,7 @@ public class TimeoutResponseTestSupport {
         }
     }
 
-    protected record ServerRequestPair(
-            HttpServerAdapters.HttpTestServer server,
-            HttpRequest request,
-            boolean secure) {
+    protected record ServerRequestPair(HttpTestServer server, HttpRequest request, boolean secure) {
 
         private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
@@ -164,7 +164,7 @@ public class TimeoutResponseTestSupport {
             // Create the server and the request URI
             SSLContext sslContext = secure ? SSL_CONTEXT : null;
             String serverId = "" + SERVER_COUNTER.getAndIncrement();
-            HttpServerAdapters.HttpTestServer server = createServer(version, sslContext);
+            HttpTestServer server = createServer(version, sslContext);
             server.getVersion();
             String handlerPath = "/%s/".formatted(CLASS_NAME);
             String requestUriScheme = secure ? "https" : "http";
@@ -184,20 +184,18 @@ public class TimeoutResponseTestSupport {
 
         }
 
-        private static HttpServerAdapters.HttpTestServer createServer(
-                Version version,
-                SSLContext sslContext) {
+        private static HttpTestServer createServer(Version version, SSLContext sslContext) {
             try {
                 return switch (version) {
-                    case HTTP_1_1, HTTP_2 -> HttpServerAdapters.HttpTestServer.create(version, sslContext, EXECUTOR);
-                    case HTTP_3 -> HttpServerAdapters.HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, EXECUTOR);
+                    case HTTP_1_1, HTTP_2 -> HttpTestServer.create(version, sslContext, EXECUTOR);
+                    case HTTP_3 -> HttpTestServer.create(HTTP_3_URI_ONLY, sslContext, EXECUTOR);
                 };
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
         }
 
-        private static HttpServerAdapters.HttpTestHandler createServerHandler(String serverId) {
+        private static HttpTestHandler createServerHandler(String serverId) {
             return (exchange) -> {
                 String connectionKey = exchange.getConnectionKey();
                 LOGGER.log(
@@ -273,10 +271,7 @@ public class TimeoutResponseTestSupport {
             SHUT_DOWN_LATCH.await();
         }
 
-        private static void sendResponseHeaders(
-                String serverId,
-                HttpServerAdapters.HttpTestExchange exchange,
-                String connectionKey)
+        private static void sendResponseHeaders(String serverId, HttpTestExchange exchange, String connectionKey)
                 throws IOException {
             LOGGER.log("Server[%s] is sending headers %s", serverId, Map.of("connectionKey", connectionKey));
             exchange.sendResponseHeaders(200, CONTENT_LENGTH);
@@ -284,10 +279,7 @@ public class TimeoutResponseTestSupport {
             exchange.getResponseBody().flush();
         }
 
-        private static void sendResponseBodySlowly(
-                String serverId,
-                HttpServerAdapters.HttpTestExchange exchange,
-                String connectionKey)
+        private static void sendResponseBodySlowly(String serverId, HttpTestExchange exchange, String connectionKey)
                 throws Exception {
             Duration perBytePauseDuration = Duration.ofMillis(100);
             assertTrue(
@@ -312,8 +304,7 @@ public class TimeoutResponseTestSupport {
 
         public HttpClient createClientWithEstablishedConnection() throws IOException, InterruptedException {
             Version version = server.getVersion();
-            HttpClient client = HttpServerAdapters
-                    .createClientBuilderFor(version)
+            HttpClient client = createClientBuilderFor(version)
                     .version(version)
                     .sslContext(SSL_CONTEXT)
                     .proxy(NO_PROXY)
