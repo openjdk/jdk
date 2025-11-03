@@ -856,11 +856,18 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   phase->igvn().replace_input_of(_node, 1, in1);
   // Note: the backedge is hooked up later.
 
-  // The Phi's inputs may have been modified, and the types changes,
-  // e.g. from scalar to vector.
+  // The Phi's inputs may have been modified from scalar to vector,
+  // and we need to update the type of the phi.
   const Type* t = in1->bottom_type();
-  _node->as_Type()->set_type(t);
-  phase->igvn().set_type(_node, t);
+  if (t->isa_vect() != nullptr &&
+      _node->bottom_type()->isa_vect() == nullptr) {
+    _node->as_Type()->set_type(t);
+    phase->igvn().set_type(_node, t);
+  }
+
+  tty->print_cr("VTransformLoopPhiNode::apply");
+  tty->print("t: "); t->dump(); tty->cr();
+  _node->dump_bfs(3,0,"#d");
 
   return VTransformApplyResult::make_scalar(_node);
 }
