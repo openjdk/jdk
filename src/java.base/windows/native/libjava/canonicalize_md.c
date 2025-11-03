@@ -288,11 +288,13 @@ wcanonicalize(const WCHAR *orig_path, WCHAR *result, int size)
 
             // If a reparse point is encountered, get the final path.
             if ((fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+                // Do not fail if the final path cannot be obtained as the
+                // canonicalization may still be otherwise correct
                 WCHAR* fp = NULL;
-                if ((fp = getFinalPath(path, result, size)) == NULL)
-                    goto err;
-                free(path);
-                return fp;
+                if ((fp = getFinalPath(path, result, size)) != NULL) {
+                    free(path);
+                    return fp;
+                }
             }
 
             if (!(dst = wcp(dst, dend, L'\\', fd.cFileName,
