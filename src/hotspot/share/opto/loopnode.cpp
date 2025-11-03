@@ -2512,7 +2512,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   if (_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
     Node* backedge_sfpt = _head->in(LoopNode::LoopBackControl);
     if (_phase->is_deleteable_safept(backedge_sfpt)) {
-      _phase->lazy_replace(backedge_sfpt, back_control);
+      _phase->replace_node_and_forward_ctrl(backedge_sfpt, back_control);
       if (_loop->_safepts != nullptr) {
         _loop->_safepts->yank(backedge_sfpt);
       }
@@ -2614,8 +2614,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
     _phase->set_loop(iff2, _phase->get_loop(iffalse));
 
     // Lazy update of 'get_ctrl' mechanism.
-    replace_node_and_forward_ctrl(iffalse, iff2);
-    replace_node_and_forward_ctrl(iftrue,  ift2);
+    _phase->replace_node_and_forward_ctrl(iffalse, iff2);
+    _phase->replace_node_and_forward_ctrl(iftrue,  ift2);
 
     // Swap names
     iffalse = iff2;
@@ -2630,7 +2630,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
   _phase->set_idom(iftrue, le, dd + 1);
   _phase->set_idom(iffalse, le, dd + 1);
   assert(iff->outcnt() == 0, "should be dead now");
-  replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
+  _phase->replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
 
   Node* entry_control = init_control;
   bool strip_mine_loop = _iv_bt == T_INT &&
@@ -2660,8 +2660,8 @@ IdealLoopTree* CountedLoopConverter::convert() {
   _loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  replace_node_and_forward_ctrl(x, l);
-  set_idom(l, entry_control, dom_depth(entry_control) + 1);
+  _phase->replace_node_and_forward_ctrl(_head, l);
+  _phase->set_idom(l, entry_control, _phase->dom_depth(entry_control) + 1);
 
   if (_iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
     // Check for immediately preceding SafePoint and remove
@@ -2686,7 +2686,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
         _phase->register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
         _phase->set_idom(outer_le, sfpt_clone, _phase->dom_depth(sfpt_clone));
       }
-      replace_node_and_forward_ctrl(_structure.sfpt(), _structure.sfpt()->in(TypeFunc::Control));
+      _phase->replace_node_and_forward_ctrl(_structure.sfpt(), _structure.sfpt()->in(TypeFunc::Control));
       if (_loop->_safepts != nullptr) {
         _loop->_safepts->yank(_structure.sfpt());
       }
