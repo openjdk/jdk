@@ -44,6 +44,7 @@ public:
 };
 
 class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
+  size_t _word_size;
   bool _transient_failure;
   bool _mark_in_progress;
   bool _cycle_already_in_progress;
@@ -53,7 +54,8 @@ class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _gc_succeeded;
 
 public:
-  VM_G1TryInitiateConcMark(uint gc_count_before,
+  VM_G1TryInitiateConcMark(size_t word_size,
+                           uint gc_count_before,
                            GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1TryInitiateConcMark; }
   virtual bool doit_prologue();
@@ -68,8 +70,8 @@ public:
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
 
 public:
-  VM_G1CollectForAllocation(size_t         word_size,
-                            uint           gc_count_before,
+  VM_G1CollectForAllocation(size_t word_size,
+                            uint gc_count_before,
                             GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }
   virtual void doit();

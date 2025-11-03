@@ -52,14 +52,16 @@ void VM_G1CollectFull::doit() {
   GCCauseSetter x(g1h, _gc_cause);
   bool clear_all_soft_refs = _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
                              _gc_cause == GCCause::_wb_full_gc;
-  g1h->do_full_collection(clear_all_soft_refs /* clear_all_soft_refs */,
-                          false /* do_maximal_compaction */,
-                          size_t(0) /* allocation_word_size */);
+  g1h->do_full_collection(size_t(0) /* allocation_word_size */,
+                          clear_all_soft_refs,
+                          false /* do_maximal_compaction */);
 }
 
-VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
+VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(size_t allocation_word_size,
+                                                   uint gc_count_before,
                                                    GCCause::Cause gc_cause) :
   VM_GC_Collect_Operation(gc_count_before, gc_cause),
+  _word_size(allocation_word_size),
   _transient_failure(false),
   _mark_in_progress(false),
   _cycle_already_in_progress(false),
@@ -97,13 +99,13 @@ void VM_G1TryInitiateConcMark::doit() {
     // we've rejected this request.
     _whitebox_attached = true;
   } else {
-    g1h->do_collection_pause_at_safepoint();
+    g1h->do_collection_pause_at_safepoint(_word_size);
     _gc_succeeded = true;
   }
 }
 
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
-                                                     uint           gc_count_before,
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t word_size,
+                                                     uint gc_count_before,
                                                      GCCause::Cause gc_cause) :
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
 
@@ -111,7 +113,7 @@ void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
-  g1h->do_collection_pause_at_safepoint();
+  g1h->do_collection_pause_at_safepoint(_word_size);
 
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
