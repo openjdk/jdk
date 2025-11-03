@@ -307,15 +307,10 @@ public final class Deadline implements Comparable<Deadline> {
      */
     public static Duration between(Deadline startInclusive, Deadline endExclusive) {
         if (startInclusive.equals(endExclusive)) return Duration.ZERO;
-        try {
-            return Duration.between(startInclusive.deadline, endExclusive.deadline);
-        } catch (DateTimeException |                // "Instant exceeds minimum or maximum instant"
-                 ArithmeticException exception) {   // "long overflow"
-            // `Deadline` works with `Instant` under the hood.
-            // Delta between `Instant.MIN` and `Instant.MAX` fits in a `Duration`.
-            // Hence, we should never receive a numeric overflow while calculating the delta between two deadlines.
-            throw new IllegalStateException("Unexpected overflow", exception);
-        }
+        // `Deadline` works with `Instant` under the hood.
+        // Delta between `Instant.MIN` and `Instant.MAX` fits in a `Duration`.
+        // Hence, we should never receive a numeric overflow while calculating the delta between two deadlines.
+        return Duration.between(startInclusive.deadline, endExclusive.deadline);
     }
 
 }
