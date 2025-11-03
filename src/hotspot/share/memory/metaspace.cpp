@@ -54,7 +54,7 @@
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -319,7 +319,7 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t bytes) {
 }
 
 size_t MetaspaceGC::capacity_until_GC() {
-  size_t value = Atomic::load_acquire(&_capacity_until_GC);
+  size_t value = AtomicAccess::load_acquire(&_capacity_until_GC);
   assert(value >= MetaspaceSize, "Not initialized properly?");
   return value;
 }
@@ -353,7 +353,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
   if (can_retry != nullptr) {
     *can_retry = true;
   }
-  size_t prev_value = Atomic::cmpxchg(&_capacity_until_GC, old_capacity_until_GC, new_value);
+  size_t prev_value = AtomicAccess::cmpxchg(&_capacity_until_GC, old_capacity_until_GC, new_value);
 
   if (old_capacity_until_GC != prev_value) {
     return false;
@@ -371,7 +371,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  return Atomic::sub(&_capacity_until_GC, v);
+  return AtomicAccess::sub(&_capacity_until_GC, v);
 }
 
 void MetaspaceGC::initialize() {
@@ -872,7 +872,7 @@ size_t Metaspace::max_allocation_word_size() {
 // is suitable for calling from non-Java threads.
 // Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, bool use_class_space) {
+                              MetaspaceObj::Type type) {
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (%zu)", word_size);
 
@@ -882,7 +882,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Deal with concurrent unloading failed allocation starvation
   MetaspaceCriticalAllocation::block_if_concurrent_purge();
 
-  MetadataType mdtype = use_class_space ? ClassType : NonClassType;
+  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
 
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
@@ -906,7 +906,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 }
 
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
-                              MetaspaceObj::Type type, bool use_class_space, TRAPS) {
+                              MetaspaceObj::Type type, TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
@@ -914,10 +914,10 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
   assert(!THREAD->owns_locks(), "allocating metaspace while holding mutex");
 
-  MetaWord* result = allocate(loader_data, word_size, type, use_class_space);
+  MetaWord* result = allocate(loader_data, word_size, type);
 
   if (result == nullptr) {
-    MetadataType mdtype = use_class_space ? ClassType : NonClassType;
+    MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
     // Allocation failed.

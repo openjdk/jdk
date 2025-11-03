@@ -1104,6 +1104,11 @@ public class JavacParser implements Parser {
             syntaxError(result.pos, Errors.RestrictedTypeNotAllowedHere(restrictedTypeName));
         }
 
+        if ((lastmode & TYPE) == 0) {
+            //if the mode was switched to expression while expecting type, wrap with Erroneous:
+            result = F.Erroneous(List.of(result));
+        }
+
         return result;
     }
 
@@ -1431,6 +1436,7 @@ public class JavacParser implements Parser {
     protected JCExpression term3() {
         int pos = token.pos;
         JCExpression t;
+        int startMode = mode;
         List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
         switch (token.kind) {
         case QUES:
@@ -1760,6 +1766,9 @@ public class JavacParser implements Parser {
             }
             // Not reachable.
         default:
+            if (typeArgs != null && (startMode & TYPE) != 0) {
+                return F.at(pos).TypeApply(F.Erroneous(), typeArgs);
+            }
             return illegal();
         }
         return term3Rest(t, typeArgs);
@@ -4924,7 +4933,8 @@ public class JavacParser implements Parser {
             }
 
             // Field
-            if (!isVoid && typarams.isEmpty() && (token.kind == EQ || token.kind == SEMI)) {
+            if (!isVoid && typarams.isEmpty() &&
+                (token.kind == EQ || token.kind == SEMI || token.kind == COMMA)) {
                 List<JCTree> defs =
                         variableDeclaratorsRest(pos, mods, type, name, false, dc,
                                 new ListBuffer<JCTree>(), false).toList();

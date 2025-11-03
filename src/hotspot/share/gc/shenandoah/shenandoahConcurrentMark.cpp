@@ -25,7 +25,6 @@
 
 
 #include "gc/shared/satbMarkQueue.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -57,18 +56,11 @@ public:
   }
 
   void work(uint worker_id) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     ShenandoahSuspendibleThreadSetJoiner stsj;
-    // Do not use active_generation() : we must use the gc_generation() set by
-    // ShenandoahGCScope on the ControllerThread's stack; no safepoint may
-    // intervene to update active_generation, so we can't
-    // shenandoah_assert_generations_reconciled() here.
-    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
-    assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
-    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
   }
@@ -94,10 +86,12 @@ private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
   bool                      _dedup_string;
+  ThreadsClaimTokenScope    _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string),
+    _threads_claim_token_scope() {
   }
 
   void work(uint worker_id) {
@@ -105,9 +99,6 @@ public:
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
     StringDedup::Requests requests;
-    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
-    shenandoah_assert_generations_reconciled();
-
     // First drain remaining SATB buffers.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
@@ -121,7 +112,7 @@ public:
       ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
-    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
@@ -297,7 +288,6 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
-  StrongRootsScope scope(nworkers);
   TaskTerminator terminator(nworkers, task_queues());
 
   switch (_generation->type()) {

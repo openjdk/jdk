@@ -28,6 +28,7 @@
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -73,8 +74,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
-
-#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -533,11 +532,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
     cont_size(), _cont.argsize(), p2i(_cont_stack_top), p2i(_cont_stack_bottom));
   assert(cont_size() > 0, "");
 
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    _monitors_in_lockstack = 0;
-  } else {
-    _monitors_in_lockstack = _thread->lock_stack().monitor_count();
-  }
+  _monitors_in_lockstack = _thread->lock_stack().monitor_count();
 }
 
 void FreezeBase::init_rest() { // we want to postpone some initialization after chunk handling
@@ -587,33 +582,12 @@ static void assert_frames_in_continuation_are_safe(JavaThread* thread) {
 #endif // ASSERT
 }
 
-#ifdef ASSERT
-static bool monitors_on_stack(JavaThread* thread) {
-  assert_frames_in_continuation_are_safe(thread);
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
-                  RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::skip,
-                  RegisterMap::WalkContinuation::skip);
-  map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
-        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f)) ||
-        (f.is_native_frame() && ContinuationHelper::NativeFrame::is_owning_locks(map.thread(), f))) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif // ASSERT
-
 // Called _after_ the last possible safepoint during the freeze operation (chunk allocation)
 void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
   entry->flush_stack_processing(_thread);
   assert_frames_in_continuation_are_safe(_thread);
   JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
-  assert(LockingMode != LM_LEGACY || !monitors_on_stack(_thread), "unexpected monitors on stack");
   set_anchor_to_entry(_thread, entry);
 }
 
@@ -1644,21 +1618,22 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
-    int num_frames = num_java_frames(cont);
+  if (!cont.entry()->is_virtual_thread()) {
+    if (JvmtiExport::has_frame_pops(thread)) {
+      int num_frames = num_java_frames(cont);
 
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
-    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
+      ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+      JvmtiExport::continuation_yield_cleanup(thread, num_frames);
+    }
+    invalidate_jvmti_stack(thread);
   }
-  invalidate_jvmti_stack(thread);
 }
 
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
@@ -1762,13 +1737,10 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-
-  if (entry->is_pinned() || current->held_monitor_count() > 0) {
-    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
+  if (entry->is_pinned()) {
+    log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
     if (!preempt) {
       JFR_ONLY(current->set_last_freeze_fail_result(res);)
     }
@@ -1825,8 +1797,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
-  } else if (thread->held_monitor_count() > 0) {
-    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread,
@@ -1862,15 +1832,12 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
-      } else if (monitor_count > 0) {
-        return freeze_pinned_monitor;
       }
     }
   }
@@ -2344,7 +2311,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
