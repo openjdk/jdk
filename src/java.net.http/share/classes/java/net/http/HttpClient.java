@@ -309,10 +309,9 @@ public abstract class HttpClient implements AutoCloseable {
          * from a previous request, then this timeout duration has no effect.
          *
          * @implSpec
-         * When a connection timeout is configured, an {@link HttpClient}
-         * implementation applies it to the entire connection phase, from the
-         * moment a connection is requested until it is established. The
-         * elapsed time includes any SSL/TLS handshake.
+         * A connection timeout applies to the entire connection phase, from the
+         * moment a connection is requested until it is established. The elapsed
+         * time includes any SSL/TLS handshake.
          *
          * @param duration the duration to allow the underlying connection to be
          *                 established

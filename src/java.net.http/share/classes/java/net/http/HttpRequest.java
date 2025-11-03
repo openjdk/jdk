@@ -262,19 +262,18 @@ public abstract class HttpRequest {
          * {@code Duration}, i.e., block forever.
          *
          * @implSpec
-         * When a timeout is configured, an {@link HttpClient} implementation
-         * should apply it over the duration measured from the instant the
+         * A timeout applies to the duration measured from the instant the
          * request execution starts to, <em>at least</em>, the instant an
          * {@link HttpResponse} is constructed. The elapsed time includes
          * obtaining a connection for transport and retrieving the response
          * headers.
          *
          * @implNote
-         * When a timeout is configured, the JDK built-in implementation of the
-         * {@link HttpClient} applies it over the duration measured from the
-         * instant the request execution starts to <b>the instant the response
-         * body is consumed</b>, if present. This is implemented by stopping
-         * the timer after the response body subscriber completion.
+         * The JDK built-in implementation applies timeout over the duration
+         * measured from the instant the request execution starts to <b>the
+         * instant the response body is consumed</b>, if present. This is
+         * implemented by stopping the timer after the response body subscriber
+         * completion.
          *
          * @param duration the timeout duration
          * @return this builder
