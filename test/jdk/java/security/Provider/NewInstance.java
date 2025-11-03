@@ -26,19 +26,32 @@
  * @bug 8039853
  * @summary Provider.Service.newInstance() does not work with current
             JDK JGSS Mechanisms
+ * @library /test/lib ../..
+ * @run main/othervm NewInstance
  */
 
-import java.security.*;
-import java.util.*;
+
+import jtreg.SkippedException;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class NewInstance {
 
     public static void main(String[] args) throws Exception {
+        String skippedProvider = "";
         for (Provider p : Security.getProviders()) {
             System.out.println("---------");
             System.out.println(p.getName() + ":" + p.getInfo());
             if (p.getName().equals("SunPCSC")) {
-                System.out.println("A smartcard might not be installed. Skip test.");
+                skippedProvider = "SunPCSC";
+                System.err.println("Skip test :: A smartcard might not be installed.");
                 continue;
             }
             Set<Provider.Service> set = p.getServices();
@@ -60,6 +73,12 @@ public class NewInstance {
                     }
                 }
             }
+        }
+        //Check if tests were skipped.
+        if (skippedProvider.isEmpty()) {
+            System.out.println("All Tests Passed");
+        } else {
+            throw new SkippedException("Few Tests were skipped for the " + skippedProvider + " provider: ");
         }
     }
 }
