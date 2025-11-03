@@ -324,6 +324,11 @@ public class MOAT {
         testEmptySet(Set.of());
         testCollMutatorsAlwaysThrow(Set.of());
         testEmptyCollMutatorsAlwaysThrow(Set.of());
+
+        testEmptySet(SequencedSet.of());
+        testCollMutatorsAlwaysThrow(SequencedSet.of());
+        testEmptyCollMutatorsAlwaysThrow(SequencedSet.of());
+
         for (Set<Integer> set : Arrays.asList(
                 Set.<Integer>of(),
                 Set.of(1),
@@ -342,10 +347,33 @@ public class MOAT {
             testCollMutatorsAlwaysThrow(set);
         }
 
+        for (SequencedSet<Integer> set : Arrays.asList(
+                SequencedSet.<Integer>of(),
+                SequencedSet.of(1),
+                SequencedSet.of(1, 2),
+                SequencedSet.of(1, 2, 3),
+                SequencedSet.of(1, 2, 3, 4),
+                SequencedSet.of(1, 2, 3, 4, 5),
+                SequencedSet.of(1, 2, 3, 4, 5, 6),
+                SequencedSet.of(1, 2, 3, 4, 5, 6, 7),
+                SequencedSet.of(1, 2, 3, 4, 5, 6, 7, 8),
+                SequencedSet.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
+                SequencedSet.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                SequencedSet.of(integerArray))) {
+            testCollection(set);
+            testImmutableSeqSet(set, 99);
+            testCollMutatorsAlwaysThrow(set);
+        }
+
         Set<Integer> setCopy = Set.copyOf(Arrays.asList(1, 2, 3));
         testCollection(setCopy);
         testImmutableSet(setCopy, 99);
         testCollMutatorsAlwaysThrow(setCopy);
+
+        SequencedSet<Integer> sequencedSetCopy = SequencedSet.copyOf(Arrays.asList(1, 2, 3));
+        testCollection(sequencedSetCopy);
+        testImmutableSeqSet(sequencedSetCopy, 99);
+        testCollMutatorsAlwaysThrow(sequencedSetCopy);
 
         Set<Integer> setCollected = Stream.of(1, 1, 2, 3, 2, 3)
                                           .collect(Collectors.toUnmodifiableSet());
@@ -365,6 +393,9 @@ public class MOAT {
         testEmptyMap(Map.of());
         testMapMutatorsAlwaysThrow(Map.of());
         testEmptyMapMutatorsAlwaysThrow(Map.of());
+        testEmptyMap(SequencedMap.of());
+        testMapMutatorsAlwaysThrow(SequencedMap.of());
+        testEmptyMapMutatorsAlwaysThrow(SequencedMap.of());
         testEmptyMap(StableValue.map(Set.of(), k -> k));
         testMapMutatorsAlwaysThrow(StableValue.map(Set.of(), k -> k));
         testEmptyMapMutatorsAlwaysThrow(StableValue.map(Set.of(), k -> k));
@@ -389,10 +420,35 @@ public class MOAT {
             testMapMutatorsAlwaysThrow(map);
         }
 
+        for (SequencedMap<Integer,Integer> map : Arrays.asList(
+                SequencedMap.<Integer,Integer>of(),
+                SequencedMap.of(1, 101),
+                SequencedMap.of(1, 101, 2, 202),
+                SequencedMap.of(1, 101, 2, 202, 3, 303),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909),
+                SequencedMap.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909, 10, 1010),
+                SequencedMap.ofEntries(ea))) {
+            testMap(map);
+            testImmutableSeqMap(map);
+            testMapMutatorsAlwaysThrow(map);
+        }
+
         Map<Integer,Integer> mapCopy = Map.copyOf(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303)));
         testMap(mapCopy);
         testImmutableMap(mapCopy);
         testMapMutatorsAlwaysThrow(mapCopy);
+
+        var baseMap = new LinkedHashMap<Integer, Integer>();
+        baseMap.put(1, 101); baseMap.put(2, 202); baseMap.put(3, 303);
+        SequencedMap<Integer,Integer> sequencedMapCopy = SequencedMap.copyOf(baseMap);
+        testMap(sequencedMapCopy);
+        testImmutableSeqMap(sequencedMapCopy);
+        testMapMutatorsAlwaysThrow(sequencedMapCopy);
 
         Map<Integer,Integer> mapCollected1 =
             Stream.of(1, 2, 3)

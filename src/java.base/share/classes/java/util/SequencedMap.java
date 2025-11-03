@@ -113,6 +113,41 @@ import jdk.internal.util.NullableKeyValueHolder;
  * methods as defined by {@link Map#equals Map.equals} and {@link Map#hashCode Map.hashCode}.
  * Thus, a {@code Map} and a {@code SequencedMap} will compare equals if and only
  * if they have equal mappings, irrespective of ordering.
+ *
+ * <h2><a id="unmodifiable">Unmodifiable Maps with Well-defined Encounter Order</a></h2>
+ * <p>The {@link #of() SequencedMap.of},
+ * {@link #ofEntries(Map.Entry...) SequencedMap.ofEntries}, and
+ * {@link #copyOf SequencedMap.copyOf}
+ * static factory methods provide a convenient way to create unmodifiable maps
+ * with well-defined encounter order.
+ * The {@code SequencedMap}
+ * instances created by these methods have the following characteristics:
+ *
+ * <ul>
+ * <li>They are <a href="Collection.html#unmodifiable"><i>unmodifiable</i></a>. Keys and values
+ * cannot be added, removed, or updated. Calling any mutator method on the map
+ * will always cause {@code UnsupportedOperationException} to be thrown.
+ * However, if the contained keys or values are themselves mutable, this may cause the
+ * Map to behave inconsistently or its contents to appear to change.
+ * <li>They disallow {@code null} keys and values. Attempts to create them with
+ * {@code null} keys or values result in {@code NullPointerException}.
+ * <li>They are serializable if all keys and values are serializable, but their
+ * view collections and reversed view maps are never serializable.
+ * <li>They reject duplicate keys at creation time. Duplicate keys
+ * passed to a static factory method result in {@code IllegalArgumentException}.
+ * <li>The iteration order of mappings is explicitly specified at creation.
+ * <li>They are <a href="../lang/doc-files/ValueBased.html">value-based</a>.
+ * Programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use them for synchronization, or
+ * unpredictable behavior may occur. For example, in a future release,
+ * synchronization may fail. Callers should make no assumptions
+ * about the identity of the returned instances. Factories are free to
+ * create new instances or reuse existing ones.
+ * <li>They are serialized as specified on the
+ * <a href="{@docRoot}/serialized-form.html#java.util.CollSer">Serialized Form</a>
+ * page.
+ * </ul>
+ *
  * <p>
  * This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
@@ -399,5 +434,372 @@ public interface SequencedMap<K, V> extends Map<K, V> {
             }
         }
         return new SeqEntrySet();
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing zero
+     * mappings in an explicit encounter order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @return an empty {@code SequencedMap}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of() {
+        return ImmutableCollections.sequencedMap(List.of());
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing a
+     * single mapping in an explicit encounter order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the mapping's key
+     * @param v1 the mapping's value
+     * @return a {@code SequencedMap} containing the specified mapping
+     * @throws NullPointerException if the key or the value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing two
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if the keys are duplicates
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing three
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing four
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing five
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing six
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @param k6 the sixth mapping's key
+     * @param v6 the sixth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+                                        K k6, V v6) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5), Map.entry(k6, v6)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing seven
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @param k6 the sixth mapping's key
+     * @param v6 the sixth mapping's value
+     * @param k7 the seventh mapping's key
+     * @param v7 the seventh mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+                                        K k6, V v6, K k7, V v7) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5), Map.entry(k6, v6),
+                Map.entry(k7, v7)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing eight
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @param k6 the sixth mapping's key
+     * @param v6 the sixth mapping's value
+     * @param k7 the seventh mapping's key
+     * @param v7 the seventh mapping's value
+     * @param k8 the eighth mapping's key
+     * @param v8 the eighth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+                                        K k6, V v6, K k7, V v7, K k8, V v8) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5), Map.entry(k6, v6),
+                Map.entry(k7, v7), Map.entry(k8, v8)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing nine
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @param k6 the sixth mapping's key
+     * @param v6 the sixth mapping's value
+     * @param k7 the seventh mapping's key
+     * @param v7 the seventh mapping's value
+     * @param k8 the eighth mapping's key
+     * @param v8 the eighth mapping's value
+     * @param k9 the ninth mapping's key
+     * @param v9 the ninth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+                                        K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5), Map.entry(k6, v6),
+                Map.entry(k7, v7), Map.entry(k8, v8), Map.entry(k9, v9)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing ten
+     * mappings in the given order.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param k1 the first mapping's key
+     * @param v1 the first mapping's value
+     * @param k2 the second mapping's key
+     * @param v2 the second mapping's value
+     * @param k3 the third mapping's key
+     * @param v3 the third mapping's value
+     * @param k4 the fourth mapping's key
+     * @param v4 the fourth mapping's value
+     * @param k5 the fifth mapping's key
+     * @param v5 the fifth mapping's value
+     * @param k6 the sixth mapping's key
+     * @param v6 the sixth mapping's value
+     * @param k7 the seventh mapping's key
+     * @param v7 the seventh mapping's value
+     * @param k8 the eighth mapping's key
+     * @param v8 the eighth mapping's value
+     * @param k9 the ninth mapping's key
+     * @param v9 the ninth mapping's value
+     * @param k10 the tenth mapping's key
+     * @param v10 the tenth mapping's value
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any key or value is {@code null}
+     *
+     * @since 26
+     */
+    static <K, V> SequencedMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+                                        K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
+        return ImmutableCollections.sequencedMap(List.of(Map.entry(k1, v1), Map.entry(k2, v2),
+                Map.entry(k3, v3), Map.entry(k4, v4), Map.entry(k5, v5), Map.entry(k6, v6),
+                Map.entry(k7, v7), Map.entry(k8, v8), Map.entry(k9, v9), Map.entry(k10, v10)));
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing keys
+     * and values extracted from the given entries in the given order.
+     * The entries themselves are not stored in the map.
+     *
+     * @apiNote
+     * It is convenient to create the map entries using the {@link Map#entry
+     * Map.entry()} method. For example,
+     *
+     * <pre>{@code
+     *     import static java.util.Map.entry;
+     *
+     *     SequencedMap<Integer,String> map = SequencedMap.ofEntries(
+     *         entry(1, "a"),
+     *         entry(2, "b"),
+     *         entry(3, "c"),
+     *         ...
+     *         entry(26, "z"));
+     * }</pre>
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param entries {@code Map.Entry}s containing the keys and values from which the map is populated
+     * @return a {@code SequencedMap} containing the specified mappings in the specified order
+     * @throws IllegalArgumentException if there are any duplicate keys
+     * @throws NullPointerException if any entry, key, or value is {@code null}, or if
+     *         the {@code entries} array is {@code null}
+     *
+     * @see Map#entry Map.entry()
+     * @since 26
+     */
+    @SafeVarargs
+    static <K, V> SequencedMap<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
+        Object[] safeEntries = new Object[entries.length];
+        for (int i = 0; i < entries.length; i++) {
+            safeEntries[i] = Map.Entry.copyOf(entries[i]);
+        }
+        List<Map.Entry<K, V>> safeEntriesList = ImmutableCollections.listFromTrustedArray(safeEntries);
+        return ImmutableCollections.sequencedMap(safeEntriesList);
+    }
+
+    /**
+     * Returns an {@linkplain ##unmodifiable unmodifiable} map containing the
+     * entries of the given Map in the given order. The given Map must not be
+     * null, and it must not contain any null keys or values. If the given Map
+     * is subsequently modified, the returned SequencedMap will not reflect such
+     * modifications.
+     *
+     * @implNote
+     * If the given Map is an <a href="#unmodifiable">unmodifiable</a>
+     * map with a well-defined order, calling copyOf will generally not create
+     * a copy.
+     *
+     * @param <K> the {@code SequencedMap}'s key type
+     * @param <V> the {@code SequencedMap}'s value type
+     * @param map a {@code SequencedMap} from which entries are drawn, must be non-null
+     * @return a {@code SequencedMap} containing the entries of the given {@code SequencedMap}
+     * @throws NullPointerException if map is null, or if it contains any null keys or values
+     * @since 26
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static <K, V> SequencedMap<K, V> copyOf(Map<? extends K, ? extends V> map) {
+        if (map instanceof ImmutableCollections.WrapperSequencedMap<? extends K,? extends V> m0)
+            return (SequencedMap<K, V>) m0;
+        return ofEntries(map.entrySet().toArray(new Entry[0]));
     }
 }

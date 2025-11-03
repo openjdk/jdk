@@ -49,6 +49,11 @@ public class Basic {
 
     static final List<String> ORIGINAL = List.of("a", "b", "c", "d", "e", "f", "g");
 
+    static SequencedSet<String> immutableSeqSet() {
+        // from the 7-arg factory instead of the vararg factory
+        return SequencedSet.of("a", "b", "c", "d", "e", "f", "g");
+    }
+
     static List<String> cklist(List<String> contents) {
         return Collections.checkedList(contents, String.class);
     }
@@ -123,7 +128,9 @@ public class Basic {
             new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
-            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqSetOf", immutableSeqSet(), ORIGINAL },
+            new Object[] { "SeqSetCopyOf", SequencedSet.copyOf(ORIGINAL), ORIGINAL }
         ).iterator();
     }
 
@@ -147,7 +154,8 @@ public class Basic {
             new Object[] { "SynchList", sylist(new ArrayList<>()), List.of() },
             new Object[] { "TreeSet", new TreeSet<>(), List.of() },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>()), List.of() },
-            new Object[] { "UnmodSet", uset(new LinkedHashSet<>()), List.of() }
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>()), List.of() },
+            new Object[] { "SeqSetOf", SequencedSet.of(), List.of() }
         ).iterator();
     }
 
@@ -221,7 +229,9 @@ public class Basic {
             new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
-            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqSetOf", immutableSeqSet(), ORIGINAL },
+            new Object[] { "SeqSetCopyOf", SequencedSet.copyOf(ORIGINAL), ORIGINAL }
         ).iterator();
     }
 
@@ -238,7 +248,9 @@ public class Basic {
             new Object[] { "SetFromMap", setFromMap(ORIGINAL).reversed() },
             new Object[] { "SynchList", sylist(new ArrayList<>(ORIGINAL)).reversed() },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)).reversed() },
-            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)).reversed() }
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)).reversed() },
+            new Object[] { "SeqSetOfReverse", immutableSeqSet().reversed() },
+            new Object[] { "SeqSetCopyOfReverse", SequencedSet.copyOf(ORIGINAL).reversed() }
         ).iterator();
     }
 
@@ -269,7 +281,9 @@ public class Basic {
             new Object[] { "UnmodList", ulist(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodNav", unav(new TreeSet<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL },
-            new Object[] { "UnmodSorted", usorted(new TreeSet<>(ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodSorted", usorted(new TreeSet<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqSetOf", immutableSeqSet(), ORIGINAL },
+            new Object[] { "SeqSetCopyOf", SequencedSet.copyOf(ORIGINAL), ORIGINAL }
         ).iterator();
     }
 
@@ -435,7 +449,7 @@ public class Basic {
      *
      * @param seq the SequencedCollection under test
      */
-    public void checkUnmodifiable1(SequencedCollection<String> seq) {
+    public void checkUnmodifiable1(SequencedCollection<String> seq, boolean strict) {
         final var UOE = UnsupportedOperationException.class;
 
         assertThrows(UOE, () -> seq.add("x"));
@@ -448,12 +462,13 @@ public class Basic {
         assertThrows(UOE, () -> seq.removeFirst());
         assertThrows(UOE, () -> seq.removeLast());
 
-// TODO these ops should throw unconditionally, but they don't in some implementations
-     // assertThrows(UOE, () -> seq.addAll(List.of()));
-     // assertThrows(UOE, () -> seq.remove("x"));
-     // assertThrows(UOE, () -> seq.removeAll(List.of()));
-     // assertThrows(UOE, () -> seq.removeIf(x -> false));
-     // assertThrows(UOE, () -> seq.retainAll(seq));
+        if (strict) {
+            assertThrows(UOE, () -> seq.addAll(List.of()));
+            assertThrows(UOE, () -> seq.remove("x"));
+            assertThrows(UOE, () -> seq.removeAll(List.of()));
+            assertThrows(UOE, () -> seq.removeIf(x -> false));
+            assertThrows(UOE, () -> seq.retainAll(seq));
+        }
         assertThrows(UOE, () -> seq.addAll(seq));
         assertThrows(UOE, () -> seq.remove(seq.iterator().next()));
         assertThrows(UOE, () -> seq.removeAll(seq));
@@ -467,8 +482,14 @@ public class Basic {
      * @param seq the SequencedCollection under test
      */
     public void checkUnmodifiable(SequencedCollection<String> seq) {
-        checkUnmodifiable1(seq);
-        checkUnmodifiable1(seq.reversed());
+        // TODO review and fix these implementations
+        var implName = seq.getClass().getName();
+        boolean badImpl = implName.equals("java.util.Collections$SingletonList");
+        checkUnmodifiable1(seq, !badImpl);
+        boolean badReverse = badImpl || implName.equals("java.util.Collections$UnmodifiableSortedSet")
+                // maybe also Collections.UnmodifiableList
+                || implName.equals("java.util.Collections$UnmodifiableRandomAccessList");
+        checkUnmodifiable1(seq.reversed(), !badReverse);
     }
 
     static final Class<? extends Throwable> CCE = ClassCastException.class;

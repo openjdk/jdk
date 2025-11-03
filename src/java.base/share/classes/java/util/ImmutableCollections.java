@@ -27,6 +27,7 @@ package java.util;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
@@ -161,13 +162,23 @@ class ImmutableCollections {
     @jdk.internal.ValueBased
     abstract static class AbstractImmutableCollection<E> extends AbstractCollection<E> {
         // all mutating methods throw UnsupportedOperationException
-        @Override public boolean add(E e) { throw uoe(); }
-        @Override public boolean addAll(Collection<? extends E> c) { throw uoe(); }
-        @Override public void    clear() { throw uoe(); }
-        @Override public boolean remove(Object o) { throw uoe(); }
-        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
-        @Override public boolean removeIf(Predicate<? super E> filter) { throw uoe(); }
-        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+        @Override public final boolean add(E e) { throw uoe(); }
+        @Override public final boolean addAll(Collection<? extends E> c) { throw uoe(); }
+        @Override public final void    clear() { throw uoe(); }
+        @Override public final boolean remove(Object o) { throw uoe(); }
+        @Override public final boolean removeAll(Collection<?> c) { throw uoe(); }
+        @Override public final boolean removeIf(Predicate<? super E> filter) { throw uoe(); }
+        @Override public final boolean retainAll(Collection<?> c) { throw uoe(); }
+    }
+
+    @jdk.internal.ValueBased
+    abstract static class AbstractImmutableSequencedCollection<E> extends AbstractImmutableCollection<E> implements SequencedCollection<E> {
+        @Override public final void addFirst(E e) { throw uoe(); }
+        @Override public final void addLast(E e) { throw uoe(); }
+        @Override public final E    removeFirst() { throw uoe(); }
+        @Override public final E    removeLast() { throw uoe(); }
+        @Override public abstract E getFirst();
+        @Override public abstract E getLast();
     }
 
     // ---------- List Static Factory Methods ----------
@@ -268,18 +279,18 @@ class ImmutableCollections {
     // ---------- List Implementations ----------
 
     @jdk.internal.ValueBased
-    abstract static class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
+    abstract static class AbstractImmutableList<E> extends AbstractImmutableSequencedCollection<E>
             implements List<E>, RandomAccess {
 
         // all mutating methods throw UnsupportedOperationException
-        @Override public void    add(int index, E element) { throw uoe(); }
-        @Override public boolean addAll(int index, Collection<? extends E> c) { throw uoe(); }
-        @Override public E       remove(int index) { throw uoe(); }
-        @Override public E       removeFirst() { throw uoe(); }
-        @Override public E       removeLast() { throw uoe(); }
-        @Override public void    replaceAll(UnaryOperator<E> operator) { throw uoe(); }
-        @Override public E       set(int index, E element) { throw uoe(); }
-        @Override public void    sort(Comparator<? super E> c) { throw uoe(); }
+        @Override public final void    add(int index, E element) { throw uoe(); }
+        @Override public final boolean addAll(int index, Collection<? extends E> c) { throw uoe(); }
+        @Override public final E       remove(int index) { throw uoe(); }
+        @Override public final void    replaceAll(UnaryOperator<E> operator) { throw uoe(); }
+        @Override public final E       set(int index, E element) { throw uoe(); }
+        @Override public final void    sort(Comparator<? super E> c) { throw uoe(); }
+        @Override public E             getFirst() { return List.super.getFirst(); }
+        @Override public E             getLast() { return List.super.getLast(); }
 
         @Override
         public List<E> subList(int fromIndex, int toIndex) {
@@ -976,6 +987,27 @@ class ImmutableCollections {
 
     }
 
+    // ---------- Set Static Factory Methods ----------
+
+    // Note: take exactly one argument to avoid racy input updates
+    static <E> SequencedSet<E> sequencedSet(List<E> list) {
+        assert list instanceof List12 || list instanceof ListN;
+        Set<E> set = Set.copyOf(list);
+        if (list.size() != set.size()) {
+            throw new IllegalArgumentException("duplicate element");
+        }
+        return new WrapperSequencedSet<>(list, set);
+    }
+
+    static <E> SequencedSet<E> sequencedSetDedup(List<E> list) {
+        assert list instanceof List12 || list instanceof ListN;
+        Set<E> set = Set.copyOf(list);
+        if (list.size() != set.size()) {
+            list = List.copyOf(new LinkedHashSet<>(list));
+        }
+        return new WrapperSequencedSet<>(list, set);
+    }
+
     // ---------- Set Implementations ----------
 
     @jdk.internal.ValueBased
@@ -1317,23 +1349,136 @@ class ImmutableCollections {
         }
     }
 
+    @jdk.internal.ValueBased
+    abstract static class AbstractImmutableSequencedSet<E> extends AbstractImmutableSequencedCollection<E> implements SequencedSet<E> {
+        @Override public abstract boolean contains(Object o);
+
+        // Copied from AbstractSet
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            } else if (!(o instanceof Set)) {
+                return false;
+            }
+
+            Collection<?> c = (Collection<?>) o;
+            if (c.size() != size()) {
+                return false;
+            }
+            for (Object e : c) {
+                if (e == null || !contains(e)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            for (E obj : this) {
+                h += obj.hashCode();
+            }
+            return h;
+        }
+
+        @Override
+        public Spliterator<E> spliterator() {
+            return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED | Spliterator.IMMUTABLE);
+        }
+    }
+
+    @jdk.internal.ValueBased
+    static final class WrapperSequencedSet<E> extends AbstractImmutableSequencedSet<E> implements Serializable {
+        final List<E> listView; // not serializable if this is reversed view
+        final Set<E> setView;
+
+        // trusted constructor no validation
+        private WrapperSequencedSet(List<E> listView, Set<E> setView) {
+            assert listView instanceof List12 || listView instanceof ListN || listView instanceof ReverseOrderListView;
+            this.listView = listView;
+            this.setView = setView;
+        }
+
+        @Override
+        public E getFirst() {
+            return listView.getFirst();
+        }
+
+        @Override
+        public E getLast() {
+            return listView.getLast();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return setView.contains(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return setView.hashCode();
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return listView.iterator();
+        }
+
+        @Override
+        public int size() {
+            return listView.size();
+        }
+
+        @Override
+        public SequencedSet<E> reversed() {
+            return new WrapperSequencedSet<>(listView.reversed(), setView);
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private Object writeReplace() throws NotSerializableException {
+            if (listView instanceof ReverseOrderListView)
+                throw new NotSerializableException("Not serializable");
+            return new CollSer(CollSer.IMM_SEQ_SET, listView.toArray(new Object[0]).clone());
+        }
+    }
+
+    // ---------- Map Static Factory Methods ----------
+
+    // Note: take exactly one argument to avoid racy input updates
+    // The entries themselves must be trusted
+    static <K, V> SequencedMap<K, V> sequencedMap(List<Map.Entry<K, V>> list) {
+        assert list instanceof List12 || list instanceof ListN;
+        @SuppressWarnings("unchecked")
+        var map = (Map<K, V>) Map.ofEntries(list.toArray(new Map.Entry<?, ?>[0]));
+        return new WrapperSequencedMap<>(map, list);
+    }
+
     // ---------- Map Implementations ----------
 
     // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> {
-        @Override public void clear() { throw uoe(); }
-        @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
-        @Override public V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
-        @Override public V computeIfPresent(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
-        @Override public V merge(K key, V value, BiFunction<? super V,? super V,? extends V> rf) { throw uoe(); }
-        @Override public V put(K key, V value) { throw uoe(); }
-        @Override public void putAll(Map<? extends K,? extends V> m) { throw uoe(); }
-        @Override public V putIfAbsent(K key, V value) { throw uoe(); }
-        @Override public V remove(Object key) { throw uoe(); }
-        @Override public boolean remove(Object key, Object value) { throw uoe(); }
-        @Override public V replace(K key, V value) { throw uoe(); }
-        @Override public boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
-        @Override public void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
+        @Override public final void clear() { throw uoe(); }
+        @Override public final V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
+        @Override public final V computeIfAbsent(K key, Function<? super K,? extends V> mf) { throw uoe(); }
+        @Override public final V computeIfPresent(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
+        @Override public final V merge(K key, V value, BiFunction<? super V,? super V,? extends V> rf) { throw uoe(); }
+        @Override public final V put(K key, V value) { throw uoe(); }
+        @Override public final void putAll(Map<? extends K,? extends V> m) { throw uoe(); }
+        @Override public final V putIfAbsent(K key, V value) { throw uoe(); }
+        @Override public final V remove(Object key) { throw uoe(); }
+        @Override public final boolean remove(Object key, Object value) { throw uoe(); }
+        @Override public final V replace(K key, V value) { throw uoe(); }
+        @Override public final boolean replace(K key, V oldValue, V newValue) { throw uoe(); }
+        @Override public final void replaceAll(BiFunction<? super K,? super V,? extends V> f) { throw uoe(); }
+        @Override public abstract boolean containsKey(Object key);
+        @Override public abstract V get(Object key);
 
         /**
          * @implNote {@code null} values are disallowed in these immutable maps,
@@ -1614,6 +1759,182 @@ class ImmutableCollections {
         }
     }
 
+    abstract static class AbstractImmutableSequencedMap<K, V> extends AbstractImmutableMap<K, V> implements SequencedMap<K, V> {
+        @Override public final Entry<K, V> pollFirstEntry() { throw uoe(); }
+        @Override public final Entry<K, V> pollLastEntry() { throw uoe(); }
+        @Override public final V putFirst(K k, V v) { throw uoe(); }
+        @Override public final V putLast(K k, V v) { throw uoe(); }
+        @Override public final Set<K> keySet() { return sequencedKeySet(); }
+        @Override public final Collection<V> values() { return sequencedValues(); }
+        @Override public final Set<Entry<K, V>> entrySet() { return sequencedEntrySet(); }
+        @Override public abstract Entry<K, V> firstEntry();
+        @Override public abstract Entry<K, V> lastEntry();
+        @Override public abstract SequencedSet<K> sequencedKeySet();
+        @Override public abstract SequencedCollection<V> sequencedValues();
+        @Override public abstract SequencedSet<Entry<K, V>> sequencedEntrySet();
+    }
+
+    static final class WrapperSequencedMap<K, V> extends AbstractImmutableSequencedMap<K, V> implements Serializable {
+        final Map<K, V> mapView;
+        final List<Entry<K, V>> entryListView; // not serializable if this is reversed view
+
+        // trusted constructor no validation
+        private WrapperSequencedMap(Map<K, V> mapView, List<Entry<K, V>> entryListView) {
+            assert entryListView instanceof List12 || entryListView instanceof ListN || entryListView instanceof ReverseOrderListView;
+            this.mapView = mapView;
+            this.entryListView = entryListView;
+        }
+
+        @Override
+        public SequencedMap<K, V> reversed() {
+            return new WrapperSequencedMap<>(mapView, entryListView.reversed());
+        }
+
+        @Override
+        public Entry<K, V> firstEntry() {
+            return isEmpty() ? null : entryListView.getFirst();
+        }
+
+        @Override
+        public Entry<K, V> lastEntry() {
+            return isEmpty() ? null : entryListView.getLast();
+        }
+
+        @Override
+        public SequencedSet<K> sequencedKeySet() {
+            return new AbstractImmutableSequencedSet<>() {
+                @Override
+                public K getFirst() {
+                    return entryListView.getFirst().getKey();
+                }
+
+                @Override
+                public K getLast() {
+                    return entryListView.getLast().getKey();
+                }
+
+                @Override
+                public boolean contains(Object o) {
+                    return containsKey(o);
+                }
+
+                @Override
+                public Iterator<K> iterator() {
+                    return new Iterator<>() {
+                        final Iterator<Entry<K, V>> delegate = entryListView.iterator();
+
+                        @Override
+                        public boolean hasNext() {
+                            return delegate.hasNext();
+                        }
+
+                        @Override
+                        public K next() {
+                            return delegate.next().getKey();
+                        }
+                    };
+                }
+
+                @Override
+                public int size() {
+                    return entryListView.size();
+                }
+
+                @Override
+                public SequencedSet<K> reversed() {
+                    return WrapperSequencedMap.this.reversed().sequencedKeySet();
+                }
+            };
+        }
+
+        @Override
+        public SequencedCollection<V> sequencedValues() {
+            return new AbstractImmutableSequencedCollection<>() {
+                @Override
+                public V getFirst() {
+                    return entryListView.getFirst().getValue();
+                }
+
+                @Override
+                public V getLast() {
+                    return entryListView.getLast().getValue();
+                }
+
+                @Override
+                public Iterator<V> iterator() {
+                    return new Iterator<>() {
+                        final Iterator<Entry<K, V>> delegate = entryListView.iterator();
+
+                        @Override
+                        public boolean hasNext() {
+                            return delegate.hasNext();
+                        }
+
+                        @Override
+                        public V next() {
+                            return delegate.next().getValue();
+                        }
+                    };
+                }
+
+                @Override
+                public int size() {
+                    return entryListView.size();
+                }
+
+                @Override
+                public SequencedCollection<V> reversed() {
+                    return WrapperSequencedMap.this.reversed().sequencedValues();
+                }
+            };
+        }
+
+        @Override
+        public SequencedSet<Entry<K, V>> sequencedEntrySet() {
+            return new WrapperSequencedSet<>(entryListView, mapView.entrySet());
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return mapView.containsKey(key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return mapView.containsValue(value);
+        }
+
+        @Override
+        public V get(Object key) {
+            return mapView.get(key);
+        }
+
+        @Override
+        public int hashCode() {
+            return mapView.hashCode();
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private Object writeReplace() throws NotSerializableException {
+            if (entryListView instanceof ReverseOrderListView)
+                throw new NotSerializableException("Not serializable");
+            int size = size();
+            Object[] array = new Object[2 * size];
+            int dest = 0;
+            for (int i = 0; i < size; i ++) {
+                var e = entryListView.get(i);
+                array[dest++] = e.getKey();
+                array[dest++] = e.getValue();
+            }
+            return new CollSer(CollSer.IMM_SEQ_MAP, array);
+        }
+    }
+
     static final class StableMap<K, V>
             extends AbstractImmutableMap<K, V> {
 
@@ -1813,6 +2134,8 @@ final class CollSer implements Serializable {
     static final int IMM_SET        = 2;
     static final int IMM_MAP        = 3;
     static final int IMM_LIST_NULLS = 4;
+    static final int IMM_SEQ_SET    = 5;
+    static final int IMM_SEQ_MAP    = 6;
 
     /**
      * Indicates the type of collection that is serialized.
@@ -1953,6 +2276,17 @@ final class CollSer implements Serializable {
                     } else {
                         return new ImmutableCollections.MapN<>(array);
                     }
+                case IMM_SEQ_SET:
+                    return SequencedSet.of(array);
+                case IMM_SEQ_MAP:
+                    if (array.length % 2 != 0)
+                        throw new InvalidObjectException("odd array length");
+                    int len = array.length / 2;
+                    Object[] entries = new Object[len];
+                    for (int i = 0; i < len; i++) {
+                        entries[i] = Map.entry(array[i * 2], array[i * 2 + 1]);
+                    }
+                    return ImmutableCollections.sequencedMap(ImmutableCollections.listFromTrustedArray(entries));
                 default:
                     throw new InvalidObjectException(String.format("invalid flags 0x%x", tag));
             }

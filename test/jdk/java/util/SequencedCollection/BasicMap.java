@@ -58,6 +58,11 @@ public class BasicMap {
                 Map.entry("d", 4),
                 Map.entry("e", 5));
 
+    static SequencedMap<String, Integer> immutableMap() {
+        // from the 5 key-value pair factory instead of the vararg factory
+        return SequencedMap.of("a", 1, "b", 2, "c", 3, "d", 4, "e", 5);
+    }
+
     static <M extends SequencedMap<String, Integer>>
     M load(M map, List<Map.Entry<String, Integer>> mappings) {
         for (var e : mappings)
@@ -99,7 +104,9 @@ public class BasicMap {
             new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedMap", load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
             new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL },
-            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqMapOf", immutableMap(), ORIGINAL },
+            new Object[] { "SeqMapOfEntries", SequencedMap.ofEntries(ORIGINAL.toArray(Map.Entry[]::new)), ORIGINAL }
         ).iterator();
     }
 
@@ -111,7 +118,8 @@ public class BasicMap {
             new Object[] { "LinkedHashMap", new LinkedHashMap<>(), List.of() },
             new Object[] { "SimpleSortedMap", new SimpleSortedMap<>(), List.of() },
             new Object[] { "TreeMap", new TreeMap<>(), List.of() },
-            new Object[] { "UnmodMap", umap(new LinkedHashMap<>()), List.of() }
+            new Object[] { "UnmodMap", umap(new LinkedHashMap<>()), List.of() },
+            new Object[] { "SeqMapOf", SequencedMap.of(), List.of() }
         ).iterator();
     }
 
@@ -152,7 +160,9 @@ public class BasicMap {
     public Iterator<Object[]> putThrows() {
         return Arrays.asList(
             new Object[] { "SimpleSortedMap", load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
-            new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL }
+            new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "SeqMapOf", immutableMap(), ORIGINAL },
+            new Object[] { "SeqMapOfEntries", SequencedMap.ofEntries(ORIGINAL.toArray(Map.Entry[]::new)), ORIGINAL }
         ).iterator();
     }
 
@@ -161,7 +171,9 @@ public class BasicMap {
         return Arrays.asList(
             new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
             new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL },
-            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqMapOf", immutableMap(), ORIGINAL },
+            new Object[] { "SeqMapOfEntries", SequencedMap.ofEntries(ORIGINAL.toArray(Map.Entry[]::new)), ORIGINAL }
         ).iterator();
     }
 
@@ -169,7 +181,9 @@ public class BasicMap {
     public Iterator<Object[]> notSerializable() {
         return Arrays.asList(
             new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL).reversed() },
-            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)).reversed() }
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)).reversed() },
+            new Object[] { "SeqMapOfReverse", immutableMap().reversed() },
+            new Object[] { "SeqMapOfEntriesReverse", SequencedMap.ofEntries(ORIGINAL.toArray(Map.Entry[]::new)).reversed() }
         ).iterator();
     }
 
@@ -185,7 +199,9 @@ public class BasicMap {
         return Arrays.<Object[]>asList(
             new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodNav", unav(load(new TreeMap<>(), ORIGINAL)), ORIGINAL },
-            new Object[] { "UnmodSorted", usorted(load(new TreeMap<>(), ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodSorted", usorted(load(new TreeMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "SeqMapOf", immutableMap(), ORIGINAL },
+            new Object[] { "SeqMapOfEntries", SequencedMap.ofEntries(ORIGINAL.toArray(Map.Entry[]::new)), ORIGINAL }
         ).iterator();
     }
 
@@ -497,15 +513,17 @@ public class BasicMap {
      * @param <T> element type of the map view
      * @param view the map view
      */
-    public <T> void checkUnmodifiableView(Collection<T> view) {
+    public <T> void checkUnmodifiableView(Collection<T> view, boolean strict) {
         assertThrows(UOE, () -> view.clear());
         assertThrows(UOE, () -> { var it = view.iterator(); it.next(); it.remove(); });
         assertThrows(UOE, () -> { var t = view.iterator().next(); view.remove(t); });
 
-// TODO these ops should throw unconditionally, but they don't in some implementations
-     // assertThrows(UOE, () -> view.removeAll(List.of()));
-     // assertThrows(UOE, () -> view.removeIf(x -> false));
-     // assertThrows(UOE, () -> view.retainAll(view));
+        if (strict) {
+            // Some implementations, like UnmodifiableSortedMap, don't secure their reverse views
+            assertThrows(UOE, () -> view.removeAll(List.of()));
+            assertThrows(UOE, () -> view.removeIf(x -> false));
+            assertThrows(UOE, () -> view.retainAll(view));
+        }
         assertThrows(UOE, () -> view.removeAll(view));
         assertThrows(UOE, () -> view.removeIf(x -> true));
         assertThrows(UOE, () -> view.retainAll(List.of()));
@@ -517,13 +535,13 @@ public class BasicMap {
      * @param <T> element type of the map view
      * @param view the map view
      */
-    public <T> void checkUnmodifiableSeqView(SequencedCollection<T> view) {
-        checkUnmodifiableView(view);
+    public <T> void checkUnmodifiableSeqView(SequencedCollection<T> view, boolean strict) {
+        checkUnmodifiableView(view, strict);
         assertThrows(UOE, () -> view.removeFirst());
         assertThrows(UOE, () -> view.removeLast());
 
         var rview = view.reversed();
-        checkUnmodifiableView(rview);
+        checkUnmodifiableView(rview, strict);
         assertThrows(UOE, () -> rview.removeFirst());
         assertThrows(UOE, () -> rview.removeLast());
     }
@@ -537,24 +555,26 @@ public class BasicMap {
         assertThrows(UOE, () -> { map.sequencedEntrySet().reversed().getLast().setValue(99); });
     }
 
-    public void checkUnmodifiable1(SequencedMap<String, Integer> map) {
+    public void checkUnmodifiable1(SequencedMap<String, Integer> map, boolean strict) {
         assertThrows(UOE, () -> map.putFirst("x", 99));
         assertThrows(UOE, () -> map.putLast("x", 99));
         assertThrows(UOE, () -> { map.pollFirstEntry(); });
         assertThrows(UOE, () -> { map.pollLastEntry(); });
 
         checkUnmodifiableEntry(map);
-        checkUnmodifiableView(map.keySet());
-        checkUnmodifiableView(map.values());
-        checkUnmodifiableView(map.entrySet());
-        checkUnmodifiableSeqView(map.sequencedKeySet());
-        checkUnmodifiableSeqView(map.sequencedValues());
-        checkUnmodifiableSeqView(map.sequencedEntrySet());
+        checkUnmodifiableView(map.keySet(), strict);
+        checkUnmodifiableView(map.values(), strict);
+        checkUnmodifiableView(map.entrySet(), strict);
+        checkUnmodifiableSeqView(map.sequencedKeySet(), strict);
+        checkUnmodifiableSeqView(map.sequencedValues(), strict);
+        checkUnmodifiableSeqView(map.sequencedEntrySet(), strict);
     }
 
     public void checkUnmodifiable(SequencedMap<String, Integer> map) {
-        checkUnmodifiable1(map);
-        checkUnmodifiable1(map.reversed());
+        // TODO fix UnmodifiableSortedMap
+        boolean strict = !map.getClass().getName().equals("java.util.Collections$UnmodifiableSortedMap");
+        checkUnmodifiable1(map, strict);
+        checkUnmodifiable1(map.reversed(), strict);
     }
 
     // The putFirst/putLast operations aren't tested here, because the only instances of
