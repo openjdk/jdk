@@ -341,8 +341,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     if (call_does_dispatch && is_interface) {
       ciInstanceKlass* declared_interface = nullptr;
       if (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface) {
-        // MemberName doesn't keep symbolic information once resolution is over, but
-        // resolved method holder can be used as a conservative approximation.
+        // MemberName doesn't keep information about resolved interface class (REFC) once
+        // resolution is over, but resolved method holder (DECC) can be used as a
+        // conservative approximation.
         declared_interface = callee->holder();
       } else {
         assert(!orig_callee->is_method_handle_intrinsic(), "not allowed");
