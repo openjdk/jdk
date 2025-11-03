@@ -78,6 +78,8 @@ public class WhiteBox {
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
 
+  public native boolean  hasExternalSymbolsStripped();
+
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
     Objects.requireNonNull(o);
@@ -847,12 +849,11 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void busyWait(int cpuTimeMs);
+  public native void busyWaitCPUTime(int cpuTimeMs);
+
 
   // returns true if supported, false if not
   public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
-
-  public native long cpuSamplerOutOfStackWalkingIterations();
 
   public native void pinObject(Object o);
 

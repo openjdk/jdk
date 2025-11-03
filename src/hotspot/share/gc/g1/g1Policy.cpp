@@ -566,7 +566,7 @@ void G1Policy::record_full_collection_start() {
   _collection_set->abandon_all_candidates();
 }
 
-void G1Policy::record_full_collection_end() {
+void G1Policy::record_full_collection_end(size_t allocation_word_size) {
   // Consider this like a collection pause for the purposes of allocation
   // since last pause.
   double end_sec = os::elapsedTime();
@@ -577,7 +577,7 @@ void G1Policy::record_full_collection_end() {
   // transitions and make sure we start with young GCs after the Full GC.
   collector_state()->set_in_young_only_phase(true);
   collector_state()->set_in_young_gc_before_mixed(false);
-  collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
+  collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC", allocation_word_size));
   collector_state()->set_in_concurrent_start_gc(false);
   collector_state()->set_mark_in_progress(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
@@ -743,7 +743,7 @@ bool G1Policy::about_to_start_mixed_phase() const {
   return _g1h->concurrent_mark()->cm_thread()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
-bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
+bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
   if (about_to_start_mixed_phase()) {
     return false;
   }
@@ -751,22 +751,27 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
   size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
 
   size_t cur_used_bytes = _g1h->non_young_capacity_bytes();
-  size_t alloc_byte_size = alloc_word_size * HeapWordSize;
-  size_t marking_request_bytes = cur_used_bytes + alloc_byte_size;
+  size_t allocation_byte_size = allocation_word_size * HeapWordSize;
+  // For humongous allocations, we need to consider that we actually use full regions
+  // for allocations. So compare the threshold to this size.
+  if (_g1h->is_humongous(allocation_word_size)) {
+    allocation_byte_size = G1HeapRegion::align_up_to_region_byte_size(allocation_byte_size);
+  }
+  size_t marking_request_bytes = cur_used_bytes + allocation_byte_size;
 
   bool result = false;
   if (marking_request_bytes > marking_initiating_used_threshold) {
     result = collector_state()->in_young_only_phase();
     log_debug(gc, ergo, ihop)("%s occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              cur_used_bytes, alloc_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
+                              cur_used_bytes, allocation_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
   }
   return result;
 }
 
-bool G1Policy::concurrent_operation_is_full_mark(const char* msg) {
+bool G1Policy::concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size) {
   return collector_state()->in_concurrent_start_gc() &&
-    ((_g1h->gc_cause() != GCCause::_g1_humongous_allocation) || need_to_start_conc_mark(msg));
+    ((_g1h->gc_cause() != GCCause::_g1_humongous_allocation) || need_to_start_conc_mark(msg, allocation_word_size));
 }
 
 double G1Policy::pending_cards_processing_time() const {
@@ -795,7 +800,9 @@ double G1Policy::pending_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                           bool allocation_failure,
+                                           size_t allocation_word_size) {
   G1GCPhaseTimes* p = phase_times();
 
   double start_time_sec = cur_pause_start_sec();
@@ -808,7 +815,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end();
   } else {
-    maybe_start_marking();
+    maybe_start_marking(allocation_word_size);
   }
 
   double app_time_ms = (start_time_sec * 1000.0 - _analytics->prev_collection_pause_end_ms());
@@ -965,7 +972,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
       assert(!candidates()->has_more_marking_candidates(),
              "only end mixed if all candidates from marking were processed");
 
-      maybe_start_marking();
+      maybe_start_marking(allocation_word_size);
     }
   } else {
     assert(is_young_only_pause, "must be");
@@ -1368,8 +1375,8 @@ void G1Policy::abandon_collection_set_candidates() {
   _collection_set->abandon_all_candidates();
 }
 
-void G1Policy::maybe_start_marking() {
-  if (need_to_start_conc_mark("end of GC")) {
+void G1Policy::maybe_start_marking(size_t allocation_word_size) {
+  if (need_to_start_conc_mark("end of GC", allocation_word_size)) {
     // Note: this might have already been set, if during the last
     // pause we decided to start a cycle but at the beginning of
     // this pause we decided to postpone it. That's OK.
