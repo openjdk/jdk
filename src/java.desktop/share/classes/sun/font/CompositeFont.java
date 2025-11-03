@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public final class CompositeFont extends Font2D {
 
         /*
          * See if this is a windows locale which has a system EUDC font.
-         * If so add it as the final fallback component of the composite.
+         * If so add it as the first fallback component of the composite.
          * The caller could be responsible for this, but for now it seems
          * better that it is handled internally to the CompositeFont class.
          */
@@ -114,8 +114,8 @@ public final class CompositeFont extends Font2D {
             components[msCnt] = fm.getEUDCFont();
             deferredInitialisation = new boolean[numSlots];
             if (defer) {
-                for (int i=0; i<numSlots-1; i++) {
-                    deferredInitialisation[i] = true;
+                for (int i = 0; i < numSlots; i++) {
+                    deferredInitialisation[i] = (i != msCnt);
                 }
             }
         } else {
