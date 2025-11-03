@@ -25,7 +25,8 @@
  * @test
  * @bug 8370939
  * @summary C2: SIGSEGV in SafePointNode::verify_input when processing MH call from Compile::process_late_inline_calls_no_inline()
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=TestLateMHClonedCallNode::test1 -XX:CompileOnly=TestLateMHClonedCallNode::test2 TestLateMHClonedCallNode
+ * @run main/othervm -XX:-BackgroundCompilation -XX:CompileOnly=TestLateMHClonedCallNode::test1
+ *                   -XX:CompileOnly=TestLateMHClonedCallNode::test2 TestLateMHClonedCallNode
  * @run main TestLateMHClonedCallNode
  */
 
