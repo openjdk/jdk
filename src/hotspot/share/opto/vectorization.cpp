@@ -541,7 +541,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-// Cost-model heuristic for nodes that do not contribute to computatinal
+// Cost-model heuristic for nodes that do not contribute to computational
 // cost inside the loop.
 bool VLoopAnalyzer::has_zero_cost(Node* n) const {
   // Outside body?
