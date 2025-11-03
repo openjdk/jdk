@@ -384,14 +384,9 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Appends the two-digit string representation of the {@code int}
-     * argument to the given {@code StringBuilder}.
+     * Appends the two Latin-1 characters to the given {@code StringBuilder}.
      * <p>
      * This method is intended for internal use by {@code DecimalDigits.appendPair}.
-     * The integer {@code v} is formatted as two decimal digits.
-     * If the value is between 0 and 9, it is formatted with a leading zero
-     * (e.g., 5 becomes "05"). If the value is outside the range 0-99,
-     * the behavior is unspecified.
      *
      * @param buf the {@code StringBuilder} to append to.
      * @param c1 the first char to append.
