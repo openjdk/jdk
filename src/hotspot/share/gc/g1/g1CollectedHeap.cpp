@@ -2258,11 +2258,11 @@ bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   return hr->block_is_obj(addr, hr->parsable_bottom_acquire());
 }
 
-size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
+size_t G1CollectedHeap::tlab_capacity() const {
   return eden_target_length() * G1HeapRegion::GrainBytes;
 }
 
-size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
+size_t G1CollectedHeap::tlab_used() const {
   return _eden.length() * G1HeapRegion::GrainBytes;
 }
 
@@ -2272,7 +2272,7 @@ size_t G1CollectedHeap::max_tlab_size() const {
   return align_down(_humongous_object_threshold_in_words, MinObjAlignment);
 }
 
-size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
+size_t G1CollectedHeap::unsafe_max_tlab_alloc() const {
   return _allocator->unsafe_max_tlab_alloc();
 }
 
