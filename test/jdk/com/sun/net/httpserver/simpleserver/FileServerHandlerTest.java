@@ -109,8 +109,8 @@ public class FileServerHandlerTest {
 
                 // multiple ranges
                 {
-                        1000L, "bytes=0-499,500-999",
-                        new FileServerHandler.RangeEntry(0, 499),
+                        1000L, "bytes=0-400,500-999",
+                        new FileServerHandler.RangeEntry(0, 400),
                         new FileServerHandler.RangeEntry(500, 999)
                 },
                 {
@@ -122,7 +122,28 @@ public class FileServerHandlerTest {
                         500L, "bytes=0-99,200-",
                         new FileServerHandler.RangeEntry(0, 99),
                         new FileServerHandler.RangeEntry(200, 499)
-                }
+                },
+                // merging overlapping or contiguous ranges
+                {
+                        1000L, "bytes=0-499,400-599,600-999",
+                        new FileServerHandler.RangeEntry(0, 999)
+                },
+                {
+                        1000L, "bytes=0-499,500-699,550-999",
+                        new FileServerHandler.RangeEntry(0, 999)
+                },
+                {
+                        1000L, "bytes=0-499,500-999",
+                        new FileServerHandler.RangeEntry(0,999)
+                },
+                {
+                        1000L, "bytes=100-199,50-149",
+                        new FileServerHandler.RangeEntry(50,199)
+                },
+                {
+                        1000L, "bytes=100-199,300-399,150-350",
+                        new FileServerHandler.RangeEntry(100,399)
+                },
         };
     }
 

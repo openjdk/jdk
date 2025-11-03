@@ -25,12 +25,11 @@
 
 package sun.net.httpserver.simpleserver;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpHandlers;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.net.URI;
 import java.nio.file.Files;
@@ -38,11 +37,15 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpHandlers;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -362,7 +365,28 @@ public final class FileServerHandler implements HttpHandler {
             assert end < fileSize;  // If end >= fileSize, it is adjusted above.
             ranges.add(new RangeEntry(start, end));
         }
-        return ranges;
+        return normalizeRanges(ranges);
+    }
+
+    private static List<RangeEntry> normalizeRanges(List<RangeEntry> ranges) {
+        if (ranges.isEmpty()) {
+            return List.of();
+        }
+        List<RangeEntry> sorted = new ArrayList<>(ranges);
+        sorted.sort(Comparator.comparingLong(r -> r.start));
+        List<RangeEntry> normalized = new ArrayList<>();
+        RangeEntry current = sorted.get(0);
+        for (int i = 1; i < sorted.size(); i++) {
+            RangeEntry range = sorted.get(i);
+            if (range.start <= current.end + 1) {
+                current = new RangeEntry(current.start, Math.max(current.end, range.end));
+            } else {
+                normalized.add(current);
+                current = range;
+            }
+        }
+        normalized.add(current);
+        return normalized;
     }
 
     private void servePartialContents(HttpExchange exchange, Path path, List<RangeEntry> ranges)

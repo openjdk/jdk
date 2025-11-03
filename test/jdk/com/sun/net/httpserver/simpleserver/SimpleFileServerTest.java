@@ -174,7 +174,7 @@ public class SimpleFileServerTest {
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
-                    .header("Range", "bytes=2-,3-4,-3")
+                    .header("Range", "bytes=1-2,4-5,7-")
                     .build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 206);
@@ -187,14 +187,14 @@ public class SimpleFileServerTest {
             {
                 String[] firstPartLines = parts[1].trim().split("\r\n");
                 assertEquals(firstPartLines[0], "Content-Type: text/plain");
-                assertEquals(firstPartLines[1], "Content-Range: bytes 2-9/10");
-                assertEquals(firstPartLines[3], "23456789");
+                assertEquals(firstPartLines[1], "Content-Range: bytes 1-2/10");
+                assertEquals(firstPartLines[3], "12");
             }
             {
                 String[] secondPartLines = parts[2].trim().split("\r\n");
                 assertEquals(secondPartLines[0], "Content-Type: text/plain");
-                assertEquals(secondPartLines[1], "Content-Range: bytes 3-4/10");
-                assertEquals(secondPartLines[3], "34");
+                assertEquals(secondPartLines[1], "Content-Range: bytes 4-5/10");
+                assertEquals(secondPartLines[3], "45");
             }
             {
                 String[] thirdPartLines = parts[3].trim().split("\r\n");
