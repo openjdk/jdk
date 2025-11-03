@@ -280,7 +280,11 @@ public final class LauncherVerifier {
     }
 
     private void verifyDescription(JPackageCommand cmd) throws IOException {
-        if (TKit.isWindows()) {
+        if (TKit.isWindows() && !cmd.hasArgument("--app-image")) {
+            // On Windows, check the description if the predefined app image is not configured.
+            // The description and the icon are encoded in the launcher executable, which should be
+            // copied verbatim from the predefined app image into the output bundle.
+            // This check is done in the JPackageCommand class, so there is no need to duplicate it here.
             String expectedDescription = getDescription(cmd);
             Path launcherPath = cmd.appLauncherPath(name);
             String actualDescription =
@@ -440,7 +444,7 @@ public final class LauncherVerifier {
         return PropertyFinder.findLauncherProperty(cmd, launcherName,
                 PropertyFinder.cmdlineOptionWithValue("--description"),
                 PropertyFinder.launcherPropertyFile("description"),
-                PropertyFinder.appImageFileLauncher(cmd, launcherName, "description")
+                PropertyFinder.nop()
         ).orElseGet(() -> {
             if (cmd.isMainLauncher(launcherName)) {
                 return cmd.mainLauncherName();
