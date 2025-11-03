@@ -625,7 +625,8 @@ float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
   return c;
 }
 
-// For now, we use unit cost. We might refine that in the future.
+// For now, we use unit cost, i.e. we count the number of backend instructions
+// that the vtnode will use. We might refine that in the future.
 // If needed, we could also use platform specific costs, if the
 // default here is not accurate enough.
 float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {

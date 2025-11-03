@@ -249,6 +249,10 @@ float VTransformGraph::cost() const {
   }
 #endif
 
+  // We only want to count the cost of nodes that are in the loop.
+  // This is especially important for cases where we were able to move
+  // some nodes outside the loop during VTransform::optimize, e.g.:
+  // VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop
   ResourceMark rm;
   VectorSet in_loop; // vtn->_idx -> bool
   mark_vtnodes_in_loop(in_loop);
