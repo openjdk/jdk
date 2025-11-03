@@ -292,7 +292,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   }
 }
 
-
 // Limits on vector size (number of elements) for auto-vectorization.
 bool VectorNode::vector_size_supported_auto_vectorization(const BasicType bt, int size) {
   return Matcher::max_vector_size_auto_vectorization(bt) >= size &&

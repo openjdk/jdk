@@ -300,7 +300,6 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -310,7 +309,6 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 //            V v, M m,
 //            UnaryOperation<V, M> defaultImpl) {
 //
-//  public static
 //  <VM extends VectorPayload,
 //   M extends VectorMask<E>,
 //   E>
@@ -321,7 +319,6 @@ static bool is_klass_initialized(const TypeInstPtr* vec_klass) {
 //              BinaryOperation<VM, M> defaultImpl) {
 //
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -502,13 +499,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
 }
 
 //
-//  public static
 //  <V extends Vector<E>, E>
 //  V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<?> cClass, int operType, int length, String debugName,
 //                   V v,
 //                   UnaryOperation<V,?> defaultImpl)
 //
-//  public static
 //  <V extends VectorPayload, E>
 //  V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<?> cClass, int operType, int length, String debugName,
 //                    V v1, V v2,
@@ -614,7 +609,6 @@ bool LibraryCallKit::inline_vector_call(int arity) {
 }
 
 //
-//  public static
 //  <M extends VectorMask<E>,
 //   E>
 //  long maskReductionCoerced(int oper,
@@ -691,7 +685,6 @@ bool LibraryCallKit::inline_vector_mask_operation() {
 }
 
 //
-//  public static
 //  <VM extends VectorPayload,
 //   S extends VectorSpecies<E>,
 //   E>
@@ -833,7 +826,6 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 }
 
 //
-//  public static
 //  <C,
 //   VM extends VectorPayload,
 //   E,
@@ -845,7 +837,6 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 //          LoadOperation<C, VM, S> defaultImpl)
 //
 //
-//  public static
 //  <C,
 //   V extends VectorPayload>
 //  void store(Class<?> vClass, Class<?> cClass, int operType,
@@ -1030,7 +1021,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 }
 
 //
-//  public static
 //  <C,
 //   V extends Vector<?>,
 //   E,
@@ -1042,7 +1032,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 //               C container, long index, S s,
 //               LoadVectorMaskedOperation<C, V, S, M> defaultImpl)
 //
-//  public static
 //  <C,
 //   V extends Vector<E>,
 //   M extends VectorMask<E>,
@@ -1259,7 +1248,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 }
 
 //
-//  public static
 //  <C,
 //   V extends Vector<?>,
 //   W extends Vector<Integer>,
@@ -1273,7 +1261,6 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 //                W indexVector1, W indexVector2, W indexVector3, W indexVector4,
 //                M m, C container, int index, int[] indexMap, int indexM, S s,
 //                LoadVectorOperationWithMap<C, V, S, M> defaultImpl)
-//  public static
 //  <C,
 //   V extends Vector<E>,
 //   W extends Vector<Integer>,
@@ -1469,7 +1456,6 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -1625,7 +1611,6 @@ bool LibraryCallKit::inline_vector_reduction() {
 
 
 //
-//  public static
 //  <M extends VectorMask<E>,
 //   E>
 //  boolean test(int cond,
@@ -1707,7 +1692,6 @@ bool LibraryCallKit::inline_vector_test() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -1779,7 +1763,6 @@ bool LibraryCallKit::inline_vector_blend() {
 
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -1897,7 +1880,6 @@ bool LibraryCallKit::inline_vector_compare() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   SH extends VectorShuffle<E>,
 //   M  extends VectorMask<E>,
@@ -2042,7 +2024,6 @@ bool LibraryCallKit::inline_vector_rearrange() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M  extends VectorMask<E>,
 //   E>
@@ -2207,7 +2188,6 @@ bool LibraryCallKit::inline_vector_select_from() {
 }
 
 //
-//    public static
 //    <V extends Vector<E>,
 //     M extends VectorMask<E>,
 //     E>
@@ -2356,9 +2336,9 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   return true;
 }
 
-// public static <VOUT extends VectorPayload,
-//                 VIN extends VectorPayload,
-//                   S extends VectorSpecies>
+// <VOUT extends VectorPayload,
+//  VIN extends VectorPayload,
+//  S extends VectorSpecies>
 // VOUT convert(int oprId,
 //           Class<?> fromVectorClass, Class<?> fromElementType, int fromVLen,
 //           Class<?>   toVectorClass, Class<?>   toElementType, int   toVLen,
@@ -2552,7 +2532,6 @@ bool LibraryCallKit::inline_vector_convert() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   E>
 //  V insert(Class<? extends V> vClass, Class<?> cClass, int operType,
@@ -2647,7 +2626,6 @@ bool LibraryCallKit::inline_vector_insert() {
 }
 
 //
-//  public static
 //  <VM extends VectorPayload,
 //   E>
 //  long extract(Class<? extends VM> vClass, Class<?> cClass, int operType,
@@ -2842,7 +2820,6 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   E>
 //  V selectFromTwoVectorOp(Class<? extends V> vClass, Class<?> cClass, int operType, int length,
@@ -2975,7 +2952,6 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   M extends VectorMask<E>,
 //   E>
@@ -3062,7 +3038,6 @@ bool LibraryCallKit::inline_vector_compress_expand() {
 }
 
 //
-//  public static
 //  <V extends Vector<E>,
 //   E,
 //   S extends VectorSpecies<E>>
@@ -3208,7 +3183,6 @@ bool LibraryCallKit::inline_index_vector() {
 }
 
 //
-//  public static
 //  <E,
 //   M extends VectorMask<E>>
 //  M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<?> cClass, int operType,
