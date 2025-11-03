@@ -233,7 +233,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   // just split through now has no use any more, it also
   // has to be removed.
   IdealLoopTree* region_loop = get_loop(region);
-  if (region->is_Loop() && region_loop->_child == nullptr) {
+  if (region->is_Loop() && region_loop->is_innermost()) {
     region_loop->_body.yank(n);
     for (uint j = 1; j < n->req(); j++) {
       PhiNode* phi = n->in(j)->isa_Phi();
