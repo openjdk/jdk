@@ -99,7 +99,7 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_KRegister(reg(ra_, node));
   }
@@ -737,7 +737,7 @@ public:
   virtual const class Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual const RegMask &in_RegMask(uint) const;
-  virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
+  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
 #ifndef PRODUCT
   virtual const char *Name() const { return "NullCheck"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -769,7 +769,7 @@ public:
   virtual int   Opcode() const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
-  virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
+  virtual const RegMask& in_RegMask(uint) const { return RegMask::EMPTY; }
   virtual const RegMask &out_RegMask() const { return _rout; }
   virtual uint  ideal_reg() const { return _ideal_reg; }
   // Need size_of() for virtual ProjNode::clone()

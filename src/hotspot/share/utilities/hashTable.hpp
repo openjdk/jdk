@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_UTILITIES_HASHTABLE_HPP
 #define SHARE_UTILITIES_HASHTABLE_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
-
-#include <type_traits>
 
 template<typename K, typename V>
 class HashTableNode : public AnyObj {

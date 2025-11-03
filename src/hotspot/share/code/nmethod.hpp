@@ -29,6 +29,7 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
+#include "runtime/mutexLocker.hpp"
 
 class AbstractCompiler;
 class CompiledDirectCall;
@@ -168,7 +169,7 @@ class nmethod : public CodeBlob {
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
 
-  #define ImmutableDataReferencesCounterSize ((int)sizeof(int))
+  #define ImmutableDataRefCountSize ((int)sizeof(int))
 
  private:
 
@@ -250,6 +251,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_ref_count_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -646,12 +648,11 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_ref_count_offset ; }
 #endif
-
-  address immutable_data_references_counter_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address immutable_data_ref_count_begin () const { return  _immutable_data + _immutable_data_ref_count_offset ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -962,8 +963,26 @@ public:
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
-  inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
-  inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
+  inline void init_immutable_data_ref_count() {
+    assert(is_not_installed(), "should be called in nmethod constructor");
+    *((int*)immutable_data_ref_count_begin()) = 1;
+  }
+
+  inline int inc_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return ++(*ref_count);
+  }
+
+  inline int dec_immutable_data_ref_count() {
+    assert_lock_strong(CodeCache_lock);
+    int* ref_count = (int*)immutable_data_ref_count_begin();
+    assert(*ref_count > 0, "Must be positive");
+    return --(*ref_count);
+  }
+
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
 
  public:
   // ScopeDesc retrieval operation
@@ -999,10 +1018,14 @@ public:
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
 
+  // AOT cache support
+  static void post_delayed_compiled_method_load_events() NOT_CDS_RETURN;
+
   // printing support
   void print_on_impl(outputStream* st) const;
   void print_code();
   void print_value_on_impl(outputStream* st) const;
+  void print_code_snippet(outputStream* st, address addr) const;
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library

@@ -25,7 +25,10 @@
 
 #include <Windows.h>
 
-const DWORD EX_CODE = 42;
+// Use an exception code that causes the Windows FAILED() macro to return true.
+// Windows AArch64 uses vectored exception handling and therefore runs error
+// reporting only for failed exception codes.
+const DWORD EX_CODE = 0xdeadbeef;
 
 JNIEXPORT void JNICALL Java_UncaughtNativeExceptionTest_00024Crasher_throwException(JNIEnv* env, jclass cls) {
   RaiseException(EX_CODE, EXCEPTION_NONCONTINUABLE, 0, NULL);

@@ -190,7 +190,7 @@ public class Accept {
 
                 /* TEST 5: AsynchronousCloseException */
                 debug("TEST 5: AsynchronousCloseException");
-                /* reset thread interrupt status */
+                /* reset thread interrupted status */
                 Thread.currentThread().interrupted();
 
                 ssc = SctpServerChannel.open().bind(null);
