@@ -1904,6 +1904,11 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
+    public static final String SAFEPOINT_SCALAROBJECT_OF = COMPOSITE_PREFIX + "SAFEPOINT_SCALAROBJECT_OF" + POSTFIX;
+    static {
+        safepointScalarobjectOfNodes(SAFEPOINT_SCALAROBJECT_OF, "SafePointScalarObject");
+    }
+
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
@@ -3211,6 +3216,11 @@ public class IRNode {
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+        beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void safepointScalarobjectOfNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + ".*" + IS_REPLACED + ".*" + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
