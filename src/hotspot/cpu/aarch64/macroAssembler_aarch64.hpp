@@ -121,7 +121,7 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
   // Load Effective Address
@@ -130,16 +130,21 @@ class MacroAssembler: public Assembler {
     a.lea(this, r);
   }
 
+  // Whether materializing the given address for a LDR/STR requires an
+  // additional lea instruction.
+  static bool legitimize_address_requires_lea(const Address &a, int size) {
+    return a.getMode() == Address::base_plus_offset &&
+           !Address::offset_ok_for_immed(a.offset(), exact_log2(size));
+  }
+
   /* Sometimes we get misaligned loads and stores, usually from Unsafe
      accesses, and these can exceed the offset range. */
   Address legitimize_address(const Address &a, int size, Register scratch) {
-    if (a.getMode() == Address::base_plus_offset) {
-      if (! Address::offset_ok_for_immed(a.offset(), exact_log2(size))) {
-        block_comment("legitimize_address {");
-        lea(scratch, a);
-        block_comment("} legitimize_address");
-        return Address(scratch);
-      }
+    if (legitimize_address_requires_lea(a, size)) {
+      block_comment("legitimize_address {");
+      lea(scratch, a);
+      block_comment("} legitimize_address");
+      return Address(scratch);
     }
     return a;
   }
@@ -322,6 +327,27 @@ class MacroAssembler: public Assembler {
 
   inline void ror(Register Rd, Register Rn, unsigned imm) {
     extr(Rd, Rn, Rn, imm);
+  }
+
+  inline void rolw(Register Rd, Register Rn, unsigned imm) {
+    extrw(Rd, Rn, Rn, (32 - imm));
+  }
+
+  inline void rol(Register Rd, Register Rn, unsigned imm) {
+    extr(Rd, Rn, Rn, (64 - imm));
+  }
+
+  using Assembler::rax1;
+  using Assembler::eor3;
+
+  inline void rax1(Register Rd, Register Rn, Register Rm) {
+    eor(Rd, Rn, Rm, ROR, 63); // Rd = Rn ^ rol(Rm, 1)
+  }
+
+  inline void eor3(Register Rd, Register Rn, Register Rm, Register Rk) {
+    assert(Rd != Rn, "Use tmp register");
+    eor(Rd, Rm, Rk);
+    eor(Rd, Rd, Rn);
   }
 
   inline void sxtbw(Register Rd, Register Rn) {
@@ -651,16 +677,8 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
-  static address target_addr_for_insn(address insn_addr, unsigned insn);
-  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
-  static address target_addr_for_insn(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn(insn_addr, insn);
-  }
-  static address target_addr_for_insn_or_null(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn_or_null(insn_addr, insn);
-  }
+  static address target_addr_for_insn(address insn_addr);
+  static address target_addr_for_insn_or_null(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -957,9 +975,6 @@ public:
 
   void push_cont_fastpath(Register java_thread = rthread);
   void pop_cont_fastpath(Register java_thread = rthread);
-
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -1603,7 +1618,7 @@ public:
                     FloatRegister p, FloatRegister z, FloatRegister t1);
   void ghash_reduce_wide(int index, FloatRegister result, FloatRegister lo, FloatRegister hi,
                     FloatRegister p, FloatRegister z, FloatRegister t1);
-  void ghash_processBlocks_wide(address p, Register state, Register subkeyH,
+  void ghash_processBlocks_wide(Label& p, Register state, Register subkeyH,
                                 Register data, Register blocks, int unrolls);
 
 

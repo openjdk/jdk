@@ -26,6 +26,7 @@
 
 package java.util.logging;
 
+import java.io.Serial;
 
 /**
  * This class is for logging permissions. Currently there is only one
@@ -48,6 +49,7 @@ package java.util.logging;
 @Deprecated(since="25", forRemoval=true)
 public final class LoggingPermission extends java.security.BasicPermission {
 
+    @Serial
     private static final long serialVersionUID = 63564341580231582L;
 
     /**

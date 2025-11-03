@@ -146,10 +146,8 @@ public class TestNewRatioFlag {
             long newSize = initEden + 2 * initSurv;
 
             // See GenArguments::scale_by_NewRatio_aligned for calculation in the JVM.
-            long alignedDownNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
+            long expectedNewSize = HeapRegionUsageTool.alignDown(initHeap / (expectedRatio + 1),
                     wb.getHeapSpaceAlignment());
-            long expectedNewSize = HeapRegionUsageTool.alignUp(alignedDownNewSize,
-                    wb.psVirtualSpaceAlignment());
 
             if (expectedNewSize != newSize) {
                 throw new RuntimeException("Expected young gen size is: " + expectedNewSize

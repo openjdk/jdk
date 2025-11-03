@@ -39,12 +39,12 @@
   <property name="dist"  location="dist"/>
   <property name="resources"  location="resources"/>
 
-  <condition property="source" value="7">
+  <condition property="source" value="8">
      <not>
         <isset property="source"/>
      </not>
   </condition>
-  <condition property="target" value="7">
+  <condition property="target" value="8">
      <not>
         <isset property="target"/>
      </not>
@@ -52,11 +52,6 @@
   <condition property="java" value="java">
      <not>
         <isset property="java"/>
-     </not>
-  </condition>
-  <condition property="javac" value="javac">
-     <not>
-        <isset property="javac"/>
      </not>
   </condition>
 
@@ -70,7 +65,7 @@
   <target name="compile" depends="init"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac debug="off" source="${source}" target="${target}" srcdir="${src}" destdir="${build}" fork="true" executable="${javac}"/>
+    <javac debug="off" source="${source}" target="${target}" srcdir="${src}" destdir="${build}"/>
   </target>
 
   <target name="run" depends="dist"

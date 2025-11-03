@@ -62,7 +62,8 @@
   JFR_LOG_TAG(jfr, event) \
   JFR_LOG_TAG(jfr, setting) \
   JFR_LOG_TAG(jfr, dcmd) \
-  JFR_LOG_TAG(jfr, start)
+  JFR_LOG_TAG(jfr, start) \
+  JFR_LOG_TAG(jfr, methodtrace)
   /* NEW TAGS, DONT FORGET TO UPDATE JAVA SIDE */
 
 #endif // SHARE_JFR_UTILITIES_JFRLOGTAGSETS_HPP

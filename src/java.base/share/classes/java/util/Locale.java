@@ -48,8 +48,8 @@ import java.io.Serializable;
 import java.text.NumberFormat;
 import java.text.MessageFormat;
 import java.text.ParsePosition;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
@@ -204,15 +204,18 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   key="x"/value="java-1-7"</dd>
  * </dl>
  *
- * <b>BCP 47 deviation:</b> Although BCP 47 requires field values to be registered
- * in the IANA Language Subtag Registry, the {@code Locale} class
- * does not validate this requirement. For example, the variant code <em>"foobar"</em>
- * is well-formed since it is composed of 5 to 8 alphanumerics, but is not defined
- * the IANA Language Subtag Registry. The {@link Builder}
- * only checks if an individual field satisfies the syntactic
- * requirement (is well-formed), but does not validate the value
- * itself. Conversely, {@link #of(String, String, String) Locale::of} and its
- * overloads do not make any syntactic checks on the input.
+ * <b>BCP 47 deviation:</b> BCP47 defines the following two levels of
+ * <a href="https://datatracker.ietf.org/doc/html/rfc5646#section-2.2.9">conformance</a>,
+ * "valid" and "well-formed". A valid tag requires that it is well-formed, its
+ * subtag values are registered in the IANA Language Subtag Registry, and it does not
+ * contain duplicate variant or extension singleton subtags. The {@code Locale}
+ * class does not enforce that subtags are registered in the Subtag Registry.
+ * {@link Builder} only checks if an individual field satisfies the syntactic
+ * requirement (is well-formed). When passed duplicate variants, {@code Builder}
+ * accepts and includes them. When passed duplicate extension singletons, {@code
+ * Builder} accepts but ignores the duplicate key and its associated value.
+ * Conversely, {@link #of(String, String, String) Locale::of} and its
+ * overloads do not check if the input is well-formed at all.
  *
  * <h3><a id="def_locale_extension">Unicode BCP 47 U Extension</a></h3>
  *
@@ -246,7 +249,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * can be empty, or a series of subtags 3-8 alphanums in length).  A
  * well-formed locale attribute has the form
  * {@code [0-9a-zA-Z]{3,8}} (it is a single subtag with the same
- * form as a locale type subtag).
+ * form as a locale type subtag). Duplicate locale attributes as well
+ * as locale keys do not convey meaning. For methods in {@code Locale} and
+ * {@code Locale.Builder} that accept extensions, occurrences of duplicate
+ * locale attributes as well as locale keys and their associated type are accepted
+ * but ignored.
  *
  * <p>The Unicode locale extension specifies optional behavior in
  * locale-sensitive services.  Although the LDML specification defines
@@ -385,10 +392,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@snippet lang = java:
  *     var number = 1000;
  *     NumberFormat.getCurrencyInstance(Locale.US).format(number); // returns "$1,000.00"
- *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "\u00A51,000""
+ *     NumberFormat.getCurrencyInstance(Locale.JAPAN).format(number); // returns "¥1,000""
  *     var date = LocalDate.of(2024, 1, 1);
  *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.US).format(date); // returns "January 1, 2024"
- *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024\u5e741\u67081\u65e5"
+ *     DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).localizedBy(Locale.JAPAN).format(date); // returns "2024年1月1日"
  * }
  *
  * <h2><a id="LocaleMatching">Locale Matching</a></h2>
@@ -561,8 +568,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
- * @spec https://unicode.org/reports/tr35/
- *      Unicode Locale Data Markup Language
+ * @spec https://www.rfc-editor.org/info/rfc6067
+ *      RFC 6067: BCP 47 Extension U
+ * @spec https://www.unicode.org/reports/tr35
+ *      Unicode Locale Data Markup Language (LDML)
  * @see Builder
  * @see ResourceBundle
  * @see java.text.Format
@@ -733,58 +742,24 @@ public final class Locale implements Cloneable, Serializable {
      * @see #getISOCountries(Locale.IsoCountryCode)
      * @since 9
      */
-    public static enum IsoCountryCode {
+    public enum IsoCountryCode {
         /**
          * PART1_ALPHA2 is used to represent the ISO3166-1 alpha-2 two letter
          * country codes.
          */
-        PART1_ALPHA2 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return Set.of(Locale.getISOCountries());
-            }
-        },
+        PART1_ALPHA2,
 
         /**
          *
          * PART1_ALPHA3 is used to represent the ISO3166-1 alpha-3 three letter
          * country codes.
          */
-        PART1_ALPHA3 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return LocaleISOData.computeISO3166_1Alpha3Countries();
-            }
-        },
+        PART1_ALPHA3,
 
         /**
          * PART3 is used to represent the ISO3166-3 four letter country codes.
          */
-        PART3 {
-            @Override
-            Set<String> createCountryCodeSet() {
-                return Set.of(LocaleISOData.ISO3166_3);
-            }
-        };
-
-        /**
-         * Concrete implementation of this method attempts to compute value
-         * for iso3166CodesMap for each IsoCountryCode type key.
-         */
-        abstract Set<String> createCountryCodeSet();
-
-        /**
-         * Map to hold country codes for each ISO3166 part.
-         */
-        private static final Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
-
-        /**
-         * This method is called from Locale class to retrieve country code set
-         * for getISOCountries(type)
-         */
-        static Set<String> retrieveISOCountryCodes(IsoCountryCode type) {
-            return iso3166CodesMap.computeIfAbsent(type, IsoCountryCode::createCountryCodeSet);
-        }
+        PART3
     }
 
     /**
@@ -1004,30 +979,28 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseloc, extensions);
     }
 
-
     static Locale getInstance(BaseLocale baseloc, LocaleExtensions extensions) {
         if (extensions == null) {
             Locale locale = CONSTANT_LOCALES.get(baseloc);
             if (locale != null) {
                 return locale;
             }
-            return LocaleCache.cache(baseloc);
+            return LOCALE_CACHE.get().computeIfAbsent(baseloc, LOCALE_CREATOR);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return LocaleCache.cache(key);
+            return LOCALE_CACHE.get().computeIfAbsent(key, LOCALE_CREATOR);
         }
     }
 
-    private static final class LocaleCache implements Function<Object, Locale> {
-        private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
-                = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+    private static final Supplier<ReferencedKeyMap<Object, Locale>> LOCALE_CACHE =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public ReferencedKeyMap<Object, Locale> get() {
+                    return ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
+                }
+            });
 
-        private static final Function<Object, Locale> LOCALE_CREATOR = new LocaleCache();
-
-        public static Locale cache(Object key) {
-            return LOCALE_CACHE.computeIfAbsent(key, LOCALE_CREATOR);
-        }
-
+    private static final Function<Object, Locale> LOCALE_CREATOR = new Function<>() {
         @Override
         public Locale apply(Object key) {
             if (key instanceof BaseLocale base) {
@@ -1036,7 +1009,7 @@ public final class Locale implements Cloneable, Serializable {
             LocaleKey lk = (LocaleKey)key;
             return new Locale(lk.base, lk.exts);
         }
-    }
+    };
 
     private static final class LocaleKey {
 
@@ -1301,16 +1274,12 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 3166 two-letter country codes.
      */
     public static String[] getISOCountries() {
-        if (isoCountries == null) {
-            isoCountries = getISO2Table(LocaleISOData.isoCountryTable);
-        }
-        String[] result = new String[isoCountries.length];
-        System.arraycopy(isoCountries, 0, result, 0, isoCountries.length);
-        return result;
+        String[] countries = LocaleISOData.ISO_3166_1_ALPHA2.get();
+        return Arrays.copyOf(countries, countries.length);
     }
 
     /**
-     * {@return a {@code Set} of ISO3166 country codes for the specified type}
+     * {@return an unmodifiable {@code Set} of ISO3166 country codes for the specified type}
      *
      * @param type {@link Locale.IsoCountryCode} specified ISO code type.
      * @see java.util.Locale.IsoCountryCode
@@ -1319,7 +1288,11 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Set<String> getISOCountries(IsoCountryCode type) {
         Objects.requireNonNull(type);
-        return IsoCountryCode.retrieveISOCountryCodes(type);
+        return switch (type) {
+            case PART1_ALPHA2 -> Set.of(LocaleISOData.ISO_3166_1_ALPHA2.get());
+            case PART1_ALPHA3 -> LocaleISOData.ISO_3166_1_ALPHA3.get();
+            case PART3 -> LocaleISOData.ISO_3166_3.get();
+        };
     }
 
     /**
@@ -1339,22 +1312,8 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
-        String[] languages = Locale.isoLanguages;
-        if (languages == null) {
-            Locale.isoLanguages = languages = getISO2Table(LocaleISOData.isoLanguageTable);
-        }
-        String[] result = new String[languages.length];
-        System.arraycopy(languages, 0, result, 0, languages.length);
-        return result;
-    }
-
-    private static String[] getISO2Table(String table) {
-        int len = table.length() / 5;
-        String[] isoTable = new String[len];
-        for (int i = 0, j = 0; i < len; i++, j += 5) {
-            isoTable[i] = table.substring(j, j + 2);
-        }
-        return isoTable;
+        String[] languages = LocaleISOData.ISO_639.get();
+        return Arrays.copyOf(languages, languages.length);
     }
 
     /**
@@ -1683,75 +1642,68 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
-        String lTag = this.languageTag;
-        if (lTag != null) {
-            return lTag;
-        }
+        return languageTag.get();
+    }
 
+    private String computeLanguageTag() {
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
-        StringBuilder buf = new StringBuilder();
+        StringBuilder bldr = new StringBuilder();
 
         String subtag = tag.language();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.canonicalizeLanguage(subtag));
+            bldr.append(LanguageTag.canonicalizeLanguage(subtag));
         }
 
         subtag = tag.script();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeScript(subtag));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeScript(subtag));
         }
 
         subtag = tag.region();
         if (!subtag.isEmpty()) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeRegion(subtag));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeRegion(subtag));
         }
 
         List<String>subtags = tag.variants();
         for (String s : subtags) {
-            buf.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.SEP);
             // preserve casing
-            buf.append(s);
+            bldr.append(s);
         }
 
         subtags = tag.extensions();
         for (String s : subtags) {
-            buf.append(LanguageTag.SEP);
-            buf.append(LanguageTag.canonicalizeExtension(s));
+            bldr.append(LanguageTag.SEP);
+            bldr.append(LanguageTag.canonicalizeExtension(s));
         }
 
         subtag = tag.privateuse();
         if (!subtag.isEmpty()) {
-            if (buf.length() > 0) {
-                buf.append(LanguageTag.SEP);
+            if (bldr.length() > 0) {
+                bldr.append(LanguageTag.SEP);
             }
-            buf.append(LanguageTag.PRIVATEUSE).append(LanguageTag.SEP);
+            bldr.append(LanguageTag.PRIVATEUSE).append(LanguageTag.SEP);
             // preserve casing
-            buf.append(subtag);
+            bldr.append(subtag);
         }
 
-        String langTag = buf.toString();
-        synchronized (this) {
-            if (this.languageTag == null) {
-                this.languageTag = langTag;
-            }
-        }
-        return langTag;
+        return bldr.toString();
     }
 
     /**
      * {@return a case folded IETF BCP 47 language tag}
      *
      * <p>This method formats a language tag into one with case convention
-     * that adheres to section 2.1.1. Formatting of Language Tags of RFC5646.
+     * that adheres to section 2.1.1. Formatting of Language Tags of RFC 5646.
      * This format is defined as: <i>All subtags, including extension and private
      * use subtags, use lowercase letters with two exceptions: two-letter
      * and four-letter subtags that neither appear at the start of the tag
      * nor occur after singletons. Such two-letter subtags are all
      * uppercase (as in the tags "en-CA-x-ca" or "sgn-BE-FR") and four-
      * letter subtags are titlecase (as in the tag "az-Latn-x-latn").</i> As
-     * legacy tags, (defined as "grandfathered" in RFC5646) are not always well-formed, this method
+     * legacy tags, (defined as "grandfathered" in RFC 5646) are not always well-formed, this method
      * will simply case fold a legacy tag to match the exact case convention
      * for the particular tag specified in the respective
      * {@link ##legacy_tags Legacy tags} table.
@@ -1777,15 +1729,15 @@ public final class Locale implements Cloneable, Serializable {
      * <p>As the formatting of the case convention is dependent on the
      * positioning of certain subtags, callers of this method should ensure
      * that the language tag is well-formed, (conforming to section 2.1. Syntax
-     * of RFC5646).
+     * of RFC 5646).
      *
      * @param languageTag the IETF BCP 47 language tag.
      * @throws IllformedLocaleException if {@code languageTag} is not well-formed
      * @throws NullPointerException if {@code languageTag} is {@code null}
      * @spec https://www.rfc-editor.org/rfc/rfc5646.html#section-2.1
-     *       RFC5646 2.1. Syntax
+     *       RFC 5646: 2.1. Syntax
      * @spec https://www.rfc-editor.org/rfc/rfc5646#section-2.1.1
-     *       RFC5646 2.1.1. Formatting of Language Tags
+     *       RFC 5646: 2.1.1. Formatting of Language Tags
      * @since 21
      */
     public static String caseFoldLanguageTag(String languageTag) {
@@ -1800,7 +1752,13 @@ public final class Locale implements Cloneable, Serializable {
      * to {@link Locale.Builder#setLanguageTag(String)} which throws an exception
      * in this case.
      *
-     * <p>The following <b>conversions</b> are performed:<ul>
+     * <p>Duplicate variants are accepted and included by the builder.
+     * However, duplicate extension singleton keys and their associated type
+     * are accepted but ignored. The same behavior applies to duplicate locale
+     * keys and attributes within a U extension. Note that subsequent subtags after
+     * the occurrence of a duplicate are not ignored.
+     *
+     * <p>The following <b id="langtag_conversions">conversions</b> are performed:<ul>
      *
      * <li>The language code "und" is mapped to language "".
      *
@@ -1826,13 +1784,19 @@ public final class Locale implements Cloneable, Serializable {
      *     loc.getExtension('x'); // returns "urp"
      * }
      *
-     * <li>When the languageTag argument contains an extlang subtag,
-     * the first such subtag is used as the language, and the primary
-     * language subtag and other extlang subtags are ignored:
+     * <li> BCP 47 language tags permit up to three extlang subtags. However,
+     * the second and third extlang subtags are always ignored. As such,
+     * the first extlang subtag in {@code languageTag} is used as the language,
+     * and the primary language subtag and other extlang subtags are ignored.
+     * Language tags that exceed three extlang subtags are considered
+     * ill-formed starting at the offending extlang subtag.
      *
      * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
+     *     Locale.forLanguageTag("zh-yue-gan-cmn-czh-CN").toString();
+     *     // returns "yue"; "czh" exceeds the extlang limit, and subsequent
+     *     // subtags are considered ill-formed
      * }
      *
      * <li>Case is normalized except for variant tags, which are left
@@ -1955,7 +1919,7 @@ public final class Locale implements Cloneable, Serializable {
             return lang;
         }
 
-        String language3 = getISO3Code(lang, LocaleISOData.isoLanguageTable);
+        String language3 = LocaleISOData.getISO3LangCode(lang);
         if (language3 == null) {
             throw new MissingResourceException("Couldn't find 3-letter language code for "
                     + lang, "FormatData_" + toString(), "ShortLanguage");
@@ -1977,33 +1941,12 @@ public final class Locale implements Cloneable, Serializable {
      * three-letter country abbreviation is not available for this locale.
      */
     public String getISO3Country() throws MissingResourceException {
-        String country3 = getISO3Code(baseLocale.getRegion(), LocaleISOData.isoCountryTable);
+        String country3 = LocaleISOData.getISO3CtryCode(baseLocale.getRegion());
         if (country3 == null) {
             throw new MissingResourceException("Couldn't find 3-letter country code for "
                     + baseLocale.getRegion(), "FormatData_" + toString(), "ShortCountry");
         }
         return country3;
-    }
-
-    private static String getISO3Code(String iso2Code, String table) {
-        int codeLength = iso2Code.length();
-        if (codeLength == 0) {
-            return "";
-        }
-
-        int tableLength = table.length();
-        int index = tableLength;
-        if (codeLength == 2) {
-            char c1 = iso2Code.charAt(0);
-            char c2 = iso2Code.charAt(1);
-            for (index = 0; index < tableLength; index += 5) {
-                if (table.charAt(index) == c1
-                    && table.charAt(index + 1) == c2) {
-                    break;
-                }
-            }
-        }
-        return index < tableLength ? table.substring(index + 2, index + 5) : null;
     }
 
     /**
@@ -2387,7 +2330,13 @@ public final class Locale implements Cloneable, Serializable {
     private static volatile Locale defaultDisplayLocale;
     private static volatile Locale defaultFormatLocale;
 
-    private transient volatile String languageTag;
+    private final transient Supplier<String> languageTag =
+            StableValue.supplier(new Supplier<>() {
+                @Override
+                public String get() {
+                    return computeLanguageTag();
+                }
+            });
 
     /**
      * Return an array of the display names of the variant.
@@ -2580,10 +2529,6 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(baseLocale.getLanguage(), baseLocale.getScript(),
                 baseLocale.getRegion(), baseLocale.getVariant(), localeExtensions);
     }
-
-    private static volatile String[] isoLanguages;
-
-    private static volatile String[] isoCountries;
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
@@ -2787,15 +2732,28 @@ public final class Locale implements Cloneable, Serializable {
          * just discards ill-formed and following portions of the
          * tag).
          *
+         * <p>Duplicate variants are accepted and included by the builder.
+         * However, duplicate extension singleton keys and their associated type
+         * are accepted but ignored. The same behavior applies to duplicate locale
+         * keys and attributes within a U extension. Note that subsequent subtags after
+         * the occurrence of a duplicate are not ignored.
+         *
+         * <p>See {@link Locale##langtag_conversions converions} for a full list
+         * of conversions that are performed on {@code languageTag}.
+         *
          * @param languageTag the language tag
          * @return This builder.
          * @throws IllformedLocaleException if {@code languageTag} is ill-formed
          * @see Locale#forLanguageTag(String)
          */
         public Builder setLanguageTag(String languageTag) {
-            LanguageTag tag = LanguageTag.parse(
-                    languageTag, new ParsePosition(0), false);
-            localeBuilder.setLanguageTag(tag);
+            if (LocaleUtils.isEmpty(languageTag)) {
+                localeBuilder.clear();
+            } else {
+                LanguageTag tag = LanguageTag.parse(
+                        languageTag, new ParsePosition(0), false);
+                localeBuilder.setLanguageTag(tag);
+            }
             return this;
         }
 
@@ -2871,7 +2829,8 @@ public final class Locale implements Cloneable, Serializable {
          * Sets the variant.  If variant is null or the empty string, the
          * variant in this {@code Builder} is removed.  Otherwise, it
          * must consist of one or more {@linkplain Locale##def_variant well-formed}
-         * subtags, or an exception is thrown.
+         * subtags, or an exception is thrown. Duplicate variants are
+         * accepted and included by the builder.
          *
          * <p><b>Note:</b> This method checks if {@code variant}
          * satisfies the IETF BCP 47 variant subtag's syntax requirements,
@@ -2904,7 +2863,8 @@ public final class Locale implements Cloneable, Serializable {
          * <p><b>Note:</b> The key {@link #UNICODE_LOCALE_EXTENSION
          * UNICODE_LOCALE_EXTENSION} ('u') is used for the Unicode locale extension.
          * Setting a value for this key replaces any existing Unicode locale key/type
-         * pairs with those defined in the extension.
+         * pairs with those defined in the extension. Duplicate locale attributes
+         * as well as locale keys and their associated type are accepted but ignored.
          *
          * <p><b>Note:</b> The key {@link #PRIVATE_USE_EXTENSION
          * PRIVATE_USE_EXTENSION} ('x') is used for the private use code. To be

@@ -39,7 +39,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -53,7 +53,6 @@
 #include "runtime/perfMemory.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -115,7 +114,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-julong os::Bsd::_physical_memory = 0;
+physical_memory_size_type os::Bsd::_physical_memory = 0;
 
 #ifdef __APPLE__
 mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
@@ -134,19 +133,19 @@ static volatile int processor_id_next = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
 
-julong os::available_memory() {
-  return Bsd::available_memory();
+bool os::available_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
 }
 
-julong os::free_memory() {
-  return Bsd::available_memory();
+bool os::free_memory(physical_memory_size_type& value) {
+  return Bsd::available_memory(value);
 }
 
 // Available here means free. Note that this number is of no much use. As an estimate
 // for future memory pressure it is far too conservative, since MacOS will use a lot
 // of unused memory for caches, and return it willingly in case of needs.
-julong os::Bsd::available_memory() {
-  uint64_t available = physical_memory() >> 2;
+bool os::Bsd::available_memory(physical_memory_size_type& value) {
+  physical_memory_size_type available = physical_memory() >> 2;
 #ifdef __APPLE__
   mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
   vm_statistics64_data_t vmstat;
@@ -155,10 +154,14 @@ julong os::Bsd::available_memory() {
   assert(kerr == KERN_SUCCESS,
          "host_statistics64 failed - check mach_host_self() and count");
   if (kerr == KERN_SUCCESS) {
-    available = vmstat.free_count * os::vm_page_size();
+    // free_count is just a lowerbound, other page categories can be freed too and make memory available
+    available = (vmstat.free_count + vmstat.inactive_count + vmstat.purgeable_count) * os::vm_page_size();
+  } else {
+    return false;
   }
 #endif
-  return available;
+  value = available;
+  return true;
 }
 
 // for more info see :
@@ -177,33 +180,35 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
-    return -1;
+    return false;
   }
-  return (jlong)vmusage.xsu_total;
+  value = static_cast<physical_memory_size_type>(vmusage.xsu_total);
+  return true;
 #else
-  return -1;
+  return false;
 #endif
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
-    return -1;
+    return false;
   }
-  return (jlong)vmusage.xsu_avail;
+  value = static_cast<physical_memory_size_type>(vmusage.xsu_avail);
+  return true;
 #else
-  return -1;
+  return false;
 #endif
 }
 
-julong os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return Bsd::physical_memory();
 }
 
@@ -226,8 +231,6 @@ size_t os::rss() {
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
-#elif defined(IA32)
-static char cpu_arch[] = "i386";
 #elif defined(AMD64)
 static char cpu_arch[] = "amd64";
 #elif defined(ARM)
@@ -281,7 +284,7 @@ void os::Bsd::initialize_system_info() {
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, nullptr, 0) != -1) {
     assert(len == sizeof(mem_val), "unexpected data size");
-    _physical_memory = mem_val;
+    _physical_memory = static_cast<physical_memory_size_type>(mem_val);
   } else {
     _physical_memory = 256 * 1024 * 1024;       // fallback (XXXBSD?)
   }
@@ -292,7 +295,7 @@ void os::Bsd::initialize_system_info() {
     // datasize rlimit restricts us anyway.
     struct rlimit limits;
     getrlimit(RLIMIT_DATA, &limits);
-    _physical_memory = MIN2(_physical_memory, (julong)limits.rlim_cur);
+    _physical_memory = MIN2(_physical_memory, static_cast<physical_memory_size_type>(limits.rlim_cur));
   }
 #endif
 }
@@ -522,7 +525,7 @@ void os::init_system_properties_values() {
   // by the nulls included by the sizeof operator (so actually one byte more
   // than necessary is allocated).
   os::snprintf_checked(buf, bufsize, "%s" SYS_EXTENSIONS_DIR ":%s" EXTENSIONS_DIR ":" SYS_EXTENSIONS_DIRS,
-          user_home_dir, Arguments::get_java_home());
+                       user_home_dir, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -782,10 +785,6 @@ void os::free_thread(OSThread* osthread) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-double os::elapsedVTime() {
-  // better than nothing, but not much
-  return elapsedTime();
-}
 
 #ifdef __APPLE__
 void os::Bsd::clock_init() {
@@ -808,7 +807,7 @@ jlong os::javaTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const uint64_t obsv = Atomic::cmpxchg(&Bsd::_max_abstime, prev, now);
+  const uint64_t obsv = AtomicAccess::cmpxchg(&Bsd::_max_abstime, prev, now);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then
@@ -1010,7 +1009,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // same architecture as Hotspot is running on
 
 void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebuflen) {
-#ifndef IA32
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1033,14 +1031,9 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
 
-  // This workaround is ineffective on IA32 systems because the MXCSR
-  // register (which controls flush-to-zero mode) is not stored in the
-  // legacy fenv.
-
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetenv must succeed");
-#endif // IA32
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
@@ -1060,7 +1053,6 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
-#ifndef IA32
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point
       // flags. Silently fix things now.
@@ -1085,7 +1077,6 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
         assert(false, "fesetenv didn't work");
       }
     }
-#endif // IA32
   }
 
   return result;
@@ -1114,7 +1105,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     return result;
   }
-
+  if (ebuf == nullptr || ebuflen < 1) {
+    // no error reporting requested
+    return nullptr;
+  }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1191,9 +1185,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"}
   };
 
-  #if  (defined IA32)
-  static  Elf32_Half running_arch_code=EM_386;
-  #elif   (defined AMD64)
+  #if    (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
   #elif  (defined __powerpc64__)
   static  Elf32_Half running_arch_code=EM_PPC64;
@@ -1215,7 +1207,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         AMD64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1243,27 +1235,27 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch.endianess != arch_array[running_arch_index].endianess) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1," (Possible cause: endianness mismatch)");
     return nullptr;
   }
 
 #ifndef S390
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
-    ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
+    os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
     return nullptr;
   }
 #endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if (lib_arch.name!=nullptr) {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
-                 lib_arch.name, arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
+                           lib_arch.name, arch_array[running_arch_index].name);
     } else {
-      ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
-                 lib_arch.code,
-                 arch_array[running_arch_index].name);
+      os::snprintf_checked(diag_msg_buf, diag_msg_max_length-1,
+                           " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
+                           lib_arch.code,
+                           arch_array[running_arch_index].name);
     }
   }
 
@@ -1365,13 +1357,13 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
     size = sizeof(build);
     int mib_build[] = { CTL_KERN, KERN_OSVERSION };
     if (sysctl(mib_build, 2, build, &size, nullptr, 0) < 0) {
-      snprintf(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
+      os::snprintf_checked(buf, buflen, "%s %s, macOS %s", os, release, osproductversion);
     } else {
-      snprintf(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
+      os::snprintf_checked(buf, buflen, "%s %s, macOS %s (%s)", os, release, osproductversion, build);
     }
   } else
 #endif
-  snprintf(buf, buflen, "%s %s", os, release);
+  os::snprintf_checked(buf, buflen, "%s %s", os, release);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -1448,14 +1440,14 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 #if defined(__APPLE__) && !defined(ZERO)
   if (VM_Version::is_cpu_emulated()) {
-    snprintf(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
+    os::snprintf_checked(buf, buflen, "\"%s\" %s (EMULATED) %d MHz", model, machine, mhz);
   } else {
-    NOT_AARCH64(snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
+    NOT_AARCH64(os::snprintf_checked(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz));
     // aarch64 CPU doesn't report its speed
-    AARCH64_ONLY(snprintf(buf, buflen, "\"%s\" %s", model, machine));
+    AARCH64_ONLY(os::snprintf_checked(buf, buflen, "\"%s\" %s", model, machine));
   }
 #else
-  snprintf(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
+  os::snprintf_checked(buf, buflen, "\"%s\" %s %d MHz", model, machine, mhz);
 #endif
 }
 
@@ -1465,11 +1457,13 @@ void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
-
-  st->print(", physical " UINT64_FORMAT "k",
-            os::physical_memory() >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            os::available_memory() >> 10);
+  physical_memory_size_type phys_mem = os::physical_memory();
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
+            phys_mem >> 10);
+  physical_memory_size_type avail_mem = 0;
+  (void)os::available_memory(avail_mem);
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
+            avail_mem >> 10);
 
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {
     if (size >= offset_of(xsw_usage, xsu_used)) {
@@ -1481,83 +1475,6 @@ void os::print_memory_info(outputStream* st) {
   }
 
   st->cr();
-}
-
-static char saved_jvm_path[MAXPATHLEN] = {0};
-
-// Find the full path to the current module, libjvm
-void os::jvm_path(char *buf, jint buflen) {
-  // Error checking.
-  if (buflen < MAXPATHLEN) {
-    assert(false, "must use a large-enough buffer");
-    buf[0] = '\0';
-    return;
-  }
-  // Lazy resolve the path to current module.
-  if (saved_jvm_path[0] != 0) {
-    strcpy(buf, saved_jvm_path);
-    return;
-  }
-
-  char dli_fname[MAXPATHLEN];
-  dli_fname[0] = '\0';
-  bool ret = dll_address_to_library_name(
-                                         CAST_FROM_FN_PTR(address, os::jvm_path),
-                                         dli_fname, sizeof(dli_fname), nullptr);
-  assert(ret, "cannot locate libjvm");
-  char *rp = nullptr;
-  if (ret && dli_fname[0] != '\0') {
-    rp = os::realpath(dli_fname, buf, buflen);
-  }
-  if (rp == nullptr) {
-    return;
-  }
-
-  // If executing unit tests we require JAVA_HOME to point to the real JDK.
-  if (Arguments::executing_unit_tests()) {
-    // Look for JAVA_HOME in the environment.
-    char* java_home_var = ::getenv("JAVA_HOME");
-    if (java_home_var != nullptr && java_home_var[0] != 0) {
-
-      // Check the current module name "libjvm"
-      const char* p = strrchr(buf, '/');
-      assert(strstr(p, "/libjvm") == p, "invalid library name");
-
-      stringStream ss(buf, buflen);
-      rp = os::realpath(java_home_var, buf, buflen);
-      if (rp == nullptr) {
-        return;
-      }
-
-      assert((int)strlen(buf) < buflen, "Ran out of buffer space");
-      // Add the appropriate library and JVM variant subdirs
-      ss.print("%s/lib/%s", buf, Abstract_VM_Version::vm_variant());
-
-      if (0 != access(buf, F_OK)) {
-        ss.reset();
-        ss.print("%s/lib", buf);
-      }
-
-      // If the path exists within JAVA_HOME, add the JVM library name
-      // to complete the path to JVM being overridden.  Otherwise fallback
-      // to the path to the current library.
-      if (0 == access(buf, F_OK)) {
-        // Use current module name "libjvm"
-        ss.print("/libjvm%s", JNI_LIB_SUFFIX);
-        assert(strcmp(buf + strlen(buf) - strlen(JNI_LIB_SUFFIX), JNI_LIB_SUFFIX) == 0,
-               "buf has been truncated");
-      } else {
-        // Fall back to path of current library
-        rp = os::realpath(dli_fname, buf, buflen);
-        if (rp == nullptr) {
-          return;
-        }
-      }
-    }
-  }
-
-  strncpy(saved_jvm_path, buf, MAXPATHLEN);
-  saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1669,8 +1586,6 @@ void os::numa_make_global(char *addr, size_t bytes) {
 
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
 }
-
-bool os::numa_topology_changed()   { return false; }
 
 size_t os::numa_get_groups_num() {
   return 1;
@@ -2206,14 +2121,14 @@ uint os::processor_id() {
   __asm__ ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
 
   uint apic_id = (ebx >> 24) & (processor_id_map_size - 1);
-  int processor_id = Atomic::load(&processor_id_map[apic_id]);
+  int processor_id = AtomicAccess::load(&processor_id_map[apic_id]);
 
   while (processor_id < 0) {
     // Assign processor id to APIC id
-    processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
+    processor_id = AtomicAccess::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
-      Atomic::store(&processor_id_map[apic_id], processor_id);
+      processor_id = AtomicAccess::fetch_then_add(&processor_id_next, 1) % os::processor_count();
+      AtomicAccess::store(&processor_id_map[apic_id], processor_id);
     }
   }
 
@@ -2234,7 +2149,7 @@ void os::set_native_thread_name(const char *name) {
   if (name != nullptr) {
     // Add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
-    snprintf(buf, sizeof(buf), "Java: %s", name);
+    (void) os::snprintf(buf, sizeof(buf), "Java: %s", name);
     pthread_setname_np(buf);
   }
 #endif
@@ -2329,8 +2244,7 @@ int os::open(const char *path, int oflag, int mode) {
   // specifically destined for a subprocess should have the
   // close-on-exec flag set.  If we don't set it, then careless 3rd
   // party native code might fork and exec without closing all
-  // appropriate file descriptors (e.g. as we do in closeDescriptors in
-  // UNIXProcess.c), and this in turn might:
+  // appropriate file descriptors, and this in turn might:
   //
   // - cause end-of-file to fail to be detected on some file
   //   descriptors, resulting in mysterious hangs, or
@@ -2569,7 +2483,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
     }
   }
 

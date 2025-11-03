@@ -28,8 +28,6 @@
  * @bug 8352775
  * @requires vm.cds
  * @requires vm.gc.Z
- * @comment work around JDK-8345635
- * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build AOTCacheWithZGC
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTCacheWithZGCApp

@@ -1303,8 +1303,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(long)} with saved state as argument.
          * </ol>
          */
         public final void awaitUninterruptibly() {
@@ -1346,8 +1346,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled or interrupted.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(long)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1398,8 +1398,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(long)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
          */
@@ -1442,8 +1442,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(long)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>
@@ -1485,8 +1485,8 @@ public abstract class AbstractQueuedLongSynchronizer
          * <li>Invoke {@link #release} with saved state as argument,
          *     throwing IllegalMonitorStateException if it fails.
          * <li>Block until signalled, interrupted, or timed out.
-         * <li>Reacquire by invoking specialized version of
-         *     {@link #acquire} with saved state as argument.
+         * <li>Reacquire by invoking underlying version of
+         *     {@link #acquire(long)} with saved state as argument.
          * <li>If interrupted while blocked in step 4, throw InterruptedException.
          * <li>If timed out while blocked in step 4, return false, else true.
          * </ol>

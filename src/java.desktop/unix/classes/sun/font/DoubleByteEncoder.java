@@ -76,6 +76,7 @@ public abstract class DoubleByteEncoder
         this.index2 = index2;
     }
 
+    @Override
     public boolean canEncode(char c) {
         return (encodeSingle(c) != -1 ||
                 encodeDouble(c) != 0);
@@ -198,6 +199,7 @@ public abstract class DoubleByteEncoder
         }
     }
 
+    @Override
     protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
         if (src.hasArray() && dst.hasArray())
             return encodeArrayLoop(src, dst);

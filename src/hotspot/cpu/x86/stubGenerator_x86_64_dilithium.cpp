@@ -274,7 +274,7 @@ static address generate_dilithiumAlmostNtt_avx512(StubGenerator *stubgen,
                                                   MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = dilithiumAlmostNtt_id;
+  StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -464,7 +464,7 @@ static address generate_dilithiumAlmostInverseNtt_avx512(StubGenerator *stubgen,
                                                          MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = dilithiumAlmostInverseNtt_id;
+  StubId stub_id = StubId::stubgen_dilithiumAlmostInverseNtt_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -645,7 +645,7 @@ static address generate_dilithiumNttMult_avx512(StubGenerator *stubgen,
                                                 MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = dilithiumNttMult_id;
+  StubId stub_id = StubId::stubgen_dilithiumNttMult_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -709,7 +709,7 @@ static address generate_dilithiumMontMulByConstant_avx512(StubGenerator *stubgen
                                                           MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = dilithiumMontMulByConstant_id;
+  StubId stub_id = StubId::stubgen_dilithiumMontMulByConstant_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();
@@ -773,7 +773,7 @@ static address generate_dilithiumDecomposePoly_avx512(StubGenerator *stubgen,
                                                       MacroAssembler *_masm) {
 
   __ align(CodeEntryAlignment);
-  StubGenStubId stub_id = dilithiumDecomposePoly_id;
+  StubId stub_id = StubId::stubgen_dilithiumDecomposePoly_id;
   StubCodeMark mark(stubgen, stub_id);
   address start = __ pc();
   __ enter();

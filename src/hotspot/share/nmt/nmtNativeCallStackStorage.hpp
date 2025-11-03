@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "nmt/arrayWithFreeList.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
+
 #include <limits>
 
 // Virtual memory regions that are tracked by NMT also have their NativeCallStack (NCS) tracked.
@@ -43,11 +44,8 @@
 class NativeCallStackStorage : public CHeapObjBase {
 public:
   using StackIndex = int;
-
-private:
   constexpr static const StackIndex invalid = std::numeric_limits<StackIndex>::max() - 1;
 
-public:
   static bool equals(const StackIndex a, const StackIndex b) {
     return a == b;
   }
@@ -97,7 +95,8 @@ public:
   }
 
   NativeCallStackStorage(bool is_detailed_mode, int table_size = default_table_size);
-
+  NativeCallStackStorage(const NativeCallStackStorage& other);
+  NativeCallStackStorage& operator=(const NativeCallStackStorage& other) = delete;
   ~NativeCallStackStorage();
 };
 

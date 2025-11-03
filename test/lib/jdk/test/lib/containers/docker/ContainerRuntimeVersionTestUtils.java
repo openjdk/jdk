@@ -79,12 +79,21 @@ public class ContainerRuntimeVersionTestUtils implements Comparable<ContainerRun
         try {
             // Example 'docker version 20.10.0 or podman version 4.9.4-rhel'
             String versNums = version.split("\\s+", 3)[2];
+            // On some docker implementations e.g. RHEL8 ppc64le we have the following version output:
+            //    Docker version v25.0.3, build 4debf41
+            // Trim potentially leading 'v' and trailing ','
+            if (versNums.startsWith("v")) {
+                versNums = versNums.substring(1);
+            }
+            int cidx = versNums.indexOf(',');
+            versNums = (cidx != -1) ? versNums.substring(0, cidx) : versNums;
+
             String[] numbers = versNums.split("-")[0].split("\\.", 3);
             return new ContainerRuntimeVersionTestUtils(Integer.parseInt(numbers[0]),
                     Integer.parseInt(numbers[1]),
                     Integer.parseInt(numbers[2]));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse container runtime version: " + version);
+            throw new RuntimeException("Failed to parse container runtime version: " + version, e);
         }
     }
 

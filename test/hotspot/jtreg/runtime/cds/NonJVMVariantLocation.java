@@ -26,6 +26,7 @@
  * @test
  * @summary Test that CDS archive can be loaded if the archive is in a non-JVM variant directory.
  * @bug 8353504
+ * @requires !jdk.static
  * @requires vm.cds
  * @requires vm.flagless
  * @requires vm.flavor == "server"

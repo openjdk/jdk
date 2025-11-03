@@ -78,7 +78,7 @@ final class MTLContext extends BufferedContext {
         buf.putLong(pConfigInfo);
     }
 
-    public static class MTLContextCaps extends ContextCapabilities {
+    public static final class MTLContextCaps extends ContextCapabilities {
 
         /** Indicates that the context is doublebuffered. */
         @Native

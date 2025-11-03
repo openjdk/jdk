@@ -168,7 +168,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     dp += n;
                     sp += n;
                 }
@@ -600,7 +600,7 @@ public class DoubleByte {
 
             try {
                 if (isASCIICompatible) {
-                    int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                     sp += n;
                     dp += n;
                 }
@@ -686,7 +686,7 @@ public class DoubleByte {
             int dp = 0;
             int sl = sp + len;
             if (isASCIICompatible) {
-                int n = JLA.uncheckedEncodeASCII(src, sp, dst, dp, len);
+                int n = JLA.encodeASCII(src, sp, dst, dp, len);
                 sp += n;
                 dp += n;
             }

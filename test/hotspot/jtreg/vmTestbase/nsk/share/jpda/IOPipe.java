@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,10 @@ import nsk.share.jdi.Binder;
 /**
  * This class implements communicational channel between
  * debugger and debugee used for synchronization and data exchange.
- * This channel is based on TCP/IP sockets and works in all
- * modes (local, remote and manual). In a remote mode
- * connection to <code>BindServer</code> is used for redirecting IOPipe messages.
- * In all other modes direct TCP/IP coonnection between two VMs is used.
+ * This channel is based on TCP/IP sockets.
  *
- * @see BindServer
+ * @see jpda.DebugeeArgumentHandler
+ * @see jpda.DebugeeProcess
  */
 public class IOPipe extends SocketIOPipe {
 

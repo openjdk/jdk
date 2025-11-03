@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ D3DPaints_ResetPaint(D3DContext *d3dc)
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
 
     paintState = d3dc->GetPaintState();
-    J2dTraceLn1(J2D_TRACE_VERBOSE, "  state=%d", paintState);
+    J2dTraceLn(J2D_TRACE_VERBOSE, "  state=%d", paintState);
 
     res = d3dc->UpdateState(STATE_OTHEROP);
 
@@ -89,7 +89,7 @@ D3DPaints_SetColor(D3DContext *d3dc, jint pixel)
 {
     HRESULT res = S_OK;
 
-    J2dTraceLn1(J2D_TRACE_INFO, "D3DPaints_SetColor: pixel=%08x", pixel);
+    J2dTraceLn(J2D_TRACE_INFO, "D3DPaints_SetColor: pixel=%08x", pixel);
 
     RETURN_STATUS_IF_NULL(d3dc, E_FAIL);
 

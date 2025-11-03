@@ -285,7 +285,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * this future has already been set or has been cancelled.
      *
      * <p>This method is invoked internally by the {@link #run} method
-     * upon successful completion of the computation.
+     * upon successful completion of the computation. Invocation in
+     * other contexts has undefined effects. Any override of this
+     * method in subclasses should include {@code super.set(v)}.
      *
      * @param v the value
      */

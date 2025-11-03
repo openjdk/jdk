@@ -65,15 +65,9 @@ public class ResumeClientTLS12withSNI {
     /*
      * The following is to set up the keystores.
      */
-    private static final String pathToStores = System.getProperty("test.src", ".");
-    private static final String keyStoreFile = "ks_san.p12";
-    private static final String trustStoreFile = "ks_san.p12";
+    private static final String keyFilename = "ks_san.p12";
+    private static final String trustFilename = "ks_san.p12";
     private static final char[] passphrase = "123456".toCharArray();
-
-    private static final String keyFilename =
-            pathToStores + "/" + keyStoreFile;
-    private static final String trustFilename =
-            pathToStores + "/" + trustStoreFile;
 
     private static final String HOST_NAME = "arf.yak.foo.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456."
             + "localhost123456.localhost123456.localhost123456.localhost123456.localhost123456.localhost123456";
@@ -118,7 +112,7 @@ public class ResumeClientTLS12withSNI {
     private static KeyManagerFactory makeKeyManagerFactory(String ksPath,
                                                            char[] pass) throws GeneralSecurityException, IOException {
         KeyManagerFactory kmf;
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
 
         try (FileInputStream fsIn = new FileInputStream(ksPath)) {
             ks.load(fsIn, pass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,32 +26,28 @@
  * @summary Test virtual threads using park/unpark
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit Parking
+ * @run junit/timeout=480 Parking
  */
 
 /*
  * @test id=Xint
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm -Xint Parking
+ * @run junit/othervm/timeout=480 -Xint Parking
  */
 
 /*
  * @test id=Xcomp
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm -Xcomp Parking
+ * @run junit/othervm/timeout=480 -Xcomp Parking
  */
 
 /*
  * @test id=Xcomp-noTieredCompilation
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
- * @run junit/othervm -Xcomp -XX:-TieredCompilation Parking
+ * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation Parking
  */
 
 import java.time.Duration;
@@ -66,7 +62,6 @@ import java.util.concurrent.locks.LockSupport;
 import jdk.test.lib.thread.VThreadRunner;
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -385,7 +380,6 @@ class Parking {
      */
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
-    @DisabledIf("LockingMode#isLegacy")
     void testParkWhenHoldingMonitor(boolean reenter) throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -435,7 +429,6 @@ class Parking {
      * parking doesn't release the carrier.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testManyParkedWhenHoldingMonitor() throws Exception {
         Thread[] vthreads = new Thread[MAX_VTHREAD_COUNT];
         var done = new AtomicBoolean();

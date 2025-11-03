@@ -912,6 +912,43 @@ protected:
     emit(insn);
   }
 
+ public:
+
+  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
+    guarantee(is_uimm12(csr), "csr is invalid");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1110011);
+    patch((address)&insn, 14, 12, 0b001);
+    patch_reg((address)&insn, 7, Rd);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, csr);
+    return insn;
+  }
+
+  static uint32_t encode_jal(Register Rd, const int32_t offset) {
+    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1101111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));
+    return insn;
+  }
+
+  static uint32_t encode_jalr(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1100111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch_reg((address)&insn, 15, Rs);
+    int32_t val = offset & 0xfff;
+    patch((address)&insn, 31, 20, val);
+    return insn;
+  }
+
  protected:
 
   enum barrier {
@@ -961,81 +998,239 @@ protected:
 
 #undef INSN
 
-enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
+  enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
 
-#define INSN(NAME, op, funct3, funct7)                                                  \
-  void NAME(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {        \
-    unsigned insn = 0;                                                                  \
-    patch((address)&insn, 6, 0, op);                                                    \
-    patch((address)&insn, 14, 12, funct3);                                              \
-    patch_reg((address)&insn, 7, Rd);                                                   \
-    patch_reg((address)&insn, 15, Rs1);                                                 \
-    patch_reg((address)&insn, 20, Rs2);                                                 \
-    patch((address)&insn, 31, 27, funct7);                                              \
-    patch((address)&insn, 26, 25, memory_order);                                        \
-    emit(insn);                                                                         \
+ private:
+
+  enum AmoWidthFunct3 : uint8_t {
+    AMO_WIDTH_BYTE        = 0b000, // Zabha extension
+    AMO_WIDTH_HALFWORD    = 0b001, // Zabha extension
+    AMO_WIDTH_WORD        = 0b010,
+    AMO_WIDTH_DOUBLEWORD  = 0b011,
+    AMO_WIDTH_QUADWORD    = 0b100,
+    // 0b101 to 0b111 are reserved
+  };
+
+  enum AmoOperationFunct5 : uint8_t {
+    AMO_ADD  = 0b00000,
+    AMO_SWAP = 0b00001,
+    AMO_LR   = 0b00010,
+    AMO_SC   = 0b00011,
+    AMO_XOR  = 0b00100,
+    AMO_OR   = 0b01000,
+    AMO_AND  = 0b01100,
+    AMO_MIN  = 0b10000,
+    AMO_MAX  = 0b10100,
+    AMO_MINU = 0b11000,
+    AMO_MAXU = 0b11100,
+    AMO_CAS  = 0b00101 // Zacas
+  };
+
+  static constexpr uint32_t OP_AMO_MAJOR = 0b0101111;
+
+  template <AmoOperationFunct5 funct5, AmoWidthFunct3 width>
+  void amo_base(Register Rd, Register Rs1, uint8_t Rs2, Aqrl memory_order = aqrl) {
+    assert(width > AMO_WIDTH_HALFWORD || UseZabha, "Must be");
+    assert(funct5 != AMO_CAS || UseZacas, "Must be");
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, OP_AMO_MAJOR);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, width);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 24, 20, Rs2);
+    patch((address)&insn, 26, 25, memory_order);
+    patch((address)&insn, 31, 27, funct5);
+    emit(insn);
   }
 
-  INSN(amoswap_w, 0b0101111, 0b010, 0b00001);
-  INSN(amoadd_w,  0b0101111, 0b010, 0b00000);
-  INSN(amoxor_w,  0b0101111, 0b010, 0b00100);
-  INSN(amoand_w,  0b0101111, 0b010, 0b01100);
-  INSN(amoor_w,   0b0101111, 0b010, 0b01000);
-  INSN(amomin_w,  0b0101111, 0b010, 0b10000);
-  INSN(amomax_w,  0b0101111, 0b010, 0b10100);
-  INSN(amominu_w, 0b0101111, 0b010, 0b11000);
-  INSN(amomaxu_w, 0b0101111, 0b010, 0b11100);
-  INSN(amoswap_d, 0b0101111, 0b011, 0b00001);
-  INSN(amoadd_d,  0b0101111, 0b011, 0b00000);
-  INSN(amoxor_d,  0b0101111, 0b011, 0b00100);
-  INSN(amoand_d,  0b0101111, 0b011, 0b01100);
-  INSN(amoor_d,   0b0101111, 0b011, 0b01000);
-  INSN(amomin_d,  0b0101111, 0b011, 0b10000);
-  INSN(amomax_d , 0b0101111, 0b011, 0b10100);
-  INSN(amominu_d, 0b0101111, 0b011, 0b11000);
-  INSN(amomaxu_d, 0b0101111, 0b011, 0b11100);
-  INSN(amocas_w,  0b0101111, 0b010, 0b00101);
-  INSN(amocas_d,  0b0101111, 0b011, 0b00101);
-#undef INSN
-
-enum operand_size { int8, int16, int32, uint32, int64 };
-
-#define INSN(NAME, op, funct3, funct7)                                              \
-  void NAME(Register Rd, Register Rs1, Aqrl memory_order = relaxed) {               \
-    unsigned insn = 0;                                                              \
-    uint32_t val = memory_order & 0x3;                                              \
-    patch((address)&insn, 6, 0, op);                                                \
-    patch((address)&insn, 14, 12, funct3);                                          \
-    patch_reg((address)&insn, 7, Rd);                                               \
-    patch_reg((address)&insn, 15, Rs1);                                             \
-    patch((address)&insn, 25, 20, 0b00000);                                         \
-    patch((address)&insn, 31, 27, funct7);                                          \
-    patch((address)&insn, 26, 25, val);                                             \
-    emit(insn);                                                                     \
+  template <AmoOperationFunct5 funct5, AmoWidthFunct3 width>
+  void amo_base(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<funct5, width>(Rd, Rs1, Rs2->raw_encoding(), memory_order);
   }
 
-  INSN(lr_w, 0b0101111, 0b010, 0b00010);
-  INSN(lr_d, 0b0101111, 0b011, 0b00010);
+ public:
 
-#undef INSN
-
-#define INSN(NAME, op, funct3, funct7)                                                      \
-  void NAME(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = relaxed) {         \
-    unsigned insn = 0;                                                                      \
-    uint32_t val = memory_order & 0x3;                                                      \
-    patch((address)&insn, 6, 0, op);                                                        \
-    patch((address)&insn, 14, 12, funct3);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                       \
-    patch_reg((address)&insn, 15, Rs2);                                                     \
-    patch_reg((address)&insn, 20, Rs1);                                                     \
-    patch((address)&insn, 31, 27, funct7);                                                  \
-    patch((address)&insn, 26, 25, val);                                                     \
-    emit(insn);                                                                             \
+  void amoadd_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_ADD, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
   }
 
-  INSN(sc_w, 0b0101111, 0b010, 0b00011);
-  INSN(sc_d, 0b0101111, 0b011, 0b00011);
-#undef INSN
+  void amoadd_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_ADD, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoadd_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_ADD, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoadd_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_ADD, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoswap_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SWAP, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoswap_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SWAP, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoswap_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SWAP, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoswap_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SWAP, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoxor_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_XOR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoxor_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_XOR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoxor_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_XOR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoxor_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_XOR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoor_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_OR, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoor_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_OR, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoor_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_OR, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoor_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_OR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoand_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_AND, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoand_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_AND, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoand_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_AND, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amoand_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_AND, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomin_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MIN, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomin_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MIN, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomin_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MIN, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomin_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MIN, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amominu_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MINU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amominu_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MINU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amominu_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MINU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amominu_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MINU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomax_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAX, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomax_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAX, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomax_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAX, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomax_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAX, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomaxu_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAXU, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomaxu_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAXU, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomaxu_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAXU, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amomaxu_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_MAXU, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+ protected:
+
+  void lr_w(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_LR, AMO_WIDTH_WORD>(Rd, Rs1, 0, memory_order);
+  }
+
+  void lr_d(Register Rd, Register Rs1, Aqrl memory_order = aqrl) {
+    amo_base<AMO_LR, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, 0, memory_order);
+  }
+
+  void sc_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SC, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void sc_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_SC, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amocas_b(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_CAS, AMO_WIDTH_BYTE>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amocas_h(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_CAS, AMO_WIDTH_HALFWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amocas_w(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_CAS, AMO_WIDTH_WORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+  void amocas_d(Register Rd, Register Rs1, Register Rs2, Aqrl memory_order = aqrl) {
+    amo_base<AMO_CAS, AMO_WIDTH_DOUBLEWORD>(Rd, Rs1, Rs2, memory_order);
+  }
+
+ public:
+
+  enum operand_size { int8, int16, int32, uint32, int64 };
 
 // Immediate Instruction
 #define INSN(NAME, op, funct3)                                                              \
@@ -1830,6 +2025,7 @@ enum VectorMask {
 
   // Vector Narrowing Integer Right Shift Instructions
   INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
+  INSN(vnsrl_wi, 0b1010111, 0b011, 0b101100);
 
 #undef INSN
 
@@ -3508,19 +3704,15 @@ public:
 // --------------------------
 // Upper Immediate Instruction
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, int32_t imm) {                                                      \
-    /* lui -> c.lui */                                                                       \
-    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {             \
-      c_lui(Rd, imm);                                                                        \
-      return;                                                                                \
-    }                                                                                        \
-    _lui(Rd, imm);                                                                           \
+  void lui(Register Rd, int32_t imm) {
+    /* lui -> c.lui */
+    if (do_compress() && (Rd != x0 && Rd != x2 && imm != 0 && is_simm18(imm))) {
+      c_lui(Rd, imm);
+      return;
+    }
+    _lui(Rd, imm);
   }
 
-  INSN(lui);
-
-#undef INSN
 
 // Cache Management Operations
 // These instruction may be turned off for user space.

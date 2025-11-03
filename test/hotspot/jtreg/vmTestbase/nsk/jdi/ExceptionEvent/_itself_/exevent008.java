@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class exevent008 {
     private ExceptionRequest eRequest;
     private ReferenceType rType, rTypeEx;
     private String cmd;
-    private int counter1 = 0, counter2 = 0;
+    private volatile boolean exception1Received = false, exception2Received = false;
     private volatile int tot_res = PASSED;
 
     public static void main (String argv[]) {
@@ -134,7 +134,6 @@ public class exevent008 {
         elThread.start();
 
         log.display("Forcing debuggee to generate caught exception");
-        counter1 = 0;
         pipe.println(COMMAND_TEST1);
 
         if (!cmd.equals(COMMAND_READY)) {
@@ -145,7 +144,6 @@ public class exevent008 {
         log.display("Exception caught");
 
         log.display("Forcing debuggee to generate uncaught exception");
-        counter1 = 0;
         pipe.println(COMMAND_TEST2);
 
         log.display("Waiting for debuggee exits due to uncaught exception");
@@ -161,12 +159,12 @@ public class exevent008 {
             return quitDebuggee();
         }
 
-        if (counter1 == 0) {
+        if (!exception1Received) {
             log.complain("TEST FAILED: caught exception " + DEBUGGEE_EXCEPTION1 +
                      " was not reported by the debugger");
             tot_res = FAILED;
         }
-        if (counter2 == 0) {
+        if (!exception2Received) {
             log.complain("TEST FAILED: uncaught exception " + DEBUGGEE_EXCEPTION2 +
                      " was not reported by the debugger");
             tot_res = FAILED;
@@ -243,13 +241,13 @@ public class exevent008 {
                                     if (exEvent.exception().referenceType().name().equals(DEBUGGEE_EXCEPTION1)) {
                                         log.display("CException event equals to expected for caught exception\n\t" +
                                                 exEvent.exception().referenceType().name());
-                                        counter1++;
-                                        log.display("\t" + "counter1 = " + counter1);
+                                        exception1Received = true;
+                                        log.display("\t" + "exception1Received = " + exception1Received);
                                     } else if (exEvent.exception().referenceType().name().equals(DEBUGGEE_EXCEPTION2)) {
                                         log.display("Exception event equals to expected for uncaught exception\n\t" +
                                                 exEvent.exception().referenceType().name());
-                                        counter2++;
-                                        log.display("\t" + "counter2 = " + counter2);
+                                        exception2Received = true;
+                                        log.display("\t" + "exception2Received = " + exception2Received);
                                     }
                                 }
                             } else {

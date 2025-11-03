@@ -53,21 +53,6 @@ public:
     ShenandoahGenerationalInitLogger logger;
     logger.print_all();
   }
-
-  void print_heap() override {
-    ShenandoahInitLogger::print_heap();
-
-    ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-
-    ShenandoahYoungGeneration* young = heap->young_generation();
-    log_info(gc, init)("Young Generation Soft Size: " EXACTFMT, EXACTFMTARGS(young->soft_max_capacity()));
-    log_info(gc, init)("Young Generation Max: " EXACTFMT, EXACTFMTARGS(young->max_capacity()));
-
-    ShenandoahOldGeneration* old = heap->old_generation();
-    log_info(gc, init)("Old Generation Soft Size: " EXACTFMT, EXACTFMTARGS(old->soft_max_capacity()));
-    log_info(gc, init)("Old Generation Max: " EXACTFMT, EXACTFMTARGS(old->max_capacity()));
-  }
-
 protected:
   void print_gc_specific() override {
     ShenandoahInitLogger::print_gc_specific();
@@ -95,7 +80,6 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
   _age_census(nullptr),
-  _evac_tracker(new ShenandoahEvacuationTracker()),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
@@ -115,18 +99,6 @@ void ShenandoahGenerationalHeap::print_init_logger() const {
   logger.print_all();
 }
 
-void ShenandoahGenerationalHeap::print_tracing_info() const {
-  ShenandoahHeap::print_tracing_info();
-
-  LogTarget(Info, gc, stats) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    ls.cr();
-    ls.cr();
-    evac_tracker()->print_global_on(&ls);
-  }
-}
-
 void ShenandoahGenerationalHeap::initialize_heuristics() {
   // Initialize global generation and heuristics even in generational mode.
   ShenandoahHeap::initialize_heuristics();
@@ -141,8 +113,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   size_t initial_capacity_old = max_capacity() - max_capacity_young;
   size_t max_capacity_old = max_capacity() - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young, initial_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old, initial_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
+  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old);
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }
@@ -183,15 +155,38 @@ void ShenandoahGenerationalHeap::stop() {
   regulator_thread()->stop();
 }
 
-void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {
+bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) {
+    return false;
+  }
+
+  if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
+    // We are marking young, this object is in young, and it is below the TAMS
+    return true;
+  }
+
+  if (is_in_old(obj)) {
+    // Card marking barriers are required for objects in the old generation
+    return true;
+  }
+
+  if (has_forwarded_objects()) {
+    // Object may have pointers that need to be updated
+    return true;
+  }
+
+  return false;
+}
+
+void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, false /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, false /* only promote regions */);
   workers()->run_task(&task);
 }
 
-void ShenandoahGenerationalHeap::promote_regions_in_place(bool concurrent) {
+void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent) {
   ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, true /* only promote regions */);
+  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, concurrent, true /* only promote regions */);
   workers()->run_task(&task);
 }
 
@@ -221,7 +216,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
+    } else if (age_census()->is_tenurable(r->age() + mark.age())) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
         return result;
@@ -329,8 +324,11 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
+  if (ShenandoahEvacTracking) {
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+  }
+
   // Copy the object:
-  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
@@ -351,8 +349,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     // safe to do this on the public copy (this is also done during concurrent mark).
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
-    // Record that the evacuation succeeded
-    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize));
+    if (ShenandoahEvacTracking) {
+      // Record that the evacuation succeeded
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    }
 
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());
@@ -360,11 +360,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
       // When copying to the old generation above, we don't care
       // about recording object age in the census stats.
       assert(target_gen == YOUNG_GENERATION, "Error");
-      // We record this census only when simulating pre-adaptive tenuring behavior, or
-      // when we have been asked to record the census at evacuation rather than at mark
-      if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
-        evac_tracker()->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
-      }
     }
     shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
@@ -762,23 +757,27 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
+  // For update refs, _generation will be young or global. Mixed collections use the young generation.
+  ShenandoahGeneration* _generation;
   ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
 
 public:
-  explicit ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahRegionIterator* regions,
-                                                    ShenandoahRegionChunkIterator* work_chunks) :
+  ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahGeneration* generation,
+                                           ShenandoahRegionIterator* regions,
+                                           ShenandoahRegionChunkIterator* work_chunks) :
           WorkerTask("Shenandoah Update References"),
+          _generation(generation),
           _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
           _work_chunks(work_chunks)
   {
-    bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
+    const bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
     log_debug(gc, remset)("Update refs, scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
       ShenandoahSuspendibleThreadSetJoiner stsj;
@@ -808,10 +807,8 @@ private:
     // If !CONCURRENT, there's no value in expanding Mutator free set
 
     ShenandoahHeapRegion* r = _regions->next();
-    // We update references for global, old, and young collections.
-    ShenandoahGeneration* const gc_generation = _heap->gc_generation();
-    shenandoah_assert_generations_reconciled();
-    assert(gc_generation->is_mark_complete(), "Expected complete marking");
+    // We update references for global, mixed, and young collections.
+    assert(_generation->is_mark_complete(), "Expected complete marking");
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     bool is_mixed = _heap->collection_set()->has_old_regions();
     while (r != nullptr) {
@@ -819,19 +816,15 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          region_progress = true;
         } else if (r->is_old()) {
-          if (gc_generation->is_global()) {
+          if (_generation->is_global()) {
 
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-            region_progress = true;
           }
           // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
-          // Don't bother to report pacing progress in this case.
         } else {
           // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
           // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
@@ -849,10 +842,6 @@ private:
         }
       }
 
-      if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
-      }
-
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
       }
@@ -860,7 +849,7 @@ private:
       r = _regions->next();
     }
 
-    if (!gc_generation->is_global()) {
+    if (_generation->is_young()) {
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 
@@ -907,10 +896,6 @@ private:
           size_t clusters = assignment._chunk_size / cluster_size;
           assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
           scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
-        }
-
-        if (ShenandoahPacing) {
-          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
@@ -978,15 +963,15 @@ private:
   }
 };
 
-void ShenandoahGenerationalHeap::update_heap_references(bool concurrent) {
+void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* generation, bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
   if (concurrent) {
-    ShenandoahGenerationalUpdateHeapRefsTask<true> task(&_update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<true> task(generation, &_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   } else {
-    ShenandoahGenerationalUpdateHeapRefsTask<false> task(&_update_refs_iterator, &work_list);
+    ShenandoahGenerationalUpdateHeapRefsTask<false> task(generation, &_update_refs_iterator, &work_list);
     workers()->run_task(&task);
   }
 
@@ -1061,7 +1046,7 @@ public:
 
 void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
   ShenandoahSynchronizePinnedRegionStates pins;
-  ShenandoahUpdateRegionAges ages(active_generation()->complete_marking_context());
+  ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
   parallel_heap_region_iterate(&cl);
 }
@@ -1104,6 +1089,10 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
+
+  log_info(gc, cset)("Concurrent cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
+                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
 
   TransferResult result;
   {

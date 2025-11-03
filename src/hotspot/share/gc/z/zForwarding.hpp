@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ private:
   const size_t           _object_alignment_shift;
   const AttachedArray    _entries;
   ZPage* const           _page;
+  const uint32_t         _partition_id;
   const ZPageAge         _from_age;
   const ZPageAge         _to_age;
   volatile bool          _claimed;
@@ -107,6 +108,8 @@ public:
   zoffset_end end() const;
   size_t size() const;
   size_t object_alignment_shift() const;
+
+  uint32_t partition_id() const;
 
   bool is_promotion() const;
 

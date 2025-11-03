@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,17 +78,17 @@ define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool,     OptoScheduling,               false);
 define_pd_global(bool,     IdealizeClearArrayNode,       true);
 
-define_pd_global(uintx,    InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(uintx,    ReservedCodeCacheSize,        48*M);
-define_pd_global(uintx,    NonProfiledCodeHeapSize,      21*M);
-define_pd_global(uintx,    ProfiledCodeHeapSize,         22*M);
-define_pd_global(uintx,    NonNMethodCodeHeapSize,       5*M  );
-define_pd_global(uintx,    CodeCacheExpansionSize,       64*K);
+define_pd_global(size_t,   InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(size_t,   ReservedCodeCacheSize,        48*M);
+define_pd_global(size_t,   NonProfiledCodeHeapSize,      21*M);
+define_pd_global(size_t,   ProfiledCodeHeapSize,         22*M);
+define_pd_global(size_t,   NonNMethodCodeHeapSize,       5*M  );
+define_pd_global(size_t,   CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                       128ULL*G);
-define_pd_global(uintx,    CodeCacheMinBlockLength,      6);
-define_pd_global(uintx,    CodeCacheMinimumUseSpace,     400*K);
+define_pd_global(size_t,   CodeCacheMinBlockLength,      6);
+define_pd_global(size_t,   CodeCacheMinimumUseSpace,     400*K);
 
 define_pd_global(bool,     TrapBasedRangeChecks,          true);
 

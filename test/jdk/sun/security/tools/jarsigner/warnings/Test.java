@@ -149,7 +149,7 @@ public abstract class Test {
             + "This algorithm will be disabled in a future update.";
 
     static final String WEAK_KEY_WARNING
-            = "It will be disabled in a future update.";
+            = "will be disabled in a future update.";
 
     static final String JAR_SIGNED = "jar signed.";
 

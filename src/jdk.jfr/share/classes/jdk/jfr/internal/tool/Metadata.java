@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ final class Metadata extends Command {
         try (PrintWriter pw = new PrintWriter(System.out, false, UTF_8)) {
             MetadataWriter metadataWriter = new MetadataWriter(pw, showIds);
             if (!filters.isEmpty()) {
-                filter =  Filters.matchAny(filters);
+                filter = Filters.matchAll(filters);
             }
 
             List<Type> types = findTypes(file);

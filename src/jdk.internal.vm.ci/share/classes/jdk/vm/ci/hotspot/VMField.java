@@ -66,7 +66,7 @@ public final class VMField {
      * Creates a description of a non-static field.
      */
     @VMEntryPoint
-    VMField(String name, String type, long offset, long address, Object value) {
+    public VMField(String name, String type, long offset, long address, Object value) {
         this.name = name;
         this.type = type;
         this.offset = offset;

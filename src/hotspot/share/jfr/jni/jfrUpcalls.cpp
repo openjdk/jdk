@@ -22,12 +22,16 @@
  *
  */
 
+#include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
+#include "jfr/support/methodtracer/jfrTracedMethod.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
@@ -36,7 +40,9 @@
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -47,6 +53,10 @@ static Symbol* bytes_for_eager_instrumentation_sym = nullptr;
 static Symbol* bytes_for_eager_instrumentation_sig_sym = nullptr;
 static Symbol* unhide_internal_types_sym = nullptr;
 static Symbol* unhide_internal_types_sig_sym = nullptr;
+static Symbol* on_method_trace_sym = nullptr;
+static Symbol* on_method_trace_sig_sym = nullptr;
+static Symbol* publish_method_timers_for_klass_sym = nullptr;
+static Symbol* publish_method_timers_for_klass_sig_sym = nullptr;
 
 static bool initialize(TRAPS) {
   static bool initialized = false;
@@ -59,7 +69,11 @@ static bool initialize(TRAPS) {
     bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZZLjava/lang/Class;[B)[B");
     unhide_internal_types_sym = SymbolTable::new_permanent_symbol("unhideInternalTypes");
     unhide_internal_types_sig_sym = SymbolTable::new_permanent_symbol("()V");
-    initialized = unhide_internal_types_sig_sym != nullptr;
+    on_method_trace_sym = SymbolTable::new_permanent_symbol("onMethodTrace");
+    on_method_trace_sig_sym = SymbolTable::new_permanent_symbol("(Ljava/lang/Module;Ljava/lang/ClassLoader;Ljava/lang/String;[B[J[Ljava/lang/String;[Ljava/lang/String;[I)[B");
+    publish_method_timers_for_klass_sym = SymbolTable::new_permanent_symbol("publishMethodTimersForClass");
+    publish_method_timers_for_klass_sig_sym = SymbolTable::new_permanent_symbol("(J)V");
+    initialized = publish_method_timers_for_klass_sig_sym != nullptr;
   }
   return initialized;
 }
@@ -206,4 +220,104 @@ bool JfrUpcalls::unhide_internal_types(TRAPS) {
     return false;
   }
   return true;
+}
+
+// Caller needs ResourceMark
+ClassFileStream* JfrUpcalls::on_method_trace(InstanceKlass* ik, const ClassFileStream* stream, GrowableArray<JfrTracedMethod>* methods, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  assert(stream != nullptr, "invariant");
+  assert(methods != nullptr, "invariant");
+  assert(methods->is_nonempty(), "invariant");
+  initialize(THREAD);
+  Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_NULL);
+  assert(klass != nullptr, "invariant");
+
+  HandleMark hm(THREAD);
+
+  ModuleEntry* module_entry = ik->module();
+  oop module = nullptr;
+  if (module_entry != nullptr) {
+    module = module_entry->module_oop();
+  }
+  instanceHandle module_handle(THREAD, (instanceOop)module);
+
+  // ClassLoader
+  oop class_loader = ik->class_loader();
+  instanceHandle class_loader_handle(THREAD, (instanceOop)class_loader);
+
+  // String class name
+  Handle class_name_h = java_lang_String::create_from_symbol(ik->name(), CHECK_NULL);
+
+  // new byte[]
+  int size = stream->length();
+  typeArrayOop bytecode_array = oopFactory::new_byteArray(size, CHECK_NULL);
+  typeArrayHandle h_bytecode_array(THREAD, bytecode_array);
+
+  // Copy ClassFileStream bytes to byte[]
+  const jbyte* src = reinterpret_cast<const jbyte*>(stream->buffer());
+  ArrayAccess<>::arraycopy_from_native(src, bytecode_array, typeArrayOopDesc::element_offset<jbyte>(0), size);
+
+  int method_count = methods->length();
+
+  // new long[method_count]
+  typeArrayOop id_array = oopFactory::new_longArray(method_count, CHECK_NULL);
+  typeArrayHandle h_id_array(THREAD, id_array);
+
+  // new String[method_count]
+  objArrayOop name_array = oopFactory::new_objArray(vmClasses::String_klass(), method_count, CHECK_NULL);
+  objArrayHandle h_name_array(THREAD, name_array);
+
+  // new String[method_count]
+  objArrayOop signature_array = oopFactory::new_objArray(vmClasses::String_klass(), method_count, CHECK_NULL);
+  objArrayHandle h_signature_array(THREAD, signature_array);
+
+   // new int[method_count]
+  typeArrayOop modification_array = oopFactory::new_intArray(method_count, CHECK_NULL);
+  typeArrayHandle h_modification_array(THREAD, modification_array);
+
+  // Fill in arrays
+  for (int i = 0; i < method_count; i++) {
+    JfrTracedMethod method = methods->at(i);
+    h_id_array->long_at_put(i, method.id());
+    Handle name = java_lang_String::create_from_symbol(method.name(), CHECK_NULL);
+    h_name_array->obj_at_put(i, name());
+    Handle signature = java_lang_String::create_from_symbol(method.signature(), CHECK_NULL);
+    h_signature_array->obj_at_put(i, signature());
+    h_modification_array->int_at_put(i, method.modification());
+  }
+
+  // Call JVMUpcalls::onMethodTrace
+  JavaCallArguments args;
+  JavaValue result(T_ARRAY);
+  args.push_oop(module_handle);
+  args.push_oop(class_loader_handle);
+  args.push_oop(class_name_h);
+  args.push_oop(h_bytecode_array);
+  args.push_oop(h_id_array);
+  args.push_oop(h_name_array);
+  args.push_oop(h_signature_array);
+  args.push_oop(h_modification_array);
+  JavaCalls::call_static(&result, klass, on_method_trace_sym, on_method_trace_sig_sym, &args, CHECK_NULL);
+
+  oop return_object = result.get_oop();
+  if (return_object != nullptr) {
+    assert(return_object->is_typeArray(), "invariant");
+    assert(TypeArrayKlass::cast(return_object->klass())->element_type() == T_BYTE, "invariant");
+    typeArrayOop byte_array = typeArrayOop(return_object);
+    int length = byte_array->length();
+    u1* buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, length);
+    ArrayAccess<>::arraycopy_to_native<>(byte_array, typeArrayOopDesc::element_offset<jbyte>(0), buffer, length);
+    return new ClassFileStream(buffer, length, stream->source(), stream->from_boot_loader_modules_image());
+  }
+  return nullptr;
+}
+
+void JfrUpcalls::publish_method_timers_for_klass(traceid klass_id, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  Klass* const klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK);
+  assert(klass != nullptr, "invariant");
+  JavaCallArguments args;
+  JavaValue result(T_VOID);
+  args.push_long(static_cast<jlong>(klass_id));
+  JavaCalls::call_static(&result, klass, publish_method_timers_for_klass_sym, publish_method_timers_for_klass_sig_sym, &args, CHECK);
 }
