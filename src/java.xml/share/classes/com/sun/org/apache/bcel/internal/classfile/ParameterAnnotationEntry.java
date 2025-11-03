@@ -37,22 +37,28 @@ public class ParameterAnnotationEntry implements Node {
 
     static final ParameterAnnotationEntry[] EMPTY_ARRAY = {};
 
-    public static ParameterAnnotationEntry[] createParameterAnnotationEntries(final Attribute[] attrs) {
+    public static ParameterAnnotationEntry[] createParameterAnnotationEntries(final Attribute[] attributes) {
+        if (attributes == null) {
+            return EMPTY_ARRAY;
+        }
         // Find attributes that contain parameter annotation data
-        final List<ParameterAnnotationEntry> accumulatedAnnotations = new ArrayList<>(attrs.length);
-        for (final Attribute attribute : attrs) {
+        final List<ParameterAnnotationEntry> accumulatedAnnotations = new ArrayList<>(attributes.length);
+        for (final Attribute attribute : attributes) {
             if (attribute instanceof ParameterAnnotations) {
                 final ParameterAnnotations runtimeAnnotations = (ParameterAnnotations) attribute;
-                Collections.addAll(accumulatedAnnotations, runtimeAnnotations.getParameterAnnotationEntries());
+                final ParameterAnnotationEntry[] parameterAnnotationEntries = runtimeAnnotations.getParameterAnnotationEntries();
+                if (parameterAnnotationEntries != null) {
+                    Collections.addAll(accumulatedAnnotations, parameterAnnotationEntries);
+                }
             }
         }
-        return accumulatedAnnotations.toArray(ParameterAnnotationEntry.EMPTY_ARRAY);
+        return accumulatedAnnotations.toArray(EMPTY_ARRAY);
     }
 
     private final AnnotationEntry[] annotationTable;
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param input Input stream
      * @throws IOException if an I/O error occurs.

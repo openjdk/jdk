@@ -110,10 +110,9 @@ void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest&
     // failure (degenerated cycle), or old marking was cancelled to run a young collection.
     // In either case, the correct generation for the next cycle can be determined by
     // the cancellation cause.
-    request.cause = _heap->cancelled_cause();
+    request.cause = _heap->clear_cancellation(GCCause::_shenandoah_concurrent_gc);
     if (request.cause == GCCause::_shenandoah_concurrent_gc) {
       request.generation = _heap->young_generation();
-      _heap->clear_cancelled_gc(false);
     }
   } else {
     request.cause = _requested_gc_cause;
@@ -245,7 +244,9 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 
   GCIdMark gc_id_mark;
 
-  _heap->reset_bytes_allocated_since_gc_start();
+  if (gc_mode() != servicing_old) {
+    _heap->reset_bytes_allocated_since_gc_start();
+  }
 
   MetaspaceCombinedStats meta_sizes = MetaspaceUtils::get_combined_statistics();
 
@@ -289,11 +290,11 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
   if (!_heap->cancelled_gc()) {
     notify_gc_waiters();
     notify_alloc_failure_waiters();
+    // Report current free set state at the end of cycle if normal completion.
+    // Do not report if cancelled, since we may not have rebuilt free set and content is unreliable.
+    _heap->free_set()->log_status_under_lock();
   }
 
-  // Report current free set state at the end of cycle, whether
-  // it is a normal completion, or the abort.
-  _heap->free_set()->log_status_under_lock();
 
   // Notify Universe about new heap usage. This has implications for
   // global soft refs policy, and we better report it every time heap

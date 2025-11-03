@@ -26,6 +26,7 @@
  * @bug 8087112
  * @requires os.family != "windows" | ( os.name != "Windows 10" & os.name != "Windows Server 2016"
  *                                      & os.name != "Windows Server 2019" )
+ * @requires os.family != "aix"
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -42,6 +43,29 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=5
  *                     -Djdk.httpclient.redirects.retrylimit=6
  *                     -Djdk.httpclient.quic.defaultMTU=16336
+ *                      H3SimpleGet
+ */
+
+/*
+ * @test id=with-continuations-aix
+ * @bug 8087112
+ * @requires os.family == "aix"
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     H3SimpleGet
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.httpclient.retryOnStreamlimit=20
+ *                     -Djdk.httpclient.redirects.retrylimit=21
+ *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
+ *                     H3SimpleGet
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     -Dsimpleget.requests=150
+ *                     -Dsimpleget.chunks=16384
+ *                     -Djdk.httpclient.retryOnStreamlimit=5
+ *                     -Djdk.httpclient.redirects.retrylimit=6
+ *                     -Djdk.httpclient.quic.defaultMTU=8192
  *                      H3SimpleGet
  */
 
@@ -75,6 +99,7 @@
 /*
  * @test id=useNioSelector
  * @bug 8087112
+ * @requires os.family != "aix"
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
@@ -94,6 +119,32 @@
  *                     -Djdk.httpclient.retryOnStreamlimit=5
  *                     -Djdk.httpclient.redirects.retrylimit=6
  *                     -Djdk.httpclient.quic.defaultMTU=16336
+ *                      H3SimpleGet
+ */
+
+/*
+ * @test id=useNioSelector-aix
+ * @bug 8087112
+ * @requires os.family == "aix"
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.internal.httpclient.quic.useNioSelector=true
+ *                     H3SimpleGet
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.internal.httpclient.quic.useNioSelector=true
+ *                     -Djdk.httpclient.retryOnStreamlimit=20
+ *                     -Djdk.httpclient.redirects.retrylimit=21
+ *                     -Dsimpleget.repeat=1 -Dsimpleget.chunks=1 -Dsimpleget.requests=1000
+ *                     H3SimpleGet
+ * @run testng/othervm/timeout=480 -XX:+HeapDumpOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError
+ *                     -Djdk.internal.httpclient.quic.useNioSelector=true
+ *                     -Dsimpleget.requests=150
+ *                     -Dsimpleget.chunks=16384
+ *                     -Djdk.httpclient.retryOnStreamlimit=5
+ *                     -Djdk.httpclient.redirects.retrylimit=6
+ *                     -Djdk.httpclient.quic.defaultMTU=8192
  *                      H3SimpleGet
  */
 
