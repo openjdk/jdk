@@ -228,38 +228,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
   }
 
-  // If the region is a Loop, we are removing the old n,
-  // and need to yank it from the _body. If any phi we
-  // just split through now has no use any more, it also
-  // has to be removed.
-  IdealLoopTree* region_loop = get_loop(region);
-  if (region->is_Loop() && region_loop->is_innermost()) {
-    region_loop->_body.yank(n);
-    for (uint j = 1; j < n->req(); j++) {
-      PhiNode* phi = n->in(j)->isa_Phi();
-      // Check that phi belongs to the region and only has n as a use.
-      if (phi != nullptr && phi->in(0) == region) {
-        bool found_n = false;
-        bool found_other = false;
-        for (DUIterator_Fast kmax, k = phi->fast_outs(kmax); k < kmax; k++) {
-          Node* u = phi->fast_out(k);
-          if (u == n) {
-            // Single and multiple use are allowed:
-            //   n = ConvF2I(phi)
-            //   n = AddI(phi, phi)
-            found_n = true;
-          } else {
-            found_other = true;
-          }
-        }
-        if (found_n && !found_other) {
-          assert(get_ctrl(phi) == region, "sanity");
-          assert(get_ctrl(n) == region, "sanity");
-          region_loop->_body.yank(phi);
-        }
-      }
-    }
-  }
+  split_thru_phi_yank_old_nodes(n, region);
   _igvn.replace_node(n, phi);
 
 #ifndef PRODUCT
@@ -270,6 +239,28 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 #endif // !PRODUCT
 
   return phi;
+}
+
+// If the region is a Loop, we are removing the old n,
+// and need to yank it from the _body. If any phi we
+// just split through now has no use any more, it also
+// has to be removed.
+void PhaseIdealLoop::split_thru_phi_yank_old_nodes(Node* n, Node* region) {
+  IdealLoopTree* region_loop = get_loop(region);
+  if (region->is_Loop() && region_loop->is_innermost()) {
+    region_loop->_body.yank(n);
+    for (uint j = 1; j < n->req(); j++) {
+      PhiNode* phi = n->in(j)->isa_Phi();
+      // Check that phi belongs to the region and only has n as a use.
+      if (phi != nullptr &&
+          phi->in(0) == region &&
+          phi->unique_multiple_edges_out_or_null() == n) {
+        assert(get_ctrl(phi) == region, "sanity");
+        assert(get_ctrl(n) == region, "sanity");
+        region_loop->_body.yank(phi);
+      }
+    }
+  }
 }
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
