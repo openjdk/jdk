@@ -339,15 +339,15 @@ public final class FileServerHandler implements HttpHandler {
             long start, end;
             try {
                 if (startStr.isEmpty()) {  // "-<suffix-length>"
-                    long suffixLength = Long.parseLong(endStr, 10);
+                    long suffixLength = Long.parseLong(endStr);
                     if (suffixLength <= 0) {
                         return null;
                     }
                     start = Math.max(0, fileSize - suffixLength);
                     end = fileSize - 1;
                 } else {  // "<start>-<end>" or "<start>-"
-                    start = Long.parseLong(startStr, 10);
-                    end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr, 10);
+                    start = Long.parseLong(startStr);
+                    end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr);
                     if (end >= fileSize) {
                         end = fileSize - 1;
                     }
