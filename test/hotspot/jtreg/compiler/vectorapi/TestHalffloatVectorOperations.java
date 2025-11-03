@@ -90,7 +90,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.ADD_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.ADD_VHF, " >0 "},
@@ -120,7 +119,6 @@ public class TestHalffloatVectorOperations {
 
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.SUB_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.SUB_VHF, " >0 "},
@@ -150,7 +148,6 @@ public class TestHalffloatVectorOperations {
 
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MUL_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.MUL_VHF, " >0 "},
@@ -179,7 +176,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.DIV_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.DIV_VHF, " >0 "},
@@ -208,7 +204,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MIN_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.MIN_VHF, " >0 "},
@@ -237,7 +232,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MAX_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.MAX_VHF, " >0 "},
@@ -266,7 +260,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.SQRT_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.SQRT_VHF, " >0 "},
@@ -292,7 +285,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
@@ -324,7 +316,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
@@ -356,7 +347,6 @@ public class TestHalffloatVectorOperations {
 
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
@@ -389,7 +379,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.FMA_VHF, " 0 "},
@@ -426,7 +415,6 @@ public class TestHalffloatVectorOperations {
 
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.ADD_VHF, " >0 "},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true", "sve", "true"})
     @IR(counts = {IRNode.ADD_VHF, " >0 "},
@@ -454,7 +442,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.SUB_VHF, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void vectorSubConstInputFloat16() {
@@ -480,7 +467,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MUL_VHF, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void vectorMulConstantInputFloat16() {
@@ -506,7 +492,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.DIV_VHF, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void vectorDivConstantInputFloat16() {
@@ -532,7 +517,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MAX_VHF, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void vectorMaxConstantInputFloat16() {
@@ -558,7 +542,6 @@ public class TestHalffloatVectorOperations {
     }
 
     @Test
-    @Warmup(50)
     @IR(counts = {IRNode.MIN_VHF, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void vectorMinConstantInputFloat16() {
