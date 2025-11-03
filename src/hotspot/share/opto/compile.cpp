@@ -114,7 +114,12 @@ static const char* const optimization_event_names[OptEvent_Count] = {
   "Merge Stores",
   "Loop Predication",
   "Auto Vectorization",
-  "Partial Peeling"
+  "Partial Peeling",
+  "Iterative GVN Iterations",
+  "Loop Iteration Split",
+  "Reassociate Invariants",
+  "Loop Intrinsification",
+  "Peephole"
 };
 #endif
 

@@ -499,14 +499,25 @@ Node* IdealLoopTree::reassociate(Node* n1, PhaseIdealLoop *phase) {
 //---------------------reassociate_invariants-----------------------------
 // Reassociate invariant expressions:
 void IdealLoopTree::reassociate_invariants(PhaseIdealLoop *phase) {
+#ifndef PRODUCT
+  bool changed = false;
+#endif
   for (int i = _body.size() - 1; i >= 0; i--) {
     Node *n = _body.at(i);
     for (int j = 0; j < 5; j++) {
       Node* nn = reassociate(n, phase);
       if (nn == nullptr) break;
+#ifndef PRODUCT
+      changed = true;
+#endif
       n = nn; // again
     }
   }
+#ifndef PRODUCT
+  if (changed) {
+    phase->C->record_optimization_event(OptEvent_ReassociateInvariants);
+  }
+#endif
 }
 
 //------------------------------policy_peeling---------------------------------
@@ -3481,7 +3492,11 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     } else if (phase->duplicate_loop_backedge(this, old_new)) {
       return false;
     } else if (_head->is_LongCountedLoop()) {
-      phase->create_loop_nest(this, old_new);
+      if (phase->create_loop_nest(this, old_new)) {
+#ifndef PRODUCT
+        phase->C->record_optimization_event(OptEvent_LoopIterationSplit);
+#endif
+      }
     }
     return true;
   }
@@ -3562,6 +3577,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   if (should_rce || should_unroll) {
     if (cl->is_normal_loop()) { // Convert to 'pre/main/post' loops
       if (should_rce_long && phase->create_loop_nest(this, old_new)) {
+#ifndef PRODUCT
+        phase->C->record_optimization_event(OptEvent_LoopIterationSplit);
+#endif
         return true;
       }
       uint estimate = est_loop_clone_sz(3);
@@ -3580,6 +3598,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       }
 
       phase->insert_pre_post_loops(this, old_new, peel_only);
+#ifndef PRODUCT
+      phase->C->record_optimization_event(OptEvent_LoopIterationSplit);
+#endif
     }
     // Adjust the pre- and main-loop limits to let the pre and  post loops run
     // with full checks, but the main-loop with no checks.  Remove said checks
@@ -3606,7 +3627,11 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       }
     }
     if (should_rce_long) {
-      phase->create_loop_nest(this, old_new);
+      if (phase->create_loop_nest(this, old_new)) {
+#ifndef PRODUCT
+        phase->C->record_optimization_event(OptEvent_LoopIterationSplit);
+#endif
+      }
     }
   }
   return true;
@@ -3661,6 +3686,11 @@ bool PhaseIdealLoop::do_intrinsify_fill() {
     IdealLoopTree* lpt = iter.current();
     changed |= intrinsify_fill(lpt);
   }
+#ifndef PRODUCT
+  if (changed) {
+    C->record_optimization_event(OptEvent_LoopIntrinsification);
+  }
+#endif
   return changed;
 }
 
