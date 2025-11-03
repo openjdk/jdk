@@ -202,6 +202,7 @@ public class EventNames {
     public static final String FileWrite = PREFIX + "FileWrite";
     public static final String SocketRead = PREFIX + "SocketRead";
     public static final String SocketWrite = PREFIX + "SocketWrite";
+    public static final String DnsLookup = PREFIX + "DnsLookup";
     public static final String ExceptionStatistics = PREFIX + "ExceptionStatistics";
     public static final String JavaExceptionThrow = PREFIX + "JavaExceptionThrow";
     public static final String JavaErrorThrow = PREFIX + "JavaErrorThrow";

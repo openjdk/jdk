@@ -57,6 +57,7 @@ public final class JDKEvents {
         // jdk.internal.event.* classes need their mirror
         // event class to be listed in the MirrorEvents class.
         jdk.internal.event.DeserializationEvent.class,
+        jdk.internal.event.DnsLookupEvent.class,
         jdk.internal.event.ErrorThrownEvent.class,
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,

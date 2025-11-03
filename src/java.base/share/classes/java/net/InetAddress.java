@@ -57,6 +57,7 @@ import java.util.stream.Stream;
 import jdk.internal.util.Exceptions;
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.DnsLookupEvent;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
@@ -982,14 +983,28 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         public InetAddress[] get() {
             long now = System.nanoTime();
             if ((refreshTime - now) < 0L && lookupLock.tryLock()) {
+                // JFR event tracking for background DNS refresh
+                long jfrStart = DnsLookupEvent.enabled() ? DnsLookupEvent.timestamp() : 0L;
                 try {
                     // cachePolicy is in [s] - we need [ns]
                     refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
                     // getAddressesFromNameService returns non-empty/non-null value
-                    inetAddresses = getAddressesFromNameService(host);
+                    InetAddress[] refreshedAddresses = getAddressesFromNameService(host);
+                    
+                    // Emit JFR event for successful background DNS refresh
+                    if (DnsLookupEvent.enabled()) {
+                        DnsLookupEvent.offer(jfrStart, host, refreshedAddresses, true);
+                    }
+                    
+                    inetAddresses = refreshedAddresses;
                     // don't update the "expirySet", will do that later
                     staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
-                } catch (UnknownHostException ignore) {
+                } catch (UnknownHostException uhe) {
+                    // Emit JFR event for failed background DNS refresh
+                    if (DnsLookupEvent.enabled() && jfrStart != 0L) {
+                        DnsLookupEvent.offer(jfrStart, host, uhe.getMessage());
+                    }
+                    // Ignore exception, continue using stale data
                 } finally {
                     lookupLock.unlock();
                 }
@@ -1052,6 +1067,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 }
                 // still us ?
                 if (addresses == this) {
+                    // JFR event tracking for actual DNS query
+                    long jfrStart = DnsLookupEvent.enabled() ? DnsLookupEvent.timestamp() : 0L;
+                    
                     // lookup name services
                     InetAddress[] inetAddresses;
                     UnknownHostException ex;
@@ -1060,10 +1078,20 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                         inetAddresses = getAddressesFromNameService(host);
                         ex = null;
                         cachePolicy = InetAddressCachePolicy.get();
+                        
+                        // Emit JFR event for successful DNS query
+                        if (DnsLookupEvent.enabled()) {
+                            DnsLookupEvent.offer(jfrStart, host, inetAddresses, true);
+                        }
                     } catch (UnknownHostException uhe) {
                         inetAddresses = null;
                         ex = uhe;
                         cachePolicy = InetAddressCachePolicy.getNegative();
+                        
+                        // Emit JFR event for failed DNS query
+                        if (DnsLookupEvent.enabled()) {
+                            DnsLookupEvent.offer(jfrStart, host, uhe.getMessage());
+                        }
                     }
                     // remove or replace us with cached addresses according to cachePolicy
                     if (cachePolicy == InetAddressCachePolicy.NEVER) {
@@ -1699,6 +1727,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
 
         // ask Addresses to get an array of InetAddress(es) and clone it
+        // Note: JFR events for DNS queries are recorded in NameServiceAddresses.get()
+        // and ValidCachedLookup.get(), only for actual DNS queries, not cache hits
         return addrs.get().clone();
     }
 

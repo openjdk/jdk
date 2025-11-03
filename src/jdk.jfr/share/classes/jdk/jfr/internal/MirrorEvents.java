@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.jfr.events.DeserializationEvent;
+import jdk.jfr.events.DnsLookupEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
 import jdk.jfr.events.ExceptionThrownEvent;
@@ -58,6 +59,7 @@ final class MirrorEvents {
     // Add mirror event mapping here. See MirrorEvent class for details.
     static {
         register("jdk.internal.event.DeserializationEvent", DeserializationEvent.class);
+        register("jdk.internal.event.DnsLookupEvent", DnsLookupEvent.class);
         register("jdk.internal.event.FileForceEvent", FileForceEvent.class);
         register("jdk.internal.event.FileReadEvent", FileReadEvent.class);
         register("jdk.internal.event.FileWriteEvent", FileWriteEvent.class);
