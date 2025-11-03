@@ -855,6 +855,28 @@ public:
   }
 };
 
+void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* ik) {
+  bool need_to_link = false;
+  {
+    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+    ExclusionCheckCandidates candidates(ik);
+
+    candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
+      if (!k->is_linked()) {
+        need_to_link = true;
+      }
+    });
+  }
+  if (need_to_link) {
+    JavaThread* THREAD = JavaThread::current();
+    if (log_is_enabled(Info, aot, link)) {
+      ResourceMark rm(THREAD);
+      log_info(aot, link)("Link all loaded classes for %s", ik->external_name());
+    }
+    AOTMetaspace::link_all_loaded_classes(THREAD);
+  }
+}
+
 // Returns true if the class should be excluded. This can be called by
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
 // When called before the safepoint, we need to link the class so that
@@ -878,27 +900,19 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
     InstanceKlass* ik = InstanceKlass::cast(k);
 
     if (!SafepointSynchronize::is_at_safepoint()) {
-      if (!ik->is_linked()) {
-        // should_be_excluded_impl() below doesn't link unlinked classes. We come
-        // here only when we are trying to aot-link constant pool entries, so
-        // we'd better link the class.
-        JavaThread* THREAD = JavaThread::current();
-        ik->link_class(THREAD);
-        if (HAS_PENDING_EXCEPTION) {
-          CLEAR_PENDING_EXCEPTION;
-          return true; // linking failed -- let's exclude it
+      {
+        // fast path
+        MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+        DumpTimeClassInfo* p = get_info_locked(ik);
+        if (p->has_checked_exclusion()) {
+          return p->is_excluded();
         }
-
-        // Also link any classes that were loaded for the verification of ik or its supertypes.
-        // Otherwise we might miss the verification constraints of those classes.
-        AOTMetaspace::link_all_loaded_classes(THREAD);
       }
+
+      link_all_exclusion_check_candidates(ik);
 
       MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
       DumpTimeClassInfo* p = get_info_locked(ik);
-      if (p->is_excluded()) {
-        return true;
-      }
       return should_be_excluded_impl(ik, p);
     } else {
       // When called within the CDS safepoint, the correctness of this function
@@ -912,7 +926,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
 
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in AOTMetaspace::link_class_for_cds().
-      // Can't take the lock as we are in safepoint.
+      // Don't take DumpTimeTable_lock as we are in safepoint.
       DumpTimeClassInfo* p = _dumptime_table->get(ik);
       if (p->is_excluded()) {
         return true;
