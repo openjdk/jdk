@@ -253,7 +253,7 @@ class MultiExchange<T> implements Cancelable {
                 .map(ConnectTimeoutTracker::getRemaining);
     }
 
-    public void cancelTimer() {
+    void cancelTimer() {
         if (responseTimerEvent != null) {
             client.cancelTimer(responseTimerEvent);
             responseTimerEvent = null;
