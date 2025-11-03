@@ -481,4 +481,14 @@ public class SequencedMapFactories {
         SequencedMap<Number,Number> map = SequencedMap.ofEntries(e1, e2);
         assertEquals(map.size(), 2);
     }
+
+    // Argument validations
+    @Test
+    public void ofEntriesModifiedLater() {
+        var entry = new AbstractMap.SimpleEntry<>(1, 2);
+        var map = SequencedMap.ofEntries(entry);
+        entry.setValue(5);
+        assertEquals((int) entry.getValue(), 5);
+        assertEquals((int) map.get(1), 2);
+    }
 }
