@@ -1,3 +1,4 @@
+
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
@@ -99,8 +100,8 @@ public:
   }
 };
 
-ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity)
-  : ShenandoahGeneration(OLD, max_queues, max_capacity),
+ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues)
+  : ShenandoahGeneration(OLD, max_queues),
     _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
     _old_heuristics(nullptr),
     _region_balance(0),
@@ -118,6 +119,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
 {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
@@ -207,6 +209,8 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
       if (can_promote(actual_size)) {
         // Assume the entirety of this PLAB will be used for promotion.  This prevents promotion from overreach.
         // When we retire this plab, we'll unexpend what we don't really use.
+        log_debug(gc, plab)("Thread can promote using PLAB of %zu bytes. Expended: %zu, available: %zu",
+                            actual_size, get_promoted_expended(), get_promoted_reserve());
         expend_promoted(actual_size);
         ShenandoahThreadLocalData::enable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, actual_size);
@@ -214,9 +218,12 @@ ShenandoahOldGeneration::configure_plab_for_current_thread(const ShenandoahAlloc
         // Disable promotions in this thread because entirety of this PLAB must be available to hold old-gen evacuations.
         ShenandoahThreadLocalData::disable_plab_promotions(thread);
         ShenandoahThreadLocalData::set_plab_actual_size(thread, 0);
+        log_debug(gc, plab)("Thread cannot promote using PLAB of %zu bytes. Expended: %zu, available: %zu, mixed evacuations? %s",
+                            actual_size, get_promoted_expended(), get_promoted_reserve(), BOOL_TO_STR(ShenandoahHeap::heap()->collection_set()->has_old_regions()));
       }
     } else if (req.is_promotion()) {
       // Shared promotion.
+      log_debug(gc, plab)("Expend shared promotion of %zu bytes", actual_size);
       expend_promoted(actual_size);
     }
   }
@@ -403,12 +410,20 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
         ShenandoahPhaseTimings::final_rebuild_freeset :
         ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    size_t cset_young_regions, cset_old_regions;
+    size_t young_trash_regions, old_trash_regions;
     size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(cset_young_regions, cset_old_regions, first_old, last_old, num_old);
-    // This is just old-gen completion.  No future budgeting required here.  The only reason to rebuild the freeset here
-    // is in case there was any immediate old garbage identified.
-    heap->free_set()->finish_rebuild(cset_young_regions, cset_old_regions, num_old);
+    heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
+    // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
+    // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand
+    // the OldCollector reserve in order to make room for these mixed evacuations.
+    assert(ShenandoahHeap::heap()->mode()->is_generational(), "sanity");
+    assert(young_trash_regions == 0, "sanity");
+    ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_trash_regions);
+    gen_heap->compute_old_generation_balance(allocation_runway, old_trash_regions);
+
+    heap->free_set()->finish_rebuild(young_trash_regions, old_trash_regions, num_old);
   }
 }
 
@@ -613,11 +628,6 @@ void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, boo
   // do this in batch, in a background GC thread than to try to carefully dirty only cards
   // that hold interesting pointers right now.
   _card_scan->mark_range_as_dirty(obj, words);
-
-  if (promotion) {
-    // This evacuation was a promotion, track this as allocation against old gen
-    increase_allocated(words * HeapWordSize);
-  }
 }
 
 bool ShenandoahOldGeneration::has_unprocessed_collection_candidates() {
@@ -722,4 +732,39 @@ void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
 
 void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
   _card_scan->mark_card_as_dirty((HeapWord*)location);
+}
+
+size_t ShenandoahOldGeneration::used() const {
+  return _free_set->old_used();
+}
+
+size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
+  assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
+  return 0;
+}
+
+size_t ShenandoahOldGeneration::get_affiliated_region_count() const {
+  return _free_set->old_affiliated_regions();
+}
+
+size_t ShenandoahOldGeneration::get_humongous_waste() const {
+  return _free_set->humongous_waste_in_old();
+}
+
+size_t ShenandoahOldGeneration::used_regions() const {
+  return _free_set->old_affiliated_regions();
+}
+
+size_t ShenandoahOldGeneration::used_regions_size() const {
+  size_t used_regions = _free_set->old_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahOldGeneration::max_capacity() const {
+  size_t total_regions = _free_set->total_old_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
+size_t ShenandoahOldGeneration::free_unaffiliated_regions() const {
+  return _free_set->old_unaffiliated_regions();
 }
