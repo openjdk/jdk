@@ -1346,8 +1346,7 @@ public class Types {
          * Type-equality relation - type variables are considered
          * equals if they share the same object identity.
          */
-        SameTypeVisitor isSameTypeVisitor = new SameTypeVisitor();
-        class SameTypeVisitor extends TypeRelation {
+        abstract class TypeEqualityVisitor extends TypeRelation {
 
             public Boolean visitType(Type t, Type s) {
                 if (t.equalsIgnoreMetadata(s))
@@ -1390,9 +1389,7 @@ public class Types {
                 }
             }
 
-            boolean sameTypeComparator(Type t, Type s) {
-                return isSameType(t, s);
-            }
+            abstract boolean sameTypeComparator(Type t, Type s);
 
             @Override
             public Boolean visitClassType(ClassType t, Type s) {
@@ -1427,9 +1424,7 @@ public class Types {
                     && sameTypeArguments(t.getTypeArguments(), s.getTypeArguments());
             }
 
-            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
-                return containsTypeEquivalent(ts, ss);
-            }
+            abstract boolean sameTypeArguments(List<Type> ts, List<Type> ss);
 
             @Override
             public Boolean visitArrayType(ArrayType t, Type s) {
@@ -1485,6 +1480,16 @@ public class Types {
             @Override
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return true;
+            }
+        }
+
+        TypeEqualityVisitor isSameTypeVisitor = new TypeEqualityVisitor() {
+            boolean sameTypeComparator(Type t, Type s) {
+                return isSameType(t, s);
+            }
+
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                return containsTypeEquivalent(ts, ss);
             }
         };
 
@@ -3888,7 +3893,8 @@ public class Types {
                         && exactTypeVisitor.visit(t2, typePair.t2);
             }
         }
-        SameTypeVisitor exactTypeVisitor = new SameTypeVisitor() {
+
+        TypeEqualityVisitor exactTypeVisitor = new TypeEqualityVisitor() {
             @Override
             boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
                 while (ts.nonEmpty() && ss.nonEmpty()
