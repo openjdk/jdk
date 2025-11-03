@@ -905,10 +905,15 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
   reg2stack(temp, dest, dest->type());
 }
 
-// Specialised mem2reg function which is used for volatile loads since 8365147
-// Uses LDAR to ensure memory ordering.
-void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
-                                     LIR_PatchCode patch_code, CodeEmitInfo* info) {
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
+                            bool wide) {
+  mem2reg(src, dest, type, patch_code, info, wide, false);
+}
+
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
+                            LIR_PatchCode patch_code, CodeEmitInfo* info,
+                            bool wide, bool is_volatile) {
   LIR_Address* addr = src->as_address_ptr();
   LIR_Address* from_addr = src->as_address_ptr();
 
@@ -920,60 +925,28 @@ void LIR_Assembler::mem2reg_volatile(LIR_Opr src, LIR_Opr dest, BasicType type,
     deoptimize_trap(info);
     return;
   }
+
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
-  int null_check_here = code_offset();
 
-  __ lea(rscratch1, as_Address(from_addr));
-
-  Register dest_reg = rscratch2;
-  if (!is_floating_point_type(type)) {
-    dest_reg = (dest->is_single_cpu()
-                ? dest->as_register() : dest->as_register_lo());
-  }
-  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
-  switch (type) {
-    // LDAR is unsigned so need to sign-extend for byte and short
-    case T_BYTE:
-      __ sxtb(dest_reg, dest_reg);
-      break;
-    case T_SHORT:
-      __ sxth(dest_reg, dest_reg);
-      break;
-    // need to move from GPR to FPR after LDAR with FMOV for floating types
-    case T_FLOAT:
-      __ fmovs(dest->as_float_reg(), dest_reg);
-      break;
-    case T_DOUBLE:
-      __ fmovd(dest->as_double_reg(), dest_reg);
-      break;
-    default:
-      break;
+  if (is_volatile) {
+    load_volatile(from_addr, dest, type);
+  } else {
+    load_generic(from_addr, dest, type, wide);
   }
 
   if (is_reference_type(type)) {
-    if (UseCompressedOops) {
+    if (UseCompressedOops && !wide) {
       __ decode_heap_oop(dest->as_register());
     }
+
     __ verify_oop(dest->as_register());
   }
 }
 
-void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
-  LIR_Address* addr = src->as_address_ptr();
-  LIR_Address* from_addr = src->as_address_ptr();
-  if (addr->base()->type() == T_OBJECT) {
-    __ verify_oop(addr->base()->as_pointer_register());
-  }
-  if (patch_code != lir_patch_none) {
-    deoptimize_trap(info);
-    return;
-  }
-  if (info != nullptr) {
-    add_debug_info_for_null_check_here(info);
-  }
-  int null_check_here = code_offset();
+void LIR_Assembler::load_generic(LIR_Address *from_addr, LIR_Opr dest,
+                                 BasicType type, bool wide) {
   switch (type) {
     case T_FLOAT: {
       __ ldrs(dest->as_float_reg(), as_Address(from_addr));
@@ -1031,16 +1004,40 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     default:
       ShouldNotReachHere();
   }
-
-  if (is_reference_type(type)) {
-    if (UseCompressedOops && !wide) {
-      __ decode_heap_oop(dest->as_register());
-    }
-
-    __ verify_oop(dest->as_register());
-  }
 }
 
+void LIR_Assembler::load_volatile(LIR_Address *from_addr, LIR_Opr dest,
+                                  BasicType type) {
+  __ lea(rscratch1, as_Address(from_addr));
+
+  Register dest_reg = rscratch2;
+  if (!is_floating_point_type(type)) {
+    dest_reg = (dest->is_single_cpu()
+                ? dest->as_register() : dest->as_register_lo());
+  }
+
+  // Uses LDAR to ensure memory ordering.
+  __ load_store_volatile(dest_reg, type, rscratch1, /*is_load*/true);
+
+  switch (type) {
+    // LDAR is unsigned so need to sign-extend for byte and short
+    case T_BYTE:
+      __ sxtb(dest_reg, dest_reg);
+      break;
+    case T_SHORT:
+      __ sxth(dest_reg, dest_reg);
+      break;
+    // need to move from GPR to FPR after LDAR with FMOV for floating types
+    case T_FLOAT:
+      __ fmovs(dest->as_float_reg(), dest_reg);
+      break;
+    case T_DOUBLE:
+      __ fmovd(dest->as_double_reg(), dest_reg);
+      break;
+    default:
+      break;
+  }
+}
 
 int LIR_Assembler::array_element_size(BasicType type) const {
   int elem_size = type2aelembytes(type);
@@ -2881,7 +2878,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   if (src->is_address()) {
-    mem2reg_volatile(src, dest, type, lir_patch_none, info);
+    mem2reg(src, dest, type, lir_patch_none, info, /*wide*/false, /*is_volatile*/true);
   } else if (dest->is_address()) {
     move_op(src, dest, type, lir_patch_none, info, /*wide*/false);
   } else {

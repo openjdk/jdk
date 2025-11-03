@@ -58,6 +58,12 @@ friend class ArrayCopyStub;
   void casw(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
+  void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
+               LIR_PatchCode patch_code,
+               CodeEmitInfo* info, bool wide, bool is_volatile);
+  void load_generic(LIR_Address *from_addr, LIR_Opr dest, BasicType type, bool wide);
+  void load_volatile(LIR_Address *from_addr, LIR_Opr dest, BasicType type);
+
   static const int max_tableswitches = 20;
   struct tableswitch switches[max_tableswitches];
   int tableswitch_count;

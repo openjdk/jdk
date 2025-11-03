@@ -1403,17 +1403,6 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 
 bool LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
-
-  // AArch64 uses LDAR for volatile field loads by default. However, if all accesses are forced to
-  // be atomic - which includes unaligned ones - use the generic DMB + LD sequence, as LDAR might
-  // fault for unaligned accesses.
-  if (AlwaysAtomicAccesses) {
-    if (!CompilerConfig::is_c1_only_no_jvmci()) {
-      __ membar();
-    }
-    __ load(address, result, info);
-  } else {
-    __ volatile_load_mem_reg(address, result, info);
-  }
-  return AlwaysAtomicAccesses;
+  __ volatile_load_mem_reg(address, result, info);
+  return false;
 }
