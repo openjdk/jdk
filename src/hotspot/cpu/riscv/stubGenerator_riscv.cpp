@@ -2607,19 +2607,20 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Big-endian 128-bit + 64-bit -> 128-bit addition.
   void be_inc_counter_128(Register counter, Register tmp1, Register tmp2) {
-    __ ld(tmp1, Address(counter, 8));  // load low 64-bit from counter
-    __ rev8(tmp1, tmp1);               // change to little endian for add
+    assert_different_registers(counter, tmp1, tmp2, t0);
+    __ ld(tmp1, Address(counter, 8)); // Load 128-bits from counter
+    __ ld(tmp2, Address(counter));
+    __ rev8(tmp1, tmp1);              // Convert big-endian to little-endian
+    __ rev8(tmp2, tmp2);
     __ addi(tmp1, tmp1, 1);
-    __ rev8(tmp1, tmp1);               // change back to big endian
-    __ sd(tmp1, Address(counter, 8));  // store the result back
-    __ seqz(tmp2, tmp1);               // Check for result overflow,
-                                       // set tmp2 = 1 if overflow, else tmp2 = 0
-    __ ld(tmp1, Address(counter));     // load high 64-bit from counter
-    __ rev8(tmp1, tmp1);
-    __ add(tmp1, tmp1, tmp2);          // add 1 if overflow, else add 0
-    __ rev8(tmp1, tmp1);
-    __ sd(tmp1, Address(counter));
+    __ seqz(t0, tmp1);                // Check for result overflow
+    __ add(tmp2, tmp2, t0);           // Add 1 if overflow otherwise 0
+    __ rev8(tmp1, tmp1);              // Convert little-endian to big-endian
+    __ rev8(tmp2, tmp2);
+    __ sd(tmp1, Address(counter, 8)); // Store 128-bits to counter
+    __ sd(tmp2, Address(counter));
   }
 
   // CTR AES crypt.
