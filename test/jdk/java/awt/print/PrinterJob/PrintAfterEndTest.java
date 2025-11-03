@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @key printer
  * @bug 8370141 8370637
