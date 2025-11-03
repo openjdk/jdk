@@ -78,7 +78,7 @@ public class NewInstance {
         if (skippedProvider.isEmpty()) {
             System.out.println("All Tests Passed");
         } else {
-            throw new SkippedException("Test was skipped for the " + skippedProvider + " provider: ");
+            throw new SkippedException("Test was skipped for the " + skippedProvider + " provider.");
         }
     }
 }
