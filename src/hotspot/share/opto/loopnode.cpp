@@ -1709,8 +1709,8 @@ LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, BaseCountedLoop
   set_loop(new_inner_exit, loop);
   set_idom(new_inner_head, idom(head), dom_depth(head));
   set_idom(new_inner_exit, idom(exit_test), dom_depth(exit_test));
-  lazy_replace(head, new_inner_head);
-  lazy_replace(exit_test, new_inner_exit);
+  replace_node_and_forward_ctrl(head, new_inner_head);
+  replace_node_and_forward_ctrl(exit_test, new_inner_exit);
   loop->_head = new_inner_head;
   return new_inner_head;
 }
@@ -2382,7 +2382,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       return false;
     }
     if (is_deleteable_safept(backedge_sfpt)) {
-      lazy_replace(backedge_sfpt, iftrue);
+      replace_node_and_forward_ctrl(backedge_sfpt, iftrue);
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(backedge_sfpt);
       }
@@ -2483,8 +2483,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     set_loop(iff2, get_loop(iffalse));
 
     // Lazy update of 'get_ctrl' mechanism.
-    lazy_replace(iffalse, iff2);
-    lazy_replace(iftrue,  ift2);
+    replace_node_and_forward_ctrl(iffalse, iff2);
+    replace_node_and_forward_ctrl(iftrue,  ift2);
 
     // Swap names
     iffalse = iff2;
@@ -2499,7 +2499,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   set_idom(iftrue,  le, dd+1);
   set_idom(iffalse, le, dd+1);
   assert(iff->outcnt() == 0, "should be dead now");
-  lazy_replace( iff, le ); // fix 'get_ctrl'
+  replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
 
   Node* entry_control = init_control;
   bool strip_mine_loop = iv_bt == T_INT &&
@@ -2525,7 +2525,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  lazy_replace( x, l );
+  replace_node_and_forward_ctrl(x, l);
   set_idom(l, entry_control, dom_depth(entry_control) + 1);
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
@@ -2551,7 +2551,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
         set_idom(outer_le, sfpt_clone, dom_depth(sfpt_clone));
       }
-      lazy_replace(sfpt, sfpt->in(TypeFunc::Control));
+      replace_node_and_forward_ctrl(sfpt, sfpt->in(TypeFunc::Control));
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(sfpt);
       }
@@ -3516,7 +3516,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   if (iloop == nullptr) {
     igvn->replace_node(outer_le, new_end);
   } else {
-    iloop->lazy_replace(outer_le, new_end);
+    iloop->replace_node_and_forward_ctrl(outer_le, new_end);
   }
   // the backedge of the inner loop must be rewired to the new loop end
   Node* backedge = cle->proj_out(true);
@@ -4487,7 +4487,7 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
       Node* n = sfpts->at(i);
       assert(phase->get_loop(n) == this, "");
       if (n != keep && phase->is_deleteable_safept(n)) {
-        phase->lazy_replace(n, n->in(TypeFunc::Control));
+        phase->replace_node_and_forward_ctrl(n, n->in(TypeFunc::Control));
       }
     }
   }
@@ -4765,6 +4765,24 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
       Node* opaque = head->is_canonical_loop_entry();
       if (opaque != nullptr) {
         useful_zero_trip_guard_opaques_nodes.push(opaque);
+#ifdef ASSERT
+        // See PhaseIdealLoop::do_unroll
+        // This property is required in do_unroll, but it may not hold after cloning a loop.
+        // In such a case, we bail out from unrolling, and rely on IGVN to clean up the graph.
+        // We are here before loop cloning (before iteration_split), so if this property
+        // does not hold, it must come from the previous round of loop optimizations, meaning
+        // that IGVN failed to clean it: we will catch that here.
+        // On the other hand, if this assert passes, a bailout in do_unroll means that
+        // this property was broken in the current round of loop optimization (between here
+        // and do_unroll), so we give a chance to IGVN to make the property true again.
+        if (head->is_main_loop()) {
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
+          assert(opaque->in(1) == head->limit(), "After IGVN cleanup, input of opaque node must be the limit.");
+        }
+        if (head->is_post_loop()) {
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
+        }
+#endif
       }
     }
   }
@@ -4934,7 +4952,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
 
 
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
 
   // Reset major-progress flag for the driver's heuristics
@@ -5315,7 +5333,7 @@ void PhaseIdealLoop::print_statistics() {
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
   ResourceMark rm;
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);
@@ -6145,7 +6163,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
           if( !_verify_only && !_verify_me && ilt->_has_sfpt && n->Opcode() == Op_SafePoint &&
               is_deleteable_safept(n)) {
             Node *in = n->in(TypeFunc::Control);
-            lazy_replace(n,in);       // Pull safepoint now
+            replace_node_and_forward_ctrl(n, in); // Pull safepoint now
             if (ilt->_safepts != nullptr) {
               ilt->_safepts->yank(n);
             }

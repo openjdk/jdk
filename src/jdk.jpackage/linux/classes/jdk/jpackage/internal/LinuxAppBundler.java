@@ -25,13 +25,15 @@
 
 package jdk.jpackage.internal;
 
+import java.util.Optional;
+
 public class LinuxAppBundler extends AppImageBundler {
     public LinuxAppBundler() {
         setAppImageSupplier((params, output) -> {
             // Order is important!
             var app = LinuxFromParams.APPLICATION.fetchFrom(params);
             var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
-            LinuxPackagingPipeline.build()
+            LinuxPackagingPipeline.build(Optional.empty())
                     .excludeDirFromCopying(output.getParent())
                     .create().execute(BuildEnv.withAppImageDir(env, output), app);
         });
