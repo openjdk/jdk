@@ -394,8 +394,7 @@ class CESU_8 extends Unicode
         }
     }
 
-    private static class Encoder extends CharsetEncoder
-                                 implements ArrayEncoder {
+    private static class Encoder extends CharsetEncoder {
 
         private Encoder(Charset cs) {
             super(cs, 1.1f, 3.0f);
@@ -544,48 +543,6 @@ class CESU_8 extends Unicode
                 return encodeBufferLoop(src, dst);
         }
 
-        // returns -1 if there is malformed char(s) and the
-        // "action" for malformed input is not REPLACE.
-        public int encode(char[] sa, int sp, int len, byte[] da) {
-            int sl = sp + len;
-            int dp = 0;
-
-            // Handle ASCII-only prefix
-            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(len, da.length));
-            sp += n;
-            dp += n;
-
-            while (sp < sl) {
-                char c = sa[sp++];
-                if (c < 0x80) {
-                    // Have at most seven bits
-                    da[dp++] = (byte)c;
-                } else if (c < 0x800) {
-                    // 2 bytes, 11 bits
-                    da[dp++] = (byte)(0xc0 | (c >> 6));
-                    da[dp++] = (byte)(0x80 | (c & 0x3f));
-                } else if (Character.isSurrogate(c)) {
-                    if (sgp == null)
-                        sgp = new Surrogate.Parser();
-                    int uc = sgp.parse(c, sa, sp - 1, sl);
-                    if (uc < 0) {
-                        if (malformedInputAction() != CodingErrorAction.REPLACE)
-                            return -1;
-                        da[dp++] = replacement()[0];
-                    } else {
-                        to3Bytes(da, dp, Character.highSurrogate(uc));
-                        dp += 3;
-                        to3Bytes(da, dp, Character.lowSurrogate(uc));
-                        dp += 3;
-                        sp++;  // 2 chars
-                    }
-                } else {
-                    // 3 bytes, 16 bits
-                    to3Bytes(da, dp, c);
-                    dp += 3;
-                }
-            }
-            return dp;
-        }
     }
+
 }

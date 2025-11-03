@@ -2548,15 +2548,15 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(G1HeapRegion* r) cons
 }
 
 #ifndef PRODUCT
-void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
+void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
   class VerifyRegionAttrRemSet : public G1HeapRegionClosure {
   public:
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      bool const remset_is_tracked = g1h->region_attr(r->bottom()).remset_is_tracked();
-      assert(r->rem_set()->is_tracked() == remset_is_tracked,
+      const bool is_remset_tracked = g1h->region_attr(r->bottom()).is_remset_tracked();
+      assert(r->rem_set()->is_tracked() == is_remset_tracked,
              "Region %u remset tracking status (%s) different to region attribute (%s)",
-             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(remset_is_tracked));
+             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
       return false;
     }
   } cl;
@@ -3159,9 +3159,9 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
       young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
+      update_region_attr(new_alloc_region);
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-    register_region_with_region_attr(new_alloc_region);
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
