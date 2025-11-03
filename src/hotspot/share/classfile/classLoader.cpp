@@ -412,7 +412,7 @@ ClassFileStream* ClassPathImageEntry::open_stream(JavaThread* current, const cha
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location;
+  JImageLocationRef location = 0;
 
   TempNewSymbol class_name = SymbolTable::new_symbol(name);
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
