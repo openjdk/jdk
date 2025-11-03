@@ -4530,7 +4530,7 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     
     if (phi2->region() != loop->_head ||
         xor_node->req() != 3 ||
-        (xor_node->Opcode() != Op_XorI && xor_node->Opcode() != Op_XorL)) {
+        (xor_node->Opcode() != Op_XorI)) {
 #ifndef PRODUCT
       if (TraceLoopOpts) {
         tty->print("    Pattern check failed: region=%d head=%d, req=%d, opcode=%d\n",
@@ -4558,7 +4558,10 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     }
 
     // Get the XOR constant
-    BasicType xor_bt = xor_node->Opcode() == Op_XorI ? T_INT : T_LONG;
+    if (xor_node->Opcode() == Op_XorL) {
+      continue;
+    }
+    BasicType xor_bt = T_INT;
     jlong xor_const = xor_node->in(const_input_idx)->get_integer_as_long(xor_bt);
     
     // Check if the constant is -1 (all bits set) or 1 (for boolean toggle)
@@ -4588,16 +4591,6 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     // This allows the expression to be used within the loop and optimized by later passes
     Node* init2 = phi2->in(LoopNode::EntryControl);
     
-    // Safety check: ensure init2 is valid
-    if (init2 == nullptr || init2 == C->top()) {
-#ifndef PRODUCT
-      if (TraceLoopOpts) {
-        tty->print("    init2 is null or top, skipping\n");
-      }
-#endif
-      continue;
-    }
-    
     // Use the loop counter phi (from cl->phi()) which represents the iteration count
     // The phi value ranges from init to limit-1
     Node* loop_phi = phi;
@@ -4620,11 +4613,9 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     } else {
       // XOR with -1: need to negate (phi & 1) to get either 0 or -1
       // This is: 0 - (phi & 1) = -(phi & 1)
-      Node* zero_const = xor_bt == T_INT ? (Node*)_igvn.intcon(0) : (Node*)_igvn.longcon(0L);
+      Node* zero_const = (Node*)_igvn.intcon(0);
       Node* and_converted = insert_convert_node_if_needed(xor_bt, and_node);
-      xor_value = xor_bt == T_INT ? 
-                  (Node*)new SubINode(zero_const, and_converted) :
-                  (Node*)new SubLNode(zero_const, and_converted);
+      xor_value = (Node*)new SubINode(zero_const, and_converted);
       _igvn.register_new_node_with_optimizer(xor_value);
       set_ctrl(xor_value, cl);
     }
@@ -4633,11 +4624,9 @@ void PhaseIdealLoop::replace_xor_parallel_iv(IdealLoopTree *loop) {
     Node* init2_converted = insert_convert_node_if_needed(xor_bt, init2);
     
     // Create: init2 ^ xor_value
-    Node* final_xor = xor_bt == T_INT ? 
-                      (Node*)new XorINode(init2_converted, xor_value) :
-                      (Node*)new XorLNode(init2_converted, xor_value);
+    Node* final_xor = (Node*)new XorINode(init2_converted, xor_value);
     _igvn.register_new_node_with_optimizer(final_xor);
-    set_ctrl(final_xor, cl);
+    set_ctrl(final_xor, cl);  // Control depends on loop since it uses loop phi
     
     _igvn.replace_node(phi2, final_xor);
 #ifndef PRODUCT

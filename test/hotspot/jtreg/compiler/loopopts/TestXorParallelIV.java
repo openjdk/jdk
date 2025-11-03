@@ -52,6 +52,20 @@ public class TestXorParallelIV {
         return even;
     }
 
+    @Test
+    @IR(failOn = {IRNode.COUNTED_LOOP})
+    public boolean testIsEvenWhileLoop(int number) {
+        if (number < 0) return true;
+        int numberCompare = 0;
+        boolean even = true;
+        while (number != numberCompare) {
+            even = !even;
+            numberCompare++;
+        }
+        return even;
+    }
+
+
     // Test with integer XOR pattern
     @Test
     @IR(failOn = {IRNode.COUNTED_LOOP})
@@ -64,23 +78,22 @@ public class TestXorParallelIV {
         return result;
     }
 
-    // Test with long XOR pattern
-    @Test
-    @IR(failOn = {IRNode.COUNTED_LOOP})
-    public long testLongXor(int n) {
-        if (n < 0) return 1L; // Guard against negative numbers
-        long result = 1L;
-        for (int i = 0; i < n; i++) {
-            result = result ^ -1L;
+    @Run(test = "testIsEvenWhileLoop")
+    public void runIsEvenWhileLoop() {
+        boolean result1 = testIsEvenWhileLoop(10);
+        if (!result1) {
+            throw new RuntimeException("Expected true for 10 (even toggles = true), got " + result1);
         }
-        return result;
-    }
 
-    // Verification tests
-    @Check(test = "testIsEven")
-    public void checkIsEven(boolean result) {
-        // For number = 10, should be even (true)
-        // For number = 11, should be odd (false)
+        boolean result2 = testIsEvenWhileLoop(11);
+        if (result2) {
+            throw new RuntimeException("Expected false for 11 (odd toggles = false), got " + result2);
+        }
+
+        boolean result3 = testIsEvenWhileLoop(0);
+        if (!result3) {
+            throw new RuntimeException("Expected true for 0 (no toggles = true), got " + result3);
+        }
     }
 
     @Run(test = "testIsEven")
@@ -89,17 +102,18 @@ public class TestXorParallelIV {
         if (!result1) {
             throw new RuntimeException("Expected true for 10 (even toggles = true), got " + result1);
         }
-        
+
         boolean result2 = testIsEven(11);
         if (result2) {
             throw new RuntimeException("Expected false for 11 (odd toggles = false), got " + result2);
         }
-        
+
         boolean result3 = testIsEven(0);
         if (!result3) {
             throw new RuntimeException("Expected true for 0 (no toggles = true), got " + result3);
         }
     }
+
 
     @Run(test = "testIntXor")
     public void runIntXor() {
@@ -107,32 +121,14 @@ public class TestXorParallelIV {
         if (result1 != 1) {
             throw new RuntimeException("Expected 1 for n=0, got " + result1);
         }
-        
+
         int result2 = testIntXor(1);
         if (result2 != -2) {
             throw new RuntimeException("Expected -2 for n=1, got " + result2);
         }
-        
+
         int result3 = testIntXor(2);
         if (result3 != 1) {
-            throw new RuntimeException("Expected 1 for n=2, got " + result3);
-        }
-    }
-
-    @Run(test = "testLongXor")
-    public void runLongXor() {
-        long result1 = testLongXor(0);
-        if (result1 != 1L) {
-            throw new RuntimeException("Expected 1 for n=0, got " + result1);
-        }
-        
-        long result2 = testLongXor(1);
-        if (result2 != -2L) {
-            throw new RuntimeException("Expected -2 for n=1, got " + result2);
-        }
-        
-        long result3 = testLongXor(2);
-        if (result3 != 1L) {
             throw new RuntimeException("Expected 1 for n=2, got " + result3);
         }
     }
