@@ -230,8 +230,8 @@ public class FileSizeCheck {
 
     private static AbstractButton findDetailsButton(final Container container) {
         Component result = Util.findComponent(container,
-                                              c -> c instanceof JToggleButton button
-                                                   && "Details".equals(button.getToolTipText()));
+                                         c -> c instanceof JToggleButton button
+                                              && "Details".equals(button.getToolTipText()));
         return (AbstractButton) result;
     }
 

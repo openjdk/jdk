@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
+import static javax.swing.SwingUtilities.isEventDispatchThread;
+
 /**
  * <p>This class contains utilities useful for regression testing.
  * <p>When using jtreg you would include this class via something like:
@@ -149,16 +151,28 @@ public class Util {
 
     /**
      * Find a component based on predicate.
-     * Always run this method on the EDT thread
      */
     public static Component findComponent(final Container container,
+                                          final Predicate<Component> predicate) {
+        try {
+            if (isEventDispatchThread()) {
+                return findComponentImpl(container, predicate);
+            } else {
+                return Util.invokeOnEDT(() -> findComponentImpl(container, predicate));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error occurred while finding component", e);
+        }
+    }
+
+    private static Component findComponentImpl(final Container container,
                                           final Predicate<Component> predicate) {
         for (Component child : container.getComponents()) {
             if (predicate.test(child)) {
                 return child;
             }
             if (child instanceof Container cont && cont.getComponentCount() > 0) {
-                Component result = findComponent(cont, predicate);
+                Component result = findComponentImpl(cont, predicate);
                 if (result != null) {
                     return result;
                 }
@@ -166,6 +180,7 @@ public class Util {
         }
         return null;
     }
+
 
      /**
      * Hits mnemonics by robot.

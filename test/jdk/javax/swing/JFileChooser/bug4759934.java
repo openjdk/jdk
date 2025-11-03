@@ -73,8 +73,10 @@ public class bug4759934 {
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
 
-            JButton cancel = Util.invokeOnEDT(() -> findCancelButton(jfc));
-            cancel.doClick();
+            SwingUtilities.invokeAndWait(() -> {
+                JButton cancel = findCancelButton(jfc);
+                cancel.doClick();
+            });
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(() -> {
