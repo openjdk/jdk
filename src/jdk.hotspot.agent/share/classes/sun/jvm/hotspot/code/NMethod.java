@@ -48,7 +48,7 @@ public class NMethod extends CodeBlob {
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
-  private static CIntegerField deoptHandlerOffsetField;
+  private static CIntegerField deoptHandlerEntryOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
   private static CIntField     handlerTableOffsetField;
@@ -86,7 +86,7 @@ public class NMethod extends CodeBlob {
     immutableDataField                 = type.getAddressField("_immutable_data");
     immutableDataSizeField             = type.getCIntegerField("_immutable_data_size");
     exceptionOffsetField               = type.getCIntegerField("_exception_offset");
-    deoptHandlerOffsetField            = type.getCIntegerField("_deopt_handler_entry_offset");
+    deoptHandlerEntryOffsetField       = type.getCIntegerField("_deopt_handler_entry_offset");
     origPCOffsetField                  = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField                    = type.getCIntegerField("_stub_offset");
     scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
@@ -490,7 +490,7 @@ public class NMethod extends CodeBlob {
 
   private int getEntryBCI()                     { return (int) entryBCIField                    .getValue(addr); }
   private int getExceptionOffset()              { return (int) exceptionOffsetField             .getValue(addr); }
-  private int getDeoptHandlerEntryOffset()      { return (int) deoptHandlerOffsetField          .getValue(addr); }
+  private int getDeoptHandlerEntryOffset()      { return (int) deoptHandlerEntryOffsetField     .getValue(addr); }
   private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(addr); }
   private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(addr); }
   private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(addr); }
