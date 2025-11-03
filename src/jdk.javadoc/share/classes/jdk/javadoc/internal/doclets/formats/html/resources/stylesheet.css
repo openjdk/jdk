@@ -99,13 +99,7 @@
     --right-svg: url("right.svg");
     --glass-svg: url("glass.svg");
     --x-svg: url("x.svg");
-    /* Show light theme icon */
-    button#theme-button img.light-theme-icon {
-        display: inline;
-    }
-    button#theme-button img.dark-theme-icon {
-        display: none;
-    }
+    --current-theme-svg: url("sun.svg");
 }
 /* Dark theme variables */
 :root[data-theme="theme-dark"] {
@@ -168,13 +162,7 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\
     <path d="m8 8 84 84" style="stroke:%23e0e0e0;stroke-width:15"/>\
     <path d="M8 92 92 8" style="stroke:%23e0e0e0;stroke-width:15"/></svg>');
-    /* Show dark theme icon */
-    button#theme-button img.light-theme-icon {
-        display: none;
-    }
-    button#theme-button img.dark-theme-icon {
-        display: inline;
-    }
+    --current-theme-svg: url("moon.svg");
 }
 /*
  * Styles for individual HTML elements.
@@ -330,6 +318,8 @@ button#theme-button {
     height: 32px;
     padding: 6px;
     margin-left: -6px;
+    background: var(--current-theme-svg) no-repeat 6px;
+    background-size: 18px 18px;
     background-color: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -338,10 +328,6 @@ button#theme-button {
 button#theme-button:hover,
 button#theme-button:focus-visible {
     border: 1px solid var(--button-border-color);
-}
-button#theme-button img {
-    display: none;
-    width: 18px;
 }
 div#theme-panel {
     display: none;

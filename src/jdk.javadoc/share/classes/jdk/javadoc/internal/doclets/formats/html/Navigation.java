@@ -500,10 +500,6 @@ public class Navigation {
     private void addThemeSwitcher(Content target) {
         var selectTheme = contents.getContent("doclet.theme.select_theme");
         target.add(HtmlTree.LI(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
-                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.SUN_SVG),
-                        selectTheme.toString()).addStyle(HtmlStyles.lightThemeIcon))
-                .add(HtmlTree.IMG(pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.MOON_SVG),
-                        selectTheme.toString()).addStyle(HtmlStyles.darkThemeIcon))
                 .put(HtmlAttr.ARIA_LABEL, selectTheme.toString())
                 .put(HtmlAttr.TITLE, selectTheme.toString())));
         target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)

@@ -1002,11 +1002,6 @@ public enum HtmlStyles implements HtmlStyle {
     copy,
 
     /**
-     * The class of an {@code img} element displaying the dark theme icon.
-     */
-    darkThemeIcon,
-
-    /**
      * The class of an {@code a} element for a link with an external target.
      */
     externalLink,
@@ -1060,11 +1055,6 @@ public enum HtmlStyles implements HtmlStyle {
      * The class of a {@code p} element containing legal copy in the page footer.
      */
     legalCopy,
-
-    /**
-     * The class of an {@code img} element displaying the light theme icon.
-     */
-    lightThemeIcon,
 
     /**
      * The class of an {@code a} element for a link in member summary lists.

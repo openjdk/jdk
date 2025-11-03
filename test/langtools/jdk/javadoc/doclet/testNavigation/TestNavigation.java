@@ -71,9 +71,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
-                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -93,9 +91,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -115,9 +111,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -137,9 +131,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -159,9 +151,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -395,9 +385,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -417,9 +405,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -439,9 +425,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -461,9 +445,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../index-all.html">Index</a></li>
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="..\
-                    /resource-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="../resourc\
-                    e-files/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -511,9 +493,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#package">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
-                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
@@ -537,9 +517,7 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="index-all.html">Index</a></li>
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#class">Help</a></li>
-                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"><img src="re\
-                    source-files/sun.svg" alt="Select Theme" class="light-theme-icon"><img src="resource-file\
-                    s/moon.svg" alt="Select Theme" class="dark-theme-icon"></button></li>
+                    <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
                     <div id="theme-panel">
                     <div>Select Theme</div>
                     <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
