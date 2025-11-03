@@ -51,25 +51,29 @@ public class PrintDialogsTest extends Panel implements ActionListener {
 
     static final String INSTRUCTIONS =
         "1. On the Test UI Select:\n" +
-        "The dialog parent type.\n" +
-        "The dialog modality type.\n" +
-        "The print dialog type (Print dialog or Page Setup dialog).\n\n" +
-        "2. Next, click on 'Start test'. Three windows will appear.\n" +
-        "A Frame or a Dialog (On selecting 'Dialog' as parent type).\n" +
-        "A Window (An undecorated top-level window).\n" +
-        "A Dialog with two buttons: 'Open' and 'Finish'.\n" +
-        "Windows (1) and (2) have a button.\n\n" +
-        "3.Press the button on Window (1) & Window (2) -\n" +
+        "\tThe dialog parent type.(e.g.Frame, Dialog, Hidden, Null)\n" +
+        "\tThe dialog modality type(e.g Modal, Non-Modal, Toolkit modal).\n" +
+        "\tThe print dialog type (Print dialog or Page Setup dialog).\n\n" +
+        "2. Next, click on 'Start test' - Three windows will appear:\n" +
+        "\tWindow (1) -a Frame or Dialog (depending on selected parent type).\n" +
+        "\tWindow (2) -an undecorated top-level Window.\n" +
+        "\tWindow (3) -a Dialog containing two buttons: 'Open' and 'Finish'.\n" +
+        "\tWindows (1) & (2) have a Dummy button.\n\n" +
+        "3.Press the button on Window (1) & Window (2) \n" +
         "Verification step:\n" +
-        "Button is presseed - only if Modality Selection was 'Non-modal' or 'Modeless'.\n" +
-        "In all other cases, Window (3) should block input to Windows (1) and (2).\n\n" +
-        "4. Next, press the 'Open' button in Window (3). This will show the print dialog.\n\n" +
-        "5. Press the button on Window (1) & Window (2) -\n" +
+        "\tIf Modality is 'Non-modal'or 'Modeless', Button is presseed \n" +
+        "\tIf Modality is 'Document'& parent is not Frame/Dialog, Button is presseed \n" +
+        "\tIn all other cases, button is not pressed & Window (3) should \n" +
+        "\tblock input to Windows (1) & (2).\n\n" +
+        "4. Next, press the 'Open' button in Window (3to open print dialog.\n\n" +
+        "5. Press the button on Window (1) & Window (2)\n" +
         "Verification step:\n" +
-        "The print dialog should block all three windows (1, 2, and 3).\n\n" +
-        "6. Cancel the print dialog, Check again if Window (3) blocks Windows (1) and (2) correctly.\n" +
+        "\tThe print dialog should block all three windows (1, 2, and 3).\n\n" +
+        "6. Cancel the print dialog, Check again if Window (3) " +
+        "blocks Windows (1) and (2) correctly.\n" +
         "Verification step:\n" +
-        "Button is presseed - only if Modality Selection was 'Non-modal' or 'Modeless'.\n" +
+        "\tConditons as seen in Verification step 3 " +
+        "should be seen, as before.\n" +
         "To close all test windows, press 'Finish'.\n\n" +
         "7. Repeat the steps for different combinations od Dialog Parent, Dialog Modality Type, Print Dialg Type.\n" +
         "Try every dialog parent type and every dialog modality type.\n\n" +
