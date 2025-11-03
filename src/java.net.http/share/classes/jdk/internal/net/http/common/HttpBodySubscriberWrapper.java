@@ -82,7 +82,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         // Do nothing
     }
 
-    private class SubscriptionWrapper implements Subscription {
+    private final class SubscriptionWrapper implements Subscription {
         final Subscription subscription;
         SubscriptionWrapper(Subscription s) {
             this.subscription = Objects.requireNonNull(s);
