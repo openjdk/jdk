@@ -145,6 +145,9 @@ public class FileServerHandlerTest {
 
                 // malformed numbers or format
                 {"bytes=-0"}, {"bytes=meow"}, {"bytes=--500"}, {"bytes=500"}, {"bytes=-"}, {"bytes=+500-600"},
+                {"bytes=400--500"}, {"bytes=500-+600"}, {"bytes=+500-600"}, {"bytes=500+-600"}, {"bytes=500-600+"},
+                {"bytes=--"}, {"bytes=-+1"}, {"bytes=+1-"}, {"bytes=-+500"}, {"bytes=+"}, {"bytes=,-"}, {"bytes=+"},
+                {"bytes=,+500"}, {"bytes=-,"},
 
                 // multiple ranges with one invalid
                 {"bytes=500-600,700-600"},
