@@ -101,6 +101,11 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher removeProperty(String name) {
+        rawProperties.remove(Objects.requireNonNull(name));
+        return this;
+    }
+
     public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
         if (TKit.isLinux()) {
             setShortcut(LINUX_SHORTCUT, desktop);
@@ -198,7 +203,7 @@ public final class AdditionalLauncher {
         }
     }
 
-    static PropertyFile getAdditionalLauncherProperties(
+    public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {

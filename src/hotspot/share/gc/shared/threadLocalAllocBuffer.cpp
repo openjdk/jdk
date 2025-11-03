@@ -30,7 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/threadSMR.hpp"
@@ -460,9 +460,9 @@ size_t ThreadLocalAllocBuffer::end_reserve() {
 }
 
 const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
-  return Atomic::load(&_start);
+  return AtomicAccess::load(&_start);
 }
 
 const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
-  return Atomic::load(&_top);
+  return AtomicAccess::load(&_top);
 }

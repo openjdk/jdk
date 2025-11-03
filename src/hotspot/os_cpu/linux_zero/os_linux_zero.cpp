@@ -24,7 +24,6 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -36,6 +35,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -86,9 +86,7 @@ char* os::non_memory_address_word() {
 
 address os::Posix::ucontext_get_pc(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (address)uc->uc_mcontext.gregs[REG_EIP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (address)uc->uc_mcontext.gregs[REG_RIP];
 #elif defined(ARM)
     return (address)uc->uc_mcontext.arm_pc;
@@ -117,9 +115,7 @@ void os::Posix::ucontext_set_pc(ucontext_t* uc, address pc) {
 
 intptr_t* os::Linux::ucontext_get_sp(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (intptr_t*)uc->uc_mcontext.gregs[REG_UESP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (intptr_t*)uc->uc_mcontext.gregs[REG_RSP];
 #elif defined(ARM)
     return (intptr_t*)uc->uc_mcontext.arm_sp;
@@ -144,9 +140,7 @@ intptr_t* os::Linux::ucontext_get_sp(const ucontext_t* uc) {
 
 intptr_t* os::Linux::ucontext_get_fp(const ucontext_t* uc) {
   if (DecodeErrorContext) {
-#if defined(IA32)
-    return (intptr_t*)uc->uc_mcontext.gregs[REG_EBP];
-#elif defined(AMD64)
+#if defined(AMD64)
     return (intptr_t*)uc->uc_mcontext.gregs[REG_RBP];
 #elif defined(ARM)
     return (intptr_t*)uc->uc_mcontext.arm_fp;

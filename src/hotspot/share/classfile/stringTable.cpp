@@ -47,7 +47,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -325,11 +325,11 @@ void StringTable::create_table() {
 }
 
 void StringTable::item_added() {
-  Atomic::inc(&_items_count);
+  AtomicAccess::inc(&_items_count);
 }
 
 void StringTable::item_removed() {
-  Atomic::dec(&_items_count);
+  AtomicAccess::dec(&_items_count);
 }
 
 double StringTable::get_load_factor() {
@@ -345,18 +345,18 @@ size_t StringTable::table_size() {
 }
 
 bool StringTable::has_work() {
-  return Atomic::load_acquire(&_has_work);
+  return AtomicAccess::load_acquire(&_has_work);
 }
 
 size_t StringTable::items_count_acquire() {
-  return Atomic::load_acquire(&_items_count);
+  return AtomicAccess::load_acquire(&_items_count);
 }
 
 void StringTable::trigger_concurrent_work() {
   // Avoid churn on ServiceThread
   if (!has_work()) {
     MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    Atomic::store(&_has_work, true);
+    AtomicAccess::store(&_has_work, true);
     Service_lock->notify_all();
   }
 }
@@ -510,7 +510,7 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
 }
 
 oop StringTable::intern(const StringWrapper& name, TRAPS) {
-  assert(!Atomic::load_acquire(&_disable_interning_during_cds_dump),
+  assert(!AtomicAccess::load_acquire(&_disable_interning_during_cds_dump),
          "All threads that may intern strings should have been stopped before CDS starts copying the interned string table");
 
   // shared table always uses java_lang_String::hash_code
@@ -666,7 +666,7 @@ void StringTable::do_concurrent_work(JavaThread* jt) {
   // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
   // work is concurrent.
   if (needs_rehashing() && maybe_rehash_table()) {
-    Atomic::release_store(&_has_work, false);
+    AtomicAccess::release_store(&_has_work, false);
     return; // done, else grow
   }
   log_debug(stringtable, perf)("Concurrent work, live factor: %g", get_load_factor());
@@ -676,7 +676,7 @@ void StringTable::do_concurrent_work(JavaThread* jt) {
   } else {
     clean_dead_entries(jt);
   }
-  Atomic::release_store(&_has_work, false);
+  AtomicAccess::release_store(&_has_work, false);
 }
 
 // Called at VM_Operation safepoint
@@ -966,7 +966,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
 
   // This flag will be cleared after intern table dumping has completed, so we can run the
   // compiler again (for future AOT method compilation, etc).
-  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, true));
+  DEBUG_ONLY(AtomicAccess::release_store(&_disable_interning_during_cds_dump, true));
 
   if (items_count_acquire() > (size_t)max_jint) {
     fatal("Too many strings to be archived: %zu", items_count_acquire());
@@ -1105,7 +1105,7 @@ void StringTable::write_shared_table() {
   _local_table->do_safepoint_scan(copy_into_shared_table);
   writer.dump(&_shared_table, "string");
 
-  DEBUG_ONLY(Atomic::release_store(&_disable_interning_during_cds_dump, false));
+  DEBUG_ONLY(AtomicAccess::release_store(&_disable_interning_during_cds_dump, false));
 }
 
 void StringTable::set_shared_strings_array_index(int root_index) {

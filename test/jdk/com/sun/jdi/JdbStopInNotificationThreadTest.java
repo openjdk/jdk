@@ -47,15 +47,14 @@ class JdbStopInNotificationThreadTestTarg {
 
     private static volatile boolean done = false;
 
-    private static final MemoryPoolMXBean tenuredGenPool =
-            findTenuredGenPool();
+    private static final MemoryPoolMXBean tenuredGenPool = findTenuredGenPool();
 
     public static void main(String[] args) throws Exception {
         test(); // @1 breakpoint
     }
 
     private static void test() throws Exception {
-        setPercentageUsageThreshold(0.1);
+        setPercentageUsageThreshold(0.2);
         MemoryMXBean mbean = ManagementFactory.getMemoryMXBean();
         NotificationEmitter emitter = (NotificationEmitter) mbean;
         emitter.addNotificationListener(new NotificationListener() {
@@ -74,34 +73,70 @@ class JdbStopInNotificationThreadTestTarg {
             }
         }, null, null);
 
-        Collection<Object[]> numbers = new LinkedList();
+        Collection<int[]> numbers = new LinkedList();
         long counter = 0;
+        System.out.println(tenuredGenPool.getName() + ": " + tenuredGenPool.getUsage());
         while (!done) {
-            numbers.add(new Object[1000]);
+            numbers.add(new int[1000]);
             counter++;
             if (counter % 1000 == 0) {
-                Thread.sleep(100);
+                System.gc();       // Encourage promotion into old/tenured generation
+                Thread.sleep(100); // Give the notification a bit of time to happen
+                MemoryUsage usage = tenuredGenPool.getUsage();
+                long used = usage.getUsed();
+                long max = usage.getMax();
+                System.out.println(tenuredGenPool.getName() + ": " + tenuredGenPool.getUsage());
+                if ((float)used / (float)max > .50) {
+                    // If we have allocated 50% of the heap pool, block here until the
+                    // notication arrives
+                    System.out.println("counter: " + counter);
+                    System.out.println(tenuredGenPool.getName() + ": " + tenuredGenPool.getUsage());
+                    System.out.println(">50% of heap pool allocated (" + used + "). Blocking...");
+                    while (!done) {
+                        Thread.sleep(100);
+                    }
+                    System.out.println("Finished blocking");
+                }
             }
         }
+
         System.out.println("Done");
     }
 
     private static MemoryPoolMXBean findTenuredGenPool() {
-        for (MemoryPoolMXBean pool :
-                ManagementFactory.getMemoryPoolMXBeans()) {
-            if (pool.getType() == MemoryType.HEAP &&
-                    pool.isUsageThresholdSupported()) {
-                return pool;
+        // List of supported GC pools
+        String[] supportedPools = {
+            "Tenured Gen",        // Serial GC
+            "PS Old Gen",         // Parallel GC
+            "G1 Old Gen",         // G1 GC
+            "ZGC Old Generation", // Z GC
+            "Shenandoah",         // Shenandoah GC
+            "Shenandoah Old Gen"  // Shenandoah generational mode GC
+        };
+
+        for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
+            if (pool.getType() == MemoryType.HEAP && pool.isUsageThresholdSupported()) {
+                System.out.println("Verify pool: " + pool.getName());
+                for (String str : supportedPools) {
+                    String poolName = pool.getName();
+                    if (str.equals(poolName)) {
+                        System.out.println("Pool Verified: " + pool.getName());
+                        return pool;
+                    }
+                }
             }
         }
-        throw new RuntimeException("Could not find tenured space");
+
+        RuntimeException ex =  new RuntimeException("Could not find tenured space");
+        ex.printStackTrace(System.out);
+        throw ex;
     }
 
     public static void setPercentageUsageThreshold(double percentage) {
         if (percentage <= 0.0 || percentage > 1.0) {
             throw new IllegalArgumentException("Percentage not in range");
         }
-        System.out.println("Setting threashold for pool " + tenuredGenPool.getName() + " percentage:" + percentage);
+        System.out.println("Setting threshold for pool " + tenuredGenPool.getName() + " percentage:" + percentage);
         long maxMemory = tenuredGenPool.getUsage().getMax();
         long warningThreshold = (long) (maxMemory * percentage);
         tenuredGenPool.setUsageThreshold(warningThreshold);
@@ -113,7 +148,7 @@ public class JdbStopInNotificationThreadTest extends JdbTest {
     private static final String DEBUGGEE_CLASS = JdbStopInNotificationThreadTestTarg.class.getName();
     private static final String PATTERN1_TEMPLATE = "^Breakpoint hit: \"thread=Notification Thread\", " +
             "JdbStopInNotificationThreadTestTarg\\$1\\.handleNotification\\(\\), line=%LINE_NUMBER.*\\R%LINE_NUMBER\\s+System\\.out\\.println\\(\"Memory usage low!!!\"\\);.*";
-    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx64M"};
+    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx128M"};
 
     private JdbStopInNotificationThreadTest() {
         super(new LaunchOptions(DEBUGGEE_CLASS)

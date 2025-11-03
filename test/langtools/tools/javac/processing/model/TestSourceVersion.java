@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 7025809 8028543 6415644 8028544 8029942 8187951 8193291 8196551 8233096 8275308
  * @summary Test latest, latestSupported, underscore as keyword, etc.
- * @author  Joseph D. Darcy
  * @modules java.compiler
  *          jdk.compiler
  */

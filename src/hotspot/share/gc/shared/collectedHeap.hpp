@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -104,8 +103,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
 
-  SoftRefPolicy _soft_ref_policy;
-
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
   static Klass* _filler_object_klass;
@@ -171,7 +168,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
@@ -248,6 +244,13 @@ protected:
   // after the Universe is fully formed, but before general heap allocation is allowed.
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
+
+  bool is_shutting_down() const;
+
+  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
+  // In this case, stall the allocation request briefly in the hope that
+  // the VM shutdown completes before the allocation request returns.
+  void stall_for_vm_shutdown();
 
   void before_exit();
 
@@ -394,9 +397,6 @@ protected:
       _total_full_collections++;
     }
   }
-
-  // Return the SoftRefPolicy for the heap;
-  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
 
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
