@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653 8343804 8351354 8366364
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -84,6 +84,8 @@ public class Settings extends TestHelper {
     private static final String TZDATA_SETTINGS = "tzdata version";
     private static final String ERR_MSG = "Unrecognized showSettings option:";
     private static final String ENABLED_GROUPS_SETTINGS = "Enabled Named Groups:";
+    private static final String ENABLED_SIG_SCHEMES_SETTINGS =
+            "Enabled Signature Schemes:";
 
     /*
      * "all" should print verbose settings
@@ -107,6 +109,7 @@ public class Settings extends TestHelper {
             checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
+        checkContains(tr, ENABLED_SIG_SCHEMES_SETTINGS);
     }
     /*
      * default (no options) should print non verbose
@@ -237,6 +240,7 @@ public class Settings extends TestHelper {
         // test a well known TLS config for sanity
         checkContains(tr, "TLSv1.2");
         checkContains(tr, ENABLED_GROUPS_SETTINGS);
+        checkContains(tr, ENABLED_SIG_SCHEMES_SETTINGS);
     }
 
     // ensure error message is printed when unrecognized option used
