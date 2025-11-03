@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @run main KeyAgreementReinit
+ * @bug 8323999
+ * @summary KeyAgreement cannot be initiated again after a failed initialization
  */
 
 
@@ -59,7 +60,6 @@ public class KeyAgreementReinit {
         } catch (InvalidKeyException e) {
             // Do nothing
         }
-
 
         ka.init(privateKey);
 
