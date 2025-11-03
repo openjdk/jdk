@@ -511,7 +511,7 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Find the right-most bit of the diff of array-of-boolean and array-of-byte layout helpers.
+  // Find the right-most non-zero (e.g., ...1000) bit of the diff of array-of-boolean and array-of-byte layout helpers.
   static int layout_helper_boolean_diffbit() {
     uint zlh = checked_cast<uint>(array_layout_helper(T_BOOLEAN));
     uint blh = checked_cast<uint>(array_layout_helper(T_BYTE));
@@ -522,7 +522,7 @@ protected:
     // The usual form is (x & -x), but VS warns (C4146) about unary minus of unsigned.
     // So use alternate form of negation to avoid warning.
     uint result = candidates & (~candidates + 1);
-    assert((result - 1) & result) == 0, "post-condition");
+    assert(((result - 1) & result) == 0, "post-condition");
     return static_cast<int>(result);
   }
 
