@@ -127,7 +127,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSucc
     }
     // Move nodes pinned on the projection or whose control is set to
     // the projection to the region.
-    lazy_replace(uncommon_proj_orig, uncommon_trap);
+    replace_node_and_forward_ctrl(uncommon_proj_orig, uncommon_trap);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < uncommon_trap->req(); proj_index++)

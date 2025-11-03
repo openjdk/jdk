@@ -645,15 +645,16 @@ public:
                               size_t word_size,
                               bool update_remsets);
 
-  // We register a region with the fast "in collection set" test. We
-  // simply set to true the array slot corresponding to this region.
-  void register_young_region_with_region_attr(G1HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
-  }
+  // The following methods update the region attribute table, i.e. a compact
+  // representation of per-region information that is regularly accessed
+  // during GC.
+  inline void register_young_region_with_region_attr(G1HeapRegion* r);
   inline void register_new_survivor_region_with_region_attr(G1HeapRegion* r);
-  inline void register_region_with_region_attr(G1HeapRegion* r);
-  inline void register_old_region_with_region_attr(G1HeapRegion* r);
+  inline void register_old_collection_set_region_with_region_attr(G1HeapRegion* r);
   inline void register_optional_region_with_region_attr(G1HeapRegion* r);
+
+  // Updates region state without overwriting the type in the region attribute table.
+  inline void update_region_attr(G1HeapRegion* r);
 
   void clear_region_attr(const G1HeapRegion* hr) {
     _region_attr.clear(hr);
@@ -665,7 +666,7 @@ public:
 
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
-  void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
+  void verify_region_attr_is_remset_tracked() PRODUCT_RETURN;
 
   void clear_bitmap_for_region(G1HeapRegion* hr);
 

@@ -380,6 +380,9 @@ public:
   // Allocation (return nullptr if full)
   inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
+  // Allocate fill after top
+  inline HeapWord* allocate_fill(size_t word_size);
+
   inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
 
   // Atomic allocation using CAS, return nullptr if full or no enough space for the req
@@ -545,7 +548,7 @@ public:
   }
 
 private:
-  void decrement_humongous_waste() const;
+  void decrement_humongous_waste();
   void do_commit();
   void do_uncommit();
 
