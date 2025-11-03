@@ -94,8 +94,13 @@ import java.util.stream.Stream;
  *     ...
  *     @Override
  *     public void close() throws IOException  {
- *         super.close();
- *         LOGGER.log("process closed");
+ *         try {
+ *             super.close();
+ *         } catch (IOException ex) {
+ *             LOGGER.log(ex);
+*          } finally {
+ *             LOGGER.log("process closed");
+ *         }
  *     }
  *     ...
  * }
