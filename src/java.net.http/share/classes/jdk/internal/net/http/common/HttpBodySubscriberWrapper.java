@@ -74,9 +74,11 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     }
 
     /**
-     * A callback to be invoked before termination, whether due to the
+     * A callback to be invoked <em>before</em> termination, whether due to the
      * completion or failure of the subscriber, or cancellation of the
-     * subscription.
+     * subscription. To be precise, this method is called before
+     * {@link #onComplete()}, {@link #onError(Throwable) onError()}, or
+     * {@link #onCancel()}.
      */
     protected void onTermination() {
         // Do nothing
