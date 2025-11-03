@@ -44,13 +44,14 @@ import jdk.test.lib.process.ProcessTools;
 * @requires vm.flagless
 * @requires vm.hasJFR
 * @library /test/lib
-* @run main/othervm/timeout=480 jdk.jfr.event.oldobject.TestEmergencyDumpAtOOM
+* @run main/othervm jdk.jfr.event.oldobject.TestEmergencyDumpAtOOM
 */
 public class TestEmergencyDumpAtOOM {
 
     public static List<String> DEFAULT_LEAKER_ARGS = List.of(
         "-Xmx64m",
         "-XX:TLABSize=2k",
+        "-XX:-CreateCoredumpOnCrash",
         "-XX:StartFlightRecording:dumponexit=true,filename=oom.jfr",
         Leaker.class.getName()
     );
