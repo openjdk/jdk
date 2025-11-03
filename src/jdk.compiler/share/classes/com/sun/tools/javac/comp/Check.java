@@ -4052,21 +4052,11 @@ public class Check {
             Type targetType;
             int maximumShift;
             switch (((OperatorSymbol)operator).opcode) {
-            case ByteCodes.ishl:
-            case ByteCodes.ishr:
-            case ByteCodes.iushr:
-            case ByteCodes.ishll:
-            case ByteCodes.ishrl:
-            case ByteCodes.iushrl:
+            case ByteCodes.ishl, ByteCodes.ishr, ByteCodes.iushr, ByteCodes.ishll, ByteCodes.ishrl, ByteCodes.iushrl:
                 targetType = syms.intType;
                 maximumShift = 32;
                 break;
-            case ByteCodes.lshl:
-            case ByteCodes.lshr:
-            case ByteCodes.lushr:
-            case ByteCodes.lshll:
-            case ByteCodes.lshrl:
-            case ByteCodes.lushrl:
+            case ByteCodes.lshl, ByteCodes.lshr, ByteCodes.lushr, ByteCodes.lshll, ByteCodes.lshrl, ByteCodes.lushrl:
                 targetType = syms.longType;
                 maximumShift = 64;
                 break;
