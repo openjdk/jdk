@@ -66,3 +66,35 @@ bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
 
   return first_wrong == nullptr;
 }
+
+#ifdef __APPLE__
+bool GtestUtils::is_memory_tagged_as_java(void* addr, size_t size) {
+  // Use mach_vm_region with extended info to get the user_tag
+  mach_vm_address_t address = (mach_vm_address_t)addr;
+  mach_vm_size_t region_size = 0;
+  vm_region_extended_info_data_t extended_info;
+  mach_msg_type_number_t info_count = VM_REGION_EXTENDED_INFO_COUNT;
+  mach_port_t object_name = MACH_PORT_NULL;
+
+  kern_return_t kr = mach_vm_region(mach_task_self(),
+                                    &address,
+                                    &region_size,
+                                    VM_REGION_EXTENDED_INFO,
+                                    (vm_region_info_t)&extended_info,
+                                    &info_count,
+                                    &object_name);
+
+  if (kr != KERN_SUCCESS) {
+    return false;
+  }
+
+  // Check if the memory region covers our allocation and has the correct tag
+  if (address <= (mach_vm_address_t)addr &&
+      (address + region_size) >= ((mach_vm_address_t)addr + size)) {
+    // Check if the user_tag matches VM_MEMORY_JAVA
+    return extended_info.user_tag == VM_MEMORY_JAVA;
+  }
+
+  return false;
+}
+#endif

@@ -28,6 +28,10 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
+#ifdef __APPLE__
+#include <mach/mach_vm.h>
+#include <mach/vm_statistics.h>
+#endif
 
 class GtestUtils : public AllStatic {
 public:
@@ -44,6 +48,12 @@ public:
   // Convenience method with a predefined byte mark.
   static void mark_range(void* p, size_t s)               { mark_range_with(p, s, 32); }
   static bool is_range_marked(const void* p, size_t s)    { return is_range_marked(p, s, 32); }
+
+#ifdef __APPLE__
+  // Check if a memory region is tagged with VM_MEMORY_JAVA on macOS
+  // This function is used by multiple test files to validate BSD memory tagging
+  static bool is_memory_tagged_as_java(void* addr, size_t size);
+#endif
 
 };
 

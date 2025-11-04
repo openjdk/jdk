@@ -30,46 +30,10 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/os.hpp"
+#include "testutils.hpp"
 #include "unittest.hpp"
-#ifdef __APPLE__
-#include <mach/mach_vm.h>
-#include <mach/vm_statistics.h>
-#endif
 
 using namespace testing;
-
-#ifdef __APPLE__
-// Check if a memory region is tagged with VM_MEMORY_JAVA
-static bool is_memory_tagged_as_java(void* addr, size_t size) {
-  // Use mach_vm_region with extended info to get the user_tag
-  mach_vm_address_t address = (mach_vm_address_t)addr;
-  mach_vm_size_t region_size = 0;
-  vm_region_extended_info_data_t extended_info;
-  mach_msg_type_number_t info_count = VM_REGION_EXTENDED_INFO_COUNT;
-  mach_port_t object_name = MACH_PORT_NULL;
-
-  kern_return_t kr = mach_vm_region(mach_task_self(),
-                                    &address,
-                                    &region_size,
-                                    VM_REGION_EXTENDED_INFO,
-                                    (vm_region_info_t)&extended_info,
-                                    &info_count,
-                                    &object_name);
-
-  if (kr != KERN_SUCCESS) {
-    return false;
-  }
-
-  // Check if the memory region covers our allocation and has the correct tag
-  if (address <= (mach_vm_address_t)addr &&
-      (address + region_size) >= ((mach_vm_address_t)addr + size)) {
-    // Check if the user_tag matches VM_MEMORY_JAVA
-    return extended_info.user_tag == VM_MEMORY_JAVA;
-  }
-
-  return false;
-}
-#endif
 
 #define CAPTURE_DELIM "\n"
 #define CAPTURE1(expression) #expression << " evaluates to " << expression
@@ -141,7 +105,7 @@ public:
 
   #ifdef __APPLE__
     // Validate BSD memory tagging for os::commit_memory path (covers pd_* functions)
-    EXPECT_TRUE(is_memory_tagged_as_java(_reserved, ZGranuleSize))
+    EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(_reserved, ZGranuleSize))
       << "Memory allocated via os::commit_memory should be tagged with VM_MEMORY_JAVA on macOS";
   #endif
 
@@ -273,7 +237,7 @@ public:
 #ifdef __APPLE__
     // Validate BSD memory tagging for ZGC allocation path (covers ZPhysicalMemoryBacking functions)
     if (!is_null(object)) {
-      EXPECT_TRUE(is_memory_tagged_as_java((void*)untype(object), object_size))
+      EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java((void*)untype(object), object_size))
         << "ZGC object allocation should be tagged with VM_MEMORY_JAVA on macOS";
     }
 #endif

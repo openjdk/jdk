@@ -37,45 +37,8 @@
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
-#ifdef __APPLE__
-#include <mach/mach_vm.h>
-#include <mach/vm_statistics.h>
-#endif
 
 using testing::HasSubstr;
-
-#ifdef __APPLE__
-// Check if a memory region is tagged with VM_MEMORY_JAVA
-static bool is_memory_tagged_as_java(void* addr, size_t size) {
-  // Use mach_vm_region with extended info to get the user_tag
-  mach_vm_address_t address = (mach_vm_address_t)addr;
-  mach_vm_size_t region_size = 0;
-  vm_region_extended_info_data_t extended_info;
-  mach_msg_type_number_t info_count = VM_REGION_EXTENDED_INFO_COUNT;
-  mach_port_t object_name = MACH_PORT_NULL;
-
-  kern_return_t kr = mach_vm_region(mach_task_self(),
-                                    &address,
-                                    &region_size,
-                                    VM_REGION_EXTENDED_INFO,
-                                    (vm_region_info_t)&extended_info,
-                                    &info_count,
-                                    &object_name);
-
-  if (kr != KERN_SUCCESS) {
-    return false;
-  }
-
-  // Check if the memory region covers our allocation and has the correct tag
-  if (address <= (mach_vm_address_t)addr &&
-      (address + region_size) >= ((mach_vm_address_t)addr + size)) {
-    // Check if the user_tag matches VM_MEMORY_JAVA
-    return extended_info.user_tag == VM_MEMORY_JAVA;
-  }
-
-  return false;
-}
-#endif
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -776,7 +739,7 @@ TEST_VM(os, show_mappings_full_range) {
 
 #ifdef __APPLE__
     // Validate BSD memory tagging for JVM-allocated memory
-    EXPECT_TRUE(is_memory_tagged_as_java(p, 1 * M))
+    EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(p, 1 * M))
       << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
   }
@@ -1153,7 +1116,7 @@ TEST_VM(os, free_without_uncommit) {
 
 #ifdef __APPLE__
   // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(is_memory_tagged_as_java(base, size))
+  EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(base, size))
     << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
 
@@ -1182,7 +1145,7 @@ TEST_VM(os, commit_memory_or_exit) {
 
 #ifdef __APPLE__
   // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(is_memory_tagged_as_java(base, size))
+  EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(base, size))
     << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
 
