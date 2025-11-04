@@ -960,4 +960,12 @@ public abstract sealed class AbstractMemorySegmentImpl
         Objects.requireNonNull(str);
         StringSupport.write(this, offset, charset, str);
     }
+
+    @ForceInline
+    @Override
+    public int setStringWithoutNullTerminator(long offset, String str, Charset charset) {
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(str);
+        return StringSupport.copyBytes(str, this, charset, offset);
+    }
 }

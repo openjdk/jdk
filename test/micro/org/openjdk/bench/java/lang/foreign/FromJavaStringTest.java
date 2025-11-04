@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,12 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
-public class ToJavaStringTest {
+@Fork(
+        value = 3,
+        jvmArgs = {"--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native"})
+public class FromJavaStringTest {
 
+    private String str;
     private MemorySegment strSegment;
     private int lengthBytes;
 
@@ -65,41 +68,33 @@ public class ToJavaStringTest {
         while (LOREM.length() < size) {
             LOREM += LOREM;
         }
-        var s = LOREM.substring(0, size);
-        strSegment = arena.allocateFrom(s);
-        lengthBytes = s.getBytes(UTF_8).length;
+        str = LOREM.substring(0, size);
+        strSegment = arena.allocateFrom(str);
+        lengthBytes = str.getBytes(UTF_8).length;
     }
 
     @Benchmark
-    public String panama_readString() {
-        return strSegment.getString(0);
+    public void panama_setString() {
+        strSegment.setString(0, str, UTF_8);
     }
 
     @Benchmark
-    public String panama_readStringLength() {
-        return strSegment.getString(0, UTF_8, lengthBytes);
+    public void panama_setStringWithoutNullTerminator() {
+        strSegment.setStringWithoutNullTerminator(0, str, UTF_8);
     }
 
     @Benchmark
-    public String panama_copyLength() {
-        byte[] bytes = new byte[lengthBytes];
-        MemorySegment.copy(strSegment, JAVA_BYTE, 0, bytes, 0, lengthBytes);
-        return new String(bytes, UTF_8);
+    public void panama_copyStringWithoutNullTerminator() {
+        byte[] bytes = str.getBytes(UTF_8);
+        MemorySegment.copy(bytes, 0, strSegment, JAVA_BYTE, 0, bytes.length);
     }
 
-    @Benchmark
-    public String jni_readString() {
-        return readString(strSegment.address());
-    }
-
-    static native String readString(long addr);
-
-    static String LOREM = """
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
-                 dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                 ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                 fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
-                 mollit anim id est laborum.
-                """;
-
+    static String LOREM =
+            """
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+             dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+             ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+             fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+             mollit anim id est laborum.
+            """;
 }
