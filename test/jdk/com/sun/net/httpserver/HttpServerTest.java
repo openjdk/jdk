@@ -43,6 +43,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class HttpServerTest implements HttpHandler {
     private static final int HTTP_STATUS_CODE_OK = 200;
@@ -66,7 +67,7 @@ public class HttpServerTest implements HttpHandler {
 
     private void sendHttpStatusCode(int httpCode, HttpExchange ex) {
         try {
-            ex.sendResponseHeaders(httpCode, 0);
+            ex.sendResponseHeaders(httpCode, RSPBODY_CHUNKED);
             ex.close();
         } catch (IOException e) {
             throw new RuntimeException("Server couldn't send response: " + e, e);

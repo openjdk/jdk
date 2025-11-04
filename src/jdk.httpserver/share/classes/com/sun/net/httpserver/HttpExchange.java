@@ -180,24 +180,24 @@ public abstract class HttpExchange implements AutoCloseable, Request {
 
     /**
      * Starts sending the final response back to the client using the current set of
-     * response headers obtained from {@link #getResponseHeaders()} and the numeric 
+     * response headers obtained from {@link #getResponseHeaders()} and the numeric
      * response code as specified in this
      * method. The response body length is also specified as follows. If the
      * response length parameter is greater than {@code zero}, this specifies an
      * exact number of bytes to send and the application must send that exact
-     * amount of data. If the response length parameter has the value 
+     * amount of data. If the response length parameter has the value
      * {@link #RSPBODY_CHUNKED} then the response body uses
      * chunked transfer encoding and an arbitrary amount of data may be
      * sent. The application terminates the response body by closing the
      * {@link OutputStream}.
-     * If response length has the value {@link #RSPBODY_EMPTY} then no 
+     * If response length has the value {@link #RSPBODY_EMPTY} then no
      * response body is being sent.
      *
      * <p> If the content-length response header has not already been set then
      * this is set to the appropriate value depending on the response length
      * parameter.
      *
-     * <p> The request body must be consumed before calling this method.
+     * <p> This method must be called prior to calling {@link #getResponseBody()}.
      *
      * @implNote This implementation allows the caller to instruct the
      * server to force a connection close after the exchange terminates, by
@@ -212,7 +212,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      *                       If equal to {@link #RSPBODY_CHUNKED}, then chunked encoding is used,
      *                       and an arbitrary number of bytes may be written.
      *                       If equal to {@link #RSPBODY_EMPTY}, then no response body length is
-     *                       specified and no response body may be written.
+     *                       specified and no response body may be written. Any value {@literal <= -1}
+     *                       is treated the same as {@link #RSPBODY_EMPTY}.
      * @throws IOException   if the response headers have already been sent or an I/O error occurs
      * @see   HttpExchange#getResponseBody()
      */

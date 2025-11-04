@@ -54,6 +54,7 @@ import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -392,12 +393,10 @@ public class HttpsParametersClientAuthTest {
     // A HttpHandler which just returns 200 response code
     private static final class AllOKHandler implements HttpHandler {
 
-        private static final int NO_RESPONSE_BODY = -1;
-
         @Override
         public void handle(final HttpExchange exchange) throws IOException {
             System.out.println("responding to request: " + exchange.getRequestURI());
-            exchange.sendResponseHeaders(200, NO_RESPONSE_BODY);
+            exchange.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
     }
 }
