@@ -379,7 +379,7 @@ public enum ClassFileFormatVersion {
      * @since 26
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se26/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 26 Edition</cite></a>
      */
     RELEASE_26(70),
@@ -391,7 +391,7 @@ public enum ClassFileFormatVersion {
      * @since 27
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se27/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/27/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 27 Edition</cite></a>
      */
     RELEASE_27(71),
