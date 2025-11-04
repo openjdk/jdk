@@ -2310,11 +2310,32 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
-                Assert.check(sym.completer == Completer.NULL_COMPLETER);
-                sym.completer = sym -> addTypeAnnotationsToSymbol(sym, newList);
+                if (sym.completer != Completer.NULL_COMPLETER) {
+                    Assert.check(sym.completer instanceof TypeAnnotationsSymbolCompleter);
+                    TypeAnnotationsSymbolCompleter completer = (TypeAnnotationsSymbolCompleter) sym.completer;
+                    completer.attributes = newList.prependList(completer.attributes);
+                } else {
+                    sym.completer = new TypeAnnotationsSymbolCompleter(newList);
+                }
             } finally {
                 currentClassFile = previousClassFile;
             }
+        }
+    }
+
+    private class TypeAnnotationsSymbolCompleter implements Completer {
+
+        List<Attribute.TypeCompound> attributes;
+
+        private TypeAnnotationsSymbolCompleter(List<Attribute.TypeCompound> attributes) {
+            this.attributes = attributes;
+        }
+
+        @Override
+        public void complete(Symbol sym) throws CompletionFailure {
+            Assert.checkNonNull(attributes);
+            addTypeAnnotationsToSymbol(sym, attributes);
+            attributes = null;
         }
     }
 
