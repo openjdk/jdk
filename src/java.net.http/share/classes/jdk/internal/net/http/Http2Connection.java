@@ -1828,6 +1828,20 @@ class Http2Connection  {
                 // if there was any error or if the TubeSubscriber completed normally,
                 // then close the connection
                 if (x != null || completed) {
+                    // although the connection terminator stops the scheduler too,
+                    // we don't want to wait that "long" and instead we should immediately
+                    // stop the scheduler so that we don't enter "processQueue" anymore.
+                    scheduler.stop();
+                    if (client2.stopping()) {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler");
+                        }
+                    } else {
+                        if (debug.on()) {
+                            debug.log("Stopping scheduler", x);
+                        }
+                    }
+                    // terminate the connection
                     final Http2TerminationCause tc = (x != null)
                             ? Http2TerminationCause.forException(x)
                             : Http2TerminationCause.noErrorTermination();
@@ -2050,10 +2064,9 @@ class Http2Connection  {
                     debug.log("Closing connection (" + stateStr + ") due to: " + tc);
                 }
             }
-
-            client2.removeFromPool(Http2Connection.this);
             // close the TubeSubscriber
             subscriber.close();
+            client2.removeFromPool(Http2Connection.this);
             // notify the HTTP/2 streams of the connection closure
             for (final Stream<?> s : streams.values()) {
                 try {
