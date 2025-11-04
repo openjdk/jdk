@@ -97,6 +97,7 @@ public class Versions {
         TWENTY_FOUR(false,"68.0", "24"),
         TWENTY_FIVE(false,"69.0", "25"),
         TWENTY_SIX(false, "70.0", "26"),
+        TWENTY_SEVEN(false, "71.0", "27"),
         ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
