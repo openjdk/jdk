@@ -4765,6 +4765,24 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
       Node* opaque = head->is_canonical_loop_entry();
       if (opaque != nullptr) {
         useful_zero_trip_guard_opaques_nodes.push(opaque);
+#ifdef ASSERT
+        // See PhaseIdealLoop::do_unroll
+        // This property is required in do_unroll, but it may not hold after cloning a loop.
+        // In such a case, we bail out from unrolling, and rely on IGVN to clean up the graph.
+        // We are here before loop cloning (before iteration_split), so if this property
+        // does not hold, it must come from the previous round of loop optimizations, meaning
+        // that IGVN failed to clean it: we will catch that here.
+        // On the other hand, if this assert passes, a bailout in do_unroll means that
+        // this property was broken in the current round of loop optimization (between here
+        // and do_unroll), so we give a chance to IGVN to make the property true again.
+        if (head->is_main_loop()) {
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
+          assert(opaque->in(1) == head->limit(), "After IGVN cleanup, input of opaque node must be the limit.");
+        }
+        if (head->is_post_loop()) {
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
+        }
+#endif
       }
     }
   }
@@ -4934,7 +4952,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
 
 
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
 
   // Reset major-progress flag for the driver's heuristics
@@ -5315,7 +5333,7 @@ void PhaseIdealLoop::print_statistics() {
 // Build a verify-only PhaseIdealLoop, and see that it agrees with "this".
 void PhaseIdealLoop::verify() const {
   ResourceMark rm;
-  int old_progress = C->major_progress();
+  bool old_progress = C->major_progress();
   bool success = true;
 
   PhaseIdealLoop phase_verify(_igvn, this);

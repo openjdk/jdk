@@ -152,7 +152,7 @@ java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
@@ -636,8 +636,6 @@ sun/security/smartcardio/TestPresent.java                       8039280 generic-
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
-
-sun/security/ssl/SSLLogger/DebugPropertyValuesTest.java         8370852 generic-all
 
 ############################################################################
 
