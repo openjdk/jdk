@@ -217,10 +217,7 @@ private:
                                137, // prime number
                                AnyObj::C_HEAP,
                                mtClassShared,
-                               DumpTimeSharedClassTable_hash> {
-  public:
-    int _count;
-  };
+                               DumpTimeSharedClassTable_hash> {};
 
 public: // solaris compiler wants this for RunTimeKlassSubGraphInfoTable
   inline static bool record_equals_compact_hashtable_entry(

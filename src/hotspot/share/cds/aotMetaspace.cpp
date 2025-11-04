@@ -1974,13 +1974,13 @@ void AOTMetaspace::unmap_archive(FileMapInfo* mapinfo) {
 // For -XX:PrintSharedArchiveAndExit
 class CountSharedSymbols : public SymbolClosure {
  private:
-   int _count;
+   size_t _count;
  public:
    CountSharedSymbols() : _count(0) {}
   void do_symbol(Symbol** sym) {
     _count++;
   }
-  int total() { return _count; }
+  size_t total() { return _count; }
 
 };
 
@@ -2054,7 +2054,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     // collect shared symbols and strings
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
-    tty->print_cr("Number of shared symbols: %d", cl.total());
+    tty->print_cr("Number of shared symbols: %ld", cl.total());
     tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == nullptr || _archive_loading_failed) {

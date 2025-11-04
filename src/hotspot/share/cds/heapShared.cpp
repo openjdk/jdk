@@ -1049,7 +1049,7 @@ void HeapShared::write_subgraph_info_table() {
 
   _run_time_subgraph_info_table.reset();
 
-  CompactHashtableWriter writer(d_table->_count, &stats);
+  CompactHashtableWriter writer(d_table->number_of_entries(), &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
   d_table->iterate(&copy);
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
