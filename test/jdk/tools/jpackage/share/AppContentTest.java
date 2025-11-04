@@ -499,11 +499,11 @@ public class AppContentTest {
         return new FileContentFactory(() -> {
             var basedir = TKit.createTempDirectory("content").resolve(path);
 
-            for (var textFile : Map.ofEntries(
+            for (var textFile : List.of(
                     entry("woods/moose", "The moose"),
                     entry("woods/bear", "The bear"),
                     entry("woods/trees/jay", "The gray jay")
-            ).entrySet()) {
+            )) {
                 var src = basedir.resolve(textFile.getKey());
                 Files.createDirectories(src.getParent());
                 TKit.createTextFile(src, Stream.of(textFile.getValue()));

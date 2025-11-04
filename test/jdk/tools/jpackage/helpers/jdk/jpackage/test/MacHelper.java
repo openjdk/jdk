@@ -545,6 +545,43 @@ public final class MacHelper {
         }
     }
 
+    static boolean isVerbatimCopyFromPredefinedAppImage(JPackageCommand cmd, Path path) {
+        cmd.verifyIsOfType(PackageType.MAC);
+
+        final var predefinedAppImage = Path.of(cmd.getArgumentValue("--app-image"));
+
+        final var appLayout = ApplicationLayout.macAppImage().resolveAt(predefinedAppImage);
+
+        if (!path.startsWith(predefinedAppImage)) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] is not in directory [%s]", path, predefinedAppImage));
+        }
+
+        if (path.startsWith(appLayout.contentDirectory().resolve("_CodeSignature"))) {
+            // A file in the "Contents/_CodeSignature" directory.
+            return false;
+        }
+
+        final var outputAppImageDir = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+
+        final var outputAppImagePath = outputAppImageDir.resolve(predefinedAppImage.relativize(path));
+
+        if (path.startsWith(appLayout.launchersDirectory()) &&
+                cmd.launcherNames(true).stream().map(cmd::appLauncherPath).collect(toSet()).contains(outputAppImagePath)) {
+            // The `path` references a launcher.
+            // It can be signed and its digest may change.
+            return false;
+        }
+
+        if (path.startsWith(appLayout.runtimeHomeDirectory().resolve("bin"))) {
+            // The `path` references an executable native command in JDK's "bin" subdirectory.
+            // It can be signed and its digest may change.
+            return false;
+        }
+
+        return true;
+    }
+
     static void verifyUnsignedBundleSignature(JPackageCommand cmd) {
         if (!cmd.isImagePackageType()) {
             MacSignVerify.assertUnsigned(cmd.outputBundle());
@@ -716,12 +753,8 @@ public final class MacHelper {
         final var defaultInstallLocation = Path.of(
                 cmd.isRuntime() ? "/Library/Java/JavaVirtualMachines" : "/Applications");
 
-        final Path installLocation;
-        if (cmd.packageType() == PackageType.MAC_DMG) {
-            installLocation = defaultInstallLocation;
-        } else {
-            installLocation = cmd.getArgumentValue("--install-dir", () -> defaultInstallLocation, Path::of);
-        }
+        final Path installLocation = Optional.ofNullable(cmd.getArgumentValue("--install-dir"))
+                .map(Path::of).orElse(defaultInstallLocation);
 
         return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? ".jdk" : ".app"));
     }

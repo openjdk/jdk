@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.test.AdditionalLauncher.NO_ICON;
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static jdk.jpackage.test.LauncherShortcut.LINUX_SHORTCUT;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -70,6 +72,12 @@ public final class LauncherVerifier {
 
     static void executeMainLauncherAndVerifyOutput(JPackageCommand cmd) {
         new LauncherVerifier(cmd).verify(cmd, Action.EXECUTE_LAUNCHER);
+    }
+
+    static String launcherDescription(JPackageCommand cmd, String launcherName) {
+        return launcherDescription(cmd, launcherName, (theCmd, theLauncherName) -> {
+            return getAdditionalLauncherProperties(theCmd, theLauncherName);
+        });
     }
 
 
@@ -137,8 +145,8 @@ public final class LauncherVerifier {
     }
 
     private String getDescription(JPackageCommand cmd) {
-        return findProperty("description").orElseGet(() -> {
-            return cmd.getArgumentValue("--description", cmd::name);
+        return launcherDescription(cmd, name, (theCmd, theLauncherName) -> {
+            return properties.orElseThrow();
         });
     }
 
@@ -272,7 +280,11 @@ public final class LauncherVerifier {
     }
 
     private void verifyDescription(JPackageCommand cmd) throws IOException {
-        if (TKit.isWindows()) {
+        if (TKit.isWindows() && !cmd.hasArgument("--app-image")) {
+            // On Windows, check the description if the predefined app image is not configured.
+            // The description and the icon are encoded in the launcher executable, which should be
+            // copied verbatim from the predefined app image into the output bundle.
+            // This check is done in the JPackageCommand class, so there is no need to duplicate it here.
             String expectedDescription = getDescription(cmd);
             Path launcherPath = cmd.appLauncherPath(name);
             String actualDescription =
@@ -420,6 +432,24 @@ public final class LauncherVerifier {
                 return icon;
             } else {
                 return null;
+            }
+        });
+    }
+
+    private static String launcherDescription(
+            JPackageCommand cmd,
+            String launcherName,
+            BiFunction<JPackageCommand, String, PropertyFile> addLauncherPropertyFileGetter) {
+
+        return PropertyFinder.findLauncherProperty(cmd, launcherName,
+                PropertyFinder.cmdlineOptionWithValue("--description"),
+                PropertyFinder.launcherPropertyFile("description"),
+                PropertyFinder.nop()
+        ).orElseGet(() -> {
+            if (cmd.isMainLauncher(launcherName)) {
+                return cmd.mainLauncherName();
+            } else {
+                return launcherDescription(cmd, null, addLauncherPropertyFileGetter);
             }
         });
     }
