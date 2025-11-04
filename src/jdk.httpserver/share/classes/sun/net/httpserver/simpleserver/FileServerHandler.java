@@ -423,7 +423,7 @@ public final class FileServerHandler implements HttpHandler {
                 while (bytesToWrite > 0) {
                     int len = raf.read(buffer, 0, (int) Math.min(buffer.length, bytesToWrite));
                     if (len == -1) {
-                        break;  // EOF
+                        throw new IOException("Unexpected EOF while reading file");
                     }
                     os.write(buffer, 0, len);
                     bytesToWrite -= len;
