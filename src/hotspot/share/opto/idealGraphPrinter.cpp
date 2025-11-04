@@ -600,7 +600,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       t->dump_on(&s2);
     } else if( t == Type::MEMORY ) {
       s2.print("  Memory:");
-      MemNode::dump_adr_type(node, node->adr_type(), &s2);
+      MemNode::dump_adr_type(node->adr_type(), &s2);
     }
 
     assert(s2.size() < sizeof(buffer), "size in range");

@@ -24,6 +24,7 @@
  *
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -42,8 +43,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
-
-#include <type_traits>
 
 const int LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
 const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());

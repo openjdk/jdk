@@ -28,6 +28,7 @@
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -73,8 +74,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
-
-#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -3055,7 +3054,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:
