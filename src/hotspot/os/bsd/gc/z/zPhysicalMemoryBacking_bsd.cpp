@@ -105,10 +105,10 @@ bool ZPhysicalMemoryBacking::commit_inner(zbacking_offset offset, size_t length)
 
   const uintptr_t addr = _base + untype(offset);
   constexpr int mmap_fd =
-  #ifdef __APPLE__ 
+  #ifdef __APPLE__
     VM_MAKE_TAG(VM_MEMORY_JAVA);
-  #else 
-    -1; 
+  #else
+    -1;
   #endif
   const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, mmap_fd, 0);
   if (res == MAP_FAILED) {
@@ -158,10 +158,10 @@ size_t ZPhysicalMemoryBacking::uncommit(zbacking_offset offset, size_t length) c
 
   const uintptr_t start = _base + untype(offset);
   constexpr int mmap_fd =
-  #ifdef __APPLE__ 
+  #ifdef __APPLE__
     VM_MAKE_TAG(VM_MEMORY_JAVA);
-  #else 
-    -1; 
+  #else
+    -1;
   #endif
   const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, mmap_fd, 0);
   if (res == MAP_FAILED) {
@@ -185,10 +185,10 @@ void ZPhysicalMemoryBacking::unmap(zaddress_unsafe addr, size_t size) const {
   // the backing memory. For this reason we map a new anonymous, non-accessible
   // and non-reserved page over the mapping instead of actually unmapping.
   constexpr int mmap_fd =
-  #ifdef __APPLE__ 
+  #ifdef __APPLE__
     VM_MAKE_TAG(VM_MEMORY_JAVA);
-  #else 
-    -1; 
+  #else
+    -1;
   #endif
   const void* const res = mmap((void*)untype(addr), size, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, mmap_fd, 0);
   if (res == MAP_FAILED) {

@@ -139,11 +139,11 @@ public:
 
     os::commit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
 
-#ifdef __APPLE__
+  #ifdef __APPLE__
     // Validate BSD memory tagging for os::commit_memory path (covers pd_* functions)
-    EXPECT_TRUE(is_memory_tagged_as_java(_reserved, ZGranuleSize)) 
+    EXPECT_TRUE(is_memory_tagged_as_java(_reserved, ZGranuleSize))
       << "Memory allocated via os::commit_memory should be tagged with VM_MEMORY_JAVA on macOS";
-#endif
+  #endif
 
     _page_offset = uintptr_t(_reserved) - ZAddressHeapBase;
   }
@@ -273,7 +273,7 @@ public:
 #ifdef __APPLE__
     // Validate BSD memory tagging for ZGC allocation path (covers ZPhysicalMemoryBacking functions)
     if (!is_null(object)) {
-      EXPECT_TRUE(is_memory_tagged_as_java((void*)untype(object), object_size)) 
+      EXPECT_TRUE(is_memory_tagged_as_java((void*)untype(object), object_size))
         << "ZGC object allocation should be tagged with VM_MEMORY_JAVA on macOS";
     }
 #endif

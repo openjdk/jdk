@@ -1690,11 +1690,11 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
-  constexpr int mmap_fd = 
-  #ifdef __APPLE__ 
+  constexpr int mmap_fd =
+  #ifdef __APPLE__
     VM_MAKE_TAG(VM_MEMORY_JAVA);
-  #else 
-    -1; 
+  #else
+    -1;
   #endif
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, mmap_fd, 0);
   if (addr == MAP_FAILED) {
