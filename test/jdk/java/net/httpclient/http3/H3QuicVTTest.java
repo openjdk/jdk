@@ -138,7 +138,7 @@ class H3QuicVTTest implements HttpServerAdapters {
     }
 
     @BeforeAll
-    public static void beforeClass() throws Exception {
+    static void beforeClass() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
