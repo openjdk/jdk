@@ -204,13 +204,7 @@
   }
 
   static bool supports_transform_cmove_to_vectorblend(int cmove_opc) {
-    switch (cmove_opc) {
-      case Op_CMoveF:
-      case Op_CMoveD:
-        return true;
-      default:
-        return false;
-    }
+    return false;
   }
 
 #endif // CPU_RISCV_MATCHER_RISCV_HPP
