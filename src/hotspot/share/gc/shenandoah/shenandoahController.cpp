@@ -29,21 +29,13 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
-void ShenandoahController::pacing_notify_alloc(size_t words) {
-  assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(&_allocs_seen, words, memory_order_relaxed);
-}
-
-size_t ShenandoahController::reset_allocs_seen() {
-  return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
-}
 
 void ShenandoahController::update_gc_id() {
-  Atomic::inc(&_gc_id);
+  AtomicAccess::inc(&_gc_id);
 }
 
 size_t ShenandoahController::get_gc_id() {
-  return Atomic::load(&_gc_id);
+  return AtomicAccess::load(&_gc_id);
 }
 
 void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest& req, bool block) {

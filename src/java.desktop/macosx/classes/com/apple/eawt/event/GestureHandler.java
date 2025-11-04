@@ -126,7 +126,7 @@ final class GestureHandler {
 
     // notifies all listeners in a particular component/handler pair
     // and recursively notifies up the component hierarchy
-    static class PerComponentNotifier {
+    static final class PerComponentNotifier {
         final Component component;
         final GestureHandler handler;
 

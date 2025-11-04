@@ -126,6 +126,7 @@ class outputStream;
   f(final_update_refs,                              "Pause Final Update Refs (N)")     \
   f(final_update_refs_verify,                       "  Verify")                        \
   f(final_update_refs_update_region_states,         "  Update Region States")          \
+  f(final_update_refs_transfer_satb,                "  Transfer Old From SATB")        \
   f(final_update_refs_trash_cset,                   "  Trash Collection Set")          \
   f(final_update_refs_rebuild_freeset,              "  Rebuild Free Set")              \
   f(final_update_refs_propagate_gc_state,           "  Propagate GC State")            \
@@ -197,8 +198,6 @@ class outputStream;
   f(full_gc_reconstruct_remembered_set,             "    Reconstruct Remembered Set")  \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
   f(full_gc_propagate_gc_state,                     "  Propagate GC State")            \
-                                                                                       \
-  f(pacing,                                         "Pacing")                          \
                                                                                        \
   f(heap_iteration_roots,                           "Heap Iteration")                  \
   SHENANDOAH_PAR_PHASE_DO(heap_iteration_roots_,    "  HI: ", f)                       \

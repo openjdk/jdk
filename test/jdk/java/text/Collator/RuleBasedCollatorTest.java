@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,40 +26,45 @@
  * @bug 4406815 8222969 8266784
  * @summary RuleBasedCollatorTest uses very limited but selected test data
  *  to test basic functionalities provided by RuleBasedCollator.
- * @run testng/othervm RuleBasedCollatorTest
+ * @run junit/othervm RuleBasedCollatorTest
  */
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.CollationElementIterator;
 import java.text.CollationKey;
-import java.text.RuleBasedCollator;
 import java.text.Collator;
 import java.text.ParseException;
+import java.text.RuleBasedCollator;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.testng.SkipException;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RuleBasedCollatorTest {
 
-    static RuleBasedCollator USC;
-    static String US_RULES;
+    private static RuleBasedCollator USC;
+    private static String US_RULES;
 
-    @BeforeClass
-    public void setup() {
+    @BeforeAll
+    void setup() {
         Collator c = Collator.getInstance(Locale.US);
-        if (!(c instanceof RuleBasedCollator)) {
-            throw new SkipException("skip tests.");
-        }
+        assumeFalse(!(c instanceof RuleBasedCollator), "skip tests.");
         USC = (RuleBasedCollator) c;
         US_RULES = USC.getRules();
     }
 
 
-    @DataProvider(name = "rulesData")
     Object[][] rulesData() {
         //Basic Tailor
         String BASIC_TAILOR_RULES = "< b=c<\u00e6;A,a";
@@ -91,15 +96,15 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "rulesData")
-    public void testRules(String rules, String[] testData, String[] expected)
+    @ParameterizedTest
+    @MethodSource("rulesData")
+    void testRules(String rules, String[] testData, String[] expected)
             throws ParseException {
         Arrays.sort(testData, new RuleBasedCollator(rules));
-        assertEquals(testData, expected);
+        assertArrayEquals(expected, testData);
 
     }
 
-    @DataProvider(name = "FrenchSecondarySort")
     Object[][] FrenchSecondarySort() {
         return new Object[][] {
                 { "\u0061\u00e1\u0061", "\u00e1\u0061\u0061", 1 },
@@ -111,8 +116,9 @@ public class RuleBasedCollatorTest {
                 { "a", "\u1ea1", -1 } };
     }
 
-    @Test(dataProvider = "FrenchSecondarySort")
-    public void testFrenchSecondarySort(String sData, String tData,
+    @ParameterizedTest
+    @MethodSource("FrenchSecondarySort")
+    void testFrenchSecondarySort(String sData, String tData,
             int expected) throws ParseException {
         String french_rule = "@";
         String rules = US_RULES + french_rule;
@@ -121,7 +127,6 @@ public class RuleBasedCollatorTest {
         assertEquals(expected, result);
     }
 
-    @DataProvider(name = "ThaiLaoVowelConsonantSwapping")
     Object[][] ThaiLaoVowelConsonantSwapping() {
         return new Object[][] {{"\u0e44\u0e01", "\u0e40\u0e2e", -1},//swap
                 {"\u0e2e\u0e40", "\u0e01\u0e44", 1},//no swap
@@ -129,8 +134,9 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "ThaiLaoVowelConsonantSwapping")
-    public void testThaiLaoVowelConsonantSwapping(String sData, String tData,
+    @ParameterizedTest
+    @MethodSource("ThaiLaoVowelConsonantSwapping")
+    void testThaiLaoVowelConsonantSwapping(String sData, String tData,
             int expected) throws ParseException {
         String thai_rule = "& Z < \u0e01 < \u0e2e <\u0e40 < \u0e44!";
         String rules = US_RULES + thai_rule;
@@ -140,16 +146,15 @@ public class RuleBasedCollatorTest {
     }
 
     @Test
-    public void testIgnorableCharacter() throws ParseException {
+    void testIgnorableCharacter() throws ParseException {
         String rule = "=f<a<c";
         RuleBasedCollator rc = new RuleBasedCollator(rule);
         CollationElementIterator iter = rc.getCollationElementIterator("f");
         int element = iter.next();
         int primary = iter.primaryOrder(element);
-        assertEquals(primary, 0);
+        assertEquals(0, primary);
     }
 
-    @DataProvider(name = "Normalization")
     Object[][] Normalization() {
         return new Object[][] {
                 //micro sign has no canonical decomp mapping
@@ -162,16 +167,17 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "Normalization")
-    public void testNormalization(String sData, String tData, int decomp,
+    @ParameterizedTest
+    @MethodSource("Normalization")
+    void testNormalization(String sData, String tData, int decomp,
             int result) {
         RuleBasedCollator rc = (RuleBasedCollator)USC.clone();
         rc.setDecomposition(decomp);
-        assertEquals(rc.compare(sData, tData), result);
+        assertEquals(result, rc.compare(sData, tData));
     }
 
     @Test
-    public void testEquality() throws ParseException {
+    void testEquality() throws ParseException {
         String rule1 = "<a=b";
         RuleBasedCollator rc1= new RuleBasedCollator(rule1);
         //test equals()
@@ -186,12 +192,12 @@ public class RuleBasedCollatorTest {
 
         Arrays.sort(array1, rc1);
         Arrays.sort(array2, rc2);
-        assertEquals(array1, array2);
-        assertEquals(array1, expected);
+        assertArrayEquals(array2, array1);
+        assertArrayEquals(expected, array1);
     }
 
     @Test
-    public void testBasicParsingOrder() throws ParseException {
+    void testBasicParsingOrder() throws ParseException {
         String rule1 = "< a < b & a < c";
         String rule2 = "< a < c & a < b";
         String rule3 = "< a < b < c";
@@ -203,13 +209,12 @@ public class RuleBasedCollatorTest {
         CollationKey k2 = c2.getCollationKey(s);
         CollationKey k3 = c3.getCollationKey(s);
         //rule1 should not equals to rule2
-        assertEquals(k1.compareTo(k2) == 0, false);
+        assertNotEquals(0, k1.compareTo(k2));
 
         //rule2 should equals to rule3
-        assertEquals(k2.compareTo(k3) == 0, true);
+        assertEquals(0, k2.compareTo(k3));
     }
 
-    @DataProvider(name = "ParseData")
     Object[][] ParseData() {
         return new Object[][] {
                 {""},
@@ -220,14 +225,14 @@ public class RuleBasedCollatorTest {
         };
     }
 
-    @Test(dataProvider = "ParseData",
-            expectedExceptions = ParseException.class)
-    public void testParseException(String rule) throws ParseException{
-        new RuleBasedCollator(rule);
+    @ParameterizedTest
+    @MethodSource("ParseData")
+    void testParseException(String rule) {
+        assertThrows(ParseException.class, () -> new RuleBasedCollator(rule));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullParseException() throws ParseException{
-        new RuleBasedCollator(null);
+    @Test
+    void testNullParseException() {
+        assertThrows(NullPointerException.class, () -> new RuleBasedCollator(null));
     }
 }

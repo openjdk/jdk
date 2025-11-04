@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng ExceptionsTest
+ * @run junit ExceptionsTest
  */
 
 import java.io.IOException;
@@ -46,16 +46,16 @@ import jdk.jshell.UnresolvedReferenceException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.*;
-
-@Test
 public class ExceptionsTest extends KullaTesting {
 
     private final Compiler compiler = new Compiler();
     private final Path outDir = Paths.get("test_class_path");
 
+    @Test
     public void throwUncheckedException() {
         String message = "error_message";
         SnippetEvent cr = assertEvalException("throw new RuntimeException(\"" + message + "\");");
@@ -64,6 +64,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr.snippet(), 1)));
     }
 
+    @Test
     public void throwCheckedException() {
         String message = "error_message";
         SnippetEvent cr = assertEvalException("throw new Exception(\"" + message + "\");");
@@ -72,6 +73,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr.snippet(), 1)));
     }
 
+    @Test
     public void throwFromStaticMethodOfClass() {
         String message = "error_message";
         Snippet s1 = methodKey(assertEval("void f() { throw new RuntimeException(\"" + message + "\"); }"));
@@ -84,6 +86,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr3.snippet(), 1)));
     }
 
+    @Test
     public void throwFromStaticMethodOfInterface() {
         String message = "error_message";
         Snippet s1 = methodKey(assertEval("void f() { throw new RuntimeException(\"" + message + "\"); }"));
@@ -96,6 +99,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr3.snippet(), 1)));
     }
 
+    @Test
     public void throwChained() {
         String message1 = "error_message1";
         String message2 = "error_message2";
@@ -122,6 +126,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr4.snippet(), 1)));
     }
 
+    @Test
     public void throwChainedUnresolved() {
         String message1 = "error_message1";
         String message2 = "error_message2";
@@ -144,6 +149,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr4.snippet(), 1)));
     }
 
+    @Test
     public void throwFromConstructor() {
         String message = "error_message";
         Snippet s1 = methodKey(assertEval("void f() { throw new RuntimeException(\"" + message + "\"); }"));
@@ -156,6 +162,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr3.snippet(), 1)));
     }
 
+    @Test
     public void throwFromDefaultMethodOfInterface() {
         String message = "error_message";
         Snippet s1 = methodKey(assertEval("void f() { throw new RuntimeException(\"" + message + "\"); }"));
@@ -168,6 +175,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr3.snippet(), 1)));
     }
 
+    @Test
     public void throwFromLambda() {
         String message = "lambda";
         Snippet s1 = varKey(assertEval(
@@ -182,6 +190,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr2.snippet(), 1)));
     }
 
+    @Test
     public void throwFromAnonymousClass() {
         String message = "anonymous";
         Snippet s1 = varKey(assertEval(
@@ -198,6 +207,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", cr2.snippet(), 1)));
     }
 
+    @Test
     public void throwFromLocalClass() {
         String message = "local";
         Snippet s1 = methodKey(assertEval(
@@ -219,6 +229,7 @@ public class ExceptionsTest extends KullaTesting {
     }
 
     // test 8210527
+    @Test
     public void throwFromWithoutSource() {
         String message = "show this";
         SnippetEvent se = assertEvalException("java.lang.reflect.Proxy.newProxyInstance(" +
@@ -232,6 +243,7 @@ public class ExceptionsTest extends KullaTesting {
     }
 
     // test 8210527
+    @Test
     public void throwFromNoSource() {
         Path path = outDir.resolve("fail");
         compiler.compile(path,
@@ -250,6 +262,7 @@ public class ExceptionsTest extends KullaTesting {
     }
 
     // test 8212167
+    @Test
     public void throwLineFormat1() {
         SnippetEvent se = assertEvalException(
                 "if (true) { \n" +
@@ -261,6 +274,7 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", se.snippet(), 3)));
     }
 
+    @Test
     public void throwLineFormat3() {
         Snippet sp = methodKey(assertEval(
                 "int p() \n" +
@@ -292,13 +306,15 @@ public class ExceptionsTest extends KullaTesting {
                         newStackTraceElement("", "", se.snippet(), 1)));
     }
 
-    @Test(enabled = false) // TODO 8129427
+    @Test // TODO 8129427
+    @Disabled
     public void outOfMemory() {
         assertEval("import java.util.*;");
         assertEval("List<byte[]> list = new ArrayList<>();");
         assertExecuteException("while (true) { list.add(new byte[10000]); }", OutOfMemoryError.class);
     }
 
+    @Test
     public void stackOverflow() {
         assertEval("void f() { f(); }");
         assertExecuteException("f();", StackOverflowError.class);
@@ -361,11 +377,11 @@ public class ExceptionsTest extends KullaTesting {
             EvalException ex = (EvalException) exception;
             String actualException = ex.getExceptionClassName();
             String expectedException = exceptionInfo.exception.getCanonicalName();
-            assertEquals(actualException, expectedException,
+            assertEquals(expectedException, actualException,
                     String.format("Given \"%s\" expected exception: %s, got: %s%nStack trace:%n%s",
                             source, expectedException, actualException, getStackTrace(ex)));
             if (exceptionInfo.message != null) {
-                assertEquals(ex.getMessage(), exceptionInfo.message,
+                assertEquals(exceptionInfo.message, ex.getMessage(),
                         String.format("Given \"%s\" expected message: %s, got: %s",
                                 source, exceptionInfo.message, ex.getMessage()));
             }
@@ -395,7 +411,7 @@ public class ExceptionsTest extends KullaTesting {
                     "Expected UnresolvedReferenceException: " + exception);
             UnresolvedExceptionInfo uei = (UnresolvedExceptionInfo) exceptionInfo;
             UnresolvedReferenceException ure = (UnresolvedReferenceException) exception;
-            assertEquals(ure.getSnippet(), uei.sn);
+            assertEquals(uei.sn, ure.getSnippet());
             assertStackMatch(ure, "", exceptionInfo);
         }
     }
@@ -405,20 +421,20 @@ public class ExceptionsTest extends KullaTesting {
             if (actual == null || expected == null) {
                 fail(message);
             } else {
-                assertEquals(actual.length, expected.length, message + " : arrays do not have the same size");
+                assertEquals(expected.length, actual.length, message + " : arrays do not have the same size");
                 for (int i = 0; i < actual.length; ++i) {
                     StackTraceElement actualElement = actual[i];
                     StackTraceElement expectedElement = expected[i];
-                    assertEquals(actualElement.getClassName(), expectedElement.getClassName(), message + " : class names [" + i + "]");
+                    assertEquals(expectedElement.getClassName(), actualElement.getClassName(), message + " : class names [" + i + "]");
                     String expectedMethodName = expectedElement.getMethodName();
                     if (expectedMethodName.startsWith("lambda$")) {
                         assertTrue(actualElement.getMethodName().startsWith("lambda$"), message + " : method names");
                     } else {
-                        assertEquals(actualElement.getMethodName(), expectedElement.getMethodName(), message + " : method names [" + i + "]");
+                        assertEquals(expectedElement.getMethodName(), actualElement.getMethodName(), message + " : method names [" + i + "]");
                     }
-                    assertEquals(actualElement.getFileName(), expectedElement.getFileName(), message + " : file names [" + i + "]");
+                    assertEquals(expectedElement.getFileName(), actualElement.getFileName(), message + " : file names [" + i + "]");
                     if (expectedElement.getLineNumber() >= 0) {
-                        assertEquals(actualElement.getLineNumber(), expectedElement.getLineNumber(), message + " : line numbers [" + i + "]"
+                        assertEquals(expectedElement.getLineNumber(), actualElement.getLineNumber(), message + " : line numbers [" + i + "]"
                                 + " -- actual: " + actualElement.getLineNumber() + ", expected: " + expectedElement.getLineNumber() +
                                 " -- in: " + actualElement.getClassName());
                     }

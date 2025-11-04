@@ -406,7 +406,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
             address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
             if (verified_entry_point != nullptr) {
               thread->set_jvmci_alternate_call_target(verified_entry_point);
-              entry_point = method->adapter()->get_i2c_entry();
+              entry_point = method->get_i2c_entry();
             }
           }
 #endif
@@ -553,7 +553,7 @@ class SignatureChekker : public SignatureIterator {
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);
-      guarantee(oopDesc::is_oop_or_null(vv, true),
+      guarantee(oopDesc::is_oop_or_null(vv),
                 "Bad JNI oop argument %d: " PTR_FORMAT " -> " PTR_FORMAT,
                 _pos, v, p2i(vv));
     }

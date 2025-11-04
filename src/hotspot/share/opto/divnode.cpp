@@ -42,19 +42,19 @@
 
 #include <math.h>
 
-ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, const char* name) : CallLeafNode(tf, nullptr, name, TypeRawPtr::BOTTOM) {
+ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf, address addr, const char* name) : CallLeafPureNode(tf, addr, name, TypeRawPtr::BOTTOM) {
   add_flag(Flag_is_macro);
   C->add_macro_node(this);
 }
 
-ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type(), "drem") {
+ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, C->top());
   init_req(TypeFunc::Parms + 2, b);
   init_req(TypeFunc::Parms + 3, C->top());
 }
 
-ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), "frem") {
+ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::frem), "frem") {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, b);
 }
@@ -825,6 +825,29 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
 
   if (t1->base() == Type::HalfFloatCon &&
       t2->base() == Type::HalfFloatCon)  {
+    // IEEE 754 floating point comparison treats 0.0 and -0.0 as equals.
+
+    // Division of a zero by a zero results in NaN.
+    if (t1->getf() == 0.0f && t2->getf() == 0.0f) {
+      return TypeH::make(NAN);
+    }
+
+    // As per C++ standard section 7.6.5 (expr.mul), behavior is undefined only if
+    // the second operand is 0.0. In all other situations, we can expect a standard-compliant
+    // C++ compiler to generate code following IEEE 754 semantics.
+    if (t2->getf() == 0.0) {
+      // If either operand is NaN, the result is NaN
+      if (g_isnan(t1->getf())) {
+        return TypeH::make(NAN);
+      } else {
+        // Division of a nonzero finite value by a zero results in a signed infinity. Also,
+        // division of an infinity by a finite value results in a signed infinity.
+        bool res_sign_neg = (jint_cast(t1->getf()) < 0) ^ (jint_cast(t2->getf()) < 0);
+        const TypeF* res = res_sign_neg ? TypeF::NEG_INF : TypeF::POS_INF;
+        return TypeH::make(res->getf());
+      }
+    }
+
     return TypeH::make(t1->getf() / t2->getf());
   }
 
@@ -915,15 +938,11 @@ const Type* DivDNode::Value(PhaseGVN* phase) const {
   if( t2 == TypeD::ONE )
     return t1;
 
-  // IA32 would only execute this for non-strict FP, which is never the
-  // case now.
-#if ! defined(IA32)
   // If divisor is a constant and not zero, divide them numbers
   if( t1->base() == Type::DoubleCon &&
       t2->base() == Type::DoubleCon &&
       t2->getd() != 0.0 ) // could be negative zero
     return TypeD::make( t1->getd()/t2->getd() );
-#endif
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
@@ -1175,44 +1194,76 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type* ModINode::Value(PhaseGVN* phase) const {
+static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node* in2, const BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "unexpected basic type");
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t2 == Type::TOP) { return Type::TOP; }
+
+  // Mod by zero?  Throw exception at runtime!
+  if (t2 == TypeInteger::zero(bt)) {
+    return Type::TOP;
+  }
 
   // We always generate the dynamic check for 0.
   // 0 MOD X is 0
-  if( t1 == TypeInt::ZERO ) return TypeInt::ZERO;
+  if (t1 == TypeInteger::zero(bt)) { return t1; }
+
   // X MOD X is 0
-  if (in(1) == in(2)) {
-    return TypeInt::ZERO;
+  if (in1 == in2) {
+    return TypeInteger::zero(bt);
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  const TypeInt *i1 = t1->is_int();
-  const TypeInt *i2 = t2->is_int();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= 0 && i2->_lo >= 0 )
-      return TypeInt::POS;
-    // If both numbers are not constants, we know little.
-    return TypeInt::INT;
+  const TypeInteger* i1 = t1->is_integer(bt);
+  const TypeInteger* i2 = t2->is_integer(bt);
+  if (i1->is_con() && i2->is_con()) {
+    // We must be modulo'ing 2 int constants.
+    // Special case: min_jlong % '-1' is UB, and e.g., x86 triggers a division error.
+    // Any value % -1 is 0, so we can return 0 and avoid that scenario.
+    if (i2->get_con_as_long(bt) == -1) {
+      return TypeInteger::zero(bt);
+    }
+    return TypeInteger::make(i1->get_con_as_long(bt) % i2->get_con_as_long(bt), bt);
   }
-  // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeInt::POS;
+  // We checked that t2 is not the zero constant. Hence, at least i2->_lo or i2->_hi must be non-zero,
+  // and hence its absoute value is bigger than zero. Hence, the magnitude of the divisor (i.e. the
+  // largest absolute value for any value in i2) must be in the range [1, 2^31] or [1, 2^63], depending
+  // on the BasicType.
+  julong divisor_magnitude = MAX2(g_uabs(i2->lo_as_long()), g_uabs(i2->hi_as_long()));
+  // JVMS lrem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
+  // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1] or [0, 2^63-1], respectively
+  jlong hi = static_cast<jlong>(divisor_magnitude - 1);
+  jlong lo = -hi;
+  // JVMS lrem bytecode: "the result of the remainder operation can be negative only if the dividend
+  // is negative and can be positive only if the dividend is positive"
+  // Note that with a dividend with bounds e.g. lo == -4 and hi == -1 can still result in values
+  // below lo; i.e., -3 % 3 == 0.
+  // That means we cannot restrict the bound that is closer to zero beyond knowing its sign (or zero).
+  if (i1->hi_as_long() <= 0) {
+    // all dividends are not positive, so the result is not positive
+    hi = 0;
+    // if the dividend is known to be closer to zero, use that as a lower limit
+    lo = MAX2(lo, i1->lo_as_long());
+  } else if (i1->lo_as_long() >= 0) {
+    // all dividends are not negative, so the result is not negative
+    lo = 0;
+    // if the dividend is known to be closer to zero, use that as an upper limit
+    hi = MIN2(hi, i1->hi_as_long());
+  } else {
+    // Mixed signs, so we don't know the sign of the result, but the result is
+    // either the dividend itself or a value closer to zero than the dividend,
+    // and it is closer to zero than the divisor.
+    // As we know i1->_lo < 0 and i1->_hi > 0, we can use these bounds directly.
+    lo = MAX2(lo, i1->lo_as_long());
+    hi = MIN2(hi, i1->hi_as_long());
+  }
+  return TypeInteger::make(lo, hi, MAX2(i1->_widen, i2->_widen), bt);
+}
 
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jint && i2->get_con() == -1 )
-    return TypeInt::ZERO;
-
-  return TypeInt::make( i1->get_con() % i2->get_con() );
+const Type* ModINode::Value(PhaseGVN* phase) const {
+  return mod_value(phase, in(1), in(2), T_INT);
 }
 
 //=============================================================================
@@ -1441,43 +1492,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 const Type* ModLNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // We always generate the dynamic check for 0.
-  // 0 MOD X is 0
-  if( t1 == TypeLong::ZERO ) return TypeLong::ZERO;
-  // X MOD X is 0
-  if (in(1) == in(2)) {
-    return TypeLong::ZERO;
-  }
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  const TypeLong *i1 = t1->is_long();
-  const TypeLong *i2 = t2->is_long();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= CONST64(0) && i2->_lo >= CONST64(0) )
-      return TypeLong::POS;
-    // If both numbers are not constants, we know little.
-    return TypeLong::LONG;
-  }
-  // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeLong::POS;
-
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jlong && i2->get_con() == -1 )
-    return TypeLong::ZERO;
-
-  return TypeLong::make( i1->get_con() % i2->get_con() );
+  return mod_value(phase, in(1), in(2), T_LONG);
 }
 
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1488,137 +1503,109 @@ const Type* UModLNode::Value(PhaseGVN* phase) const {
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 
-Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
-  if (result_is_unused && not_dead) {
-    return replace_with_con(igvn, TypeF::make(0.));
-  }
-
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(dividend());
-  const Type* t2 = phase->type(divisor());
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return phase->C->top();
-  }
-
+const Type* ModFNode::get_result_if_constant(const Type* dividend, const Type* divisor) const {
   // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
+  if ((dividend->base() != Type::FloatCon) || (divisor->base() != Type::FloatCon)) {
     return nullptr; // note: x%x can be either NaN or 0
   }
 
-  float f1 = t1->getf();
-  float f2 = t2->getf();
-  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
-  jint x2 = jint_cast(f2);
+  float dividend_f = dividend->getf();
+  float divisor_f = divisor->getf();
+  jint dividend_i = jint_cast(dividend_f); // note:  *(int*)&f1, not just (int)f1
+  jint divisor_i = jint_cast(divisor_f);
 
   // If either is a NaN, return an input NaN
-  if (g_isnan(f1)) {
-    return replace_with_con(igvn, t1);
+  if (g_isnan(dividend_f)) {
+    return dividend;
   }
-  if (g_isnan(f2)) {
-    return replace_with_con(igvn, t2);
+  if (g_isnan(divisor_f)) {
+    return divisor;
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
+  if (!g_isfinite(dividend_f) || !g_isfinite(divisor_f) || divisor_i == 0 || divisor_i == min_jint) {
     return nullptr;
   }
 
   // We must be modulo'ing 2 float constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jint xr = jint_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
+  jint xr = jint_cast(fmod(dividend_f, divisor_f));
+  if ((dividend_i ^ xr) < 0) {
     xr ^= min_jint;
   }
 
-  return replace_with_con(igvn, TypeF::make(jfloat_cast(xr)));
+  return TypeF::make(jfloat_cast(xr));
 }
 
-Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-
-  bool result_is_unused = proj_out_or_null(TypeFunc::Parms) == nullptr;
-  bool not_dead = proj_out_or_null(TypeFunc::Control) != nullptr;
-  if (result_is_unused && not_dead) {
-    return replace_with_con(igvn, TypeD::make(0.));
-  }
-
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(dividend());
-  const Type* t2 = phase->type(divisor());
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return nullptr;
-  }
-
+const Type* ModDNode::get_result_if_constant(const Type* dividend, const Type* divisor) const {
   // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
+  if ((dividend->base() != Type::DoubleCon) || (divisor->base() != Type::DoubleCon)) {
     return nullptr; // note: x%x can be either NaN or 0
   }
 
-  double f1 = t1->getd();
-  double f2 = t2->getd();
-  jlong x1 = jlong_cast(f1); // note:  *(long*)&f1, not just (long)f1
-  jlong x2 = jlong_cast(f2);
+  double dividend_d = dividend->getd();
+  double divisor_d = divisor->getd();
+  jlong dividend_l = jlong_cast(dividend_d); // note:  *(long*)&f1, not just (long)f1
+  jlong divisor_l = jlong_cast(divisor_d);
 
   // If either is a NaN, return an input NaN
-  if (g_isnan(f1)) {
-    return replace_with_con(igvn, t1);
+  if (g_isnan(dividend_d)) {
+    return dividend;
   }
-  if (g_isnan(f2)) {
-    return replace_with_con(igvn, t2);
+  if (g_isnan(divisor_d)) {
+    return divisor;
   }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong) {
+  if (!g_isfinite(dividend_d) || !g_isfinite(divisor_d) || divisor_l == 0 || divisor_l == min_jlong) {
     return nullptr;
   }
 
   // We must be modulo'ing 2 double constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jlong xr = jlong_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
+  jlong xr = jlong_cast(fmod(dividend_d, divisor_d));
+  if ((dividend_l ^ xr) < 0) {
     xr ^= min_jlong;
   }
 
-  return replace_with_con(igvn, TypeD::make(jdouble_cast(xr)));
+  return TypeD::make(jdouble_cast(xr));
 }
 
-Node* ModFloatingNode::replace_with_con(PhaseIterGVN* phase, const Type* con) {
-  Compile* C = phase->C;
+Node* ModFloatingNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (can_reshape) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+
+    // Either input is TOP ==> the result is TOP
+    const Type* dividend_type = phase->type(dividend());
+    const Type* divisor_type = phase->type(divisor());
+    if (dividend_type == Type::TOP || divisor_type == Type::TOP) {
+      return phase->C->top();
+    }
+    const Type* constant_result = get_result_if_constant(dividend_type, divisor_type);
+    if (constant_result != nullptr) {
+      return make_tuple_of_input_state_and_constant_result(igvn, constant_result);
+    }
+  }
+
+  return CallLeafPureNode::Ideal(phase, can_reshape);
+}
+
+/* Give a tuple node for ::Ideal to return, made of the input state (control to return addr)
+ * and the given constant result. Idealization of projections will make sure to transparently
+ * propagate the input state and replace the result by the said constant.
+ */
+TupleNode* ModFloatingNode::make_tuple_of_input_state_and_constant_result(PhaseIterGVN* phase, const Type* con) const {
   Node* con_node = phase->makecon(con);
-  CallProjections projs;
-  extract_projections(&projs, false, false);
-  phase->replace_node(projs.fallthrough_proj, in(TypeFunc::Control));
-  if (projs.fallthrough_catchproj != nullptr) {
-    phase->replace_node(projs.fallthrough_catchproj, in(TypeFunc::Control));
-  }
-  if (projs.fallthrough_memproj != nullptr) {
-    phase->replace_node(projs.fallthrough_memproj, in(TypeFunc::Memory));
-  }
-  if (projs.catchall_memproj != nullptr) {
-    phase->replace_node(projs.catchall_memproj, C->top());
-  }
-  if (projs.fallthrough_ioproj != nullptr) {
-    phase->replace_node(projs.fallthrough_ioproj, in(TypeFunc::I_O));
-  }
-  assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
-  assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
-  if (projs.resproj != nullptr) {
-    phase->replace_node(projs.resproj, con_node);
-  }
-  phase->replace_node(this, C->top());
-  C->remove_macro_node(this);
-  disconnect_inputs(C);
-  return nullptr;
+  TupleNode* tuple = TupleNode::make(
+      tf()->range(),
+      in(TypeFunc::Control),
+      in(TypeFunc::I_O),
+      in(TypeFunc::Memory),
+      in(TypeFunc::FramePtr),
+      in(TypeFunc::ReturnAdr),
+      con_node);
+
+  return tuple;
 }
 
 //=============================================================================
@@ -1677,10 +1664,10 @@ Node *DivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divI_proj_mask();
+    rm.assignFrom(match->divI_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modI_proj_mask();
+    rm.assignFrom(match->modI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1692,10 +1679,10 @@ Node *DivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divL_proj_mask();
+    rm.assignFrom(match->divL_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modL_proj_mask();
+    rm.assignFrom(match->modL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1730,10 +1717,10 @@ Node* UDivModINode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divI_proj_mask();
+    rm.assignFrom(match->divI_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modI_proj_mask();
+    rm.assignFrom(match->modI_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
@@ -1745,10 +1732,10 @@ Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   uint ideal_reg = proj->ideal_reg();
   RegMask rm;
   if (proj->_con == div_proj_num) {
-    rm = match->divL_proj_mask();
+    rm.assignFrom(match->divL_proj_mask());
   } else {
     assert(proj->_con == mod_proj_num, "must be div or mod projection");
-    rm = match->modL_proj_mask();
+    rm.assignFrom(match->modL_proj_mask());
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }

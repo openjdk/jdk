@@ -24,6 +24,7 @@
 
 #ifndef SHARE_GC_G1_G1FULLGCRESETMETADATATASK_HPP
 #define SHARE_GC_G1_G1FULLGCRESETMETADATATASK_HPP
+
 #include "gc/g1/g1FullGCTask.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 

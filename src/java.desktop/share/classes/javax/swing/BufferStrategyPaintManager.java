@@ -534,8 +534,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         Container root = c;
         xOffset = yOffset = 0;
         while (root != null &&
-               (!(root instanceof Window) &&
-                !SunToolkit.isInstanceOf(root, "java.applet.Applet"))) {
+               (!(root instanceof Window))) {
             xOffset += root.getX();
             yOffset += root.getY();
             root = root.getParent();
@@ -687,7 +686,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         }
 
         /**
-         * Returns the Root (Window or Applet) that this BufferInfo references.
+         * Returns the Root (Window) that this BufferInfo references.
          */
         public Container getRoot() {
             return (root == null) ? null : root.get();
@@ -793,30 +792,14 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     null);
             }
             BufferStrategy bs = null;
-            if (SunToolkit.isInstanceOf(root, "java.applet.Applet")) {
-                try {
-                    AWTAccessor.ComponentAccessor componentAccessor
-                            = AWTAccessor.getComponentAccessor();
-                    componentAccessor.createBufferStrategy(root, 2, caps);
-                    bs = componentAccessor.getBufferStrategy(root);
-                } catch (AWTException e) {
-                    // Type is not supported
-                    if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStrategy failed",
-                                     e);
-                    }
-                }
-            }
-            else {
-                try {
-                    ((Window)root).createBufferStrategy(2, caps);
-                    bs = ((Window)root).getBufferStrategy();
-                } catch (AWTException e) {
-                    // Type not supported
-                    if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
-                        LOGGER.finer("createBufferStrategy failed",
-                                     e);
-                    }
+            try {
+                ((Window)root).createBufferStrategy(2, caps);
+                bs = ((Window)root).getBufferStrategy();
+            } catch (AWTException e) {
+                // Type not supported
+                if (LOGGER.isLoggable(PlatformLogger.Level.FINER)) {
+                    LOGGER.finer("createBufferStrategy failed",
+                                 e);
                 }
             }
             return bs;

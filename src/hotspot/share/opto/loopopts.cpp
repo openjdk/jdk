@@ -41,6 +41,7 @@
 #include "opto/subtypenode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 //=============================================================================
@@ -66,7 +67,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     return nullptr;
   }
 
-  int wins = 0;
+  SplitThruPhiWins wins(region);
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
 
@@ -119,7 +120,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
 
     if (singleton) {
-      wins++;
+      wins.add_win(i);
       x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
@@ -134,7 +135,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       x->raise_bottom_type(t);
       Node* y = x->Identity(&_igvn);
       if (y != x) {
-        wins++;
+        wins.add_win(i);
         x = y;
       } else {
         y = _igvn.hash_find(x);
@@ -142,7 +143,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
           y = similar_subtype_check(x, region->in(i));
         }
         if (y) {
-          wins++;
+          wins.add_win(i);
           x = y;
         } else {
           // Else x is a new node we are keeping
@@ -165,12 +166,12 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
                n->is_Load() && can_move_to_inner_loop(n, region->as_Loop(), x)) {
       // it is not a win if 'x' moved from an outer to an inner loop
       // this edge case can only happen for Load nodes
-      wins = 0;
+      wins.reset();
       break;
     }
   }
   // Too few wins?
-  if (wins <= policy) {
+  if (!wins.profitable(policy)) {
     _igvn.remove_dead_node(phi);
     return nullptr;
   }
@@ -227,7 +228,39 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
   }
 
+  split_thru_phi_yank_old_nodes(n, region);
+  _igvn.replace_node(n, phi);
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print_cr("Split %d %s through %d Phi in %d %s",
+                  n->_idx, n->Name(), phi->_idx, region->_idx, region->Name());
+  }
+#endif // !PRODUCT
+
   return phi;
+}
+
+// If the region is a Loop, we are removing the old n,
+// and need to yank it from the _body. If any phi we
+// just split through now has no use any more, it also
+// has to be removed.
+void PhaseIdealLoop::split_thru_phi_yank_old_nodes(Node* n, Node* region) {
+  IdealLoopTree* region_loop = get_loop(region);
+  if (region->is_Loop() && region_loop->is_innermost()) {
+    region_loop->_body.yank(n);
+    for (uint j = 1; j < n->req(); j++) {
+      PhiNode* phi = n->in(j)->isa_Phi();
+      // Check that phi belongs to the region and only has n as a use.
+      if (phi != nullptr &&
+          phi->in(0) == region &&
+          phi->unique_multiple_edges_out_or_null() == n) {
+        assert(get_ctrl(phi) == region, "sanity");
+        assert(get_ctrl(n) == region, "sanity");
+        region_loop->_body.yank(phi);
+      }
+    }
+  }
 }
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
@@ -1199,13 +1232,10 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   if (must_throttle_split_if()) return n;
 
-  // Split 'n' through the merge point if it is profitable
-  Node *phi = split_thru_phi( n, n_blk, policy );
-  if (!phi) return n;
+  // Split 'n' through the merge point if it is profitable, replacing it with a new phi.
+  Node* phi = split_thru_phi(n, n_blk, policy);
+  if (phi == nullptr) { return n; }
 
-  // Found a Phi to split thru!
-  // Replace 'n' with the new phi
-  _igvn.replace_node( n, phi );
   // Moved a load around the loop, 'en-registering' something.
   if (n_blk->is_Loop() && n->is_Load() &&
       !phi->in(LoopNode::LoopBackControl)->is_Load())
@@ -1436,15 +1466,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       return;
     }
 
-    // Found a Phi to split thru!
-    // Replace 'n' with the new phi
-    _igvn.replace_node(n, phi);
-
     // Now split the bool up thru the phi
-    Node *bolphi = split_thru_phi(bol, n_ctrl, -1);
+    Node* bolphi = split_thru_phi(bol, n_ctrl, -1);
     guarantee(bolphi != nullptr, "null boolean phi node");
-
-    _igvn.replace_node(bol, bolphi);
     assert(iff->in(1) == bolphi, "");
 
     if (bolphi->Value(&_igvn)->singleton()) {
@@ -1453,8 +1477,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Conditional-move?  Must split up now
     if (!iff->is_If()) {
-      Node *cmovphi = split_thru_phi(iff, n_ctrl, -1);
-      _igvn.replace_node(iff, cmovphi);
+      Node* cmovphi = split_thru_phi(iff, n_ctrl, -1);
       return;
     }
 
@@ -1702,18 +1725,20 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
         Node* maybe_pinned_n = n;
         Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
-        if (n->depends_only_on_test()) {
-          Node* pinned_clone = n->pin_array_access_node();
-          if (pinned_clone != nullptr) {
-            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
-            // range check for that access. If that condition is replaced by an identical dominating one, then an
-            // unpinned load would risk floating above its range check.
-            register_new_node(pinned_clone, n_ctrl);
-            maybe_pinned_n = pinned_clone;
-            _igvn.replace_node(n, pinned_clone);
+        if (!would_sink_below_pre_loop_exit(loop_ctrl, outside_ctrl)) {
+          if (n->depends_only_on_test()) {
+            Node* pinned_clone = n->pin_array_access_node();
+            if (pinned_clone != nullptr) {
+              // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+              // range check for that access. If that condition is replaced by an identical dominating one, then an
+              // unpinned load would risk floating above its range check.
+              register_new_node(pinned_clone, n_ctrl);
+              maybe_pinned_n = pinned_clone;
+              _igvn.replace_node(n, pinned_clone);
+            }
           }
+          _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
         }
-        _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
@@ -1921,6 +1946,21 @@ bool PhaseIdealLoop::ctrl_of_all_uses_out_of_loop(const Node* n, Node* n_ctrl, I
   return true;
 }
 
+// Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
+// to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
+// test of the pre loop above the point in the graph where it's pinned. This results in a broken graph. One way to avoid
+// it would be to not eliminate the check in the main loop. Instead, we prevent sinking of the node here so better code
+// is generated for the main loop.
+bool PhaseIdealLoop::would_sink_below_pre_loop_exit(IdealLoopTree* n_loop, Node* ctrl) {
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
+    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealLoopTree* n_loop, Node* ctrl) {
   if (n->is_Load()) {
     ctrl = get_late_ctrl_with_anti_dep(n->as_Load(), n_ctrl, ctrl);
@@ -1932,14 +1972,8 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   if (n_loop->is_member(u_loop)) {
     return false; // Found use in inner loop
   }
-  // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
-  // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
-  // test of the pre loop above the point in the graph where it's pinned.
-  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
-    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
-    if (is_dominator(pre_loop->loopexit(), ctrl)) {
-      return false;
-    }
+  if (would_sink_below_pre_loop_exit(n_loop, ctrl)) {
+    return false;
   }
   return true;
 }
@@ -2659,8 +2693,9 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         if (head->is_strip_mined() && mode != IgnoreStripMined) {
           CountedLoopNode* cl = head->as_CountedLoop();
           CountedLoopEndNode* cle = cl->loopexit();
-          Node* cle_out = cle->proj_out_or_null(false);
-          if (use == cle_out) {
+          // is use the projection that exits the loop from the CountedLoopEndNode?
+          if (use->in(0) == cle) {
+            IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
             use = le->proj_out(false);
             use_loop = get_loop(use);
@@ -2723,12 +2758,13 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         }
 
         assert(use->is_Proj(), "loop exit should be projection");
-        // lazy_replace() below moves all nodes that are:
+        // replace_node_and_forward_ctrl() below moves all nodes that are:
         // - control dependent on the loop exit or
         // - have control set to the loop exit
-        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
-        // possible to use it, the loop exit projection is cloned and becomes the new exit projection. The initial one
-        // becomes dead and is "replaced" by the region.
+        // below the post-loop merge point.
+        // replace_node_and_forward_ctrl() takes a dead control as first input.
+        // To make it possible to use it, the loop exit projection is cloned and becomes the
+        // new exit projection. The initial one becomes dead and is "replaced" by the region.
         Node* use_clone = use->clone();
         register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
@@ -2737,7 +2773,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
         set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
-        lazy_replace(use, r);
+        replace_node_and_forward_ctrl(use, r);
         // Map the (cloned) old use to the new merge point
         old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
@@ -4338,6 +4374,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       }
     }
   }
+  C->print_method(PHASE_BEFORE_DUPLICATE_LOOP_BACKEDGE, 4, head);
 
   // Collect data nodes that need to be clones as well
   int dd = dom_depth(head);
@@ -4427,6 +4464,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   }
 
   C->set_major_progress();
+
+  C->print_method(PHASE_AFTER_DUPLICATE_LOOP_BACKEDGE, 4, outer_head);
 
   return true;
 }
@@ -4524,211 +4563,6 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   if (!may_require_nodes(estimate)) { return; }
 
   do_multiversioning(lpt, old_new);
-}
-
-// Returns true if the Reduction node is unordered.
-static bool is_unordered_reduction(Node* n) {
-  return n->is_Reduction() && !n->as_Reduction()->requires_strict_order();
-}
-
-// Having ReductionNodes in the loop is expensive. They need to recursively
-// fold together the vector values, for every vectorized loop iteration. If
-// we encounter the following pattern, we can vector accumulate the values
-// inside the loop, and only have a single UnorderedReduction after the loop.
-//
-// Note: UnorderedReduction represents a ReductionNode which does not require
-// calculating in strict order.
-//
-// CountedLoop     init
-//          |        |
-//          +------+ | +-----------------------+
-//                 | | |                       |
-//                PhiNode (s)                  |
-//                  |                          |
-//                  |          Vector          |
-//                  |            |             |
-//               UnorderedReduction (first_ur) |
-//                  |                          |
-//                 ...         Vector          |
-//                  |            |             |
-//               UnorderedReduction (last_ur)  |
-//                       |                     |
-//                       +---------------------+
-//
-// We patch the graph to look like this:
-//
-// CountedLoop   identity_vector
-//         |         |
-//         +-------+ | +---------------+
-//                 | | |               |
-//                PhiNode (v)          |
-//                   |                 |
-//                   |         Vector  |
-//                   |           |     |
-//                 VectorAccumulator   |
-//                   |                 |
-//                  ...        Vector  |
-//                   |           |     |
-//      init       VectorAccumulator   |
-//        |          |     |           |
-//     UnorderedReduction  +-----------+
-//
-// We turned the scalar (s) Phi into a vectorized one (v). In the loop, we
-// use vector_accumulators, which do the same reductions, but only element
-// wise. This is a single operation per vector_accumulator, rather than many
-// for a UnorderedReduction. We can then reduce the last vector_accumulator
-// after the loop, and also reduce the init value into it.
-//
-// We can not do this with all reductions. Some reductions do not allow the
-// reordering of operations (for example float addition/multiplication require
-// strict order).
-void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
-  assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
-
-  // Find all Phi nodes with an unordered Reduction on backedge.
-  CountedLoopNode* cl = loop->_head->as_CountedLoop();
-  for (DUIterator_Fast jmax, j = cl->fast_outs(jmax); j < jmax; j++) {
-    Node* phi = cl->fast_out(j);
-    // We have a phi with a single use, and an unordered Reduction on the backedge.
-    if (!phi->is_Phi() || phi->outcnt() != 1 || !is_unordered_reduction(phi->in(2))) {
-      continue;
-    }
-
-    ReductionNode* last_ur = phi->in(2)->as_Reduction();
-    assert(!last_ur->requires_strict_order(), "must be");
-
-    // Determine types
-    const TypeVect* vec_t = last_ur->vect_type();
-    uint vector_length    = vec_t->length();
-    BasicType bt          = vec_t->element_basic_type();
-
-    // Convert opcode from vector-reduction -> scalar -> normal-vector-op
-    const int sopc        = VectorNode::scalar_opcode(last_ur->Opcode(), bt);
-    const int vopc        = VectorNode::opcode(sopc, bt);
-    if (!Matcher::match_rule_supported_vector(vopc, vector_length, bt)) {
-        DEBUG_ONLY( last_ur->dump(); )
-        assert(false, "do not have normal vector op for this reduction");
-        continue; // not implemented -> fails
-    }
-
-    // Traverse up the chain of unordered Reductions, checking that it loops back to
-    // the phi. Check that all unordered Reductions only have a single use, except for
-    // the last (last_ur), which only has phi as a use in the loop, and all other uses
-    // are outside the loop.
-    ReductionNode* current = last_ur;
-    ReductionNode* first_ur = nullptr;
-    while (true) {
-      assert(!current->requires_strict_order(), "sanity");
-
-      // Expect no ctrl and a vector_input from within the loop.
-      Node* ctrl = current->in(0);
-      Node* vector_input = current->in(2);
-      if (ctrl != nullptr || get_ctrl(vector_input) != cl) {
-        DEBUG_ONLY( current->dump(1); )
-        assert(false, "reduction has ctrl or bad vector_input");
-        break; // Chain traversal fails.
-      }
-
-      assert(current->vect_type() != nullptr, "must have vector type");
-      if (current->vect_type() != last_ur->vect_type()) {
-        // Reductions do not have the same vector type (length and element type).
-        break; // Chain traversal fails.
-      }
-
-      // Expect single use of an unordered Reduction, except for last_ur.
-      if (current == last_ur) {
-        // Expect all uses to be outside the loop, except phi.
-        for (DUIterator_Fast kmax, k = current->fast_outs(kmax); k < kmax; k++) {
-          Node* use = current->fast_out(k);
-          if (use != phi && ctrl_or_self(use) == cl) {
-            DEBUG_ONLY( current->dump(-1); )
-            assert(false, "reduction has use inside loop");
-            // Should not be allowed by SuperWord::mark_reductions
-            return; // bail out of optimization
-          }
-        }
-      } else {
-        if (current->outcnt() != 1) {
-          break; // Chain traversal fails.
-        }
-      }
-
-      // Expect another unordered Reduction or phi as the scalar input.
-      Node* scalar_input = current->in(1);
-      if (is_unordered_reduction(scalar_input) &&
-          scalar_input->Opcode() == current->Opcode()) {
-        // Move up the unordered Reduction chain.
-        current = scalar_input->as_Reduction();
-        assert(!current->requires_strict_order(), "must be");
-      } else if (scalar_input == phi) {
-        // Chain terminates at phi.
-        first_ur = current;
-        current = nullptr;
-        break; // Success.
-      } else {
-        // scalar_input is neither phi nor a matching reduction
-        // Can for example be scalar reduction when we have
-        // partial vectorization.
-        break; // Chain traversal fails.
-      }
-    }
-    if (current != nullptr) {
-      // Chain traversal was not successful.
-      continue;
-    }
-    assert(first_ur != nullptr, "must have successfully terminated chain traversal");
-
-    Node* identity_scalar = ReductionNode::make_identity_con_scalar(_igvn, sopc, bt);
-    set_root_as_ctrl(identity_scalar);
-    VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt);
-    register_new_node(identity_vector, C->root());
-    assert(vec_t == identity_vector->vect_type(), "matching vector type");
-    VectorNode::trace_new_vector(identity_vector, "Unordered Reduction");
-
-    // Turn the scalar phi into a vector phi.
-    _igvn.rehash_node_delayed(phi);
-    Node* init = phi->in(1); // Remember init before replacing it.
-    phi->set_req_X(1, identity_vector, &_igvn);
-    phi->as_Type()->set_type(vec_t);
-    _igvn.set_type(phi, vec_t);
-
-    // Traverse down the chain of unordered Reductions, and replace them with vector_accumulators.
-    current = first_ur;
-    while (true) {
-      // Create vector_accumulator to replace current.
-      Node* last_vector_accumulator = current->in(1);
-      Node* vector_input            = current->in(2);
-      VectorNode* vector_accumulator = VectorNode::make(vopc, last_vector_accumulator, vector_input, vec_t);
-      register_new_node(vector_accumulator, cl);
-      _igvn.replace_node(current, vector_accumulator);
-      VectorNode::trace_new_vector(vector_accumulator, "Unordered Reduction");
-      if (current == last_ur) {
-        break;
-      }
-      current = vector_accumulator->unique_out()->as_Reduction();
-      assert(!current->requires_strict_order(), "must be");
-    }
-
-    // Create post-loop reduction.
-    Node* last_accumulator = phi->in(2);
-    Node* post_loop_reduction = ReductionNode::make(sopc, nullptr, init, last_accumulator, bt);
-
-    // Take over uses of last_accumulator that are not in the loop.
-    for (DUIterator i = last_accumulator->outs(); last_accumulator->has_out(i); i++) {
-      Node* use = last_accumulator->out(i);
-      if (use != phi && use != post_loop_reduction) {
-        assert(ctrl_or_self(use) != cl, "use must be outside loop");
-        use->replace_edge(last_accumulator, post_loop_reduction,  &_igvn);
-        --i;
-      }
-    }
-    register_new_node(post_loop_reduction, get_late_ctrl(post_loop_reduction, cl));
-    VectorNode::trace_new_vector(post_loop_reduction, "Unordered Reduction");
-
-    assert(last_accumulator->outcnt() == 2, "last_accumulator has 2 uses: phi and post_loop_reduction");
-    assert(post_loop_reduction->outcnt() > 0, "should have taken over all non loop uses of last_accumulator");
-    assert(phi->outcnt() == 1, "accumulator is the only use of phi");
-  }
 }
 
 void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {

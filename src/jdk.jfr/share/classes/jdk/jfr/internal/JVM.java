@@ -273,12 +273,24 @@ public final class JVM {
     /**
      * Set the maximum event emission rate for the CPU time sampler
      *
+     * Use {@link #setCPUPeriod(long)} if you want a fixed sampling period instead.
+     *
      * Setting rate to 0 turns off the CPU time sampler.
      *
      * @param rate the new rate in events per second
-     * @param autoAdapt true if the rate should be adapted automatically
      */
-    public static native void setCPUThrottle(double rate, boolean autoAdapt);
+    public static native void setCPURate(double rate);
+
+    /**
+     * Set the fixed CPU time sampler period.
+     *
+     * Use {@link #setCPURate(double)} if you want a fixed rate with an auto-adjusted period instead.
+     *
+     * Setting period to 0 turns off the CPU time sampler.
+     *
+     * @param periodNanos the new fixed period in nanoseconds
+     */
+    public static native void setCPUPeriod(long periodNanos);
 
     /**
      * Sets the file where data should be written.
