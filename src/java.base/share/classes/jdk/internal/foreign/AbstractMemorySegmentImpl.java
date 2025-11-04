@@ -430,8 +430,10 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
-                        this, offset, length));
+        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; " +
+                        "attempting to access an element of length %d at offset %d " +
+                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                        this, length, offset, byteSize()));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
