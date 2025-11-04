@@ -1768,6 +1768,9 @@ void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int 
     ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry == nullptr) {
       ResolutionErrorTable::add_entry(pool, which, error, message, cause, cause_msg);
+    } else if (entry->error() == nullptr) {
+      // We found an entry but it's for nest host error instead, so merge in the LinkageError.
+      entry->merge(error, message, cause, cause_msg);
     }
   }
 }
