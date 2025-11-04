@@ -152,7 +152,7 @@ public class H3QuicVTTest implements HttpServerAdapters {
     }
 
     @AfterAll
-    public static void afterClass() throws Exception {
+    static void afterClass() throws Exception {
         if (h3Server != null) {
             System.out.println("Stopping server " + h3Server.getAddress());
             h3Server.stop();
