@@ -51,6 +51,7 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -324,6 +325,14 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
         return result;
       }
 
+      if (!is_init_completed()) {
+        // Can't do GC; try heap expansion to satisfy the request.
+        result = expand_heap_and_allocate(size, is_tlab);
+        if (result != nullptr) {
+          return result;
+        }
+      }
+
       gc_count = total_collections();
     }
 
@@ -394,8 +403,8 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  // We just finished a young/full gc, try everything to satisfy this allocation request.
+  assert(Heap_lock->is_locked(), "precondition");
+
   HeapWord* result = young_gen()->expand_and_allocate(size);
 
   if (result == nullptr && !is_tlab) {
@@ -447,16 +456,16 @@ void ParallelScavengeHeap::ensure_parsability(bool retire_tlabs) {
   young_gen()->eden_space()->ensure_parsability();
 }
 
-size_t ParallelScavengeHeap::tlab_capacity(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_capacity(thr);
+size_t ParallelScavengeHeap::tlab_capacity() const {
+  return young_gen()->eden_space()->tlab_capacity();
 }
 
-size_t ParallelScavengeHeap::tlab_used(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_used(thr);
+size_t ParallelScavengeHeap::tlab_used() const {
+  return young_gen()->eden_space()->tlab_used();
 }
 
-size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
-  return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
+size_t ParallelScavengeHeap::unsafe_max_tlab_alloc() const {
+  return young_gen()->eden_space()->unsafe_max_tlab_alloc();
 }
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {

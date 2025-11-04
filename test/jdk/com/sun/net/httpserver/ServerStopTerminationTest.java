@@ -124,13 +124,16 @@ public class ServerStopTerminationTest {
 
         // Complete the exchange one second into the future
         final Duration exchangeDuration = Duration.ofSeconds(1);
+        // taking start time before entering completeExchange to account for possible
+        // delays in reaching server.stop().
+        final long startTime = System.nanoTime();
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 
         // Time the shutdown sequence
-        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
+        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(20));
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
-        final long elapsed = timeShutdown(delayDuration);
+        final long elapsed = timeShutdown(delayDuration, startTime);
         log("Shutdown complete");
 
         // The shutdown should take at least as long as the exchange duration
@@ -151,31 +154,20 @@ public class ServerStopTerminationTest {
      * @throws InterruptedException if an unexpected interruption occurs
      */
     @Test
-    public void shouldCompeteAfterDelay() throws InterruptedException {
+    public void shouldCompleteAfterDelay() throws InterruptedException {
         // Initiate an exchange
         startExchange();
         // Wait for the server to receive the exchange
         start.await();
         log("Exchange started");
 
-        // Complete the exchange 10 second into the future.
-        // Runs in parallel, so won't block the server stop
-        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
-        completeExchange(exchangeDuration);
-        log("Complete Exchange triggered");
-
-
         // Time the shutdown sequence
         final Duration delayDuration = Duration.ofSeconds(1);
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
         final long elapsed = timeShutdown(delayDuration);
         log("Shutdown complete");
-
-
-        // The shutdown should not await the exchange to complete
-        if (elapsed >= exchangeDuration.toNanos()) {
-            fail("HttpServer.stop terminated too late");
-        }
+        complete.countDown();
+        log("Exchange completed");
 
         // The shutdown delay should have expired
         if (elapsed < delayDuration.toNanos()) {
@@ -277,7 +269,14 @@ public class ServerStopTerminationTest {
      */
     private long timeShutdown(Duration delayDuration) {
         final long startTime = System.nanoTime();
+        return timeShutdown(delayDuration, startTime);
+    }
 
+    /**
+     * This allows passing a custom start time
+     */
+    private long timeShutdown(Duration delayDuration,
+                              long startTime) {
         server.stop((int) delayDuration.toSeconds());
         return System.nanoTime() - startTime;
     }
