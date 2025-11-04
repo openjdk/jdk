@@ -191,6 +191,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -205,6 +208,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -219,6 +225,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_64, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_64, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VB, IRNode.VECTOR_SIZE_64, ">0"},
         applyIfCPUFeatureAnd = {"avx512_vbmi", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
@@ -253,6 +262,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -267,6 +279,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -281,6 +296,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_32, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VS, IRNode.VECTOR_SIZE_32, ">0"},
         applyIfCPUFeatureAnd = {"avx512bw", "true", "avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
@@ -315,6 +333,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -329,6 +350,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_8, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -343,6 +367,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_16, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VI, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
@@ -377,6 +404,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -391,6 +421,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_8, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -405,6 +438,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_16, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VF, IRNode.VECTOR_SIZE_16, ">0"},
         applyIfCPUFeature = {"avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
@@ -431,6 +467,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -445,6 +484,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_4, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -459,6 +501,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_8, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VD, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
@@ -485,6 +530,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "16"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">16"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_2, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=16"})
@@ -499,6 +547,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "32"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_4, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">32"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_4, ">0"},
         applyIfCPUFeature = {"avx512vl", "true"},
         applyIf = {"MaxVectorSize", ">=32"})
@@ -513,6 +564,9 @@ public class TestSelectFromTwoVectorOp {
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"sve2", "true"},
         applyIf = {"MaxVectorSize", "64"})
+    @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_8, "0"},
+        applyIfCPUFeature = {"sve2", "true"},
+        applyIf = {"MaxVectorSize", ">64"})
     @IR(counts = {IRNode.SELECT_FROM_TWO_VECTOR_VL, IRNode.VECTOR_SIZE_8, ">0"},
         applyIfCPUFeature = {"avx512f", "true"},
         applyIf = {"MaxVectorSize", ">=64"})
