@@ -7,7 +7,7 @@ tests:
     - bash configure
     - make jdk.javadoc
     - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/
-    - cp -vR build/linux-x86_64-server-release/jdk ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+    - cp -vR build/linux-x86_64-server-release ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
   sharedEnvironment:
       MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
   localEnvironment:
