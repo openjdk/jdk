@@ -2563,10 +2563,12 @@ void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
   public:
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      const bool is_remset_tracked = g1h->region_attr(r->bottom()).is_remset_tracked();
-      assert(r->rem_set()->is_tracked() == is_remset_tracked,
-             "Region %u remset tracking status (%s) different to region attribute (%s)",
-             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
+      G1HeapRegionAttr attr = g1h->region_attr(r->bottom());
+      bool const is_remset_tracked = attr.is_remset_tracked();
+      assert((r->rem_set()->is_tracked() == is_remset_tracked) ||
+             (attr.is_new_survivor() && is_remset_tracked),
+             "Region %u (%s) remset tracking status (%s) different to region attribute (%s)",
+             r->hrm_index(), r->get_type_str(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
       return false;
     }
   } cl;
@@ -3105,9 +3107,8 @@ G1HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
       new_alloc_region->set_eden();
       _eden.add(new_alloc_region);
       _policy->set_region_eden(new_alloc_region);
-      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-      // Install the group cardset.
-      young_regions_cset_group()->add(new_alloc_region);
+
+      collection_set()->add_eden_region(new_alloc_region);
       G1HeapRegionPrinter::alloc(new_alloc_region);
       return new_alloc_region;
     }
@@ -3120,7 +3121,6 @@ void G1CollectedHeap::retire_mutator_alloc_region(G1HeapRegion* alloc_region,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
-  collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _eden.add_used_bytes(allocated_bytes);
   G1HeapRegionPrinter::retire(alloc_region);
@@ -3164,14 +3164,20 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
     if (type.is_survivor()) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
+      // The remembered set/group cardset for this region will be installed at the
+      // end of GC. Cannot do that right now because we still need the current young
+      // gen cardset group.
+      // However, register with the attribute table to collect remembered set entries
+      // immediately as it is the only source for determining the need for remembered
+      // set tracking during GC.
       register_new_survivor_region_with_region_attr(new_alloc_region);
-      // Install the group cardset.
-      young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
+      // Update remembered set/cardset.
+      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
+      // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
     }
-    _policy->remset_tracker()->update_at_allocate(new_alloc_region);
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }
