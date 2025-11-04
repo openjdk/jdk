@@ -215,7 +215,7 @@
     uint64_t bcp;
     uint64_t esp;
     uint64_t mdx;
-    uint64_t top_frame_sp; // Maybe define parent_frame_abi and move there.
+    uint64_t top_frame_sp; // Original sp to be restored when returning from an i2i call
     uint64_t sender_sp;
     // Slots only needed for native calls. Maybe better to move elsewhere.
     uint64_t oop_tmp;

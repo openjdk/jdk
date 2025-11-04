@@ -2115,6 +2115,7 @@ int java_lang_VirtualThread::_state_offset;
 int java_lang_VirtualThread::_next_offset;
 int java_lang_VirtualThread::_onWaitingList_offset;
 int java_lang_VirtualThread::_notified_offset;
+int java_lang_VirtualThread::_interruptible_wait_offset;
 int java_lang_VirtualThread::_timeout_offset;
 int java_lang_VirtualThread::_objectWaiter_offset;
 
@@ -2126,6 +2127,7 @@ int java_lang_VirtualThread::_objectWaiter_offset;
   macro(_next_offset,                      k, "next",               vthread_signature,           false); \
   macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
   macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
+  macro(_interruptible_wait_offset,        k, "interruptibleWait",  bool_signature,              false); \
   macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 
@@ -2193,6 +2195,10 @@ bool java_lang_VirtualThread::set_onWaitingList(oop vthread, OopHandle& list_hea
 
 void java_lang_VirtualThread::set_notified(oop vthread, jboolean value) {
   vthread->bool_field_put_volatile(_notified_offset, value);
+}
+
+void java_lang_VirtualThread::set_interruptible_wait(oop vthread, jboolean value) {
+  vthread->bool_field_put_volatile(_interruptible_wait_offset, value);
 }
 
 jlong java_lang_VirtualThread::timeout(oop vthread) {

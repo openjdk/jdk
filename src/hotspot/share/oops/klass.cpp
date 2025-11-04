@@ -252,6 +252,10 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
+void Klass::initialize_preemptable(TRAPS) {
+  ShouldNotReachHere();
+}
+
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."

@@ -1337,21 +1337,19 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
 }
 
 
-void JvmtiExport::expose_single_stepping(JavaThread *thread) {
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-  if (state != nullptr) {
-    state->clear_hide_single_stepping();
-  }
+void JvmtiExport::expose_single_stepping(JvmtiThreadState* state) {
+  assert(state != nullptr, "must be non-null");
+  state->clear_hide_single_stepping();
 }
 
 
-bool JvmtiExport::hide_single_stepping(JavaThread *thread) {
+JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state != nullptr && state->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     state->set_hide_single_stepping();
-    return true;
+    return state;
   } else {
-    return false;
+    return nullptr;
   }
 }
 

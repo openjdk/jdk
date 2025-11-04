@@ -563,6 +563,7 @@ class java_lang_VirtualThread : AllStatic {
   static int _next_offset;
   static int _onWaitingList_offset;
   static int _notified_offset;
+  static int _interruptible_wait_offset;
   static int _recheckInterval_offset;
   static int _timeout_offset;
   static int _objectWaiter_offset;
@@ -615,6 +616,7 @@ class java_lang_VirtualThread : AllStatic {
   static jlong timeout(oop vthread);
   static void set_timeout(oop vthread, jlong value);
   static void set_notified(oop vthread, jboolean value);
+  static void set_interruptible_wait(oop vthread, jboolean value);
   static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
 
