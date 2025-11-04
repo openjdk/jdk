@@ -522,7 +522,6 @@ protected:
   // Support for stack overflow handling, get_thread, etc.
   address          _stack_base;
   size_t           _stack_size;
-  int              _lgrp_id;
 
  public:
   // Stack overflow support
@@ -536,9 +535,6 @@ protected:
   void    record_stack_base_and_size();
   void    register_thread_stack_with_NMT();
   void    unregister_thread_stack_with_NMT();
-
-  int     lgrp_id() const  { return _lgrp_id; }
-  void    update_lgrp_id() { _lgrp_id = os::numa_get_group_id(); }
 
   // Printing
   void print_on(outputStream* st, bool print_extended_info) const;
