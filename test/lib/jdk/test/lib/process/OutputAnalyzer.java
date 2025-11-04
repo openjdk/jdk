@@ -354,38 +354,40 @@ public final class OutputAnalyzer {
         return this;
     }
 
-    private boolean matchesHelper(String s, Pattern pattern) {
-        return s != null && pattern.matcher(s).find();
-    }
-
-    // NOTE: The meaning of "match" in OutputAnalyzer is NOT the same as String.matches().
-    // Rather it means "can the pattern be found in stdout and/or stderr".
-    // The pattern is comiled with MULTILINE but without DOTALL, so "." doesn't match newline, but
-    // "^" and "$" matches just after or just before, respectively, a newline.
-    private boolean matchesHelper(String stdout, String stderr, String regexp) {
+    /**
+     * Returns true if the pattern can be found inside the stdout and/or stderr.
+     *
+     * NOTE: The meaning of "match" in OutputAnalyzer is NOT the same as String.matches().
+     * Rather it means "can the pattern be found in stdout and/or stderr".
+     *
+     * The pattern is comiled with MULTILINE but without DOTALL, so "." doesn't match newline, but
+     * "^" and "$" matches just after or just before, respectively, a newline.
+     */
+    private boolean findPattern(String stdout, String stderr, String regexp) {
         Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
-        return matchesHelper(stdout, pattern) || matchesHelper(stderr, pattern);
+        return ((stdout != null && pattern.matcher(stdout).find()) ||
+                (stderr != null && pattern.matcher(stderr).find()));
     }
 
     /**
      * Returns true if stdout matches the given pattern
      */
     public boolean stdoutMatches(String regexp) {
-        return matchesHelper(getStdout(), null, regexp);
+        return findPattern(getStdout(), null, regexp);
     }
 
     /**
      * Returns true if stderr matches the given pattern
      */
     public boolean stderrMatches(String regexp) {
-        return matchesHelper(null, getStderr(), regexp);
+        return findPattern(null, getStderr(), regexp);
     }
 
     /**
      * Returns true if either stdout or stderr matches the given pattern
      */
     public boolean matches(String regexp) {
-        return matchesHelper(getStdout(), getStderr(), regexp);
+        return findPattern(getStdout(), getStderr(), regexp);
     }
 
     /**
