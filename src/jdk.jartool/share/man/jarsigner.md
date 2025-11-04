@@ -278,7 +278,9 @@ algorithm and SHA-384 as the hash and MGF1 algorithms.
 
 2. Modern digital signature algorithms such as EdDSA and ML-DSA use the same
 name for both the key and signature algorithms. Only the signature algorithm
-with the same name can be used with a given key algorithm.
+with the same name can be used with a given key algorithm. The specific
+signature parameter set (for example, Ed25519 or Ed448 for EdDSA) is the
+same as that of the key.
 
 If a key algorithm is not listed in this table, the `.DSA` block file extension
 is always used.

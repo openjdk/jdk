@@ -57,8 +57,7 @@ public interface DataFetcher extends AutoCloseable {
 
     /// @param klass the `Artifact` class
     /// @param zipPrefix the common prefix for each entry in the ZIP file
-    static DataFetcher of(Class<?> klass, String zipPrefix)
-            throws IOException {
+    static DataFetcher of(Class<?> klass, String zipPrefix) {
         Artifact artifact = klass.getAnnotation(Artifact.class);
         var org = artifact.organization();
         var prop = System.getProperty("jdk.tests.repos.pattern");
@@ -74,7 +73,7 @@ public interface DataFetcher extends AutoCloseable {
                         .findAny().get().getValue();
                 System.out.println("Creating ZipFetcher on " + p);
                 return new ZipFetcher(new ZipFile(p.toFile()), zipPrefix);
-            } catch (ArtifactResolverException e) {
+            } catch (ArtifactResolverException | IOException e) {
                 throw new SkippedException("Cannot find " + artifact.name(), e);
             }
         }
