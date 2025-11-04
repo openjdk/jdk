@@ -754,9 +754,9 @@ public class ArrayList<E> extends AbstractList<E>
             ArrayList<?> src = (ArrayList<?>) c;
             Object[] a = src.elementData;
             int numNew = src.size;
+            modCount++;
             if (numNew == 0)
                 return false;
-            modCount++;
             Object[] elementData;
             final int s;
             if (numNew > (elementData = this.elementData).length - (s = size))

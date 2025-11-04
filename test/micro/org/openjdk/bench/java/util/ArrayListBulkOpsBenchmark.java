@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
@@ -44,7 +45,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
+
 
 /**
  * Benchmark measuring ArrayList addAll() performance.
@@ -58,122 +59,70 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1, jvmArgs = { "-XX:+UseParallelGC", "-Xmx3g" })
 public class ArrayListBulkOpsBenchmark {
+    @Param({"0", "1", "5", "75"})
+    int size;
 
-    @Param({ "false", "true" })
-    private boolean enablePoisoning;
+    @Param({"ArrayList", "LinkedList"})
+    String type;
 
-    private ArrayList<String> arrayListSource0;
-    private ArrayList<String> arrayListSource5;
-    private ArrayList<String> arrayListSource75;
-    private LinkedList<String> linkedListSource0;
-    private LinkedList<String> linkedListSource5;
-    private LinkedList<String> linkedListSource75;
-    private Set<String> singletonSetSource;
-    private HashMap<String, String> hashMapSource;
-    private TreeSet<String> treeSetSource;
-    private WeakHashMap<String, String> weakHashMapSource;
-
-    @Benchmark
-    public ArrayList<String> addAllArrayList0(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(0);
-        result.addAll(arrayListSource0);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllArrayList5(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(5);
-        result.addAll(arrayListSource5);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllArrayList75(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(75);
-        result.addAll(arrayListSource75);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllLinkedList0(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(0);
-        result.addAll(linkedListSource0);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllLinkedList5(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(5);
-        result.addAll(linkedListSource5);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllLinkedList75(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(75);
-        result.addAll(linkedListSource75);
-        bh.consume(result);
-        return result;
-    }
-
-    @Benchmark
-    public ArrayList<String> addAllSingletonSet(Blackhole bh) {
-        ArrayList<String> result = new ArrayList<>(1);
-        result.addAll(singletonSetSource);
-        bh.consume(result);
-        return result;
-    }
+    List<String> source;
 
     @Setup(Level.Trial)
     public void setup() {
-        // Create source collections of different sizes
-        arrayListSource0 = new ArrayList<>();
-        arrayListSource5 = new ArrayList<>();
-        arrayListSource75 = new ArrayList<>();
-        linkedListSource0 = new LinkedList<>();
-        linkedListSource5 = new LinkedList<>();
-        linkedListSource75 = new LinkedList<>();
-
-        for (int i = 0; i < 5; i++) {
-            arrayListSource5.add("key" + i);
-            linkedListSource5.add("key" + i);
+        switch (type) {
+            case "ArrayList" -> source = new ArrayList<>(size);
+            case "LinkedList" -> source = new LinkedList<>();
         }
+        for (int i = 0; i < size; i++) source.add("key" + i);
+    }
 
-        for (int i = 0; i < 75; i++) {
-            arrayListSource75.add("key" + i);
-            linkedListSource75.add("key" + i);
-        }
+    @Benchmark
+    public ArrayList<String> addAll() {
+        ArrayList<String> result = new ArrayList<>(size);
+        result.addAll(source);
+        return result;
+    }
 
-        // SingletonSet always contains exactly one element
-        singletonSetSource = Collections.singleton("key0");
-
-        // Create poisoning collections
-        hashMapSource = new HashMap<>();
-        treeSetSource = new TreeSet<>();
-        weakHashMapSource = new WeakHashMap<>();
+    static void poisonCallSites() {
+        HashMap<String, String> hashMapSource = new HashMap<>();
+        TreeSet<String> treeSetSource = new TreeSet<>();
+        WeakHashMap<String, String> weakHashMapSource = new WeakHashMap<>();
         for (int i = 0; i < 75; i++) {
             hashMapSource.put("key" + i, "value" + i);
             treeSetSource.add("key" + i);
             weakHashMapSource.put("key" + i, "value" + i);
         }
-
-        if (enablePoisoning) {
-            poisonCallSites();
-        }
-    }
-
-    private void poisonCallSites() {
         // Poison ArrayList.addAll() with different Collection types
-        for (int i = 0; i < 40000; i++) {
+        for (int i = 0; i < 40_000; i++) {
             ArrayList<Object> temp = new ArrayList<>();
             temp.addAll(hashMapSource.entrySet());
             temp.addAll(treeSetSource);
             temp.addAll(weakHashMapSource.keySet());
+        }
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Benchmark)
+    @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+    @Fork(value = 1, jvmArgs = { "-XX:+UseParallelGC", "-Xmx3g" })
+    public static class SingletonSet {
+        Set<String> singletonSetSource = Collections.singleton("key");
+
+        @Param({ "false", "true" })
+        private boolean poison;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            if (poison) poisonCallSites();
+        }
+
+        @Benchmark
+        public ArrayList<String> addAllSingletonSet() {
+            ArrayList<String> result = new ArrayList<>(1);
+            result.addAll(singletonSetSource);
+            return result;
         }
     }
 }

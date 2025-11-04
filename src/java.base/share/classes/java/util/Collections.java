@@ -5253,9 +5253,11 @@ public final class Collections {
         public int hashCode() {
             return Objects.hashCode(element);
         }
+        @Override
         public Object[] toArray() {
             return new Object[] {element};
         }
+        @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             if (a.length < 1)
