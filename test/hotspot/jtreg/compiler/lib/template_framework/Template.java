@@ -194,8 +194,27 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
  * {@link DataName}s) and of the hashtag replacements in the templates. The {@link ScopeToken} serves
- * this purpose, and allows the definition of transparent scopes (e.g. {@link #transparentScope}) and non-transparent
- * scopes (e.g. {#link #scope}).
+ * this purpose, and allows the definition of transparent scopes (e.g. {@link #transparentScope}) and
+ * non-transparent scopes (e.g. {@link #scope}).
+ *
+ * <table border="1">
+ *   <caption>Scopes and (non-)transparency</caption>
+ *   <tr>
+ *     <th>                          </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link setFuelCost} </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link scope}            </th><th> non-transparent </th><th> non-transparent                             </th><th> non-transparent     </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link hashtagScope}     </th><th> non-transparent </th><th> transparent                                 </th><th> transparent         </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link nameScope}        </th><th> transparent     </th><th> non-transparent                             </th><th> transparent         </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link setFuelCostScope} </th><th> transparent     </th><th> transparent                                 </th><th> non-transparent     </th>
+ *   </tr>
+ * </table>
  *
  * <p>
  * In some cases, we may be deeper nested in templates and scopes, and would like to reach "back" or

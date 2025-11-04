@@ -1069,7 +1069,7 @@ public class TestTutorial {
                 let("v", dn.name()),
                 "#v *= 2;\n"
             )),
-            "// We can do the same by directly capturing the name, instead of using let:\n",
+            "// We can also capture the name (v) and type of the DataName:\n",
             dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> scope(
                 "#v *= 2;\n"
             )),
@@ -1097,11 +1097,11 @@ public class TestTutorial {
 
             "// Let us copy each variable:\n",
             dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> hashtagScope(
-                // Note that we need a hashtagScope here, so that we can reuse "v" as
-                // hashtag replacement in each iteration, but still let the copied
-                // DataNames escape.
+                // Note that we need a hashtagScope here, so that we can reuse "v" and
+                // "type" as hashtag replacements in each iteration, but still let the
+                // copied DataNames escape.
                 addDataName(dn.name() + "_copy", myInt, MUTABLE),
-                "int #{v}_copy = #v;\n"
+                "#type #{v}_copy = #v;\n"
             )),
             templateVerify.asToken(10, true, "v1, v2, v4, v5, v6, v1_copy, v2_copy, v4_copy, v5_copy, v6_copy")
         ));
