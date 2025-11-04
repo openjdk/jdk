@@ -947,6 +947,9 @@ public class ServerSocket implements java.io.Closeable {
      *         bandwidth
      *
      * @since 1.5
+     *
+     * @deprecated This function has always been a no-op.
+     * It is deprecated for removal without any replacement.
      */
     @Deprecated(since = "26", forRemoval = true)
     public void setPerformancePreferences(int connectionTime,
