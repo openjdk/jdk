@@ -63,8 +63,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> A thread <i>terminates</i> if either its {@code run} method completes normally,
  * or if its {@code run} method completes abruptly and the appropriate {@linkplain
  * Thread.UncaughtExceptionHandler uncaught exception handler} completes normally or
- * abruptly. With no code left to run, the thread has completed execution. The
- * {@link #join() join} method can be used to wait for a thread to terminate.
+ * abruptly. With no code left to run, the thread has completed execution. The {@link
+ * #isAlive isAlive} method can be used to test if a started thread has terminated.
+ * The {@link #join() join} method can be used to wait for a thread to terminate.
  *
  * <p> Threads have a unique {@linkplain #threadId() identifier} and a {@linkplain
  * #getName() name}. The identifier is generated when a {@code Thread} is created
@@ -79,7 +80,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * {@code Thread} supports a special inheritable thread local for the thread
  * {@linkplain #getContextClassLoader() context-class-loader}.
  *
- * <h2><a id="platform-threads">Platform threads</a></h2>
+ * <h2><a id="platform-threads">Platform Threads</a></h2>
  * <p> {@code Thread} supports the creation of <i>platform threads</i> that are
  * typically mapped 1:1 to kernel threads scheduled by the operating system.
  * Platform threads will usually have a large stack and other resources that are
@@ -99,7 +100,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * #getPriority() thread priority} and are members of a {@linkplain ThreadGroup
  * thread group}.
  *
- * <h2><a id="virtual-threads">Virtual threads</a></h2>
+ * <h2><a id="virtual-threads">Virtual Threads</a></h2>
  * <p> {@code Thread} also supports the creation of <i>virtual threads</i>.
  * Virtual threads are typically <i>user-mode threads</i> scheduled by the Java
  * runtime rather than the operating system. Virtual threads will typically require
@@ -124,7 +125,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * Virtual threads have a fixed {@linkplain #getPriority() thread priority}
  * that cannot be changed.
  *
- * <h2>Creating and starting threads</h2>
+ * <h2>Creating and Starting Threads</h2>
  *
  * <p> {@code Thread} defines public constructors for creating platform threads and
  * the {@link #start() start} method to schedule threads to execute. {@code Thread}
@@ -153,7 +154,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *   ThreadFactory factory = Thread.ofVirtual().factory();
  * }
  *
- * <h2><a id="inheritance">Inheritance when creating threads</a></h2>
+ * <h2><a id="inheritance">Inheritance When Creating Threads</a></h2>
  * A {@code Thread} created with one of the public constructors inherits the daemon
  * status and thread priority from the parent thread at the time that the child {@code
  * Thread} is created. The {@linkplain ThreadGroup thread group} is also inherited when
@@ -171,7 +172,38 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * {@link Builder#inheritInheritableThreadLocals(boolean) inheritInheritableThreadLocals}
  * method can be used to select if the initial values are inherited.
  *
- * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
+ * <h2><a id="thread-interruption">Thread Interruption</a></h2>
+ * A {@code Thread} has an <em>interrupted status</em> that serves as a "request" for
+ * code executing in the thread to "cancel or stop what it is doing". The interrupted
+ * status is set by invoking the target thread's {@link #interrupt()} method.
+ * {@link #sleep(long) Thread.sleep(long)}, {@link Object#wait() Object.wait()} and
+ * many other blocking methods detect the thread's interrupted status is set and cause the
+ * thread to return early from the blocking method by throwing an exception.
+ *
+ * <p> Blocking methods that throw {@link InterruptedException} do so after first clearing
+ * the interrupted status. Code that catches {@code InterruptedException} should rethrow
+ * the exception, or <em>reset</em> the current thread's interrupted status before it
+ * continues normally or handles it by throwing another type of exception. The
+ * current thread's interrupted status is reset by interrupting the current thread with
+ * {@link Thread#currentThread() Thread.currentThread()}.{@link #interrupt() interrupt()}.
+ *
+ * <p> Some blocking methods are specified to throw a different exception or return normally
+ * when interrupted. Blocking I/O operations on an {@link java.nio.channels.InterruptibleChannel}
+ * close the channel and throw {@link java.nio.channels.ClosedByInterruptException} with
+ * the interrupted status set. A thread blocked in a {@link java.nio.channels.Selector}
+ * will return immediately if interrupted, with the interrupted status set.
+ *
+ * <p> Code that doesn't block but needs to detect interruption can poll the
+ * current thread's interrupted status using
+ * {@link Thread#currentThread() Thread.currentThread()}.{@link #isInterrupted() isInterrupted()}.
+ *
+ * <p> In addition to the {@link #interrupt()} and {@link #isInterrupted()} methods,
+ * {@code Thread} also defines the static {@link #interrupted() Thread.interrupted()}
+ * method to test the current thread's interrupted status and clear it. It should be rare
+ * to need to use this method.
+ *
+ * <h2>Null Handling</h2>
+ * Unless otherwise specified, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be thrown.
  *
  * @implNote
@@ -190,8 +222,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *     <th scope="row">
  *       {@systemProperty jdk.virtualThreadScheduler.parallelism}
  *     </th>
- *     <td> The number of platform threads available for scheduling virtual
- *       threads. It defaults to the number of available processors. </td>
+ *     <td> The scheduler's target parallelism. This is the number of platform threads
+ *       available for scheduling virtual threads. It defaults to the number of available
+ *       processors. </td>
  *   </tr>
  *   <tr>
  *     <th scope="row">
@@ -202,9 +235,13 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *   </tr>
  *   </tbody>
  * </table>
+ * <p> The virtual thread scheduler can be monitored and managed with the
+ * {@link jdk.management/jdk.management.VirtualThreadSchedulerMXBean} management
+ * interface.
  *
  * @since   1.0
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public class Thread implements Runnable {
     /* Make sure registerNatives is the first thing <clinit> does. */
     private static native void registerNatives();
@@ -1558,6 +1595,9 @@ public class Thread implements Runnable {
      * @implNote In the JDK Reference Implementation, interruption of a thread
      * that is not alive still records that the interrupt request was made and
      * will report it via {@link #interrupted()} and {@link #isInterrupted()}.
+     *
+     * @see ##thread-interruption Thread Interruption
+     * @see #isInterrupted()
      */
     public void interrupt() {
         // Setting the interrupted status must be done before reading nioBlocker.
@@ -1589,6 +1629,7 @@ public class Thread implements Runnable {
      *
      * @return  {@code true} if the current thread has been interrupted;
      *          {@code false} otherwise.
+     * @see ##thread-interruption Thread Interruption
      * @see #isInterrupted()
      */
     public static boolean interrupted() {
@@ -1601,7 +1642,8 @@ public class Thread implements Runnable {
      *
      * @return  {@code true} if this thread has been interrupted;
      *          {@code false} otherwise.
-     * @see     #interrupted()
+     * @see ##thread-interruption Thread Interruption
+     * @see #interrupt()
      */
     public boolean isInterrupted() {
         return interrupted;
