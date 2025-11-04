@@ -56,10 +56,10 @@ void LRG::dump_on(outputStream* out) const {
     if (mask_size() == compute_mask_size()) {
       out->print(", #%d ", _mask_size);
     } else {
-      out->print(", #!!!_%d_vs_%d ", _mask_size, _mask.Size());
+      out->print(", #!!!_%d_vs_%d ", _mask_size, _mask.size());
     }
   } else {
-    out->print(", #?(%d) ", _mask.Size());
+    out->print(", #?(%d) ", _mask.size());
   }
 
   out->print("EffDeg: ");
