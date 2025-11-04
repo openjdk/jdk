@@ -71,6 +71,21 @@ import java.net.URI;
 
 public abstract class HttpExchange implements AutoCloseable, Request {
 
+    /*
+     * Symbolic values for the responseLength parameter of
+     * sendResponseHeaders(int,long)
+     */
+
+    /**
+     * No response body is being sent with this response
+     */
+    public static final long RSPBODY_EMPTY = -1l;
+
+    /**
+     * The response body is unspecified and will be chunk encoded
+     */
+    public static final long RSPBODY_CHUNKED = 0;
+
     /**
      * Constructor for subclasses to call.
      */
@@ -163,25 +178,26 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      */
     public abstract OutputStream getResponseBody();
 
-
     /**
-     * Starts sending the response back to the client using the current set of
-     * response headers and the numeric response code as specified in this
+     * Starts sending the final response back to the client using the current set of
+     * response headers obtained from {@link #getResponseHeaders()} and the numeric 
+     * response code as specified in this
      * method. The response body length is also specified as follows. If the
      * response length parameter is greater than {@code zero}, this specifies an
      * exact number of bytes to send and the application must send that exact
-     * amount of data. If the response length parameter is {@code zero}, then
-     * chunked transfer encoding is used and an arbitrary amount of data may be
+     * amount of data. If the response length parameter has the value 
+     * {@link #RSPBODY_CHUNKED} then the response body uses
+     * chunked transfer encoding and an arbitrary amount of data may be
      * sent. The application terminates the response body by closing the
      * {@link OutputStream}.
-     * If response length has the value {@code -1} then no response body is
-     * being sent.
+     * If response length has the value {@link #RSPBODY_EMPTY} then no 
+     * response body is being sent.
      *
      * <p> If the content-length response header has not already been set then
      * this is set to the appropriate value depending on the response length
      * parameter.
      *
-     * <p> This method must be called prior to calling {@link #getResponseBody()}.
+     * <p> The request body must be consumed before calling this method.
      *
      * @implNote This implementation allows the caller to instruct the
      * server to force a connection close after the exchange terminates, by
@@ -193,9 +209,9 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * @param responseLength if {@literal > 0}, specifies a fixed response body
      *                       length and that exact number of bytes must be written
      *                       to the stream acquired from {@link #getResponseCode()}
-     *                       If {@literal == 0}, then chunked encoding is used,
+     *                       If equal to {@link #RSPBODY_CHUNKED}, then chunked encoding is used,
      *                       and an arbitrary number of bytes may be written.
-     *                       If {@literal <= -1}, then no response body length is
+     *                       If equal to {@link #RSPBODY_EMPTY}, then no response body length is
      *                       specified and no response body may be written.
      * @throws IOException   if the response headers have already been sent or an I/O error occurs
      * @see   HttpExchange#getResponseBody()
