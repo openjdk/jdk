@@ -1256,7 +1256,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
                     var verbatimPaths = filteredWalk.collect(toCollection(TreeSet::new));
 
-                    // Remove nonempty directories for the collection of paths copied verbatim.
+                    // Remove nonempty directories from the collection of paths copied verbatim.
                     verbatimPaths.removeAll(verbatimPaths.stream().map(Path::getParent).toList());
 
                     verbatimPaths.forEach(ThrowingConsumer.toConsumer(p -> {
