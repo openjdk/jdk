@@ -722,6 +722,8 @@ void HandshakeState::handle_unsafe_access_error() {
   MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   // We may be at method entry which requires we save the do-not-unlock flag.
   UnlockFlagSaver fs(_handshakee);
+  // Tell code inspecting handshakee's stack what we are doing
+  ThrowingUnsafeAccessError tuae(_handshakee);
   Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
   if (h_exception()->is_a(vmClasses::InternalError_klass())) {
     java_lang_InternalError::set_during_unsafe_access(h_exception());

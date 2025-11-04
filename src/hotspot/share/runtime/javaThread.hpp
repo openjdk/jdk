@@ -317,6 +317,7 @@ class JavaThread: public Thread {
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
+  volatile bool         _throwing_unsafe_access_error;   // Thread has faulted and is throwing an exception
   bool                  _do_not_unlock_if_synchronized;  // Do not unlock the receiver of a synchronized method (since it was
                                                          // never locked) when throwing an exception. Used by interpreter only.
 #if INCLUDE_JVMTI
@@ -621,6 +622,9 @@ private:
 
   bool doing_unsafe_access()                     { return _doing_unsafe_access; }
   void set_doing_unsafe_access(bool val)         { _doing_unsafe_access = val; }
+
+  bool is_throwing_unsafe_access_error()          { return _throwing_unsafe_access_error; }
+  void set_throwing_unsafe_access_error(bool val) { _throwing_unsafe_access_error = val; }
 
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
@@ -1351,6 +1355,20 @@ class ThreadInClassInitializer : public StackObj {
   }
   ~ThreadInClassInitializer() {
     _thread->set_class_being_initialized(_previous);
+  }
+};
+
+class ThrowingUnsafeAccessError : public StackObj {
+  JavaThread* _thread;
+  bool _prev;
+public:
+  ThrowingUnsafeAccessError(JavaThread* thread) :
+      _thread(thread),
+      _prev(thread->is_throwing_unsafe_access_error()) {
+    _thread->set_throwing_unsafe_access_error(true);
+  }
+  ~ThrowingUnsafeAccessError() {
+    _thread->set_throwing_unsafe_access_error(_prev);
   }
 };
 
