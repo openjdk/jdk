@@ -148,7 +148,7 @@ public class BorderFactory
      * is derived from the specified component's background color.
      * If shadow color is {@code null}, the shadow color
      * is derived from the specified component's background color.
-     * If bevelType is not of known type that is neither
+     * If {@code bevelType} is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}
      * no bevel border will be painted.
      *

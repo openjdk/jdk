@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class BevelBorder extends AbstractBorder
      * Creates a bevel border with the specified type and whose
      * colors will be derived from the background color of the
      * component passed into the paintBorder method.
-     * If bevelType is not of known type that is neither
+     * If {@code bevelType} is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
      * no bevel border will be painted.
      *
@@ -98,7 +98,7 @@ public class BevelBorder extends AbstractBorder
      * is derived from the specified component's background color.
      * If shadow color is {@code null}, the shadow color
      * is derived from the specified component's background color.
-     * If bevelType is not of known type that is neither
+     * If {@code bevelType} is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
      * no bevel border will be painted.
      *
@@ -118,7 +118,7 @@ public class BevelBorder extends AbstractBorder
      * is derived from the specified component's background color.
      * If any of the shadow color is {@code null}, the shadow color
      * is derived from the specified component's background color.
-     * If bevelType is not of known type that is neither
+     * If {@code bevelType} is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
      * no bevel border will be painted.
      *
