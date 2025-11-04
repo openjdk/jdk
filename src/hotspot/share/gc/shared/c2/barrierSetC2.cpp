@@ -115,7 +115,7 @@ uint8_t BarrierStubC2::barrier_data() const {
 void BarrierStubC2::preserve(Register r) {
   const VMReg vm_reg = r->as_VMReg();
   assert(vm_reg->is_Register(), "r must be a general-purpose register");
-  _preserve.Insert(OptoReg::as_OptoReg(vm_reg));
+  _preserve.insert(OptoReg::as_OptoReg(vm_reg));
 }
 
 void BarrierStubC2::dont_preserve(Register r) {
@@ -124,7 +124,7 @@ void BarrierStubC2::dont_preserve(Register r) {
   // Subtract the given register and all its sub-registers (e.g. {R11, R11_H}
   // for r11 in aarch64).
   do {
-    _preserve.Remove(OptoReg::as_OptoReg(vm_reg));
+    _preserve.remove(OptoReg::as_OptoReg(vm_reg));
     vm_reg = vm_reg->next();
   } while (vm_reg->is_Register() && !vm_reg->is_concrete());
 }
@@ -1171,7 +1171,7 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
     // Initialize to union of successors
     for (uint i = 0; i < block->_num_succs; i++) {
       const uint succ_id = block->_succs[i]->_pre_order;
-      new_live.OR(live[succ_id]);
+      new_live.or_with(live[succ_id]);
     }
 
     // Walk block backwards, computing liveness
@@ -1182,7 +1182,7 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       if (!bs_state->needs_livein_data()) {
         RegMask* const regs = bs_state->live(node);
         if (regs != nullptr) {
-          regs->OR(new_live);
+          regs->or_with(new_live);
         }
       }
 
@@ -1190,10 +1190,10 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       const OptoReg::Name first = bs->refine_register(node, regalloc->get_reg_first(node));
       const OptoReg::Name second = bs->refine_register(node, regalloc->get_reg_second(node));
       if (first != OptoReg::Bad) {
-        new_live.Remove(first);
+        new_live.remove(first);
       }
       if (second != OptoReg::Bad) {
-        new_live.Remove(second);
+        new_live.remove(second);
       }
 
       // Add use bits
@@ -1202,10 +1202,10 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
         const OptoReg::Name first = bs->refine_register(use, regalloc->get_reg_first(use));
         const OptoReg::Name second = bs->refine_register(use, regalloc->get_reg_second(use));
         if (first != OptoReg::Bad) {
-          new_live.Insert(first);
+          new_live.insert(first);
         }
         if (second != OptoReg::Bad) {
-          new_live.Insert(second);
+          new_live.insert(second);
         }
       }
 
@@ -1213,16 +1213,16 @@ void BarrierSetC2::compute_liveness_at_stubs() const {
       if (bs_state->needs_livein_data()) {
         RegMask* const regs = bs_state->live(node);
         if (regs != nullptr) {
-          regs->OR(new_live);
+          regs->or_with(new_live);
         }
       }
     }
 
     // Now at block top, see if we have any changes
-    new_live.SUBTRACT(old_live);
-    if (!new_live.is_Empty()) {
+    new_live.subtract(old_live);
+    if (!new_live.is_empty()) {
       // Liveness has refined, update and propagate to prior blocks
-      old_live.OR(new_live);
+      old_live.or_with(new_live);
       for (uint i = 1; i < block->num_preds(); ++i) {
         Block* const pred = cfg->get_block_for_node(block->pred(i));
         worklist.push(pred);

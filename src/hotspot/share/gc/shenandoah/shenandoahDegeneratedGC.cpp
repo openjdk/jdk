@@ -46,9 +46,8 @@
 #include "utilities/events.hpp"
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
-  ShenandoahGC(),
+  ShenandoahGC(generation),
   _degen_point(degen_point),
-  _generation(generation),
   _abbreviated(false) {
 }
 
@@ -95,6 +94,12 @@ void ShenandoahDegenGC::op_degenerated() {
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc();
+
+  // If it's passive mode with ShenandoahCardBarrier turned on: clean the write table
+  // without swapping the tables since no scan happens in passive mode anyway
+  if (ShenandoahCardBarrier && !heap->mode()->is_generational()) {
+    heap->old_generation()->card_scan()->mark_write_table_as_clean();
+  }
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
@@ -260,7 +265,7 @@ void ShenandoahDegenGC::op_degenerated() {
       } else if (has_in_place_promotions(heap)) {
         // We have nothing to evacuate, but there are still regions to promote in place.
         ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_promote_regions);
-        ShenandoahGenerationalHeap::heap()->promote_regions_in_place(false /* concurrent*/);
+        ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, false /* concurrent*/);
       }
 
       // Update collector state regardless of whether there are forwarded objects
@@ -300,7 +305,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_degenerated();
+    heap->verifier()->verify_after_degenerated(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -337,11 +342,11 @@ void ShenandoahDegenGC::op_finish_mark() {
 void ShenandoahDegenGC::op_prepare_evacuation() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   // STW cleanup weak roots and unload classes
-  heap->parallel_cleaning(false /*full gc*/);
+  heap->parallel_cleaning(_generation, false /*full gc*/);
 
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
@@ -358,7 +363,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
   if (!heap->collection_set()->is_empty()) {
     if (ShenandoahVerify) {
-      heap->verifier()->verify_before_evacuation();
+      heap->verifier()->verify_before_evacuation(_generation);
     }
 
     heap->set_evacuation_in_progress(true);
@@ -366,9 +371,9 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   } else {
     if (ShenandoahVerify) {
       if (has_in_place_promotions(heap)) {
-        heap->verifier()->verify_after_concmark_with_promotions();
+        heap->verifier()->verify_after_concmark_with_promotions(_generation);
       } else {
-        heap->verifier()->verify_after_concmark();
+        heap->verifier()->verify_after_concmark(_generation);
       }
     }
 
@@ -388,7 +393,7 @@ void ShenandoahDegenGC::op_cleanup_early() {
 
 void ShenandoahDegenGC::op_evacuate() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_evac);
-  ShenandoahHeap::heap()->evacuate_collection_set(false /* concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, false /* concurrent*/);
 }
 
 void ShenandoahDegenGC::op_init_update_refs() {
@@ -402,7 +407,7 @@ void ShenandoahDegenGC::op_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_update_refs);
   // Handed over from concurrent update references phase
-  heap->update_heap_references(false /*concurrent*/);
+  heap->update_heap_references(_generation, false /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
@@ -416,7 +421,7 @@ void ShenandoahDegenGC::op_update_roots() {
   heap->update_heap_region_states(false /*concurrent*/);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {
