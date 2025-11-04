@@ -28,12 +28,12 @@
 #include "oops/bsmAttribute.hpp"
 
 inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
-  if (_cur_offset + 1 > insert_into->offsets()->length() ||
-      _cur_array + BSMAttributeEntry::u2s_required(argc) > insert_into->bootstrap_methods()->length()) {
+  if (_cur_offset + 1 > _insert_into->offsets()->length() ||
+      _cur_array + BSMAttributeEntry::u2s_required(argc) > _insert_into->bootstrap_methods()->length()) {
     return nullptr;
   }
-  insert_into->offsets()->at_put(_cur_offset, _cur_array);
-  BSMAttributeEntry* e = insert_into->entry(_cur_offset);
+  _insert_into->offsets()->at_put(_cur_offset, _cur_array);
+  BSMAttributeEntry* e = _insert_into->entry(_cur_offset);
   e->_bootstrap_method_index = bsmi;
   e->_argument_count = argc;
 

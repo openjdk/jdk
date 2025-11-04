@@ -90,15 +90,15 @@ class BSMAttributeEntries {
 public:
   class InsertionIterator {
     friend BSMAttributeEntries;
-    BSMAttributeEntries* insert_into;
+    BSMAttributeEntries* _insert_into;
     // Current unused offset into BSMAEs offset array.
     int _cur_offset;
     // Current unused offset into BSMAEs bsm-data array.
     int _cur_array;
   public:
-    InsertionIterator() : insert_into(nullptr), _cur_offset(-1), _cur_array(-1) {}
+    InsertionIterator() : _insert_into(nullptr), _cur_offset(-1), _cur_array(-1) {}
     InsertionIterator(BSMAttributeEntries* insert_into, int cur_offset, int cur_array)
-    : insert_into(insert_into),
+    : _insert_into(insert_into),
       _cur_offset(cur_offset),
       _cur_array(cur_array) {
       assert(insert_into->offsets() != nullptr, "must");

@@ -2344,7 +2344,7 @@ void BSMAttributeEntries::deallocate_contents(ClassLoaderData* loader_data) {
 }
 
 void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) const {
-  assert(num_entries + iter._cur_offset <= iter.insert_into->_offsets->length(), "must");
+  assert(num_entries + iter._cur_offset <= iter._insert_into->_offsets->length(), "must");
   for (int i = 0; i < num_entries; i++) {
     const BSMAttributeEntry* e = entry(i);
     BSMAttributeEntry* e_new = iter.reserve_new_entry(e->bootstrap_method_index(), e->argument_count());
@@ -2394,7 +2394,7 @@ void BSMAttributeEntries::append(const BSMAttributeEntries& other, ClassLoaderDa
 }
 
 void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS) {
-  assert(iter.insert_into == this, "must be");
+  assert(iter._insert_into == this, "must be");
   assert(iter._cur_offset <= this->_offsets->length(), "must be");
   assert(iter._cur_array <= this->_bootstrap_methods->length(), "must be");
 
