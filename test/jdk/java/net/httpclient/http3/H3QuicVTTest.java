@@ -129,7 +129,7 @@ class H3QuicVTTest implements HttpServerAdapters {
                 .findFirst().orElse(UseVTForSelector.DEFAULT);
     }
 
-    static boolean isQuicSelectorThreadVirtual() {
+    private static boolean isQuicSelectorThreadVirtual() {
         return switch (USE_VT_FOR_SELECTOR) {
             case ALWAYS -> true;
             case NEVER  -> false;
