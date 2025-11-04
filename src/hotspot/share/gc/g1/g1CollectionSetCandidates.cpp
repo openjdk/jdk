@@ -27,7 +27,7 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-uint G1CSetCandidateGroup::_next_group_id = 2;
+uint G1CSetCandidateGroup::_next_group_id = G1CSetCandidateGroup::InitialId;
 
 G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),

@@ -28,6 +28,7 @@
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -73,8 +74,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
-
-#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -1619,21 +1618,22 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
-    int num_frames = num_java_frames(cont);
+  if (!cont.entry()->is_virtual_thread()) {
+    if (JvmtiExport::has_frame_pops(thread)) {
+      int num_frames = num_java_frames(cont);
 
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
-    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
+      ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+      JvmtiExport::continuation_yield_cleanup(thread, num_frames);
+    }
+    invalidate_jvmti_stack(thread);
   }
-  invalidate_jvmti_stack(thread);
 }
 
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
@@ -1737,13 +1737,10 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert((current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should not be used for lightweight locking: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-
-  if (entry->is_pinned() || current->held_monitor_count() > 0) {
-    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
+  if (entry->is_pinned()) {
+    log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
     if (!preempt) {
       JFR_ONLY(current->set_last_freeze_fail_result(res);)
     }
@@ -1800,8 +1797,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
-  } else if (thread->held_monitor_count() > 0) {
-    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread,
@@ -1837,15 +1832,12 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
-      } else if (monitor_count > 0) {
-        return freeze_pinned_monitor;
       }
     }
   }
@@ -2319,7 +2311,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
@@ -3062,7 +3054,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:

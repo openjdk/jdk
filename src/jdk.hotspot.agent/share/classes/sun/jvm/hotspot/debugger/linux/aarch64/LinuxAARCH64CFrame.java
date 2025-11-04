@@ -53,24 +53,36 @@ public final class LinuxAARCH64CFrame extends BasicCFrame {
       return fp;
    }
 
+   @Override
    public CFrame sender(ThreadProxy thread) {
-      AARCH64ThreadContext context = (AARCH64ThreadContext) thread.getContext();
-      Address rsp = context.getRegisterAsAddress(AARCH64ThreadContext.SP);
+      return sender(thread, null, null);
+   }
 
-      if ((fp == null) || fp.lessThan(rsp)) {
+   @Override
+   public CFrame sender(ThreadProxy thread, Address nextFP, Address nextPC) {
+      // Check fp
+      // Skip if both nextFP and nextPC are given - do not need to load from fp.
+      if (nextFP == null && nextPC == null) {
+        if (fp == null) {
+          return null;
+        }
+
+        // Check alignment of fp
+        if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
+          return null;
+        }
+      }
+
+      if (nextFP == null) {
+        nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
+      }
+      if (nextFP == null) {
         return null;
       }
 
-      // Check alignment of fp
-      if (dbg.getAddressValue(fp) % (2 * ADDRESS_SIZE) != 0) {
-        return null;
+      if (nextPC == null) {
+        nextPC  = fp.getAddressAt(1 * ADDRESS_SIZE);
       }
-
-      Address nextFP = fp.getAddressAt(0 * ADDRESS_SIZE);
-      if (nextFP == null || nextFP.lessThanOrEqual(fp)) {
-        return null;
-      }
-      Address nextPC  = fp.getAddressAt(1 * ADDRESS_SIZE);
       if (nextPC == null) {
         return null;
       }

@@ -79,17 +79,17 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
     jlong memory_usage_in_bytes() override;
-    jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) override;
-    jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) override;
+    jlong memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
+    jlong memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
     jlong memory_soft_limit_in_bytes(julong upper_bound) override;
     jlong memory_throttle_limit_in_bytes() override;
     jlong memory_max_usage_in_bytes() override;
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
     jlong kernel_memory_usage_in_bytes();
-    jlong kernel_memory_limit_in_bytes(julong host_mem);
+    jlong kernel_memory_limit_in_bytes(julong upper_bound);
     jlong kernel_memory_max_usage_in_bytes();
-    void print_version_specific_info(outputStream* st, julong host_mem) override;
+    void print_version_specific_info(outputStream* st, julong upper_mem_bound) override;
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
@@ -100,8 +100,9 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     const char* mount_point() override { return reader()->mount_point(); }
     const char* cgroup_path() override { return reader()->cgroup_path(); }
   private:
+    jlong uses_mem_hierarchy();
     jlong read_mem_swappiness();
-    jlong read_mem_swap(julong host_total_memsw);
+    jlong read_mem_swap(julong upper_memsw_bound);
 
   public:
     CgroupV1MemoryController(const CgroupV1Controller& reader)

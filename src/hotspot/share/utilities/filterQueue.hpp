@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_FILTERQUEUE_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 // The FilterQueue is FIFO with the ability to skip over queued items.
 // The skipping is controlled by using a filter when popping.
@@ -44,7 +44,7 @@ class FilterQueue {
 
   Node* _first;
   Node* load_first() {
-    return Atomic::load_acquire(&_first);
+    return AtomicAccess::load_acquire(&_first);
   }
 
   static bool match_all(E d) { return true; }

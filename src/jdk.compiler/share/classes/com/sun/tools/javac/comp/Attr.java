@@ -1183,7 +1183,7 @@ public class Attr extends JCTree.Visitor {
                                   Errors.DefaultAllowedInIntfAnnotationMember);
                 }
                 if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0)
-                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract);
+                    log.error(tree.pos(), Errors.MissingMethBodyOrDeclAbstract(tree.sym, owner));
             } else {
                 if ((tree.sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                     if ((owner.flags() & INTERFACE) != 0) {
@@ -2777,16 +2777,9 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
-        Type clazztype;
-
-        try {
-            env.info.isAnonymousNewClass = tree.def != null;
-            clazztype = TreeInfo.isEnumInit(env.tree) ?
-                attribIdentAsEnumType(env, (JCIdent)clazz) :
-                attribType(clazz, env);
-        } finally {
-            env.info.isAnonymousNewClass = false;
-        }
+        Type clazztype = TreeInfo.isEnumInit(env.tree) ?
+            attribIdentAsEnumType(env, (JCIdent)clazz) :
+            attribType(clazz, env);
 
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
@@ -4569,9 +4562,19 @@ public class Attr extends JCTree.Visitor {
                     log.error(pos, Errors.TypeVarCantBeDeref);
                     return syms.errSymbol;
                 } else {
-                    Symbol sym2 = (sym.flags() & Flags.PRIVATE) != 0 ?
-                        rs.new AccessError(env, site, sym) :
-                                sym;
+                    // JLS 4.9 specifies the members are derived by inheritance.
+                    // We skip inducing a whole class by filtering members that
+                    // can never be inherited:
+                    Symbol sym2;
+                    if (sym.isPrivate()) {
+                        // Private members
+                        sym2 = rs.new AccessError(env, site, sym);
+                    } else if (sym.owner.isInterface() && sym.kind == MTH && (sym.flags() & STATIC) != 0) {
+                        // Interface static methods
+                        sym2 = rs.new SymbolNotFoundError(ABSENT_MTH);
+                    } else {
+                        sym2 = sym;
+                    }
                     rs.accessBase(sym2, pos, location, site, name, true);
                     return sym;
                 }
@@ -5246,8 +5249,7 @@ public class Attr extends JCTree.Visitor {
         Type underlyingType = attribType(tree.underlyingType, env);
         Type annotatedType = underlyingType.preannotatedType();
 
-        if (!env.info.isAnonymousNewClass)
-            annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
+        annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);
         result = tree.type = annotatedType;
     }
 

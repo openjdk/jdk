@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 5009574
  * @summary verify an enum type can't be directly subclassed
- * @author Joseph D. Darcy
  *
  * @compile/fail/ref=FauxEnum3.out -XDrawDiagnostics  FauxEnum3.java
  */
