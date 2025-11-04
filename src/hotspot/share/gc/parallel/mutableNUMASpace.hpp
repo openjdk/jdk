@@ -166,9 +166,9 @@ public:
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
 
-  virtual size_t tlab_capacity(Thread* ignored) const;
-  virtual size_t tlab_used(Thread* ignored) const;
-  virtual size_t unsafe_max_tlab_alloc(Thread* ignored) const;
+  virtual size_t tlab_capacity() const;
+  virtual size_t tlab_used() const;
+  virtual size_t unsafe_max_tlab_alloc() const;
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);

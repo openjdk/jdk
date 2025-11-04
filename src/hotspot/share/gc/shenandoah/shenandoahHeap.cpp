@@ -1507,7 +1507,7 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 }
 
 // Returns size in bytes
-size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahHeap::unsafe_max_tlab_alloc() const {
   // Return the max allowed size, and let the allocation path
   // figure out the safe size for current allocation.
   return ShenandoahHeapRegion::max_tlab_size_bytes();
@@ -1649,7 +1649,7 @@ void ShenandoahHeap::verify(VerifyOption vo) {
     }
   }
 }
-size_t ShenandoahHeap::tlab_capacity(Thread *thr) const {
+size_t ShenandoahHeap::tlab_capacity() const {
   return _free_set->capacity();
 }
 
@@ -2125,7 +2125,7 @@ GCTracer* ShenandoahHeap::tracer() {
   return shenandoah_policy()->tracer();
 }
 
-size_t ShenandoahHeap::tlab_used(Thread* thread) const {
+size_t ShenandoahHeap::tlab_used() const {
   return _free_set->used();
 }
 

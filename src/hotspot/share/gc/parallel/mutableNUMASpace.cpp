@@ -110,7 +110,7 @@ size_t MutableNUMASpace::free_in_words() const {
   return s;
 }
 
-size_t MutableNUMASpace::tlab_capacity(Thread *ignored) const {
+size_t MutableNUMASpace::tlab_capacity() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->capacity_in_bytes();
@@ -118,7 +118,7 @@ size_t MutableNUMASpace::tlab_capacity(Thread *ignored) const {
   return s / (size_t)lgrp_spaces()->length();
 }
 
-size_t MutableNUMASpace::tlab_used(Thread *ignored) const {
+size_t MutableNUMASpace::tlab_used() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->used_in_bytes();
@@ -126,7 +126,7 @@ size_t MutableNUMASpace::tlab_used(Thread *ignored) const {
   return s / (size_t)lgrp_spaces()->length();
 }
 
-size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *ignored) const {
+size_t MutableNUMASpace::unsafe_max_tlab_alloc() const {
   size_t s = 0;
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->free_in_bytes();

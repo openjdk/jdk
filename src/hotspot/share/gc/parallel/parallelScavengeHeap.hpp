@@ -214,9 +214,9 @@ public:
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;
 
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   void object_iterate(ObjectClosure* cl) override;
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);

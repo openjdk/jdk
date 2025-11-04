@@ -117,11 +117,11 @@ public:
   size_t free_in_bytes() const                { return free_in_words() * HeapWordSize; }
 
   // Size computations.  Sizes are in heapwords.
-  virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
-  virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
-  virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
-  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
+  virtual size_t used_in_words() const         { return pointer_delta(top(), bottom()); }
+  virtual size_t free_in_words() const         { return pointer_delta(end(),    top()); }
+  virtual size_t tlab_capacity() const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used() const             { return used_in_bytes();                }
+  virtual size_t unsafe_max_tlab_alloc() const { return free_in_bytes();                }
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);

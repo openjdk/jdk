@@ -1202,10 +1202,10 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  size_t tlab_capacity(Thread* ignored) const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
   size_t max_tlab_size() const override;
-  size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   inline bool is_in_young(const oop obj) const;
   inline bool requires_barriers(stackChunkOop obj) const override;
