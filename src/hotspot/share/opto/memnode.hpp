@@ -1419,6 +1419,7 @@ private:
 
 public:
 
+  // callback is allowed to add new uses that will then be iterated over
   template <class Callback> void for_each_narrow_mem_proj_with_new_uses(Callback callback) const {
     auto callback_always_continue = [&](NarrowMemProjNode* proj) {
       callback(proj);

@@ -221,10 +221,7 @@ protected:
     return sizeof(*this);
   }
 public:
-  NarrowMemProjNode(Node* src, const TypePtr* adr_type)
-    : ProjNode(src, TypeFunc::Memory), _adr_type(adr_type) {
-    init_class_id(Class_NarrowMemProj);
-  }
+  NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type);
 
   virtual const TypePtr* adr_type() const {
     return _adr_type;

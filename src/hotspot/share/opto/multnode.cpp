@@ -267,3 +267,8 @@ ProjNode* ProjNode::other_if_proj() const {
   assert(_con == 0 || _con == 1, "not an if?");
   return in(0)->as_If()->proj_out(1-_con);
 }
+
+NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)
+  : ProjNode(src, TypeFunc::Memory), _adr_type(adr_type) {
+  init_class_id(Class_NarrowMemProj);
+}
