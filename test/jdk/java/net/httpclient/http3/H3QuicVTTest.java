@@ -163,7 +163,7 @@ class H3QuicVTTest implements HttpServerAdapters {
      * Issues various HTTP3 requests and verifies the responses are received
      */
     @Test
-    public void testBasicRequests() throws Exception {
+    void testBasicRequests() throws Exception {
         try (final HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .version(HTTP_3)
