@@ -664,7 +664,6 @@ void help() {
   tty->print_cr("  pns(void* sp, void* fp, void* pc) - print native (i.e. mixed) stack trace, e.g.");
 #ifdef LINUX
   AMD64_ONLY(  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64"));
-  IA32_ONLY(   tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86"));
   AARCH64_ONLY(tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64"));
   RISCV_ONLY(  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V"));
   PPC64_ONLY(  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64"));
