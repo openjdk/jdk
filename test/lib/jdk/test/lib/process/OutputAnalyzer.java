@@ -355,7 +355,7 @@ public final class OutputAnalyzer {
     }
 
     /**
-     * Returns true if the pattern can be found inside the stdout and/or stderr.
+     * Returns true if the pattern can be found in the given string(s).
      *
      * NOTE: The meaning of "match" in OutputAnalyzer is NOT the same as String.matches().
      * Rather it means "can the pattern be found in stdout and/or stderr".
@@ -363,31 +363,35 @@ public final class OutputAnalyzer {
      * The pattern is comiled with MULTILINE but without DOTALL, so "." doesn't match newline, but
      * "^" and "$" matches just after or just before, respectively, a newline.
      */
-    private boolean findPattern(String stdout, String stderr, String regexp) {
+    private boolean findPattern(String regexp, String... strings) {
         Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
-        return ((stdout != null && pattern.matcher(stdout).find()) ||
-                (stderr != null && pattern.matcher(stderr).find()));
+        for (String s : strings) {
+            if (pattern.matcher(s).find()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Returns true if stdout matches the given pattern
      */
     public boolean stdoutMatches(String regexp) {
-        return findPattern(getStdout(), null, regexp);
+        return findPattern(regexp, getStdout());
     }
 
     /**
      * Returns true if stderr matches the given pattern
      */
     public boolean stderrMatches(String regexp) {
-        return findPattern(null, getStderr(), regexp);
+        return findPattern(regexp, getStderr());
     }
 
     /**
      * Returns true if either stdout or stderr matches the given pattern
      */
     public boolean matches(String regexp) {
-        return findPattern(getStdout(), getStderr(), regexp);
+        return findPattern(regexp, getStdout(), getStderr());
     }
 
     /**
