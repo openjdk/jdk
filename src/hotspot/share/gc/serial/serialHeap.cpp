@@ -660,16 +660,16 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   return addr < _old_gen->space()->top();
 }
 
-size_t SerialHeap::tlab_capacity(Thread* thr) const {
+size_t SerialHeap::tlab_capacity() const {
   // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
-size_t SerialHeap::tlab_used(Thread* thr) const {
+size_t SerialHeap::tlab_used() const {
   return _young_gen->tlab_used();
 }
 
-size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t SerialHeap::unsafe_max_tlab_alloc() const {
   return _young_gen->unsafe_max_tlab_alloc();
 }
 
