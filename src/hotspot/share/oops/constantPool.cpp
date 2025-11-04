@@ -2348,6 +2348,7 @@ void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) co
   for (int i = 0; i < num_entries; i++) {
     const BSMAttributeEntry* e = entry(i);
     BSMAttributeEntry* e_new = iter.reserve_new_entry(e->bootstrap_method_index(), e->argument_count());
+    assert(e_new != nullptr, "must be");
     e->copy_args_into(e_new);
   }
 }

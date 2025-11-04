@@ -3339,7 +3339,9 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
     cfs->guarantee_more(sizeof(u2) * num_bootstrap_arguments, CHECK); // argv[argc]
 
     BSMAttributeEntry* entry = iter.reserve_new_entry(bootstrap_method_ref, num_bootstrap_arguments);
-    guarantee_property(entry != nullptr, "Invalid BootstrapMethods num_bootstrap_methods. The total amount of space reserved for the BootstrapMethod attribute was not sufficient", CHECK);
+    guarantee_property(entry != nullptr,
+                       "Invalid BootstrapMethods num_bootstrap_methods."
+                       " The total amount of space reserved for the BootstrapMethod attribute was not sufficient", CHECK);
 
     for (int argi = 0; argi < num_bootstrap_arguments; argi++) {
       const u2 argument_index = cfs->get_u2_fast();
