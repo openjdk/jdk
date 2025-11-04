@@ -27,14 +27,18 @@
  * @test
  * @summary Test PrintVMInfoAtExit
  * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @modules java.base/jdk.internal.misc
  * @requires vm.flagless
  * @requires vm.bits == "64"
- * @run driver PrintVMInfoAtExitTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PrintVMInfoAtExitTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.whitebox.WhiteBox;
+
 
 public class PrintVMInfoAtExitTest {
 
@@ -53,7 +57,14 @@ public class PrintVMInfoAtExitTest {
     output_detail.shouldContain("--  S U M M A R Y --");
     output_detail.shouldContain("Command Line: -Xmx64M -Xms64M -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+PrintVMInfoAtExit -XX:NativeMemoryTracking=summary -XX:CompressedClassSpaceSize=256m");
     output_detail.shouldContain("Native Memory Tracking:");
-    output_detail.shouldContain("Java Heap (reserved=65536KB, committed=65536KB)");
+    WhiteBox wb = WhiteBox.getWhiteBox();
+    if (wb.isAsanEnabled()) {
+        // the reserved value can be influenced by asan
+        output_detail.shouldContain("Java Heap (reserved=");
+        output_detail.shouldContain(", committed=65536KB)");
+    } else {
+        output_detail.shouldContain("Java Heap (reserved=65536KB, committed=65536KB)");
+    }
   }
 }
 
