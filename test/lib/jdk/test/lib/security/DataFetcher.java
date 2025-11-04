@@ -51,9 +51,12 @@ import java.util.zip.ZipFile;
 /// and a pattern `https://raw.repos.com/%o/%n/%r/%e` will be resolved to
 /// a URL like `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
 ///
-public interface DataFetcher extends AutoCloseable {
+public sealed interface DataFetcher extends AutoCloseable {
 
     byte[] fetch(String entry) throws IOException;
+
+    @Override
+    void close() throws IOException; // to avoid InterruptedException warning
 
     /// @param klass the `Artifact` class
     /// @param zipPrefix the common prefix for each entry in the ZIP file
@@ -83,7 +86,7 @@ public interface DataFetcher extends AutoCloseable {
     /// @param base the base URL string, contains "%e" mapping to entry name
     record FileFetcher(String base) implements DataFetcher {
         @Override
-        public void close() throws Exception {
+        public void close() {
             // nothing to do
         }
 
@@ -105,7 +108,7 @@ public interface DataFetcher extends AutoCloseable {
     ///     inside the ZIP, "archive/" should be provided as `zipPrefix`.
     record ZipFetcher(ZipFile zf, String zipPrefix) implements DataFetcher {
         @Override
-        public void close() throws Exception {
+        public void close() throws IOException {
             zf.close();
         }
 
