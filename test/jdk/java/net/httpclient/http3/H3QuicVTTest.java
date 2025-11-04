@@ -50,8 +50,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 /*
  * @test id=default
  * @bug 8369920
- * @summary Basic test to verify that the QuicSelector
- *          uses a VirtualThread
+ * @summary Verifies whether `QuicSelector` uses virtual threads when
+            no explicit configuration is provided
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
