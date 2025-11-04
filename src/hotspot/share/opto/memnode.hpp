@@ -167,7 +167,7 @@ public:
   bool is_unsafe_access() const { return _unsafe_access; }
 
 #ifndef PRODUCT
-  static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);
+  static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
@@ -1371,7 +1371,20 @@ public:
                         intptr_t header_size, Node* size_in_bytes,
                         PhaseIterGVN* phase);
 
- private:
+  // An Initialize node has multiple memory projections. Helper methods used when the node is removed.
+  // For use at parse time
+  void replace_mem_projs_by(Node* mem, Compile* C);
+  // For use with IGVN
+  void replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn);
+
+  // Does a NarrowMemProj with this adr_type and this node as input already exist?
+  bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
+
+  // Used during matching: find the MachProj memory projection if there's one. Expectation is that there should be at
+  // most one.
+  MachProjNode* mem_mach_proj() const;
+
+private:
   void remove_extra_zeroes();
 
   // Find out where a captured store should be placed (or already is placed).
@@ -1388,6 +1401,33 @@ public:
                                PhaseGVN* phase);
 
   intptr_t find_next_fullword_store(uint i, PhaseGVN* phase);
+
+  // Iterate with i over all NarrowMemProj uses calling callback
+  template <class Callback, class Iterator> NarrowMemProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
+    auto filter = [&](ProjNode* proj) {
+      if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj()) == BREAK_AND_RETURN_CURRENT_PROJ) {
+        return BREAK_AND_RETURN_CURRENT_PROJ;
+      }
+      return CONTINUE;
+    };
+    ProjNode* res = apply_to_projs_any_iterator(i, filter);
+    if (res == nullptr) {
+      return nullptr;
+    }
+    return res->as_NarrowMemProj();
+  }
+
+public:
+
+  // callback is allowed to add new uses that will then be iterated over
+  template <class Callback> void for_each_narrow_mem_proj_with_new_uses(Callback callback) const {
+    auto callback_always_continue = [&](NarrowMemProjNode* proj) {
+      callback(proj);
+      return MultiNode::CONTINUE;
+    };
+    DUIterator i = outs();
+    apply_to_narrow_mem_projs_any_iterator(UsesIterator(i, this), callback_always_continue);
+  }
 };
 
 //------------------------------MergeMem---------------------------------------

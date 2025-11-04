@@ -2602,7 +2602,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
     t->dump_on(st);
   } else if (t == Type::MEMORY) {
     st->print("  Memory:");
-    MemNode::dump_adr_type(this, adr_type(), st);
+    MemNode::dump_adr_type(adr_type(), st);
   } else if (Verbose || WizardMode) {
     st->print("  Type:");
     if (t) {
