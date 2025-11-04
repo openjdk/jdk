@@ -29,12 +29,19 @@
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
+static jboolean did_single_step = false;
 
 extern "C" {
 
 static void JNICALL
 SingleStep(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
            jmethodID method, jlocation location) {
+  did_single_step = true;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_SingleStepKlassInit_didSingleStep(JNIEnv* jni, jclass klass) {
+  return did_single_step;
 }
 
 JNIEXPORT void JNICALL

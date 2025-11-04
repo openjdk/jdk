@@ -36,6 +36,7 @@ public class SingleStepKlassInit {
     private static final CountDownLatch finishInvokeStatic = new CountDownLatch(1);
 
     private static native void setSingleSteppingMode(boolean enable);
+    private static native boolean didSingleStep();
 
     public static void main(String args[]) throws Exception {
         class TestClass {
@@ -69,6 +70,10 @@ public class SingleStepKlassInit {
             vthreads[i].join();
         }
         setSingleSteppingMode(false);
+
+        if (!didSingleStep()) {
+            throw new RuntimeException("No SingleStep events");
+        }
     }
 
     /**
