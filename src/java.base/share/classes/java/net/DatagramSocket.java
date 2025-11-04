@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,14 +387,9 @@ public class DatagramSocket implements java.io.Closeable {
      * this socket is unknown - it may or may not be connected to the address
      * that it was previously connected to.
      *
-     * <p> Care should be taken to ensure that a connected datagram socket
-     * is not shared with untrusted code. When a socket is connected,
-     * {@link #receive receive} and {@link #send send} <b>will not perform
-     * any security checks</b> on incoming and outgoing packets, other than
-     * matching the packet's and the socket's address and port. On a send
-     * operation, if the packet's address is set and the packet's address
-     * and the socket's address do not match, an {@code IllegalArgumentException}
-     * will be thrown. A socket connected to a multicast address may only
+     * <p> When the socket is connected, the send method checks that the
+     * packet's address matches the remote address that the socket is
+     * connected to. A socket connected to a multicast address may only
      * be used to send packets. Datagrams in the socket's {@linkplain
      * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
      * have not been {@linkplain #receive(DatagramPacket) received} before invoking
@@ -616,13 +611,13 @@ public class DatagramSocket implements java.io.Closeable {
      *        with a {@link DatagramChannel DatagramChannel}. In that case,
      *        interrupting a thread receiving a datagram packet will close the
      *        underlying channel and cause this method to throw {@link
-     *        java.nio.channels.ClosedByInterruptException} with the interrupt
-     *        status set.
+     *        java.nio.channels.ClosedByInterruptException} with the thread's
+     *        interrupted status set.
      *   <li> The datagram socket uses the system-default socket implementation and
      *        a {@linkplain Thread#isVirtual() virtual thread} is receiving a
      *        datagram packet. In that case, interrupting the virtual thread will
      *        cause it to wakeup and close the socket. This method will then throw
-     *        {@code SocketException} with the interrupt status set.
+     *        {@code SocketException} with the thread's interrupted status set.
      * </ol>
      *
      * @param      p   the {@code DatagramPacket} into which to place
@@ -1086,11 +1081,6 @@ public class DatagramSocket implements java.io.Closeable {
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
         }
         factory = fac;
     }

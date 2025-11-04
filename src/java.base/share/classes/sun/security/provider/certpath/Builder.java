@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
 
-import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 
@@ -55,8 +54,8 @@ abstract class Builder {
      * Authority Information Access extension shall be enabled. Currently
      * disabled by default for compatibility reasons.
      */
-    static final boolean USE_AIA = GetBooleanAction
-            .privilegedGetProperty("com.sun.security.enableAIAcaIssuers");
+    static final boolean USE_AIA =
+            Boolean.getBoolean("com.sun.security.enableAIAcaIssuers");
 
     /**
      * Initialize the builder with the input parameters.
@@ -140,7 +139,7 @@ abstract class Builder {
      * cert's certificate policies extension in order for a cert to be selected.
      */
     Set<String> getMatchingPolicies() {
-        if (matchingPolicies != null) {
+        if (matchingPolicies == null) {
             Set<String> initialPolicies = buildParams.initialPolicies();
             if ((!initialPolicies.isEmpty()) &&
                 (!initialPolicies.contains(PolicyChecker.ANY_POLICY)) &&

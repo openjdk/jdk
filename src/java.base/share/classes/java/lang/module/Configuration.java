@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,61 @@ import jdk.internal.vm.annotation.Stable;
  * java.lang.ModuleLayer#boot() boot} layer is obtained by invoking {@code
  * ModuleLayer.boot().configuration()}. The configuration for the boot layer
  * will often be the parent when creating new configurations. </p>
+ *
+ * <h2><a id="optional-services">Optional Services</a></h2>
+ *
+ * Resolution requires that if a module {@code M} '{@code uses}' a service or
+ * '{@code provides}' an implementation of a service, then the service must be available
+ * to {@code M} at run time, either because {@code M} itself contains the service's
+ * package or because {@code M} reads another module that exports the service's package.
+ * However, it is sometimes desirable for the service's package to come from a module
+ * that is optional at run time, as indicated by the use of 'requires static' in this
+ * example:
+ *
+ * {@snippet :
+ *     module M {
+ *         requires static Y;
+ *         uses p.S;
+ *     }
+ *
+ *     module Y {
+ *        exports p;
+ *     }
+ *  }
+ *
+ * Resolution is resilient when a service's package comes from a module that is optional
+ * at run time. That is, if a module {@code M} has an optional dependency on some module
+ * {@code Y}, but {@code Y} is not needed at run time ({@code Y} might be observable but
+ * no-one reads it), then resolution at run time <i>assumes</i> that {@code Y} exported
+ * the service's package at compile time. Resolution at run time does not attempt to
+ * check whether {@code Y} is observable or (if it is observable) whether {@code Y}
+ * exports the service's package.
+ *
+ * <p> The module that '{@code uses}' the service, or '{@code provides}' an implementation
+ * of it, may depend directly on the optional module, as {@code M} does above, or may
+ * depend indirectly on the optional module, as shown here:
+ *
+ *  {@snippet :
+ *     module M {
+ *         requires X;
+ *         uses p.S;
+ *     }
+ *
+ *     module X {
+ *         requires static transitive Y;
+ *     }
+ *
+ *     module Y {
+ *         exports p;
+ *     }
+ * }
+ *
+ * In effect, the service that {@code M} '{@code uses}', or '{@code provides}' an
+ * implementation of, is optional if it comes from an optional dependency. In this case,
+ * code in {@code M} must be prepared to deal with the class or interface that denotes
+ * the service being unavailable at run time. This is distinct from the more regular
+ * case where the service is available but no implementations of the service are
+ * available.
  *
  * <h2> Example </h2>
  *
@@ -153,7 +208,6 @@ public final class Configuration {
         this.graph = g;
         this.modules = Set.of(moduleArray);
         this.nameToModule = Map.ofEntries(nameEntries);
-
         this.targetPlatform = resolver.targetPlatform();
     }
 
@@ -358,10 +412,17 @@ public final class Configuration {
      *     module {@code M} containing package {@code p} reads another module
      *     that exports {@code p} to {@code M}. </p></li>
      *
-     *     <li><p> A module {@code M} declares that it "{@code uses p.S}" or
-     *     "{@code provides p.S with ...}" but package {@code p} is neither in
-     *     module {@code M} nor exported to {@code M} by any module that
-     *     {@code M} reads. </p></li>
+     *     <li><p> A module {@code M} declares that it '{@code uses p.S}' or
+     *     '{@code provides p.S with ...}', but the package {@code p} is neither in
+     *     module {@code M} nor exported to {@code M} by any module that {@code M}
+     *     reads. Additionally, neither of the following is {@code true}:
+     *     <ul>
+     *         <li> {@code M} declares '{@code requires static}' for at least one
+     *         module that is not in the readability graph. </li>
+     *         <li> {@code M} reads another module that declares
+     *         '{@code requires transitive static}' for at least one module that is
+     *         not in the readability graph. </li>
+     *     </ul> </li>
      *
      * </ul>
      *

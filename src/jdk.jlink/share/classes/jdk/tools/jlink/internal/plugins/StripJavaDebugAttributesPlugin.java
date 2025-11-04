@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,14 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
     private final Predicate<String> predicate;
+    public static final String NAME = "strip-java-debug-attributes";
 
     public StripJavaDebugAttributesPlugin() {
         this((path) -> false);
     }
 
     StripJavaDebugAttributesPlugin(Predicate<String> predicate) {
-        super("strip-java-debug-attributes");
+        super(NAME);
         this.predicate = predicate;
     }
 
@@ -69,11 +70,9 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                                 ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
                         byte[] content = ClassFile.of().transformClass(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
-                                                            || cle instanceof SourceDebugExtensionAttribute)
-                                              .andThen(ClassTransform.transformingMethods(MethodTransform
-                                                    .dropping(me -> me instanceof MethodParametersAttribute)
-                                                    .andThen(MethodTransform
-                                                            .transformingCode(CodeTransform.ACCEPT_ALL)))));
+                                                        || cle instanceof SourceDebugExtensionAttribute)
+                                        .andThen(ClassTransform.transformingMethods(MethodTransform
+                                                .transformingCode(CodeTransform.ACCEPT_ALL))));
                         res = resource.copyWithContent(content);
                     }
                 }

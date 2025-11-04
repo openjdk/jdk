@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,18 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
 
 include CopyFiles.gmk
+include DebugInfoUtils.gmk
 include Execute.gmk
 include Modules.gmk
 include Utils.gmk
 
 JDK_TARGETS :=
 JRE_TARGETS :=
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, Images-pre.gmk))
 
 ################################################################################
 
@@ -98,6 +95,10 @@ JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
 ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
   JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
+endif
+
+ifneq ($(JLINK_USER_EXTRA_FLAGS), )
+  JLINK_JDK_EXTRA_OPTS += $(JLINK_USER_EXTRA_FLAGS)
 endif
 
 $(eval $(call SetupExecute, jlink_jdk, \
@@ -161,7 +162,7 @@ define CreateCDSArchive
   endif
 
   ifeq ($(DEBUG_CDS_ARCHIVE), true)
-    $1_$2_CDS_DUMP_FLAGS += -Xlog:cds+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
+    $1_$2_CDS_DUMP_FLAGS += -Xlog:aot+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
   endif
 
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \
@@ -269,6 +270,7 @@ endif
 # Since debug symbols are not included in the jmod files, they need to be copied
 # in manually after generating the images.
 
+# These variables are read by SetupCopyDebuginfo
 ALL_JDK_MODULES := $(JDK_MODULES)
 ALL_JRE_MODULES := $(sort $(JRE_MODULES), $(foreach m, $(JRE_MODULES), \
     $(call FindTransitiveDepsForModule, $m)))
@@ -280,27 +282,6 @@ else
   LIBS_TARGET_SUBDIR := lib
 endif
 CMDS_TARGET_SUBDIR := bin
-
-# Param 1 - dir to find debuginfo files in
-FindDebuginfoFiles = \
-    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
-
-# Pick the correct debug info files to copy, either zipped or not.
-ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-  DEBUGINFO_SUFFIXES += .diz
-else
-  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
-  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
-  # dirs.
-  ifeq ($(call isTargetOs, macosx), true)
-    $(call FillFindCache, \
-        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
-    FindDebuginfoFiles = \
-        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
-  endif
-endif
 
 # Param 1 - either JDK or JRE
 SetupCopyDebuginfo = \
@@ -329,12 +310,6 @@ $(call SetupCopyDebuginfo,SYMBOLS)
 
 ################################################################################
 
-# Include custom post hook here to make it possible to augment the target lists
-# before actual target prerequisites are declared.
-$(eval $(call IncludeCustomExtension, Images-post.gmk))
-
-################################################################################
-
 $(JRE_TARGETS): $(JLINK_JRE_TARGETS)
 $(JDK_TARGETS): $(JLINK_JDK_TARGETS)
 
@@ -344,4 +319,8 @@ symbols: $(SYMBOLS_TARGETS)
 
 all: jdk jre symbols
 
-.PHONY: default all jdk jre symbols
+.PHONY: jdk jre symbols
+
+################################################################################
+
+include MakeFileEnd.gmk

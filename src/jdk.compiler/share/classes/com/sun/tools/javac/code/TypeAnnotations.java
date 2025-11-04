@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,7 +472,6 @@ public class TypeAnnotations {
                         enclEl.getKind() != ElementKind.PACKAGE &&
                         enclTy != null &&
                         enclTy.getKind() != TypeKind.NONE &&
-                        enclTy.getKind() != TypeKind.ERROR &&
                         (enclTr.getKind() == JCTree.Kind.MEMBER_SELECT ||
                                 enclTr.getKind() == JCTree.Kind.PARAMETERIZED_TYPE ||
                                 enclTr.getKind() == JCTree.Kind.ANNOTATED_TYPE)) {
@@ -1018,7 +1017,11 @@ public class TypeAnnotations {
                     if (!invocation.typeargs.contains(tree)) {
                         return TypeAnnotationPosition.unknown;
                     }
-                    MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
+                    Symbol exsym = TreeInfo.symbol(invocation.getMethodSelect());
+                    if (exsym.type.isErroneous()) {
+                        // bail out, don't deal with erroneous types which would be reported anyways
+                        return TypeAnnotationPosition.unknown;
+                    }
                     final int type_index = invocation.typeargs.indexOf(tree);
                     if (exsym == null) {
                         throw new AssertionError("could not determine symbol for {" + invocation + "}");

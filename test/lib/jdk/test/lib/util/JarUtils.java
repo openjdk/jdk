@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,24 @@ public final class JarUtils {
     {
         Path[] paths = Stream.of(input).map(Paths::get).toArray(Path[]::new);
         createJarFile(jarfile, dir, paths);
+    }
+
+
+    /**
+     * Creates a JAR file from a map of class binary name to class bytes.
+     *
+     * @see jdk.test.lib.compiler.InMemoryJavaCompiler#compile(Map)
+     */
+    public static void createJarFromClasses(Path jarfile, Map<String, byte[]> classes) throws IOException {
+        try (OutputStream out = Files.newOutputStream(jarfile);
+             JarOutputStream jos = new JarOutputStream(out)) {
+            for (var entry : classes.entrySet()) {
+                String name = entry.getKey().replace('.', '/') + ".class";
+                jos.putNextEntry(new JarEntry(name));
+                jos.write(entry.getValue());
+                jos.closeEntry();
+            }
+        }
     }
 
     /**

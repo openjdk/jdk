@@ -622,6 +622,7 @@ public class JSR166TestCase extends TestCase {
             String[] java20TestClassNames = {
                 "ForkJoinPool20Test",
                 "SynchronousQueue20Test",
+                "ReentrantReadWriteLock20Test"
             };
             addNamedTestClasses(suite, java20TestClassNames);
         }
@@ -831,7 +832,7 @@ public class JSR166TestCase extends TestCase {
      * by rethrowing, in the test harness thread, any exception recorded
      * earlier by threadRecordFailure.
      *
-     * Triggers test case failure if interrupt status is set in the main thread.
+     * Triggers test case failure if interrupted status is set in the main thread.
      */
     public void tearDown() throws Exception {
         Throwable t = threadFailure.getAndSet(null);
@@ -847,7 +848,7 @@ public class JSR166TestCase extends TestCase {
         }
 
         if (Thread.interrupted())
-            tearDownFail("interrupt status set in main thread");
+            tearDownFail("interrupted status set in main thread");
 
         checkForkJoinPoolThreadLeaks();
     }
@@ -1459,7 +1460,7 @@ public class JSR166TestCase extends TestCase {
 
     /**
      * Spin-waits up to LONG_DELAY_MS milliseconds for the current thread to
-     * be interrupted.  Clears the interrupt status before returning.
+     * be interrupted.  Clears the interrupted status before returning.
      */
     void awaitInterrupted() {
         for (long startTime = 0L; !Thread.interrupted(); ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  *@test
- *@bug 8007520 8008254
+ *@bug 8007520 8008254 8347841
  *@summary Test those bridge methods to/from java.time date/time classes
  * @key randomness
  */
@@ -107,23 +107,22 @@ public class JavatimeTest {
 
         ///////////// java.util.TimeZone /////////////////////////
         for (String zidStr : TimeZone.getAvailableIDs()) {
-            // TBD: tzdt intergration
-            if (zidStr.startsWith("SystemV")
-                    || zidStr.contains("Riyadh8")
-                    || zidStr.equals("US/Pacific-New")
-                    || zidStr.equals("EST")
-                    || zidStr.equals("HST")
-                    || zidStr.equals("MST")) {
+            if (ZoneId.SHORT_IDS.containsKey(zidStr)) {
                 continue;
             }
-            ZoneId zid = ZoneId.of(zidStr, ZoneId.SHORT_IDS);
+            // TBD: tzdt integration
+            if (zidStr.startsWith("SystemV")
+                    || zidStr.contains("Riyadh8")
+                    || zidStr.equals("US/Pacific-New")) {
+                continue;
+            }
+            ZoneId zid = ZoneId.of(zidStr);
             if (!zid.equals(TimeZone.getTimeZone(zid).toZoneId())) {
                 throw new RuntimeException("FAILED: zid -> tz -> zid :" + zidStr);
             }
             TimeZone tz = TimeZone.getTimeZone(zidStr);
             // no round-trip for alias and "GMT"
             if (!tz.equals(TimeZone.getTimeZone(tz.toZoneId()))
-                    && !ZoneId.SHORT_IDS.containsKey(zidStr)
                     && !zidStr.startsWith("GMT")) {
                 throw new RuntimeException("FAILED: tz -> zid -> tz :" + zidStr);
             }

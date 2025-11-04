@@ -1,4 +1,4 @@
-## libpng v1.6.43
+## libpng v1.6.47
 
 ### libpng License
 <pre>
@@ -9,8 +9,8 @@ COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
 PNG Reference Library License version 2
 ---------------------------------------
 
-Copyright (C) 1995-2024 The PNG Reference Library Authors.
-Copyright (C) 2018-2024 Cosmin Truta
+Copyright (c) 1995-2025 The PNG Reference Library Authors.
+Copyright (C) 2018-2025 Cosmin Truta
 Copyright (C) 1998-2018 Glenn Randers-Pehrson
 Copyright (C) 1996-1997 Andreas Dilger
 Copyright (C) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -170,6 +170,7 @@ Authors, for copyright and licensing purposes.
  * James Yu
  * John Bowler
  * Kevin Bracey
+ * Lucas Chollet
  * Magnus Holmgren
  * Mandar Sahastrabuddhe
  * Mans Rullgard

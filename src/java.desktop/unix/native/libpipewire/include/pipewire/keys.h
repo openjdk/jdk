@@ -38,6 +38,14 @@ extern "C" {
 #define PW_KEY_SEC_GID            "pipewire.sec.gid"    /**< client gid, set by protocol*/
 #define PW_KEY_SEC_LABEL        "pipewire.sec.label"    /**< client security label, set by protocol*/
 
+#define PW_KEY_SEC_SOCKET        "pipewire.sec.socket"    /**< client socket name, set by protocol */
+
+#define PW_KEY_SEC_ENGINE        "pipewire.sec.engine"    /**< client secure context engine, set by protocol.
+                                  *  This can also be set by a client when making a
+                                  *  new security context. */
+#define PW_KEY_SEC_APP_ID        "pipewire.sec.app-id"    /**< client secure application id */
+#define PW_KEY_SEC_INSTANCE_ID        "pipewire.sec.instance-id"    /**< client secure instance id */
+
 #define PW_KEY_LIBRARY_NAME_SYSTEM    "library.name.system"    /**< name of the system library to use */
 #define PW_KEY_LIBRARY_NAME_LOOP    "library.name.loop"    /**< name of the loop library to use */
 #define PW_KEY_LIBRARY_NAME_DBUS    "library.name.dbus"    /**< name of the dbus library to use */
@@ -52,13 +60,20 @@ extern "C" {
 #define PW_KEY_OBJECT_LINGER        "object.linger"        /**< the object lives on even after the client
                                   *  that created it has been destroyed */
 #define PW_KEY_OBJECT_REGISTER        "object.register"    /**< If the object should be registered. */
-
+#define PW_KEY_OBJECT_EXPORT        "object.export"        /**< If the object should be exported,
+                                  *  since 0.3.72 */
 
 /* config */
 #define PW_KEY_CONFIG_PREFIX        "config.prefix"        /**< a config prefix directory */
 #define PW_KEY_CONFIG_NAME        "config.name"        /**< a config file name */
 #define PW_KEY_CONFIG_OVERRIDE_PREFIX    "config.override.prefix"    /**< a config override prefix directory */
 #define PW_KEY_CONFIG_OVERRIDE_NAME    "config.override.name"    /**< a config override file name */
+
+/* loop */
+#define PW_KEY_LOOP_NAME        "loop.name"        /**< the name of a loop */
+#define PW_KEY_LOOP_CLASS        "loop.class"        /**< the classes this loop handles, array of strings */
+#define PW_KEY_LOOP_RT_PRIO        "loop.rt-prio"        /**< realtime priority of the loop */
+#define PW_KEY_LOOP_CANCEL        "loop.cancel"        /**< if the loop can be canceled */
 
 /* context */
 #define PW_KEY_CONTEXT_PROFILE_MODULES    "context.profile.modules"    /**< a context profile for modules, deprecated */
@@ -87,7 +102,9 @@ extern "C" {
 /* remote keys */
 #define PW_KEY_REMOTE_NAME        "remote.name"        /**< The name of the remote to connect to,
                                   *  default pipewire-0, overwritten by
-                                  *  env(PIPEWIRE_REMOTE) */
+                                  *  env(PIPEWIRE_REMOTE). May also be
+                                  *  a SPA-JSON array of sockets, to be tried
+                                  *  in order. */
 #define PW_KEY_REMOTE_INTENTION        "remote.intention"    /**< The intention of the remote connection,
                                   *  "generic", "screencast" */
 
@@ -132,7 +149,14 @@ extern "C" {
 #define PW_KEY_NODE_SESSION        "node.session"        /**< the session id this node is part of */
 #define PW_KEY_NODE_GROUP        "node.group"        /**< the group id this node is part of. Nodes
                                   *  in the same group are always scheduled
-                                  *  with the same driver. */
+                                  *  with the same driver. Can be an array of
+                                  *  group names. */
+#define PW_KEY_NODE_SYNC_GROUP        "node.sync-group"    /**< the sync group this node is part of. Nodes
+                                  *  in the same sync group are always scheduled
+                                  *  together with the same driver when the sync
+                                  *  is active. Can be an array of sync names. */
+#define PW_KEY_NODE_SYNC        "node.sync"        /**< if the sync-group is active or not */
+#define PW_KEY_NODE_TRANSPORT        "node.transport"    /**< if the transport is active or not */
 #define PW_KEY_NODE_EXCLUSIVE        "node.exclusive"    /**< node wants exclusive access to resources */
 #define PW_KEY_NODE_AUTOCONNECT        "node.autoconnect"    /**< node wants to be automatically connected
                                   *  to a compatible node */
@@ -163,7 +187,23 @@ extern "C" {
 #define PW_KEY_NODE_SUSPEND_ON_IDLE    "node.suspend-on-idle"    /**< suspend the node when idle */
 #define PW_KEY_NODE_CACHE_PARAMS    "node.cache-params"    /**< cache the node params */
 #define PW_KEY_NODE_TRANSPORT_SYNC    "node.transport.sync"    /**< the node handles transport sync */
-#define PW_KEY_NODE_DRIVER        "node.driver"        /**< node can drive the graph */
+#define PW_KEY_NODE_DRIVER        "node.driver"        /**< node can drive the graph. When the node is
+                                  *  selected as the driver, it needs to start
+                                  *  the graph periodically. */
+#define PW_KEY_NODE_SUPPORTS_LAZY    "node.supports-lazy"    /**< the node can be a lazy driver. It will listen
+                                  *  to RequestProcess commands and take them into
+                                  *  account when deciding to start the graph.
+                                  *  A value of 0 disables support, a value of > 0
+                                  *  enables with increasing preference. */
+#define PW_KEY_NODE_SUPPORTS_REQUEST    "node.supports-request"    /**< The node supports emiting RequestProcess events
+                                  *  when it wants the graph to be scheduled.
+                                  *  A value of 0 disables support, a value of > 0
+                                  *  enables with increasing preference. */
+#define PW_KEY_NODE_DRIVER_ID        "node.driver-id"    /**< the node id of the node assigned as driver
+                                  *   for this node */
+#define PW_KEY_NODE_ASYNC        "node.async"        /**< the node wants async scheduling */
+#define PW_KEY_NODE_LOOP_NAME        "node.loop.name"    /**< the loop name fnmatch pattern to run in */
+#define PW_KEY_NODE_LOOP_CLASS        "node.loop.class"    /**< the loop class fnmatch pattern to run in */
 #define PW_KEY_NODE_STREAM        "node.stream"        /**< node is a stream, the server side should
                                   *  add a converter */
 #define PW_KEY_NODE_VIRTUAL        "node.virtual"        /**< the node is some sort of virtual
@@ -172,17 +212,20 @@ extern "C" {
                                   *  on output/input/all ports when the value is
                                   *  "out"/"in"/"true" respectively */
 #define PW_KEY_NODE_LINK_GROUP        "node.link-group"    /**< the node is internally linked to
-                                  *  nodes with the same link-group */
+                                  *  nodes with the same link-group. Can be an
+                                  *  array of group names. */
 #define PW_KEY_NODE_NETWORK        "node.network"        /**< the node is on a network */
 #define PW_KEY_NODE_TRIGGER        "node.trigger"        /**< the node is not scheduled automatically
                                   *   based on the dependencies in the graph
                                   *   but it will be triggered explicitly. */
-#define PW_KEY_NODE_CHANNELNAMES        "node.channel-names"        /**< names of node's
-                                    *   channels (unrelated to positions) */
-#define PW_KEY_NODE_DEVICE_PORT_NAME_PREFIX            "node.device-port-name-prefix"        /** override
-                                    *        port name prefix for device ports, like capture and playback
-                                    *        or disable the prefix completely if an empty string is provided */
-
+#define PW_KEY_NODE_CHANNELNAMES    "node.channel-names"    /**< names of node's
+                                *   channels (unrelated to positions) */
+#define PW_KEY_NODE_DEVICE_PORT_NAME_PREFIX    \
+                    "node.device-port-name-prefix"    /**< override port name prefix for
+                                      *  device ports, like capture and
+                                      *  playback or disable the prefix
+                                      *  completely if an empty string
+                                      *  is provided */
 /** Port keys */
 #define PW_KEY_PORT_ID            "port.id"        /**< port id */
 #define PW_KEY_PORT_NAME        "port.name"        /**< port name */
@@ -197,6 +240,8 @@ extern "C" {
 #define PW_KEY_PORT_EXTRA        "port.extra"        /**< api specific extra port info, API name
                                   *  should be prefixed. "jack:flags:56" */
 #define PW_KEY_PORT_PASSIVE        "port.passive"        /**< the ports wants passive links, since 0.3.67 */
+#define PW_KEY_PORT_IGNORE_LATENCY    "port.ignore-latency"    /**< latency ignored by peers, since 0.3.71 */
+#define PW_KEY_PORT_GROUP        "port.group"        /**< the port group of the port 1.2.0 */
 
 /** link properties */
 #define PW_KEY_LINK_ID            "link.id"        /**< a link id */
@@ -210,6 +255,7 @@ extern "C" {
 #define PW_KEY_LINK_FEEDBACK        "link.feedback"        /**< indicate that a link is a feedback
                                   *  link and the target will receive data
                                   *  in the next cycle */
+#define PW_KEY_LINK_ASYNC        "link.async"        /**< the link is using async io */
 
 /** device properties */
 #define PW_KEY_DEVICE_ID        "device.id"        /**< device id */
@@ -260,6 +306,7 @@ extern "C" {
 #define PW_KEY_MODULE_USAGE        "module.usage"        /**< a human readable usage description of
                                   *  the module's arguments. */
 #define PW_KEY_MODULE_VERSION        "module.version"    /**< a version string for the module. */
+#define PW_KEY_MODULE_DEPRECATED    "module.deprecated"    /**< the module is deprecated with this message */
 
 /** Factory properties */
 #define PW_KEY_FACTORY_ID        "factory.id"        /**< the factory id */
@@ -274,7 +321,10 @@ extern "C" {
 #define PW_KEY_STREAM_LATENCY_MAX    "stream.latency.max"    /**< The maximum latency of the stream */
 #define PW_KEY_STREAM_MONITOR        "stream.monitor"    /**< Indicates that the stream is monitoring
                                   *  and might select a less accurate but faster
-                                  *  conversion algorithm. */
+                                  *  conversion algorithm. Monitor streams are also
+                                  *  ignored when calculating the latency of their peer
+                                  *  ports (since 0.3.71).
+                                  */
 #define PW_KEY_STREAM_DONT_REMIX    "stream.dont-remix"    /**< don't remix channels */
 #define PW_KEY_STREAM_CAPTURE_SINK    "stream.capture.sink"    /**< Try to capture the sink output instead of
                                   *  source output */
@@ -292,6 +342,7 @@ extern "C" {
 #define PW_KEY_MEDIA_NAME        "media.name"        /**< media name. Ex: "Pink Floyd: Time" */
 #define PW_KEY_MEDIA_TITLE        "media.title"        /**< title. Ex: "Time" */
 #define PW_KEY_MEDIA_ARTIST        "media.artist"        /**< artist. Ex: "Pink Floyd" */
+#define PW_KEY_MEDIA_ALBUM        "media.album"        /**< album. Ex: "Dark Side of the Moon" */
 #define PW_KEY_MEDIA_COPYRIGHT        "media.copyright"    /**< copyright string */
 #define PW_KEY_MEDIA_SOFTWARE        "media.software"    /**< generator software */
 #define PW_KEY_MEDIA_LANGUAGE        "media.language"    /**< language in POSIX format. Ex: en_GB */
@@ -327,9 +378,11 @@ extern "C" {
 # ifdef PW_ENABLE_DEPRECATED
 #  define PW_KEY_PRIORITY_MASTER    "priority.master"    /**< deprecated, use priority.driver */
 #  define PW_KEY_NODE_TARGET        "node.target"        /**< deprecated since 0.3.64, use target.object. */
+#  define PW_KEY_LOOP_RETRY_TIMEOUT    "loop.retry-timeout"    /**< deprecated since 1.3.0 */
 # else
 #  define PW_KEY_PRIORITY_MASTER    PW_DEPRECATED("priority.master")
 #  define PW_KEY_NODE_TARGET        PW_DEPRECATED("node.target")
+#  define PW_KEY_LOOP_RETRY_TIMEOUT    PW_DEPRECATED("loop.retry-timeout")
 # endif /* PW_ENABLE_DEPRECATED */
 #endif /* PW_REMOVE_DEPRECATED */
 

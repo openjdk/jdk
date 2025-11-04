@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,9 @@
 #ifndef SHARE_GC_Z_ZINITIALIZE_HPP
 #define SHARE_GC_Z_ZINITIALIZE_HPP
 
+#include "cppstdlib/cstddef.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/compilerWarnings.hpp"
-
-#include <cstddef>
 
 class ZBarrierSet;
 
@@ -37,6 +36,8 @@ public:
 };
 
 class ZInitialize : public AllStatic {
+  friend class ZTest;
+
 private:
   static constexpr size_t ErrorMessageLength = 256;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 
 /**
@@ -91,7 +92,8 @@ import jdk.internal.module.ModuleInfo;
  * @since 9
  */
 
-public class ModuleDescriptor
+@AOTSafeClassInitializer
+public final class ModuleDescriptor
     implements Comparable<ModuleDescriptor>
 {
 
@@ -1312,18 +1314,18 @@ public class ModuleDescriptor
      * Creates a module descriptor from its components.
      * The arguments are pre-validated and sets are unmodifiable sets.
      */
-    ModuleDescriptor(String name,
-                     Version version,
-                     Set<Modifier> modifiers,
-                     Set<Requires> requires,
-                     Set<Exports> exports,
-                     Set<Opens> opens,
-                     Set<String> uses,
-                     Set<Provides> provides,
-                     Set<String> packages,
-                     String mainClass,
-                     int hashCode,
-                     boolean unused) {
+    private ModuleDescriptor(String name,
+                             Version version,
+                             Set<Modifier> modifiers,
+                             Set<Requires> requires,
+                             Set<Exports> exports,
+                             Set<Opens> opens,
+                             Set<String> uses,
+                             Set<Provides> provides,
+                             Set<String> packages,
+                             String mainClass,
+                             int hashCode,
+                             boolean unused) {
         this.name = name;
         this.version = version;
         this.rawVersionString = null;
@@ -1516,11 +1518,7 @@ public class ModuleDescriptor
     }
 
     /**
-     * Returns the set of packages in the module.
-     *
-     * <p> The set of packages includes all exported and open packages, as well
-     * as the packages of any service providers, and the package for the main
-     * class. </p>
+     * Returns the set of all packages in the module.
      *
      * @return A possibly-empty unmodifiable set of the packages in the module
      */
@@ -2020,7 +2018,7 @@ public class ModuleDescriptor
 
         /**
          * Provides a service with one or more implementations. The package for
-         * each {@link Provides#providers provider} (or provider factory) is
+         * each {@link Provides#providers() provider} (or provider factory) is
          * added to the module if not already added.
          *
          * @param  p

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@
 #include "gc/shared/fullGCForwarding.inline.hpp"
 
 void G1DetermineCompactionQueueClosure::free_empty_humongous_region(G1HeapRegion* hr) {
+  if (VerifyDuringGC) {
+    // Satisfy some asserts in free_..._region.
+    hr->clear_both_card_tables();
+  }
   _g1h->free_humongous_region(hr, nullptr);
   _collector->set_free(hr->hrm_index());
   add_to_compaction_queue(hr);
@@ -107,7 +111,7 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(G1HeapRegion* hr) 
 
     // Too many live objects in the region; skip compacting it.
     _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
-    log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+    log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: %zu",
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
   }
 

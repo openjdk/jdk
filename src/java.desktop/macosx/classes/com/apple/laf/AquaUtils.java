@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.swing.plaf.UIResource;
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
@@ -163,7 +162,7 @@ final class AquaUtils {
         abstract T getInstance();
     }
 
-    static class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
+    static final class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
         private final Class<T> clazz;
 
         RecyclableSingletonFromDefaultConstructor(final Class<T> clazz) {
@@ -174,7 +173,6 @@ final class AquaUtils {
         @SuppressWarnings("deprecation")
         T getInstance() {
             try {
-                ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
             } catch (ReflectiveOperationException ignored) {
             }
@@ -310,7 +308,7 @@ final class AquaUtils {
         }
     }
 
-    static class SlicedShadowBorder extends ShadowBorder {
+    static final class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
         SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {

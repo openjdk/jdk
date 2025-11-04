@@ -25,7 +25,6 @@
 
 package javax.swing;
 
-import java.applet.Applet;
 import java.awt.AWTEvent;
 import java.awt.AWTKeyStroke;
 import java.awt.Color;
@@ -106,8 +105,7 @@ import static javax.swing.ClientPropertyKey.JComponent_TRANSFER_HANDLER;
  * you must place the component in a containment hierarchy
  * whose root is a top-level Swing container.
  * Top-level Swing containers --
- * such as <code>JFrame</code>, <code>JDialog</code>,
- * and <code>JApplet</code> --
+ * such as <code>JFrame</code> and <code>JDialog</code> --
  * are specialized components
  * that provide a place for other Swing components to paint themselves.
  * For an explanation of containment hierarchies, see
@@ -609,7 +607,6 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #setComponentPopupMenu
      * @since 1.5
      */
-    @SuppressWarnings("removal")
     public JPopupMenu getComponentPopupMenu() {
 
         if(!getInheritsPopupMenu()) {
@@ -623,8 +620,7 @@ public abstract class JComponent extends Container implements Serializable,
                 if(parent instanceof JComponent) {
                     return ((JComponent)parent).getComponentPopupMenu();
                 }
-                if(parent instanceof Window ||
-                   parent instanceof Applet) {
+                if(parent instanceof Window) {
                     // Reached toplevel, break and return null
                     break;
                 }
@@ -2838,11 +2834,6 @@ public abstract class JComponent extends Container implements Serializable,
      * Returns the default locale used to initialize each JComponent's
      * locale property upon creation.
      *
-     * The default locale has "AppContext" scope so that applets (and
-     * potentially multiple lightweight applications running in a single VM)
-     * can have their own setting. An applet can safely alter its default
-     * locale because it will have no affect on other applets (or the browser).
-     *
      * @return the default <code>Locale</code>.
      * @see #setDefaultLocale
      * @see java.awt.Component#getLocale
@@ -2865,10 +2856,6 @@ public abstract class JComponent extends Container implements Serializable,
      * Sets the default locale used to initialize each JComponent's locale
      * property upon creation.  The initial value is the VM's default locale.
      *
-     * The default locale has "AppContext" scope so that applets (and
-     * potentially multiple lightweight applications running in a single VM)
-     * can have their own setting. An applet can safely alter its default
-     * locale because it will have no affect on other applets (or the browser).
      * Passing {@code null} will reset the current locale back
      * to VM's default locale.
      *
@@ -2949,7 +2936,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @since 1.3
      */
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("deprecation")
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e,
                                         int condition, boolean pressed) {
         InputMap map = getInputMap(condition, false);
@@ -2978,7 +2965,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param pressed true if the key is pressed
      * @return true if there is a key binding for <code>e</code>
      */
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("deprecation")
     boolean processKeyBindings(KeyEvent e, boolean pressed) {
       if (!SwingUtilities.isValidKeyEventForKeyBindings(e)) {
           return false;
@@ -3015,8 +3002,7 @@ public abstract class JComponent extends Container implements Serializable,
        * asking the same component twice.
        */
       Container parent = this;
-      while (parent != null && !(parent instanceof Window) &&
-             !(parent instanceof Applet)) {
+      while (parent != null && !(parent instanceof Window)) {
           if(parent instanceof JComponent) {
               if(ksE != null && ((JComponent)parent).processKeyBinding(ksE, e,
                                WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, pressed))
@@ -4534,12 +4520,11 @@ public abstract class JComponent extends Container implements Serializable,
      *          return value for this method
      * @see #getVisibleRect
      */
-    @SuppressWarnings("removal")
     static final void computeVisibleRect(Component c, Rectangle visibleRect) {
         Container p = c.getParent();
         Rectangle bounds = c.getBounds();
 
-        if (p == null || p instanceof Window || p instanceof Applet) {
+        if (p == null || p instanceof Window) {
             visibleRect.setBounds(0, 0, bounds.width, bounds.height);
         } else {
             computeVisibleRect(p, visibleRect);
@@ -4694,8 +4679,8 @@ public abstract class JComponent extends Container implements Serializable,
 
 
     /**
-     * Returns the top-level ancestor of this component (either the
-     * containing <code>Window</code> or <code>Applet</code>),
+     * Returns the top-level ancestor of this component (the
+     * containing <code>Window</code>)
      * or <code>null</code> if this component has not
      * been added to any container.
      *
@@ -4703,10 +4688,9 @@ public abstract class JComponent extends Container implements Serializable,
      *          or <code>null</code> if not in any container
      */
     @BeanProperty(bound = false)
-    @SuppressWarnings("removal")
     public Container getTopLevelAncestor() {
         for(Container p = this; p != null; p = p.getParent()) {
-            if(p instanceof Window || p instanceof Applet) {
+            if(p instanceof Window) {
                 return p;
             }
         }
@@ -5126,7 +5110,7 @@ public abstract class JComponent extends Container implements Serializable,
         JComponent paintingComponent = this;
 
         RepaintManager repaintManager = RepaintManager.currentManager(this);
-        // parent Container's up to Window or Applet. First container is
+        // parent Container's up to Window. First container is
         // the direct parent. Note that in testing it was faster to
         // alloc a new Vector vs keeping a stack of them around, and gc
         // seemed to have a minimal effect on this.
@@ -5156,7 +5140,7 @@ public abstract class JComponent extends Container implements Serializable,
         }
         Component child;
         for (c = this, child = null;
-             c != null && !(c instanceof Window) && !(c instanceof Applet);
+             c != null && !(c instanceof Window);
              child = c, c = c.getParent()) {
                 JComponent jc = (c instanceof JComponent) ? (JComponent)c :
                                 null;

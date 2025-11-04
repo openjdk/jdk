@@ -5,7 +5,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 -->
 
 <!--
-  Copyright © 1991-2024 Unicode, Inc.
+  Copyright © 1991-2025 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
   SPDX-License-Identifier: Unicode-3.0
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -20,6 +20,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         <xs:element minOccurs="0" ref="territoryContainment"/>
         <xs:element minOccurs="0" ref="subdivisionContainment"/>
         <xs:element minOccurs="0" ref="languageData"/>
+        <xs:element minOccurs="0" ref="scriptData"/>
         <xs:element minOccurs="0" ref="territoryInfo"/>
         <xs:element minOccurs="0" ref="postalCodeData"/>
         <xs:element minOccurs="0" ref="calendarData"/>
@@ -64,10 +65,10 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="version">
     <xs:complexType>
       <xs:attribute name="number" use="required"/>
-      <xs:attribute default="46" name="cldrVersion">
+      <xs:attribute default="47" name="cldrVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="46"/>
+            <xs:enumeration value="47"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
@@ -241,6 +242,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
+  
   <!-- use from and to instead. -->
   
   
@@ -368,6 +370,24 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  
+  
+  
+  
+  <xs:element name="scriptData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="scriptVariant"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="scriptVariant">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="id" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="base" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
   
   
   

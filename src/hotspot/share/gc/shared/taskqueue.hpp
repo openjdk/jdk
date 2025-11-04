@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,11 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
-
-// Simple TaskQueue stats that are collected by default in debug builds.
-
-#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
-#define TASKQUEUE_STATS 1
-#elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
-#endif
-
-#if TASKQUEUE_STATS
-#define TASKQUEUE_STATS_ONLY(code) code
-#else
-#define TASKQUEUE_STATS_ONLY(code)
-#endif // TASKQUEUE_STATS
 
 #if TASKQUEUE_STATS
 class TaskQueueStats {
@@ -154,36 +140,36 @@ protected:
   };
 
   uint bottom_relaxed() const {
-    return Atomic::load(&_bottom);
+    return AtomicAccess::load(&_bottom);
   }
 
   uint bottom_acquire() const {
-    return Atomic::load_acquire(&_bottom);
+    return AtomicAccess::load_acquire(&_bottom);
   }
 
   void set_bottom_relaxed(uint new_bottom) {
-    Atomic::store(&_bottom, new_bottom);
+    AtomicAccess::store(&_bottom, new_bottom);
   }
 
   void release_set_bottom(uint new_bottom) {
-    Atomic::release_store(&_bottom, new_bottom);
+    AtomicAccess::release_store(&_bottom, new_bottom);
   }
 
   Age age_relaxed() const {
-    return Age(Atomic::load(&_age._data));
+    return Age(AtomicAccess::load(&_age._data));
   }
 
   void set_age_relaxed(Age new_age) {
-    Atomic::store(&_age._data, new_age._data);
+    AtomicAccess::store(&_age._data, new_age._data);
   }
 
   Age cmpxchg_age(Age old_age, Age new_age) {
-    return Age(Atomic::cmpxchg(&_age._data, old_age._data, new_age._data));
+    return Age(AtomicAccess::cmpxchg(&_age._data, old_age._data, new_age._data));
   }
 
   idx_t age_top_relaxed() const {
     // Atomically accessing a subfield of an "atomic" member.
-    return Atomic::load(&_age._fields._top);
+    return AtomicAccess::load(&_age._fields._top);
   }
 
   // These both operate mod N.
@@ -575,8 +561,10 @@ private:
 
 class PartialArrayState;
 
-// Discriminated union over oop*, narrowOop*, and PartialArrayState.
+// Discriminated union over oop/oop*, narrowOop*, and PartialArrayState.
 // Uses a low tag in the associated pointer to identify the category.
+// Oop/oop* are overloaded using the same tag because they can not appear at the
+// same time.
 // Used as a task queue element type.
 class ScannerTask {
   void* _p;
@@ -609,6 +597,8 @@ class ScannerTask {
 public:
   ScannerTask() : _p(nullptr) {}
 
+  explicit ScannerTask(oop p) : _p(encode(p, OopTag)) {}
+
   explicit ScannerTask(oop* p) : _p(encode(p, OopTag)) {}
 
   explicit ScannerTask(narrowOop* p) : _p(encode(p, NarrowOopTag)) {}
@@ -634,6 +624,10 @@ public:
 
   oop* to_oop_ptr() const {
     return static_cast<oop*>(decode(OopTag));
+  }
+
+  oop to_oop() const {
+    return cast_to_oop(decode(OopTag));
   }
 
   narrowOop* to_narrow_oop_ptr() const {

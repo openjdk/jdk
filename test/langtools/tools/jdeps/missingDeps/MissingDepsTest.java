@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class MissingDepsTest {
     private static final Path CLASSES_DIR = Paths.get("classes");
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar").orElseThrow();
-    private static final String VERSION = "13";
+    private static final String VERSION = String.valueOf(Runtime.version().feature());
 
     private static final Set<String> modules = Set.of("m1", "m2");
 
@@ -122,7 +122,7 @@ public class MissingDepsTest {
             JdepsRunner jdepsRunner = new JdepsRunner(options.toArray(new String[0]));
             int rc = jdepsRunner.run(DEBUG);
             assertTrue(rc != 0);
-            String regex = "\\s+13/p.internal.X\\s+->\\s+q.T\\s+not found";
+            String regex = "\\s+" + VERSION + "/p.internal.X\\s+->\\s+q.T\\s+not found";
             assertTrue(Arrays.stream(jdepsRunner.output()).anyMatch(l -> l.matches(regex)));
         }
 

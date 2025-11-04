@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
+import jdk.jfr.Throttle;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
@@ -37,6 +38,11 @@ import jdk.jfr.internal.Type;
 @Label("Socket Write")
 @Category("Java Application")
 @Description("Writing data to a socket")
+@StackFilter({"java.io.OutputStream",
+              "java.net.Socket$SocketOutputStream",
+              "java.nio.channels.SocketChannel",
+              "sun.nio.ch.SocketOutputStream"})
+@Throttle
 public final class SocketWriteEvent extends MirrorEvent {
 
     @Label("Remote Host")

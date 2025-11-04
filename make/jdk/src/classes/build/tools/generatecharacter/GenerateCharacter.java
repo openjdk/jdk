@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1190,7 +1190,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
         if (Csyntax)
             result.append("  static ");
         else
-            result.append("  static final ");
+            result.append("  @Stable static final ");
         result.append(atype);
         result.append(" ").append(name).append("[");
         if (Csyntax)
@@ -1347,7 +1347,7 @@ OUTER:  for (int i = 0; i < n; i += m) {
     }
 
     static void genCaseMapTableDeclaration(StringBuffer result) {
-        result.append("    static final char[][][] charMap;\n");
+        result.append("    @Stable static final char[][][] charMap;\n");
     }
 
     static void genCaseMapTable(StringBuffer result, SpecialCaseMap[] specialCaseMaps){

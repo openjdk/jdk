@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.util.logging.PlatformLogger;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-public class FcFontConfiguration extends FontConfiguration {
+public final class FcFontConfiguration extends FontConfiguration {
 
     /** Version of the cache file format understood by this code.
      * Its part of the file name so that we can rev this at
@@ -363,11 +363,6 @@ public class FcFontConfiguration extends FontConfiguration {
 
     private File getFcInfoFile() {
         if (fcInfoFileName == null) {
-            // NB need security permissions to get true IP address, and
-            // we should have those as the whole initialisation is in a
-            // doPrivileged block. But in this case no exception is thrown,
-            // and it returns the loop back address, and so we end up with
-            // "localhost"
             String hostname;
             try {
                 hostname = InetAddress.getLocalHost().getHostName();

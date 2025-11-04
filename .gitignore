@@ -20,3 +20,9 @@ NashornProfile.txt
 /.settings/
 /compile_commands.json
 /.cache
+/.gdbinit
+/.lldbinit
+**/core.[0-9]*
+*.rej
+*.orig
+test/benchmarks/**/target

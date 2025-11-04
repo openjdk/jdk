@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAutoShutdown;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
@@ -187,7 +186,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         }
     }
 
-    static class ToolkitDisposer implements sun.java2d.DisposerRecord {
+    static final class ToolkitDisposer implements sun.java2d.DisposerRecord {
         @Override
         public void dispose() {
             WToolkit.postDispose();
@@ -594,22 +593,20 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public FontPeer getFontPeer(String name, int style) {
-        FontPeer retval = null;
         String lcName = name.toLowerCase();
         if (null != cacheFontPeer) {
-            retval = cacheFontPeer.get(lcName + style);
-            if (null != retval) {
-                return retval;
+            FontPeer cachedVal = cacheFontPeer.get(lcName + style);
+            if (null != cachedVal) {
+                return cachedVal;
             }
         }
-        retval = new WFontPeer(name, style);
-        if (retval != null) {
-            if (null == cacheFontPeer) {
-                cacheFontPeer = new Hashtable<>(5, 0.9f);
-            }
-            if (null != cacheFontPeer) {
-                cacheFontPeer.put(lcName + style, retval);
-            }
+
+        FontPeer retval = new WFontPeer(name, style);
+        if (null == cacheFontPeer) {
+            cacheFontPeer = new Hashtable<>(5, 0.9f);
+        }
+        if (null != cacheFontPeer) {
+            cacheFontPeer.put(lcName + style, retval);
         }
         return retval;
     }
@@ -678,11 +675,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-        }
         synchronized (this) {
             if (clipboard == null) {
                 clipboard = new WClipboard();

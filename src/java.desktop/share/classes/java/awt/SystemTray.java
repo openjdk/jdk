@@ -32,7 +32,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Vector;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.SunToolkit;
@@ -160,7 +159,6 @@ public class SystemTray {
      * @see #isSupported
      */
     public static SystemTray getSystemTray() {
-        checkSystemTrayAllowed();
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
@@ -308,10 +306,7 @@ public class SystemTray {
     /**
      * Returns an array of all icons added to the tray by this
      * application.  You can't access the icons added by another
-     * application.  Some browsers partition applets in different
-     * code bases into separate contexts, and establish walls between
-     * these contexts.  In such a scenario, only the tray icons added
-     * from this context will be returned.
+     * application.
      *
      * <p> The returned array is a copy of the actual array and may be
      * modified in any way without affecting the system tray.  To
@@ -491,14 +486,6 @@ public class SystemTray {
             } else if (toolkit instanceof HeadlessToolkit) {
                 peer = ((HeadlessToolkit)Toolkit.getDefaultToolkit()).createSystemTray(this);
             }
-        }
-    }
-
-    static void checkSystemTrayAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_SYSTEM_TRAY_PERMISSION);
         }
     }
 

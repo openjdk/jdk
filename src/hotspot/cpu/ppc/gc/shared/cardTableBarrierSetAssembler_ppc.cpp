@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 
@@ -41,6 +41,66 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+void CardTableBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register src, Register dst, Register count, Register preserve1, Register preserve2) {
+  if (type == T_OBJECT) {
+    gen_write_ref_array_pre_barrier(masm, decorators,
+                                    src, dst, count,
+                                    preserve1, preserve2);
+
+    bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+    if (!checkcast) {
+      assert_different_registers(dst, count, R9_ARG7, R10_ARG8);
+      // Save some arguments for epilogue, e.g. disjoint_long_copy_core destroys them.
+      __ mr(R9_ARG7, dst);
+      __ mr(R10_ARG8, count);
+    }
+  }
+}
+
+void CardTableBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                                      Register dst, Register count, Register preserve) {
+  if (type == T_OBJECT) {
+    bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
+    if (!checkcast) {
+      gen_write_ref_array_post_barrier(masm, decorators, R9_ARG7, R10_ARG8, preserve);
+    } else {
+      gen_write_ref_array_post_barrier(masm, decorators, dst, count, preserve);
+    }
+  }
+}
+
+void CardTableBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                            Register base, RegisterOrConstant ind_or_offs, Register val,
+                                            Register tmp1, Register tmp2, Register tmp3,
+                                            MacroAssembler::PreservationLevel preservation_level) {
+  if (is_reference_type(type)) {
+    oop_store_at(masm, decorators, type,
+                 base, ind_or_offs, val,
+                 tmp1, tmp2, tmp3,
+                 preservation_level);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type,
+                                  base, ind_or_offs, val,
+                                  tmp1, tmp2, tmp3,
+                                  preservation_level);
+  }
+}
+
+void CardTableBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value,
+                                                   Register tmp1, Register tmp2,
+                                                   MacroAssembler::PreservationLevel preservation_level) {
+  Label done;
+  __ cmpdi(CR0, value, 0);
+  __ beq(CR0, done);         // Use null as-is.
+
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
+  __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
+
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
+}
+
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators, Register addr,
                                                                     Register count, Register preserve) {
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
@@ -50,7 +110,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   Label Lskip_loop, Lstore_loop;
 
   __ sldi_(count, count, LogBytesPerHeapOop);
-  __ beq(CCR0, Lskip_loop); // zero length
+  __ beq(CR0, Lskip_loop); // zero length
   __ addi(count, count, -BytesPerHeapOop);
   __ add(count, addr, count);
   // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)

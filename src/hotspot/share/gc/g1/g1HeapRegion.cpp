@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
@@ -40,11 +39,12 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -56,6 +56,10 @@ size_t G1HeapRegion::CardsPerRegion    = 0;
 
 size_t G1HeapRegion::max_region_size() {
   return G1HeapRegionBounds::max_size();
+}
+
+size_t G1HeapRegion::max_ergonomics_size() {
+  return G1HeapRegionBounds::max_ergonomics_size();
 }
 
 size_t G1HeapRegion::min_region_size_in_words() {
@@ -119,7 +123,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
-  uninstall_group_cardset();
+  uninstall_cset_group();
   set_free();
   reset_pre_dummy_top();
 
@@ -129,25 +133,24 @@ void G1HeapRegion::hr_clear(bool clear_space) {
 
   _parsable_bottom = bottom();
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
-void G1HeapRegion::clear_cardtable() {
+void G1HeapRegion::clear_card_table() {
   G1CardTable* ct = G1CollectedHeap::heap()->card_table();
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
-double G1HeapRegion::calc_gc_efficiency() {
-  // GC efficiency is the ratio of how much space would be
-  // reclaimed over how long we predict it would take to reclaim it.
-  G1Policy* policy = G1CollectedHeap::heap()->policy();
+void G1HeapRegion::clear_refinement_table() {
+  G1CardTable* ct = G1CollectedHeap::heap()->refinement_table();
+  ct->clear_MemRegion(MemRegion(bottom(), end()));
+}
 
-  // Retrieve a prediction of the elapsed time for this region for
-  // a mixed gc because the region will only be evacuated during a
-  // mixed gc.
-  double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
-  return (double)reclaimable_bytes() / region_elapsed_time_ms;
+void G1HeapRegion::clear_both_card_tables() {
+  clear_card_table();
+  clear_refinement_table();
 }
 
 void G1HeapRegion::set_free() {
@@ -192,6 +195,9 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
+  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup();
+  cset_group->add(this);
+
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
     _bot->update_for_block(obj_top, obj_top + fill_size);
@@ -212,12 +218,19 @@ void G1HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
+  if (is_starts_humongous()) {
+    G1CSetCandidateGroup* cset_group = _rem_set->cset_group();
+    assert(cset_group != nullptr, "pre-condition %u missing cardset", hrm_index());
+    uninstall_cset_group();
+    cset_group->clear();
+    delete cset_group;
+  }
   _humongous_start_region = nullptr;
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
   if (is_young()) {
-    uninstall_group_cardset();
+    uninstall_cset_group();
   }
   _rem_set->reset_table_scanner();
 }
@@ -242,7 +255,8 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
 #endif
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
-  _young_index_in_cset(-1),
+  _incoming_refs(0),
+  _young_index_in_cset(InvalidCSetIndex),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex),
@@ -251,7 +265,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new G1HeapRegionRemSet(this, config);
+  _rem_set = new G1HeapRegionRemSet(this);
   initialize();
 }
 
@@ -281,10 +295,11 @@ void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
+  _incoming_refs = 0;
 }
 
 void G1HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
-  Atomic::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
+  AtomicAccess::add(&_garbage_bytes, garbage_bytes, memory_order_relaxed);
 }
 
 // Code roots support
@@ -389,7 +404,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   if (is_empty()) {
     bool has_code_roots = code_roots_length > 0;
     if (has_code_roots) {
-      log_error(gc, verify)("region " HR_FORMAT " is empty but has " SIZE_FORMAT " code root entries",
+      log_error(gc, verify)("region " HR_FORMAT " is empty but has %zu code root entries",
                             HR_FORMAT_PARAMS(this), code_roots_length);
     }
     return has_code_roots;
@@ -398,7 +413,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   if (is_continues_humongous()) {
     bool has_code_roots = code_roots_length > 0;
     if (has_code_roots) {
-      log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has " SIZE_FORMAT " code root entries",
+      log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has %zu code root entries",
                             HR_FORMAT_PARAMS(this), code_roots_length);
     }
     return has_code_roots;
@@ -437,7 +452,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
-  st->print("|%3zu", Atomic::load(&_pinned_object_count));
+  st->print("|%3zu", AtomicAccess::load(&_pinned_object_count));
   st->print_cr("");
 }
 
@@ -587,8 +602,12 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
 
     G1HeapRegion* _from;
     G1HeapRegion* _to;
-    CardValue _cv_obj;
-    CardValue _cv_field;
+
+    CardValue _cv_obj_ct;    // In card table.
+    CardValue _cv_field_ct;
+
+    CardValue _cv_obj_rt;    // In refinement table.
+    CardValue _cv_field_rt;
 
     RemSetChecker(G1VerifyFailureCounter* failures, oop containing_obj, T* p, oop obj)
       : Checker<T>(failures, containing_obj, p, obj) {
@@ -596,17 +615,23 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       _to = this->_g1h->heap_region_containing(obj);
 
       CardTable* ct = this->_g1h->card_table();
-      _cv_obj = *ct->byte_for_const(this->_containing_obj);
-      _cv_field = *ct->byte_for_const(p);
+      _cv_obj_ct = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_ct = *ct->byte_for_const(p);
+
+      ct = this->_g1h->refinement_table();
+      _cv_obj_rt = *ct->byte_for_const(this->_containing_obj);
+      _cv_field_rt = *ct->byte_for_const(p);
     }
 
     bool failed() const {
-      if (_from != _to && !_from->is_young() && _to->rem_set()->is_complete()) {
-        const CardValue dirty = G1CardTable::dirty_card_val();
+      if (_from != _to && !_from->is_young() &&
+          _to->rem_set()->is_complete() &&
+          _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
+        const CardValue clean = G1CardTable::clean_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?
-                  _cv_field == dirty :
-                  _cv_obj == dirty || _cv_field == dirty));
+                  (_cv_field_ct != clean || _cv_field_rt != clean) :
+                  (_cv_obj_ct != clean || _cv_field_ct != clean || _cv_obj_rt != clean || _cv_field_rt != clean)));
       }
       return false;
     }
@@ -624,7 +649,8 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
       log.error("Missing rem set entry:");
       this->print_containing_obj(&ls, _from);
       this->print_referenced_obj(&ls, _to, "");
-      log.error("Obj head CV = %d, field CV = %d.", _cv_obj, _cv_field);
+      log.error("CT obj head CV = %d, field CV = %d.", _cv_obj_ct, _cv_field_ct);
+      log.error("RT Obj head CV = %d, field CV = %d.", _cv_obj_rt, _cv_field_rt);
       log.error("----------");
     }
   };

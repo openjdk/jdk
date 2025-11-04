@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vanilla-A
  */
 
 /*
@@ -36,7 +36,7 @@
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vanilla-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vanilla-U
  */
 
 /*
@@ -48,7 +48,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v016-A
  */
 
 /*
@@ -60,7 +60,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v016-U
  */
 
 /*
@@ -72,7 +72,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v008-A
  */
 
 /*
@@ -84,7 +84,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v008-U
  */
 
 /*
@@ -96,7 +96,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v004-A
  */
 
 /*
@@ -108,7 +108,7 @@
  * @requires vm.cpu.features ~= ".*sse4.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets sse4-v004-U
  */
 
 /*
@@ -120,7 +120,7 @@
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v032-A
  */
 
 /*
@@ -132,7 +132,7 @@
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v032-U
  */
 
 /*
@@ -144,7 +144,7 @@
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v016-A
  */
 
 /*
@@ -156,7 +156,7 @@
  * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx1-v016-U
  */
 
 /*
@@ -168,7 +168,7 @@
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v032-A
  */
 
 /*
@@ -180,7 +180,7 @@
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v032-U
  */
 
 /*
@@ -192,7 +192,7 @@
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v016-A
  */
 
 /*
@@ -204,7 +204,7 @@
  * @requires vm.cpu.features ~= ".*avx2.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx2-v016-U
  */
 
 /*
@@ -216,7 +216,7 @@
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v064-A
  */
 
 /*
@@ -228,7 +228,7 @@
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v064-U
  */
 
 /*
@@ -240,7 +240,7 @@
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v032-A
  */
 
 /*
@@ -252,7 +252,7 @@
  * @requires vm.cpu.features ~= ".*avx512.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512-v032-U
  */
 
 /*
@@ -264,7 +264,7 @@
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-A
  */
 
 /*
@@ -276,7 +276,7 @@
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v064-U
  */
 
 /*
@@ -288,7 +288,7 @@
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-A
  */
 
 /*
@@ -300,7 +300,7 @@
  * @requires vm.cpu.features ~= ".*avx512bw.*"
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets avx512bw-v032-U
  */
 
 /*
@@ -311,7 +311,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v064-A
  */
 
 /*
@@ -322,7 +322,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v064-U
  */
 
 /*
@@ -333,7 +333,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v032-A
  */
 
 /*
@@ -344,7 +344,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v032-U
  */
 
 /*
@@ -355,7 +355,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v016-A
  */
 
 /*
@@ -366,7 +366,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v016-U
  */
 
 /*
@@ -377,7 +377,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v008-A
  */
 
 /*
@@ -388,7 +388,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v008-U
  */
 
 /*
@@ -399,7 +399,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v004-A
  */
 
 /*
@@ -410,7 +410,7 @@
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
  * @library /test/lib /
  * @compile ../../lib/ir_framework/TestFramework.java
- * @run driver compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
+ * @run driver/timeout=480 compiler.loopopts.superword.TestDependencyOffsets vec-v004-U
  */
 
 package compiler.loopopts.superword;
@@ -597,8 +597,7 @@ public class TestDependencyOffsets {
             case "byte"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "char"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
                                                      new CPUMinVectorWidth(ASIMD,      8 )};
-            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4,       4 ),
-                                                     new CPUMinVectorWidth(ASIMD,      8 )};
+            case "short"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 4 )};
             case "int"    -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
             case "long"   -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 16)};
             case "float"  -> new CPUMinVectorWidth[]{new CPUMinVectorWidth(SSE4_ASIMD, 8 )};
@@ -643,6 +642,12 @@ public class TestDependencyOffsets {
         return new ArrayList<Integer>(set);
     }
 
+    enum ExpectVectorization {
+        ALWAYS,    // -> positive "count" IR rule
+        UNKNOWN,   // -> disable IR rule
+        NEVER      // -> negative "failOn" IR rule
+    };
+
     static record TestDefinition (int id, Type type, int offset) {
 
         /*
@@ -656,18 +661,22 @@ public class TestDependencyOffsets {
             String aliasingComment;
             String secondArgument;
             String loadFrom;
+            boolean isSingleArray;
             switch (RANDOM.nextInt(3)) {
             case 0: // a[i + offset] = a[i]
+                isSingleArray = true;
                 aliasingComment = "single-array";
                 secondArgument = "a";
                 loadFrom = "a";
                 break;
             case 1: // a[i + offset] = b[i], but a and b alias, i.e. at runtime a == b.
+                isSingleArray = false;
                 aliasingComment = "aliasing";
                 secondArgument = "a";
                 loadFrom = "b";
                 break;
             case 2: // a[i + offset] = b[i], and a and b do not alias, i.e. at runtime a != b.
+                isSingleArray = false;
                 aliasingComment = "non-aliasing";
                 secondArgument = "b";
                 loadFrom = "b";
@@ -712,7 +721,7 @@ public class TestDependencyOffsets {
                    type.name, id, type.name,
                    id, id, id, id, secondArgument, id,
                    // IR rules
-                   generateIRRules(),
+                   generateIRRules(isSingleArray),
                    // test
                    id, type.name, type.name,
                    start, end,
@@ -726,7 +735,7 @@ public class TestDependencyOffsets {
          * expect depends on AlignVector and MaxVectorSize, as well as the byteOffset between the load and
          * store.
          */
-        String generateIRRules() {
+        String generateIRRules(boolean isSingleArray) {
             StringBuilder builder = new StringBuilder();
 
             for (CPUMinVectorWidth cm : getCPUMinVectorWidth(type.name)) {
@@ -742,31 +751,79 @@ public class TestDependencyOffsets {
                 // we use shorter vectors to avoid cycles and still vectorize. Vector lengths have to
                 // be powers-of-2, and smaller or equal to the byteOffset. So we round down to the next
                 // power of two.
+                // If we have two array references, then we can speculate that they do not alias, and
+                // still produce full vectorization.
                 int infinity = 256; // No vector size is ever larger than this.
                 int maxVectorWidth = infinity; // no constraint by default
-                if (0 < byteOffset && byteOffset < maxVectorWidth) {
-                    int log2 = 31 - Integer.numberOfLeadingZeros(offset);
-                    int floorPow2 = 1 << log2;
-                    maxVectorWidth = Math.min(maxVectorWidth, floorPow2 * type.size);
-                    builder.append("    // Vectors must have at most " + floorPow2 +
+                int log2 = 31 - Integer.numberOfLeadingZeros(offset);
+                int floorPow2Offset = 1 << log2;
+                if (isSingleArray && 0 < byteOffset && byteOffset < maxVectorWidth) {
+                    maxVectorWidth = Math.min(maxVectorWidth, floorPow2Offset * type.size);
+                    builder.append("    // Vectors must have at most " + floorPow2Offset +
                                    " elements: maxVectorWidth = " + maxVectorWidth +
                                    " to avoid cyclic dependency.\n");
                 }
 
+                ExpectVectorization expectVectorization = ExpectVectorization.ALWAYS;
+                if (isSingleArray && 0 < offset && offset < 64) {
+                    // In a store-forward case at iteration distances below a certain threshold, and not there
+                    // is some partial overlap between the expected vector store and some vector load in a later
+                    // iteration, we avoid vectorization to avoid the latency penalties of store-to-load
+                    // forwarding failure. We only detect these failures in single-array cases.
+                    //
+                    // Note: we currently never detect store-to-load-forwarding failures beyond 64 iterations,
+                    //       And so if the offset >= 64, we always expect vectorization.
+                    //
+                    // The condition for partial overlap:
+                    //   offset % #elements != 0
+                    //
+                    // But we do not know #elements exactly, only a range from min/maxVectorWidth.
+
+                    int maxElements = maxVectorWidth / type.size;
+                    int minElements = minVectorWidth / type.size;
+                    boolean sometimesPartialOverlap = offset % maxElements != 0;
+                    // If offset % minElements != 0, then it does also not hold for any larger vector.
+                    boolean alwaysPartialOverlap = offset % minElements != 0;
+
+                    if (alwaysPartialOverlap) {
+                        // It is a little tricky to know the exact threshold. On all platforms and in all
+                        // unrolling cases, it is between 8 and 64. Hence, we have these 3 cases:
+                        if (offset <= 8) {
+                            builder.append("    // We always detect store-to-load-forwarding failures -> never vectorize.\n");
+                            expectVectorization = ExpectVectorization.NEVER;
+                        } else if (offset <= 64) {
+                            builder.append("    // Unknown if detect store-to-load-forwarding failures -> maybe disable IR rules.\n");
+                            expectVectorization = ExpectVectorization.UNKNOWN;
+                        } else {
+                            // offset > 64  -> offset too large, expect no store-to-load-failure detection
+                            throw new RuntimeException("impossible");
+                        }
+                    } else if (sometimesPartialOverlap && !alwaysPartialOverlap) {
+                        builder.append("    // Partial overlap condition true: sometimes but not always -> maybe disable IR rules.\n");
+                        expectVectorization = ExpectVectorization.UNKNOWN;
+                    } else {
+                        builder.append("    // Partial overlap never happens -> expect vectorization.\n");
+                        expectVectorization = ExpectVectorization.ALWAYS;
+                    }
+                }
+
                 // Rule 1: No strict alignment: -XX:-AlignVector
+                ExpectVectorization expectVectorization1 = expectVectorization;
                 IRRule r1 = new IRRule(type, type.irNode, applyIfCPUFeature);
                 r1.addApplyIf("\"AlignVector\", \"false\"");
                 r1.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    // maxVectorWidth < minVectorWidth -> expect no vectorization.\n");
-                    r1.setNegative();
+                    expectVectorization1 = ExpectVectorization.NEVER;
                 } else if (maxVectorWidth < infinity) {
                     r1.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
+                r1.setExpectVectVectorization(expectVectorization1);
                 r1.generate(builder);
 
                 // Rule 2: strict alignment: -XX:+AlignVector
+                ExpectVectorization expectVectorization2 = expectVectorization;
                 IRRule r2 = new IRRule(type, type.irNode, applyIfCPUFeature);
                 r2.addApplyIf("\"AlignVector\", \"true\"");
                 r2.addApplyIf("\"MaxVectorSize\", \">=" + minVectorWidth + "\"");
@@ -791,18 +848,23 @@ public class TestDependencyOffsets {
                     builder.append("    // byteOffset % awMax == 0   -> always trivially aligned\n");
                 } else if (byteOffset % awMin != 0) {
                     builder.append("    // byteOffset % awMin != 0   -> can never align -> expect no vectorization.\n");
-                    r2.setNegative();
+                    expectVectorization2 = ExpectVectorization.NEVER;
                 } else {
-                    builder.append("    // Alignment unknown -> disable IR rule.\n");
-                    r2.disable();
+                    if (expectVectorization2 != ExpectVectorization.NEVER) {
+                        builder.append("    // Alignment unknown -> disable IR rule.\n");
+                        expectVectorization2 = ExpectVectorization.UNKNOWN;
+                    } else {
+                        builder.append("    // Alignment unknown -> but already proved no vectorization above.\n");
+                    }
                 }
 
                 if (maxVectorWidth < minVectorWidth) {
                     builder.append("    // Not at least 2 elements or 4 bytes -> expect no vectorization.\n");
-                    r2.setNegative();
+                    expectVectorization2 = ExpectVectorization.NEVER;
                 } else if (maxVectorWidth < infinity) {
                     r2.setSize("min(" + (maxVectorWidth / type.size) + ",max_" + type.name + ")");
                 }
+                r2.setExpectVectVectorization(expectVectorization2);
                 r2.generate(builder);
             }
             return builder.toString();
@@ -846,12 +908,12 @@ public class TestDependencyOffsets {
             this.size = size;
         }
 
-        void setNegative() {
-            this.isPositiveRule = false;
-        }
-
-        void disable() {
-            this.isEnabled = false;
+        void setExpectVectVectorization(ExpectVectorization expectVectorization) {
+            switch(expectVectorization) {
+                case ExpectVectorization.NEVER   -> { this.isPositiveRule = false; }
+                case ExpectVectorization.UNKNOWN -> { this.isEnabled = false; }
+                case ExpectVectorization.ALWAYS  -> {}
+            }
         }
 
         void addApplyIf(String constraint) {

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -704,7 +704,7 @@ The following commands are available:
     Impact: Low
 
 `Thread.dump_to_file` \[*options*\] *filepath*
-:   Dump threads, with stack traces, to a file in plain text or JSON format.
+:   Dump all threads, with stack traces, to a file in plain text or JSON format.
 
     Impact: Medium: Depends on the number of threads.
 
@@ -723,7 +723,8 @@ The following commands are available:
     -   *filepath*:  The file path to the output file.  If %p is specified in the filename, it is expanded to the JVM's PID.  (FILE, no default value)
 
 `Thread.print` \[*options*\]
-:   Prints all threads with stacktraces.
+:   Print all platform threads, and mounted virtual threads, with stack traces.
+    The Thread.dump_to_file command will print all threads to a file.
 
     Impact: Medium --- depends on the number of threads.
 
@@ -736,6 +737,17 @@ The following commands are available:
 
     -   `-e`: (Optional) Print extended thread information (BOOLEAN, false)
     -   `-l`: (Optional) Prints `java.util.concurrent` locks (BOOLEAN, false)
+
+`Thread.vthread_scheduler`
+:   Print the virtual thread scheduler, and the delayed task schedulers that support
+    virtual threads doing timed operations.
+
+    Impact: Low
+
+`Thread.vthread_pollers`
+:   Print the I/O pollers that support virtual threads doing blocking network I/O operations.
+
+    Impact: Low
 
 `VM.cds` \[*arguments*\]
 :   Dump a static or dynamic shared archive that includes all currently loaded classes.
@@ -836,7 +848,7 @@ The following commands are available:
     -   `log`: (Optional) Name of log to be printed.
         If omitted, all logs are printed. (STRING, no default value)
     -   `max`: (Optional) Maximum number of events to be printed (newest first).
-        If omitted, all events are printed. (STRING, no default value)
+        If omitted or zero, all events are printed. (INT, 0)
 
 `VM.flags` \[*options*\]
 :   Print the VM flag options and their current values.

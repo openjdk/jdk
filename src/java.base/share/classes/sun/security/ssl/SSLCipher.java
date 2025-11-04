@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -380,14 +378,7 @@ enum SSLCipher {
 
     static  {
         final long max = 4611686018427387904L; // 2^62
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                return Security.getProperty("jdk.tls.keyLimits");
-            }
-        });
+        String prop = Security.getProperty("jdk.tls.keyLimits");
 
         if (prop != null) {
             String[] propvalue = prop.split(",");
@@ -1932,9 +1923,9 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--);
+                for (; i >= pos && pt.get(i) == 0; i--);
 
-                if (i < (pos + 1)) {
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
@@ -2450,10 +2441,9 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--) {
-                    // blank
-                }
-                if (i < (pos + 1)) {
+                for (; i >= pos && pt.get(i) == 0; i--);
+
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }

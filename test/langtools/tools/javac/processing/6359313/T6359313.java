@@ -25,7 +25,7 @@
  * @test
  * @bug     6359313
  * @summary error compiling annotated package
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

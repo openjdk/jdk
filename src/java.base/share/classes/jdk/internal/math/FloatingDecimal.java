@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,244 +25,80 @@
 
 package jdk.internal.math;
 
-import java.util.Arrays;
-import java.util.regex.*;
+import jdk.internal.vm.annotation.Stable;
+
+import static jdk.internal.math.FDBigInteger.valueOfMulPow52;
+import static jdk.internal.math.FDBigInteger.valueOfPow52;
 
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
- * static convenience methods, although a <code>BinaryToASCIIConverter</code>
- * instance may be obtained and reused.
+ * static convenience methods, although a {@link BinaryToASCIIBuffer}
+ * instance may be obtained.
  */
-public class FloatingDecimal{
+public final class FloatingDecimal {
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
-    // (There are more really boring constants at the end.)
     //
-    static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
-    static final long   FRACT_HOB = ( 1L<<EXP_SHIFT ); // assumed High-Order bit
-    static final long   EXP_ONE   = ((long)DoubleConsts.EXP_BIAS)<<EXP_SHIFT; // exponent of 1.0
-    static final int    MAX_SMALL_BIN_EXP = 62;
-    static final int    MIN_SMALL_BIN_EXP = -( 63 / 3 );
-    static final int    MAX_DECIMAL_DIGITS = 15;
-    static final int    MAX_DECIMAL_EXPONENT = 308;
-    static final int    MIN_DECIMAL_EXPONENT = -324;
-    static final int    BIG_DECIMAL_EXPONENT = 324; // i.e. abs(MIN_DECIMAL_EXPONENT)
-    static final int    MAX_NDIGITS = 1100;
-
-    static final int    SINGLE_EXP_SHIFT  =   FloatConsts.SIGNIFICAND_WIDTH - 1;
-    static final int    SINGLE_FRACT_HOB  =   1<<SINGLE_EXP_SHIFT;
-    static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
-    static final int    SINGLE_MAX_DECIMAL_EXPONENT = 38;
-    static final int    SINGLE_MIN_DECIMAL_EXPONENT = -45;
-    static final int    SINGLE_MAX_NDIGITS = 200;
-
-    static final int    INT_DECIMAL_DIGITS = 9;
+    private static final int    EXP_SHIFT = DoubleConsts.SIGNIFICAND_WIDTH - 1;
+    private static final long   FRACT_HOB = 1L << EXP_SHIFT; // assumed High-Order bit
+    private static final long   EXP_ONE   = (long) DoubleConsts.EXP_BIAS << EXP_SHIFT; // exponent of 1.0
+    private static final int    MAX_SMALL_BIN_EXP = 62;
+    private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
+    private static final int    MAX_DEC_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
+    private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
     /**
-     * Converts a double precision floating point value to a <code>String</code>.
+     * Converts a {@link String} to a double precision floating point value.
      *
-     * @param d The double precision value.
-     * @return The value converted to a <code>String</code>.
-     */
-    public static String toJavaFormatString(double d) {
-        return getBinaryToASCIIConverter(d).toJavaFormatString();
-    }
-
-    /**
-     * Converts a single precision floating point value to a <code>String</code>.
-     *
-     * @param f The single precision value.
-     * @return The value converted to a <code>String</code>.
-     */
-    public static String toJavaFormatString(float f) {
-        return getBinaryToASCIIConverter(f).toJavaFormatString();
-    }
-
-    /**
-     * Appends a double precision floating point value to an <code>Appendable</code>.
-     * @param d The double precision value.
-     * @param buf The <code>Appendable</code> with the value appended.
-     */
-    public static void appendTo(double d, Appendable buf) {
-        getBinaryToASCIIConverter(d).appendTo(buf);
-    }
-
-    /**
-     * Appends a single precision floating point value to an <code>Appendable</code>.
-     * @param f The single precision value.
-     * @param buf The <code>Appendable</code> with the value appended.
-     */
-    public static void appendTo(float f, Appendable buf) {
-        getBinaryToASCIIConverter(f).appendTo(buf);
-    }
-
-    /**
-     * Converts a <code>String</code> to a double precision floating point value.
-     *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The double precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted double precision value.
      */
     public static double parseDouble(String s) throws NumberFormatException {
-        return readJavaFormatString(s).doubleValue();
+        return readJavaFormatString(s, BINARY_64_IX);
     }
 
     /**
-     * Converts a <code>String</code> to a single precision floating point value.
+     * Converts a {@link String} to a single precision floating point value.
      *
-     * @param s The <code>String</code> to convert.
+     * @param s The {@link String} to convert.
      * @return The single precision value.
-     * @throws NumberFormatException If the <code>String</code> does not
+     * @throws NumberFormatException If the {@link String} does not
      * represent a properly formatted single precision value.
      */
     public static float parseFloat(String s) throws NumberFormatException {
-        return readJavaFormatString(s).floatValue();
+        return (float) readJavaFormatString(s, BINARY_32_IX);
     }
 
     /**
-     * A converter which can process single or double precision floating point
-     * values into an ASCII <code>String</code> representation.
+     * Converts a sequence of digits ('0'-'9') as well as an exponent to a positive
+     * double value
+     *
+     * @param decExp The decimal exponent of the value to generate
+     * @param d The digits of the significand.
+     * @param length Number of digits to use
+     * @return The double-precision value of the conversion
      */
-    public interface BinaryToASCIIConverter {
-        /**
-         * Converts a floating point value into an ASCII <code>String</code>.
-         * @return The value converted to a <code>String</code>.
-         */
-        String toJavaFormatString();
-
-        /**
-         * Appends a floating point value to an <code>Appendable</code>.
-         * @param buf The <code>Appendable</code> to receive the value.
-         */
-        void appendTo(Appendable buf);
-
-        /**
-         * Retrieves the decimal exponent most closely corresponding to this value.
-         * @return The decimal exponent.
-         */
-        int getDecimalExponent();
-
-        /**
-         * Retrieves the value as an array of digits.
-         * @param digits The digit array.
-         * @return The number of valid digits copied into the array.
-         */
-        int getDigits(char[] digits);
-
-        /**
-         * Indicates the sign of the value.
-         * @return {@code value < 0.0}.
-         */
-        boolean isNegative();
-
-        /**
-         * Indicates whether the value is either infinite or not a number.
-         *
-         * @return <code>true</code> if and only if the value is <code>NaN</code>
-         * or infinite.
-         */
-        boolean isExceptional();
-
-        /**
-         * Indicates whether the value was rounded up during the binary to ASCII
-         * conversion.
-         *
-         * @return <code>true</code> if and only if the value was rounded up.
-         */
-        boolean digitsRoundedUp();
-
-        /**
-         * Indicates whether the binary to ASCII conversion was exact.
-         *
-         * @return <code>true</code> if any only if the conversion was exact.
-         */
-        boolean decimalDigitsExact();
-    }
-
-    /**
-     * A <code>BinaryToASCIIConverter</code> which represents <code>NaN</code>
-     * and infinite values.
-     */
-    private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
-        private final String image;
-        private boolean isNegative;
-
-        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
-            this.image = image;
-            this.isNegative = isNegative;
-        }
-
-        @Override
-        public String toJavaFormatString() {
-            return image;
-        }
-
-        @Override
-        public void appendTo(Appendable buf) {
-            if (buf instanceof StringBuilder) {
-                ((StringBuilder) buf).append(image);
-            } else if (buf instanceof StringBuffer) {
-                ((StringBuffer) buf).append(image);
-            } else {
-                assert false;
-            }
-        }
-
-        @Override
-        public int getDecimalExponent() {
-            throw new IllegalArgumentException("Exceptional value does not have an exponent");
-        }
-
-        @Override
-        public int getDigits(char[] digits) {
-            throw new IllegalArgumentException("Exceptional value does not have digits");
-        }
-
-        @Override
-        public boolean isNegative() {
-            return isNegative;
-        }
-
-        @Override
-        public boolean isExceptional() {
-            return true;
-        }
-
-        @Override
-        public boolean digitsRoundedUp() {
-            throw new IllegalArgumentException("Exceptional value is not rounded");
-        }
-
-        @Override
-        public boolean decimalDigitsExact() {
-            throw new IllegalArgumentException("Exceptional value is not exact");
-        }
+    public static double parseDoubleSignlessDigits(int decExp, byte[] d, int length) {
+        return new ASCIIToBinaryBuffer(false, decExp, d, length).doubleValue();
     }
 
     private static final String INFINITY_REP = "Infinity";
-    private static final int INFINITY_LENGTH = INFINITY_REP.length();
     private static final String NAN_REP = "NaN";
-    private static final int NAN_LENGTH = NAN_REP.length();
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new char[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new char[]{'0'});
+    private static final BinaryToASCIIBuffer B2AC_POSITIVE_ZERO =
+            new BinaryToASCIIBuffer(new byte[] {'0'});
+    private static final BinaryToASCIIBuffer B2AC_NEGATIVE_ZERO =
+            new BinaryToASCIIBuffer(new byte[] {'0'});
 
-    /**
-     * A buffered implementation of <code>BinaryToASCIIConverter</code>.
-     */
-    static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
-        private boolean isNegative;
+    public static final class BinaryToASCIIBuffer {
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
-        private final char[] digits;
-        private final char[] buffer = new char[26];
+        private final byte[] digits;
 
         //
         // The fields below provide additional information about the result of
@@ -279,74 +115,37 @@ public class FloatingDecimal{
 
         /**
          * Default constructor; used for non-zero values,
-         * <code>BinaryToASCIIBuffer</code> may be thread-local and reused
+         * {@link BinaryToASCIIBuffer} may be thread-local and reused
          */
-        BinaryToASCIIBuffer(){
-            this.digits = new char[20];
+        private BinaryToASCIIBuffer() {
+            this.digits = new byte[20];
         }
 
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIBuffer(boolean isNegative, char[] digits){
-            this.isNegative = isNegative;
+        private BinaryToASCIIBuffer(byte[] digits){
             this.decExponent  = 0;
             this.digits = digits;
             this.firstDigitIndex = 0;
             this.nDigits = digits.length;
         }
 
-        @Override
-        public String toJavaFormatString() {
-            int len = getChars(buffer);
-            return new String(buffer, 0, len);
-        }
-
-        @Override
-        public void appendTo(Appendable buf) {
-            int len = getChars(buffer);
-            if (buf instanceof StringBuilder) {
-                ((StringBuilder) buf).append(buffer, 0, len);
-            } else if (buf instanceof StringBuffer) {
-                ((StringBuffer) buf).append(buffer, 0, len);
-            } else {
-                assert false;
-            }
-        }
-
-        @Override
         public int getDecimalExponent() {
             return decExponent;
         }
 
-        @Override
-        public int getDigits(char[] digits) {
+        public int getDigits(byte[] digits) {
             System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
             return this.nDigits;
         }
 
-        @Override
-        public boolean isNegative() {
-            return isNegative;
-        }
-
-        @Override
-        public boolean isExceptional() {
-            return false;
-        }
-
-        @Override
         public boolean digitsRoundedUp() {
             return decimalDigitsRoundedUp;
         }
 
-        @Override
         public boolean decimalDigitsExact() {
             return exactDecimalConversion;
-        }
-
-        private void setSign(boolean isNegative) {
-            this.isNegative = isNegative;
         }
 
         /**
@@ -358,13 +157,14 @@ public class FloatingDecimal{
          * In particular:
          * lvalue is a finite number (not Inf, nor NaN)
          * lvalue > 0L (not zero, nor negative).
-         *
+         *<p>
          * The only reason that we develop the digits here, rather than
          * calling on Long.toString() is that we can do it a little faster,
          * and besides want to treat trailing 0s specially. If Long.toString
          * changes, we should re-evaluate this strategy!
          */
-        private void developLongDigits( int decExponent, long lvalue, int insignificantDigits ){
+        private void developLongDigits( long lvalue, int insignificantDigits ){
+            int decExponent = 0;
             if ( insignificantDigits != 0 ){
                 // Discard non-significant low-order bits, while rounding,
                 // up to insignificant value.
@@ -392,12 +192,12 @@ public class FloatingDecimal{
                     ivalue /= 10;
                 }
                 while ( ivalue != 0){
-                    digits[digitno--] = (char)(c+'0');
+                    digits[digitno--] = (byte)(c+'0');
                     decExponent++;
                     c = ivalue%10;
                     ivalue /= 10;
                 }
-                digits[digitno] = (char)(c+'0');
+                digits[digitno] = (byte)(c+'0');
             } else {
                 // same algorithm as above (same bugs, too )
                 // but using long arithmetic.
@@ -409,19 +209,19 @@ public class FloatingDecimal{
                     lvalue /= 10L;
                 }
                 while ( lvalue != 0L ){
-                    digits[digitno--] = (char)(c+'0');
+                    digits[digitno--] = (byte) (c+'0');
                     decExponent++;
                     c = (int)(lvalue%10L);
                     lvalue /= 10;
                 }
-                digits[digitno] = (char)(c+'0');
+                digits[digitno] = (byte)(c+'0');
             }
             this.decExponent = decExponent+1;
             this.firstDigitIndex = digitno;
             this.nDigits = this.digits.length - digitno;
         }
 
-        private void dtoa( int binExp, long fractBits, int nSignificantBits, boolean isCompatibleFormat)
+        private void dtoa( int binExp, long fractBits, int nSignificantBits)
         {
             assert fractBits > 0 ; // fractBits here can't be zero or negative
             assert (fractBits & FRACT_HOB)!=0  ; // Hi-order bit should be set
@@ -473,7 +273,7 @@ public class FloatingDecimal{
                         } else {
                             fractBits >>>= (EXP_SHIFT-binExp) ;
                         }
-                        developLongDigits( 0, fractBits, insignificant );
+                        developLongDigits( fractBits, insignificant );
                         return;
                     }
                     //
@@ -567,7 +367,7 @@ public class FloatingDecimal{
             // 26 Sept 96 is not that day.
             // So we use a symmetric test.
             //
-            int ndigit = 0;
+            int ndigit;
             boolean low, high;
             long lowDigitDifference;
             int  q;
@@ -615,7 +415,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (char)('0' + q);
+                        digits[ndigit++] = (byte)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -623,7 +423,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat ||decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -643,7 +443,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (char)('0' + q);
+                        digits[ndigit++] = (byte)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -669,7 +469,7 @@ public class FloatingDecimal{
                         // oops. Usually ignore leading zero.
                         decExp--;
                     } else {
-                        digits[ndigit++] = (char)('0' + q);
+                        digits[ndigit++] = (byte)('0' + q);
                     }
                     //
                     // HACK! Java spec sez that we always have at least
@@ -677,7 +477,7 @@ public class FloatingDecimal{
                     // Thus we will need more than one digit if we're using
                     // E-form
                     //
-                    if ( !isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                    if (decExp < -3 || decExp >= 8){
                         high = low = false;
                     }
                     while( ! low && ! high ){
@@ -697,7 +497,7 @@ public class FloatingDecimal{
                             low = true;
                             high = true;
                         }
-                        digits[ndigit++] = (char)('0' + q);
+                        digits[ndigit++] = (byte)('0' + q);
                     }
                     lowDigitDifference = (b<<1) - tens;
                     exactDecimalConversion  = (b == 0);
@@ -707,14 +507,14 @@ public class FloatingDecimal{
                 // We really must do FDBigInteger arithmetic.
                 // Fist, construct our FDBigInteger initial values.
                 //
-                FDBigInteger Sval = FDBigInteger.valueOfPow52(S5, S2);
+                FDBigInteger Sval = valueOfPow52(S5, S2);
                 int shiftBias = Sval.getNormalizationBias();
                 Sval = Sval.leftShift(shiftBias); // normalize so that division works better
 
-                FDBigInteger Bval = FDBigInteger.valueOfMulPow52(fractBits, B5, B2 + shiftBias);
-                FDBigInteger Mval = FDBigInteger.valueOfPow52(M5 + 1, M2 + shiftBias + 1);
+                FDBigInteger Bval = valueOfMulPow52(fractBits, B5, B2 + shiftBias);
+                FDBigInteger Mval = valueOfPow52(M5 + 1, M2 + shiftBias + 1);
 
-                FDBigInteger tenSval = FDBigInteger.valueOfPow52(S5 + 1, S2 + shiftBias + 1); //Sval.mult( 10 );
+                FDBigInteger tenSval = valueOfPow52(S5 + 1, S2 + shiftBias + 1); //Sval.mult( 10 );
                 //
                 // Unroll the first iteration. If our decExp estimate
                 // was too high, our first quotient will be zero. In this
@@ -730,7 +530,7 @@ public class FloatingDecimal{
                     // oops. Usually ignore leading zero.
                     decExp--;
                 } else {
-                    digits[ndigit++] = (char)('0' + q);
+                    digits[ndigit++] = (byte)('0' + q);
                 }
                 //
                 // HACK! Java spec sez that we always have at least
@@ -738,7 +538,7 @@ public class FloatingDecimal{
                 // Thus we will need more than one digit if we're using
                 // E-form
                 //
-                if (!isCompatibleFormat || decExp < -3 || decExp >= 8 ){
+                if (decExp < -3 || decExp >= 8){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -747,7 +547,7 @@ public class FloatingDecimal{
                     Mval = Mval.multBy10(); //Mval = Mval.mult( 10 );
                     low  = (Bval.cmp( Mval ) < 0);
                     high = tenSval.addAndCmp(Bval,Mval)<=0;
-                    digits[ndigit++] = (char)('0' + q);
+                    digits[ndigit++] = (byte)('0' + q);
                 }
                 if ( high && low ){
                     Bval = Bval.leftShift(1);
@@ -755,7 +555,7 @@ public class FloatingDecimal{
                 } else {
                     lowDigitDifference = 0L; // this here only for flow analysis!
                 }
-                exactDecimalConversion  = (Bval.cmp( FDBigInteger.ZERO ) == 0);
+                exactDecimalConversion  = Bval.isZero();
             }
             this.decExponent = decExp+1;
             this.firstDigitIndex = 0;
@@ -801,14 +601,14 @@ public class FloatingDecimal{
                 }
                 // else fall through.
             }
-            digits[i] = (char) (q + 1);
+            digits[i] = (byte) (q + 1);
             decimalDigitsRoundedUp = true;
         }
 
         /**
          * Estimate decimal exponent. (If it is small-ish,
          * we could double-check.)
-         *
+         *<p>
          * First, scale the mantissa bits such that 1 <= d2 < 2.
          * We are then going to estimate
          *          log10(d2) ~=~  (d2-1.5)/1.5 + log(1.5)
@@ -816,7 +616,7 @@ public class FloatingDecimal{
          *      log10(d) ~=~ log10(d2) + binExp * log10(2)
          * take the floor and call it decExp.
          */
-        static int estimateDecExp(long fractBits, int binExp) {
+        private static int estimateDecExp(long fractBits, int binExp) {
             double d2 = Double.longBitsToDouble( EXP_ONE | ( fractBits & DoubleConsts.SIGNIF_BIT_MASK ) );
             double d = (d2-1.5D)*0.289529654D + 0.176091259 + (double)binExp * 0.301029995663981;
             long dBits = Double.doubleToRawLongBits(d);  //can't be NaN here so use raw
@@ -834,19 +634,8 @@ public class FloatingDecimal{
             }
         }
 
-        private static int insignificantDigits(long insignificant) {
-            int i;
-            for ( i = 0; insignificant >= 10L; i++ ) {
-                insignificant /= 10L;
-            }
-            return i;
-        }
-
         /**
          * Calculates
-         * <pre>
-         * insignificantDigitsForPow2(v) == insignificantDigits(1L<<v)
-         * </pre>
          */
         private static int insignificantDigitsForPow2(int p2) {
             if (p2 > 1 && p2 < insignificantDigitsNumber.length) {
@@ -862,16 +651,18 @@ public class FloatingDecimal{
          *  for ( i = 0; insignificant >= 10L; i++ )
          *         insignificant /= 10L;
          */
+        @Stable
         private static final int[] insignificantDigitsNumber = {
             0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3,
             4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7,
             8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 11,
             12, 12, 12, 12, 13, 13, 13, 14, 14, 14,
             15, 15, 15, 15, 16, 16, 16, 17, 17, 17,
-            18, 18, 18, 19
+            18, 18, 18, 19,
         };
 
         // approximately ceil( log2( long5pow[i] ) )
+        @Stable
         private static final int[] N_5_BITS = {
                 0,
                 3,
@@ -900,830 +691,508 @@ public class FloatingDecimal{
                 56,
                 59,
                 61,
+                63,
         };
-
-        private int getChars(char[] result) {
-            assert nDigits <= 19 : nDigits; // generous bound on size of nDigits
-            int i = 0;
-            if (isNegative) {
-                result[0] = '-';
-                i = 1;
-            }
-            if (decExponent > 0 && decExponent < 8) {
-                // print digits.digits.
-                int charLength = Math.min(nDigits, decExponent);
-                System.arraycopy(digits, firstDigitIndex, result, i, charLength);
-                i += charLength;
-                if (charLength < decExponent) {
-                    charLength = decExponent - charLength;
-                    Arrays.fill(result,i,i+charLength,'0');
-                    i += charLength;
-                    result[i++] = '.';
-                    result[i++] = '0';
-                } else {
-                    result[i++] = '.';
-                    if (charLength < nDigits) {
-                        int t = nDigits - charLength;
-                        System.arraycopy(digits, firstDigitIndex+charLength, result, i, t);
-                        i += t;
-                    } else {
-                        result[i++] = '0';
-                    }
-                }
-            } else if (decExponent <= 0 && decExponent > -3) {
-                result[i++] = '0';
-                result[i++] = '.';
-                if (decExponent != 0) {
-                    Arrays.fill(result, i, i-decExponent, '0');
-                    i -= decExponent;
-                }
-                System.arraycopy(digits, firstDigitIndex, result, i, nDigits);
-                i += nDigits;
-            } else {
-                result[i++] = digits[firstDigitIndex];
-                result[i++] = '.';
-                if (nDigits > 1) {
-                    System.arraycopy(digits, firstDigitIndex+1, result, i, nDigits - 1);
-                    i += nDigits - 1;
-                } else {
-                    result[i++] = '0';
-                }
-                result[i++] = 'E';
-                int e;
-                if (decExponent <= 0) {
-                    result[i++] = '-';
-                    e = -decExponent + 1;
-                } else {
-                    e = decExponent - 1;
-                }
-                // decExponent has 1, 2, or 3, digits
-                if (e <= 9) {
-                    result[i++] = (char) (e + '0');
-                } else if (e <= 99) {
-                    result[i++] = (char) (e / 10 + '0');
-                    result[i++] = (char) (e % 10 + '0');
-                } else {
-                    result[i++] = (char) (e / 100 + '0');
-                    e %= 100;
-                    result[i++] = (char) (e / 10 + '0');
-                    result[i++] = (char) (e % 10 + '0');
-                }
-            }
-            return i;
-        }
 
     }
 
     private static final ThreadLocal<BinaryToASCIIBuffer> threadLocalBinaryToASCIIBuffer =
-            new ThreadLocal<BinaryToASCIIBuffer>() {
-                @Override
-                protected BinaryToASCIIBuffer initialValue() {
-                    return new BinaryToASCIIBuffer();
-                }
-            };
+            ThreadLocal.withInitial(BinaryToASCIIBuffer::new);
 
     private static BinaryToASCIIBuffer getBinaryToASCIIBuffer() {
         return threadLocalBinaryToASCIIBuffer.get();
     }
 
-    /**
-     * A converter which can process an ASCII <code>String</code> representation
-     * of a single or double precision floating point value into a
-     * <code>float</code> or a <code>double</code>.
+    /*
+     * The mathematical value x of an instance is
+     *      ±<0.d_1...d_n> 10^e
+     * where d_i = d[i-1] - '0' (0 < i ≤ n) is the i-th digit.
+     * It is assumed that d_1 > 0.
+     * isNegative denotes the - sign.
      */
-    interface ASCIIToBinaryConverter {
+    private static final class ASCIIToBinaryBuffer {
 
-        double doubleValue();
+        private final boolean isNegative;
+        private final int e;
+        private final int n;
+        private final byte[] d;
 
-        float floatValue();
-
-    }
-
-    /**
-     * A <code>ASCIIToBinaryConverter</code> container for a <code>double</code>.
-     */
-    static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        private final double doubleVal;
-        private final float floatVal;
-
-        public PreparedASCIIToBinaryBuffer(double doubleVal, float floatVal) {
-            this.doubleVal = doubleVal;
-            this.floatVal = floatVal;
+        private ASCIIToBinaryBuffer(boolean isNegative, int e, byte[] d, int n) {
+            this.isNegative = isNegative;
+            this.e = e;
+            this.d = d;
+            this.n = n;
         }
 
-        @Override
-        public double doubleValue() {
-            return doubleVal;
+        /* Assumes n ≤ 19 and returns a decimal prefix of f as an unsigned long. */
+        private long toLong(int n) {
+            long f = 0;
+            for (int i = 0; i < n; ++i) {
+                f = 10 * f + (d[i] - '0');
+            }
+            return f;
         }
 
-        @Override
-        public float floatValue() {
-            return floatVal;
-        }
-    }
+        private double doubleValue() {
+            /*
+             * As described above, the magnitude of the mathematical value is
+             *      x = <0.d_1...d_n> 10^e = <d_1...d_n> 10^(e-n) = f 10^ep
+             * where f = <d_1...d_n> and ep = e - n are integers.
+             *
+             * Let r_e denote the roundTiesToEven rounding.
+             * This method returns ±r_e(x).
+             */
 
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_INFINITY = new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-    static final ASCIIToBinaryConverter A2BC_NOT_A_NUMBER  = new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
-    static final ASCIIToBinaryConverter A2BC_POSITIVE_ZERO = new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
-    static final ASCIIToBinaryConverter A2BC_NEGATIVE_ZERO = new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
-
-    /**
-     * A buffered implementation of <code>ASCIIToBinaryConverter</code>.
-     */
-    static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        boolean     isNegative;
-        int         decExponent;
-        byte[]      digits;
-        int         nDigits;
-
-        ASCIIToBinaryBuffer( boolean negSign, int decExponent, byte[] digits, int n)
-        {
-            this.isNegative = negSign;
-            this.decExponent = decExponent;
-            this.digits = digits;
-            this.nDigits = n;
-        }
-
-        /**
-         * Takes a FloatingDecimal, which we presumably just scanned in,
-         * and finds out what its value is, as a double.
-         *
-         * AS A SIDE EFFECT, SET roundDir TO INDICATE PREFERRED
-         * ROUNDING DIRECTION in case the result is really destined
-         * for a single-precision float.
-         */
-        @Override
-        public double doubleValue() {
-            int kDigits = Math.min(nDigits, MAX_DECIMAL_DIGITS + 1);
-            //
-            // convert the lead kDigits to a long integer.
-            //
-            // (special performance hack: start to do it using int)
-            int iValue = (int) digits[0] - (int) '0';
-            int iDigits = Math.min(kDigits, INT_DECIMAL_DIGITS);
-            for (int i = 1; i < iDigits; i++) {
-                iValue = iValue * 10 + (int) digits[i] - (int) '0';
+             /* Filter out extremely small or extremely large x. */
+            if (e <= DoubleToDecimal.E_THR_Z) {
+                /* Test cases: "0.9e-324", "3e-500" */
+                return signed(0.0);
             }
-            long lValue = (long) iValue;
-            for (int i = iDigits; i < kDigits; i++) {
-                lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
+            if (e >= DoubleToDecimal.E_THR_I) {
+                /* Test cases: "0.1e310", "4e500" */
+                return signed(Double.POSITIVE_INFINITY);
             }
-            double dValue = (double) lValue;
-            int exp = decExponent - kDigits;
-            //
-            // lValue now contains a long integer with the value of
-            // the first kDigits digits of the number.
-            // dValue contains the (double) of the same.
-            //
 
-            if (nDigits <= MAX_DECIMAL_DIGITS) {
-                //
-                // possibly an easy case.
-                // We know that the digits can be represented
-                // exactly. And if the exponent isn't too outrageous,
-                // the whole thing can be done with one operation,
-                // thus one rounding error.
-                // Note that all our constructors trim all leading and
-                // trailing zeros, so simple values (including zero)
-                // will always end up here
-                //
-                if (exp == 0 || dValue == 0.0) {
-                    return (isNegative) ? -dValue : dValue; // small floating integer
+            /*
+             * Attempt some fast paths before resorting to higher precision.
+             * Here, let P = Double.PRECISION = 53.
+             *
+             * Below, fl is an unsigned long, thus we require n ≤ 19 because
+             * 10^19 < 2^64 < 10^20.
+             */
+            int n = this.n;
+            int ep = e - n;
+            double v;
+            int m = Math.min(n, MathUtils.N);
+            long fl = toLong(m);  // unsigned
+            if (n <= MathUtils.N && 0 <= ep && e <= MathUtils.N) {
+                /*
+                 * Here, n ≤ 19, hence f = fl < 10^19.
+                 * Since e = n + ep and 0 ≤ ep ∧ n + ep ≤ 19 we see that
+                 * x = f 10^ep < 10^n 10^ep = 10^(n+ep) ≤ 10^19.
+                 * Thus, x = fl 10^ep fits in an unsigned long as well.
+                 * If its most significant bit is 0, the long is non-negative.
+                 * Otherwise, fl ≥ 2^63, so there's room for P precision bits,
+                 * +1 rounding bit, +1 sticky bit.
+                 * In both cases, correct rounding is achieved as below.
+                 * All integer x < 10^19 are covered here.
+                 */
+
+                /*
+                 * Test cases:
+                 *      for fl < 2^63: "1", "2.34000e2", "9.223e18";
+                 *      for fl ≥ 2^63: "9.876e18", "9223372036854776833" (this
+                 *          is 2^63 + 2^10 + 1, rounding up due to sticky bit),
+                 *          "9223372036854776832" (this is 2^63 + 2^10, halfway
+                 *          value rounding down to even);
+                 */
+                fl *= MathUtils.pow10(ep);  // 0 ≤ ep < 19
+                v = fl >= 0 ? fl : 2.0 * (fl >>> 1 | fl & 0b1);
+                return signed(v);
+            }
+
+            if (n <= FLOG_10_MAX_LONG && -MAX_SMALL_TEN <= ep) {
+                v = fl;
+                /*
+                 * Here, -22 ≤ ep.
+                 * Further, fl < 10^18, so fl is an exact double iff
+                 * (long) v == fl holds.
+                 * If fl is not an exact double, resort to higher precision.
+                 */
+                boolean isExact = (long) v == fl;
+                if (isExact && ep <= MAX_SMALL_TEN) {
+                    /*
+                     * Here, -22 ≤ ep ≤ 22, so 10^|ep| is an exact double.
+                     * The product or quotient below operate on exact doubles,
+                     * so the result is correctly rounded.
+                     */
+
+                    /*
+                     * Test cases:
+                     *      for ep < 0: "1.23", "0.000234";
+                     *      for ep > 0: "3.45e23", "576460752303423616e20" (the
+                     *          significand is 2^59 + 2^7, an exact double);
+                     */
+                    v = ep >= 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
+                    return signed(v);
                 }
-                else if (exp >= 0) {
-                    if (exp <= MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer with one operation,
-                        // thus one roundoff.
-                        //
-                        double rValue = dValue * SMALL_10_POW[exp];
-                        return (isNegative) ? -rValue : rValue;
+
+                /*
+                 * Here, fl < 10^18 is not an exact double, or ep > 22.
+                 * If fl is not an exact double, resort to higher precision.
+                 */
+                if (isExact) {  // v and fl are mathematically equal.
+                    /*
+                     * Here, ep > 22.
+                     * We have f = fl = v.
+                     * Note that 2^P = 9007199254740992 has 16 digits.
+                     * If f does not start with 9 let ef = 16 - n, otherwise
+                     * let ef = 15 - n.
+                     * If ef < 0 then resort to higher precision.
+                     * Otherwise, if f does not start with 9 we have n ≤ 16,
+                     * so f 10^ef < 9 10^(n-1) 10^ef = 9 10^15 < 2^P.
+                     * If f starts with 9 we have n ≤ 15, hence f 10^ef <
+                     * 10^n 10^ef = 10^15 < 2^P.
+                     *
+                     * Hence, when ef ≥ 0 and ep - ef ≤ 22 we know that
+                     * fl 10^ep = (fl 10^ef) 10^(ep-ef), with fl, (fl 10^ef),
+                     * and 10^(ep-ef) all exact doubles.
+                     */
+                    int ef = (d[0] < '9' ? MAX_DEC_DIGITS + 1 : MAX_DEC_DIGITS) - n;
+                    if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {
+                        /*
+                         * Test cases:
+                         *      f does not start with 9: "1e37", "8999e34";
+                         *      f starts with 9: "0.9999e36", "0.9876e37";
+                         */
+
+                        /* Rely on left-to-right evaluation. */
+                        v = v * SMALL_10_POW[ef] * SMALL_10_POW[ep - ef];
+                        return signed(v);
                     }
-                    int slop = MAX_DECIMAL_DIGITS - kDigits;
-                    if (exp <= MAX_SMALL_TEN + slop) {
-                        //
-                        // We can multiply dValue by 10^(slop)
-                        // and it is still "small" and exact.
-                        // Then we can multiply by 10^(exp-slop)
-                        // with one rounding.
-                        //
-                        dValue *= SMALL_10_POW[slop];
-                        double rValue = dValue * SMALL_10_POW[exp - slop];
-                        return (isNegative) ? -rValue : rValue;
+                }
+            }
+
+            /*
+             * Here, the above fast paths have failed to return.
+             * Force ll, lh in [10^(N-1), 10^N] to have more high order bits.
+             */
+            long ll = fl;  // unsigned
+            long lh;  // unsigned
+            if (n <= MathUtils.N) {  // ll = f
+                ll *= MathUtils.pow10(MathUtils.N - n);
+                lh = ll;
+            } else {  // ll is an N digits long prefix of f
+                lh = ll + 1;
+            }
+            int el = e - MathUtils.N;
+            /*
+             * We now have
+             *      x = f 10^ep
+             *      ll 10^el ≤ x ≤ lh 10^el
+             *      2^59 < 10^(N-1) ≤ ll ≤ lh ≤ 10^N < 2^64
+             *
+             * Rather than rounding x directly, which requires full precision
+             * arithmetic, approximate x as follows.
+             * Let integers g and r such that (see comments in MathUtils)
+             *      (g - 1) 2^r ≤ 10^el < g 2^r
+             * and split g into the lower 63 bits g0 and the higher bits g1:
+             *      g = g1 2^63 + g0
+             * where
+             *      2^62 < g1 + 1 < 2^63, 0 < g0 < 2^63
+             * We have
+             *      g - 1 = g1 2^63 + g0 - 1 ≥ g1 2^63
+             *      g = g1 2^63 + g0 < g1 2^63 + 2^63 = (g1 + 1) 2^63
+             * Let
+             *      nl = ll g1          nh = lh (g1 + 1)
+             * These lead to
+             *      nl 2^(r+63) ≤ x < nh 2^(r+63)
+             * Let
+             *      v = r_e(nl 2^(r+63))        vh = r_e(nh 2^(r+63))
+             * If v = vh then r_e(x) = v.
+             *
+             * We also have
+             *      2^121 = 2^59 2^62 < nl < nh < 2^64 2^63 = 2^127
+             * Therefore, each of nl and nh fits in two longs.
+             * Split them into the lower 64 bits and the higher bits.
+             *      nl = nl1 2^64 + nl0     2^57 ≤ nl1 < 2^63
+             *      nh = nh1 2^64 + nh0     2^57 ≤ nh1 < 2^63
+             * Let bl and bh be the bitlength of nl1 and nh1, resp.
+             * Both bl and bh lie in the interval [58, 63], and all of nl1, nh1,
+             * nl, and nh are in the normal range of double.
+             * As nl ≤ nh ≤ nl + 2 ll, and as ll < 2^64, then either bh = bl,
+             * or more rarely bh = bl + 1.
+             *
+             * As mentioned above, if v = vh then r_e(x) = v.
+             * Rather than rounding nl 2^(r+63), nh 2^(r+63) boundaries directly,
+             * first round nl and nh to obtain doubles wl and wh, resp.
+             *      wl = r_e(nl)        wh = r_e(nh)
+             * Note that both wl and wh are normal doubles.
+             *
+             * Assume wl = wh.
+             * There's a good chance that v = scalb(wl, r + 63) holds.
+             * In fact, if x ≥ MIN_NORMAL then it can be (tediously) shown that
+             * v = scalb(wl, r + 63) holds, even when v overflows.
+             * If x < MIN_NORMAL, and since wl is normal and v ≤ MIN_NORMAL,
+             * the precision might be lowered, so scalb(wl, r + 63) might incur
+             * two rounding errors and could slightly differ from v.
+             *
+             * It is costly to precisely determine whether x ≥ MIN_NORMAL.
+             * However, bl + r > MIN_EXPONENT - 127 implies x ≥ MIN_NORMAL,
+             * and bh + r ≤ MIN_EXPONENT - 127 entails x < MIN_NORMAL.
+             * Finally, when bl + r ≤ MIN_EXPONENT - 127 < bh + r we see that
+             * bl + r = MIN_EXPONENT - 127 and bh = bl + 1 must hold.
+             *
+             * As noted, nh ≤ nl + 2 ll.
+             * This means
+             *      nh1 ≤ nh 2^(-64) ≤ (nl + 2 ll) 2^(-64) < (nl1 + 1) + 2
+             * and thus
+             *      nh1 ≤ nl1 + 2
+             */
+            int rp = MathUtils.flog2pow10(el) + 2;  // r + 127
+            long g1 = MathUtils.g1(el);
+            long nl1 = Math.unsignedMultiplyHigh(ll, g1);
+            long nl0 = ll * g1;
+            long nh1 = Math.unsignedMultiplyHigh(lh, g1 + 1);
+            long nh0 = lh * (g1 + 1);
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
+            if (bl + rp > Double.MIN_EXPONENT) {  // implies x is normal
+                /*
+                 * To round nl we need its most significant P bits, the rounding
+                 * bit immediately to the right, and an indication (sticky bit)
+                 * of whether there are "1" bits following the rounding bit.
+                 * The sticky bit can be placed anywhere after the rounding bit.
+                 * Since bl ≥ 58, the P = 53 bits, the rounding bit, and space
+                 * for the sticky bit are all located in nl1.
+                 *
+                 * When nl0 = 0, the indication of whether there are "1" bits
+                 * to the right of the rounding bit is already contained in nl1.
+                 * Rounding nl to wl is the same as rounding nl1 to ul and then
+                 * multiplying this by 2^64.
+                 * that is, given wl = r_e(nl), ul = r_e(nl1), we get
+                 * wl = scalb(ul, 64).
+                 * The same holds for nh, wh, nh1, and uh.
+                 * So, if ul = uh then wl = wh, thus v = scalb(ul, r + 127).
+                 *
+                 * When nl1 ≠ 0, there are indeed "1" bits to the right of the
+                 * rounding bit.
+                 * We force the rightmost bit of nl1 to 1, obtaining nl1'.
+                 * Then, again, rounding nl to wl is the same as rounding nl1'
+                 * to ul and multiplying this by 2^64.
+                 * Analogously for nh, wh, nh1, and uh.
+                 * Again, if ul = uh then wl = wh, thus v = scalb(ul, r + 127).
+                 *
+                 * Since nh1 ≤ nl1 + 2, then either uh = ul or uh = nextUp(ul).
+                 * This means that when ul ≠ uh then
+                 *      v ≤ r_e(x) ≤ nextUp(v)
+                 */
+                double ul = nl1 | (nl0 != 0 ? 1 : 0);
+                double uh = nh1 | (nh0 != 0 ? 1 : 0);
+                v = Math.scalb(ul, rp);
+                if (ul == uh || v == Double.POSITIVE_INFINITY) {
+                    /*
+                     * Test cases:
+                     *      for ll = lh ∧ ul = uh: "1.2e-200", "2.3e100";
+                     *      for ll ≠ lh ∧ ul = uh: "1.2000000000000000003e-200",
+                     *          "2.3000000000000000004e100";
+                     *      for ll = lh ∧ v = ∞: "5.249320425370670463e308";
+                     *      for ll ≠ lh ∧ v = ∞: "5.2493204253706704633e308";
+                     */
+                    return signed(v);
+                }
+            } else {
+                int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+                if (bh + rp <= Double.MIN_EXPONENT) {  // implies x is subnormal
+                    /*
+                     * We need to reduce the precision to avoid double rounding
+                     * issues.
+                     * Shifting to the right while keeping room for the rounding
+                     * and the sticky bit is one way to go.
+                     * Other than that, the reasoning is similar to the above case.
+                     */
+                    int sh = DoubleToDecimal.Q_MIN - rp;  // shift distance
+                    long sbMask = -1L >>> 1 - sh;
+
+                    long nl1p = nl1 >>> sh;
+                    long rb = nl1 >>> sh - 1;
+                    long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                    long corr = rb & (sb | nl1p) & 0b1;
+                    double ul = nl1p + corr;
+
+                    long nh1p = nh1 >>> sh;
+                    rb = nh1 >>> sh - 1;
+                    sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                    corr = rb & (sb | nh1p) & 0b1;
+                    double uh = nh1p + corr;
+                    v = Math.scalb(ul, rp + sh);
+                    if (ul == uh) {
+                        /*
+                         * Test cases:
+                         *      for ll = lh: "1.2e-320";
+                         *      for ll ≠ lh: "1.2000000000000000003e-320";
+                         */
+                        return signed(v);
                     }
-                    //
-                    // Else we have a hard case with a positive exp.
-                    //
                 } else {
-                    if (exp >= -MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer in one division.
-                        //
-                        double rValue = dValue / SMALL_10_POW[-exp];
-                        return (isNegative) ? -rValue : rValue;
-                    }
-                    //
-                    // Else we have a hard case with a negative exp.
-                    //
+                    /*
+                     * Here, bl + r ≤ MIN_EXPONENT - 127 < bh + r.
+                     * As mentioned before, this means bh = bl + 1 and
+                     * rp = MIN_EXPONENT - bl.
+                     * As nh1 ≤ nl1 + 2, nl1 ≥ 2^57, bh = bl + 1 happens only if
+                     * the most significant P + 2 bits in nl1 are all "1" bits,
+                     * so wl = r_e(nl) = r_e(nh) = wh = 2^(bl+64), and
+                     * thus v = vh = 2^(bl+127) = 2^MIN_EXPONENT = MIN_NORMAL.
+                     */
+
+                    /*
+                     * Test cases:
+                     *      for ll = lh: "2.225073858507201383e-308"
+                     *      for ll ≠ lh: "2.2250738585072013831e-308"
+                     */
+                    return signed(Double.MIN_NORMAL);
                 }
             }
 
-            //
-            // Harder cases:
-            // The sum of digits plus exponent is greater than
-            // what we think we can do with one error.
-            //
-            // Start by approximating the right answer by,
-            // naively, scaling by powers of 10.
-            //
-            if (exp > 0) {
-                if (decExponent > MAX_DECIMAL_EXPONENT + 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // Infinity. Cut to the chase.
-                    //
-                    return (isNegative) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-                }
-                if ((exp & 15) != 0) {
-                    dValue *= SMALL_10_POW[exp & 15];
-                }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 1; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= BIG_10_POW[j];
-                        }
-                    }
-                    //
-                    // The reason for the weird exp > 1 condition
-                    // in the above loop was so that the last multiply
-                    // would get unrolled. We handle it here.
-                    // It could overflow.
-                    //
-                    double t = dValue * BIG_10_POW[j];
-                    if (Double.isInfinite(t)) {
-                        //
-                        // It did overflow.
-                        // Look more closely at the result.
-                        // If the exponent is just one too large,
-                        // then use the maximum finite as our estimate
-                        // value. Else call the result infinity
-                        // and punt it.
-                        // ( I presume this could happen because
-                        // rounding forces the result here to be
-                        // an ULP or two larger than
-                        // Double.MAX_VALUE ).
-                        //
-                        t = dValue / 2.0;
-                        t *= BIG_10_POW[j];
-                        if (Double.isInfinite(t)) {
-                            return (isNegative) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-                        }
-                        t = Double.MAX_VALUE;
-                    }
-                    dValue = t;
-                }
-            } else if (exp < 0) {
-                exp = -exp;
-                if (decExponent < MIN_DECIMAL_EXPONENT - 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // zero. Cut to the chase.
-                    //
-                    return (isNegative) ? -0.0 : 0.0;
-                }
-                if ((exp & 15) != 0) {
-                    dValue /= SMALL_10_POW[exp & 15];
-                }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 1; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= TINY_10_POW[j];
-                        }
-                    }
-                    //
-                    // The reason for the weird exp > 1 condition
-                    // in the above loop was so that the last multiply
-                    // would get unrolled. We handle it here.
-                    // It could underflow.
-                    //
-                    double t = dValue * TINY_10_POW[j];
-                    if (t == 0.0) {
-                        //
-                        // It did underflow.
-                        // Look more closely at the result.
-                        // If the exponent is just one too small,
-                        // then use the minimum finite as our estimate
-                        // value. Else call the result 0.0
-                        // and punt it.
-                        // ( I presume this could happen because
-                        // rounding forces the result here to be
-                        // an ULP or two less than
-                        // Double.MIN_VALUE ).
-                        //
-                        t = dValue * 2.0;
-                        t *= TINY_10_POW[j];
-                        if (t == 0.0) {
-                            return (isNegative) ? -0.0 : 0.0;
-                        }
-                        t = Double.MIN_VALUE;
-                    }
-                    dValue = t;
-                }
-            }
+            /*
+             * Measurements show that the failure rate of the above fast paths
+             * on the outcomes of Double.toString() on uniformly distributed
+             * double bit patterns is around 0.04%.
+             *
+             * Here, v ≤ r_e(x) ≤ nextUp(v), with v = c 2^q (c, q are as in
+             * IEEE-754 2019).
+             *
+             * Let vr = v + ulp(v)/2 = (c + 1/2) 2^q, the number halfway between
+             * v and nextUp(v).
+             * With cr = (2 c + 1), qr = q - 1 we get vr = cr 2^qr.
+             */
+            long bits = Double.doubleToRawLongBits(v);
+            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
+            int qr = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 1 : 0);
+            long cr = 2 * (bits & DoubleConsts.SIGNIF_BIT_MASK | (be != 0 ? DoubleToDecimal.C_MIN : 0)) + 1;
 
-            //
-            // dValue is now approximately the result.
-            // The hard part is adjusting it, by comparison
-            // with FDBigInteger arithmetic.
-            // Formulate the EXACT big-number result as
-            // bigD0 * 10^exp
-            //
-            if (nDigits > MAX_NDIGITS) {
-                nDigits = MAX_NDIGITS + 1;
-                digits[MAX_NDIGITS] = '1';
-            }
-            FDBigInteger bigD0 = new FDBigInteger(lValue, digits, kDigits, nDigits);
-            exp = decExponent - nDigits;
-
-            long ieeeBits = Double.doubleToRawLongBits(dValue); // IEEE-754 bits of double candidate
-            final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
-            final int D5 = Math.max(0, exp); // powers of 5 in bigD, value is not modified inside correctionLoop
-            bigD0 = bigD0.multByPow52(D5, 0);
-            bigD0.makeImmutable();   // prevent bigD0 modification inside correctionLoop
-            FDBigInteger bigD = null;
-            int prevD2 = 0;
-
-            correctionLoop:
-            while (true) {
-                // here ieeeBits can't be NaN, Infinity or zero
-                int binexp = (int) (ieeeBits >>> EXP_SHIFT);
-                long bigBbits = ieeeBits & DoubleConsts.SIGNIF_BIT_MASK;
-                if (binexp > 0) {
-                    bigBbits |= FRACT_HOB;
-                } else { // Normalize denormalized numbers.
-                    assert bigBbits != 0L : bigBbits; // doubleToBigInt(0.0)
-                    int leadingZeros = Long.numberOfLeadingZeros(bigBbits);
-                    int shift = leadingZeros - (63 - EXP_SHIFT);
-                    bigBbits <<= shift;
-                    binexp = 1 - shift;
-                }
-                binexp -= DoubleConsts.EXP_BIAS;
-                int lowOrderZeros = Long.numberOfTrailingZeros(bigBbits);
-                bigBbits >>>= lowOrderZeros;
-                final int bigIntExp = binexp - EXP_SHIFT + lowOrderZeros;
-                final int bigIntNBits = EXP_SHIFT + 1 - lowOrderZeros;
-
-                //
-                // Scale bigD, bigB appropriately for
-                // big-integer operations.
-                // Naively, we multiply by powers of ten
-                // and powers of two. What we actually do
-                // is keep track of the powers of 5 and
-                // powers of 2 we would use, then factor out
-                // common divisors before doing the work.
-                //
-                int B2 = B5; // powers of 2 in bigB
-                int D2 = D5; // powers of 2 in bigD
-                int Ulp2;   // powers of 2 in halfUlp.
-                if (bigIntExp >= 0) {
-                    B2 += bigIntExp;
-                } else {
-                    D2 -= bigIntExp;
-                }
-                Ulp2 = B2;
-                // shift bigB and bigD left by a number s. t.
-                // halfUlp is still an integer.
-                int hulpbias;
-                if (binexp <= -DoubleConsts.EXP_BIAS) {
-                    // This is going to be a denormalized number
-                    // (if not actually zero).
-                    // half an ULP is at 2^-(DoubleConsts.EXP_BIAS+EXP_SHIFT+1)
-                    hulpbias = binexp + lowOrderZeros + DoubleConsts.EXP_BIAS;
-                } else {
-                    hulpbias = 1 + lowOrderZeros;
-                }
-                B2 += hulpbias;
-                D2 += hulpbias;
-                // if there are common factors of 2, we might just as well
-                // factor them out, as they add nothing useful.
-                int common2 = Math.min(B2, Math.min(D2, Ulp2));
-                B2 -= common2;
-                D2 -= common2;
-                Ulp2 -= common2;
-                // do multiplications by powers of 5 and 2
-                FDBigInteger bigB = FDBigInteger.valueOfMulPow52(bigBbits, B5, B2);
-                if (bigD == null || prevD2 != D2) {
-                    bigD = bigD0.leftShift(D2);
-                    prevD2 = D2;
-                }
-                //
-                // to recap:
-                // bigB is the scaled-big-int version of our floating-point
-                // candidate.
-                // bigD is the scaled-big-int version of the exact value
-                // as we understand it.
-                // halfUlp is 1/2 an ulp of bigB, except for special cases
-                // of exact powers of 2
-                //
-                // the plan is to compare bigB with bigD, and if the difference
-                // is less than halfUlp, then we're satisfied. Otherwise,
-                // use the ratio of difference to halfUlp to calculate a fudge
-                // factor to add to the floating value, then go 'round again.
-                //
-                FDBigInteger diff;
-                int cmpResult;
-                boolean overvalue;
-                if ((cmpResult = bigB.cmp(bigD)) > 0) {
-                    overvalue = true; // our candidate is too big.
-                    diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
-                    if ((bigIntNBits == 1) && (bigIntExp > -DoubleConsts.EXP_BIAS + 1)) {
-                        // candidate is a normalized exact power of 2 and
-                        // is too big (larger than Double.MIN_NORMAL). We will be subtracting.
-                        // For our purposes, ulp is the ulp of the
-                        // next smaller range.
-                        Ulp2 -= 1;
-                        if (Ulp2 < 0) {
-                            // rats. Cannot de-scale ulp this far.
-                            // must scale diff in other direction.
-                            Ulp2 = 0;
-                            diff = diff.leftShift(1);
-                        }
-                    }
-                } else if (cmpResult < 0) {
-                    overvalue = false; // our candidate is too small.
-                    diff = bigD.rightInplaceSub(bigB); // bigB is not user further - reuse
-                } else {
-                    // the candidate is exactly right!
-                    // this happens with surprising frequency
-                    break correctionLoop;
-                }
-                cmpResult = diff.cmpPow52(B5, Ulp2);
-                if ((cmpResult) < 0) {
-                    // difference is small.
-                    // this is close enough
-                    break correctionLoop;
-                } else if (cmpResult == 0) {
-                    // difference is exactly half an ULP
-                    // round to some other value maybe, then finish
-                    if ((ieeeBits & 1) != 0) { // half ties to even
-                        ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    }
-                    break correctionLoop;
-                } else {
-                    // difference is non-trivial.
-                    // could scale addend by ratio of difference to
-                    // halfUlp here, if we bothered to compute that difference.
-                    // Most of the time ( I hope ) it is about 1 anyway.
-                    ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    if (ieeeBits == 0 || ieeeBits == DoubleConsts.EXP_BIT_MASK) { // 0.0 or Double.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
-                    }
-                    continue; // try again.
-                }
-
-            }
-            if (isNegative) {
-                ieeeBits |= DoubleConsts.SIGN_BIT_MASK;
-            }
-            return Double.longBitsToDouble(ieeeBits);
+            /*
+             * The test vr ⋚ x is equivalent to cr 2^qr ⋚ f 10^ep.
+             * This is in turn equivalent to one of 4 cases, where all exponents
+             * are non-negative:
+             *      ep ≥ 0 ∧ ep ≥ qr:                     cr ⋚ f 5^ep 2^(ep-qr)
+             *      ep ≥ 0 ∧ ep < qr:           cr 2^(qr-ep) ⋚ f 5^ep
+             *      ep < 0 ∧ ep ≥ qr:             cr 5^(-ep) ⋚ f 2^(ep-qr)
+             *      ep < 0 ∧ ep < qr:   cr 5^(-ep) 2^(qr-ep) ⋚ f
+             */
+            FDBigInteger lhs = valueOfMulPow52(cr, Math.max(-ep, 0), Math.max(qr - ep, 0));
+            FDBigInteger rhs = new FDBigInteger(fl, d, m, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0));
+            int cmp = lhs.cmp(rhs);
+            v = Double.longBitsToDouble(cmp < 0
+                    ? bits + 1
+                    : cmp > 0
+                    ? bits
+                    : bits + (bits & 0b1));
+            return signed(v);
         }
 
-        /**
-         * Takes a FloatingDecimal, which we presumably just scanned in,
-         * and finds out what its value is, as a float.
-         * This is distinct from doubleValue() to avoid the extremely
-         * unlikely case of a double rounding error, wherein the conversion
-         * to double has one rounding error, and the conversion of that double
-         * to a float has another rounding error, IN THE WRONG DIRECTION,
-         * ( because of the preference to a zero low-order bit ).
-         */
-        @Override
-        public float floatValue() {
-            int kDigits = Math.min(nDigits, SINGLE_MAX_DECIMAL_DIGITS + 1);
-            //
-            // convert the lead kDigits to an integer.
-            //
-            int iValue = (int) digits[0] - (int) '0';
-            for (int i = 1; i < kDigits; i++) {
-                iValue = iValue * 10 + (int) digits[i] - (int) '0';
-            }
-            float fValue = (float) iValue;
-            int exp = decExponent - kDigits;
-            //
-            // iValue now contains an integer with the value of
-            // the first kDigits digits of the number.
-            // fValue contains the (float) of the same.
-            //
-
-            if (nDigits <= SINGLE_MAX_DECIMAL_DIGITS) {
-                //
-                // possibly an easy case.
-                // We know that the digits can be represented
-                // exactly. And if the exponent isn't too outrageous,
-                // the whole thing can be done with one operation,
-                // thus one rounding error.
-                // Note that all our constructors trim all leading and
-                // trailing zeros, so simple values (including zero)
-                // will always end up here.
-                //
-                if (exp == 0 || fValue == 0.0f) {
-                    return (isNegative) ? -fValue : fValue; // small floating integer
-                } else if (exp >= 0) {
-                    if (exp <= SINGLE_MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer with one operation,
-                        // thus one roundoff.
-                        //
-                        fValue *= SINGLE_SMALL_10_POW[exp];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    int slop = SINGLE_MAX_DECIMAL_DIGITS - kDigits;
-                    if (exp <= SINGLE_MAX_SMALL_TEN + slop) {
-                        //
-                        // We can multiply fValue by 10^(slop)
-                        // and it is still "small" and exact.
-                        // Then we can multiply by 10^(exp-slop)
-                        // with one rounding.
-                        //
-                        fValue *= SINGLE_SMALL_10_POW[slop];
-                        fValue *= SINGLE_SMALL_10_POW[exp - slop];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    //
-                    // Else we have a hard case with a positive exp.
-                    //
-                } else {
-                    if (exp >= -SINGLE_MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer in one division.
-                        //
-                        fValue /= SINGLE_SMALL_10_POW[-exp];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    //
-                    // Else we have a hard case with a negative exp.
-                    //
-                }
-            } else if ((decExponent >= nDigits) && (nDigits + decExponent <= MAX_DECIMAL_DIGITS)) {
-                //
-                // In double-precision, this is an exact floating integer.
-                // So we can compute to double, then shorten to float
-                // with one round, and get the right answer.
-                //
-                // First, finish accumulating digits.
-                // Then convert that integer to a double, multiply
-                // by the appropriate power of ten, and convert to float.
-                //
-                long lValue = (long) iValue;
-                for (int i = kDigits; i < nDigits; i++) {
-                    lValue = lValue * 10L + (long) ((int) digits[i] - (int) '0');
-                }
-                double dValue = (double) lValue;
-                exp = decExponent - nDigits;
-                dValue *= SMALL_10_POW[exp];
-                fValue = (float) dValue;
-                return (isNegative) ? -fValue : fValue;
-
-            }
-            //
-            // Harder cases:
-            // The sum of digits plus exponent is greater than
-            // what we think we can do with one error.
-            //
-            // Start by approximating the right answer by,
-            // naively, scaling by powers of 10.
-            // Scaling uses doubles to avoid overflow/underflow.
-            //
-            double dValue = fValue;
-            if (exp > 0) {
-                if (decExponent > SINGLE_MAX_DECIMAL_EXPONENT + 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // Infinity. Cut to the chase.
-                    //
-                    return (isNegative) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-                }
-                if ((exp & 15) != 0) {
-                    dValue *= SMALL_10_POW[exp & 15];
-                }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 0; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= BIG_10_POW[j];
-                        }
-                    }
-                }
-            } else if (exp < 0) {
-                exp = -exp;
-                if (decExponent < SINGLE_MIN_DECIMAL_EXPONENT - 1) {
-                    //
-                    // Lets face it. This is going to be
-                    // zero. Cut to the chase.
-                    //
-                    return (isNegative) ? -0.0f : 0.0f;
-                }
-                if ((exp & 15) != 0) {
-                    dValue /= SMALL_10_POW[exp & 15];
-                }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 0; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= TINY_10_POW[j];
-                        }
-                    }
-                }
-            }
-            fValue = Math.clamp((float) dValue, Float.MIN_VALUE, Float.MAX_VALUE);
-
-            //
-            // fValue is now approximately the result.
-            // The hard part is adjusting it, by comparison
-            // with FDBigInteger arithmetic.
-            // Formulate the EXACT big-number result as
-            // bigD0 * 10^exp
-            //
-            if (nDigits > SINGLE_MAX_NDIGITS) {
-                nDigits = SINGLE_MAX_NDIGITS + 1;
-                digits[SINGLE_MAX_NDIGITS] = '1';
-            }
-            FDBigInteger bigD0 = new FDBigInteger(iValue, digits, kDigits, nDigits);
-            exp = decExponent - nDigits;
-
-            int ieeeBits = Float.floatToRawIntBits(fValue); // IEEE-754 bits of float candidate
-            final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
-            final int D5 = Math.max(0, exp); // powers of 5 in bigD, value is not modified inside correctionLoop
-            bigD0 = bigD0.multByPow52(D5, 0);
-            bigD0.makeImmutable();   // prevent bigD0 modification inside correctionLoop
-            FDBigInteger bigD = null;
-            int prevD2 = 0;
-
-            correctionLoop:
-            while (true) {
-                // here ieeeBits can't be NaN, Infinity or zero
-                int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
-                int bigBbits = ieeeBits & FloatConsts.SIGNIF_BIT_MASK;
-                if (binexp > 0) {
-                    bigBbits |= SINGLE_FRACT_HOB;
-                } else { // Normalize denormalized numbers.
-                    assert bigBbits != 0 : bigBbits; // floatToBigInt(0.0)
-                    int leadingZeros = Integer.numberOfLeadingZeros(bigBbits);
-                    int shift = leadingZeros - (31 - SINGLE_EXP_SHIFT);
-                    bigBbits <<= shift;
-                    binexp = 1 - shift;
-                }
-                binexp -= FloatConsts.EXP_BIAS;
-                int lowOrderZeros = Integer.numberOfTrailingZeros(bigBbits);
-                bigBbits >>>= lowOrderZeros;
-                final int bigIntExp = binexp - SINGLE_EXP_SHIFT + lowOrderZeros;
-                final int bigIntNBits = SINGLE_EXP_SHIFT + 1 - lowOrderZeros;
-
-                //
-                // Scale bigD, bigB appropriately for
-                // big-integer operations.
-                // Naively, we multiply by powers of ten
-                // and powers of two. What we actually do
-                // is keep track of the powers of 5 and
-                // powers of 2 we would use, then factor out
-                // common divisors before doing the work.
-                //
-                int B2 = B5; // powers of 2 in bigB
-                int D2 = D5; // powers of 2 in bigD
-                int Ulp2;   // powers of 2 in halfUlp.
-                if (bigIntExp >= 0) {
-                    B2 += bigIntExp;
-                } else {
-                    D2 -= bigIntExp;
-                }
-                Ulp2 = B2;
-                // shift bigB and bigD left by a number s. t.
-                // halfUlp is still an integer.
-                int hulpbias;
-                if (binexp <= -FloatConsts.EXP_BIAS) {
-                    // This is going to be a denormalized number
-                    // (if not actually zero).
-                    // half an ULP is at 2^-(FloatConsts.EXP_BIAS+SINGLE_EXP_SHIFT+1)
-                    hulpbias = binexp + lowOrderZeros + FloatConsts.EXP_BIAS;
-                } else {
-                    hulpbias = 1 + lowOrderZeros;
-                }
-                B2 += hulpbias;
-                D2 += hulpbias;
-                // if there are common factors of 2, we might just as well
-                // factor them out, as they add nothing useful.
-                int common2 = Math.min(B2, Math.min(D2, Ulp2));
-                B2 -= common2;
-                D2 -= common2;
-                Ulp2 -= common2;
-                // do multiplications by powers of 5 and 2
-                FDBigInteger bigB = FDBigInteger.valueOfMulPow52(bigBbits, B5, B2);
-                if (bigD == null || prevD2 != D2) {
-                    bigD = bigD0.leftShift(D2);
-                    prevD2 = D2;
-                }
-                //
-                // to recap:
-                // bigB is the scaled-big-int version of our floating-point
-                // candidate.
-                // bigD is the scaled-big-int version of the exact value
-                // as we understand it.
-                // halfUlp is 1/2 an ulp of bigB, except for special cases
-                // of exact powers of 2
-                //
-                // the plan is to compare bigB with bigD, and if the difference
-                // is less than halfUlp, then we're satisfied. Otherwise,
-                // use the ratio of difference to halfUlp to calculate a fudge
-                // factor to add to the floating value, then go 'round again.
-                //
-                FDBigInteger diff;
-                int cmpResult;
-                boolean overvalue;
-                if ((cmpResult = bigB.cmp(bigD)) > 0) {
-                    overvalue = true; // our candidate is too big.
-                    diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
-                    if ((bigIntNBits == 1) && (bigIntExp > -FloatConsts.EXP_BIAS + 1)) {
-                        // candidate is a normalized exact power of 2 and
-                        // is too big (larger than Float.MIN_NORMAL). We will be subtracting.
-                        // For our purposes, ulp is the ulp of the
-                        // next smaller range.
-                        Ulp2 -= 1;
-                        if (Ulp2 < 0) {
-                            // rats. Cannot de-scale ulp this far.
-                            // must scale diff in other direction.
-                            Ulp2 = 0;
-                            diff = diff.leftShift(1);
-                        }
-                    }
-                } else if (cmpResult < 0) {
-                    overvalue = false; // our candidate is too small.
-                    diff = bigD.rightInplaceSub(bigB); // bigB is not user further - reuse
-                } else {
-                    // the candidate is exactly right!
-                    // this happens with surprising frequency
-                    break correctionLoop;
-                }
-                cmpResult = diff.cmpPow52(B5, Ulp2);
-                if ((cmpResult) < 0) {
-                    // difference is small.
-                    // this is close enough
-                    break correctionLoop;
-                } else if (cmpResult == 0) {
-                    // difference is exactly half an ULP
-                    // round to some other value maybe, then finish
-                    if ((ieeeBits & 1) != 0) { // half ties to even
-                        ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    }
-                    break correctionLoop;
-                } else {
-                    // difference is non-trivial.
-                    // could scale addend by ratio of difference to
-                    // halfUlp here, if we bothered to compute that difference.
-                    // Most of the time ( I hope ) it is about 1 anyway.
-                    ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
-                        break correctionLoop; // oops. Fell off end of range.
-                    }
-                    continue; // try again.
-                }
-
-            }
-            if (isNegative) {
-                ieeeBits |= FloatConsts.SIGN_BIT_MASK;
-            }
-            return Float.intBitsToFloat(ieeeBits);
+        private double signed(double v) {
+            return isNegative ? -v : v;
         }
 
+        private float floatValue() {
+            /* For details not covered here, see comments in doubleValue(). */
+            if (e <= E_THR_Z[BINARY_32_IX]) {
+                return signed(0.0f);
+            }
+            if (e >= E_THR_I[BINARY_32_IX]) {
+                return signed(Float.POSITIVE_INFINITY);
+            }
+            int n = this.n;
+            int ep = e - n;
+            float v;
+            int m = Math.min(n, MathUtils.N);
+            long fl = toLong(m);
+            if (n <= MathUtils.N && 0 <= ep && e <= MathUtils.N) {
+                fl *= MathUtils.pow10(ep);  // 0 ≤ ep < 19
+                v = fl >= 0 ? fl : 2.0f * (fl >>> 1 | fl & 0b1);
+                return signed(v);
+            }
+            if (n <= FLOG_10_MAX_LONG && -SINGLE_MAX_SMALL_TEN <= ep) {
+                v = fl;
+                boolean isExact = (long) v == fl;
+                if (isExact && ep <= SINGLE_MAX_SMALL_TEN) {
+                    v = ep >= 0 ? v * SINGLE_SMALL_10_POW[ep] : v / SINGLE_SMALL_10_POW[-ep];
+                    return signed(v);
+                }
+                /*
+                 * The similar case in doubleValue() where fl is exact and
+                 * ep is somewhat larger than MAX_SMALL_TEN is already covered
+                 * above for float.
+                 */
+            }
+            long ll = fl;
+            long lh;
+            if (n <= MathUtils.N) {
+                ll *= MathUtils.pow10(MathUtils.N - n);
+                lh = ll;
+            } else {
+                lh = ll + 1;
+            }
+            int el = e - MathUtils.N;
+            int rp = MathUtils.flog2pow10(el) + 2;
+            long g1 = MathUtils.g1(el);
+            long nl1 = Math.unsignedMultiplyHigh(ll, g1);
+            long nl0 = ll * g1;
+            long nh1 = Math.unsignedMultiplyHigh(lh, g1 + 1);
+            long nh0 = lh * (g1 + 1);
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
+            if (bl + rp > Float.MIN_EXPONENT) {
+                float ul = nl1 | (nl0 != 0 ? 1 : 0);
+                float uh = nh1 | (nh0 != 0 ? 1 : 0);
+                v = Math.scalb(ul, rp);
+                if (ul == uh || v == Float.POSITIVE_INFINITY) {
+                    return signed(v);
+                }
+            } else {
+                int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+                if (bh + rp <= Float.MIN_EXPONENT) {
+                    int sh = FloatToDecimal.Q_MIN - rp;
+                    long sbMask = -1L >>> 1 - sh;
 
-        /**
-         * All the positive powers of 10 that can be
-         * represented exactly in double/float.
-         */
+                    long nl1p = nl1 >>> sh;
+                    long rb = nl1 >>> sh - 1;
+                    long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                    long corr = rb & (sb | nl1p) & 0b1;
+                    float ul = nl1p + corr;
+
+                    long nh1p = nh1 >>> sh;
+                    rb = nh1 >>> sh - 1;
+                    sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                    corr = rb & (sb | nh1p) & 0b1;
+                    float uh = nh1p + corr;
+                    v = Math.scalb(ul, rp + sh);
+                    if (ul == uh) {
+                        return signed(v);
+                    }
+                } else {
+                    return signed(Float.MIN_NORMAL);
+                }
+            }
+            int bits = Float.floatToRawIntBits(v);
+            int be = (bits & FloatConsts.EXP_BIT_MASK) >>> FloatConsts.SIGNIFICAND_WIDTH - 1;
+            int qr = be - (FloatConsts.EXP_BIAS + FloatConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 1 : 0);
+            int cr = 2 * (bits & FloatConsts.SIGNIF_BIT_MASK | (be != 0 ? FloatToDecimal.C_MIN : 0)) + 1;
+            FDBigInteger lhs = valueOfMulPow52(cr, Math.max(-ep, 0), Math.max(qr - ep, 0));
+            FDBigInteger rhs = new FDBigInteger(fl, d, m, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0));
+            int cmp = lhs.cmp(rhs);
+            v = Float.intBitsToFloat(cmp < 0
+                    ? bits + 1
+                    : cmp > 0
+                    ? bits
+                    : bits + (bits & 0b1));
+            return signed(v);
+        }
+
+        private float signed(float v) {
+            return isNegative ? -v : v;
+        }
+
+        /* All the powers of 10 that can be represented exactly in double. */
+        @Stable
         private static final double[] SMALL_10_POW = {
-            1.0e0,
-            1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5,
-            1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10,
-            1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15,
-            1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20,
-            1.0e21, 1.0e22
+                1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+                1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+                1e20, 1e21, 1e22,
         };
 
+        /* All the powers of 10 that can be represented exactly in float. */
+        @Stable
         private static final float[] SINGLE_SMALL_10_POW = {
-            1.0e0f,
-            1.0e1f, 1.0e2f, 1.0e3f, 1.0e4f, 1.0e5f,
-            1.0e6f, 1.0e7f, 1.0e8f, 1.0e9f, 1.0e10f
+                1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f, 1e7f, 1e8f, 1e9f,
+                1e10f,
         };
 
-        private static final double[] BIG_10_POW = {
-            1e16, 1e32, 1e64, 1e128, 1e256 };
-        private static final double[] TINY_10_POW = {
-            1e-16, 1e-32, 1e-64, 1e-128, 1e-256 };
-
-        private static final int MAX_SMALL_TEN = SMALL_10_POW.length-1;
-        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length-1;
+        private static final int MAX_SMALL_TEN = SMALL_10_POW.length - 1;
+        private static final int SINGLE_MAX_SMALL_TEN = SINGLE_SMALL_10_POW.length - 1;
 
     }
 
@@ -1731,22 +1200,44 @@ public class FloatingDecimal{
      * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
      * The returned object is a <code>ThreadLocal</code> variable of this class.
      *
-     * @param d The double precision value to convert.
+     * @param d      The double precision value to convert.
+     * @param compat    compatibility with releases < JDK 21
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
-        return getBinaryToASCIIConverter(d, true);
+    public static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d, boolean compat) {
+        return compat
+                ? getCompatBinaryToASCIIConverter(d)
+                : getBinaryToASCIIConverter(d);
     }
 
-    /**
-     * Returns a <code>BinaryToASCIIConverter</code> for a <code>double</code>.
-     * The returned object is a <code>ThreadLocal</code> variable of this class.
-     *
-     * @param d The double precision value to convert.
-     * @param isCompatibleFormat
-     * @return The converter.
+    private static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d) {
+        assert Double.isFinite(d);
+
+        FormattedFPDecimal dec = FormattedFPDecimal.split(d);
+        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
+
+        buf.nDigits = dec.getPrecision();
+        buf.decExponent = dec.getExp() + buf.nDigits;
+        buf.firstDigitIndex = 0;
+        buf.exactDecimalConversion = dec.getExact();
+        buf.decimalDigitsRoundedUp = dec.getAway();
+
+        long f = dec.getSignificand();
+        byte[] digits = buf.digits;
+        for (int i = buf.nDigits - 1; i >= 0; --i) {
+            long q = f / 10;
+            digits[i] = (byte) ((f - 10 * q) + '0');
+            f = q;
+        }
+        return buf;
+    }
+
+    /*
+     * The old implementation of getBinaryToASCIIConverter().
+     * Should be removed in the future, along with its dependent methods and
+     * fields (> 550 lines).
      */
-    static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean isCompatibleFormat) {
+    private static BinaryToASCIIBuffer getCompatBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
@@ -1754,9 +1245,9 @@ public class FloatingDecimal{
         // Discover obvious special cases of NaN and Infinity.
         if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
             if ( fractBits == 0L ){
-                return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
+                throw new IllegalArgumentException((isNegative ? "-" : "") + INFINITY_REP);
             } else {
-                return B2AC_NOT_A_NUMBER;
+                throw new IllegalArgumentException(NAN_REP);
             }
         }
         // Finish unpacking
@@ -1780,772 +1271,603 @@ public class FloatingDecimal{
         }
         binExp -= DoubleConsts.EXP_BIAS;
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
-        buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, fractBits, nSignificantBits, isCompatibleFormat);
+        buf.dtoa(binExp, fractBits, nSignificantBits);
         return buf;
-    }
-
-    private static BinaryToASCIIConverter getBinaryToASCIIConverter(float f) {
-        int fBits = Float.floatToRawIntBits( f );
-        boolean isNegative = (fBits&FloatConsts.SIGN_BIT_MASK) != 0;
-        int fractBits = fBits&FloatConsts.SIGNIF_BIT_MASK;
-        int binExp = (fBits&FloatConsts.EXP_BIT_MASK) >> SINGLE_EXP_SHIFT;
-        // Discover obvious special cases of NaN and Infinity.
-        if ( binExp == (FloatConsts.EXP_BIT_MASK>>SINGLE_EXP_SHIFT) ) {
-            if ( fractBits == 0L ){
-                return isNegative ? B2AC_NEGATIVE_INFINITY : B2AC_POSITIVE_INFINITY;
-            } else {
-                return B2AC_NOT_A_NUMBER;
-            }
-        }
-        // Finish unpacking
-        // Normalize denormalized numbers.
-        // Insert assumed high-order bit for normalized numbers.
-        // Subtract exponent bias.
-        int  nSignificantBits;
-        if ( binExp == 0 ){
-            if ( fractBits == 0 ){
-                // not a denorm, just a 0!
-                return isNegative ? B2AC_NEGATIVE_ZERO : B2AC_POSITIVE_ZERO;
-            }
-            int leadingZeros = Integer.numberOfLeadingZeros(fractBits);
-            int shift = leadingZeros-(31-SINGLE_EXP_SHIFT);
-            fractBits <<= shift;
-            binExp = 1 - shift;
-            nSignificantBits =  32 - leadingZeros; // recall binExp is  - shift count.
-        } else {
-            fractBits |= SINGLE_FRACT_HOB;
-            nSignificantBits = SINGLE_EXP_SHIFT+1;
-        }
-        binExp -= FloatConsts.EXP_BIAS;
-        BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
-        buf.setSign(isNegative);
-        // call the routine that actually does all the hard work.
-        buf.dtoa(binExp, ((long)fractBits)<<(EXP_SHIFT-SINGLE_EXP_SHIFT), nSignificantBits, true);
-        return buf;
-    }
-
-    @SuppressWarnings("fallthrough")
-    static ASCIIToBinaryConverter readJavaFormatString( String in ) throws NumberFormatException {
-        boolean isNegative = false;
-        boolean signSeen   = false;
-        int     decExp;
-        char    c;
-
-    parseNumber:
-        try{
-            in = in.trim(); // don't fool around with white space.
-                            // throws NullPointerException if null
-            int len = in.length();
-            if ( len == 0 ) {
-                throw new NumberFormatException("empty String");
-            }
-            int i = 0;
-            switch (in.charAt(i)){
-            case '-':
-                isNegative = true;
-                //FALLTHROUGH
-            case '+':
-                i++;
-                signSeen = true;
-            }
-            c = in.charAt(i);
-            if(c == 'N') { // Check for NaN
-                if((len-i)==NAN_LENGTH && in.indexOf(NAN_REP,i)==i) {
-                    return A2BC_NOT_A_NUMBER;
-                }
-                // something went wrong, throw exception
-                break parseNumber;
-            } else if(c == 'I') { // Check for Infinity strings
-                if((len-i)==INFINITY_LENGTH && in.indexOf(INFINITY_REP,i)==i) {
-                    return isNegative? A2BC_NEGATIVE_INFINITY : A2BC_POSITIVE_INFINITY;
-                }
-                // something went wrong, throw exception
-                break parseNumber;
-            } else if (c == '0')  { // check for hexadecimal floating-point number
-                if (len > i+1 ) {
-                    char ch = in.charAt(i+1);
-                    if (ch == 'x' || ch == 'X' ) { // possible hex string
-                        return parseHexString(in);
-                    }
-                }
-            }  // look for and process decimal floating-point string
-
-            byte[] digits = new byte[ len ];
-            boolean decSeen = false;
-            int nDigits = 0;
-            int decPt = 0;
-            int nLeadZero = 0;
-            int nTrailZero = 0;
-
-        skipLeadingZerosLoop:
-            while (i < len) {
-                c = in.charAt(i);
-                if (c == '0') {
-                    nLeadZero++;
-                } else if (c == '.') {
-                    if (decSeen) {
-                        // already saw one ., this is the 2nd.
-                        throw new NumberFormatException("multiple points");
-                    }
-                    decPt = i;
-                    if (signSeen) {
-                        decPt -= 1;
-                    }
-                    decSeen = true;
-                } else {
-                    break skipLeadingZerosLoop;
-                }
-                i++;
-            }
-        digitLoop:
-            while (i < len) {
-                c = in.charAt(i);
-                if (c >= '1' && c <= '9') {
-                    digits[nDigits++] = (byte) c;
-                    nTrailZero = 0;
-                } else if (c == '0') {
-                    digits[nDigits++] = (byte) c;
-                    nTrailZero++;
-                } else if (c == '.') {
-                    if (decSeen) {
-                        // already saw one ., this is the 2nd.
-                        throw new NumberFormatException("multiple points");
-                    }
-                    decPt = i;
-                    if (signSeen) {
-                        decPt -= 1;
-                    }
-                    decSeen = true;
-                } else {
-                    break digitLoop;
-                }
-                i++;
-            }
-            nDigits -=nTrailZero;
-            //
-            // At this point, we've scanned all the digits and decimal
-            // point we're going to see. Trim off leading and trailing
-            // zeros, which will just confuse us later, and adjust
-            // our initial decimal exponent accordingly.
-            // To review:
-            // we have seen i total characters.
-            // nLeadZero of them were zeros before any other digits.
-            // nTrailZero of them were zeros after any other digits.
-            // if ( decSeen ), then a . was seen after decPt characters
-            // ( including leading zeros which have been discarded )
-            // nDigits characters were neither lead nor trailing
-            // zeros, nor point
-            //
-            //
-            // special hack: if we saw no non-zero digits, then the
-            // answer is zero!
-            // Unfortunately, we feel honor-bound to keep parsing!
-            //
-            boolean isZero = (nDigits == 0);
-            if ( isZero &&  nLeadZero == 0 ){
-                // we saw NO DIGITS AT ALL,
-                // not even a crummy 0!
-                // this is not allowed.
-                break parseNumber; // go throw exception
-            }
-            //
-            // Our initial exponent is decPt, adjusted by the number of
-            // discarded zeros. Or, if there was no decPt,
-            // then its just nDigits adjusted by discarded trailing zeros.
-            //
-            if ( decSeen ){
-                decExp = decPt - nLeadZero;
-            } else {
-                decExp = nDigits + nTrailZero;
-            }
-
-            //
-            // Look for 'e' or 'E' and an optionally signed integer.
-            //
-            if ( (i < len) &&  (((c = in.charAt(i) )=='e') || (c == 'E') ) ){
-                int expSign = 1;
-                int expVal  = 0;
-                int reallyBig = Integer.MAX_VALUE / 10;
-                boolean expOverflow = false;
-                switch( in.charAt(++i) ){
-                case '-':
-                    expSign = -1;
-                    //FALLTHROUGH
-                case '+':
-                    i++;
-                }
-                int expAt = i;
-            expLoop:
-                while ( i < len  ){
-                    if ( expVal >= reallyBig ){
-                        // the next character will cause integer
-                        // overflow.
-                        expOverflow = true;
-                    }
-                    c = in.charAt(i++);
-                    if(c>='0' && c<='9') {
-                        expVal = expVal*10 + ( (int)c - (int)'0' );
-                    } else {
-                        i--;           // back up.
-                        break expLoop; // stop parsing exponent.
-                    }
-                }
-                int expLimit = BIG_DECIMAL_EXPONENT + nDigits + nTrailZero;
-                if (expOverflow || (expVal > expLimit)) {
-                    // There is still a chance that the exponent will be safe to
-                    // use: if it would eventually decrease due to a negative
-                    // decExp, and that number is below the limit.  We check for
-                    // that here.
-                    if (!expOverflow && (expSign == 1 && decExp < 0)
-                            && (expVal + decExp) < expLimit) {
-                        // Cannot overflow: adding a positive and negative number.
-                        decExp += expVal;
-                    } else {
-                        //
-                        // The intent here is to end up with
-                        // infinity or zero, as appropriate.
-                        // The reason for yielding such a small decExponent,
-                        // rather than something intuitive such as
-                        // expSign*Integer.MAX_VALUE, is that this value
-                        // is subject to further manipulation in
-                        // doubleValue() and floatValue(), and I don't want
-                        // it to be able to cause overflow there!
-                        // (The only way we can get into trouble here is for
-                        // really outrageous nDigits+nTrailZero, such as 2
-                        // billion.)
-                        //
-                        decExp = expSign * expLimit;
-                    }
-                } else {
-                    // this should not overflow, since we tested
-                    // for expVal > (MAX+N), where N >= abs(decExp)
-                    decExp = decExp + expSign*expVal;
-                }
-
-                // if we saw something not a digit ( or end of string )
-                // after the [Ee][+-], without seeing any digits at all
-                // this is certainly an error. If we saw some digits,
-                // but then some trailing garbage, that might be ok.
-                // so we just fall through in that case.
-                // HUMBUG
-                if ( i == expAt ) {
-                    break parseNumber; // certainly bad
-                }
-            }
-            //
-            // We parsed everything we could.
-            // If there are leftovers, then this is not good input!
-            //
-            if ( i < len &&
-                ((i != len - 1) ||
-                (in.charAt(i) != 'f' &&
-                 in.charAt(i) != 'F' &&
-                 in.charAt(i) != 'd' &&
-                 in.charAt(i) != 'D'))) {
-                break parseNumber; // go throw exception
-            }
-            if(isZero) {
-                return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-            }
-            return new ASCIIToBinaryBuffer(isNegative, decExp, digits, nDigits);
-        } catch ( StringIndexOutOfBoundsException e ){ }
-        throw new NumberFormatException("For input string: \"" + in + "\"");
-    }
-
-    private static class HexFloatPattern {
-        /**
-         * Grammar is compatible with hexadecimal floating-point constants
-         * described in section 6.4.4.2 of the C99 specification.
-         */
-        private static final Pattern VALUE = Pattern.compile(
-                   //1           234                   56                7                   8      9
-                    "([-+])?0[xX](((\\p{XDigit}+)\\.?)|((\\p{XDigit}*)\\.(\\p{XDigit}+)))[pP]([-+])?(\\p{Digit}+)[fFdD]?"
-                    );
     }
 
     /**
-     * Converts string s to a suitable floating decimal; uses the
-     * double constructor and sets the roundDir variable appropriately
-     * in case the value is later converted to a float.
+     * The input must match the {@link Double#valueOf(String) rules described here},
+     * about leading and trailing whitespaces, and the grammar.
      *
-     * @param s The <code>String</code> to parse.
+     * @param in the non-null input
+     * @param ix one of the {@code BINARY_<S>_IX} constants, where {@code <S>}
+     *           is one of 16, 32, 64
+     * @return an appropriate binary converter
+     * @throws NullPointerException  if the input is null
+     * @throws NumberFormatException if the input is malformed
      */
-   static ASCIIToBinaryConverter parseHexString(String s) {
-            // Verify string is a member of the hexadecimal floating-point
-            // string language.
-            Matcher m = HexFloatPattern.VALUE.matcher(s);
-            boolean validInput = m.matches();
-            if (!validInput) {
-                // Input does not match pattern
-                throw new NumberFormatException("For input string: \"" + s + "\"");
-            } else { // validInput
-                //
-                // We must isolate the sign, significand, and exponent
-                // fields.  The sign value is straightforward.  Since
-                // floating-point numbers are stored with a normalized
-                // representation, the significand and exponent are
-                // interrelated.
-                //
-                // After extracting the sign, we normalized the
-                // significand as a hexadecimal value, calculating an
-                // exponent adjust for any shifts made during
-                // normalization.  If the significand is zero, the
-                // exponent doesn't need to be examined since the output
-                // will be zero.
-                //
-                // Next the exponent in the input string is extracted.
-                // Afterwards, the significand is normalized as a *binary*
-                // value and the input value's normalized exponent can be
-                // computed.  The significand bits are copied into a
-                // double significand; if the string has more logical bits
-                // than can fit in a double, the extra bits affect the
-                // round and sticky bits which are used to round the final
-                // value.
-                //
-                //  Extract significand sign
-                String group1 = m.group(1);
-                boolean isNegative = ((group1 != null) && group1.equals("-"));
+    private static double readJavaFormatString(String in, int ix) {
+        /*
+         * The scanning proper does not allocate any object,
+         * nor does it perform any costly computation.
+         * This means that all scanning errors are detected without consuming
+         * any heap, before actually throwing.
+         *
+         * Once scanning is complete, the method determines the length
+         * of a prefix of the significand that is sufficient for correct
+         * rounding according to roundTiesToEven.
+         * The actual value of the prefix length might not be optimal,
+         * but is always a safe choice.
+         *
+         * For hexadecimal input, the prefix is processed by this method directly,
+         * without allocating objects before creating the returned instance.
+         *
+         * For decimal input, the prefix is copied to the returned instance,
+         * along with the other information needed for the conversion.
+         * For comparison, the prefix length is at most
+         *       23 for BINARY_16_IX (Float16, once integrated in java.base)
+         *      114 for BINARY_32_IX (float)
+         *      769 for BINARY_64_IX (double)
+         * but is much shorter in common cases.
+         */
+        int len = in.length();  // fail fast on null
 
-                //  Extract Significand magnitude
-                //
-                // Based on the form of the significand, calculate how the
-                // binary exponent needs to be adjusted to create a
-                // normalized//hexadecimal* floating-point number; that
-                // is, a number where there is one nonzero hex digit to
-                // the left of the (hexa)decimal point.  Since we are
-                // adjusting a binary, not hexadecimal exponent, the
-                // exponent is adjusted by a multiple of 4.
-                //
-                // There are a number of significand scenarios to consider;
-                // letters are used in indicate nonzero digits:
-                //
-                // 1. 000xxxx       =>      x.xxx   normalized
-                //    increase exponent by (number of x's - 1)*4
-                //
-                // 2. 000xxx.yyyy =>        x.xxyyyy        normalized
-                //    increase exponent by (number of x's - 1)*4
-                //
-                // 3. .000yyy  =>   y.yy    normalized
-                //    decrease exponent by (number of zeros + 1)*4
-                //
-                // 4. 000.00000yyy => y.yy normalized
-                //    decrease exponent by (number of zeros to right of point + 1)*4
-                //
-                // If the significand is exactly zero, return a properly
-                // signed zero.
-                //
+        /* Skip leading whitespaces. */
+        int i = skipWhitespaces(in, 0);  // main running index
+        if (i == len) {
+            throw new NumberFormatException("empty String");
+        }
 
-                String significandString;
-                int signifLength;
-                int exponentAdjust;
-                {
-                    int leftDigits = 0; // number of meaningful digits to
-                    // left of "decimal" point
-                    // (leading zeros stripped)
-                    int rightDigits = 0; // number of digits to right of
-                    // "decimal" point; leading zeros
-                    // must always be accounted for
-                    //
-                    // The significand is made up of either
-                    //
-                    // 1. group 4 entirely (integer portion only)
-                    //
-                    // OR
-                    //
-                    // 2. the fractional portion from group 7 plus any
-                    // (optional) integer portions from group 6.
-                    //
-                    String group4;
-                    if ((group4 = m.group(4)) != null) {  // Integer-only significand
-                        // Leading zeros never matter on the integer portion
-                        significandString = stripLeadingZeros(group4);
-                        leftDigits = significandString.length();
-                    } else {
-                        // Group 6 is the optional integer; leading zeros
-                        // never matter on the integer portion
-                        String group6 = stripLeadingZeros(m.group(6));
-                        leftDigits = group6.length();
+        /* Scan opt significand sign. */
+        int ch;  // running char
+        int ssign = ' ';  // ' ' iff sign is implicit
+        if ((ch = in.charAt(i)) == '-' || ch == '+') {  // i < len
+            ssign = ch;
+            ++i;
+        }
 
-                        // fraction
-                        String group7 = m.group(7);
-                        rightDigits = group7.length();
+        /* Determine whether we are facing a symbolic value or hex notation. */
+        boolean isDec = true;  // decimal input until proven to the contrary
+        if (i < len) {
+            ch = in.charAt(i);
+            if (ch == 'I') {
+                scanSymbolic(in, i, INFINITY_REP);
+                return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+            }
+            if (ch == 'N') {
+                scanSymbolic(in, i, NAN_REP);
+                return Double.NaN;  // ignore sign
+            }
+            if (ch == '0' && i + 1 < len && toLowerCase(in.charAt(i + 1)) == 'x') {
+                isDec = false;
+                i += 2;
+            }
+        }
 
-                        // Turn "integer.fraction" into "integer"+"fraction"
-                        significandString =
-                                ((group6 == null) ? "" : group6) + // is the null
-                                        // check necessary?
-                                        group7;
-                    }
+        int pt = 0;  // index after point, 0 iff absent
+        int start = i;  // index of start of the significand, excluding opt sign
 
-                    significandString = stripLeadingZeros(significandString);
-                    signifLength = significandString.length();
+        /* Skip opt leading zeros, including an opt point. */
+        while (i < len && ((ch = in.charAt(i)) == '0' || ch == '.')) {
+            ++i;
+            if (ch == '.') {
+                pt = checkMultiplePoints(pt, i);
+            }
+        }
+        int lz = i;  // index after leading group of zeros or point
 
-                    //
-                    // Adjust exponent as described above
-                    //
-                    if (leftDigits >= 1) {  // Cases 1 and 2
-                        exponentAdjust = 4 * (leftDigits - 1);
-                    } else {                // Cases 3 and 4
-                        exponentAdjust = -4 * (rightDigits - signifLength + 1);
-                    }
+        /*
+         * Scan all remaining chars of the significand, including an opt point.
+         * Also locate the index after the end of the trailing group of non-zeros
+         * inside this range of the input.
+         */
+        int tnz = 0;  // index after trailing group of non-zeros, 0 iff absent
+        while (i < len && (isDigit(ch = in.charAt(i), isDec) || ch == '.')) {
+            i++;
+            if (ch == '.') {
+                pt = checkMultiplePoints(pt, i);
+            } else if (ch != '0') {
+                tnz = i;
+            }
+        }
+        check(in, i - start > (pt != 0 ? 1 : 0));  // must have at least one digit
+        int stop = i;  // index after the significand
 
-                    // If the significand is zero, the exponent doesn't
-                    // matter; return a properly signed zero.
+        /* Scan exponent part, optional for dec, mandatory for hex. */
+        long ep = 0;  // exponent, implicitly 0
+        boolean hasExp = false;
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'e' && isDec
+                || ch == 'p' && !isDec)) {
+            ++i;
 
-                    if (signifLength == 0) { // Only zeros in input
-                        return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-                    }
-                }
+            /* Scan opt exponent sign. */
+            int esign = ' ';  // esign == ' ' iff the sign is implicit
+            if (i < len && ((ch = in.charAt(i)) == '-' || ch == '+')) {
+                esign = ch;
+                ++i;
+            }
 
-                //  Extract Exponent
-                //
-                // Use an int to read in the exponent value; this should
-                // provide more than sufficient range for non-contrived
-                // inputs.  If reading the exponent in as an int does
-                // overflow, examine the sign of the exponent and
-                // significand to determine what to do.
-                //
-                String group8 = m.group(8);
-                boolean positiveExponent = (group8 == null) || group8.equals("+");
-                long unsignedRawExponent;
-                try {
-                    unsignedRawExponent = Integer.parseInt(m.group(9));
-                }
-                catch (NumberFormatException e) {
-                    // At this point, we know the exponent is
-                    // syntactically well-formed as a sequence of
-                    // digits.  Therefore, if an NumberFormatException
-                    // is thrown, it must be due to overflowing int's
-                    // range.  Also, at this point, we have already
-                    // checked for a zero significand.  Thus the signs
-                    // of the exponent and significand determine the
-                    // final result:
-                    //
-                    //                      significand
-                    //                      +               -
-                    // exponent     +       +infinity       -infinity
-                    //              -       +0.0            -0.0
-                    return isNegative ?
-                              (positiveExponent ? A2BC_NEGATIVE_INFINITY : A2BC_NEGATIVE_ZERO)
-                            : (positiveExponent ? A2BC_POSITIVE_INFINITY : A2BC_POSITIVE_ZERO);
+            /* Scan the exponent digits. Accumulate in ep, clamping at 10^10. */
+            while (i < len && isDigit(ch = in.charAt(i), true)) {  // ep is decimal
+                ++i;
+                ep = appendDecDigit(ep, ch);
+            }
+            check(in, i - stop >= 3  // at least 3 chars after significand
+                    || i - stop == 2 && esign == ' ');  // 2 chars, one is digit
+            if (esign == '-') {
+                ep = -ep;
+            }
+            hasExp = true;
+        }
+        /*
+         * |ep| < 10^10, or |ep| = 10^10 when considered "large".
+         * A "large" ep either generates a zero or an infinity.
+         */
+        check(in, isDec | hasExp);
 
-                }
+        /* Skip opt [FfDd]? suffix. */
+        if (i < len && ((ch = toLowerCase(in.charAt(i))) == 'f' || ch == 'd')) {
+            ++i;
+        }
 
-                long rawExponent =
-                        (positiveExponent ? 1L : -1L) * // exponent sign
-                                unsignedRawExponent;            // exponent magnitude
+        /* Skip optional trailing whitespaces, then must be at the end of input. */
+        check(in, skipWhitespaces(in, i) == len);
 
-                // Calculate partially adjusted exponent
-                long exponent = rawExponent + exponentAdjust;
+        /* By now, the input is syntactically correct. */
+        if (tnz == 0) {  // all zero digits, so ignore ep and point
+            return ssign != '-' ? 0.0 : -0.0;
+        }
 
-                // Starting copying non-zero bits into proper position in
-                // a long; copy explicit bit too; this will be masked
-                // later for normal values.
+        /*
+         * Virtually adjust the point position to be just after
+         * the last non-zero digit by adjusting the exponent accordingly
+         * (without modifying the physical pt, as it is used later on).
+         *
+         * Determine the count of digits, excluding leading and trailing zeros.
+         *
+         * These are the possible situations:
+         *         |lz               |tnz     |stop
+         * 00000000123456000000234567000000000
+         *
+         *  |pt     |lz               |tnz     |stop
+         * .00000000123456000000234567000000000
+         *
+         *    |pt   |lz               |tnz     |stop
+         * 00.000000123456000000234567000000000
+         *
+         *          |pt=lz            |tnz     |stop
+         * 00000000.123456000000234567000000000
+         *
+         *         |lz  |pt           |tnz     |stop
+         * 000000001234.56000000234567000000000
+         *
+         *         |lz      |pt       |tnz     |stop
+         * 0000000012345600.0000234567000000000
+         *
+         *         |lz          |pt   |tnz     |stop
+         * 00000000123456000000.234567000000000
+         *
+         *         |lz            |pt |tnz     |stop
+         * 0000000012345600000023.4567000000000
+         *
+         *         |lz                |pt=tnz  |stop
+         * 00000000123456000000234567.000000000
+         *
+         *         |lz               |tnz  |pt |stop
+         * 0000000012345600000023456700000.0000
+         *
+         *         |lz               |tnz      |pt=stop
+         * 00000000123456000000234567000000000.
+         *
+         * In decimal, moving the point by one position means correcting ep by 1.
+         * In hexadecimal, it means correcting ep by 4.
+         */
+        long emult = isDec ? 1L : 4L;
+        int n = tnz - lz;  // number of significant digits, 1st approximation
+        if (pt == 0) {
+            ep += emult * (stop - tnz);
+        } else {
+            ep += emult * (pt - tnz);
+            if (pt > tnz) {  // '.' was counted as a position, adjust ep
+                ep -= emult;
+            } else if (lz < pt) {  // lz < pt ≤ tnz
+                n -= 1;
+            }
+        }
+        /*
+         * n = number of significant digits (that is, not counting leading nor
+         * trailing zeros)
+         * |ep| < 10^11
+         *
+         * The magnitude x of the input meets
+         *      x = f 10^ep  (decimal)
+         *      x = f 2^ep  (hexadecimal)
+         * Integer f = <d_1 ... d_n> consists of the n decimal or hexadecimal
+         * digits found in part [lz, tnz) of the input, and d_1 > 0, d_n > 0.
+         */
 
-                boolean round = false;
-                boolean sticky = false;
-                int nextShift;
-                long significand = 0L;
-                // First iteration is different, since we only copy
-                // from the leading significand bit; one more exponent
-                // adjust will be needed...
-
-                // IMPORTANT: make leadingDigit a long to avoid
-                // surprising shift semantics!
-                long leadingDigit = getHexDigit(significandString, 0);
-
-                //
-                // Left shift the leading digit (53 - (bit position of
-                // leading 1 in digit)); this sets the top bit of the
-                // significand to 1.  The nextShift value is adjusted
-                // to take into account the number of bit positions of
-                // the leadingDigit actually used.  Finally, the
-                // exponent is adjusted to normalize the significand
-                // as a binary value, not just a hex value.
-                //
-                if (leadingDigit == 1) {
-                    significand |= leadingDigit << 52;
-                    nextShift = 52 - 4;
-                    // exponent += 0
-                } else if (leadingDigit <= 3) { // [2, 3]
-                    significand |= leadingDigit << 51;
-                    nextShift = 52 - 5;
-                    exponent += 1;
-                } else if (leadingDigit <= 7) { // [4, 7]
-                    significand |= leadingDigit << 50;
-                    nextShift = 52 - 6;
-                    exponent += 2;
-                } else if (leadingDigit <= 15) { // [8, f]
-                    significand |= leadingDigit << 49;
-                    nextShift = 52 - 7;
-                    exponent += 3;
-                } else {
-                    throw new AssertionError("Result from digit conversion too large!");
-                }
-                // The preceding if-else could be replaced by a single
-                // code block based on the high-order bit set in
-                // leadingDigit.  Given leadingOnePosition,
-
-                // significand |= leadingDigit << (SIGNIFICAND_WIDTH - leadingOnePosition);
-                // nextShift = 52 - (3 + leadingOnePosition);
-                // exponent += (leadingOnePosition-1);
-
-                //
-                // Now the exponent variable is equal to the normalized
-                // binary exponent.  Code below will make representation
-                // adjustments if the exponent is incremented after
-                // rounding (includes overflows to infinity) or if the
-                // result is subnormal.
-                //
-
-                // Copy digit into significand until the significand can't
-                // hold another full hex digit or there are no more input
-                // hex digits.
-                int i = 0;
-                for (i = 1;
-                     i < signifLength && nextShift >= 0;
-                     i++) {
-                    long currentDigit = getHexDigit(significandString, i);
-                    significand |= (currentDigit << nextShift);
-                    nextShift -= 4;
-                }
-
-                // After the above loop, the bulk of the string is copied.
-                // Now, we must copy any partial hex digits into the
-                // significand AND compute the round bit and start computing
-                // sticky bit.
-
-                if (i < signifLength) { // at least one hex input digit exists
-                    long currentDigit = getHexDigit(significandString, i);
-
-                    // from nextShift, figure out how many bits need
-                    // to be copied, if any
-                    switch (nextShift) { // must be negative
-                        case -1:
-                            // three bits need to be copied in; can
-                            // set round bit
-                            significand |= ((currentDigit & 0xEL) >> 1);
-                            round = (currentDigit & 0x1L) != 0L;
-                            break;
-
-                        case -2:
-                            // two bits need to be copied in; can
-                            // set round and start sticky
-                            significand |= ((currentDigit & 0xCL) >> 2);
-                            round = (currentDigit & 0x2L) != 0L;
-                            sticky = (currentDigit & 0x1L) != 0;
-                            break;
-
-                        case -3:
-                            // one bit needs to be copied in
-                            significand |= ((currentDigit & 0x8L) >> 3);
-                            // Now set round and start sticky, if possible
-                            round = (currentDigit & 0x4L) != 0L;
-                            sticky = (currentDigit & 0x3L) != 0;
-                            break;
-
-                        case -4:
-                            // all bits copied into significand; set
-                            // round and start sticky
-                            round = ((currentDigit & 0x8L) != 0);  // is top bit set?
-                            // nonzeros in three low order bits?
-                            sticky = (currentDigit & 0x7L) != 0;
-                            break;
-
-                        default:
-                            throw new AssertionError("Unexpected shift distance remainder.");
-                            // break;
-                    }
-
-                    // Round is set; sticky might be set.
-
-                    // For the sticky bit, it suffices to check the
-                    // current digit and test for any nonzero digits in
-                    // the remaining unprocessed input.
-                    i++;
-                    while (i < signifLength && !sticky) {
-                        currentDigit = getHexDigit(significandString, i);
-                        sticky = sticky || (currentDigit != 0);
-                        i++;
-                    }
-
-                }
-                // else all of string was seen, round and sticky are
-                // correct as false.
-
-                // Float calculations
-                int floatBits = isNegative ? FloatConsts.SIGN_BIT_MASK : 0;
-                if (exponent >= Float.MIN_EXPONENT) {
-                    if (exponent > Float.MAX_EXPONENT) {
-                        // Float.POSITIVE_INFINITY
-                        floatBits |= FloatConsts.EXP_BIT_MASK;
-                    } else {
-                        int threshShift = DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH - 1;
-                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
-                        int iValue = (int) (significand >>> threshShift);
-                        if ((iValue & 3) != 1 || floatSticky) {
-                            iValue++;
-                        }
-                        floatBits |= (((((int) exponent) + (FloatConsts.EXP_BIAS - 1))) << SINGLE_EXP_SHIFT) + (iValue >> 1);
-                    }
-                } else {
-                    if (exponent < FloatConsts.MIN_SUB_EXPONENT - 1) {
-                        // 0
-                    } else {
-                        // exponent == -127 ==> threshShift = 53 - 2 + (-149) - (-127) = 53 - 24
-                        int threshShift = (int) ((DoubleConsts.SIGNIFICAND_WIDTH - 2 + FloatConsts.MIN_SUB_EXPONENT) - exponent);
-                        assert threshShift >= DoubleConsts.SIGNIFICAND_WIDTH - FloatConsts.SIGNIFICAND_WIDTH;
-                        assert threshShift < DoubleConsts.SIGNIFICAND_WIDTH;
-                        boolean floatSticky = (significand & ((1L << threshShift) - 1)) != 0 || round || sticky;
-                        int iValue = (int) (significand >>> threshShift);
-                        if ((iValue & 3) != 1 || floatSticky) {
-                            iValue++;
-                        }
-                        floatBits |= iValue >> 1;
-                    }
-                }
-                float fValue = Float.intBitsToFloat(floatBits);
-
-                // Check for overflow and update exponent accordingly.
-                if (exponent > Double.MAX_EXPONENT) {         // Infinite result
-                    // overflow to properly signed infinity
-                    return isNegative ? A2BC_NEGATIVE_INFINITY : A2BC_POSITIVE_INFINITY;
-                } else {  // Finite return value
-                    if (exponent <= Double.MAX_EXPONENT && // (Usually) normal result
-                            exponent >= Double.MIN_EXPONENT) {
-
-                        // The result returned in this block cannot be a
-                        // zero or subnormal; however after the
-                        // significand is adjusted from rounding, we could
-                        // still overflow in infinity.
-
-                        // AND exponent bits into significand; if the
-                        // significand is incremented and overflows from
-                        // rounding, this combination will update the
-                        // exponent correctly, even in the case of
-                        // Double.MAX_VALUE overflowing to infinity.
-
-                        significand = ((( exponent +
-                                (long) DoubleConsts.EXP_BIAS) <<
-                                (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                & DoubleConsts.EXP_BIT_MASK) |
-                                (DoubleConsts.SIGNIF_BIT_MASK & significand);
-
-                    } else {  // Subnormal or zero
-                        // (exponent < Double.MIN_EXPONENT)
-
-                        if (exponent < (DoubleConsts.MIN_SUB_EXPONENT - 1)) {
-                            // No way to round back to nonzero value
-                            // regardless of significand if the exponent is
-                            // less than -1075.
-                            return isNegative ? A2BC_NEGATIVE_ZERO : A2BC_POSITIVE_ZERO;
-                        } else { //  -1075 <= exponent <= MIN_EXPONENT -1 = -1023
-                            //
-                            // Find bit position to round to; recompute
-                            // round and sticky bits, and shift
-                            // significand right appropriately.
-                            //
-
-                            sticky = sticky || round;
-                            round = false;
-
-                            // Number of bits of significand to preserve is
-                            // exponent - abs_min_exp +1
-                            // check:
-                            // -1075 +1074 + 1 = 0
-                            // -1023 +1074 + 1 = 52
-
-                            int bitsDiscarded = 53 -
-                                    ((int) exponent - DoubleConsts.MIN_SUB_EXPONENT + 1);
-                            assert bitsDiscarded >= 1 && bitsDiscarded <= 53;
-
-                            // What to do here:
-                            // First, isolate the new round bit
-                            round = (significand & (1L << (bitsDiscarded - 1))) != 0L;
-                            if (bitsDiscarded > 1) {
-                                // create mask to update sticky bits; low
-                                // order bitsDiscarded bits should be 1
-                                long mask = ~((~0L) << (bitsDiscarded - 1));
-                                sticky = sticky || ((significand & mask) != 0L);
-                            }
-
-                            // Now, discard the bits
-                            significand = significand >> bitsDiscarded;
-
-                            significand = ((((long) (Double.MIN_EXPONENT - 1) + // subnorm exp.
-                                    (long) DoubleConsts.EXP_BIAS) <<
-                                    (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                                    & DoubleConsts.EXP_BIT_MASK) |
-                                    (DoubleConsts.SIGNIF_BIT_MASK & significand);
-                        }
-                    }
-
-                    // The significand variable now contains the currently
-                    // appropriate exponent bits too.
-
-                    //
-                    // Determine if significand should be incremented;
-                    // making this determination depends on the least
-                    // significant bit and the round and sticky bits.
-                    //
-                    // Round to nearest even rounding table, adapted from
-                    // table 4.7 in "Computer Arithmetic" by IsraelKoren.
-                    // The digit to the left of the "decimal" point is the
-                    // least significant bit, the digits to the right of
-                    // the point are the round and sticky bits
-                    //
-                    // Number       Round(x)
-                    // x0.00        x0.
-                    // x0.01        x0.
-                    // x0.10        x0.
-                    // x0.11        x1. = x0. +1
-                    // x1.00        x1.
-                    // x1.01        x1.
-                    // x1.10        x1. + 1
-                    // x1.11        x1. + 1
-                    //
-                    boolean leastZero = ((significand & 1L) == 0L);
-                    if ((leastZero && round && sticky) ||
-                            ((!leastZero) && round)) {
-                        significand++;
-                    }
-
-                    double value = isNegative ?
-                            Double.longBitsToDouble(significand | DoubleConsts.SIGN_BIT_MASK) :
-                            Double.longBitsToDouble(significand );
-
-                    return new PreparedASCIIToBinaryBuffer(value, fValue);
+        if (!isDec) {  // hexadecimal conversion is performed entirely here
+            /*
+             * Rounding the leftmost P bits +1 rounding bit +1 sticky bit
+             * has the same outcome as rounding all bits.
+             * In terms of hex digits, we need room for HEX_COUNT of them.
+             */
+            int j = 0;
+            i = lz;
+            long c = 0;
+            int le = Math.min(n, HEX_COUNT[ix]);
+            while (j < le) {
+                if ((ch = in.charAt(i++)) != '.') {
+                    ++j;
+                    c = c << 4 | digitFor(ch);
                 }
             }
-    }
-
-    /**
-     * Returns <code>s</code> with any leading zeros removed.
-     */
-    static String stripLeadingZeros(String s) {
-        if(!s.isEmpty() && s.charAt(0)=='0') {
-            for(int i=1; i<s.length(); i++) {
-                if(s.charAt(i)!='0') {
-                    return s.substring(i);
-                }
+            if (n > le) {
+                c |= 0b1;  // force a sticky bit
+                ep += 4L * (n - le);
             }
-            return "";
+
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(c);  // bitlength
+            /*
+             * Let x = c 2^ep, so 2^(ep+bl-1) ≤ x < 2^(ep+bl)
+             * When ep + bl < Q_MIN then x certainly rounds to zero.
+             * When ep + bl > QE_MAX then x surely rounds to infinity.
+             */
+            if (ep < Q_MIN[ix] - bl) {
+                return ssign != '-' ? 0.0 : -0.0;
+            }
+            if (ep > QP_MAX[ix] - bl) {
+                return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+            }
+            int q = (int) ep;  // narrowing conversion is safe
+            int shr;  // (sh)ift to (r)ight iff shr > 0
+            if (q >= QP_MIN[ix] - bl) {
+                shr = bl - P[ix];
+                q += shr;
+            } else {
+                shr = Q_MIN[ix] - q;
+                q = Q_MIN[ix];
+            }
+            if (shr > 0) {
+                long thr = 1L << shr;
+                long tail = (c & thr - 1) << 1;
+                c >>>= shr;
+                if (tail > thr || tail == thr && (c & 0b1) != 0) {
+                    c += 1;
+                    if (c >= 1L << P[ix]) {  // but in fact it can't be >
+                        c >>>= 1;
+                        q += 1;
+                    }
+                }
+            } else {
+                c <<= -shr;
+            }
+
+            /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+            return switch (ix) {
+                case BINARY_32_IX -> buildFloat(ssign, q, c);
+                case BINARY_64_IX -> buildDouble(ssign, q, c);
+                default -> throw new AssertionError("unexpected");
+            };
         }
-        return s;
+
+        /*
+         * For decimal inputs, we copy an appropriate prefix of the input and
+         * rely on another method to do the (sometimes intensive) math conversion.
+         *
+         * Define e = n + ep, which leads to
+         *      x = 0.d_1 ... d_n 10^e, 10^(e-1) ≤ x < 10^e
+         * If e ≤ E_THR_Z then x rounds to zero.
+         * Similarly, if e ≥ E_THR_I then x rounds to infinity.
+         * We return immediately in these cases.
+         * Otherwise, e fits in an int, aptly named e as well.
+         */
+        int e = Math.clamp(ep + n, E_THR_Z[ix], E_THR_I[ix]);
+        if (e == E_THR_Z[ix]) {  // the true mathematical e ≤ E_THR_Z
+            return ssign != '-' ? 0.0 : -0.0;
+        }
+        if (e == E_THR_I[ix]) {  // the true mathematical e ≥ E_THR_I
+            return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+        }
+
+        /*
+         * For further considerations, x also needs to be seen as
+         *      x = beta 2^q
+         * with real beta and integer q meeting
+         *      q ≥ Q_MIN
+         * and
+         *      either  2^(P-1) ≤ beta < 2^P
+         *      or      0 < beta < 2^(P-1) and q = Q_MIN
+         * The (unique) solution is
+         *      q = max(floor(log2(x)) - (P-1), Q_MIN), beta = x 2^(-q)
+         * It's usually costly to determine q as here.
+         * However, estimates to q are cheaper and quick to compute.
+         *
+         * Indeed, it's a matter of some simple maths to show that, by defining
+         *      ql = max(floor((e-1) log2(10)) - (P-1), Q_MIN)
+         *      qh = max(floor(e log2(10)) - (P-1), Q_MIN)
+         * then the following hold
+         *      ql ≤ q ≤ qh, and qh - ql ≤ 4
+         * Since by now e is relatively small, we can leverage flog2pow10().
+         *
+         * Consider the half-open interval [ 2^(P-1+q), 2^(P+q) ).
+         * It contains all floating-point values of the form
+         *      c 2^q, c integer, 2^(P-1) ≤ c < 2^P (normal values)
+         * When q = Q_MIN also consider the interval half-open [0, 2^(P-1+q) ),
+         * which contains all floating-point values of the form
+         *      c 2^q, c integer, 0 ≤ c < 2^(P-1) (subnormal values and zero)
+         * For these c values, all numbers of the form
+         *      (c + 1/2) 2^q
+         * also belong to the intervals.
+         * These are the boundaries of the rounding intervals and are key for
+         * correct rounding.
+         *
+         * First assume ql > 0, so q > 0.
+         * All rounding boundaries (c + 1/2) 2^q are integers.
+         *
+         * Hence, to correctly round x, it's enough to retain its integer part,
+         * +1 non-zero sticky digit iff the fractional part is non-zero.
+         * (Well, the sticky digit is only needed when the integer part
+         * coincides with a boundary, but that's hard to detect at this stage.
+         * Adding the sticky digit is always safe.)
+         * If n > e we pass the digits <d_1...d_e 8> (8 is as good as any other
+         * non-zero sticky digit) and the exponent e to the conversion routine.
+         * If n ≤ e we pass all the digits <d_1...d_n> (no sticky digit,
+         * as the fractional part is empty) and the exponent e to the converter.
+         *
+         * Now assume qh ≤ 0, so q ≤ 0.
+         * The boundaries (c + 1/2) 2^q = (2c + 1) 2^(q-1) have a fractional part
+         * of 1 - q digits: some (or zero) leading zeros, the rightmost is 5.
+         * A correct rounding needs to retain the integer part of x (if any),
+         * 1 - q digits of the fractional part, +1 non-zero sticky digit iff
+         * the rest of the fractional part beyond the 1 - q digits is non-zero.
+         * (Again, the sticky digit is only needed when the digit in f at the
+         * same position as the last 5 of the rounding boundary is 5 as well.
+         * But let's keep it simple for now.)
+         * However, q is unknown, so use the conservative ql instead.
+         * More precisely, if n > e + 1 - ql we pass the leftmost e + 1 - ql
+         * digits of f, sticky 8 (the "most even" digit), and e.
+         * Otherwise, n ≤ e + 1 - ql.
+         * We pass all n digits of f, no sticky digit, and e to the converter.
+         *
+         * Otherwise, ql ≤ 0 < qh, so -4 < q ≤ 4.
+         * Again, since q is not known exactly, we proceed as in the previous
+         * case, with ql as a safe replacement for q.
+         */
+        int ql = Math.max(MathUtils.flog2pow10(e - 1) - (P[ix] - 1), Q_MIN[ix]);
+        int np = e + Math.max(2 - ql, 1);
+        byte[] d = new byte[Math.min(n, np)];
+        if (n >= np) {
+            copyDigits(in, d, np - 1, lz);
+            d[np - 1] = '8';  // append the "most even" non-zero sticky digit
+        } else {
+            copyDigits(in, d, n, lz);
+        }
+        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+        return switch (ix) {
+            case BINARY_32_IX ->
+                    new ASCIIToBinaryBuffer(ssign == '-', e, d, d.length).floatValue();
+            case BINARY_64_IX ->
+                    new ASCIIToBinaryBuffer(ssign == '-', e, d, d.length).doubleValue();
+            default -> throw new AssertionError("unexpected");
+        };
     }
 
-    /**
-     * Extracts a hexadecimal digit from position <code>position</code>
-     * of string <code>s</code>.
-     */
-    static int getHexDigit(String s, int position) {
-        int value = Character.digit(s.charAt(position), 16);
-        if (value <= -1 || value >= 16) {
-            throw new AssertionError("Unexpected failure of digit conversion of " +
-                                     s.charAt(position));
-        }
-        return value;
+    private static int toLowerCase(int ch) {
+        return ch | 0b10_0000;
     }
+
+    private static double buildDouble(int ssign, int q, long c) {
+        long be = c < 1L << P[BINARY_64_IX] - 1
+                ? 0
+                : q + ((DoubleConsts.EXP_BIAS - 1) + P[BINARY_64_IX]);
+        long bits = (ssign != '-' ? 0L : 1L << Double.SIZE - 1)
+                | be << P[BINARY_64_IX] - 1
+                | c & DoubleConsts.SIGNIF_BIT_MASK;
+        return Double.longBitsToDouble(bits);
+    }
+
+    private static float buildFloat(int ssign, int q, long c) {
+        int be = c < 1L << P[BINARY_32_IX] - 1
+                ? 0
+                : q + ((FloatConsts.EXP_BIAS - 1) + P[BINARY_32_IX]);
+        int bits = (ssign != '-' ? 0 : 1 << Float.SIZE - 1)
+                | be << P[BINARY_32_IX] - 1
+                | (int) c & FloatConsts.SIGNIF_BIT_MASK;
+        return Float.intBitsToFloat(bits);
+    }
+
+    private static void copyDigits(String in, byte[] d, int len, int i) {
+        int ch;
+        int j = 0;
+        while (j < len) {
+            if ((ch = in.charAt(i++)) != '.') {
+                d[j++] = (byte) ch;
+            }
+        }
+    }
+
+    /* Arithmetically "appends the dec digit" ch to v ≥ 0, clamping at 10^10. */
+    private static long appendDecDigit(long v, int ch) {
+        return v < 10_000_000_000L / 10 ? 10 * v + (ch - '0') : 10_000_000_000L;
+    }
+
+    /* Whether ch is a digit char '0-9', 'A-F', or 'a-f', depending on isDec. */
+    private static boolean isDigit(int ch, boolean isDec) {
+        int lch;  // lowercase ch
+        return '0' <= ch && ch <= '9' ||
+                !isDec && 'a' <= (lch = toLowerCase(ch)) && lch <= 'f';
+    }
+
+    /* Returns the numeric value of ch, assuming it is a hexdigit. */
+    private static int digitFor(int ch) {
+        return ch <= '9' ? ch - '0' : toLowerCase(ch) - ('a' - 10);
+    }
+
+    /*
+     * Starting at i, skips all chars in ['\0', ' '].
+     * Returns the index after the whitespaces.
+     */
+    private static int skipWhitespaces(String in, int i) {
+        int len = in.length();
+        for (; i < len && in.charAt(i) <= ' '; ++i);  // empty body
+        return i;
+    }
+
+    /*
+     * Attempts to scan sub and optional trailing whitespaces, starting at index i.
+     * The optional whitespaces must be at the end of in.
+     */
+    private static void scanSymbolic(String in, int i, String sub) {
+        int high = i + sub.length();  // might overflow, checked in next line
+        check(in, i <= high && high <= in.length()
+                        && in.indexOf(sub, i, high) == i
+                        && skipWhitespaces(in, high) == in.length());
+    }
+
+    /*
+     * Returns i if this is the first time the scanner detects a point.
+     * Throws otherwise.
+     */
+    private static int checkMultiplePoints(int pt, int i) {
+        if (pt != 0) {
+            throw new NumberFormatException("multiple points");
+        }
+        return i;
+    }
+
+    private static final int MAX_OUT = 1_000;
+    private static final String OMITTED = " ... ";
+    private static final int L_HALF = (MAX_OUT - OMITTED.length()) / 2;
+    private static final int R_HALF = MAX_OUT - (L_HALF + OMITTED.length());
+
+    private static void check(String in, boolean expected) {
+        if (!expected) {
+            int len = in.length();
+            if (len > MAX_OUT) {  // discard middle chars to achieve a length of MAX_OUT
+                in = in.substring(0, L_HALF) + OMITTED + in.substring(len - R_HALF);
+            }
+            throw new NumberFormatException("For input string: \"" + in + "\"");
+        }
+    }
+
+    /*
+     * According to IEEE 754-2019, a finite positive binary floating-point
+     * value of precision P is (uniquely) expressed as
+     *      c 2^q
+     * where integers c and q meet
+     *      Q_MIN ≤ q ≤ Q_MAX
+     *      either      2^(P-1) ≤ c < 2^P                   (normal)
+     *      or          0 < c < 2^(P-1)  &  q = Q_MIN       (subnormal)
+     *      c = <b_1...b_P>  (b_i in [0, 2)),   b_1 > 0 iff normal
+     *
+     * Equivalently, the floating-point value can be (uniquely) expressed as
+     *      m 2^qp
+     * where integer qp and real m meet
+     *      qp = q + P
+     *      m = c 2^(-P)
+     * Hence,
+     *      QP_MIN = Q_MIN + P, QP_MAX = Q_MAX + P,
+     *      2^(-1) ≤ m < 1      (normal)
+     *      m < 2^(-1)          (subnormal)
+     *      m = <0.b_1...b_P>
+     */
+
+    /*
+     * These constants are used to indicate the IEEE binary floating-point format
+     * as an index (ix) to some methods and static arrays in this class.
+     */
+    private static final int BINARY_16_IX = 0;
+    private static final int BINARY_32_IX = 1;
+    private static final int BINARY_64_IX = 2;
+    // private static final int BINARY_128_IX = 3;
+    // private static final int BINARY_256_IX = 4;
+
+    @Stable
+    private static final int[] P = {
+            11,  // 11
+            FloatToDecimal.P,  // 24
+            DoubleToDecimal.P,  // 53
+            // 113,
+            // 237,
+    };
+
+    /* Minimum exponent in the c 2^q representation. */
+    @Stable
+    private static final int[] Q_MIN = {
+            -24,  // Float16ToDecimal.Q_MIN,  // -24
+            FloatToDecimal.Q_MIN,  // -149
+            DoubleToDecimal.Q_MIN,  // -1_074
+            // -16_494,
+            // -262_378,
+    };
+
+    /* Minimum exponent in the m 2^qp representation. */
+    @Stable
+    private static final int[] QP_MIN = {
+            Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],  // -13
+            Q_MIN[BINARY_32_IX] + P[BINARY_32_IX],  // -125
+            Q_MIN[BINARY_64_IX] + P[BINARY_64_IX],  // -1_021
+            // Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],  // -16_381
+            // Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],  // -262_141
+    };
+
+    /* Maximum exponent in the m 2^qp representation. */
+    @Stable
+    private static final int[] QP_MAX = {
+            3 - QP_MIN[BINARY_16_IX],  // 16
+            3 - QP_MIN[BINARY_32_IX],  // 128
+            3 - QP_MIN[BINARY_64_IX],  // 1_024
+            // 3 - QP_MIN[BINARY_128_IX],  // 16_384
+            // 3 - QP_MIN[BINARY_256_IX],  // 262_144
+    };
+
+    /*
+     * For each binary floating-point format, let
+     *      THR_Z = ulp(0.0) / 2 = MIN_VALUE / 2
+     * THR_Z is the zero threshold.
+     * Real x rounds to 0 by roundTiesToEven iff |x| ≤ THR_Z.
+     *
+     * E_THR_Z = max{e : 10^e ≤ THR_Z}.
+     */
+    @Stable
+    private static final int[] E_THR_Z = {
+            -8,  // -8
+            FloatToDecimal.E_THR_Z,  // -46
+            DoubleToDecimal.E_THR_Z,  // -324
+            // -4_966,
+            // -78_985,
+    };
+
+    /*
+     * For each binary floating-point format, let
+     *      THR_I = MAX_VALUE + ulp(MAX_VALUE) / 2
+     * THR_I is the infinity threshold.
+     * Real x rounds to infinity by roundTiesToEven iff |x| ≥ THR_I.
+     *
+     * E_THR_I = min{e : THR_I ≤ 10^(e-1)}.
+     */
+    @Stable
+    private static final int[] E_THR_I = {
+            6,  // 6
+            FloatToDecimal.E_THR_I,  // 40
+            DoubleToDecimal.E_THR_I,  // 310
+            // 4_934,
+            // 78_915,
+    };
+
+    /*
+     * The most significant P +1 rounding bit +1 sticky bit = P + 2 bits in a
+     * hexadecimal string need up to HEX_COUNT = floor(P/4) + 2 hex digits.
+     */
+    @Stable
+    private static final int[] HEX_COUNT = {
+            P[BINARY_16_IX] / 4 + 2,  // 4
+            P[BINARY_32_IX] / 4 + 2,  // 8
+            P[BINARY_64_IX] / 4 + 2,  // 15
+            // P[BINARY_128_IX] / 4 + 2,  // 30
+            // P[BINARY_256_IX] / 4 + 2,  // 61
+    };
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,15 +66,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *        {@code AWTEvent}&nbsp;B then event B will not be
  *        dispatched before event A.
  * </dl>
- * <p>
- * Some browsers partition applets in different code bases into
- * separate contexts, and establish walls between these contexts.
- * In such a scenario, there will be one {@code EventQueue}
- * per context. Other browsers place all applets into the same
- * context, implying that there will be only a single, global
- * {@code EventQueue} for all applets. This behavior is
- * implementation-dependent.  Consult your browser's documentation
- * for more information.
  * <p>
  * For information on the threading issues of the event dispatch
  * machinery, see <a href="doc-files/AWTThreadIssues.html#Autoshutdown"
@@ -1058,7 +1049,7 @@ public class EventQueue {
         }
     }
 
-    @SuppressWarnings({"deprecation", "removal"})
+    @SuppressWarnings("removal")
     final void initDispatchThread() {
         pushPopLock.lock();
         try {

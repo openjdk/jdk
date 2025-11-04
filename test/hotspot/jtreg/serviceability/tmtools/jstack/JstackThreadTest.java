@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ public class JstackThreadTest {
     ProcessBuilder processBuilder = new ProcessBuilder();
     JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
     launcher.addVMArgs(jdk.test.lib.Utils.getTestJavaOpts());
+    // jstack output may be lengthy, disable streaming output to avoid deadlocks
+    launcher.addVMArg("-Djdk.attach.allowStreamingOutput=false");
     launcher.addToolArg("-l");
     launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
     processBuilder.command(launcher.getCommand());

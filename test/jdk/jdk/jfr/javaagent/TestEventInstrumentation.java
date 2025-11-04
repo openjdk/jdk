@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,10 @@ import static java.lang.constant.ConstantDescs.MTD_void;
  * @test
  * @summary Verify that a subclass of the JFR Event class
  *          can be successfully instrumented.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
- * @enablePreview
  * @build jdk.jfr.javaagent.InstrumentationEventCallback
  *        jdk.jfr.javaagent.TestEventInstrumentation
  * @run driver jdk.test.lib.util.JavaAgentBuilder

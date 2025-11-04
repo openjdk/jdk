@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,7 +608,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      */
     public boolean isVisibleClass(TypeElement typeElement) {
         return visibleClasses.contains(typeElement) && configuration.isGeneratedDoc(typeElement)
-                && !utils.hasHiddenTag(typeElement);
+                && !utils.isHidden(typeElement);
     }
 
      Content getClassHeader(TypeElement typeElement) {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,19 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
-static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
-static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
+static void* raw_malloc(size_t s)               { return permit_forbidden_function::malloc(s); }
+static void* raw_realloc(void* old, size_t s)   { return permit_forbidden_function::realloc(old, s); }
+static void  raw_free(void* p)                  { permit_forbidden_function::free(p); }
 
 // To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
 // is just used for pre-VM-initialization mallocs, none of which are optional, we don't
@@ -132,7 +132,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
     num_entries += chain_len;
     longest_chain = MAX2(chain_len, longest_chain);
   }
-  st->print("entries: %d (primary: %d, empties: %d), sum bytes: " SIZE_FORMAT
+  st->print("entries: %d (primary: %d, empties: %d), sum bytes: %zu"
             ", longest chain length: %d",
             num_entries, num_primary_entries, table_size - num_primary_entries,
             sum_bytes, longest_chain);
@@ -143,7 +143,7 @@ void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   for (int i = 0; i < table_size; i++) {
     st->print("[%d]: ", i);
     for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
-      st->print( PTR_FORMAT "(" SIZE_FORMAT ") ", p2i(a->payload), a->size);
+      st->print( PTR_FORMAT "(%zu) ", p2i(a->payload), a->size);
     }
     st->cr();
   }

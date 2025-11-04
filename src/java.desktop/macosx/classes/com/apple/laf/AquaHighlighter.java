@@ -36,7 +36,7 @@ import javax.swing.text.*;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
-public class AquaHighlighter extends DefaultHighlighter implements UIResource {
+public final class AquaHighlighter extends DefaultHighlighter implements UIResource {
     private static final RecyclableSingleton<LayerPainter> instance = new RecyclableSingleton<LayerPainter>() {
         protected LayerPainter getInstance() {
             return new AquaHighlightPainter(null);
@@ -47,7 +47,7 @@ public class AquaHighlighter extends DefaultHighlighter implements UIResource {
         return instance.get();
     }
 
-    public static class AquaHighlightPainter extends DefaultHighlightPainter {
+    public static final class AquaHighlightPainter extends DefaultHighlightPainter {
         Color selectionColor;
         Color disabledSelectionColor;
 
@@ -55,6 +55,7 @@ public class AquaHighlighter extends DefaultHighlighter implements UIResource {
             super(c);
         }
 
+        @Override
         public Color getColor() {
             return selectionColor == null ? super.getColor() : selectionColor;
         }
@@ -82,11 +83,13 @@ public class AquaHighlighter extends DefaultHighlighter implements UIResource {
             }
         }
 
+        @Override
         public void paint(final Graphics g, final int offs0, final int offs1, final Shape bounds, final JTextComponent c) {
             setColor(c);
             super.paint(g, offs0, offs1, bounds, c);
         }
 
+        @Override
         public Shape paintLayer(final Graphics g, final int offs0, final int offs1, final Shape bounds, final JTextComponent c, final View view) {
             setColor(c);
             return super.paintLayer(g, offs0, offs1, bounds, c, view);

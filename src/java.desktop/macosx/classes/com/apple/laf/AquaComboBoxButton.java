@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import apple.laf.JRSUIConstants.Widget;
 import apple.laf.JRSUIState;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class AquaComboBoxButton extends JButton {
+final class AquaComboBoxButton extends JButton {
     protected final JComboBox<Object> comboBox;
     protected final JList<?> list;
     protected final CellRendererPane rendererPane;
@@ -63,7 +63,6 @@ class AquaComboBoxButton extends JButton {
     boolean isPopDown;
     boolean isSquare;
 
-    @SuppressWarnings("serial") // anonymous class
     protected AquaComboBoxButton(final AquaComboBoxUI ui,
                                  final JComboBox<Object> comboBox,
                                  final CellRendererPane rendererPane,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -35,7 +34,7 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -365,6 +364,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
     } else {
       // We are only printing the hierarchy of a specific class.
       if (strcmp(classname, cie->klass()->external_name()) == 0) {
+        assert(cie->klass()->is_instance_klass(), "elements array contains only instance klasses");
         KlassHierarchy::set_do_print_for_class_hierarchy(cie, &cit, print_subclasses);
       }
     }
@@ -403,7 +403,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
 void KlassHierarchy::set_do_print_for_class_hierarchy(KlassInfoEntry* cie, KlassInfoTable* cit,
                                                       bool print_subclasses) {
   // Set do_print for all superclasses of this class.
-  Klass* super = ((InstanceKlass*)cie->klass())->java_super();
+  InstanceKlass* super = InstanceKlass::cast(cie->klass())->super();
   while (super != nullptr) {
     KlassInfoEntry* super_cie = cit->lookup(super);
     super_cie->set_do_print(true);
@@ -539,7 +539,7 @@ class RecordInstanceClosure : public ObjectClosure {
 void ParHeapInspectTask::work(uint worker_id) {
   uintx missed_count = 0;
   bool merge_success = true;
-  if (!Atomic::load(&_success)) {
+  if (!AtomicAccess::load(&_success)) {
     // other worker has failed on parallel iteration.
     return;
   }
@@ -547,7 +547,7 @@ void ParHeapInspectTask::work(uint worker_id) {
   KlassInfoTable cit(false);
   if (cit.allocation_failed()) {
     // fail to allocate memory, stop parallel mode
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
     return;
   }
   RecordInstanceClosure ric(&cit, _filter);
@@ -558,9 +558,9 @@ void ParHeapInspectTask::work(uint worker_id) {
     merge_success = _shared_cit->merge(&cit);
   }
   if (merge_success) {
-    Atomic::add(&_missed_count, missed_count);
+    AtomicAccess::add(&_missed_count, missed_count);
   } else {
-    Atomic::store(&_success, false);
+    AtomicAccess::store(&_success, false);
   }
 }
 
@@ -592,7 +592,7 @@ void HeapInspection::heap_inspection(outputStream* st, WorkerThreads* workers) {
     // populate table with object allocation info
     uintx missed_count = populate_table(&cit, nullptr, workers);
     if (missed_count != 0) {
-      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
+      log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted %zu"
                                " total instances in data below",
                                missed_count);
     }

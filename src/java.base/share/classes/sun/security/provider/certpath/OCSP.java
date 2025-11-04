@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
 import sun.security.util.IOUtils;
+import sun.security.util.SecurityProperties;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.GeneralName;
@@ -67,7 +67,6 @@ public final class OCSP {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private static final int DEFAULT_CONNECT_TIMEOUT = 15000;
-    private static final int DEFAULT_READ_TIMEOUT = 15000;
 
     /**
      * Integer value indicating the timeout length, in milliseconds, to be
@@ -83,7 +82,7 @@ public final class OCSP {
      * zero is interpreted as an infinite timeout.
      */
     private static final int READ_TIMEOUT = initializeTimeout(
-            "com.sun.security.ocsp.readtimeout", DEFAULT_READ_TIMEOUT);
+            "com.sun.security.ocsp.readtimeout", CONNECT_TIMEOUT);
 
     /**
      * Boolean value indicating whether OCSP client can use GET for OCSP
@@ -114,7 +113,7 @@ public final class OCSP {
      */
     private static int initializeTimeout(String prop, int def) {
         int timeoutVal =
-                GetPropertyAction.privilegedGetTimeoutProp(prop, def, debug);
+                SecurityProperties.getTimeoutSystemProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }
@@ -123,7 +122,7 @@ public final class OCSP {
 
     private static boolean initializeBoolean(String prop, boolean def) {
         boolean value =
-                GetPropertyAction.privilegedGetBooleanProp(prop, def, debug);
+                SecurityProperties.getBooleanSystemProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + value);
         }

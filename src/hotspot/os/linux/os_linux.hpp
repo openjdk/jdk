@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ class os::Linux {
   friend class os;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-  static int (*_pthread_setname_np)(pthread_t, const char*);
 
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
@@ -50,11 +49,11 @@ class os::Linux {
 
  protected:
 
-  static julong _physical_memory;
+  static physical_memory_size_type _physical_memory;
   static pthread_t _main_thread;
 
-  static julong available_memory();
-  static julong free_memory();
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
 
 
   static void initialize_system_info();
@@ -91,7 +90,13 @@ class os::Linux {
   };
 
   static int active_processor_count();
-  static void kernel_version(long* major, long* minor);
+  static void kernel_version(long* major, long* minor, long* patch);
+
+  // If kernel1 > kernel2 return  1
+  // If kernel1 < kernel2 return -1
+  // If kernel1 = kernel2 return  0
+  static int kernel_version_compare(long major1, long minor1, long patch1,
+                                    long major2, long minor2, long patch2);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
@@ -111,7 +116,7 @@ class os::Linux {
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
-  static julong physical_memory() { return _physical_memory; }
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
   static julong host_swap();
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
@@ -175,6 +180,23 @@ class os::Linux {
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
 
+  // Output structure for query_accurate_process_memory_info() (all values in KB)
+  struct accurate_meminfo_t {
+    ssize_t rss;        // current resident set size
+    ssize_t pss;        // current proportional set size
+    ssize_t pssdirty;   // proportional set size (dirty)
+    ssize_t pssanon;    // proportional set size (anonymous mappings)
+    ssize_t pssfile;    // proportional set size (file mappings)
+    ssize_t pssshmem;   // proportional set size (shared mappings)
+    ssize_t swap;       // swapped out
+    ssize_t swappss;    // proportional set size (swapped out)
+  };
+
+  // Attempts to query accurate memory information from /proc/self/smaps_rollup and return it in the output structure.
+  // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
+  // fields will contain -1.
+  static bool query_accurate_process_memory_info(accurate_meminfo_t* info);
+
   // Tells if the user asked for transparent huge pages.
   static bool _thp_requested;
 
@@ -193,6 +215,7 @@ class os::Linux {
  private:
   static void numa_init();
 
+  static void disable_numa(const char* reason, bool warning);
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
   typedef int (*numa_node_to_cpus_v2_func_t)(int node, void *mask);
@@ -204,10 +227,12 @@ class os::Linux {
   typedef void (*numa_interleave_memory_v2_func_t)(void *start, size_t size, struct bitmask* mask);
   typedef struct bitmask* (*numa_get_membind_func_t)(void);
   typedef struct bitmask* (*numa_get_interleave_mask_func_t)(void);
+  typedef struct bitmask* (*numa_get_run_node_mask_func_t)(void);
   typedef long (*numa_move_pages_func_t)(int pid, unsigned long count, void **pages, const int *nodes, int *status, int flags);
   typedef void (*numa_set_preferred_func_t)(int node);
   typedef void (*numa_set_bind_policy_func_t)(int policy);
   typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
+  typedef int (*numa_bitmask_equal_func_t)(struct bitmask *bmp1, struct bitmask *bmp2);
   typedef int (*numa_distance_func_t)(int node1, int node2);
 
   static sched_getcpu_func_t _sched_getcpu;
@@ -221,8 +246,10 @@ class os::Linux {
   static numa_interleave_memory_v2_func_t _numa_interleave_memory_v2;
   static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static numa_bitmask_isbitset_func_t _numa_bitmask_isbitset;
+  static numa_bitmask_equal_func_t _numa_bitmask_equal;
   static numa_distance_func_t _numa_distance;
   static numa_get_membind_func_t _numa_get_membind;
+  static numa_get_run_node_mask_func_t _numa_get_run_node_mask;
   static numa_get_interleave_mask_func_t _numa_get_interleave_mask;
   static numa_move_pages_func_t _numa_move_pages;
   static numa_set_preferred_func_t _numa_set_preferred;
@@ -231,6 +258,7 @@ class os::Linux {
   static struct bitmask* _numa_nodes_ptr;
   static struct bitmask* _numa_interleave_bitmask;
   static struct bitmask* _numa_membind_bitmask;
+  static struct bitmask* _numa_cpunodebind_bitmask;
 
   static void set_sched_getcpu(sched_getcpu_func_t func) { _sched_getcpu = func; }
   static void set_numa_node_to_cpus(numa_node_to_cpus_func_t func) { _numa_node_to_cpus = func; }
@@ -243,8 +271,10 @@ class os::Linux {
   static void set_numa_interleave_memory_v2(numa_interleave_memory_v2_func_t func) { _numa_interleave_memory_v2 = func; }
   static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_bitmask_isbitset(numa_bitmask_isbitset_func_t func) { _numa_bitmask_isbitset = func; }
+  static void set_numa_bitmask_equal(numa_bitmask_equal_func_t func) { _numa_bitmask_equal = func; }
   static void set_numa_distance(numa_distance_func_t func) { _numa_distance = func; }
   static void set_numa_get_membind(numa_get_membind_func_t func) { _numa_get_membind = func; }
+  static void set_numa_get_run_node_mask(numa_get_run_node_mask_func_t func) { _numa_get_run_node_mask = func; }
   static void set_numa_get_interleave_mask(numa_get_interleave_mask_func_t func) { _numa_get_interleave_mask = func; }
   static void set_numa_move_pages(numa_move_pages_func_t func) { _numa_move_pages = func; }
   static void set_numa_set_preferred(numa_set_preferred_func_t func) { _numa_set_preferred = func; }
@@ -253,6 +283,7 @@ class os::Linux {
   static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == nullptr ? nullptr : *ptr); }
   static void set_numa_interleave_bitmask(struct bitmask* ptr)     { _numa_interleave_bitmask = ptr ;   }
   static void set_numa_membind_bitmask(struct bitmask* ptr)        { _numa_membind_bitmask = ptr ;      }
+  static void set_numa_cpunodebind_bitmask(struct bitmask* ptr)        { _numa_cpunodebind_bitmask = ptr ;      }
   static int sched_getcpu_syscall(void);
 
   enum NumaAllocationPolicy{
@@ -358,21 +389,26 @@ class os::Linux {
     }
     return false;
   }
-  // Check if bound to only one numa node.
-  // Returns true if bound to a single numa node, otherwise returns false.
-  static bool is_bound_to_single_node() {
+  // Check if memory is bound to only one numa node.
+  // Returns true if memory is bound to a single numa node, otherwise returns false.
+  static bool is_bound_to_single_mem_node() {
     int nodes = 0;
     unsigned int node = 0;
     unsigned int highest_node_number = 0;
 
-    if (_numa_membind_bitmask != nullptr && _numa_max_node != nullptr && _numa_bitmask_isbitset != nullptr) {
+    struct bitmask* mem_nodes_bitmask = Linux::_numa_membind_bitmask;
+    if (Linux::is_running_in_interleave_mode()) {
+      mem_nodes_bitmask = Linux::_numa_interleave_bitmask;
+    }
+
+    if (mem_nodes_bitmask != nullptr && _numa_max_node != nullptr && _numa_bitmask_isbitset != nullptr) {
       highest_node_number = _numa_max_node();
     } else {
       return false;
     }
 
     for (node = 0; node <= highest_node_number; node++) {
-      if (_numa_bitmask_isbitset(_numa_membind_bitmask, node)) {
+      if (_numa_bitmask_isbitset(mem_nodes_bitmask, node)) {
         nodes++;
       }
     }
@@ -382,6 +418,19 @@ class os::Linux {
     } else {
       return false;
     }
+  }
+  // Check if cpu and memory nodes are aligned, returns true if nodes misalign
+  static bool mem_and_cpu_node_mismatch() {
+    struct bitmask* mem_nodes_bitmask = Linux::_numa_membind_bitmask;
+    if (Linux::is_running_in_interleave_mode()) {
+      mem_nodes_bitmask = Linux::_numa_interleave_bitmask;
+    }
+
+    if (mem_nodes_bitmask == nullptr || Linux::_numa_cpunodebind_bitmask == nullptr) {
+      return false;
+    }
+
+    return !_numa_bitmask_equal(mem_nodes_bitmask, Linux::_numa_cpunodebind_bitmask);
   }
 
   static const GrowableArray<int>* numa_nindex_to_node() {

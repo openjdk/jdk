@@ -248,8 +248,7 @@ public class LinkTaglet extends BaseTaglet {
                     containing = utils.getEnclosingTypeElement(overriddenMethod);
                 }
             }
-            if (refSignature.trim().startsWith("#") &&
-                    ! (utils.isPublic(containing) || utils.isLinkable(containing))) {
+            if (refSignature.trim().startsWith("#") && !utils.isVisible(containing)) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
@@ -264,14 +263,14 @@ public class LinkTaglet extends BaseTaglet {
                 }
             }
             String refMemName = refFragment;
-            if (config.currentTypeElement != containing) {
+            if (htmlWriter.getCurrentTypeElement() != containing) {
                 refMemName = (utils.isConstructor(refMem))
                         ? refMemName
                         : utils.getSimpleName(containing) + "." + refMemName;
             }
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, false, true);
                 }
                 if (overriddenMethod != null) {
                     // The method to actually link.

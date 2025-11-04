@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,12 @@
 
 #include "utilities/macros.hpp"
 
-// Do something for each concrete barrier set part of the build.
-#define FOR_EACH_CONCRETE_BARRIER_SET_DO(f)          \
+// Do something for each barrier set part of the build.
+#define FOR_EACH_BARRIER_SET_DO(f)                   \
   f(CardTableBarrierSet)                             \
   EPSILONGC_ONLY(f(EpsilonBarrierSet))               \
   G1GC_ONLY(f(G1BarrierSet))                         \
   SHENANDOAHGC_ONLY(f(ShenandoahBarrierSet))         \
   ZGC_ONLY(f(ZBarrierSet))
-
-#define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
-  f(ModRef)
-
-// Do something for each known barrier set.
-#define FOR_EACH_BARRIER_SET_DO(f)    \
-  FOR_EACH_ABSTRACT_BARRIER_SET_DO(f) \
-  FOR_EACH_CONCRETE_BARRIER_SET_DO(f)
 
 #endif // SHARE_GC_SHARED_BARRIERSETCONFIG_HPP

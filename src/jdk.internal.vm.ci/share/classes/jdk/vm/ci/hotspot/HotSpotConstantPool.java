@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@ package jdk.vm.ci.hotspot;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.common.NativeImageReinitialize;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
@@ -182,7 +182,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             throw new JVMCIError("Unknown JvmConstant tag %s", tag);
         }
 
-        @NativeImageReinitialize private static volatile JvmConstants instance;
+        private static volatile JvmConstants instance;
 
         static JvmConstants instance() {
             JvmConstants result = instance;
@@ -531,19 +531,21 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         }
     }
 
-    static class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
+    class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
         private final boolean indy;
         private final ResolvedJavaMethod method;
         private final String name;
         private final JavaConstant type;
         private final List<JavaConstant> staticArguments;
+        private final int cpiOrIndyIndex;
 
-        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments) {
+        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments, int cpiOrIndyIndex) {
             this.indy = indy;
             this.method = method;
             this.name = name;
             this.type = type;
             this.staticArguments = staticArguments;
+            this.cpiOrIndyIndex = cpiOrIndyIndex;
         }
 
         @Override
@@ -569,6 +571,24 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         @Override
         public List<JavaConstant> getStaticArguments() {
             return staticArguments;
+        }
+
+        @Override
+        public void resolve() {
+            if (isInvokeDynamic()) {
+                loadReferencedType(cpiOrIndyIndex, Bytecodes.INVOKEDYNAMIC);
+            } else {
+                lookupConstant(cpiOrIndyIndex, true);
+            }
+        }
+
+        @Override
+        public JavaConstant lookup() {
+            if (isInvokeDynamic()) {
+                return lookupAppendix(cpiOrIndyIndex, Bytecodes.INVOKEDYNAMIC);
+            } else {
+                return (JavaConstant) lookupConstant(cpiOrIndyIndex, false);
+            }
         }
 
         @Override
@@ -613,9 +633,33 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     int bss_index = bsciArgs[1];
                     staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
                 }
-                return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
+                boolean isIndy = tag.name.equals("InvokeDynamic");
+                return new BootstrapMethodInvocationImpl(isIndy, method, name, type, staticArgumentsList, isIndy ? index : cpi);
             default:
                 return null;
+        }
+    }
+
+    private boolean isDynamicEntry(int cpi) {
+        JvmConstant tagAt = getTagAt(cpi);
+        return tagAt != null && tagAt.name.equals("Dynamic");
+    }
+
+    @Override
+    public List<BootstrapMethodInvocation> lookupBootstrapMethodInvocations(boolean invokeDynamic){
+        if (invokeDynamic) {
+            int numIndys = compilerToVM().getNumIndyEntries(this);
+            if (numIndys == 0) {
+                return List.of();
+            }
+            return IntStream.range(0, numIndys)
+                            .mapToObj(i -> lookupBootstrapMethodInvocation(i, Bytecodes.INVOKEDYNAMIC))
+                            .toList();
+        } else {
+            return IntStream.range(1, length())
+                            .filter(this::isDynamicEntry)
+                            .mapToObj(cpi -> lookupBootstrapMethodInvocation(cpi, -1))
+                            .toList();
         }
     }
 
@@ -798,11 +842,10 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             HotSpotResolvedObjectTypeImpl resolvedHolder;
             try {
                 resolvedHolder = compilerToVM().resolveFieldInPool(this, rawIndex, (HotSpotResolvedJavaMethodImpl) method, (byte) opcode, info);
-            } catch (Throwable t) {
-                resolvedHolder = null;
+            } catch (Throwable cause) {
+                return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type, cause);
             }
             if (resolvedHolder == null) {
-                // There was an exception resolving the field or it returned null so return an unresolved field.
                 return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type);
             }
             final int flags = info[0];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ class ClassLoaderData;
 // It contains the type and size of the elements
 
 class TypeArrayKlass : public ArrayKlass {
+  friend class Deoptimization;
+  friend class oopFactory;
   friend class VMStructs;
 
  public:
@@ -43,13 +45,18 @@ class TypeArrayKlass : public ArrayKlass {
 
   // Constructor
   TypeArrayKlass(BasicType type, Symbol* name);
-  static TypeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+  static TypeArrayKlass* allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+
+  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
+  typeArrayOop allocate_instance(int length, TRAPS) { return allocate_common(length, true, THREAD); }
  public:
   TypeArrayKlass() {} // For dummy objects.
 
   // instance variables
   jint max_length()                     { return _max_length; }
   void set_max_length(jint m)           { _max_length = m;    }
+
+  u2 compute_modifier_flags() const;
 
   // testers
   DEBUG_ONLY(bool is_typeArray_klass_slow() const  { return true; })
@@ -64,8 +71,6 @@ class TypeArrayKlass : public ArrayKlass {
   size_t oop_size(oop obj) const;
 
   // Allocation
-  typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
-  typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
   oop protection_domain() const { return nullptr; }

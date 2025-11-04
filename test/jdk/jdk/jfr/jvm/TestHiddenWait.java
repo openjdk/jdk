@@ -38,7 +38,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test TestHiddenWait
- * @key jfr
+ * @requires vm.flagless
  * @summary Checks that JFR code don't emit noise in the form of ThreadSleep and JavaMonitorWait events.
  * @requires vm.hasJFR
  * @library /test/lib

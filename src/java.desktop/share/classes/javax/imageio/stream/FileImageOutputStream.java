@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import com.sun.imageio.stream.CloseableDisposerRecord;
-import com.sun.imageio.stream.StreamFinalizer;
 import sun.java2d.Disposer;
 
 /**
@@ -44,7 +43,7 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
     private RandomAccessFile raf;
 
     /** The referent to be registered with the Disposer. */
-    private final Object disposerReferent;
+    private final Object disposerReferent = new Object();
 
     /** The DisposerRecord that closes the underlying RandomAccessFile. */
     private final CloseableDisposerRecord disposerRecord;
@@ -81,14 +80,13 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
             throw new IllegalArgumentException("raf == null!");
         }
         this.raf = raf;
+        try {
+            this.streamPos = raf.getFilePointer();
+        } catch (IOException ignored) {
+        }
 
         disposerRecord = new CloseableDisposerRecord(raf);
-        if (getClass() == FileImageOutputStream.class) {
-            disposerReferent = new Object();
-            Disposer.addRecord(disposerReferent, disposerRecord);
-        } else {
-            disposerReferent = new StreamFinalizer(this);
-        }
+        Disposer.addRecord(disposerReferent, disposerRecord);
     }
 
     public int read() throws IOException {
@@ -157,20 +155,5 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
         super.close();
         disposerRecord.dispose(); // this closes the RandomAccessFile
         raf = null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated Finalization has been deprecated for removal.  See
-     * {@link java.lang.Object#finalize} for background information and details
-     * about migration options.
-     */
-    @Deprecated(since="9", forRemoval=true)
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer: for performance reasons we instead use the
-        // Disposer mechanism for ensuring that the underlying
-        // RandomAccessFile is closed prior to garbage collection
     }
 }

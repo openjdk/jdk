@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,22 +130,13 @@ public class FileInputStream extends InputStream
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(File file) throws FileNotFoundException {
-        String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(name);
-        }
-        if (name == null) {
-            throw new NullPointerException();
-        }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        path = file.getPath();
         fd = new FileDescriptor();
         fd.attach(this);
-        path = name;
-        open(name);
+        open(path);
         FileCleanable.register(fd);       // open set the fd, register the cleanup
     }
 
@@ -166,13 +157,8 @@ public class FileInputStream extends InputStream
      */
     @SuppressWarnings("this-escape")
     public FileInputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkRead(fdObj);
         }
         fd = fdObj;
         path = null;
@@ -219,22 +205,17 @@ public class FileInputStream extends InputStream
 
     private int traceRead0() throws IOException {
         int result = 0;
-        boolean endOfFile = false;
         long bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             result = read0();
             if (result < 0) {
-                endOfFile = true;
+                bytesRead = -1;
             } else {
                 bytesRead = 1;
             }
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                FileReadEvent.commit(start, duration, path, bytesRead, endOfFile);
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return result;
     }
@@ -250,19 +231,11 @@ public class FileInputStream extends InputStream
 
     private int traceReadBytes(byte b[], int off, int len) throws IOException {
         int bytesRead = 0;
-        long start = 0;
+        long start = FileReadEvent.timestamp();
         try {
-            start = FileReadEvent.timestamp();
             bytesRead = readBytes(b, off, len);
         } finally {
-            long duration = FileReadEvent.timestamp() - start;
-            if (FileReadEvent.shouldCommit(duration)) {
-                if (bytesRead < 0) {
-                    FileReadEvent.commit(start, duration, path, 0L, true);
-                } else {
-                    FileReadEvent.commit(start, duration, path, bytesRead, false);
-                }
-            }
+            FileReadEvent.offer(start, path, bytesRead);
         }
         return bytesRead;
     }

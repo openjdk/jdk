@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,12 @@ import jdk.jfr.Period;
 import jdk.jfr.Relational;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
 import jdk.jfr.TransitionFrom;
 import jdk.jfr.TransitionTo;
 import jdk.jfr.Unsigned;
 import jdk.jfr.internal.util.Utils;
-
+import jdk.jfr.internal.settings.ThrottleSetting;
 public final class MetadataLoader {
 
     // Caching to reduce allocation pressure and heap usage
@@ -191,7 +192,7 @@ public final class MetadataLoader {
 
     public static List<Type> createTypes() throws IOException {
         try (DataInputStream dis = new DataInputStream(
-                SecuritySupport.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
+                MetadataLoader.class.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
             MetadataLoader ml = new MetadataLoader(dis);
             return ml.buildTypes();
         } catch (Exception e) {
@@ -320,7 +321,7 @@ public final class MetadataLoader {
                     aes.add(new AnnotationElement(Cutoff.class, Cutoff.INFINITY));
                 }
                 if (t.throttle) {
-                    aes.add(new AnnotationElement(Throttle.class, Throttle.DEFAULT));
+                    aes.add(new AnnotationElement(Throttle.class, ThrottleSetting.DEFAULT_VALUE));
                 }
             }
             if (t.experimental) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
@@ -42,7 +41,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
   G1FullGCMarker* marker = collector()->marker(worker_id);
-  MarkingNMethodClosure code_closure(marker->mark_closure(), !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
+  MarkingNMethodClosure code_closure(marker->mark_closure());
 
   if (ClassUnloading) {
     _root_processor.process_strong_roots(marker->mark_closure(),

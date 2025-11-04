@@ -36,6 +36,7 @@ import jtreg.SkippedException;
  * @bug 8263636 8263635
  * @summary Test to use already started RMI registry
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @requires os.family != "windows"
  * @library /test/lib
  * @run driver DisableRegistryTest

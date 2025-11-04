@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.common.JVMCIError;
@@ -77,7 +78,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     }
 
     /**
-     * Gets the address of the pointer to the native failed speculations list.
+     * Gets the address of the pointer to the native failed speculations list.  This always returns a non-zero address.
      *
      * @see #managesFailedSpeculations()
      */
@@ -85,8 +86,9 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (managesFailedSpeculations) {
             synchronized (this) {
                 if (failedSpeculationsAddress == 0L) {
-                    failedSpeculationsAddress = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
-                    UnsafeAccess.UNSAFE.putAddress(failedSpeculationsAddress, 0L);
+                    long address = UnsafeAccess.UNSAFE.allocateMemory(HotSpotJVMCIRuntime.getHostWordKind().getByteCount());
+                    UnsafeAccess.UNSAFE.putAddress(address, 0L);
+                    failedSpeculationsAddress = address;
                     LogCleaner c = new LogCleaner(this, failedSpeculationsAddress);
                     assert c.address == failedSpeculationsAddress;
                 }
@@ -129,7 +131,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
         private final byte[] encoding;
 
-        HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding) {
+        public HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding) {
             super(reason);
             this.id = id;
             this.encoding = encoding;
@@ -139,12 +141,33 @@ public class HotSpotSpeculationLog implements SpeculationLog {
             return id;
         }
 
+        /**
+         * Returns a copy of the speculation reason encoding.
+         */
+        public byte[] getReasonEncoding() {
+            return (encoding == null) ? null : encoding.clone();
+        }
+
         @Override
         public String toString() {
             long indexAndLength = id.asLong();
             int index = decodeIndex(indexAndLength);
             int length = decodeLength(indexAndLength);
             return String.format("{0x%016x[index: %d, len: %d, hash: 0x%x]: %s}", indexAndLength, index, length, Arrays.hashCode(encoding), getReason());
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof HotSpotSpeculation that) {
+                return getReason().equals(that.getReason()) && id.equals(that.id) && Arrays.equals(encoding, that.encoding);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getReason(), id, Arrays.hashCode(encoding));
         }
     }
 
@@ -171,8 +194,16 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     @Override
     public void collectFailedSpeculations() {
-        if (failedSpeculationsAddress != 0 && UnsafeAccess.UNSAFE.getLong(failedSpeculationsAddress) != 0) {
-            failedSpeculations = compilerToVM().getFailedSpeculations(failedSpeculationsAddress, failedSpeculations);
+        if (failedSpeculationsAddress == 0) {
+            // If no memory has been allocated then don't force its creation
+            return;
+        }
+
+        // Go through getFailedSpeculationsAddress() to ensure that any concurrent
+        // initialization of failedSpeculationsAddress is seen by this thread.
+        long address = getFailedSpeculationsAddress();
+        if (UnsafeAccess.UNSAFE.getLong(address) != 0) {
+            failedSpeculations = compilerToVM().getFailedSpeculations(address, failedSpeculations);
             assert failedSpeculations.getClass() == byte[][].class;
         }
     }

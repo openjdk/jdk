@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,9 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
+ *          java.desktop
  * @build KullaTesting TestingInputStream
- * @run testng ToolSimpleTest
+ * @run junit/timeout=480 ToolSimpleTest
  */
 
 import java.util.ArrayList;
@@ -46,10 +47,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class ToolSimpleTest extends ReplToolTesting {
 
@@ -542,7 +542,7 @@ public class ToolSimpleTest extends ReplToolTesting {
         String[] res = trimmed.isEmpty()
                 ? new String[0]
                 : trimmed.split("\n");
-        assertEquals(res.length, match.size(), "Got: " + Arrays.asList(res));
+        assertEquals(match.size(), res.length, "Got: " + Arrays.asList(res));
         for (int i = 0; i < match.size(); ++i) {
             assertTrue(res[i].contains(match.get(i)));
         }
@@ -566,11 +566,11 @@ public class ToolSimpleTest extends ReplToolTesting {
                         s -> checkLineToList(s, START_UP)),
                 a -> assertCommandCheckOutput(a, "/list -all",
                         s -> checkLineToList(s, startVarList)),
-                a -> assertCommandOutputStartsWith(a, "/list s3",
-                        "s3 : import"),
-                a -> assertCommandCheckOutput(a, "/list 1-2 s3",
+                a -> assertCommandOutputStartsWith(a, "/list s1",
+                        "s1 : import"),
+                a -> assertCommandCheckOutput(a, "/list 1-2 s1",
                         s -> {
-                            assertTrue(Pattern.matches(".*aardvark.*\\R.*weevil.*\\R.*s3.*import.*", s.trim()),
+                            assertTrue(Pattern.matches(".*aardvark.*\\R.*weevil.*\\R.*s1.*import.*", s.trim()),
                                     "No match: " + s);
                         }),
                 a -> assertCommandOutputStartsWith(a, "/list " + arg,
@@ -618,7 +618,7 @@ public class ToolSimpleTest extends ReplToolTesting {
                 a -> assertCommandCheckOutput(a, "/methods print println printf",
                         s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandCheckOutput(a, "/methods println",
-                        s -> assertEquals(s.trim().split("\n").length, 10)),
+                        s -> assertEquals(10, s.trim().split("\n").length)),
                 a -> assertCommandCheckOutput(a, "/methods",
                         s -> checkLineToList(s, printingMethodList)),
                 a -> assertCommandOutputStartsWith(a, "/methods " + arg,
@@ -977,4 +977,14 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "var a = a;", "cannot use 'var' on self-referencing variable")
         );
     }
+
+    @Test
+    public void testModuleImportShortenedTypes() {
+        test(
+                (a) -> assertCommandOutputContains(a, "import module java.desktop;", ""),
+                (a) -> assertCommandOutputContains(a, "var r1 = new JButton()", ""),
+                (a) -> assertCommandOutputContains(a, "/vars r1", "|    JButton r1 =")
+        );
+    }
+
 }

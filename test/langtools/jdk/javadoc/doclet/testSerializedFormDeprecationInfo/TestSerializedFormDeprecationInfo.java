@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">This field indicates whether the C1 is undecorated.</div>
                     <dl class="notes">
@@ -123,7 +123,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     <div class="block">Reads the object stream.</div>
                     <dl class="notes">
@@ -146,13 +146,13 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
                     <pre>boolean undecorated</pre>
                     <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     </li>""",
                 """
                     <span class="deprecated-label">Deprecated.</span>
                     <div class="deprecation-comment">As of JDK version 1.5, replaced by
-                     <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
+                    <a href="pkg1/C1.html#setUndecorated(boolean)"><code>setUndecorated(boolean)</code></a>.</div>
                     </div>
                     </li>""");
     }

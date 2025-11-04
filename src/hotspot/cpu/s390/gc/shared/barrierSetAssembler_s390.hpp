@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,6 +66,14 @@ public:
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg) const;
 #endif // COMPILER2
+
+  static const int OFFSET_TO_PATCHABLE_DATA_INSTRUCTION = 6 + 6 + 6; // iihf(6) + iilf(6) + lg(6)
+  static const int BARRIER_TOTAL_LENGTH = OFFSET_TO_PATCHABLE_DATA_INSTRUCTION + 6 + 6 + 2; // cfi(6) + larl(6) + bcr(2)
+
+  // first 2 bytes are for cfi instruction opcode and next 4 bytes will be the value/data to be patched,
+  // so we are skipping first 2 bytes and returning the address of value/data field
+  static const int OFFSET_TO_PATCHABLE_DATA = 6 + 6 + 6 + 2; // iihf(6) + iilf(6) + lg(6) + CFI_OPCODE(2)
+
 };
 
 #ifdef COMPILER2

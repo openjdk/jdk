@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +23,10 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "os_windows.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/ostream.hpp"
 
 #include <limits.h>
 #include <winnt.h>
@@ -197,10 +197,11 @@ public:
     st->print_cr("state:   region state and type:");
     st->print_cr("             state: committed / reserved");
     st->print_cr("             type: image / mapped / private");
+    st->print_cr("offset:  offset from start of allocation block");
+    st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
-    st->print_cr("vm info: VM information (requires NMT)");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
   }

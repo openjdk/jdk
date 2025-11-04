@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,6 +214,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         return new AffineTransform(xscale, 0.0, 0.0, yscale, 0.0, 0.0);
     }
 
+    @Override
     public String toString() {
         return (super.toString()+"[dev="+device+",pixfmt="+visual+"]");
     }

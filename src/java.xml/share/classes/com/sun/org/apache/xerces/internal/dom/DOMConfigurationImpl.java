@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,7 +32,6 @@ import com.sun.org.apache.xerces.internal.util.MessageFormatter;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDContentModelHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDTDHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -54,8 +53,10 @@ import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
@@ -71,7 +72,7 @@ import org.w3c.dom.ls.LSResourceResolver;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems.
- * @LastModified: July 2023
+ * @LastModified: May 2025
  */
 public class DOMConfigurationImpl extends ParserConfigurationSettings
     implements XMLParserConfiguration, DOMConfiguration {
@@ -414,10 +415,10 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         fValidationManager = createValidationManager();
         setProperty(VALIDATION_MANAGER, fValidationManager);
 
-        setProperty(SECURITY_MANAGER, new XMLSecurityManager(true));
+        setProperty(SECURITY_MANAGER, JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
 
         setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER,
-                new XMLSecurityPropertyManager());
+                JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false));
 
         // add message formatters
         if (fErrorReporter.getMessageFormatter(XMLMessageFormatter.XML_DOMAIN) == null) {

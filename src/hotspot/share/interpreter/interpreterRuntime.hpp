@@ -146,8 +146,8 @@ private:
                                         Method* method,
                                         intptr_t* from, intptr_t* to);
 
-#if defined(IA32) || defined(AMD64) || defined(ARM)
-  // Popframe support (only needed on x86, AMD64 and ARM)
+#if defined(AMD64) || defined(ARM)
+  // Popframe support (only needed on AMD64 and ARM)
   static void popframe_move_outgoing_args(JavaThread* current, void* src_address, void* dest_address);
 #endif
 
@@ -192,7 +192,6 @@ class SignatureHandlerLibrary: public AllStatic {
 
  public:
   static void add(const methodHandle& method);
-  static void add(uint64_t fingerprint, address handler);
 };
 
 #endif // SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP

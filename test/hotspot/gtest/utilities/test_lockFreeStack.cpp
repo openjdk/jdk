@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "threadHelper.inline.hpp"
@@ -226,21 +225,21 @@ public:
   {}
 
   virtual void main_run() {
-    Atomic::release_store_fence(&_ready, true);
+    AtomicAccess::release_store_fence(&_ready, true);
     while (true) {
       Element* e = _from->pop();
       if (e != nullptr) {
         _to->push(*e);
-        Atomic::inc(_processed);
+        AtomicAccess::inc(_processed);
         ++_local_processed;
-      } else if (Atomic::load_acquire(_processed) == _process_limit) {
-        tty->print_cr("thread %u processed " SIZE_FORMAT, _id, _local_processed);
+      } else if (AtomicAccess::load_acquire(_processed) == _process_limit) {
+        tty->print_cr("thread %u processed %zu", _id, _local_processed);
         return;
       }
     }
   }
 
-  bool ready() const { return Atomic::load_acquire(&_ready); }
+  bool ready() const { return AtomicAccess::load_acquire(&_ready); }
 };
 
 TEST_VM(LockFreeStackTest, stress) {

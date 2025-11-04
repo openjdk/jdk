@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
@@ -193,6 +192,7 @@ TEST(TestJavaArithmetic, shift_left_jint) {
   const volatile ShiftOpJintData* data = asl_jint_data;
   for (size_t i = 0; i < ARRAY_SIZE(asl_jint_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_left(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_left(data[i].x, data[i].shift, T_INT));
   }
 }
 
@@ -200,6 +200,7 @@ TEST(TestJavaArithmetic, shift_left_jlong) {
   const volatile ShiftOpJlongData* data = asl_jlong_data;
   for (size_t i = 0; i < ARRAY_SIZE(asl_jlong_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_left(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_left(data[i].x, data[i].shift, T_LONG));
   }
 }
 
@@ -263,6 +264,7 @@ TEST(TestJavaArithmetic, shift_right_jint) {
   const volatile ShiftOpJintData* data = asr_jint_data;
   for (size_t i = 0; i < ARRAY_SIZE(asr_jint_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_right(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_right(data[i].x, data[i].shift, T_INT));
   }
 }
 
@@ -270,6 +272,7 @@ TEST(TestJavaArithmetic, shift_right_jlong) {
   const volatile ShiftOpJlongData* data = asr_jlong_data;
   for (size_t i = 0; i < ARRAY_SIZE(asr_jlong_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_right(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_right(data[i].x, data[i].shift, T_LONG));
   }
 }
 
@@ -335,6 +338,7 @@ TEST(TestJavaArithmetic, shift_right_unsigned_jint) {
   const volatile ShiftOpJintData* data = lsr_jint_data;
   for (size_t i = 0; i < ARRAY_SIZE(lsr_jint_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_right_unsigned(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_right_unsigned(data[i].x, data[i].shift, T_INT));
   }
 }
 
@@ -342,5 +346,6 @@ TEST(TestJavaArithmetic, shift_right_unsigned_jlong) {
   const volatile ShiftOpJlongData* data = lsr_jlong_data;
   for (size_t i = 0; i < ARRAY_SIZE(lsr_jlong_data); ++i) {
     ASSERT_EQ(data[i].r, java_shift_right_unsigned(data[i].x, data[i].shift));
+    ASSERT_EQ(data[i].r, java_shift_right_unsigned(data[i].x, data[i].shift, T_LONG));
   }
 }

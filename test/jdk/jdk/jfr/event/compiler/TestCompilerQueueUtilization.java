@@ -32,7 +32,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires vm.compMode!="Xint"
  * @library /test/lib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
@@ -61,7 +60,7 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   // Using a spin lock since we are part of the mutex impl.
   // 8028280: using concurrent free list without memory management can leak
   // pretty badly it turns out.
-  Thread::SpinAcquire(&ListLock, "ParkEventFreeListAllocate");
+  Thread::SpinAcquire(&ListLock);
   {
     ev = FreeList;
     if (ev != nullptr) {
@@ -89,7 +88,7 @@ void ParkEvent::Release (ParkEvent * ev) {
   ev->AssociatedWith = nullptr ;
   // Note that if we didn't have the TSM/immortal constraint, then
   // when reattaching we could trim the list.
-  Thread::SpinAcquire(&ListLock, "ParkEventFreeListRelease");
+  Thread::SpinAcquire(&ListLock);
   {
     ev->FreeNext = FreeList;
     FreeList = ev;

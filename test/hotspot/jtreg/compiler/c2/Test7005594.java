@@ -27,8 +27,8 @@
  * @summary Array overflow not handled correctly with loop optimzations
  *
  * @run main/othervm -Xcomp
-                     -XX:CompileOnly=compiler.c2.Test7005594::test
-                     compiler.c2.Test7005594
+ *                   -XX:CompileOnly=compiler.c2.Test7005594::test
+ *                   compiler.c2.Test7005594
  */
 
 package compiler.c2;

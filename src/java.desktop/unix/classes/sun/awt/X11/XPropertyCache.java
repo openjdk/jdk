@@ -37,9 +37,9 @@ import java.util.*;
  * access to properties is rewritten using general mechanisms, caching
  * will be enabled.
  */
-public class XPropertyCache {
+public final class XPropertyCache {
 
-    static class PropertyCacheEntry {
+    static final class PropertyCacheEntry {
         private final int format;
         private final int numberOfItems;
         private final long bytesAfter;

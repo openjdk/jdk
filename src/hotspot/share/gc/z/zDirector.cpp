@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-#include "precompiled.hpp"
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -192,7 +192,7 @@ static ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& s
   const double time_until_gc = time_until_oom - actual_gc_duration;
 
   log_debug(gc, director)("Rule Minor: Allocation Rate (Dynamic GC Workers), "
-                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "
+                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: %zuMB, GCCPUTime: %.3f, "
                           "GCDuration: %.3fs, TimeUntilOOM: %.3fs, TimeUntilGC: %.3fs, GCWorkers: %u",
                           alloc_rate / M,
                           alloc_rate_sd_percent * 100,
@@ -286,7 +286,7 @@ static bool rule_minor_allocation_rate_static(const ZDirectorStats& stats) {
   // time and end up starting the GC too late in the next interval.
   const double time_until_gc = time_until_oom - gc_duration;
 
-  log_debug(gc, director)("Rule Minor: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: " SIZE_FORMAT "MB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule Minor: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: %zuMB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, gc_duration, time_until_gc);
 
   return time_until_gc <= 0;
@@ -301,12 +301,11 @@ static bool is_young_small(const ZDirectorStats& stats) {
 
   // If the freeable memory isn't even 5% of the heap, we can't expect to free up
   // all that much memory, so let's not even try - it will likely be a wasted effort
-  // that takes away CPU power to the hopefullt more profitable major colelction.
+  // that takes away CPU power to the hopefully more profitable major collection.
   return young_used_percent <= 5.0;
 }
 
-template <typename PrintFn = void(*)(size_t, double)>
-static bool is_high_usage(const ZDirectorStats& stats, PrintFn* print_function = nullptr) {
+static bool is_high_usage(const ZDirectorStats& stats, bool log = false) {
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
   const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
@@ -315,8 +314,9 @@ static bool is_high_usage(const ZDirectorStats& stats, PrintFn* print_function =
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
   const double free_percent = percent_of(free, soft_max_capacity);
 
-  if (print_function != nullptr) {
-    (*print_function)(free, free_percent);
+  if (log) {
+    log_debug(gc, director)("Rule Minor: High Usage, Free: %zuMB(%.1f%%)",
+                            free / M, free_percent);
   }
 
   // The heap has high usage if there is less than 5% free memory left
@@ -376,19 +376,7 @@ static bool rule_minor_high_usage(const ZDirectorStats& stats) {
   // such that the allocation rate rule doesn't trigger, but the amount of free
   // memory is still slowly but surely heading towards zero. In this situation,
   // we start a GC cycle to avoid a potential allocation stall later.
-
-  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
-  const size_t used = stats._heap._used;
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
-  const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
-  const double free_percent = percent_of(free, soft_max_capacity);
-
-  auto print_function = [&](size_t free, double free_percent) {
-    log_debug(gc, director)("Rule Minor: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
-                            free / M, free_percent);
-  };
-
-  return is_high_usage(stats, &print_function);
+  return is_high_usage(stats, true /* log */);
 }
 
 // Major GC rules
@@ -428,7 +416,7 @@ static bool rule_major_warmup(const ZDirectorStats& stats) {
   const double used_threshold_percent = (stats._old_stats._cycle._nwarmup_cycles + 1) * 0.1;
   const size_t used_threshold = (size_t)(soft_max_capacity * used_threshold_percent);
 
-  log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
+  log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: %zuMB, UsedThreshold: %zuMB",
                           used_threshold_percent * 100, used / M, used_threshold / M);
 
   return used >= used_threshold;
@@ -453,16 +441,22 @@ static double calculate_extra_young_gc_time(const ZDirectorStats& stats) {
   // relocation headroom into account to avoid in-place relocation.
   const size_t old_used = stats._old_stats._general._used;
   const size_t old_live = stats._old_stats._stat_heap._live_at_mark_end;
-  const size_t old_garbage = old_used - old_live;
+  const double old_garbage = double(old_used - old_live);
 
   const double young_gc_time = gc_time(stats._young_stats);
 
   // Calculate how much memory young collections are predicted to free.
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
 
   // Calculate current YC time and predicted YC time after an old collection.
-  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double potential_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc + old_garbage);
+  const double current_young_gc_time_per_bytes_freed = young_gc_time / reclaimed_per_young_gc;
+  const double potential_young_gc_time_per_bytes_freed = young_gc_time / (reclaimed_per_young_gc + old_garbage);
+
+  if (current_young_gc_time_per_bytes_freed == std::numeric_limits<double>::infinity()) {
+    // Young collection's are not reclaiming any memory. Return infinity as a signal
+    // to trigger an old collection, regardless of the amount of old garbage.
+    return std::numeric_limits<double>::infinity();
+  }
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -483,13 +477,12 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
   const double young_gc_time = gc_time(stats._young_stats);
 
   // Calculate how much memory collections are predicted to free.
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
-  const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
 
   // Calculate the GC cost for each reclaimed byte
-  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double current_old_gc_time_per_bytes_freed = reclaimed_per_old_gc == 0 ? std::numeric_limits<double>::infinity()
-                                                                               : (double(old_gc_time) / double(reclaimed_per_old_gc));
+  const double current_young_gc_time_per_bytes_freed = young_gc_time / reclaimed_per_young_gc;
+  const double current_old_gc_time_per_bytes_freed = old_gc_time / reclaimed_per_old_gc;
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -531,10 +524,10 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
 
   const double young_gc_time = gc_time(stats._young_stats);
   const double old_gc_time = gc_time(stats._old_stats);
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
-  const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
-  const double current_young_bytes_freed_per_gc_time = double(reclaimed_per_young_gc) / double(young_gc_time);
-  const double current_old_bytes_freed_per_gc_time = double(reclaimed_per_old_gc) / double(old_gc_time);
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
+  const double current_young_bytes_freed_per_gc_time = reclaimed_per_young_gc / young_gc_time;
+  const double current_old_bytes_freed_per_gc_time = reclaimed_per_old_gc / old_gc_time;
 
   if (current_young_bytes_freed_per_gc_time == 0.0) {
     if (current_old_bytes_freed_per_gc_time == 0.0) {
@@ -550,7 +543,7 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
 
   const double old_vs_young_efficiency_ratio = current_old_bytes_freed_per_gc_time / current_young_bytes_freed_per_gc_time;
 
-  return old_vs_young_efficiency_ratio;
+  return MIN2(old_vs_young_efficiency_ratio, (double)ZOldGCThreads);
 }
 
 static bool rule_major_proactive(const ZDirectorStats& stats) {
@@ -586,7 +579,7 @@ static bool rule_major_proactive(const ZDirectorStats& stats) {
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
-    log_debug(gc, director)("Rule Major: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3fs",
+    log_debug(gc, director)("Rule Major: Proactive, UsedUntilEnabled: %zuMB, TimeUntilEnabled: %.3fs",
                             (used_threshold - used) / M,
                             time_since_last_gc_threshold - time_since_last_gc);
     return false;
@@ -719,8 +712,8 @@ static ZWorkerCounts select_worker_threads(const ZDirectorStats& stats, uint you
       // Adjust down the old workers so the next minor during major will be less sad
       old_workers = old_workers_clamped;
       // Since collecting the old generation depends on the initial young collection
-      // finishing, we don't want it to have fewer workers than the old generation.
-      young_workers = MAX2(old_workers, young_workers);
+      // finishing, we ideally don't want it to have fewer workers than the old generation.
+      young_workers = clamp(MAX2(old_workers, young_workers), 1u, ZYoungGCThreads);
     } else if (type == ZWorkerSelectionType::minor_during_old) {
       // Adjust young and old workers for minor during old to fit within ConcGCThreads
       young_workers = young_workers_clamped;

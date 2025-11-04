@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test NotifBufferSizePropertyNameTest
- * @bug 6174229
+ * @bug 6174229 8345045
  * @summary Verify the property name specifying server notification buffer size.
  * @author Shanliang JIANG
  *
@@ -52,35 +52,25 @@ public class NotifBufferSizePropertyNameTest {
             };
 
     public static void main(String[] args) throws Exception {
-        System.out.println(
-           "Verify the property name specifying the server notification buffer size.");
+        System.out.println("Verify the property name specifying the server notification buffer size.");
 
         oname = new ObjectName ("Default:name=NotificationEmitter");
         url = new JMXServiceURL("rmi", null, 0);
         Map env = new HashMap(2);
 
-        System.out.println("Test the new property name.");
+        System.out.println("Test the property name.");
         env.put("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         test(env);
 
-        System.out.println("Test the old property name.");
-        env.remove("jmx.remote.x.notification.buffer.size");
-        env.put("jmx.remote.x.buffer.size", String.valueOf(bufferSize));
-        test(env);
-
+        // Recognition of the old, incorrect property "jmx.remote.x.buffer.size" has been dropped.
+        // Do not test old name is recognised, but do test it does not interfere with correct name:
         System.out.println("Test that the new property name overwrite the old one.");
         env.put("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         env.put("jmx.remote.x.buffer.size", String.valueOf(bufferSize*6));
         test(env);
 
-        System.out.println("Test the old property name on system.");
-        System.setProperty("jmx.remote.x.buffer.size", String.valueOf(bufferSize));
-        test(null);
-
-        System.out.println(
-             "Test that the new property name overwrite the old one on system.");
-        System.setProperty("jmx.remote.x.notification.buffer.size",
-                           String.valueOf(bufferSize));
+        System.out.println("Test that the new property name overwrite the old one on system.");
+        System.setProperty("jmx.remote.x.notification.buffer.size", String.valueOf(bufferSize));
         System.setProperty("jmx.remote.x.buffer.size", String.valueOf(bufferSize*6));
         test(null);
     }

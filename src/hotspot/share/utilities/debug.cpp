@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -38,10 +37,9 @@
 #include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -61,11 +59,13 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/unsigned5.hpp"
 #include "utilities/vmError.hpp"
 
-#include <stdio.h>
+#include <new>
 #include <stdarg.h>
+#include <stdio.h>
 
 // These functions needs to be exported on Windows only
 #define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
@@ -74,8 +74,8 @@
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
+const char* g_assert_poison_read_only = &g_dummy;
 static intx g_asserting_thread = 0;
-static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 int DebuggingContext::_enabled = 0; // Initially disabled.
@@ -181,16 +181,21 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
 {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = nullptr;
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
-    context = g_assertion_context;
-  }
-#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   print_error_for_unit_test(error_msg, detail_fmt, detail_args);
 
-  VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
+  const void* context = nullptr;
+  const void* siginfo = nullptr;
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (os::current_thread_id() == g_asserting_thread) {
+    context = os::get_saved_assert_context(&siginfo);
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+  VMError::report_and_die(INTERNAL_ERROR, error_msg, detail_fmt, detail_args,
+                          Thread::current_or_null(), nullptr, siginfo, context,
+                          file, line, 0);
   va_end(detail_args);
 }
 
@@ -202,17 +207,21 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = nullptr;
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
-    context = g_assertion_context;
-  }
-#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
 
   print_error_for_unit_test("fatal error", detail_fmt, detail_args);
 
+  const void* context = nullptr;
+  const void* siginfo = nullptr;
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (os::current_thread_id() == g_asserting_thread) {
+    context = os::get_saved_assert_context(&siginfo);
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
   VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
-                          Thread::current_or_null(), nullptr, nullptr, context,
+                          Thread::current_or_null(), nullptr, siginfo, context,
                           file, line, 0);
   va_end(detail_args);
 }
@@ -257,7 +266,7 @@ void report_java_out_of_memory(const char* message) {
   // same time. To avoid dumping the heap or executing the data collection
   // commands multiple times we just do it once when the first threads reports
   // the error.
-  if (Atomic::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
+  if (AtomicAccess::cmpxchg(&out_of_memory_reported, 0, 1) == 0) {
     // create heap dump before OnOutOfMemoryError commands are executed
     if (HeapDumpOnOutOfMemoryError) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
@@ -288,19 +297,39 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark _rm;
-  DebuggingContext _debugging;
- public:
   static int level;
-  Command(const char* str) {
-    if (level++ > 0)  return;
-    tty->cr();
-    tty->print_cr("\"Executing %s\"", str);
+  DebuggingContext _debugging;
+  bool _has_rm;
+  // Union members of class type are implicitly allocated but not constructed automatically.
+  // We therefore have to explicitly construct _rm with a placement new call (see 'onThread()') and
+  // clean it up afterwards with an explicit destructor call (see '~Command()').
+  union { ResourceMark _rm; };
+ public:
+  Command(const char* str) : _has_rm(false) {
+    if (level++ == 0) {
+      tty->cr();
+      tty->print_cr("\"Executing %s\"", str);
+    }
+    tty->flush();
   }
-
   ~Command() {
+    if (_has_rm) _rm.~ResourceMark();
     tty->flush();
     level--;
+  }
+
+  bool onThread() {
+    Thread* thread = Thread::current_or_null();
+    if (thread == nullptr) {
+      tty->print_cr("Failed: Current thread is not attached");
+      return false;
+    }
+
+    if (!_has_rm) {
+      ::new (&_rm) ResourceMark();
+      _has_rm = true;
+    }
+    return true;
   }
 };
 
@@ -362,6 +391,7 @@ extern "C" DEBUGEXPORT void printnm(intptr_t p) {
 
 extern "C" DEBUGEXPORT void universe() {
   Command c("universe");
+  if (!c.onThread()) return;
   Universe::print_on(tty);
 }
 
@@ -371,6 +401,7 @@ extern "C" DEBUGEXPORT void verify() {
   // note: this may not be safe if we're not at a safepoint; for debugging,
   // this manipulates the safepoint settings to avoid assertion failures
   Command c("universe verify");
+  if (!c.onThread()) return;
   bool safe = SafepointSynchronize::is_at_safepoint();
   if (!safe) {
     tty->print_cr("warning: not at safepoint -- verify may fail");
@@ -385,6 +416,7 @@ extern "C" DEBUGEXPORT void verify() {
 
 extern "C" DEBUGEXPORT void pp(void* p) {
   Command c("pp");
+  if (!c.onThread()) return;
   FlagSetting fl(DisplayVMOutput, true);
   if (p == nullptr) {
     tty->print_cr("null");
@@ -408,14 +440,15 @@ extern "C" DEBUGEXPORT void pp(void* p) {
 }
 
 
-extern "C" DEBUGEXPORT void findpc(intptr_t x);
-
 extern "C" DEBUGEXPORT void ps() { // print stack
-  if (Thread::current_or_null() == nullptr) return;
-  Command c("ps");
-
   // Prints the stack of the current Java thread
+  Command c("ps");
+  if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
   tty->print(" for thread: ");
   p->print();
   tty->cr();
@@ -442,7 +475,12 @@ extern "C" DEBUGEXPORT void ps() { // print stack
 extern "C" DEBUGEXPORT void pfl() {
   // print frame layout
   Command c("pfl");
+  if (!c.onThread()) return;
   JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
   tty->print(" for thread: ");
   p->print();
   tty->cr();
@@ -452,34 +490,39 @@ extern "C" DEBUGEXPORT void pfl() {
 }
 
 extern "C" DEBUGEXPORT void psf() { // print stack frames
-  {
-    Command c("psf");
-    JavaThread* p = JavaThread::active();
-    tty->print(" for thread: ");
-    p->print();
-    tty->cr();
-    if (p->has_last_Java_frame()) {
-      p->trace_frames();
-    }
+  Command c("psf");
+  if (!c.onThread()) return;
+  JavaThread* p = JavaThread::active();
+  if (p == nullptr) {
+    tty->print_cr("Failed: JavaThread::active is null");
+    return;
+  }
+  tty->print(" for thread: ");
+  p->print();
+  tty->cr();
+  if (p->has_last_Java_frame()) {
+    p->trace_frames();
   }
 }
 
 
 extern "C" DEBUGEXPORT void threads() {
   Command c("threads");
+  if (!c.onThread()) return;
   Threads::print(false, true);
 }
 
 
 extern "C" DEBUGEXPORT void psd() {
   Command c("psd");
+  if (!c.onThread()) return;
   SystemDictionary::print();
 }
 
 
 extern "C" DEBUGEXPORT void pss() { // print all stacks
-  if (Thread::current_or_null() == nullptr) return;
   Command c("pss");
+  if (!c.onThread()) return;
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
 
@@ -526,12 +569,14 @@ extern "C" DEBUGEXPORT nmethod* findnm(intptr_t addr) {
 
 extern "C" DEBUGEXPORT void find(intptr_t x) {
   Command c("find");
+  if (!c.onThread()) return;
   os::print_location(tty, x, false);
 }
 
 
 extern "C" DEBUGEXPORT void findpc(intptr_t x) {
   Command c("findpc");
+  if (!c.onThread()) return;
   os::print_location(tty, x, true);
 }
 
@@ -543,6 +588,7 @@ extern "C" DEBUGEXPORT void findpc(intptr_t x) {
 //   call findmethod("*ang/Object*", "wait:(*J*)V", 0x1) -> list all "wait" methods in j.l.Object that have a long parameter
 extern "C" DEBUGEXPORT void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
+  if (!c.onThread()) return;
   ClassPrinter::print_flags_help(tty);
   ClassPrinter::print_classes(class_name_pattern, flags, tty);
 }
@@ -550,6 +596,7 @@ extern "C" DEBUGEXPORT void findclass(const char* class_name_pattern, int flags)
 extern "C" DEBUGEXPORT void findmethod(const char* class_name_pattern,
                                      const char* method_pattern, int flags) {
   Command c("findmethod");
+  if (!c.onThread()) return;
   ClassPrinter::print_flags_help(tty);
   ClassPrinter::print_methods(class_name_pattern, method_pattern, flags, tty);
 }
@@ -604,42 +651,69 @@ void pp(oop p)               { pp((void*)p); }
 void help() {
   Command c("help");
   tty->print_cr("basic");
-  tty->print_cr("  pp(void* p)   - try to make sense of p");
-  tty->print_cr("  ps()          - print current thread stack");
-  tty->print_cr("  pss()         - print all thread stacks");
-  tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
-  tty->print_cr("  findm(intptr_t pc) - finds Method*");
-  tty->print_cr("  find(intptr_t x)   - finds & prints nmethod/stub/bytecode/oop based on pointer into it");
-  tty->print_cr("  pns(void* sp, void* fp, void* pc)  - print native (i.e. mixed) stack trace. E.g.");
-  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64 or");
-  tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86 or");
-  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64 or");
-  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
-  tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
+  tty->print_cr("  pp(void* p)         - try to make sense of p");
+  tty->print_cr("  ps()                - print current thread stack");
+  tty->print_cr("  pss()               - print all thread stacks");
+  tty->print_cr("  pm(int pc)          - print Method* given compiled PC");
+  tty->print_cr("  findnm(intptr_t pc) - find nmethod*");
+  tty->print_cr("  findm(intptr_t pc)  - find Method*");
+  tty->print_cr("  find(intptr_t x)    - find & print nmethod/stub/bytecode/oop based on pointer into it");
+  tty->print_cr("  findpc(intptr_t x)  - find & print nmethod/stub/bytecode/oop based on pointer into it (verbose)");
+
+#ifndef PRODUCT
+  tty->print_cr("  pns(void* sp, void* fp, void* pc) - print native (i.e. mixed) stack trace, e.g.");
+#ifdef LINUX
+  AMD64_ONLY(  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64"));
+  AARCH64_ONLY(tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64"));
+  RISCV_ONLY(  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V"));
+  PPC64_ONLY(  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64"));
+#endif // LINUX
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
+#endif // !PRODUCT
+
+  tty->print_cr("universe.");
+  tty->print_cr("  verify(intptr_t p) - run verify on Universe");
+  tty->print_cr("  threads()          - print all threads");
+  tty->print_cr("  psd()              - print system dictionary");
+
   tty->print_cr("class metadata.");
   tty->print_cr("  findclass(name_pattern, flags)");
   tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
 
-  tty->print_cr("misc.");
-  tty->print_cr("  flush()       - flushes the log file");
-  tty->print_cr("  events()      - dump events from ring buffers");
+  tty->print_cr("method metadata.");
+  tty->print_cr("  blob(CodeBlob* p)      - print CodeBlob");
+  tty->print_cr("  dump_vtable(address p) - dump vtable of the Klass");
+  tty->print_cr("  nm(intptr_t p)         - find & print CodeBlob details");
+  tty->print_cr("  disnm(intptr_t p)      - find & print disassembly of CodeBlob");
+  tty->print_cr("  printnm(intptr_t p)    - print nmethod details");
+  tty->print_cr("  findbcp(method, bcp)   - find & prints bcp");
 
+  tty->print_cr("stack frame details.");
+  tty->print_cr("  pfl() - print frame layout");
+  tty->print_cr("  psf() - print stack frames");
+
+  tty->print_cr("misc.");
+  tty->print_cr("  flush()                                       - flush the log file");
+  tty->print_cr("  events()                                      - dump events from ring buffers");
+  tty->print_cr("  u5decode(intptr_t addr)                       - decode a single u5 value");
+  tty->print_cr("  u5p(intptr_t addr, intptr_t limit, int count) - decode u5 values");
 
   tty->print_cr("compiler debugging");
-  tty->print_cr("  debug()       - to set things up for compiler debugging");
-  tty->print_cr("  ndebug()      - undo debug");
+  tty->print_cr("  debug()  - set things up for compiler debugging");
+  tty->print_cr("  ndebug() - undo debug");
 }
 
 #ifndef PRODUCT
 extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
+  if (!c.onThread()) return;
   static char buf[O_BUFLEN];
-  Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
-  VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
+  NativeStackPrinter nsp(Thread::current_or_null());
+  nsp.print_stack_from_frame(tty, fr, buf, sizeof(buf),
+                             false /* print_source_info */, -1 /* max stack */);
 }
 
 //
@@ -652,16 +726,12 @@ extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native 
 //
 extern "C" DEBUGEXPORT void pns2() { // print native stack
   Command c("pns2");
+  if (!c.onThread()) return;
   static char buf[O_BUFLEN];
   address lastpc = nullptr;
-  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf), lastpc)) {
-    // We have printed the native stack in platform-specific code,
-    // so nothing else to do in this case.
-  } else {
-    Thread* t = Thread::current_or_null();
-    frame fr = os::current_frame();
-    VMError::print_native_stack(tty, fr, t, false, -1, buf, sizeof(buf));
-  }
+  NativeStackPrinter nsp(Thread::current_or_null());
+  nsp.print_stack(tty, buf, sizeof(buf), lastpc,
+                  false /* print_source_info */, -1 /* max stack */);
 }
 #endif
 
@@ -705,16 +775,13 @@ struct TestMultipleStaticAssertFormsInClassScope {
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-
-static ucontext_t g_stored_assertion_context;
-
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size());
+  char* page = os::reserve_memory(os::vm_page_size(), mtInternal);
   if (page) {
-    MemTracker::record_virtual_memory_tag(page, mtInternal);
-    if (os::commit_memory(page, os::vm_page_size(), false) &&
+    if (os::commit_memory(page, os::vm_page_size(), !ExecMem) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
+      g_assert_poison_read_only = page;
     }
   }
 }
@@ -723,48 +790,29 @@ void disarm_assert_poison() {
   g_assert_poison = &g_dummy;
 }
 
-static void store_context(const void* context) {
-  memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
-#if defined(LINUX)
-  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
-  //  after copying the context (see comment in sys/ucontext.h):
-#if defined(PPC64)
-  *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
-#elif defined(AMD64)
-  // In the copied version, fpregs should point to the copied contents.
-  // Sanity check: fpregs should point into the context.
-  if ((address)((const ucontext_t*)context)->uc_mcontext.fpregs > (address)context) {
-    size_t fpregs_offset = pointer_delta(((const ucontext_t*)context)->uc_mcontext.fpregs, context, 1);
-    if (fpregs_offset < sizeof(ucontext_t)) {
-      // Preserve the offset.
-      *((void**) &g_stored_assertion_context.uc_mcontext.fpregs) = (void*)((address)(void*)&g_stored_assertion_context + fpregs_offset);
-    }
-  }
-#endif
-#endif
-}
-
-bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address) {
-  if (faulting_address == g_assert_poison) {
-    // Disarm poison page.
-    if (os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX) == false) {
 #ifdef ASSERT
-      fprintf(stderr, "Assertion poison page cannot be unprotected - mprotect failed with %d (%s)",
-              errno, os::strerror(errno));
-      fflush(stderr);
+static void print_unprotect_error() {
+  fprintf(stderr, "Assertion poison page cannot be unprotected - mprotect failed with %d (%s)",
+          errno, os::strerror(errno));
+  fflush(stderr);
+}
 #endif
-      return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
-    }
-    // Store Context away.
-    if (ucVoid) {
-      const intx my_tid = os::current_thread_id();
-      if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
-        store_context(ucVoid);
-        g_assertion_context = &g_stored_assertion_context;
-      }
-    }
-    return true;
+
+// TOUCH_ASSERT_POISON writes to the protected g_assert_poison page, which faults
+// and enters platform signal handlers which in turn invokes this routine.
+bool handle_assert_poison_fault(const void* ucVoid) {
+  // Disarm poison page.
+  if (!os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX)) {
+    DEBUG_ONLY(print_unprotect_error();)
+    return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
   }
-  return false;
+  if (ucVoid != nullptr) {
+    // Save context.
+    const intx my_tid = os::current_thread_id();
+    if (AtomicAccess::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+      os::save_assert_context(ucVoid);
+    }
+  }
+  return true;
 }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT

@@ -12,6 +12,11 @@ extern "C" {
 #include <spa/utils/type.h>
 #include <spa/param/audio/amr.h>
 
+/**
+ * \addtogroup spa_param
+ * \{
+ */
+
 #define SPA_TYPE_INFO_AudioAMRBandMode        SPA_TYPE_INFO_ENUM_BASE "AudioAMRBandMode"
 #define SPA_TYPE_INFO_AUDIO_AMR_BAND_MODE_BASE    SPA_TYPE_INFO_AudioAMRBandMode ":"
 

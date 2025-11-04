@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.inline.hpp"
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -40,8 +40,8 @@
 #include "logging/logStream.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -58,8 +58,8 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackOverflow.hpp"
@@ -71,8 +71,9 @@
 #if INCLUDE_ZGC
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #endif
-
-#include <type_traits>
+#if INCLUDE_JFR
+#include "jfr/jfr.inline.hpp"
+#endif
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -256,7 +257,9 @@ public:
   using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static freeze_result freeze(JavaThread* thread, intptr_t* const sp) {
-    return freeze_internal<SelfT, false>(thread, sp);
+    freeze_result res = freeze_internal<SelfT, false>(thread, sp);
+    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
+    return res;
   }
 
   static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
@@ -456,6 +459,7 @@ private:
   template<typename FKind> frame new_heap_frame(frame& f, frame& caller);
   inline void set_top_frame_metadata_pd(const frame& hf);
   inline void patch_pd(frame& callee, const frame& caller);
+  inline void patch_pd_unused(intptr_t* sp);
   void adjust_interpreted_frame_unextended_sp(frame& f);
   static inline void prepare_freeze_interpreted_top_frame(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
@@ -528,11 +532,7 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
     cont_size(), _cont.argsize(), p2i(_cont_stack_top), p2i(_cont_stack_bottom));
   assert(cont_size() > 0, "");
 
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    _monitors_in_lockstack = 0;
-  } else {
-    _monitors_in_lockstack = _thread->lock_stack().monitor_count();
-  }
+  _monitors_in_lockstack = _thread->lock_stack().monitor_count();
 }
 
 void FreezeBase::init_rest() { // we want to postpone some initialization after chunk handling
@@ -564,10 +564,30 @@ void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
 #endif
 }
 
+static void assert_frames_in_continuation_are_safe(JavaThread* thread) {
+#ifdef ASSERT
+  StackWatermark* watermark = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+  if (watermark == nullptr) {
+    return;
+  }
+  ContinuationEntry* ce = thread->last_continuation();
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::include,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
+  map.set_include_argument_oops(false);
+  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+    watermark->assert_is_frame_safe(f);
+  }
+#endif // ASSERT
+}
+
 // Called _after_ the last possible safepoint during the freeze operation (chunk allocation)
 void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
   entry->flush_stack_processing(_thread);
+  assert_frames_in_continuation_are_safe(_thread);
+  JFR_ONLY(Jfr::check_and_process_sample_request(_thread);)
   set_anchor_to_entry(_thread, entry);
 }
 
@@ -738,9 +758,24 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
-  intptr_t* from = _cont_stack_top - frame::metadata_words_at_bottom;
-  intptr_t* to   = chunk_top - frame::metadata_words_at_bottom;
-  copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
+
+  int adjust = frame::metadata_words_at_bottom;
+#if INCLUDE_ASAN && defined(AARCH64)
+  // Reading at offset frame::metadata_words_at_bottom from _cont_stack_top
+  // will accesss memory at the callee frame, which on preemption cases will
+  // be the VM native method being called. The Arm 64-bit ABI doesn't specify
+  // a location where the frame record (returnpc+fp) has to be stored within
+  // a stack frame, and GCC currently chooses to save it at the top of the
+  // frame (lowest address). ASan treats this memory access in the callee as
+  // an overflow access to one of the locals stored in that frame. For these
+  // preemption cases we don't need to read these words anyways so we avoid it.
+  if (_preempt) {
+    adjust = 0;
+  }
+#endif
+  intptr_t* from = _cont_stack_top - adjust;
+  intptr_t* to   = chunk_top - adjust;
+  copy_to_chunk(from, to, cont_size() + adjust);
   // Because we're not patched yet, the chunk is now in a bad state
 
   // patch return pc of the bottom-most frozen frame (now in the chunk)
@@ -771,6 +806,11 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
     address last_pc = _last_frame.pc();
     ContinuationHelper::patch_return_address_at(chunk_top - frame::sender_sp_ret_address_offset(), last_pc);
     chunk->set_pc(last_pc);
+    // For stub/native frames the fp is not used while frozen, and will be constructed
+    // again when thawing the frame (see ThawBase::handle_preempted_continuation). We
+    // patch it with a special bad address to help with debugging, particularly when
+    // inspecting frames and identifying invalid accesses.
+    patch_pd_unused(chunk_top);
   } else {
     chunk->set_pc(ContinuationHelper::return_address_at(
                   _cont_stack_top - frame::sender_sp_ret_address_offset()));
@@ -1578,21 +1618,22 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
-    int num_frames = num_java_frames(cont);
+  if (!cont.entry()->is_virtual_thread()) {
+    if (JvmtiExport::has_frame_pops(thread)) {
+      int num_frames = num_java_frames(cont);
 
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
-    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
+      ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+      JvmtiExport::continuation_yield_cleanup(thread, num_frames);
+    }
+    invalidate_jvmti_stack(thread);
   }
-  invalidate_jvmti_stack(thread);
 }
 
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
@@ -1620,23 +1661,6 @@ static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, fram
 #endif // INCLUDE_JVMTI
 
 #ifdef ASSERT
-static bool monitors_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
-                  RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::include,
-                  RegisterMap::WalkContinuation::skip);
-  map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
-        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f)) ||
-        (f.is_native_frame() && ContinuationHelper::NativeFrame::is_owning_locks(map.thread(), f))) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
 // adapter or called Deoptimization::unpack_frames. As for native frames, upcalls from JNI also go through the
 // interpreter (see JavaCalls::call_helper), while the UpcallLinker explicitly sets cont_fastpath.
@@ -1713,15 +1737,13 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(LockingMode != LM_LEGACY || (monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0)),
-         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-  assert(LockingMode == LM_LEGACY || (current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should only be used for LM_LEGACY: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-
-  if (entry->is_pinned() || current->held_monitor_count() > 0) {
-    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
+  if (entry->is_pinned()) {
+    log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
+    if (!preempt) {
+      JFR_ONLY(current->set_last_freeze_fail_result(res);)
+    }
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     // Avoid Thread.yield() loops without safepoint polls.
     if (SafepointMechanism::should_process(current) && !preempt) {
@@ -1775,8 +1797,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
-  } else if (thread->held_monitor_count() > 0) {
-    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread,
@@ -1812,15 +1832,12 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
-      } else if (monitor_count > 0) {
-        return freeze_pinned_monitor;
       }
     }
   }
@@ -2294,7 +2311,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
@@ -2455,7 +2472,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
   if (fast_case) {
     // If we thawed in the slow path the runtime stub/native wrapper frame already
     // has the correct fp (see ThawBase::new_stack_frame). On the fast path though,
-    // we copied the original fp at the time of freeze which now will have to be fixed.
+    // we copied the fp patched during freeze, which will now have to be fixed.
     assert(top.is_runtime_frame() || top.is_native_frame(), "");
     int fsize = top.cb()->frame_size();
     patch_pd(top, sp + fsize);
@@ -2598,6 +2615,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
               || (stub_caller && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
     // cannot rely on nmethod patching for deopt.
+    assert(_thread->is_interp_only_mode() || stub_caller, "expected a stub-caller");
 
     log_develop_trace(continuations)("Deoptimizing thawed frame");
     DEBUG_ONLY(ContinuationHelper::Frame::patch_pc(f, nullptr));
@@ -3036,7 +3054,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:

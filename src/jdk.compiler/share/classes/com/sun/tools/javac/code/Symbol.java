@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -969,7 +969,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             boolean isCurrentSymbolsAnnotation(Attribute.TypeCompound anno, int index) {
                 return (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
                         anno.position.type == TargetType.METHOD_TYPE_PARAMETER) &&
-                        anno.position.parameter_index == index;
+                        anno.position.parameter_index == index &&
+                        anno.type.tsym.flatName() != name.table.names.requiresIdentityInternal;
             }
 
 
@@ -1353,8 +1354,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
             if (index < 0) {
                 index = -index - 1;
+                permitted.add(index, element);
             }
-            permitted.add(index, element);
         }
 
         public boolean isPermittedSubclass(Symbol csym) {
@@ -1694,7 +1695,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A class for variable symbols
      */
-    @SuppressWarnings("preview")
     public static class VarSymbol extends Symbol implements VariableElement {
 
         /** The variable's declaration position.
@@ -1789,10 +1789,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public void setLazyConstValue(final Env<AttrContext> env,
+                                      final Env<AttrContext> enclosingEnv,
                                       final Attr attr,
                                       final JCVariableDecl variable)
         {
-            setData((Callable<Object>)() -> attr.attribLazyConstantValue(env, variable, type));
+            setData((Callable<Object>)() -> attr.attribLazyConstantValue(env, enclosingEnv, variable, type));
         }
 
         /**

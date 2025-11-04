@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import jdk.internal.module.Modules;
 import jdk.internal.misc.VM;
 import jdk.internal.loader.ClassLoaderValue;
 import jdk.internal.vm.annotation.Stable;
-import sun.reflect.misc.ReflectUtil;
 
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
@@ -968,6 +967,7 @@ public class Proxy implements java.io.Serializable {
      * @return  the invocation handler for the proxy instance
      * @throws  IllegalArgumentException if the argument is not a
      *          proxy instance
+     * @throws  NullPointerException if {@code proxy} is {@code null}
      */
     public static InvocationHandler getInvocationHandler(Object proxy)
         throws IllegalArgumentException
@@ -984,7 +984,7 @@ public class Proxy implements java.io.Serializable {
         return ih;
     }
 
-    private static final String PROXY_PACKAGE_PREFIX = ReflectUtil.PROXY_PACKAGE;
+    private static final String PROXY_PACKAGE_PREFIX = "com.sun.proxy";
 
     /**
      * A cache of Method -> MethodHandle for default methods.

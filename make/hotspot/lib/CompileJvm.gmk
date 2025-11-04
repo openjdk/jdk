@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
 
 include CopyFiles.gmk
 
@@ -84,18 +89,21 @@ CFLAGS_VM_VERSION := \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
+    -DJVM_VARIANT='"$(JVM_VARIANT)"' \
     #
 
 ################################################################################
 # Disabled warnings
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
-    empty-body implicit-fallthrough int-in-bool-context \
+    empty-body format-zero-length implicit-fallthrough int-in-bool-context \
+    invalid-offsetof \
     maybe-uninitialized missing-field-initializers \
     shift-negative-value unknown-pragmas unused-but-set-variable \
     unused-local-typedefs unused-variable
 
-DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor missing-braces \
+DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor \
+    invalid-offsetof missing-braces \
     sometimes-uninitialized unknown-pragmas unused-but-set-variable \
     unused-function unused-local-typedef unused-private-field unused-variable
 
@@ -125,9 +133,7 @@ else ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), 
   endif
 endif
 
-ifeq ($(call isTargetOs, linux macosx windows), true)
-  JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
-endif
+JVM_PRECOMPILED_HEADER := $(TOPDIR)/src/hotspot/share/precompiled/precompiled.hpp
 
 ifeq ($(call isTargetCpu, x86), true)
   JVM_EXCLUDE_PATTERNS += x86_64
@@ -150,6 +156,10 @@ ifeq ($(call isTargetOs, windows), true)
     WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
   else
     WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  endif
+
+  ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+    CFLAGS_STRIPPED_DEBUGINFO := -DHAS_STRIPPED_DEBUGINFO
   endif
 
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
@@ -177,13 +187,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
+    whitebox.cpp_CXXFLAGS := $(CFLAGS_STRIPPED_DEBUGINFO), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
     DISABLED_WARNINGS_gcc_bytecodeInterpreter.cpp := unused-label, \
     DISABLED_WARNINGS_gcc_c1_Runtime1_aarch64.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
     DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
-    DISABLED_WARNINGS_gcc_g1FreeIdSet.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_handshake.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
     DISABLED_WARNINGS_gcc_javaClasses.cpp := unused-const-variable, \
@@ -361,3 +371,8 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     $(foreach o, $(BUILD_LIBJVM_ALL_OBJS), $(eval $(call SetupOperatorNewDeleteCheck,$o)))
   endif
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

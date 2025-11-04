@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.security.ec;
 
+import sun.security.util.KeyUtil;
+
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -39,11 +41,12 @@ import javax.crypto.KeyAgreementSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class XDHKeyAgreement extends KeyAgreementSpi {
 
-    private byte[] privateKey;
+    private XECPrivateKey privateKey;
     private byte[] secret;
     private XECOperations ops;
     private XECParameters lockedParams = null;
@@ -99,15 +102,16 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
             throw new InvalidKeyException
             ("Unsupported key type");
         }
-        XECPrivateKey privateKey = (XECPrivateKey) key;
+        privateKey = (XECPrivateKey) key;
         XECParameters xecParams = XECParameters.get(
             InvalidKeyException::new, privateKey.getParams());
         checkLockedParams(InvalidKeyException::new, xecParams);
 
         this.ops = new XECOperations(xecParams);
-        this.privateKey = privateKey.getScalar().orElseThrow(
+        byte[] tmp = privateKey.getScalar().orElseThrow(
             () -> new InvalidKeyException("No private key value")
         );
+        Arrays.fill(tmp, (byte)0);
         secret = null;
     }
 
@@ -142,9 +146,11 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
 
         // The privateKey may be modified to a value that is equivalent for
         // the purposes of this algorithm.
+        byte[] scalar = this.privateKey.getScalar().get();
         byte[] computedSecret = ops.encodedPointMultiply(
-            this.privateKey,
+            scalar,
             publicKey.getU());
+        Arrays.fill(scalar, (byte)0);
 
         // test for contributory behavior
         if (allZero(computedSecret)) {
@@ -207,11 +213,16 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
 
-        if (!(algorithm.equals("TlsPremasterSecret"))) {
+        if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             throw new NoSuchAlgorithmException(
-                    "Only supported for algorithm TlsPremasterSecret");
+                    "Unsupported secret key algorithm: " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), algorithm);
+        byte[] bytes = engineGenerateSecret();
+        try {
+            return new SecretKeySpec(bytes, algorithm);
+        } finally {
+            Arrays.fill(bytes, (byte)0);
+        }
     }
 
     static class X25519 extends XDHKeyAgreement {

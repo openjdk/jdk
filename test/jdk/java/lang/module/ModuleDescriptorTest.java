@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8142968 8158456 8298875
- * @enablePreview
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
  * @library /test/lib
@@ -1524,7 +1523,6 @@ public class ModuleDescriptorTest {
         assertTrue(s.contains("p1"));
     }
 
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
     public void testRequiresTransitiveJavaBaseNotPermitted1() throws Exception {
         ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
                 .requires(Set.of(Modifier.TRANSITIVE), "java.base")
@@ -1537,7 +1535,6 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
     }
 
-    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
     public void testRequiresTransitiveJavaBaseNotPermitted2() throws Exception {
         ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
                 .requires(Set.of(Modifier.TRANSITIVE), "java.base")

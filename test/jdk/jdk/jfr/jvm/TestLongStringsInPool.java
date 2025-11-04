@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test
  * @summary Verify that duplicate longer strings doesn't take up unneccessary space
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.jvm.TestLongStringsInPool

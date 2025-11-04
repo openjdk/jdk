@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
@@ -123,7 +122,7 @@ JvmtiRawMonitor::is_valid() {
 
 void JvmtiRawMonitor::simple_enter(Thread* self) {
   for (;;) {
-    if (Atomic::replace_if_null(&_owner, self)) {
+    if (AtomicAccess::replace_if_null(&_owner, self)) {
       if (self->is_Java_thread()) {
         Continuation::pin(JavaThread::cast(self));
       }
@@ -138,7 +137,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
     node._next = _entry_list;
     _entry_list = &node;
     OrderAccess::fence();
-    if (_owner == nullptr && Atomic::replace_if_null(&_owner, self)) {
+    if (_owner == nullptr && AtomicAccess::replace_if_null(&_owner, self)) {
       _entry_list = node._next;
       RawMonitor_lock->unlock();
       if (self->is_Java_thread()) {
@@ -155,7 +154,7 @@ void JvmtiRawMonitor::simple_enter(Thread* self) {
 
 void JvmtiRawMonitor::simple_exit(Thread* self) {
   guarantee(_owner == self, "invariant");
-  Atomic::release_store(&_owner, (Thread*)nullptr);
+  AtomicAccess::release_store(&_owner, (Thread*)nullptr);
   OrderAccess::fence();
   if (self->is_Java_thread()) {
     Continuation::unpin(JavaThread::cast(self));
@@ -325,7 +324,7 @@ void JvmtiRawMonitor::ExitOnSuspend::operator()(JavaThread* current) {
 
 // JavaThreads will enter here with state _thread_in_native.
 void JvmtiRawMonitor::raw_enter(Thread* self) {
-  // TODO Atomic::load on _owner field
+  // TODO AtomicAccess::load on _owner field
   if (_owner == self) {
     _recursions++;
     return;

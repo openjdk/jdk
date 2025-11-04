@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +28,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahMarkBitMap {
 public:
-  typedef size_t idx_t;         // Type used for bit and word indices.
+  typedef size_t idx_t;        // Type used for bit and word indices.
   typedef uintptr_t bm_word_t;  // Element type of array that represents the
                                 // bitmap, with BitsPerWord bits per element.
 
@@ -158,6 +159,8 @@ public:
   inline bool is_marked(HeapWord* addr) const;
   inline bool is_marked_strong(HeapWord* w)  const;
   inline bool is_marked_weak(HeapWord* addr) const;
+
+  bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
 
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-null.  If there is no

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         boolean noDeprecated = options.noDeprecated();
         Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
         for (TypeElement typeElement : includedTypes) {
-            if (utils.hasHiddenTag(typeElement) || !utils.isCoreClass(typeElement)) {
+            if (utils.isHidden(typeElement) || !utils.isCoreClass(typeElement)) {
                 continue;
             }
             if (noDeprecated

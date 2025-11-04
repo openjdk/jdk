@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -56,14 +55,14 @@ public:
   virtual void main_run() {
     size_t iterations = 0;
     size_t values_changed = 0;
-    while (Atomic::load_acquire(_continue_running) != 0) {
+    while (AtomicAccess::load_acquire(_continue_running) != 0) {
       { ThreadBlockInVM tbiv(this); } // Safepoint check outside critical section.
       ++iterations;
       SingleWriterSynchronizer::CriticalSection cs(_synchronizer);
-      uintx value = Atomic::load_acquire(_synchronized_value);
+      uintx value = AtomicAccess::load_acquire(_synchronized_value);
       uintx new_value = value;
       for (uint i = 0; i < reader_iterations; ++i) {
-        new_value = Atomic::load_acquire(_synchronized_value);
+        new_value = AtomicAccess::load_acquire(_synchronized_value);
         // A reader can see either the value it first read after
         // entering the critical section, or that value + 1.  No other
         // values are possible.
@@ -75,7 +74,7 @@ public:
         ++values_changed;
       }
     }
-    tty->print_cr("reader iterations: " SIZE_FORMAT ", changes: " SIZE_FORMAT,
+    tty->print_cr("reader iterations: %zu, changes: %zu",
                   iterations, values_changed);
   }
 };
@@ -97,12 +96,12 @@ public:
   {}
 
   virtual void main_run() {
-    while (Atomic::load_acquire(_continue_running) != 0) {
+    while (AtomicAccess::load_acquire(_continue_running) != 0) {
       ++*_synchronized_value;
       _synchronizer->synchronize();
       { ThreadBlockInVM tbiv(this); } // Safepoint check.
     }
-    tty->print_cr("writer iterations: " UINTX_FORMAT, *_synchronized_value);
+    tty->print_cr("writer iterations: %zu", *_synchronized_value);
   }
 };
 

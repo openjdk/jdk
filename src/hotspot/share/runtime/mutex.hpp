@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_MUTEX_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/semaphore.hpp"
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
@@ -49,8 +49,19 @@
 // A thread is not allowed to safepoint while holding a mutex whose rank
 // is nosafepoint or lower.
 
+// The Mutex class used to explicitly guarantee fence(); lock(); acquire(); semantics with
+// a hand crafted implementation. That may or may not be a desirable contract for a Mutex,
+// but is nevertheless something that older HotSpot code may or may not rely on for correctness.
+// Newer code is encouraged not to rely more on this feature, but it is not generally safe to
+// remove the fences, until all usages of Mutex have been evaluated on a case-by-case basis, whether
+// they actually rely on this stronger contract, or not.
+
+// Having a fence does not have any significant impact on peformance, as this is an internal VM
+// mutex and is generally not in hot code paths.
+
 class Mutex : public CHeapObj<mtSynchronizer> {
 
+  friend class VMStructs;
  public:
   // Special low level locks are given names and ranges avoid overlap.
   enum class Rank {
@@ -93,7 +104,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // the low-level _lock, or to null before it has released the _lock. Accesses by any thread other
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
-  void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
+  void raw_set_owner(Thread* new_owner) { AtomicAccess::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
   PlatformMonitor _lock;                 // Native monitor implementation
@@ -103,6 +114,9 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 #ifndef PRODUCT
   bool    _allow_vm_block;
 #endif
+  static Mutex** _mutex_array;
+  static int _num_mutex;
+
 #ifdef ASSERT
   Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
@@ -188,17 +202,24 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   // Current owner - note not MT-safe. Can only be used to guarantee that
   // the current running thread owns the lock
-  Thread* owner() const         { return Atomic::load(&_owner); }
+  Thread* owner() const         { return AtomicAccess::load(&_owner); }
   void set_owner(Thread* owner) { set_owner_implementation(owner); }
   bool owned_by_self() const;
 
   const char *name() const                  { return _name; }
+
+  static void  add_mutex(Mutex* var);
 
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
     void print() const;
   #endif
+
+  // Print all mutexes/monitors that are currently owned by a thread; called
+  // by fatal error handler.
+  static void print_owned_locks_on_error(outputStream* st);
+  static void print_lock_ranks(outputStream* st);
 };
 
 class Monitor : public Mutex {

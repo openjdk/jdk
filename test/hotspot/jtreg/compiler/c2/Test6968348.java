@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.lang.reflect.Field;
 public class Test6968348 {
     static Unsafe unsafe = Unsafe.getUnsafe();
     static final long[] buffer = new long[4096];
-    static int array_long_base_offset;
+    static long array_long_base_offset;
 
     public static void main(String[] args) throws Exception {
         array_long_base_offset = unsafe.arrayBaseOffset(long[].class);

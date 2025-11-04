@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,14 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class crstepreq001t {
+    static Thread debuggeeThread = null;
+
     public static void main(String args[]) {
         ArgumentHandler argHandler = new ArgumentHandler(args);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
-        Thread  thr = Thread.currentThread();
+        debuggeeThread = Thread.currentThread();
 
-        thr.setName(crstepreq001.DEBUGGEE_THRD);
+        debuggeeThread.setName(crstepreq001.DEBUGGEE_THRD);
         pipe.println(crstepreq001.COMMAND_READY);
         String cmd = pipe.readln();
         if (!cmd.equals(crstepreq001.COMMAND_QUIT)) {

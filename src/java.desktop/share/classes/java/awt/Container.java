@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.io.PrintWriter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -67,7 +66,6 @@ import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.dnd.SunDropTargetEvent;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -814,7 +812,6 @@ public class Container extends Component {
      * to new heavyweight parent.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentTraverse(ContainerPeer parentPeer, Container child) {
         checkTreeLock();
 
@@ -838,7 +835,6 @@ public class Container extends Component {
      * Container must be heavyweight.
      * @since 1.5
      */
-    @SuppressWarnings("deprecation")
     private void reparentChild(Component comp) {
         checkTreeLock();
         if (comp == null) {
@@ -1561,8 +1557,8 @@ public class Container extends Component {
      * as a {@code Frame} object) should be used to restore the validity of the
      * component hierarchy.
      * <p>
-     * The {@code Window} class and the {@code Applet} class are the validate
-     * roots in AWT.  Swing introduces more validate roots.
+     * The {@code Window} class is the validate root in AWT.
+     * Swing introduces more validate roots.
      *
      * @return whether this container is a validate root
      * @see #invalidate
@@ -3857,6 +3853,7 @@ public class Container extends Component {
         /**
          * The handler to fire {@code PropertyChange}
          * when children are added or removed
+         * @serial
          */
         @SuppressWarnings("serial") // Not statically typed as Serializable
         protected ContainerListener accessibleContainerHandler = null;
@@ -4203,7 +4200,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveShowHeavyweightChildren() {
         if (!hasHeavyweightDescendants() || !isVisible()) {
             return;
@@ -4225,7 +4221,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveHideHeavyweightChildren() {
         if (!hasHeavyweightDescendants()) {
             return;
@@ -4247,7 +4242,6 @@ public class Container extends Component {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void recursiveRelocateHeavyweightChildren(Point origin) {
         for (int index = 0; index < getComponentCount(); index++) {
             Component comp = getComponent(index);

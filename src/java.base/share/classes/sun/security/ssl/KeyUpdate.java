@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,11 +214,11 @@ final class KeyUpdate {
                         Alert.INTERNAL_ERROR, "no key derivation");
             }
 
-            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
+            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1");
             SSLKeyDerivation kd = kdg.createKeyDerivation(hc, nplus1);
-            SecretKey key = kd.deriveKey("TlsKey", null);
-            IvParameterSpec ivSpec = new IvParameterSpec(
-                    kd.deriveKey("TlsIv", null).getEncoded());
+            SecretKey key = kd.deriveKey("TlsKey");
+            IvParameterSpec ivSpec =
+                    new IvParameterSpec(kd.deriveData("TlsIv"));
             try {
                 SSLReadCipher rc =
                     hc.negotiatedCipherSuite.bulkCipher.createReadCipher(
@@ -269,6 +269,12 @@ final class KeyUpdate {
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
+            if (hc.sslConfig.isQuic) {
+                // Quic doesn't allow KEY_UPDATE TLS message. It has its own Quic specific
+                // key update mechanism, RFC-9001, section 6:
+                // Endpoints MUST NOT send a TLS KeyUpdate message.
+                return null;
+            }
             KeyUpdateMessage km = (KeyUpdateMessage)message;
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
@@ -293,11 +299,11 @@ final class KeyUpdate {
                         Alert.INTERNAL_ERROR, "no key derivation");
             }
 
-            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1", null);
+            SecretKey nplus1 = skd.deriveKey("TlsUpdateNplus1");
             SSLKeyDerivation kd = kdg.createKeyDerivation(hc, nplus1);
-            SecretKey key = kd.deriveKey("TlsKey", null);
-            IvParameterSpec ivSpec = new IvParameterSpec(
-                    kd.deriveKey("TlsIv", null).getEncoded());
+            SecretKey key = kd.deriveKey("TlsKey");
+            IvParameterSpec ivSpec =
+                     new IvParameterSpec(kd.deriveData("TlsIv"));
 
             SSLWriteCipher wc;
             try {

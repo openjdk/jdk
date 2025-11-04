@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,18 @@
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeStringConcat
  *    compiler.c2.Test7046096
  */
+
+
+/*
+ * @test id=stringConcatInline
+ * @bug 7046096 8357822
+ * @summary The same test with an updated compile directive that produces
+ *          StringBuilder-backed string concatenations.
+ *
+ * @compile -XDstringConcat=inline Test7046096.java
+ * @run main/othervm -Xbatch compiler.c2.Test7046096
+ */
+
 
 package compiler.c2;
 

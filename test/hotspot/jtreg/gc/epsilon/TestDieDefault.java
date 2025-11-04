@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@ import jdk.test.lib.process.ProcessTools;
 public class TestDieDefault {
 
   public static void passWith(String... args) throws Exception {
-    OutputAnalyzer out = ProcessTools.executeLimitedTestJava(args);
+    OutputAnalyzer out = ProcessTools.executeTestJava(args);
     out.shouldNotContain("OutOfMemoryError");
     out.shouldHaveExitValue(0);
   }
 
   public static void failWith(String... args) throws Exception {
-    OutputAnalyzer out = ProcessTools.executeLimitedTestJava(args);
+    OutputAnalyzer out = ProcessTools.executeTestJava(args);
     out.shouldContain("OutOfMemoryError");
     if (out.getExitValue() == 0) {
       throw new IllegalStateException("Should have failed with non-zero exit code");

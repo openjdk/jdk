@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,13 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Rectangle;
 import java.awt.event.PaintEvent;
-import java.security.AccessController;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;
 
 /**
  * Swing's PaintEventDispatcher.  If the component specified by the PaintEvent
- * is a top level Swing component (JFrame, JWindow, JDialog, JApplet), this
+ * is a top level Swing component (JFrame, JWindow, JDialog), this
  * will forward the request to the RepaintManager for eventual painting.
  *
  */

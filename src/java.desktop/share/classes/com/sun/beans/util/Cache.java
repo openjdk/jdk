@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,11 +405,13 @@ public abstract class Cache<K,V> {
      */
     public static enum Kind {
         STRONG {
+            @Override
             <T> Ref<T> create(Object owner, T value, ReferenceQueue<? super T> queue) {
                 return new Strong<>(owner, value);
             }
         },
         SOFT {
+            @Override
             <T> Ref<T> create(Object owner, T referent, ReferenceQueue<? super T> queue) {
                 return (referent == null)
                         ? new Strong<>(owner, referent)
@@ -417,6 +419,7 @@ public abstract class Cache<K,V> {
             }
         },
         WEAK {
+            @Override
             <T> Ref<T> create(Object owner, T referent, ReferenceQueue<? super T> queue) {
                 return (referent == null)
                         ? new Strong<>(owner, referent)
@@ -463,6 +466,7 @@ public abstract class Cache<K,V> {
              *
              * @return the owner of the reference or {@code null} if the owner is unknown
              */
+            @Override
             public Object getOwner() {
                 return this.owner;
             }
@@ -472,6 +476,7 @@ public abstract class Cache<K,V> {
              *
              * @return the referred object
              */
+            @Override
             public T getReferent() {
                 return this.referent;
             }
@@ -481,6 +486,7 @@ public abstract class Cache<K,V> {
              *
              * @return {@code true} if the referred object was collected
              */
+            @Override
             public boolean isStale() {
                 return false;
             }
@@ -488,6 +494,7 @@ public abstract class Cache<K,V> {
             /**
              * Marks this reference as removed from the cache.
              */
+            @Override
             public void removeOwner() {
                 this.owner = null;
             }
@@ -522,6 +529,7 @@ public abstract class Cache<K,V> {
              *
              * @return the owner of the reference or {@code null} if the owner is unknown
              */
+            @Override
             public Object getOwner() {
                 return this.owner;
             }
@@ -531,6 +539,7 @@ public abstract class Cache<K,V> {
              *
              * @return the referred object or {@code null} if it was collected
              */
+            @Override
             public T getReferent() {
                 return get();
             }
@@ -540,6 +549,7 @@ public abstract class Cache<K,V> {
              *
              * @return {@code true} if the referred object was collected
              */
+            @Override
             public boolean isStale() {
                 return null == get();
             }
@@ -547,6 +557,7 @@ public abstract class Cache<K,V> {
             /**
              * Marks this reference as removed from the cache.
              */
+            @Override
             public void removeOwner() {
                 this.owner = null;
             }
@@ -581,6 +592,7 @@ public abstract class Cache<K,V> {
              *
              * @return the owner of the reference or {@code null} if the owner is unknown
              */
+            @Override
             public Object getOwner() {
                 return this.owner;
             }
@@ -590,6 +602,7 @@ public abstract class Cache<K,V> {
              *
              * @return the referred object or {@code null} if it was collected
              */
+            @Override
             public T getReferent() {
                 return get();
             }
@@ -599,6 +612,7 @@ public abstract class Cache<K,V> {
              *
              * @return {@code true} if the referred object was collected
              */
+            @Override
             public boolean isStale() {
                 return null == get();
             }
@@ -606,6 +620,7 @@ public abstract class Cache<K,V> {
             /**
              * Marks this reference as removed from the cache.
              */
+            @Override
             public void removeOwner() {
                 this.owner = null;
             }

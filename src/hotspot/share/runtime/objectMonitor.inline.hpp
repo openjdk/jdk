@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,11 @@
 
 #include "runtime/objectMonitor.hpp"
 
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/markWord.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
@@ -39,25 +40,19 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline int64_t ObjectMonitor::owner_from(JavaThread* thread) {
-  int64_t tid = thread->lock_id();
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
+  return thread->monitor_owner_id();
 }
 
-inline int64_t ObjectMonitor::owner_from(oop vthread) {
-  int64_t tid = java_lang_Thread::thread_id(vthread);
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
+  int64_t id = java_lang_Thread::thread_id(vthread);
+  ThreadIdentifier::verify_id(id);
+  return id;
 }
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (has_anonymous_owner()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return current->lock_stack().contains(object());
-    } else {
-      return current->is_lock_owned((address)stack_locker());
-    }
+    return current->lock_stack().contains(object());
   } else {
     return has_owner(current);
   }
@@ -65,11 +60,11 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
 }
 
 inline uintptr_t ObjectMonitor::metadata() const {
-  return Atomic::load(&_metadata);
+  return AtomicAccess::load(&_metadata);
 }
 
 inline void ObjectMonitor::set_metadata(uintptr_t value) {
-  Atomic::store(&_metadata, value);
+  AtomicAccess::store(&_metadata, value);
 }
 
 inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
@@ -114,15 +109,7 @@ inline int64_t ObjectMonitor::owner() const {
 }
 
 inline int64_t ObjectMonitor::owner_raw() const {
-  return Atomic::load(&_owner);
-}
-
-inline BasicLock* ObjectMonitor::stack_locker() const {
-  return Atomic::load(&_stack_locker);
-}
-
-inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
-  Atomic::store(&_stack_locker, locker);
+  return AtomicAccess::load(&_owner);
 }
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
@@ -137,12 +124,12 @@ inline bool ObjectMonitor::is_being_async_deflated() {
 
 // Return number of threads contending for this monitor.
 inline int ObjectMonitor::contentions() const {
-  return Atomic::load(&_contentions);
+  return AtomicAccess::load(&_contentions);
 }
 
 // Add value to the contentions field.
 inline void ObjectMonitor::add_to_contentions(int value) {
-  Atomic::add(&_contentions, value);
+  AtomicAccess::add(&_contentions, value);
 }
 
 inline void ObjectMonitor::set_recursions(size_t recursions) {
@@ -151,15 +138,35 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
   _recursions = checked_cast<intx>(recursions);
 }
 
+inline void ObjectMonitor::increment_recursions(JavaThread* current) {
+  assert(has_owner(current), "must be the owner");
+  _recursions++;
+}
+
+inline void ObjectMonitor::inc_unmounted_vthreads() {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  AtomicAccess::inc(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline void ObjectMonitor::dec_unmounted_vthreads() {
+  assert(_unmounted_vthreads > 0, "invariant");
+  AtomicAccess::dec(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline bool ObjectMonitor::has_unmounted_vthreads() const {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  return AtomicAccess::load(&_unmounted_vthreads) > 0;
+}
+
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
-  int64_t old_value = owner_from(old_owner);
+  int64_t old_value = owner_id_from(old_owner);
 #ifdef ASSERT
-  int64_t prev = Atomic::load(&_owner);
+  int64_t prev = AtomicAccess::load(&_owner);
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
          ", expected=" INT64_FORMAT, prev, old_value);
 #endif
-  Atomic::release_store(&_owner, NO_OWNER);
+  AtomicAccess::release_store(&_owner, NO_OWNER);
   log_trace(monitorinflation, owner)("release_clear_owner(): mid="
                                      INTPTR_FORMAT ", old_value=" INT64_FORMAT,
                                      p2i(this), old_value);
@@ -169,12 +176,12 @@ inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
 // (Simple means no memory sync needed.)
 inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_value) {
 #ifdef ASSERT
-  int64_t prev = Atomic::load(&_owner);
+  int64_t prev = AtomicAccess::load(&_owner);
   assert((int64_t)prev < ThreadIdentifier::current(), "must be reasonable");
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
          ", expected=" INT64_FORMAT, prev, old_value);
 #endif
-  Atomic::store(&_owner, new_value);
+  AtomicAccess::store(&_owner, new_value);
   log_trace(monitorinflation, owner)("set_owner_from(): mid="
                                      INTPTR_FORMAT ", old_value=" INT64_FORMAT
                                      ", new_value=" INT64_FORMAT, p2i(this),
@@ -182,7 +189,7 @@ inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_val
 }
 
 inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current) {
-  set_owner_from_raw(old_value, owner_from(current));
+  set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 // Try to set _owner field to new_value if the current value matches
@@ -190,7 +197,7 @@ inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current
 // the prior value of the _owner field.
 inline int64_t ObjectMonitor::try_set_owner_from_raw(int64_t old_value, int64_t new_value) {
   assert((int64_t)new_value < ThreadIdentifier::current(), "must be reasonable");
-  int64_t prev = Atomic::cmpxchg(&_owner, old_value, new_value);
+  int64_t prev = AtomicAccess::cmpxchg(&_owner, old_value, new_value);
   if (prev == old_value) {
     log_trace(monitorinflation, owner)("try_set_owner_from(): mid="
                                        INTPTR_FORMAT ", prev=" INT64_FORMAT
@@ -201,31 +208,31 @@ inline int64_t ObjectMonitor::try_set_owner_from_raw(int64_t old_value, int64_t 
 }
 
 inline int64_t ObjectMonitor::try_set_owner_from(int64_t old_value, JavaThread* current) {
-  return try_set_owner_from_raw(old_value, owner_from(current));
+  return try_set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 inline bool ObjectMonitor::has_successor() const {
-  return Atomic::load(&_succ) != NO_OWNER;
+  return AtomicAccess::load(&_succ) != NO_OWNER;
 }
 
 inline bool ObjectMonitor::has_successor(JavaThread* thread) const {
-  return owner_from(thread) == Atomic::load(&_succ);
+  return owner_id_from(thread) == AtomicAccess::load(&_succ);
 }
 
 inline void ObjectMonitor::set_successor(JavaThread* thread) {
-  Atomic::store(&_succ, owner_from(thread));
+  AtomicAccess::store(&_succ, owner_id_from(thread));
 }
 
 inline void ObjectMonitor::set_successor(oop vthread) {
-  Atomic::store(&_succ, java_lang_Thread::thread_id(vthread));
+  AtomicAccess::store(&_succ, java_lang_Thread::thread_id(vthread));
 }
 
 inline void ObjectMonitor::clear_successor() {
-  Atomic::store(&_succ, NO_OWNER);
+  AtomicAccess::store(&_succ, NO_OWNER);
 }
 
 inline int64_t ObjectMonitor::successor() const {
-  return Atomic::load(&_succ);
+  return AtomicAccess::load(&_succ);
 }
 
 // The _next_om field can be concurrently read and modified so we
@@ -234,12 +241,12 @@ inline int64_t ObjectMonitor::successor() const {
 
 // Simply get _next_om field.
 inline ObjectMonitor* ObjectMonitor::next_om() const {
-  return Atomic::load(&_next_om);
+  return AtomicAccess::load(&_next_om);
 }
 
 // Simply set _next_om field to new_value.
 inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
-  Atomic::store(&_next_om, new_value);
+  AtomicAccess::store(&_next_om, new_value);
 }
 
 // Block out deflation.
@@ -249,7 +256,7 @@ inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* m
   // contended enter protocol, which prevents the deflater thread from
   // winning the last part of the 2-part async deflation
   // protocol. See: ObjectMonitor::deflate_monitor() and
-  // ObjectMonitor::TryLockWithContentionMark().
+  // ObjectMonitor::try_lock_with_contention_mark().
   _monitor->add_to_contentions(1);
 }
 
@@ -261,7 +268,7 @@ inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
 }
 
 inline void ObjectMonitorContentionMark::extend() {
-  // Used by ObjectMonitor::TryLockWithContentionMark() to "extend the
+  // Used by ObjectMonitor::try_lock_with_contention_mark() to "extend the
   // lifetime" of the contention mark.
   assert(!_extended, "extending twice is probably a bad design");
   _monitor->add_to_contentions(1);
@@ -284,6 +291,12 @@ inline bool ObjectMonitor::object_refers_to(oop obj) const {
     return false;
   }
   return _object.peek() == obj;
+}
+
+inline bool ObjectMonitor::is_jfr_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jdk_jfr_internal_management_HiddenWait() == monitor_klass->name();)
 }
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_INLINE_HPP

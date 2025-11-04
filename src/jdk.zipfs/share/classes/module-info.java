@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,12 +149,52 @@ import java.util.Set;
  *
  * <tbody>
  * <tr>
+ *   <th scope="row">accessMode</th>
+ *   <td>{@link java.lang.String}</td>
+ *   <td>null/unset</td>
+ *   <td>
+ *       A value defining the desired access mode of the file system.
+ *       ZIP file systems can be created to allow for <em>read-write</em> or
+ *       <em>read-only</em> access.
+ *       <ul>
+ *           <li>
+ *               If no value is set, the file system is created as <em>read-write</em>
+ *               if possible. Use {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} to determine the actual access mode.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "readOnly"}, the file system is created
+ *               <em>read-only</em>, and {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} will always return {@code true}. Creating a
+ *               <em>read-only</em> file system requires the underlying ZIP file to
+ *               already exist.
+ *           </li>
+ *           <li>
+ *               If the value is {@code "readWrite"}, the file system is created
+ *               <em>read-write</em>, and {@link java.nio.file.FileSystem#isReadOnly()
+ *               isReadOnly()} will always return {@code false}. If a writable file
+ *               system cannot be created, an {@code IOException} will be thrown
+ *               when creating the ZIP file system.
+ *           </li>
+ *           <li>
+ *               Any other values will cause an {@code IllegalArgumentException}
+ *               to be thrown when creating the ZIP file system.
+ *           </li>
+ *       </ul>
+ *       The {@code accessMode} property has no effect on reported POSIX file
+ *       permissions (in cases where POSIX support is enabled).
+ *   </td>
+ * </tr>
+ * <tr>
  *   <th scope="row">create</th>
  *   <td>{@link java.lang.String} or {@link java.lang.Boolean}</td>
  *   <td>false</td>
  *   <td>
- *       If the value is {@code true}, the ZIP file system provider
- *       creates a new ZIP or JAR file if it does not exist.
+ *       If the value is {@code true}, the ZIP file system provider creates a
+ *       new ZIP or JAR file if it does not exist. Specifying the {@code create}
+ *       property as {@code true} with the {@code accessMode} as {@code "readOnly"}
+ *       will cause an {@code IllegalArgumentException} to be thrown when creating
+ *       the ZIP file system.
  *   </td>
  * </tr>
  * <tr>
@@ -225,8 +265,8 @@ import java.util.Set;
  *           </li>
  *           <li>
  *               If the value is not {@code "STORED"} or {@code "DEFLATED"}, an
- *               {@code IllegalArgumentException} will be thrown when the Zip
- *               filesystem is created.
+ *               {@code IllegalArgumentException} will be thrown when creating the
+ *               ZIP file system.
  *           </li>
  *       </ul>
  *   </td>
@@ -260,12 +300,13 @@ import java.util.Set;
  *           <li>
  *               If the value does not represent a valid
  *               {@linkplain Runtime.Version Java SE Platform version number},
- *               an {@code IllegalArgumentException} will be thrown.
+ *               an {@code IllegalArgumentException} will be thrown when creating
+ *               the ZIP file system.
  *           </li>
  *       </ul>
  *   </td>
  * </tr>
- *  </tbody>
+ * </tbody>
  * </table>
  *
  * <h2>Examples:</h2>

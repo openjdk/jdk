@@ -27,9 +27,9 @@
 #include "prims/foreignGlobals.hpp"
 
 #include "classfile/javaClasses.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopCast.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 template<typename T>
 void ForeignGlobals::parse_register_array(objArrayOop jarray, StorageType type_index, GrowableArray<T>& array, T (*converter)(int)) {

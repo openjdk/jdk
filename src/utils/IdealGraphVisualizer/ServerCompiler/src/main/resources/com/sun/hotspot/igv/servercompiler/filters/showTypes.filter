@@ -44,8 +44,16 @@ function simplifyType(type) {
 }
 
 // Merge a possibly existing extra label, bottom type, and phase type into a
-// new, single extra label.
-function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
+// new, single extra label. For memory nodes, add an extra label with the memory
+// slice, extracted from the dump_spec field.
+function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type, category, dump_spec) {
+  new_extra_label = extra_label == null ? "" : (extra_label + " ");
+  if (category == "memory") {
+    m = /idx=([^\s]+);/.exec(dump_spec);
+    if (m != null) {
+      return new_extra_label + "mem: " + m[1];
+    }
+  }
   if (phase_type == null && bottom_type == null) {
     return extra_label;
   }
@@ -62,11 +70,10 @@ function mergeAndAppendTypeInfo(extra_label, bottom_type, phase_type) {
     type += "B: ";
     type += simplifyType(bottom_type);
   }
-  new_extra_label = extra_label == null ? "" : (extra_label + " ");
   return new_extra_label + type;
 }
 
 editProperty(not(or([matches("bottom_type", "bottom"),
                      matches("bottom_type", "abIO")])),
-             ["extra_label", "bottom_type", "phase_type"], "extra_label",
-             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2]);});
+             ["extra_label", "bottom_type", "phase_type", "category", "dump_spec"], "extra_label",
+             function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1], propertyValues[2], propertyValues[3], propertyValues[4]);});

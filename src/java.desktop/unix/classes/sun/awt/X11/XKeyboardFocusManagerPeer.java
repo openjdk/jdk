@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.awt.event.FocusEvent;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 import sun.util.logging.PlatformLogger;
 
-public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
+public final class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
     private static final XKeyboardFocusManagerPeer inst = new XKeyboardFocusManagerPeer();
 
@@ -78,13 +78,6 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
             if (currentFocusedWindow != null) {
                 to = AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
             }
-        }
-
-        if (from != null) {
-            from.updateSecurityWarningVisibility();
-        }
-        if (to != null) {
-            to.updateSecurityWarningVisibility();
         }
     }
 

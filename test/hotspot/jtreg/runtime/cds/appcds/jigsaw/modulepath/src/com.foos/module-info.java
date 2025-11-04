@@ -24,4 +24,5 @@
 
 module com.foos {
     exports com.foos;
+    // exports com.foos.internal; /* do not export this package */
 }

@@ -102,7 +102,6 @@ protected:
   void yield_processing();
   static bool has_barrier(const frame& f);
   void ensure_safe(const frame& f);
-  void assert_is_frame_safe(const frame& f) NOT_DEBUG_RETURN;
   bool is_frame_safe(const frame& f);
 
   // API for consumers of the stack watermark barrier.
@@ -151,6 +150,8 @@ public:
   void on_safepoint();
   void start_processing();
   void finish_processing(void* context);
+
+  void assert_is_frame_safe(const frame& f) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_RUNTIME_STACKWATERMARK_HPP

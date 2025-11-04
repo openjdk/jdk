@@ -23,20 +23,26 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8320646
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs, with NaN
  * @requires vm.compiler2.enabled
  * @requires (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
  * @library /test/lib /
- * @run driver compiler.vectorization.TestFloatConversionsVectorNaN
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN nCOH_nAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN nCOH_yAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN yCOH_nAV
+ * @run driver compiler.vectorization.TestFloatConversionsVectorNaN yCOH_yAV
  */
 
 package compiler.vectorization;
 
 import java.util.HexFormat;
+import java.util.Random;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class TestFloatConversionsVectorNaN {
     private static final int ARRLEN = 1024;
@@ -47,29 +53,45 @@ public class TestFloatConversionsVectorNaN {
     private static float  [] fout;
 
     public static void main(String args[]) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:CompileThresholdScaling=0.3");
+        TestFramework framework = new TestFramework(TestFloatConversionsVectorNaN.class);
+        framework.addFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
+        switch (args[0]) {
+            case "nCOH_nAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "nCOH_yAV" -> { framework.addFlags("-XX:-UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            case "yCOH_nAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:-AlignVector"); }
+            case "yCOH_yAV" -> { framework.addFlags("-XX:+UseCompactObjectHeaders", "-XX:+AlignVector"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        };
+        framework.start();
         System.out.println("PASSED");
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"})
     public void test_float_float16(short[] sout, float[] finp) {
         for (int i = 0; i < finp.length; i++) {
             sout[i] = Float.floatToFloat16(finp[i]);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // F_adr = base + 16 + 4*i   ->  i % 2 = 0       F_adr = base + 12 + 4*i   ->  i % 2 = 1
+            // S_adr = base + 16 + 2*i   ->  i % 4 = 0       S_adr = base + 12 + 2*i   ->  i % 4 = 2
+            // -> vectorize                                  -> no vectorization
         }
     }
 
     @Run(test = {"test_float_float16"}, mode = RunMode.STANDALONE)
     public void kernel_test_float_float16() {
+        Random rand = Utils.getRandomInstance();
         int errno = 0;
         finp = new float[ARRLEN];
         sout = new short[ARRLEN];
 
         // Setup
         for (int i = 0; i < ARRLEN; i++) {
-            if (i%39 == 0) {
-                int x = 0x7f800000 + ((i/39) << 13);
+            if (i%3 == 0) {
+                int shift = rand.nextInt(13+1);
+                int x = 0x7f800000 + ((i/39) << shift);
                 x = (i%2 == 0) ? x : (x | 0x80000000);
                 finp[i] = Float.intBitsToFloat(x);
             } else {
@@ -111,7 +133,8 @@ public class TestFloatConversionsVectorNaN {
 
     static int assertEquals(int idx, float f, short expected, short actual) {
         HexFormat hf = HexFormat.of();
-        String msg = "floatToFloat16 wrong result: idx: " + idx + ", \t" + f +
+        String msg = "floatToFloat16 wrong result: idx: " + idx +
+                     ", \t" + f + ", hex: " + Integer.toHexString(Float.floatToRawIntBits(f)) +
                      ",\t expected: " + hf.toHexDigits(expected) +
                      ",\t actual: " + hf.toHexDigits(actual);
         if ((expected & 0x7c00) != 0x7c00) {
@@ -129,10 +152,16 @@ public class TestFloatConversionsVectorNaN {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"})
     public void test_float16_float(float[] fout, short[] sinp) {
         for (int i = 0; i < sinp.length; i++) {
             fout[i] = Float.float16ToFloat(sinp[i]);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                 UseCompactObjectHeaders=true
+            // F_adr = base + 16 + 4*i   ->  i % 2 = 0       F_adr = base + 12 + 4*i   ->  i % 2 = 1
+            // S_adr = base + 16 + 2*i   ->  i % 4 = 0       S_adr = base + 12 + 2*i   ->  i % 4 = 2
+            // -> vectorize                                  -> no vectorization
         }
     }
 
@@ -144,7 +173,7 @@ public class TestFloatConversionsVectorNaN {
 
         // Setup
         for (int i = 0; i < ARRLEN; i++) {
-            if (i%39 == 0) {
+            if (i%3 == 0) {
                 int x = 0x7c00 + i;
                 x = (i%2 == 0) ? x : (x | 0x8000);
                 sinp[i] = (short)x;

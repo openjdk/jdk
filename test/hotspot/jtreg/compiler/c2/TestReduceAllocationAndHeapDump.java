@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8319784
  * @summary Check that the JVM is able to dump the heap even when there are ReduceAllocationMerge in the scope.
  * @library /test/lib /
+ * @requires vm.flavor == "server" & !vm.emulatedClient
  * @run main/othervm compiler.c2.TestReduceAllocationAndHeapDump
  */
 
@@ -45,7 +46,6 @@ public class TestReduceAllocationAndHeapDump {
             }
 
             String[] dumperArgs = {
-                "-server",
                 "-XX:CompileThresholdScaling=0.01",
                 "-XX:+HeapDumpAfterFullGC",
                 "-XX:HeapDumpPath=" + dumpDirectory.getAbsolutePath(),
@@ -54,7 +54,7 @@ public class TestReduceAllocationAndHeapDump {
                 HeapDumper.class.getName()
             };
 
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(dumperArgs);
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(dumperArgs);
             Process p = pb.start();
             OutputAnalyzer out = new OutputAnalyzer(p);
 

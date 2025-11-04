@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,7 @@ public:
                        BasicType type,
                        Register dst,
                        Address src,
-                       Register tmp1,
-                       Register tmp_thread);
+                       Register tmp1);
 
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,

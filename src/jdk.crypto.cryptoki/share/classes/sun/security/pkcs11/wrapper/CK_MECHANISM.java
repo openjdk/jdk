@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -124,6 +124,14 @@ public class CK_MECHANISM {
     }
 
     public CK_MECHANISM(long mechanism, CK_TLS_MAC_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_HKDF_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_KEY_DERIVATION_STRING_DATA params) {
         init(mechanism, params);
     }
 

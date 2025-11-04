@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/metadataFactory.hpp"
@@ -200,7 +199,7 @@ bool Relocator::handle_code_changes() {
 bool Relocator::is_opcode_lookupswitch(Bytecodes::Code bc) {
   switch (bc) {
     case Bytecodes::_tableswitch:       return false;
-    case Bytecodes::_lookupswitch:                   // not rewritten on ia64
+    case Bytecodes::_lookupswitch:
     case Bytecodes::_fast_linearswitch:              // rewritten _lookupswitch
     case Bytecodes::_fast_binaryswitch: return true; // rewritten _lookupswitch
     default: ShouldNotReachHere();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/singleWriterSynchronizer.hpp"
 
 SingleWriterSynchronizer::SingleWriterSynchronizer() :
   _enter(0),
@@ -44,7 +43,7 @@ SingleWriterSynchronizer::SingleWriterSynchronizer() :
 // synchronization have exited that critical section.
 void SingleWriterSynchronizer::synchronize() {
   // Side-effect in assert balanced by debug-only dec at end.
-  assert(Atomic::add(&_writers, 1u) == 1u, "multiple writers");
+  assert(AtomicAccess::add(&_writers, 1u) == 1u, "multiple writers");
   // We don't know anything about the muxing between this invocation
   // and invocations in other threads.  We must start with the latest
   // _enter polarity, else we could clobber the wrong _exit value on
@@ -64,7 +63,7 @@ void SingleWriterSynchronizer::synchronize() {
   do {
     old = value;
     *new_ptr = ++value;
-    value = Atomic::cmpxchg(&_enter, old, value);
+    value = AtomicAccess::cmpxchg(&_enter, old, value);
   } while (old != value);
   // Critical sections entered before we changed the polarity will use
   // the old exit counter.  Critical sections entered after the change
@@ -85,7 +84,7 @@ void SingleWriterSynchronizer::synchronize() {
   // to complete, e.g. for the value of old_ptr to catch up with old.
   // Loop because there could be pending wakeups unrelated to this
   // synchronize request.
-  while (old != Atomic::load_acquire(old_ptr)) {
+  while (old != AtomicAccess::load_acquire(old_ptr)) {
     _wakeup.wait();
   }
   // (5) Drain any pending wakeups. A critical section exit may have
@@ -96,5 +95,5 @@ void SingleWriterSynchronizer::synchronize() {
   // lead to semaphore overflow.  This doesn't guarantee no unrelated
   // wakeups for the next wait, but prevents unbounded accumulation.
   while (_wakeup.trywait()) {}
-  DEBUG_ONLY(Atomic::dec(&_writers);)
+  DEBUG_ONLY(AtomicAccess::dec(&_writers);)
 }

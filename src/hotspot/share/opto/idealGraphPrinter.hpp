@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class Node;
 class InlineTree;
 class ciMethod;
 class JVMState;
+class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
  private:
@@ -67,6 +68,13 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *ALL_PROPERTY;
   static const char *COMPILATION_ID_PROPERTY;
   static const char *COMPILATION_OSR_PROPERTY;
+  static const char *COMPILATION_ARGUMENTS_PROPERTY;
+  static const char *COMPILATION_MACHINE_PROPERTY;
+  static const char *COMPILATION_CPU_FEATURES_PROPERTY;
+  static const char *COMPILATION_VM_VERSION_PROPERTY;
+  static const char *COMPILATION_DATE_TIME_PROPERTY;
+  static const char *COMPILATION_PROCESS_ID_PROPERTY;
+  static const char *COMPILATION_THREAD_ID_PROPERTY;
   static const char *METHOD_NAME_PROPERTY;
   static const char *BLOCK_NAME_PROPERTY;
   static const char *BLOCK_DOMINATOR_PROPERTY;
@@ -91,6 +99,10 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   static const char *METHOD_BCI_PROPERTY;
   static const char *METHOD_SHORT_NAME_PROPERTY;
   static const char *ASSEMBLY_ELEMENT;
+  static const char *LIVEOUT_ELEMENT;
+  static const char *LIVE_RANGE_ELEMENT;
+  static const char *LIVE_RANGE_ID_PROPERTY;
+  static const char *LIVE_RANGES_ELEMENT;
 
   static int _file_count;
   networkStream *_network_stream;
@@ -98,14 +110,18 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   outputStream *_output;
   ciMethod *_current_method;
   int _depth;
-  char buffer[512];
-  bool _should_send_method;
+  char buffer[2048];
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
   Compile *C;
   double _max_freq;
   bool _append;
+  const Parse* _parse;
 
+  // Walk the native stack and print relevant C2 frames as IGV properties (if
+  // graph_name == nullptr) or the graph name based on the highest C2 frame (if
+  // graph_name != nullptr).
+  void print_stack(const frame* initial_frame, outputStream* graph_name);
   void print_method(ciMethod* method, int bci, InlineTree* tree);
   void print_inline_tree(InlineTree* tree);
   void visit_node(Node* n, bool edges);
@@ -114,6 +130,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   ciField* get_field(const Node* node);
   ciField* find_source_field_of_array_access(const Node* node, uint& depth);
   static Node* get_load_node(const Node* node);
+  bool has_liveness_info() const;
   void walk_nodes(Node* start, bool edges);
   void begin_elem(const char *s);
   void end_elem();
@@ -141,11 +158,13 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
 
   bool traverse_outs();
   void set_traverse_outs(bool b);
+  const Parse* parse();
+  void set_parse(const Parse* parser);
   void print_inlining();
   void begin_method();
   void end_method();
-  void print_graph(const char* name);
-  void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes);
+  void print_graph(const char* name, const frame* fr = nullptr);
+  void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, const frame* fr = nullptr);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };

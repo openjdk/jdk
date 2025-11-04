@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,22 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6255196
- * @summary Verifies the function of methods mail() and mail(java.net.URI uri).
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual MailTest
- */
-
 import java.awt.Desktop;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import javax.swing.JPanel;
+
+import jtreg.SkippedException;
+
+/*
+ * @test
+ * @bug 6255196
+ * @summary Verifies the function of methods mail() and mail(java.net.URI uri).
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @run main/manual MailTest
+ */
 
 public class MailTest extends JPanel {
 
@@ -48,18 +50,7 @@ public class MailTest extends JPanel {
             """;
 
     private MailTest() {
-        if (!Desktop.isDesktopSupported()) {
-            PassFailJFrame.log("Class java.awt.Desktop is not supported on " +
-                    "current platform. Farther testing will not be performed");
-            PassFailJFrame.forcePass();
-        }
-
         Desktop desktop = Desktop.getDesktop();
-        if (!desktop.isSupported(Desktop.Action.MAIL)) {
-            PassFailJFrame.log("Action.MAIL is not supported.");
-            PassFailJFrame.forcePass();
-        }
-
         /*
          * Part 1: launch the mail composing window without a mailto URI.
          */
@@ -103,6 +94,15 @@ public class MailTest extends JPanel {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
+        if (!Desktop.isDesktopSupported()) {
+            throw new SkippedException("Class java.awt.Desktop is not supported " +
+                    "on current platform. Further testing will not be performed");
+        }
+
+        if (!Desktop.getDesktop().isSupported(Desktop.Action.MAIL)) {
+            throw new SkippedException("Action.MAIL is not supported.");
+        }
+
         PassFailJFrame.builder()
                 .title("Mail Test")
                 .splitUI(MailTest::new)

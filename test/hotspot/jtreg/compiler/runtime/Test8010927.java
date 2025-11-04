@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class Test8010927 {
     static final Test8010927 elem = new Test8010927();
     static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    static final int obj_header_size = U.ARRAY_OBJECT_BASE_OFFSET;
+    static final int obj_header_size = (int) U.ARRAY_OBJECT_BASE_OFFSET;
     static final int heap_oop_size = wb.getHeapOopSize();
     static final int card_size = 512;
     static final int one_card = (card_size - obj_header_size) / heap_oop_size;

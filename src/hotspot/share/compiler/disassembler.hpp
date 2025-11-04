@@ -25,13 +25,12 @@
 #ifndef SHARE_COMPILER_DISASSEMBLER_HPP
 #define SHARE_COMPILER_DISASSEMBLER_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
 #include "asm/assembler.hpp"
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 class decode_env;

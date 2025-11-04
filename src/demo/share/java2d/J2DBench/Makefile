@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,10 +31,10 @@
 
 
 ifndef SOURCE
-export SOURCE := 7
+export SOURCE := 8
 endif
 ifndef TARGET
-export TARGET := 7
+export TARGET := 8
 endif
 ifndef JAVAC
 export JAVAC := javac

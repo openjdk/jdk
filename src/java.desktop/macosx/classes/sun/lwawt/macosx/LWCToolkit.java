@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,6 @@ import sun.lwawt.LWWindowPeer.PeerType;
 import sun.lwawt.PlatformComponent;
 import sun.lwawt.PlatformDropTarget;
 import sun.lwawt.PlatformWindow;
-import sun.lwawt.SecurityWarningWindow;
 
 @SuppressWarnings("serial") // JDK implementation class
 final class NamedCursor extends Cursor {
@@ -142,8 +141,6 @@ public final class LWCToolkit extends LWToolkit {
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
     static {
-        System.err.flush();
-
         ResourceBundle platformResources = null;
         try {
             platformResources = ResourceBundle.getBundle("sun.awt.resources.awtosx");
@@ -217,7 +214,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @SuppressWarnings("serial") // JDK implementation class
-    private static class AppleSpecificColor extends Color {
+    private static final class AppleSpecificColor extends Color {
         private final int index;
         AppleSpecificColor(int index) {
             super(appleColors[index]);
@@ -290,12 +287,6 @@ public final class LWCToolkit extends LWToolkit {
             return createCPrinterDialog((CPrinterDialog)target);
         }
         return super.createDialog(target);
-    }
-
-    @Override
-    protected SecurityWarningWindow createSecurityWarning(Window ownerWindow,
-                                                          LWWindowPeer ownerPeer) {
-        return new CWarningWindow(ownerWindow, ownerPeer);
     }
 
     @Override
@@ -409,7 +400,7 @@ public final class LWCToolkit extends LWToolkit {
         // TODO Auto-generated method stub
     }
 
-    static class OSXPlatformFont extends sun.awt.PlatformFont {
+    static final class OSXPlatformFont extends sun.awt.PlatformFont {
         OSXPlatformFont(String name, int style)
         {
             super(name, style);

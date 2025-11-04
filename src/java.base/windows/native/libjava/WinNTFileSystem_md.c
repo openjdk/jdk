@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 /* -- Path operations -- */
 
 extern int wcanonicalize(const WCHAR *path, WCHAR *out, int len);
-extern int wcanonicalizeWithPrefix(const WCHAR *canonicalPrefix, const WCHAR *pathWithCanonicalPrefix, WCHAR *out, int len);
 
 /**
  * Retrieves the fully resolved (final) path for the given path or NULL
@@ -295,41 +294,6 @@ Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
     return rv;
 }
 
-
-JNIEXPORT jstring JNICALL
-Java_java_io_WinNTFileSystem_canonicalizeWithPrefix0(JNIEnv *env, jobject this,
-                                                     jstring canonicalPrefixString,
-                                                     jstring pathWithCanonicalPrefixString)
-{
-    jstring rv = NULL;
-    WCHAR canonicalPath[MAX_PATH_LENGTH];
-    WITH_UNICODE_STRING(env, canonicalPrefixString, canonicalPrefix) {
-        WITH_UNICODE_STRING(env, pathWithCanonicalPrefixString, pathWithCanonicalPrefix) {
-            int len = (int)wcslen(canonicalPrefix) + MAX_PATH;
-            if (len > MAX_PATH_LENGTH) {
-                WCHAR *cp = (WCHAR*)malloc(len * sizeof(WCHAR));
-                if (cp != NULL) {
-                    if (wcanonicalizeWithPrefix(canonicalPrefix,
-                                                pathWithCanonicalPrefix,
-                                                cp, len) >= 0) {
-                      rv = (*env)->NewString(env, cp, (jsize)wcslen(cp));
-                    }
-                    free(cp);
-                } else {
-                    JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
-                }
-            } else if (wcanonicalizeWithPrefix(canonicalPrefix,
-                                               pathWithCanonicalPrefix,
-                                               canonicalPath, MAX_PATH_LENGTH) >= 0) {
-                rv = (*env)->NewString(env, canonicalPath, (jsize)wcslen(canonicalPath));
-            }
-        } END_UNICODE_STRING(env, pathWithCanonicalPrefix);
-    } END_UNICODE_STRING(env, canonicalPrefix);
-    if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
-    }
-    return rv;
-}
 
 JNIEXPORT jstring JNICALL
 Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pathname) {
@@ -649,31 +613,43 @@ Java_java_io_WinNTFileSystem_createFileExclusively0(JNIEnv *env, jclass cls,
 }
 
 static int
-removeFileOrDirectory(const jchar *path)
+removeFileOrDirectory(const jchar *path, jboolean allowDeleteReadOnlyFiles)
 {
     /* Returns 0 on success */
-    DWORD a;
-
-    SetFileAttributesW(path, FILE_ATTRIBUTE_NORMAL);
-    a = GetFileAttributesW(path);
+    DWORD a = GetFileAttributesW(path);
     if (a == INVALID_FILE_ATTRIBUTES) {
         return 1;
     } else if (a & FILE_ATTRIBUTE_DIRECTORY) {
+        // read-only attribute cannot be set on directories
         return !RemoveDirectoryW(path);
     } else {
-        return !DeleteFileW(path);
+        // unset read-only attribute if deleting read-only files is enabled
+        BOOL readOnlyAttrCleared = FALSE;
+        if (allowDeleteReadOnlyFiles && ((a & FILE_ATTRIBUTE_READONLY) != 0)) {
+            DWORD notReadOnlyAttr = a & (~FILE_ATTRIBUTE_READONLY);
+            readOnlyAttrCleared = SetFileAttributesW(path, notReadOnlyAttr);
+        }
+
+        BOOL deleted = !DeleteFileW(path);
+
+        // reinstate the read-only attribute if it was unset but deletion failed
+        if (!deleted && readOnlyAttrCleared)
+            SetFileAttributesW(path, a);
+
+        return deleted;
     }
 }
 
 JNIEXPORT jboolean JNICALL
-Java_java_io_WinNTFileSystem_delete0(JNIEnv *env, jobject this, jobject file)
+Java_java_io_WinNTFileSystem_delete0(JNIEnv *env, jobject this, jobject file,
+                                     jboolean allowDeleteReadOnlyFiles)
 {
     jboolean rv = JNI_FALSE;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL) {
         return JNI_FALSE;
     }
-    if (removeFileOrDirectory(pathbuf) == 0) {
+    if (removeFileOrDirectory(pathbuf, allowDeleteReadOnlyFiles) == 0) {
         rv = JNI_TRUE;
     }
     free(pathbuf);

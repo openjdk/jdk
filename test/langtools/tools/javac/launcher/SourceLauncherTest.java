@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8344706
+ *      8362237
  * @summary Test source launcher
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.launcher
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.module
  * @build toolbox.JavaTask toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SourceLauncherTest
@@ -78,7 +77,7 @@ public class SourceLauncherTest extends TestRunner {
         System.err.println("version: " + thisVersion);
     }
 
-    private final ToolBox tb;
+    final ToolBox tb;
     private static final String thisVersion = System.getProperty("java.specification.version");
 
     /*
@@ -285,6 +284,46 @@ public class SourceLauncherTest extends TestRunner {
         checkNull("exception", r.exception);
     }
 
+
+    @Test
+    public void testMainNoParams(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testMainNotPublic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    static void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
+    public void testMainNotStatic(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "package hello;\n" +
+            "import java.util.Arrays;\n" +
+            "class World {\n" +
+            "    public void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
     /*
      * Negative tests: such as cannot find or execute main method.
      */
@@ -304,7 +343,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, enum, or record expected\n" +
+            file + ":1: error: class, interface, annotation type, enum, record, method or field expected\n" +
             "#!/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
@@ -518,7 +557,7 @@ public class SourceLauncherTest extends TestRunner {
             file + ":1: error: illegal character: '#'\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
-            file + ":1: error: class, interface, enum, or record expected\n" +
+            file + ":1: error: class, interface, annotation type, enum, record, method or field expected\n" +
             "#/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
@@ -563,31 +602,15 @@ public class SourceLauncherTest extends TestRunner {
     public void testNoMain(Path base) throws IOException {
         tb.writeJavaFiles(base, "class NoMain { }");
         testError(base.resolve("NoMain.java"), "",
-                "error: can't find main(String[]) method in class: NoMain");
+                "error: can't find main(String[]) or main() method in class: NoMain");
     }
 
-    //@Test temporary disabled as enabled preview allows no-param main
+    @Test
     public void testMainBadParams(Path base) throws IOException {
         tb.writeJavaFiles(base,
-                "class BadParams { public static void main() { } }");
+                "class BadParams { public static void main(int n) { } }");
         testError(base.resolve("BadParams.java"), "",
-                "error: can't find main(String[]) method in class: BadParams");
-    }
-
-    //@Test temporary disabled as enabled preview allows non-public main
-    public void testMainNotPublic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotPublic { static void main(String... args) { } }");
-        testError(base.resolve("NotPublic.java"), "",
-                "error: can't find main(String[]) method in class: NotPublic");
-    }
-
-    //@Test temporary disabled as enabled preview allows non-static main
-    public void testMainNotStatic(Path base) throws IOException {
-        tb.writeJavaFiles(base,
-                "class NotStatic { public void main(String... args) { } }");
-        testError(base.resolve("NotStatic.java"), "",
-                "error: can't find main(String[]) method in class: NotStatic");
+                "error: can't find main(String[]) or main() method in class: BadParams");
     }
 
     @Test
@@ -595,7 +618,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: can't find main(String[]) method in class: NotVoid");
+                "error: can't find main(String[]) or main() method in class: NotVoid");
     }
 
     @Test
@@ -692,6 +715,29 @@ public class SourceLauncherTest extends TestRunner {
                 "at Thrower.main(Thrower.java:4)");
     }
 
+    /*
+     * Tests in which main throws a traceless exception.
+     */
+    @Test
+    public void testTracelessTargetException(Path base) throws IOException {
+        tb.writeJavaFiles(base, """
+            class TestLauncherException extends RuntimeException {
+                TestLauncherException() {
+                    super("No trace", null, true, false); // No writable trace
+                }
+
+                public static void main(String... args) {
+                    throw new TestLauncherException();
+                }
+            }
+            """);
+        Path file = base.resolve("TestLauncherException.java");
+        SourceLauncherTest.Result r = run(file, List.of(), List.of("3"));
+        checkEmpty("stdout", r.stdOut());
+        checkEmpty("stderr", r.stdErr());
+        checkTrace("exception", r.exception(), "TestLauncherException: No trace");
+    }
+
     @Test
     public void testNoDuplicateIncubatorWarning(Path base) throws Exception {
         Path module = base.resolve("lib");
@@ -751,6 +797,82 @@ public class SourceLauncherTest extends TestRunner {
                 out.write(newBytes);
             }
         }
+
+    @Test
+    public void testAbstractClassInstanceMain(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public abstract class AbstractMain {
+                              void main(String[] args) {}
+                          }
+                          """);
+        testError(base.resolve("AbstractMain.java"), "",
+                "error: abstract class: AbstractMain can not be instantiated");
+    }
+
+    @Test
+    public void testWrongMainPrivate(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainPrivate {
+                              private static void main(String[] args) {}
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainPrivate.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainPrivateInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainPrivate {
+                              private void main(String[] args) {}
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainPrivate.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainReturnType(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainReturnType {
+                              public static int main(String[] args) {
+                                  return -1;
+                              }
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainReturnType.java"),
+                    "correct\n");
+    }
+
+    @Test
+    public void testWrongMainReturnTypeInstance(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                          """
+                          public class WrongMainReturnType {
+                              public int main(String[] args) {
+                                  return -1;
+                              }
+                              void main() {
+                                  System.out.println("correct");
+                              }
+                          }
+                          """);
+        testSuccess(base.resolve("WrongMainReturnType.java"),
+                    "correct\n");
+    }
 
     Result run(Path file, List<String> runtimeArgs, List<String> appArgs) {
         List<String> args = new ArrayList<>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244 8284908 8298405
+ * @bug 7021614 8273244 8284908 8298405 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,11 +39,11 @@ class EntityTest {
      */
     public void name() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Entity[ENTITY, pos:6, lt]
-    Text[TEXT, pos:10, _def]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, lt]
+    Text[TEXT, pos:8, _def]
   body: empty
   block tags: empty
 ]
@@ -54,11 +54,11 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void decimal_value() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Entity[ENTITY, pos:6, #160]
-    Text[TEXT, pos:12, _def]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, #160]
+    Text[TEXT, pos:10, _def]
   body: empty
   block tags: empty
 ]
@@ -69,11 +69,11 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void lower_hex_value() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Entity[ENTITY, pos:6, #xa0]
-    Text[TEXT, pos:12, _def]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, #xa0]
+    Text[TEXT, pos:10, _def]
   body: empty
   block tags: empty
 ]
@@ -84,11 +84,11 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void upper_hex_value() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Entity[ENTITY, pos:6, #XA0]
-    Text[TEXT, pos:12, _def]
+    Text[TEXT, pos:0, abc_]
+    Entity[ENTITY, pos:4, #XA0]
+    Text[TEXT, pos:10, _def]
   body: empty
   block tags: empty
 ]
@@ -99,14 +99,14 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void bad_amp() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Erroneous[ERRONEOUS, pos:6
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.bad.entity
       body: &
     ]
-    Text[TEXT, pos:7, _def]
+    Text[TEXT, pos:5, _def]
   body: empty
   block tags: empty
 ]
@@ -117,14 +117,14 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void bad_entity_name() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Erroneous[ERRONEOUS, pos:6
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4
       code: compiler.err.dc.bad.entity
       body: &
     ]
-    Text[TEXT, pos:7, 1_def]
+    Text[TEXT, pos:5, 1_def]
   body: empty
   block tags: empty
 ]
@@ -135,14 +135,14 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void bad_entity_decimal_value() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Erroneous[ERRONEOUS, pos:6, prefPos:10
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:8
       code: compiler.err.dc.missing.semicolon
       body: &#012
     ]
-    Text[TEXT, pos:11, .3;_def]
+    Text[TEXT, pos:9, .3;_def]
   body: empty
   block tags: empty
 ]
@@ -153,14 +153,14 @@ DocComment[DOC_COMMENT, pos:2
      */
     public void bad_entity_hex_value() { }
 /*
-DocComment[DOC_COMMENT, pos:2
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:2, abc_]
-    Erroneous[ERRONEOUS, pos:6, prefPos:12
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:10
       code: compiler.err.dc.missing.semicolon
       body: &#x012a
     ]
-    Text[TEXT, pos:13, zc;_def]
+    Text[TEXT, pos:11, zc;_def]
   body: empty
   block tags: empty
 ]

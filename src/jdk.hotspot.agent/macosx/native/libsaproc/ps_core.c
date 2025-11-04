@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,7 +74,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
   // allocate map_array
   map_info** array;
   if ( (array = (map_info**) malloc(sizeof(map_info*) * num_maps)) == NULL) {
-    print_debug("can't allocate memory for map array\n");
+    print_error("can't allocate memory for map array\n");
     return false;
   }
 
@@ -280,6 +280,7 @@ static bool read_core_segments(struct ps_prochandle* ph) {
 
   lseek(fd, offset, SEEK_SET);
   if(read(fd, (void *)&fhead, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
+     print_error("Failed to read program header table\n");
      goto err;
   }
   print_debug("total commands: %d\n", fhead.ncmds);
@@ -287,6 +288,7 @@ static bool read_core_segments(struct ps_prochandle* ph) {
   for (i = 0; i < fhead.ncmds; i++) {
     lseek(fd, offset, SEEK_SET);
     if (read(fd, (void *)&lcmd, sizeof(load_command)) != sizeof(load_command)) {
+      print_error("Failed to read command\n");
       goto err;
     }
     offset += lcmd.cmdsize;    // next command position
@@ -294,14 +296,14 @@ static bool read_core_segments(struct ps_prochandle* ph) {
     if (lcmd.cmd == LC_SEGMENT_64) {
       lseek(fd, -sizeof(load_command), SEEK_CUR);
       if (read(fd, (void *)&segcmd, sizeof(segment_command_64)) != sizeof(segment_command_64)) {
-        print_debug("failed to read LC_SEGMENT_64 i = %d!\n", i);
+        print_error("failed to read LC_SEGMENT_64 i = %d!\n", i);
         goto err;
       }
       // The base of the library is offset by a random amount which ends up as a load command with a
       // filesize of 0.  This must be ignored otherwise the base address of the library is wrong.
       if (segcmd.filesize != 0) {
         if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize, segcmd.flags) == NULL) {
-          print_debug("Failed to add map_info at i = %d\n", i);
+          print_error("Failed to add map_info at i = %d\n", i);
           goto err;
         }
       }
@@ -318,7 +320,7 @@ static bool read_core_segments(struct ps_prochandle* ph) {
       uint32_t size = sizeof(load_command);
       while (size < lcmd.cmdsize) {
         if (read(fd, (void *)&fc, sizeof(thread_fc)) != sizeof(thread_fc)) {
-          printf("Reading flavor, count failed.\n");
+          print_error("Reading flavor, count failed.\n");
           goto err;
         }
         size += sizeof(thread_fc);
@@ -326,14 +328,14 @@ static bool read_core_segments(struct ps_prochandle* ph) {
         if (fc.flavor == x86_THREAD_STATE) {
           x86_thread_state_t thrstate;
           if (read(fd, (void *)&thrstate, sizeof(x86_thread_state_t)) != sizeof(x86_thread_state_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(x86_thread_state_t);
           // create thread info list, update lwp_id later
           sa_thread_info* newthr = add_thread_info(ph, (pthread_t) -1, (lwpid_t) num_threads++);
           if (newthr == NULL) {
-            printf("create thread_info failed\n");
+            print_error("create thread_info failed\n");
             goto err;
           }
 
@@ -370,14 +372,14 @@ static bool read_core_segments(struct ps_prochandle* ph) {
         } else if (fc.flavor == x86_FLOAT_STATE) {
           x86_float_state_t flstate;
           if (read(fd, (void *)&flstate, sizeof(x86_float_state_t)) != sizeof(x86_float_state_t)) {
-            print_debug("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(x86_float_state_t);
         } else if (fc.flavor == x86_EXCEPTION_STATE) {
           x86_exception_state_t excpstate;
           if (read(fd, (void *)&excpstate, sizeof(x86_exception_state_t)) != sizeof(x86_exception_state_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(x86_exception_state_t);
@@ -387,14 +389,14 @@ static bool read_core_segments(struct ps_prochandle* ph) {
         if (fc.flavor == ARM_THREAD_STATE64) {
           arm_thread_state64_t thrstate;
           if (read(fd, (void *)&thrstate, sizeof(arm_thread_state64_t)) != sizeof(arm_thread_state64_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(arm_thread_state64_t);
           // create thread info list, update lwp_id later
           sa_thread_info* newthr = add_thread_info(ph, (pthread_t) -1, (lwpid_t) num_threads++);
           if (newthr == NULL) {
-            printf("create thread_info failed\n");
+            print_error("create thread_info failed\n");
             goto err;
           }
 
@@ -443,21 +445,21 @@ static bool read_core_segments(struct ps_prochandle* ph) {
         } else if (fc.flavor == ARM_NEON_STATE64) {
           arm_neon_state64_t flstate;
           if (read(fd, (void *)&flstate, sizeof(arm_neon_state64_t)) != sizeof(arm_neon_state64_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(arm_neon_state64_t);
         } else if (fc.flavor == ARM_EXCEPTION_STATE64) {
           arm_exception_state64_t excpstate;
           if (read(fd, (void *)&excpstate, sizeof(arm_exception_state64_t)) != sizeof(arm_exception_state64_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(arm_exception_state64_t);
         } else if (fc.flavor == ARM_DEBUG_STATE64) {
           arm_debug_state64_t dbgstate;
           if (read(fd, (void *)&dbgstate, sizeof(arm_debug_state64_t)) != sizeof(arm_debug_state64_t)) {
-            printf("Reading flavor, count failed.\n");
+            print_error("Reading flavor, count failed.\n");
             goto err;
           }
           size += sizeof(arm_debug_state64_t);
@@ -631,6 +633,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       lseek(fd, -sizeof(uint32_t), SEEK_CUR);
       // This is the beginning of the mach-o file in the segment.
       if (read(fd, (void *)&header, sizeof(mach_header_64)) != sizeof(mach_header_64)) {
+        print_error("Failed to file header\n");
         goto err;
       }
       fpos = ltell(fd);
@@ -641,6 +644,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         // LC_ID_DYLIB is the file itself for a .dylib
         lseek(fd, fpos, SEEK_SET);
         if (read(fd, (void *)&lcmd, sizeof(load_command)) != sizeof(load_command)) {
+          print_error("Failed to read command\n");
           return false;   // error
         }
         fpos += lcmd.cmdsize;  // next command position
@@ -652,6 +656,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
         if (lcmd.cmd == LC_ID_DYLIB) {
           lseek(fd, -sizeof(load_command), SEEK_CUR);
           if (read(fd, (void *)&dylibcmd, sizeof(dylib_command)) != sizeof(dylib_command)) {
+            print_error("Failed to read command\n");
             return false;
           }
           /**** name stored at dylib_command.dylib.name.offset, is a C string  */
@@ -710,13 +715,13 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   struct ps_prochandle* ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle));
   if (ph == NULL) {
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
   if ((ph->core = (struct core_data*) calloc(1, sizeof(struct core_data))) == NULL) {
     free(ph);
-    print_debug("can't allocate ps_prochandle\n");
+    print_error("can't allocate ps_prochandle\n");
     return NULL;
   }
 
@@ -738,12 +743,12 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
 
   // read core file header
   if (read_macho64_header(ph->core->core_fd, &core_header) != true || core_header.filetype != MH_CORE) {
-    print_debug("core file is not a valid Mach-O file\n");
+    print_error("core file is not a valid Mach-O file\n");
     goto err;
   }
 
   if ((ph->core->exec_fd = open(exec_file, O_RDONLY)) < 0) {
-    print_error("can't open executable file\n");
+    print_error("can't open executable file: %s\n", strerror(errno));
     goto err;
   }
 
@@ -779,7 +784,7 @@ struct ps_prochandle* Pgrab_core(const char* exec_file, const char* core_file) {
   }
 
   if (init_classsharing_workaround(ph) != true) {
-    print_error("failed to workaround classshareing\n");
+    print_error("failed to workaround class sharing\n");
     goto err;
   }
 

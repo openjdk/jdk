@@ -31,7 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 /**
  * @test
  * @summary Tests that -XX:FlightRecorderOptions:preserve-repository works
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr
  * @library /test/lib

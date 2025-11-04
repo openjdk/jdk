@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
 
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -132,7 +131,7 @@ class ServerSocketChannelImpl
         if (family == UNIX) {
             this.fd = UnixDomainSockets.socket();
         } else {
-            this.fd = Net.serverSocket(family, true);
+            this.fd = Net.serverSocket(family);
         }
         this.fdVal = IOUtil.fdVal(fd);
     }
@@ -331,7 +330,6 @@ class ServerSocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         Net.listen(fd, backlog < 1 ? 50 : backlog);
         return Net.localAddress(fd);
@@ -585,15 +583,7 @@ class ServerSocketChannelImpl
             assert state < ST_CLOSING;
             state = ST_CLOSING;
             if (!tryClose()) {
-                long th = thread;
-                if (th != 0) {
-                    if (NativeThread.isVirtualThread(th)) {
-                        Poller.stopPoll(fdVal);
-                    } else {
-                        nd.preClose(fd);
-                        NativeThread.signal(th);
-                    }
-                }
+                nd.preClose(fd, thread, 0);
             }
         }
     }

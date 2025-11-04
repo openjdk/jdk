@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 
-import com.sun.jdi.JDIPermission;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.VirtualMachineManager;
@@ -59,13 +58,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManagerService {
     private static VirtualMachineManagerImpl vmm;
 
     public static VirtualMachineManager virtualMachineManager() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            JDIPermission vmmPermission =
-                new JDIPermission("virtualMachineManager");
-            sm.checkPermission(vmmPermission);
-        }
         synchronized (lock) {
             if (vmm == null) {
                 vmm = new VirtualMachineManagerImpl();

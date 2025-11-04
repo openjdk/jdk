@@ -26,6 +26,7 @@
  * @bug 8192985
  * @summary Test the clhsdb 'printas' command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbPrintAs
  */

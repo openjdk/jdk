@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1ANALYTICSSEQUENCES_INLINE_HPP
 
 #include "gc/g1/g1AnalyticsSequences.hpp"
+
 #include "gc/g1/g1Predictions.hpp"
 
 bool G1PhaseDependentSeq::enough_samples_to_use_mixed_seq() const {

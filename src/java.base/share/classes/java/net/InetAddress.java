@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package java.net;
 import java.net.spi.InetAddressResolver;
 import java.net.spi.InetAddressResolverProvider;
 import java.net.spi.InetAddressResolver.LookupPolicy;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.ArrayList;
@@ -56,13 +54,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
+import jdk.internal.util.Exceptions;
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
 import sun.net.ResolverProviderConfiguration;
-import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
 import sun.nio.cs.UTF_8;
@@ -71,6 +69,8 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV4_FIRST;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6;
 import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents an Internet Protocol (IP) address.
@@ -364,11 +364,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      */
     static {
         PREFER_IPV4_STACK_VALUE =
-                GetPropertyAction.privilegedGetProperty("java.net.preferIPv4Stack");
+                System.getProperty("java.net.preferIPv4Stack");
         PREFER_IPV6_ADDRESSES_VALUE =
-                GetPropertyAction.privilegedGetProperty("java.net.preferIPv6Addresses");
+                System.getProperty("java.net.preferIPv6Addresses");
         HOSTS_FILE_NAME =
-                GetPropertyAction.privilegedGetProperty("jdk.net.hosts.file");
+                System.getProperty("jdk.net.hosts.file");
         jdk.internal.loader.BootLoader.loadLibrary("net");
         SharedSecrets.setJavaNetInetAddressAccess(
                 new JavaNetInetAddressAccess() {
@@ -385,6 +385,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                 }
         );
+        Exceptions.setup(); // needed for native exceptions
         init();
     }
 
@@ -440,19 +441,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     // Native method to check if IPv6 is available
     private static native boolean isIPv6Supported();
 
-    /**
-     * The {@code RuntimePermission("inetAddressResolverProvider")} is
-     * necessary to subclass and instantiate the {@code InetAddressResolverProvider}
-     * class, as well as to obtain resolver from an instance of that class,
-     * and it is also required to obtain the operating system name resolution configurations.
-     */
-    private static final RuntimePermission INET_ADDRESS_RESOLVER_PERMISSION =
-            new RuntimePermission("inetAddressResolverProvider");
-
     private static final ReentrantLock RESOLVER_LOCK = new ReentrantLock();
     private static volatile InetAddressResolver bootstrapResolver;
 
-    @SuppressWarnings("removal")
     private static InetAddressResolver resolver() {
         InetAddressResolver cns = resolver;
         if (cns != null) {
@@ -476,10 +467,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 if (HOSTS_FILE_NAME != null) {
                     // The default resolver service is already host file resolver
                     cns = BUILTIN_RESOLVER;
-                } else if (System.getSecurityManager() != null) {
-                    PrivilegedAction<InetAddressResolver> pa = InetAddress::loadResolver;
-                    cns = AccessController.doPrivileged(
-                            pa, null, INET_ADDRESS_RESOLVER_PERMISSION);
                 } else {
                     cns = loadResolver();
                 }
@@ -737,25 +724,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @see InetAddress#getCanonicalHostName
      */
     public String getHostName() {
-        return getHostName(true);
-    }
-
-    /**
-     * Returns the hostname for this address.
-     * If the host is equal to null, then this address refers to any
-     * of the local machine's available network addresses.
-     * this is package private so SocketPermission can make calls into
-     * here without a security check.
-     *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
-     *
-     * @param check make security check if true
-     */
-    String getHostName(boolean check) {
         if (holder().getHostName() == null) {
-            holder().hostName = InetAddress.getHostFromNameService(this, check);
+            holder().hostName = InetAddress.getHostFromNameService(this);
         }
         return holder().getHostName();
     }
@@ -782,45 +752,31 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         String value = canonicalHostName;
         if (value == null)
             canonicalHostName = value =
-                InetAddress.getHostFromNameService(this, true);
+                InetAddress.getHostFromNameService(this);
         return value;
     }
 
     /**
      * Returns the fully qualified domain name for the given address.
      *
-     * @param check make security check if true
-     *
      * @return  the fully qualified domain name for the given IP address.
-     *          If either the operation is not allowed by the security check
-     *          or the system-wide resolver wasn't able to determine the
+     *          If the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
      *          representation of the IP address is returned instead.
      */
-    private static String getHostFromNameService(InetAddress addr, boolean check) {
+    private static String getHostFromNameService(InetAddress addr) {
         String host;
         var resolver = resolver();
         try {
             // first lookup the hostname
             host = resolver.lookupByAddress(addr.getAddress());
 
-            /* check to see if calling code is allowed to know
-             * the hostname for this IP address, ie, connect to the host
-             */
-            if (check) {
-                @SuppressWarnings("removal")
-                SecurityManager sec = System.getSecurityManager();
-                if (sec != null) {
-                    sec.checkConnect(host, -1);
-                }
-            }
-
             /* now get all the IP addresses for this hostname,
              * and make sure one of them matches the original IP
              * address. We do this to try and prevent spoofing.
              */
 
-            InetAddress[] arr = InetAddress.getAllByName0(host, check);
+            InetAddress[] arr = InetAddress.getAllByName0(host);
             boolean ok = false;
 
             if (arr != null) {
@@ -950,7 +906,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         @Override
         public InetAddress[] get() throws UnknownHostException {
             if (inetAddresses == null) {
-                throw new UnknownHostException(host);
+                throw new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)));
             }
             return inetAddresses;
         }
@@ -1143,7 +1099,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
-                        throw ex == null ? new UnknownHostException(host) : ex;
+                        throw ex == null
+                            ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
+                            : ex;
                     }
                     return inetAddresses;
                 }
@@ -1251,16 +1209,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                 }
             } catch (IOException e) {
-                throw new UnknownHostException("Unable to resolve address "
-                        + Arrays.toString(addr) + " as hosts file " + hostsFile
-                        + " not found ");
+                throw new UnknownHostException(
+                    formatMsg("Unable to resolve address %s as hosts file %s not found",
+                              filterNonSocketInfo(Arrays.toString(addr)),
+                              filterNonSocketInfo(hostsFile)
+                                   .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
 
             if ((host == null) || (host.isEmpty()) || (host.equals(" "))) {
-                throw new UnknownHostException("Requested address "
-                        + Arrays.toString(addr)
-                        + " resolves to an invalid entry in hosts file "
-                        + hostsFile);
+                throw new UnknownHostException(
+                    formatMsg("Requested address %s resolves to an invalid entry in hosts file %s",
+                              filterNonSocketInfo(Arrays.toString(addr)),
+                              filterNonSocketInfo(hostsFile)
+                                   .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
             return host;
         }
@@ -1321,8 +1282,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     }
                 }
             } catch (IOException e) {
-                throw new UnknownHostException("Unable to resolve host " + host
-                        + " as hosts file " + hostsFile + " not found ");
+                throw new UnknownHostException(
+                    formatMsg("Unable to resolve host %s as hosts file %s not found",
+                              filterNonSocketInfo(host), filterNonSocketInfo(hostsFile)
+                                   .replaceWith("from ${jdk.net.hosts.file} system property")));
+
             }
             // Check if only IPv4 addresses are requested
             if (needIPv4 && !needIPv6) {
@@ -1353,8 +1317,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         private void checkResultsList(List<InetAddress> addressesList, String hostName)
                 throws UnknownHostException {
             if (addressesList.isEmpty()) {
-                throw new UnknownHostException("Unable to resolve host " + hostName
-                        + " in hosts file " + hostsFile);
+                throw new UnknownHostException(
+                    formatMsg("Unable to resolve host %s in hosts file %s",
+                              filterNonSocketInfo(hostName), filterNonSocketInfo(hostsFile)
+                                   .replaceWith("from ${jdk.net.hosts.file} system property")));
             }
         }
 
@@ -1591,7 +1557,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     // Here we check the address string for ambiguity only
                     inetAddress = Inet4Address.parseAddressString(host, false);
                 } catch (IllegalArgumentException iae) {
-                    var uhe = new UnknownHostException(host);
+                    var uhe = new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)));
                     uhe.initCause(iae);
                     throw uhe;
                 }
@@ -1613,12 +1579,13 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             // and ends with square brackets, but we got something else.
             throw invalidIPv6LiteralException(host, true);
         }
-        return getAllByName0(host, true, true);
+        return getAllByName0(host, true);
     }
 
     private static UnknownHostException invalidIPv6LiteralException(String host, boolean wrapInBrackets) {
         String hostString = wrapInBrackets ? "[" + host + "]" : host;
-        return new UnknownHostException(hostString + ": invalid IPv6 address literal");
+        return new UnknownHostException(formatMsg("%sinvalid IPv6 address literal",
+                                                  filterNonSocketInfo(hostString).suffixWith(": ")));
     }
 
     /**
@@ -1639,9 +1606,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     /**
      * package private so SocketPermission can call it
      */
-    static InetAddress[] getAllByName0 (String host, boolean check)
-        throws UnknownHostException  {
-        return getAllByName0(host, check, true);
+    static InetAddress[] getAllByName0(String host) throws UnknownHostException {
+        return getAllByName0(host, true);
     }
 
     /**
@@ -1667,6 +1633,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      */
     public static InetAddress ofLiteral(String ipAddressLiteral) {
         Objects.requireNonNull(ipAddressLiteral);
+        if (ipAddressLiteral.isEmpty()) {
+            throw IPAddressUtil.invalidIpAddressLiteral(ipAddressLiteral);
+        }
         InetAddress inetAddress;
         try {
             // First try to parse the input as an IPv4 address literal
@@ -1682,30 +1651,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * Designated lookup method.
      *
      * @param host host name to look up
-     * @param check perform security check
      * @param useCache use cached value if not expired else always
      *                 perform name service lookup (and cache the result)
      * @return array of InetAddress(es)
      * @throws UnknownHostException if host name is not found
      */
     private static InetAddress[] getAllByName0(String host,
-                                               boolean check,
                                                boolean useCache)
         throws UnknownHostException  {
 
         /* If it gets here it is presumed to be a hostname */
-
-        /* make sure the connection to the host is allowed, before we
-         * give out a hostname
-         */
-        if (check) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkConnect(host, -1);
-            }
-        }
-
         // remove expired addresses from cache - expirySet keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
@@ -1768,7 +1723,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         InetAddress[] result = addresses == null ? null
                 : addresses.toArray(InetAddress[]::new);
         if (result == null || result.length == 0) {
-            throw ex == null ? new UnknownHostException(host) : ex;
+            throw ex == null ? new UnknownHostException(formatMsg("%s", filterNonSocketInfo(host)))
+                             : ex;
         }
         return result;
     }
@@ -1822,48 +1778,33 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @see java.net.InetAddress#getByName(java.lang.String)
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        try {
-            // is cached data still valid?
-            CachedLocalHost clh = cachedLocalHost;
-            if (clh != null && (clh.expiryTime - System.nanoTime()) >= 0L) {
-                if (security != null) {
-                    security.checkConnect(clh.host, -1);
-                }
-                return clh.addr;
-            }
-
-            String local = impl.getLocalHostName();
-
-            if (security != null) {
-                security.checkConnect(local, -1);
-            }
-
-            InetAddress localAddr;
-            if (local.equals("localhost")) {
-                // shortcut for "localhost" host name
-                localAddr = impl.loopbackAddress();
-            } else {
-                // call getAllByName0 without security checks and
-                // without using cached data
-                try {
-                    localAddr = getAllByName0(local, false, false)[0];
-                } catch (UnknownHostException uhe) {
-                    // Rethrow with a more informative error message.
-                    UnknownHostException uhe2 =
-                        new UnknownHostException(local + ": " +
-                                                 uhe.getMessage());
-                    uhe2.initCause(uhe);
-                    throw uhe2;
-                }
-            }
-            cachedLocalHost = new CachedLocalHost(local, localAddr);
-            return localAddr;
-        } catch (java.lang.SecurityException e) {
-            return impl.loopbackAddress();
+        // is cached data still valid?
+        CachedLocalHost clh = cachedLocalHost;
+        if (clh != null && (clh.expiryTime - System.nanoTime()) >= 0L) {
+            return clh.addr;
         }
+
+        String local = impl.getLocalHostName();
+
+        InetAddress localAddr;
+        if (local.equals("localhost")) {
+            // shortcut for "localhost" host name
+            localAddr = impl.loopbackAddress();
+        } else {
+            // call getAllByName0 without using cached data
+            try {
+                localAddr = getAllByName0(local, false)[0];
+            } catch (UnknownHostException uhe) {
+                // Rethrow with a more informative error message.
+                    UnknownHostException uhe2 =
+                        new UnknownHostException(formatMsg(filterNonSocketInfo(local)
+                                                               .suffixWith(": ") + uhe.getMessage()));
+                uhe2.initCause(uhe);
+                throw uhe2;
+            }
+        }
+        cachedLocalHost = new CachedLocalHost(local, localAddr);
+        return localAddr;
     }
 
     /**

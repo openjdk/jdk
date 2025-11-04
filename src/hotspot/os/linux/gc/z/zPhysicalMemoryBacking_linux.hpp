@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,19 +48,19 @@ private:
   bool is_hugetlbfs() const;
   bool tmpfs_supports_transparent_huge_pages() const;
 
-  ZErrno fallocate_compat_mmap_hugetlbfs(zoffset offset, size_t length, bool touch) const;
-  ZErrno fallocate_compat_mmap_tmpfs(zoffset offset, size_t length) const;
-  ZErrno fallocate_compat_pwrite(zoffset offset, size_t length) const;
-  ZErrno fallocate_fill_hole_compat(zoffset offset, size_t length) const;
-  ZErrno fallocate_fill_hole_syscall(zoffset offset, size_t length) const;
-  ZErrno fallocate_fill_hole(zoffset offset, size_t length) const;
-  ZErrno fallocate_punch_hole(zoffset offset, size_t length) const;
-  ZErrno split_and_fallocate(bool punch_hole, zoffset offset, size_t length) const;
-  ZErrno fallocate(bool punch_hole, zoffset offset, size_t length) const;
+  ZErrno fallocate_compat_mmap_hugetlbfs(zbacking_offset offset, size_t length, bool touch) const;
+  ZErrno fallocate_compat_mmap_tmpfs(zbacking_offset offset, size_t length) const;
+  ZErrno fallocate_compat_pwrite(zbacking_offset offset, size_t length) const;
+  ZErrno fallocate_fill_hole_compat(zbacking_offset offset, size_t length) const;
+  ZErrno fallocate_fill_hole_syscall(zbacking_offset offset, size_t length) const;
+  ZErrno fallocate_fill_hole(zbacking_offset offset, size_t length) const;
+  ZErrno fallocate_punch_hole(zbacking_offset offset, size_t length) const;
+  ZErrno split_and_fallocate(bool punch_hole, zbacking_offset offset, size_t length) const;
+  ZErrno fallocate(bool punch_hole, zbacking_offset offset, size_t length) const;
 
-  bool commit_inner(zoffset offset, size_t length) const;
-  size_t commit_numa_interleaved(zoffset offset, size_t length) const;
-  size_t commit_default(zoffset offset, size_t length) const;
+  bool commit_inner(zbacking_offset offset, size_t length) const;
+  size_t commit_numa_preferred(zbacking_offset offset, size_t length, uint32_t numa_id) const;
+  size_t commit_default(zbacking_offset offset, size_t length) const;
 
 public:
   ZPhysicalMemoryBacking(size_t max_capacity);
@@ -69,10 +69,10 @@ public:
 
   void warn_commit_limits(size_t max_capacity) const;
 
-  size_t commit(zoffset offset, size_t length) const;
-  size_t uncommit(zoffset offset, size_t length) const;
+  size_t commit(zbacking_offset offset, size_t length, uint32_t numa_id) const;
+  size_t uncommit(zbacking_offset offset, size_t length) const;
 
-  void map(zaddress_unsafe addr, size_t size, zoffset offset) const;
+  void map(zaddress_unsafe addr, size_t size, zbacking_offset offset) const;
   void unmap(zaddress_unsafe addr, size_t size) const;
 };
 

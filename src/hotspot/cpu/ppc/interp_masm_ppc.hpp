@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size);
 
   void load_resolved_indy_entry(Register cache, Register index);
-  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
-  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_field_or_method_entry(bool is_method, Register cache, Register index, int bcp_offset, bool for_fast_bytecode);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1, bool for_fast_bytecode = false) {
+    load_field_or_method_entry(false, cache, index, bcp_offset, for_fast_bytecode);
+  }
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1, bool for_fast_bytecode = false) {
+    load_field_or_method_entry(true, cache, index, bcp_offset, for_fast_bytecode);
+  }
 
   void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
@@ -170,7 +175,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void remove_activation(TosState state,
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true);
-  void merge_frames(Register Rtop_frame_sp, Register return_pc, Register Rscratch1, Register Rscratch2); // merge top frames
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
+  void load_fp(Register fp);
+  void remove_top_frame_given_fp(Register fp, Register sender_sp, Register sender_fp, Register return_pc, Register temp);
+  void merge_frames(Register sender_sp, Register return_pc, Register temp1, Register temp2); // merge top frames
 
   void add_monitor_to_stack(bool stack_is_empty, Register Rtemp1, Register Rtemp2);
 
@@ -265,7 +274,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

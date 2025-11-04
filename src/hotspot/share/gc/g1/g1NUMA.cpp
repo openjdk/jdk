@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/logStream.hpp"
@@ -204,9 +203,7 @@ uint G1NUMA::index_for_region(G1HeapRegion* hr) const {
 //      * G1HeapRegion #: |-#0-||-#1-||-#2-||-#3-||-#4-||-#5-||-#6-||-#7-||-#8-||-#9-||#10-||#11-||#12-||#13-||#14-||#15-|
 //      * NUMA node #:    |----#0----||----#1----||----#2----||----#3----||----#0----||----#1----||----#2----||----#3----|
 void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes, uint region_index) {
-  if (!is_enabled()) {
-    return;
-  }
+  assert(is_enabled(), "must be, check before");
 
   if (size_in_bytes == 0) {
     return;
@@ -215,7 +212,7 @@ void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes,
   uint node_index = preferred_node_index_for_index(region_index);
 
   assert(is_aligned(aligned_address, page_size()), "Given address (" PTR_FORMAT ") should be aligned.", p2i(aligned_address));
-  assert(is_aligned(size_in_bytes, page_size()), "Given size (" SIZE_FORMAT ") should be aligned.", size_in_bytes);
+  assert(is_aligned(size_in_bytes, page_size()), "Given size (%zu) should be aligned.", size_in_bytes);
 
   log_trace(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be NUMA id (%u)",
                             p2i(aligned_address), p2i((char*)aligned_address + size_in_bytes), _node_ids[node_index]);

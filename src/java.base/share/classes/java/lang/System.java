@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,25 +42,18 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URL;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,7 +85,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.nio.cs.UTF_8;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code System} class contains several useful class fields
@@ -123,15 +115,32 @@ public final class System {
 
     /**
      * The "standard" input stream. This stream is already
-     * open and ready to supply input data. Typically this stream
+     * open and ready to supply input data. This stream
      * corresponds to keyboard input or another input source specified by
-     * the host environment or user. In case this stream is wrapped
-     * in a {@link java.io.InputStreamReader}, {@link Console#charset()}
-     * should be used for the charset, or consider using
-     * {@link Console#reader()}.
+     * the host environment or user. Applications should use the encoding
+     * specified by the {@link ##stdin.encoding stdin.encoding} property
+     * to convert input bytes to character data.
      *
-     * @see Console#charset()
-     * @see Console#reader()
+     * @apiNote
+     * The typical approach to read character data is to wrap {@code System.in}
+     * within the object that handles character encoding. After this is done,
+     * subsequent reading should use only the wrapper object; continuing to
+     * operate directly on {@code System.in} results in unspecified behavior.
+     * <p>
+     * Here are two common examples. Using an {@link java.io.InputStreamReader
+     * InputStreamReader}:
+     * {@snippet lang=java :
+     *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+     * }
+     * Or using a {@link java.util.Scanner Scanner}:
+     * {@snippet lang=java :
+     *     new Scanner(System.in, System.getProperty("stdin.encoding"));
+     * }
+     * <p>
+     * For handling interactive input, consider using {@link Console}.
+     *
+     * @see Console
+     * @see ##stdin.encoding stdin.encoding
      */
     public static final InputStream in = null;
 
@@ -200,7 +209,6 @@ public final class System {
      * @since   1.1
      */
     public static void setIn(InputStream in) {
-        checkIO();
         setIn0(in);
     }
 
@@ -212,7 +220,6 @@ public final class System {
      * @since   1.1
      */
     public static void setOut(PrintStream out) {
-        checkIO();
         setOut0(out);
     }
 
@@ -224,17 +231,17 @@ public final class System {
      * @since   1.1
      */
     public static void setErr(PrintStream err) {
-        checkIO();
         setErr0(err);
     }
 
     private static volatile Console cons;
 
     /**
-     * Returns the unique {@link java.io.Console Console} object associated
+     * Returns the unique {@link Console Console} object associated
      * with the current Java virtual machine, if any.
      *
      * @return  The system console, if any, otherwise {@code null}.
+     * @see Console
      *
      * @since   1.6
      */
@@ -275,31 +282,9 @@ public final class System {
         return SelectorProvider.provider().inheritedChannel();
     }
 
-    private static void checkIO() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setIO"));
-        }
-    }
-
     private static native void setIn0(InputStream in);
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
-
-    private static class CallersHolder {
-        // Remember callers of setSecurityManager() here so that warning
-        // is only printed once for each different caller
-        static final Map<Class<?>, Boolean> callers
-            = Collections.synchronizedMap(new WeakHashMap<>());
-    }
-
-    static URL codeSource(Class<?> clazz) {
-        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
-        return (cs != null) ? cs.getLocation() : null;
-    }
 
     /**
      * Throws {@code UnsupportedOperationException}. Setting a security manager
@@ -607,17 +592,22 @@ public final class System {
      * <tr><th scope="row">{@systemProperty user.dir}</th>
      *     <td>User's current working directory</td></tr>
      * <tr><th scope="row">{@systemProperty native.encoding}</th>
-     *     <td>Character encoding name derived from the host environment and/or
-     *     the user's settings. Setting this system property has no effect.</td></tr>
+     *     <td>Character encoding name derived from the host environment and
+     *     the user's settings. Setting this system property on the command line
+     *     has no effect.</td></tr>
+     * <tr><th scope="row">{@systemProperty stdin.encoding}</th>
+     *     <td>Character encoding name for {@link System#in System.in}.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
      *     <td>Character encoding name for {@link System#out System.out} and
      *     {@link System#console() System.console()}.
-     *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value leads to undefined behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
      *     <td>Character encoding name for {@link System#err System.err}.
-     *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value leads to undefined behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8}.
+     *     Starting it with the property set to another value results in unspecified behavior.
      * </tbody>
      * </table>
      * <p>
@@ -671,7 +661,7 @@ public final class System {
      *     the value {@code COMPAT} then the value is replaced with the
      *     value of the {@code native.encoding} property during startup.
      *     Setting the property to a value other than {@code UTF-8} or
-     *     {@code COMPAT} leads to unspecified behavior.
+     *     {@code COMPAT} results in unspecified behavior.
      *     </td></tr>
      * </tbody>
      * </table>
@@ -681,12 +671,6 @@ public final class System {
      * @see        java.util.Properties
      */
     public static Properties getProperties() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         return props;
     }
 
@@ -725,12 +709,6 @@ public final class System {
      * @see        java.util.Properties
      */
     public static void setProperties(Properties props) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         if (props == null) {
             Map<String, String> tempProps = SystemProps.initProperties();
             VersionProps.init(tempProps);
@@ -762,12 +740,6 @@ public final class System {
      */
     public static String getProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key);
     }
 
@@ -790,12 +762,6 @@ public final class System {
      */
     public static String getProperty(String key, String def) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key, def);
     }
 
@@ -822,13 +788,6 @@ public final class System {
      */
     public static String setProperty(String key, String value) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key,
-                SecurityConstants.PROPERTY_WRITE_ACTION));
-        }
-
         return (String) props.setProperty(key, value);
     }
 
@@ -853,12 +812,6 @@ public final class System {
      */
     public static String clearProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key, "write"));
-        }
-
         return (String) props.remove(key);
     }
 
@@ -905,12 +858,6 @@ public final class System {
      * @see    ProcessBuilder#environment()
      */
     public static String getenv(String name) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv."+name));
-        }
-
         return ProcessEnvironment.getenv(name);
     }
 
@@ -945,12 +892,6 @@ public final class System {
      * @since  1.5
      */
     public static java.util.Map<String,String> getenv() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv.*"));
-        }
-
         return ProcessEnvironment.getenv();
     }
 
@@ -1376,13 +1317,6 @@ public final class System {
      */
     @SuppressWarnings("doclint:reference") // cross-module links
     public abstract static class LoggerFinder {
-        /**
-         * The {@code RuntimePermission("loggerFinder")} is
-         * necessary to subclass and instantiate the {@code LoggerFinder} class,
-         * as well as to obtain loggers from an instance of that class.
-         */
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
 
         /**
          * Creates a new instance of {@code LoggerFinder}.
@@ -1393,20 +1327,6 @@ public final class System {
          *   loading cycles during the instantiation of the service provider.
          */
         protected LoggerFinder() {
-            this(checkPermission());
-        }
-
-        private LoggerFinder(Void unused) {
-            // nothing to do.
-        }
-
-        private static Void checkPermission() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
-            return null;
         }
 
         /**
@@ -1476,27 +1396,18 @@ public final class System {
          * @return the {@link LoggerFinder LoggerFinder} instance.
          */
         public static LoggerFinder getLoggerFinder() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
             return accessProvider();
         }
 
 
         private static volatile LoggerFinder service;
-        @SuppressWarnings("removal")
         static LoggerFinder accessProvider() {
             // We do not need to synchronize: LoggerFinderLoader will
             // always return the same instance, so if we don't have it,
             // just fetch it again.
             LoggerFinder finder = service;
             if (finder == null) {
-                PrivilegedAction<LoggerFinder> pa =
-                        () -> LoggerFinderLoader.getLoggerFinder();
-                finder = AccessController.doPrivileged(pa, null,
-                        LOGGERFINDER_PERMISSION);
+                finder = LoggerFinderLoader.getLoggerFinder();
                 if (finder instanceof TemporaryLoggerFinder) return finder;
                 service = finder;
             }
@@ -1593,7 +1504,6 @@ public final class System {
      *
      * @since 9
      */
-    @SuppressWarnings("removal")
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {
         final ResourceBundle rb = Objects.requireNonNull(bundle);
@@ -1601,17 +1511,6 @@ public final class System {
         final Class<?> caller = Reflection.getCallerClass();
         if (caller == null) {
             throw new IllegalCallerException("no caller frame");
-        }
-        final SecurityManager sm = System.getSecurityManager();
-        // We don't use LazyLoggers if a resource bundle is specified.
-        // Bootstrap sensitive classes in the JDK do not use resource bundles
-        // when logging. This could be revisited later, if it needs to.
-        if (sm != null) {
-            final PrivilegedAction<Logger> pa =
-                    () -> LoggerFinder.accessProvider()
-                            .getLocalizedLogger(name, rb, caller.getModule());
-            return AccessController.doPrivileged(pa, null,
-                                         LoggerFinder.LOGGERFINDER_PERMISSION);
         }
         return LoggerFinder.accessProvider()
                 .getLocalizedLogger(name, rb, caller.getModule());
@@ -2123,9 +2022,15 @@ public final class System {
             public byte[] getRawExecutableTypeAnnotations(Executable executable) {
                 return Class.getExecutableTypeAnnotationBytes(executable);
             }
+            public int getClassFileAccessFlags(Class<?> klass) {
+                return klass.getClassFileAccessFlags();
+            }
             public <E extends Enum<E>>
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
+            }
+            public int classFileVersion(Class<?> clazz) {
+                return clazz.getClassFileVersion();
             }
             public void blockedOn(Interruptible b) {
                 Thread.currentThread().blockedOn(b);
@@ -2182,9 +2087,6 @@ public final class System {
             public void addOpensToAllUnnamed(Module m, String pn) {
                 m.implAddOpensToAllUnnamed(pn);
             }
-            public void addOpensToAllUnnamed(Module m, Set<String> concealedPackages, Set<String> exportedPackages) {
-                m.implAddOpensToAllUnnamed(concealedPackages, exportedPackages);
-            }
             public void addUses(Module m, Class<?> service) {
                 m.implAddUses(service);
             }
@@ -2222,28 +2124,33 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
+
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
             }
-            public char getUTF16Char(byte[] bytes, int index) {
+
+            public String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringOrThrow(bytes, cs);
+            }
+
+            public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
-            public void putCharUTF16(byte[] bytes, int index, int ch) {
+
+            public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
+
+            public byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesOrThrow(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
-            }
-
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
+            public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
+                return String.getBytesUTF8OrThrow(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
@@ -2254,8 +2161,8 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
-                return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            public int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len) {
+                return StringCoding.encodeAsciiArray(sa, sp, da, dp, len);
             }
 
             public InputStream initialSystemIn() {
@@ -2271,26 +2178,14 @@ public final class System {
             }
 
             public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
+                return c.getProtectionDomain();
             }
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatInitialCoder() {
-                return StringConcatHelper.initialCoder();
-            }
-
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
-            }
-
-            public Object stringConcat1(String[] constants) {
+            public Object uncheckedStringConcat1(String[] constants) {
                 return new StringConcatHelper.Concat1(constants);
             }
 
@@ -2300,14 +2195,6 @@ public final class System {
 
             public byte stringCoder(String str) {
                 return str.coder();
-            }
-
-            public int getCharsLatin1(long i, int index, byte[] buf) {
-                return StringLatin1.getChars(i, index, buf);
-            }
-
-            public int getCharsUTF16(long i, int index, byte[] buf) {
-                return StringUTF16.getChars(i, index, buf);
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
@@ -2325,11 +2212,6 @@ public final class System {
             @Override
             public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
                 return ClassLoader.nativeLibrariesFor(loader);
-            }
-
-            @Override
-            public void exit(int statusCode) {
-                Shutdown.exit(statusCode);
             }
 
             public Thread[] getAllThreads() {
@@ -2366,10 +2248,6 @@ public final class System {
 
             public void removeCarrierThreadLocal(CarrierThreadLocal<?> local) {
                 ((ThreadLocal<?>)local).removeCarrierThreadLocal();
-            }
-
-            public boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local) {
-                return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
             public Object[] scopedValueCache() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@ const int G1C2BarrierPostNotNull = 4;
 
 class G1BarrierStubC2 : public BarrierStubC2 {
 public:
+  static bool needs_pre_barrier(const MachNode* node);
+  static bool needs_post_barrier(const MachNode* node);
+  static bool post_new_val_may_be_null(const MachNode* node);
+
   G1BarrierStubC2(const MachNode* node);
   virtual void emit_code(MacroAssembler& masm) = 0;
 };
@@ -64,28 +68,10 @@ public:
   virtual void emit_code(MacroAssembler& masm);
 };
 
-class G1PostBarrierStubC2 : public G1BarrierStubC2 {
-private:
-  Register _thread;
-  Register _tmp1;
-  Register _tmp2;
-  Register _tmp3;
-
-protected:
-  G1PostBarrierStubC2(const MachNode* node);
-
-public:
-  static bool needs_barrier(const MachNode* node);
-  static G1PostBarrierStubC2* create(const MachNode* node);
-  void initialize_registers(Register thread, Register tmp1 = noreg, Register tmp2 = noreg, Register tmp3 = noreg);
-  Register thread() const;
-  Register tmp1() const;
-  Register tmp2() const;
-  Register tmp3() const;
-  virtual void emit_code(MacroAssembler& masm);
-};
-
 class G1BarrierSetC2: public CardTableBarrierSetC2 {
+private:
+  void analyze_dominating_barriers() const;
+
 protected:
   bool g1_can_remove_pre_barrier(GraphKit* kit,
                                  PhaseValues* phase,
@@ -117,6 +103,7 @@ public:
                                   ArrayCopyNode* ac) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
   virtual void emit_stubs(CodeBuffer& cb) const;
+  virtual void elide_dominated_barrier(MachNode* mach) const;
   virtual void late_barrier_analysis() const;
 
 #ifndef PRODUCT

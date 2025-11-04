@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.*;
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
@@ -49,6 +35,28 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
+
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.ValueLayout;
+import java.lang.reflect.Array;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -121,6 +129,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
@@ -129,27 +138,43 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
     @CallerSensitive
+    @ForceInline
     public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
                 MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
-    public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
+    private NativeMemorySegmentImpl reinterpretInternal(Class<?> callerClass, long newSize, MemorySessionImpl scope, Consumer<MemorySegment> cleanup) {
         Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        Runnable action = cleanup != null ?
-                () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
-                null;
-        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (MemorySessionImpl)scope, readOnly, action);
+        Runnable action = cleanupAction(address(), newSize, cleanup);
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
+    }
+
+    // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
+
+        record CleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) implements Runnable {
+            @Override
+            public void run() {
+                cleanup().accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize()));
+            }
+        }
+
+        return cleanup != null
+                // Use a record (which is always static) instead of a lambda to avoid
+                // capturing and to enable early use in the init sequence.
+                ? new CleanupAction(address, newSize, cleanup)
+                : null;
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -332,10 +357,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         checkBounds(offset, length);
     }
 
-    public void checkValidState() {
-        sessionImpl().checkValidState();
-    }
-
     @ForceInline
     public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
         checkAccess(offset, enclosing.byteSize(), readOnly);
@@ -394,7 +415,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public Scope scope() {
+    public MemorySessionImpl scope() {
         return scope;
     }
 
@@ -491,9 +512,18 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        return "MemorySegment{ " +
-                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
-                "address: " + Utils.toHexString(address()) +
+        final String kind;
+        if (this instanceof HeapMemorySegmentImpl) {
+            kind = "heap";
+        } else if (this instanceof MappedMemorySegmentImpl) {
+            kind = "mapped";
+        } else {
+            kind = "native";
+        }
+        return "MemorySegment{ kind: " +
+                kind +
+                heapBase().map(hb -> ", heapBase: " + hb).orElse("") +
+                ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
                 " }";
     }
@@ -539,7 +569,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    private static AbstractMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
+    private static NativeMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         if (!b.isDirect()) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
@@ -894,23 +924,27 @@ public abstract sealed class AbstractMemorySegmentImpl
         layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
+    @ForceInline
     @Override
     public String getString(long offset) {
         return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
     }
 
+    @ForceInline
     @Override
     public String getString(long offset, Charset charset) {
         Objects.requireNonNull(charset);
         return StringSupport.read(this, offset, charset);
     }
 
+    @ForceInline
     @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
         setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
     }
 
+    @ForceInline
     @Override
     public void setString(long offset, String str, Charset charset) {
         Objects.requireNonNull(charset);

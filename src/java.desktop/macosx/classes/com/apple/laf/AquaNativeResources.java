@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@ import javax.swing.plaf.UIResource;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
 @SuppressWarnings("restricted")
-public class AquaNativeResources {
+public final class AquaNativeResources {
     static {
         System.loadLibrary("osxui");
     }
 
     // TODO: removing CColorPaint for now
     @SuppressWarnings("serial") // JDK implementation class
-    static class CColorPaintUIResource extends Color/*CColorPaint*/ implements UIResource {
+    static final class CColorPaintUIResource extends Color/*CColorPaint*/ implements UIResource {
         // The color passed to this MUST be a retained NSColor, and the CColorPaintUIResource
         //  takes ownership of that retain.
         public CColorPaintUIResource(long color, int r, int g, int b, int a) {

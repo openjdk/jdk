@@ -164,6 +164,16 @@ public enum HtmlStyles implements HtmlStyle {
      */
     tocList,
 
+    /**
+     * The class used for lexical order toggle in the table of contents.
+     */
+    tocSortToggle,
+
+     /**
+     * The class used to indicate the state of the lexical sort toggle.
+     */
+    tocSortIsActive,
+
     //</editor-fold>
 
     //<editor-fold desc="header (title block)">
@@ -688,6 +698,16 @@ public enum HtmlStyles implements HtmlStyle {
     permits,
 
     /**
+     * The class used for a {@code sup} element marking an element as preview feature.
+     */
+    previewMark,
+
+    /**
+     * The class used for a {@code sup} element marking a method as restricted.
+     */
+    restrictedMark,
+
+    /**
      * The class of a {@code span} containing the return type in the signature of a method element.
      */
     returnType,
@@ -698,14 +718,6 @@ public enum HtmlStyles implements HtmlStyle {
      */
     typeParameters,
 
-    /**
-     * The class of a {@code span} containing type parameters in the signature of an element,
-     * used when the type parameters are too long to be displayed inline.
-     * @implNote
-     * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
-     * is 50 characters.
-     */
-    typeParametersLong,
     //</editor-fold>
 
     //<editor-fold desc="search index and results">

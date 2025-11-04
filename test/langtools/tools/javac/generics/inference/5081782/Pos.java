@@ -25,7 +25,7 @@
  * @test
  * @bug     5081782
  * @summary type arguments to non-generic methods
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Pos.java
  */
 

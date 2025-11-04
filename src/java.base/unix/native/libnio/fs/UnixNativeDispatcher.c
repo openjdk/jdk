@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,16 @@
 #include <sys/xattr.h>
 #endif
 
+#if defined(_AIX)
+#include <sys/ea.h>
+#endif
+
 /* For POSIX-compliant getpwuid_r */
 #include <pwd.h>
 #include <grp.h>
 
 #ifdef __linux__
+#include <stdint.h> // For uintXX_t types used in statx support
 #include <sys/syscall.h>
 #include <sys/sysmacros.h> // makedev macros
 #endif
@@ -66,19 +71,12 @@
 // by defining binary compatible statx structs in this file and
 // not relying on included headers.
 
-#ifndef __GLIBC__
-// Alpine doesn't know these types, define them
-typedef unsigned int       __uint32_t;
-typedef unsigned short     __uint16_t;
-typedef unsigned long int  __uint64_t;
-#endif
-
 /*
  * Timestamp structure for the timestamps in struct statx.
  */
 struct my_statx_timestamp {
         int64_t   tv_sec;
-        __uint32_t  tv_nsec;
+        uint32_t  tv_nsec;
         int32_t   __reserved;
 };
 
@@ -88,27 +86,27 @@ struct my_statx_timestamp {
  */
 struct my_statx
 {
-  __uint32_t stx_mask;
-  __uint32_t stx_blksize;
-  __uint64_t stx_attributes;
-  __uint32_t stx_nlink;
-  __uint32_t stx_uid;
-  __uint32_t stx_gid;
-  __uint16_t stx_mode;
-  __uint16_t __statx_pad1[1];
-  __uint64_t stx_ino;
-  __uint64_t stx_size;
-  __uint64_t stx_blocks;
-  __uint64_t stx_attributes_mask;
+  uint32_t stx_mask;
+  uint32_t stx_blksize;
+  uint64_t stx_attributes;
+  uint32_t stx_nlink;
+  uint32_t stx_uid;
+  uint32_t stx_gid;
+  uint16_t stx_mode;
+  uint16_t __statx_pad1[1];
+  uint64_t stx_ino;
+  uint64_t stx_size;
+  uint64_t stx_blocks;
+  uint64_t stx_attributes_mask;
   struct my_statx_timestamp stx_atime;
   struct my_statx_timestamp stx_btime;
   struct my_statx_timestamp stx_ctime;
   struct my_statx_timestamp stx_mtime;
-  __uint32_t stx_rdev_major;
-  __uint32_t stx_rdev_minor;
-  __uint32_t stx_dev_major;
-  __uint32_t stx_dev_minor;
-  __uint64_t __statx_pad2[14];
+  uint32_t stx_rdev_major;
+  uint32_t stx_rdev_minor;
+  uint32_t stx_dev_major;
+  uint32_t stx_dev_minor;
+  uint64_t __statx_pad2[14];
 };
 
 // statx masks, flags, constants
@@ -250,23 +248,6 @@ static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
 }
 #endif
 
-#if defined(__linux__) && defined(__arm__)
-/**
- * Lookup functions with time_t parameter. Try to use 64 bit symbol
- * if sizeof(time_t) exceeds 32 bit.
- */
-static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
-    void *func_ptr = NULL;
-    if (sizeof(time_t) > 4) {
-        func_ptr = dlsym(RTLD_DEFAULT, symbol64);
-    }
-    if (func_ptr == NULL) {
-        return dlsym(RTLD_DEFAULT, symbol);
-    }
-    return func_ptr;
-}
-#endif
-
 /**
  * Call this to throw an internal UnixException when a system/library
  * call fails
@@ -356,22 +337,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*) openat;
-    my_fstatat_func = (fstatat_func*) fstatat;
-#else
-    // Make sure we link to the 64-bit version of the functions
-    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
-    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
-#endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "open64at");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "stat64at");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #elif defined(_ALLBSD_SOURCE)
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
     my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
+    // Make sure we link to the 64-bit version of the functions
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
 
@@ -404,11 +384,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports extended attributes */
 
-#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_)
+#if defined(_SYS_XATTR_H) || defined(_SYS_XATTR_H_) || defined(_AIX)
     capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_XATTR;
 #endif
 
     return capabilities;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodatNoFollowSupported0(JNIEnv* env, jclass this) {
+#if defined(__linux__)
+    // Linux recognizes but does not support the AT_SYMLINK_NOFOLLOW flag
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -745,7 +735,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     }
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd,
     jlong pathAddress, jint flag, jobject attrs)
 {
@@ -765,23 +755,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
+            return 0;
         } else {
-            throwUnixException(env, errno);
+            return errno;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
 
     if (my_fstatat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
-        return;
+        return ENOTSUP;
     }
     RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
+        return 0;
+    } else {
+        return errno;
     }
 }
 
@@ -805,6 +795,19 @@ Java_sun_nio_fs_UnixNativeDispatcher_fchmod0(JNIEnv* env, jclass this, jint file
     int err;
 
     RESTARTABLE(fchmod((int)filedes, (mode_t)mode), err);
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_fchmodat0(JNIEnv* env, jclass this,
+    jint fd, jlong pathAddress, jint mode, jint flag)
+{
+    int err;
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    RESTARTABLE(fchmodat((int)fd, path, (mode_t)mode, (int)flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     }
@@ -1398,6 +1401,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     res = fgetxattr(fd, name, value, valueLen);
 #elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fgetea(fd, name, value, valueLen);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1419,6 +1424,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
     res = fsetxattr(fd, name, value, valueLen, 0);
 #elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
+#elif defined(_AIX)
+    res = fsetea(fd, name, value, valueLen, 0);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1438,6 +1445,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
     res = fremovexattr(fd, name);
 #elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
+#elif defined(_AIX)
+    res = fremoveea(fd, name);
 #else
     throwUnixException(env, ENOTSUP);
 #endif
@@ -1457,6 +1466,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     res = flistxattr(fd, list, (size_t)size);
 #elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
+#elif defined(_AIX)
+    res = flistea(fd, list, (size_t)size);
 #else
     throwUnixException(env, ENOTSUP);
 #endif

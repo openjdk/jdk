@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 class MemRegion;
 
@@ -72,8 +72,9 @@ class ArchiveHeapWriter : AllStatic {
   // - "source objects" are regular Java objects allocated during the execution
   //   of "java -Xshare:dump". They can be used as regular oops.
   //
-  //   HeapShared::archive_objects() recursively searches for the oops that need to be
-  //   stored into the CDS archive. These are entered into HeapShared::archived_object_cache().
+  //   Between HeapShared::start_scanning_for_oops() and HeapShared::end_scanning_for_oops(),
+  //   we recursively search for the oops that need to be stored into the CDS archive.
+  //   These are entered into HeapShared::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
   //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of
@@ -151,7 +152,7 @@ private:
   };
   static GrowableArrayCHeap<HeapObjOrder, mtClassShared>* _source_objs_order;
 
-  typedef ResizeableResourceHashtable<size_t, oop,
+  typedef ResizeableHashTable<size_t, OopHandle,
       AnyObj::C_HEAP,
       mtClassShared> BufferOffsetToSourceObjectTable;
   static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;
@@ -226,6 +227,7 @@ private:
 
 public:
   static void init() NOT_CDS_JAVA_HEAP_RETURN;
+  static void delete_tables_with_raw_oops();
   static void add_source_obj(oop src_obj);
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
@@ -235,11 +237,11 @@ public:
   static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
-  static bool is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset);
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
-
+  static Klass* real_klass_of_buffered_oop(address buffered_addr);
+  static size_t size_of_buffered_oop(address buffered_addr);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP

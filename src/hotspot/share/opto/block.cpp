@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  *
  */
 
-#include "precompiled.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
@@ -38,12 +37,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void Block_Array::grow( uint i ) {
-  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
-  if (i < Max()) {
-    return; // No need to grow
-  }
-  debug_only(_limit = i+1);
+void Block_Array::grow(uint i) {
+  assert(i >= Max(), "Should have been checked before, use maybe_grow?");
+  DEBUG_ONLY(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
     _size = 1;
@@ -181,10 +177,11 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock()) {
     end_idx--;
   }
 
@@ -1355,6 +1352,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
@@ -1610,7 +1610,8 @@ void PhaseBlockLayout::find_edges() {
           Block *target = b->non_connector_successor(j);
           float freq = b->_freq * b->succ_prob(j);
           int from_pct = (int) ((100 * freq) / b->_freq);
-          int to_pct = (int) ((100 * freq) / target->_freq);
+          float f_to_pct = (100 * freq) / target->_freq;
+          int to_pct = (f_to_pct < 100.0) ? (int)f_to_pct : 100;
           edges->append(new CFGEdge(b, target, freq, from_pct, to_pct));
         }
       }

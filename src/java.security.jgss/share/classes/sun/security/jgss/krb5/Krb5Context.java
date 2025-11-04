@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@ import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.security.*;
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -631,8 +631,6 @@ class Krb5Context implements GSSContextSpi {
                         tgt = proxyCreds.self.getKrb5Credentials();
                     }
 
-                    checkPermission(peerName.getKrb5PrincipalName().getName(),
-                                    "initiate");
                     /*
                      * If useSubjectCredsonly is true then
                      * we check whether we already have the ticket
@@ -641,33 +639,21 @@ class Krb5Context implements GSSContextSpi {
 
                     if (GSSUtil.useSubjectCredsOnly(caller)) {
                         KerberosTicket kerbTicket = null;
-                        try {
-                           // get service ticket from caller's subject
-                           @SuppressWarnings("removal")
-                           var tmp = AccessController.doPrivilegedWithCombiner(
-                                new PrivilegedExceptionAction<KerberosTicket>() {
-                                public KerberosTicket run() throws Exception {
-                                    // XXX to be cleaned
-                                    // highly consider just calling:
-                                    // Subject.getSubject
-                                    // SubjectComber.find
-                                    // instead of Krb5Util.getServiceTicket
-                                    return Krb5Util.getServiceTicket(
-                                        GSSCaller.CALLER_UNKNOWN,
-                                        // since it's useSubjectCredsOnly here,
-                                        // don't worry about the null
-                                        proxyCreds == null ?
-                                            myName.getKrb5PrincipalName().getName():
-                                            proxyCreds.getName().getKrb5PrincipalName().getName(),
-                                        peerName.getKrb5PrincipalName().getName());
-                                }});
-                            kerbTicket = tmp;
-                        } catch (PrivilegedActionException e) {
-                            if (DEBUG != null) {
-                                DEBUG.println("Attempt to obtain service"
-                                        + " ticket from the subject failed!");
-                            }
-                        }
+                        // get service ticket from caller's subject
+                        // XXX to be cleaned
+                        // highly consider just calling:
+                        // Subject.getSubject
+                        // SubjectComber.find
+                        // instead of Krb5Util.getServiceTicket
+                        kerbTicket = Krb5Util.getServiceTicket(
+                            GSSCaller.CALLER_UNKNOWN,
+                            // since it's useSubjectCredsOnly here,
+                            // don't worry about the null
+                            proxyCreds == null ?
+                                myName.getKrb5PrincipalName().getName():
+                                proxyCreds.getName().getKrb5PrincipalName().getName(),
+                            peerName.getKrb5PrincipalName().getName());
+
                         if (kerbTicket != null) {
                             if (DEBUG != null) {
                                 DEBUG.println("Found service ticket in " +
@@ -701,10 +687,7 @@ class Krb5Context implements GSSContextSpi {
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
-                            @SuppressWarnings("removal")
-                            final Subject subject =
-                                AccessController.doPrivilegedWithCombiner(
-                                        (PrivilegedAction<Subject>) Subject::current);
+                            Subject subject = Subject.current();
                             if (subject != null &&
                                 !subject.isReadOnly()) {
                                 /*
@@ -714,14 +697,9 @@ class Krb5Context implements GSSContextSpi {
                                  * successfully established; however it is easier
                                  * to do it here and there is no harm.
                                  */
-                                final KerberosTicket kt =
+                                KerberosTicket kt =
                                         Krb5Util.credsToTicket(serviceCreds);
-                                @SuppressWarnings("removal")
-                                var dummy = AccessController.doPrivileged (
-                                        (PrivilegedAction<Void>) () -> {
-                                          subject.getPrivateCredentials().add(kt);
-                                          return null;
-                                        });
+                                subject.getPrivateCredentials().add(kt);
                             } else {
                                 // log it for debugging purpose
                                 if (DEBUG != null) {
@@ -816,11 +794,6 @@ class Krb5Context implements GSSContextSpi {
                 }
                 myName = (Krb5NameElement) myCred.getName();
 
-                // If there is already a bound name, check now
-                if (myName != null) {
-                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
-                }
-
                 InitSecContextToken token = new InitSecContextToken(this,
                                                     (Krb5AcceptCredential) myCred, is);
                 PrincipalName clientName = token.getKrbApReq().getClient();
@@ -830,7 +803,6 @@ class Krb5Context implements GSSContextSpi {
                 if (myName == null) {
                     myName = Krb5NameElement.getInstance(
                         token.getKrbApReq().getCreds().getServer());
-                    Krb5MechFactory.checkAcceptCredPermission(myName, myName);
                 }
 
                 if (getMutualAuthState()) {
@@ -1322,16 +1294,6 @@ class Krb5Context implements GSSContextSpi {
         }
     }
 
-    private void checkPermission(String principal, String action) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            ServicePermission perm =
-                new ServicePermission(principal, action);
-            sm.checkPermission(perm);
-        }
-    }
-
     private static String getHexBytes(byte[] bytes, int pos, int len) {
 
         StringBuilder sb = new StringBuilder();
@@ -1371,6 +1333,7 @@ class Krb5Context implements GSSContextSpi {
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
     static class KerberosSessionKey implements Key {
+        @Serial
         private static final long serialVersionUID = 699307378954123869L;
 
         @SuppressWarnings("serial") // Not statically typed as Serializable
@@ -1408,7 +1371,7 @@ class Krb5Context implements GSSContextSpi {
          * @throws IOException if an I/O error occurs
          * @throws ClassNotFoundException if a serialized class cannot be loaded
          */
-        @java.io.Serial
+        @Serial
         private void readObject(ObjectInputStream stream)
                 throws IOException, ClassNotFoundException {
             throw new InvalidObjectException

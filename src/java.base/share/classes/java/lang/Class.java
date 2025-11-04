@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,19 +47,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
 import java.net.URL;
+import java.security.AllPermission;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -79,19 +78,19 @@ import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
+import jdk.internal.util.ModifiedUtf;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
+import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.Wrapper;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
-import sun.reflect.generics.repository.MethodRepository;
-import sun.reflect.generics.repository.ConstructorRepository;
 import sun.reflect.generics.scope.ClassScope;
-import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.*;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Instances of the class {@code Class} represent classes and
@@ -213,6 +212,7 @@ import sun.reflect.misc.ReflectUtil;
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
  */
+@AOTSafeClassInitializer
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
                               Type,
@@ -228,7 +228,9 @@ public final class Class<T> implements java.io.Serializable,
         runtimeSetup();
     }
 
-    // Called from JVM when loading an AOT cache
+    /// No significant static final fields; [#resetArchivedStates()] handles
+    /// prevents storing [#reflectionFactory] into AOT image.
+    @AOTRuntimeSetup
     private static void runtimeSetup() {
         registerNatives();
     }
@@ -238,11 +240,16 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, char mods, ProtectionDomain pd, boolean isPrim, char flags) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
+        // The following assignments are done directly by the VM without calling this constructor.
         classLoader = loader;
         componentType = arrayComponentType;
+        modifiers = mods;
+        protectionDomain = pd;
+        primitive = isPrim;
+        classFileAccessFlags = flags;
     }
 
     /**
@@ -460,9 +467,10 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
+        validateClassNameLength(className);
         ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
                                               : ClassLoader.getClassLoader(caller);
-        return forName0(className, true, loader, caller);
+        return forName0(className, true, loader);
     }
 
     /**
@@ -542,13 +550,13 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(String name, boolean initialize, ClassLoader loader)
         throws ClassNotFoundException
     {
-        return forName0(name, initialize, loader, null);
+        validateClassNameLength(name);
+        return forName0(name, initialize, loader);
     }
 
     /** Called after security check for system loader access checks have been made. */
     private static native Class<?> forName0(String name, boolean initialize,
-                                            ClassLoader loader,
-                                            Class<?> caller)
+                                            ClassLoader loader)
         throws ClassNotFoundException;
 
 
@@ -591,6 +599,9 @@ public final class Class<T> implements java.io.Serializable,
     public static Class<?> forName(Module module, String name) {
         Objects.requireNonNull(module);
         Objects.requireNonNull(name);
+        if (!ModifiedUtf.isValidLengthInConstantPool(name)) {
+            return null;
+        }
 
         ClassLoader cl = module.getClassLoader();
         if (cl != null) {
@@ -790,8 +801,9 @@ public final class Class<T> implements java.io.Serializable,
      * @return  {@code true} if this {@code Class} object represents an interface;
      *          {@code false} otherwise.
      */
-    @IntrinsicCandidate
-    public native boolean isInterface();
+    public boolean isInterface() {
+        return Modifier.isInterface(modifiers);
+    }
 
 
     /**
@@ -801,8 +813,9 @@ public final class Class<T> implements java.io.Serializable,
      *          {@code false} otherwise.
      * @since   1.1
      */
-    @IntrinsicCandidate
-    public native boolean isArray();
+    public boolean isArray() {
+        return componentType != null;
+    }
 
 
     /**
@@ -843,8 +856,9 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      * @jls 15.8.2 Class Literals
      */
-    @IntrinsicCandidate
-    public native boolean isPrimitive();
+    public boolean isPrimitive() {
+        return primitive;
+    }
 
     /**
      * Returns true if this {@code Class} object represents an annotation
@@ -1002,6 +1016,9 @@ public final class Class<T> implements java.io.Serializable,
 
     private transient Object classData; // Set by VM
     private transient Object[] signers; // Read by VM, mutable
+    private final transient char modifiers;  // Set by the VM
+    private final transient char classFileAccessFlags;  // Set by the VM
+    private final transient boolean primitive;  // Set by the VM if the Class is a primitive type.
 
     // package-private
     Object getClassData() {
@@ -1207,18 +1224,13 @@ public final class Class<T> implements java.io.Serializable,
 
     private Class<?>[] getInterfaces(boolean cloneArray) {
         ReflectionData<T> rd = reflectionData();
-        if (rd == null) {
-            // no cloning required
-            return getInterfaces0();
-        } else {
-            Class<?>[] interfaces = rd.interfaces;
-            if (interfaces == null) {
-                interfaces = getInterfaces0();
-                rd.interfaces = interfaces;
-            }
-            // defensively copy if requested
-            return cloneArray ? interfaces.clone() : interfaces;
+        Class<?>[] interfaces = rd.interfaces;
+        if (interfaces == null) {
+            interfaces = getInterfaces0();
+            rd.interfaces = interfaces;
         }
+        // defensively copy if requested
+        return cloneArray ? interfaces.clone() : interfaces;
     }
 
     private native Class<?>[] getInterfaces0();
@@ -1288,15 +1300,12 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      */
     public Class<?> getComponentType() {
-        // Only return for array types. Storage may be reused for Class for instance types.
-        if (isArray()) {
-            return componentType;
-        } else {
-            return null;
-        }
+        return componentType;
     }
 
-    private final Class<?> componentType;
+    // The componentType field's null value is the sole indication that the class
+    // is an array - see isArray().
+    private transient final Class<?> componentType;
 
     /*
      * Returns the {@code Class} representing the element type of an array class.
@@ -1351,8 +1360,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
-    @IntrinsicCandidate
-    public native int getModifiers();
+    public int getModifiers() { return modifiers; }
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
@@ -1381,15 +1389,13 @@ public final class Class<T> implements java.io.Serializable,
         // Location.CLASS allows SUPER and AccessFlag.MODULE which
         // INNER_CLASS forbids. INNER_CLASS allows PRIVATE, PROTECTED,
         // and STATIC, which are not allowed on Location.CLASS.
-        // Use getClassAccessFlagsRaw to expose SUPER status.
+        // Use getClassFileAccessFlags to expose SUPER status.
         var location = (isMemberClass() || isLocalClass() ||
                         isAnonymousClass() || isArray()) ?
             AccessFlag.Location.INNER_CLASS :
             AccessFlag.Location.CLASS;
-        return AccessFlag.maskToAccessFlags((location == AccessFlag.Location.CLASS) ?
-                                            getClassAccessFlagsRaw() :
-                                            getModifiers(),
-                                            location);
+        return getReflectionFactory().parseAccessFlags((location == AccessFlag.Location.CLASS) ?
+                        getClassFileAccessFlags() : getModifiers(), location, this);
     }
 
     /**
@@ -1439,17 +1445,10 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isMethod())
                 return null;
 
-            MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(),
-                                                              getFactory());
-            Class<?>   returnType       = toClass(typeInfo.getReturnType());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for(int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
+            // Descriptor already validated by VM
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            Class<?>   returnType       = types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Method[] candidates = enclosingCandidate.privateGetDeclaredMethods(false);
@@ -1568,17 +1567,10 @@ public final class Class<T> implements java.io.Serializable,
             if (!enclosingInfo.isConstructor())
                 return null;
 
-            ConstructorRepository typeInfo = ConstructorRepository.make(enclosingInfo.getDescriptor(),
-                                                                        getFactory());
-            Type []    parameterTypes   = typeInfo.getParameterTypes();
-            Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
-
-            // Convert Types to Classes; returned types *should*
-            // be class objects since the methodDescriptor's used
-            // don't have generics information
-            for (int i = 0; i < parameterClasses.length; i++)
-                parameterClasses[i] = toClass(parameterTypes[i]);
-
+            // Descriptor already validated by VM
+            List<Class<?>> types = BytecodeDescriptor.parseMethod(enclosingInfo.getDescriptor(), getClassLoader());
+            types.removeLast();
+            Class<?>[] parameterClasses = types.toArray(EMPTY_CLASS_ARRAY);
 
             final Class<?> enclosingCandidate = enclosingInfo.getEnclosingClass();
             Constructor<?>[] candidates = enclosingCandidate
@@ -1884,7 +1876,7 @@ public final class Class<T> implements java.io.Serializable,
             }
             currentClass = currentClass.getSuperclass();
         }
-        return list.toArray(new Class<?>[0]);
+        return list.toArray(EMPTY_CLASS_ARRAY);
     }
 
 
@@ -2703,6 +2695,18 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
+    private transient final ProtectionDomain protectionDomain;
+
+    /** Holder for the protection domain returned when the internal domain is null */
+    private static class Holder {
+        private static final ProtectionDomain allPermDomain;
+        static {
+            Permissions perms = new Permissions();
+            perms.add(new AllPermission());
+            allPermDomain = new ProtectionDomain(null, perms);
+        }
+    }
+
     /**
      * Returns the {@code ProtectionDomain} of this class.
      *
@@ -2712,33 +2716,12 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.2
      */
     public ProtectionDomain getProtectionDomain() {
-        return protectionDomain();
-    }
-
-    /** Holder for the protection domain returned when the internal domain is null */
-    private static class Holder {
-        private static final ProtectionDomain allPermDomain;
-        static {
-            Permissions perms = new Permissions();
-            perms.add(SecurityConstants.ALL_PERMISSION);
-            allPermDomain = new ProtectionDomain(null, perms);
-        }
-    }
-
-    // package-private
-    ProtectionDomain protectionDomain() {
-        ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
+        if (protectionDomain == null) {
             return Holder.allPermDomain;
         } else {
-            return pd;
+            return protectionDomain;
         }
     }
-
-    /**
-     * Returns the ProtectionDomain of this class.
-     */
-    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Returns the Class object for the named primitive type. Type parameter T
@@ -2924,18 +2907,14 @@ public final class Class<T> implements java.io.Serializable,
     private Field[] privateGetDeclaredFields(boolean publicOnly) {
         Field[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.declaredPublicFields : rd.declaredFields;
+        if (res != null) return res;
         // No cached value available; request value from VM
         res = Reflection.filterFields(this, getDeclaredFields0(publicOnly));
-        if (rd != null) {
-            if (publicOnly) {
-                rd.declaredPublicFields = res;
-            } else {
-                rd.declaredFields = res;
-            }
+        if (publicOnly) {
+            rd.declaredPublicFields = res;
+        } else {
+            rd.declaredFields = res;
         }
         return res;
     }
@@ -2946,10 +2925,8 @@ public final class Class<T> implements java.io.Serializable,
     private Field[] privateGetPublicFields() {
         Field[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = rd.publicFields;
-            if (res != null) return res;
-        }
+        res = rd.publicFields;
+        if (res != null) return res;
 
         // Use a linked hash set to ensure order is preserved and
         // fields from common super interfaces are not duplicated
@@ -2970,9 +2947,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         res = fields.toArray(new Field[0]);
-        if (rd != null) {
-            rd.publicFields = res;
-        }
+        rd.publicFields = res;
         return res;
     }
 
@@ -2995,10 +2970,8 @@ public final class Class<T> implements java.io.Serializable,
     private Constructor<T>[] privateGetDeclaredConstructors(boolean publicOnly) {
         Constructor<T>[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.publicConstructors : rd.declaredConstructors;
+        if (res != null) return res;
         // No cached value available; request value from VM
         if (isInterface()) {
             @SuppressWarnings("unchecked")
@@ -3007,12 +2980,10 @@ public final class Class<T> implements java.io.Serializable,
         } else {
             res = getDeclaredConstructors0(publicOnly);
         }
-        if (rd != null) {
-            if (publicOnly) {
-                rd.publicConstructors = res;
-            } else {
-                rd.declaredConstructors = res;
-            }
+        if (publicOnly) {
+            rd.publicConstructors = res;
+        } else {
+            rd.declaredConstructors = res;
         }
         return res;
     }
@@ -3029,18 +3000,14 @@ public final class Class<T> implements java.io.Serializable,
     private Method[] privateGetDeclaredMethods(boolean publicOnly) {
         Method[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
-            if (res != null) return res;
-        }
+        res = publicOnly ? rd.declaredPublicMethods : rd.declaredMethods;
+        if (res != null) return res;
         // No cached value available; request value from VM
         res = Reflection.filterMethods(this, getDeclaredMethods0(publicOnly));
-        if (rd != null) {
-            if (publicOnly) {
-                rd.declaredPublicMethods = res;
-            } else {
-                rd.declaredMethods = res;
-            }
+        if (publicOnly) {
+            rd.declaredPublicMethods = res;
+        } else {
+            rd.declaredMethods = res;
         }
         return res;
     }
@@ -3051,10 +3018,8 @@ public final class Class<T> implements java.io.Serializable,
     private Method[] privateGetPublicMethods() {
         Method[] res;
         ReflectionData<T> rd = reflectionData();
-        if (rd != null) {
-            res = rd.publicMethods;
-            if (res != null) return res;
-        }
+        res = rd.publicMethods;
+        if (res != null) return res;
 
         // No cached value available; compute value recursively.
         // Start by fetching public declared methods...
@@ -3080,9 +3045,7 @@ public final class Class<T> implements java.io.Serializable,
         }
 
         res = pms.toArray();
-        if (rd != null) {
-            rd.publicMethods = res;
-        }
+        rd.publicMethods = res;
         return res;
     }
 
@@ -4015,7 +3978,7 @@ public final class Class<T> implements java.io.Serializable,
      */
     @Override
     public Class<?> componentType() {
-        return isArray() ? componentType : null;
+        return getComponentType();
     }
 
     /**
@@ -4156,24 +4119,33 @@ public final class Class<T> implements java.io.Serializable,
      * type is returned.  If the class is a primitive type then the latest class
      * file major version is returned and zero is returned for the minor version.
      */
-    private int getClassFileVersion() {
+    int getClassFileVersion() {
         Class<?> c = isArray() ? elementType() : this;
         return c.getClassFileVersion0();
     }
 
     private native int getClassFileVersion0();
 
-    /*
-     * Return the access flags as they were in the class's bytecode, including
-     * the original setting of ACC_SUPER.
-     *
-     * If the class is an array type then the access flags of the element type is
-     * returned.  If the class is a primitive then ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC.
-     */
-    private int getClassAccessFlagsRaw() {
-        Class<?> c = isArray() ? elementType() : this;
-        return c.getClassAccessFlagsRaw0();
-    }
+     /**
+      * Return the access flags as they were in the class's bytecode, including
+      * the original setting of ACC_SUPER.
+      *
+      * If this {@code Class} object represents a primitive type or
+      * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+      * {@code FINAL}.
+      * If this {@code Class} object represents an array type, return 0.
+      */
+     int getClassFileAccessFlags() {
+         return classFileAccessFlags;
+     }
 
-    private native int getClassAccessFlagsRaw0();
+    // Validates the length of the class name and throws an exception if it exceeds the maximum allowed length.
+    private static void validateClassNameLength(String name) throws ClassNotFoundException {
+        if (!ModifiedUtf.isValidLengthInConstantPool(name)) {
+            throw new ClassNotFoundException(
+                    "Class name length exceeds limit of "
+                    + ModifiedUtf.CONSTANT_POOL_UTF8_MAX_BYTES
+                    + ": " + name.substring(0,256) + "...");
+        }
+    }
 }

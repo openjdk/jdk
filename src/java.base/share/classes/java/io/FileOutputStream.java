@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,23 +199,15 @@ public class FileOutputStream extends OutputStream
     public FileOutputStream(File file, boolean append)
         throws FileNotFoundException
     {
-        String name = (file != null ? file.getPath() : null);
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(name);
-        }
-        if (name == null) {
-            throw new NullPointerException();
-        }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        this.path = file.getPath();
+
         this.fd = new FileDescriptor();
         fd.attach(this);
-        this.path = name;
 
-        open(name, append);
+        open(this.path, append);
         FileCleanable.register(fd);   // open sets the fd, register the cleanup
     }
 
@@ -236,13 +228,8 @@ public class FileOutputStream extends OutputStream
      */
     @SuppressWarnings("this-escape")
     public FileOutputStream(FileDescriptor fdObj) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
-        }
-        if (security != null) {
-            security.checkWrite(fdObj);
         }
         this.fd = fdObj;
         this.path = null;
@@ -279,16 +266,12 @@ public class FileOutputStream extends OutputStream
 
     private void traceWrite(int b, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             write(b, append);
             bytesWritten = 1;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 
@@ -323,16 +306,12 @@ public class FileOutputStream extends OutputStream
 
     private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
         long bytesWritten = 0;
-        long start = 0;
+        long start = FileWriteEvent.timestamp();
         try {
-            start = FileWriteEvent.timestamp();
             writeBytes(b, off, len, append);
             bytesWritten = len;
         } finally {
-            long duration = FileWriteEvent.timestamp() - start;
-            if (FileWriteEvent.shouldCommit(duration)) {
-                FileWriteEvent.commit(start, duration, path, bytesWritten);
-            }
+            FileWriteEvent.offer(start, path, bytesWritten);
         }
     }
 

@@ -3872,7 +3872,7 @@ _unwind___jsvml_sin8_ha_z0_B1_B10:
 
         ALIGN 004H
 _unwind___jsvml_sin8_ha_z0_B12_B16:
-        DD      2943009
+        DD      2418721
         DD      8082664
         DD      7894238
         DD      7955668
@@ -3891,10 +3891,6 @@ _unwind___jsvml_sin8_ha_z0_B12_B16:
         DD      3053640
         DD      3307581
         DD      3565618
-        DD      7633703
-        DD      7695134
-        DD      7756565
-        DD      7817996
         DD      imagerel _B9_1
         DD      imagerel _B9_12
         DD      imagerel _unwind___jsvml_sin8_ha_z0_B1_B10
@@ -4022,7 +4018,7 @@ _unwind___jsvml_dsin_ha_cout_rare_internal_B1_B6:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
         PUBLIC __jsvml_dsin_ha_reduction_data_internal
 __jsvml_dsin_ha_reduction_data_internal DD      0

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
  * @test id=nocoops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -37,6 +39,8 @@
  * @test id=nocoops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -48,6 +52,8 @@
  * @test id=coops_nocoh
  * @summary Test Loading of default archives in all configurations
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -59,6 +65,8 @@
  * @test id=coops_coh
  * @summary Test Loading of default archives in all configurations (requires --enable-cds-archive-coh)
  * @requires vm.cds
+ * @requires vm.cds.default.archive.available
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -66,12 +74,32 @@
  * @run driver TestDefaultArchiveLoading coops_coh
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+
 import jtreg.SkippedException;
 
 public class TestDefaultArchiveLoading {
+
+    private static String archiveName(String archiveSuffix) {
+        return "classes" + archiveSuffix + ".jsa";
+    }
+
+    private static Path archivePath(String archiveSuffix) {
+        return Paths.get(System.getProperty("java.home"), "lib",
+                         "server", archiveName(archiveSuffix));
+    }
+
+    private static boolean isArchiveAvailable(char coops, char coh,
+                                              String archiveSuffix) throws Exception {
+        Path archive= archivePath(archiveSuffix);
+        return Files.exists(archive);
+    }
+
     public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
@@ -85,26 +113,41 @@ public class TestDefaultArchiveLoading {
             case "nocoops_nocoh":
                 coh = coops = '-';
                 archiveSuffix = "_nocoops";
+                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             case "nocoops_coh":
                 coops = '-';
                 coh = '+';
                 archiveSuffix = "_nocoops_coh";
+                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             case "coops_nocoh":
                 coops = '+';
                 coh = '-';
                 archiveSuffix = "";
+                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             case "coops_coh":
                 coh = coops = '+';
                 archiveSuffix = "_coh";
+                if (!isArchiveAvailable(coops, coh, archiveSuffix)) {
+                    throw new SkippedException("Skipping test due to " +
+                                               archivePath(archiveSuffix).toString() + " not available");
+                }
                 break;
             default: throw new RuntimeException("Invalid argument " + args[0]);
         }
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+UnlockExperimentalVMOptions",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:" + coh + "UseCompactObjectHeaders",
                 "-XX:" + coops + "UseCompressedOops",
                 "-Xlog:cds",
@@ -114,7 +157,6 @@ public class TestDefaultArchiveLoading {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
-        output.shouldContain("classes" + archiveSuffix + ".jsa");
-
+        output.shouldContain(archiveName(archiveSuffix));
     }
 }

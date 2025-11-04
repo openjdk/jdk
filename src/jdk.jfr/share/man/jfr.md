@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ Use `jfr print` to print the contents of a flight recording file to standard out
 
 The syntax is:
 
-`jfr print` \[`--xml`|`--json`\]
+`jfr print` \[`--xml`|`--json`|`--exact`\]
            \[`--categories` <*filters*>\]
            \[`--events` <*filters*>\]
            \[`--stack-depth` <*depth*>\]
@@ -119,6 +119,9 @@ where:
 
 <a id="print-option-json">`--json`</a>
 : Print the recording in JSON format.
+
+<a id="print-option-exact">`--exact`</a>
+: Pretty-print numbers and timestamps with full precision.
 
 <a id="print-option-categories">`--categories` <*filters*></a>
 : Select events matching a category name.
@@ -207,7 +210,7 @@ Use `jfr configure` to configure a .jfc settings file.
 The syntax is:
 
  `jfr configure` \[--interactive\] \[--verbose\]
-               \[--input <files>\] [--output <file>\]
+               \[--input &lt;files&gt;\] [--output &lt;file&gt;\]
                \[option=value\]* \[event-setting=value\]*
 
 <a id="configure-option-interactive">`--interactive`</a>
@@ -244,9 +247,9 @@ names, categories and field layout within a flight recording file.
 
 The syntax is:
 
-`jfr metadata` \[--categories <filter>\]
-              \[--events <filter>\]
-              \[<file>\]
+`jfr metadata` \[--categories &lt;filter&gt;\]
+              \[--events &lt;filter&gt;\]
+              \[&lt;file&gt;\]
 
 <a id="metadata-option-categories">`--categories` <*filter*></a>
 : Select events matching a category name. The filter is a comma-separated
@@ -259,7 +262,7 @@ list of names, simple and/or qualified, and/or quoted glob patterns.
 <a id="metadata-option-file"><*file*></a>
 : Location of the recording file (.jfr)
 
-If the <file> parameter is omitted, metadata from the JDK where
+If the &lt;file&gt; parameter is omitted, metadata from the JDK where
 the 'jfr' tool is located will be used.
 
 #### `jfr summary` subcommand

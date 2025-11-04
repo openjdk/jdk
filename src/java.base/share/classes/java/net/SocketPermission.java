@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
-import java.security.AccessController;
 import java.security.Permission;
 import java.security.PermissionCollection;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -44,11 +42,12 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.net.util.IPAddressUtil;
 import sun.net.PortConfig;
-import sun.security.action.GetBooleanAction;
 import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
 
+import static jdk.internal.util.Exceptions.filterNonSocketInfo;
+import static jdk.internal.util.Exceptions.formatMsg;
 
 /**
  * This class represents access to a network via sockets.
@@ -112,14 +111,13 @@ import sun.security.util.Debug;
  * <P>
  * The actions string is converted to lowercase before processing.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @spec https://www.rfc-editor.org/info/rfc2732
  *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @see java.security.Permissions
- * @see SocketPermission
  *
  *
  * @author Marianne Mueller
@@ -129,6 +127,7 @@ import sun.security.util.Debug;
  * @serial exclude
  */
 
+@Deprecated(since = "26", forRemoval = true)
 public final class SocketPermission extends Permission
     implements java.io.Serializable
 {
@@ -213,7 +212,8 @@ public final class SocketPermission extends Permission
     private transient boolean trusted;
 
     // true if the sun.net.trustNameService system property is set
-    private static final boolean trustNameService = GetBooleanAction.privilegedGetProperty("sun.net.trustNameService");
+    private static final boolean trustNameService =
+            Boolean.getBoolean("sun.net.trustNameService");
 
     private static Debug debug = null;
     private static boolean debugInit = false;
@@ -394,8 +394,8 @@ public final class SocketPermission extends Permission
             if (rb != -1) {
                 host = host.substring(start, rb);
             } else {
-                throw new
-                    IllegalArgumentException("invalid host/port: "+host);
+                throw new IllegalArgumentException(
+                    formatMsg("invalid host/port%s", filterNonSocketInfo(host).prefixWith(": ")));
             }
             sep = hostport.indexOf(':', rb+1);
         } else {
@@ -412,8 +412,8 @@ public final class SocketPermission extends Permission
             try {
                 portrange = parsePort(port);
             } catch (Exception e) {
-                throw new
-                    IllegalArgumentException("invalid port range: "+port);
+                throw new IllegalArgumentException(
+                    formatMsg("invalid port range%s", filterNonSocketInfo(port).prefixWith(": ")));
             }
         } else {
             portrange = new int[] { PORT_MIN, PORT_MAX };
@@ -638,10 +638,10 @@ public final class SocketPermission extends Permission
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                cname = addresses[0].getHostName(false).toLowerCase(Locale.ROOT);
+                cname = addresses[0].getHostName().toLowerCase(Locale.ROOT);
             } else {
              cname = InetAddress.getByName(addresses[0].getHostAddress()).
-                                              getHostName(false).toLowerCase(Locale.ROOT);
+                                              getHostName().toLowerCase(Locale.ROOT);
             }
         } catch (UnknownHostException uhe) {
             invalid = true;
@@ -705,7 +705,7 @@ public final class SocketPermission extends Permission
             // Following check seems unnecessary
             // auth = InetAddress.getAllByName0(authHost, false)[0];
             authHost = hostname + '.' + authHost;
-            auth = InetAddress.getAllByName0(authHost, false)[0];
+            auth = InetAddress.getAllByName0(authHost)[0];
             if (auth.equals(InetAddress.getByAddress(addr))) {
                 return true;
             }
@@ -736,9 +736,8 @@ public final class SocketPermission extends Permission
                 sb.append('.');
             }
             authHost = "auth." + sb.toString() + "IP6.ARPA";
-            //auth = InetAddress.getAllByName0(authHost, false)[0];
             authHost = hostname + '.' + authHost;
-            auth = InetAddress.getAllByName0(authHost, false)[0];
+            auth = InetAddress.getAllByName0(authHost)[0];
             if (auth.equals(InetAddress.getByAddress(addr)))
                 return true;
             Debug debug = getDebug();
@@ -780,14 +779,14 @@ public final class SocketPermission extends Permission
             }
 
             addresses =
-                new InetAddress[] {InetAddress.getAllByName0(host, false)[0]};
+                new InetAddress[] {InetAddress.getAllByName0(host)[0]};
 
         } catch (UnknownHostException uhe) {
             invalid = true;
             throw uhe;
         }  catch (IndexOutOfBoundsException iobe) {
             invalid = true;
-            throw new UnknownHostException(getName());
+            throw new UnknownHostException(formatMsg("%s", filterNonSocketInfo(getName())));
         }
     }
 
@@ -1191,23 +1190,15 @@ public final class SocketPermission extends Permission
      * Check the system/security property for the ephemeral port range
      * for this system. The suffix is either "high" or "low"
      */
-    @SuppressWarnings("removal")
     private static int initEphemeralPorts(String suffix) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<>(){
-                public Integer run() {
-                    int val = Integer.getInteger(
-                            "jdk.net.ephemeralPortRange."+suffix, -1
-                    );
-                    if (val != -1) {
-                        return val;
-                    } else {
-                        return suffix.equals("low") ?
-                            PortConfig.getLower() : PortConfig.getUpper();
-                    }
-                }
-            }
-        );
+        int val = Integer.getInteger(
+                "jdk.net.ephemeralPortRange." + suffix, -1);
+        if (val != -1) {
+            return val;
+        } else {
+            return suffix.equals("low") ?
+                    PortConfig.getLower() : PortConfig.getUpper();
+        }
     }
 
     /**
@@ -1316,6 +1307,7 @@ else its the cname?
  * @serial include
  */
 
+@SuppressWarnings("removal")
 final class SocketPermissionCollection extends PermissionCollection
     implements Serializable
 {

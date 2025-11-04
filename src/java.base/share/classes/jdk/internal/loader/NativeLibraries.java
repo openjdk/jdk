@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import jdk.internal.util.StaticProperty;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.BiFunction;
@@ -155,7 +153,7 @@ public final class NativeLibraries {
             }
 
             // cannot be loaded by other class loaders
-            if (loadedLibraryNames.contains(name)) {
+            if (Holder.loadedLibraryNames.contains(name)) {
                 throw new UnsatisfiedLinkError("Native Library " + name +
                         " already loaded in another classloader");
             }
@@ -205,7 +203,7 @@ public final class NativeLibraries {
                 NativeLibraryContext.pop();
             }
             // register the loaded native library
-            loadedLibraryNames.add(name);
+            Holder.loadedLibraryNames.add(name);
             libraries.put(name, lib);
             return lib;
         } finally {
@@ -243,6 +241,11 @@ public final class NativeLibraries {
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
         }
         return lib;
+    }
+
+    // Called at the end of AOTCache assembly phase.
+    public void clear() {
+        libraries.clear();
     }
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
@@ -323,18 +326,13 @@ public final class NativeLibraries {
             return load(this, name, isBuiltin, throwExceptionIfFail());
         }
 
-        @SuppressWarnings("removal")
         private boolean throwExceptionIfFail() {
             if (loadLibraryOnlyIfPresent) return true;
 
             // If the file exists but fails to load, UnsatisfiedLinkException thrown by the VM
             // will include the error message from dlopen to provide diagnostic information
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Boolean run() {
-                    File file = new File(name);
-                    return file.exists();
-                }
-            });
+            File file = new File(name);
+            return file.exists();
         }
 
         /*
@@ -375,7 +373,7 @@ public final class NativeLibraries {
             acquireNativeLibraryLock(name);
             try {
                 /* remove the native library name */
-                if (!loadedLibraryNames.remove(name)) {
+                if (!Holder.loadedLibraryNames.remove(name)) {
                     throw new IllegalStateException(name + " has already been unloaded");
                 }
                 NativeLibraryContext.push(UNLOADER);
@@ -402,9 +400,13 @@ public final class NativeLibraries {
         static final String[] USER_PATHS = ClassLoaderHelper.parsePath(StaticProperty.javaLibraryPath());
     }
 
-    // All native libraries we've loaded.
-    private static final Set<String> loadedLibraryNames =
+    // Holder has the fields that need to be initialized during JVM bootstrap even if
+    // the outer is aot-initialized.
+    static class Holder {
+        // All native libraries we've loaded.
+        private static final Set<String> loadedLibraryNames =
             ConcurrentHashMap.newKeySet();
+    }
 
     // reentrant lock class that allows exact counting (with external synchronization)
     @SuppressWarnings("serial")

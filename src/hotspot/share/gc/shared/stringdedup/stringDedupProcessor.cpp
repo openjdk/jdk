@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.hpp"
@@ -37,7 +36,7 @@
 #include "memory/iterator.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/access.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -76,7 +75,7 @@ void StringDedup::Processor::wait_for_requests() const {
   {
     ThreadBlockInVM tbivm(_thread);
     MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-    OopStorage* storage = Atomic::load(&_storage_for_requests)->storage();
+    OopStorage* storage = AtomicAccess::load(&_storage_for_requests)->storage();
     while ((storage->allocation_count() == 0) &&
            !Table::is_dead_entry_removal_needed()) {
       ml.wait();
@@ -84,7 +83,7 @@ void StringDedup::Processor::wait_for_requests() const {
   }
   // Swap the request and processing storage objects.
   log_trace(stringdedup)("swapping request storages");
-  _storage_for_processing = Atomic::xchg(&_storage_for_requests, _storage_for_processing);
+  _storage_for_processing = AtomicAccess::xchg(&_storage_for_requests, _storage_for_processing);
   GlobalCounter::write_synchronize();
   // Wait for the now current processing storage object to no longer be used
   // by an in-progress GC.  Again here, the num-dead notification from the

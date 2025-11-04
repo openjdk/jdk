@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
@@ -173,7 +172,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 #ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }
@@ -335,7 +333,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     blob->print_on(&ls);
   }

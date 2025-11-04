@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,12 @@
  * questions.
  */
 
-import java.io.IOException;
+import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
-import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
+import jdk.jpackage.test.JPackageCommand;
 
 /**
  * Test that terminating of the parent app launcher process automatically
@@ -48,7 +46,7 @@ import static jdk.jpackage.test.WindowsHelper.killAppLauncherProcess;
 public class Win8301247Test {
 
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void test() throws InterruptedException {
         var cmd = JPackageCommand.helloAppImage().ignoreFakeRuntime();
 
         // Launch the app in a way it doesn't exit to let us trap app laucnher
@@ -56,22 +54,20 @@ public class Win8301247Test {
         cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         cmd.executeAndAssertImageCreated();
 
-        try ( // Launch the app in a separate thread
-                ExecutorService exec = Executors.newSingleThreadExecutor()) {
-            exec.execute(() -> {
-                HelloApp.executeLauncher(cmd);
-            });
+        // Launch the app in a separate thread
+        new Thread(() -> {
+            HelloApp.executeLauncher(cmd);
+        }).start();
 
-            // Wait a bit to let the app start
-            Thread.sleep(Duration.ofSeconds(10));
+        // Wait a bit to let the app start
+        Thread.sleep(Duration.ofSeconds(10));
 
-            // Find the main app launcher process and kill it
-            killAppLauncherProcess(cmd, null, 2);
+        // Find the main app launcher process and kill it
+        killAppLauncherProcess(cmd, null, 2);
 
-            // Wait a bit and check if child app launcher process is still running (it must NOT)
-            Thread.sleep(Duration.ofSeconds(5));
+        // Wait a bit and check if child app launcher process is still running (it must NOT)
+        Thread.sleep(Duration.ofSeconds(5));
 
-            killAppLauncherProcess(cmd, null, 0);
-        }
+        killAppLauncherProcess(cmd, null, 0);
     }
 }

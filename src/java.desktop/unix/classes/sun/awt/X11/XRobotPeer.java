@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.awt.X11;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.peer.RobotPeer;
-import java.security.AccessController;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -36,38 +35,18 @@ import sun.awt.UNIXToolkit;
 import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
 import sun.awt.screencast.ScreencastHelper;
-import sun.security.action.GetPropertyAction;
+import sun.awt.screencast.XdgDesktopPortal;
 
-@SuppressWarnings("removal")
 final class XRobotPeer implements RobotPeer {
 
     private static final boolean tryGtk;
-    private static final String screenshotMethod;
-    private static final String METHOD_X11 = "x11";
-    private static final String METHOD_SCREENCAST = "dbusScreencast";
 
     static {
         loadNativeLibraries();
 
         tryGtk = Boolean.parseBoolean(
-                     AccessController.doPrivileged(
-                             new GetPropertyAction("awt.robot.gtk",
-                                     "true")
-                     ));
-
-        boolean isOnWayland = false;
-
-        if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
-            isOnWayland = sunToolkit.isRunningOnWayland();
-        }
-
-        screenshotMethod = AccessController.doPrivileged(
-                new GetPropertyAction(
-                        "awt.robot.screenshotMethod",
-                        isOnWayland
-                            ? METHOD_SCREENCAST
-                            : METHOD_X11
-                ));
+                            System.getProperty("awt.robot.gtk", "true")
+                 );
     }
 
     private static volatile boolean useGtk;
@@ -92,39 +71,63 @@ final class XRobotPeer implements RobotPeer {
     @Override
     public void mouseMove(int x, int y) {
         mouseMoveImpl(xgc, xgc.scaleUp(x), xgc.scaleUp(y));
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            // We still call mouseMoveImpl on purpose to change the mouse position
+            // within the XWayland server so that we can retrieve it later.
+            ScreencastHelper.remoteDesktopMouseMove(xgc.scaleUp(x), xgc.scaleUp(y));
+        }
     }
 
     @Override
     public void mousePress(int buttons) {
-        mousePressImpl(buttons);
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.remoteDesktopMouseButton(true, buttons);
+        } else {
+            mousePressImpl(buttons);
+        }
     }
 
     @Override
     public void mouseRelease(int buttons) {
-        mouseReleaseImpl(buttons);
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.remoteDesktopMouseButton(false, buttons);
+        } else {
+            mouseReleaseImpl(buttons);
+        }
     }
 
     @Override
     public void mouseWheel(int wheelAmt) {
-        mouseWheelImpl(wheelAmt);
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.remoteDesktopMouseWheel(wheelAmt);
+        } else {
+            mouseWheelImpl(wheelAmt);
+        }
     }
 
     @Override
     public void keyPress(int keycode) {
-        keyPressImpl(keycode);
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.remoteDesktopKey(true, keycode);
+        } else {
+            keyPressImpl(keycode);
+        }
     }
 
     @Override
     public void keyRelease(int keycode) {
-        keyReleaseImpl(keycode);
+        if (XdgDesktopPortal.isRemoteDesktop() && ScreencastHelper.isAvailable()) {
+            ScreencastHelper.remoteDesktopKey(false, keycode);
+        } else {
+            keyReleaseImpl(keycode);
+        }
     }
 
     @Override
     public int getRGBPixel(int x, int y) {
         int[] pixelArray = new int[1];
-        if (screenshotMethod.equals(METHOD_SCREENCAST)
-            && ScreencastHelper.isAvailable()) {
-
+        if ((XdgDesktopPortal.isScreencast()
+                || XdgDesktopPortal.isRemoteDesktop()) && ScreencastHelper.isAvailable()) {
             ScreencastHelper.getRGBPixels(x, y, 1, 1, pixelArray);
         } else {
             getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, useGtk);
@@ -135,8 +138,8 @@ final class XRobotPeer implements RobotPeer {
     @Override
     public int[] getRGBPixels(Rectangle bounds) {
         int[] pixelArray = new int[bounds.width * bounds.height];
-        if (screenshotMethod.equals(METHOD_SCREENCAST)
-            && ScreencastHelper.isAvailable()) {
+        if ((XdgDesktopPortal.isScreencast()
+                || XdgDesktopPortal.isRemoteDesktop()) && ScreencastHelper.isAvailable()) {
 
             ScreencastHelper.getRGBPixels(bounds.x, bounds.y,
                                           bounds.width, bounds.height,

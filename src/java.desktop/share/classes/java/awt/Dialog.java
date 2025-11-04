@@ -33,7 +33,6 @@ import java.awt.peer.DialogPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
-import java.security.AccessControlException;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,7 +41,6 @@ import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
@@ -167,18 +165,11 @@ public class Dialog extends Window {
         /**
          * An {@code APPLICATION_MODAL} dialog blocks all top-level windows
          * from the same Java application except those from its own child hierarchy.
-         * If there are several applets launched in a browser, they can be
-         * treated either as separate applications or a single one. This behavior
-         * is implementation-dependent.
          */
         APPLICATION_MODAL,
         /**
          * A {@code TOOLKIT_MODAL} dialog blocks all top-level windows run
-         * from the same toolkit except those from its own child hierarchy. If there
-         * are several applets launched in a browser, all of them run with the same
-         * toolkit; thus, a toolkit-modal dialog displayed by an applet may affect
-         * other applets and all windows of the browser instance which embeds the
-         * Java runtime environment for this toolkit.
+         * from the same toolkit except those from its own child hierarchy.
          */
         TOOLKIT_MODAL
     }
@@ -843,8 +834,6 @@ public class Dialog extends Window {
         if (modalityType == type) {
             return;
         }
-
-        checkModalityPermission(type);
 
         modalityType = type;
         modal = (modalityType != ModalityType.MODELESS);
@@ -1561,16 +1550,6 @@ public class Dialog extends Window {
         }
     }
 
-    private void checkModalityPermission(ModalityType mt) {
-        if (mt == ModalityType.TOOLKIT_MODAL) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
-            }
-        }
-    }
-
     /**
      * Reads serializable fields from stream.
      *
@@ -1591,12 +1570,6 @@ public class Dialog extends Window {
             s.readFields();
 
         ModalityType localModalityType = (ModalityType)fields.get("modalityType", null);
-
-        try {
-            checkModalityPermission(localModalityType);
-        } catch (@SuppressWarnings("removal") AccessControlException ace) {
-            localModalityType = DEFAULT_MODALITY_TYPE;
-        }
 
         // in 1.5 or earlier modalityType was absent, so use "modal" instead
         if (localModalityType == null) {

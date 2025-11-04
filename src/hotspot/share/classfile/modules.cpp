@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,15 @@
 *
 */
 
-#include "precompiled.hpp"
+#include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/modules.hpp"
@@ -467,25 +465,20 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
     if (EnableVectorSupport && EnableVectorReboxing && FLAG_IS_DEFAULT(EnableVectorAggressiveReboxing)) {
       FLAG_SET_DEFAULT(EnableVectorAggressiveReboxing, true);
     }
-    if (EnableVectorSupport && FLAG_IS_DEFAULT(UseVectorStubs)) {
-      FLAG_SET_DEFAULT(UseVectorStubs, true);
-    }
     log_info(compilation)("EnableVectorSupport=%s",            (EnableVectorSupport            ? "true" : "false"));
     log_info(compilation)("EnableVectorReboxing=%s",           (EnableVectorReboxing           ? "true" : "false"));
     log_info(compilation)("EnableVectorAggressiveReboxing=%s", (EnableVectorAggressiveReboxing ? "true" : "false"));
-    log_info(compilation)("UseVectorStubs=%s",                 (UseVectorStubs                 ? "true" : "false"));
   }
 #endif // COMPILER2_OR_JVMCI
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
+static bool _seen_boot_unnamed_module = false;
 static bool _seen_platform_unnamed_module = false;
 static bool _seen_system_unnamed_module = false;
 
 // Validate the states of an java.lang.Module oop to be archived.
-//
-// Returns true iff the oop has an archived ModuleEntry.
-bool Modules::check_archived_module_oop(oop orig_module_obj) {
+void Modules::check_archived_module_oop(oop orig_module_obj) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
@@ -496,14 +489,13 @@ bool Modules::check_archived_module_oop(oop orig_module_obj) {
     //     java.lang.Module::ALL_UNNAMED_MODULE
     //     java.lang.Module::EVERYONE_MODULE
     //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
-    log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
+    log_info(aot, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
     assert(java_lang_Module::name(orig_module_obj) == nullptr, "must be unnamed");
-    return false;
   } else {
     // This java.lang.Module oop has an ModuleEntry*. Check if the latter is archived.
-    if (log_is_enabled(Info, cds, module)) {
+    if (log_is_enabled(Info, aot, module)) {
       ResourceMark rm;
-      LogStream ls(Log(cds, module)::info());
+      LogStream ls(Log(aot, module)::info());
       ls.print("Archived java.lang.Module oop " PTR_FORMAT " for ", p2i(orig_module_obj));
       orig_module_ent->print(&ls);
     }
@@ -516,152 +508,140 @@ bool Modules::check_archived_module_oop(oop orig_module_obj) {
     if (orig_module_ent->name() != nullptr) {
       // For each named module, we archive both the java.lang.Module oop and the ModuleEntry.
       assert(orig_module_ent->has_been_archived(), "sanity");
-      return true;
     } else {
-      // We only archive two unnamed module oops (for platform and system loaders). These do NOT have an archived
-      // ModuleEntry.
-      //
-      // At runtime, these oops are fetched from java_lang_ClassLoader::unnamedModule(loader) and
-      // are initialized in ClassLoaderData::ClassLoaderData() => ModuleEntry::create_unnamed_module(), where
-      // a new ModuleEntry is allocated.
-      assert(!loader_data->is_boot_class_loader_data(), "unnamed module for boot loader should be not archived");
-      assert(!orig_module_ent->has_been_archived(), "sanity");
+      // We always archive unnamed module oop for boot, platform, and system loaders.
+      precond(orig_module_ent->should_be_archived());
+      precond(orig_module_ent->has_been_archived());
 
-      if (SystemDictionary::is_platform_class_loader(loader_data->class_loader())) {
+      if (loader_data->is_boot_class_loader_data()) {
+        assert(!_seen_boot_unnamed_module, "only once");
+        _seen_boot_unnamed_module = true;
+      } else if (SystemDictionary::is_platform_class_loader(loader_data->class_loader())) {
         assert(!_seen_platform_unnamed_module, "only once");
         _seen_platform_unnamed_module = true;
       } else if (SystemDictionary::is_system_class_loader(loader_data->class_loader())) {
         assert(!_seen_system_unnamed_module, "only once");
         _seen_system_unnamed_module = true;
       } else {
-        // The java.lang.Module oop and ModuleEntry of the unnamed module of the boot loader are
-        // not in the archived module graph. These are always allocated at runtime.
         ShouldNotReachHere();
       }
-      return false;
     }
   }
-}
-
-void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index) {
-  // This java.lang.Module oop must have an archived ModuleEntry
-  assert(check_archived_module_oop(orig_module_obj) == true, "sanity");
-
-  // We remember the oop inside the ModuleEntry::_archived_module_index. At runtime, we use
-  // this index to reinitialize the ModuleEntry inside ModuleEntry::restore_archived_oops().
-  //
-  // ModuleEntry::verify_archived_module_entries(), called below, ensures that every archived
-  // ModuleEntry has been assigned an _archived_module_index.
-  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  ModuleEntry::get_archived_entry(orig_module_ent)->update_oops_in_archived_module(archived_module_root_index);
 }
 
 void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
-char* Modules::_archived_main_module_name = nullptr;
-char* Modules::_archived_addmods_names = nullptr;
+class Modules::ArchivedProperty {
+  const char* _prop;
+  const bool _numbered;
+  const char* _archived_value;
 
-void Modules::dump_main_module_name() {
-  const char* module_name = Arguments::get_property("jdk.module.main");
-  if (module_name != nullptr) {
-    _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
-  }
-  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
-}
-
-void Modules::serialize(SerializeClosure* soc) {
-  soc->do_ptr(&_archived_main_module_name);
-  if (soc->reading()) {
-    const char* runtime_main_module = Arguments::get_property("jdk.module.main");
-    log_info(cds)("_archived_main_module_name %s",
-      _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
-    bool disable = false;
-    if (runtime_main_module == nullptr) {
-      if (_archived_main_module_name != nullptr) {
-        log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
-        disable = true;
-      }
+  const char* get_flattened_value() const {
+    if (_numbered) {
+      return get_numbered_property_as_sorted_string();
     } else {
-      if (_archived_main_module_name == nullptr) {
-        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
-        disable = true;
-      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
-        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
-        disable = true;
-      }
+      return Arguments::get_property(_prop);
     }
-
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
-
-    // Don't hold onto the pointer, in case we might decide to unmap the archive.
-    _archived_main_module_name = nullptr;
   }
+
+  void runtime_check() const;
+  const char* get_numbered_property_as_sorted_string() const;
+
+public:
+  ArchivedProperty(const char* prop, bool numbered)
+    : _prop(prop), _numbered(numbered), _archived_value(nullptr) {}
+
+  void dump() {
+    ResourceMark rm;
+    const char* str = get_flattened_value();
+    if (str != nullptr) {
+      _archived_value = ArchiveBuilder::current()->ro_strdup(str);
+    }
+  }
+
+  void serialize(SerializeClosure* soc) {
+    soc->do_ptr(&_archived_value);
+    if (soc->reading()) {
+      runtime_check();
+      // Don't hold onto the pointer, in case we might decide to unmap the archive.
+      _archived_value = nullptr;
+    }
+  }
+};
+
+Modules::ArchivedProperty Modules::_archived_props[] = {
+  // non-numbered
+  {"jdk.module.main", false},
+
+  // numbered
+  {"jdk.module.addexports", true},             // --add-exports
+  {"jdk.module.addmods", true},                // --add-modules
+  {"jdk.module.enable.native.access", true},   // --enable-native-access
+  {"jdk.module.addopens", true},               // --add-opens
+  {"jdk.module.addreads", true},               // --add-reads
+};
+
+constexpr size_t Modules::num_archived_props() {
+  return sizeof(_archived_props) / sizeof(_archived_props[0]);
 }
 
-void Modules::dump_addmods_names() {
-  unsigned int count = Arguments::addmods_count();
-  const char* addmods_names = get_addmods_names_as_sorted_string();
-  if (addmods_names != nullptr) {
-    _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
-  }
-  ArchivePtrMarker::mark_pointer(&_archived_addmods_names);
+Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
+  assert(i < num_archived_props(), "oob");
+  return _archived_props[i];
 }
 
-void Modules::serialize_addmods_names(SerializeClosure* soc) {
-  soc->do_ptr(&_archived_addmods_names);
-  if (soc->reading()) {
-    bool disable = false;
-    if (_archived_addmods_names[0] != '\0') {
-      if (Arguments::addmods_count() == 0) {
-        log_info(cds)("--add-modules module name(s) found in archive but not specified during runtime: %s",
-            _archived_addmods_names);
-        disable = true;
-      } else {
-        const char* addmods_names = get_addmods_names_as_sorted_string();
-        if (strcmp((const char*)_archived_addmods_names, addmods_names) != 0) {
-          log_info(cds)("Mismatched --add-modules module name(s).");
-          log_info(cds)("  dump time: %s runtime: %s", _archived_addmods_names, addmods_names);
-          disable = true;
-        }
-      }
-    } else {
-      if (Arguments::addmods_count() > 0) {
-        log_info(cds)("--add-modules module name(s) specified during runtime but not found in archive: %s",
-                      get_addmods_names_as_sorted_string());
-        disable = true;
-      }
-    }
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
-
-    // Don't hold onto the pointer, in case we might decide to unmap the archive.
-    _archived_addmods_names = nullptr;
-  }
-}
-
-const char* Modules::get_addmods_names_as_sorted_string() {
+void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
-  const int max_digits = 3;
+  const char* runtime_value = get_flattened_value();
+  aot_log_info(aot)("archived module property %s: %s", _prop,
+                _archived_value != nullptr ? _archived_value : "(null)");
+
+  bool disable = false;
+  if (runtime_value == nullptr) {
+    if (_archived_value != nullptr) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
+      disable = true;
+    }
+  } else {
+    if (_archived_value == nullptr) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
+      disable = true;
+    } else if (strcmp(runtime_value, _archived_value) != 0) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
+      disable = true;
+    }
+  }
+
+  if (disable) {
+    AOTMetaspace::report_loading_error("Disabling optimized module handling");
+    CDSConfig::stop_using_optimized_module_handling();
+  }
+}
+
+
+static int compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
+}
+
+// Caller needs ResourceMark
+const char* Modules::ArchivedProperty::get_numbered_property_as_sorted_string() const {
+  assert(_numbered, "sanity");
+  // theoretical string size limit for decimal int, but the following loop will end much sooner due to
+  // OS command-line size limit.
+  const int max_digits = 10;
   const int extra_symbols_count = 2; // includes '.', '\0'
-  size_t prop_len = strlen("jdk.module.addmods") + max_digits + extra_symbols_count;
+  size_t prop_len = strlen(_prop) + max_digits + extra_symbols_count;
   char* prop_name = resource_allocate_bytes(prop_len);
   GrowableArray<const char*> list;
-  for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
-    jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
+  for (unsigned int i = 0;; i++) {
+    jio_snprintf(prop_name, prop_len, "%s.%d", _prop, i);
     const char* prop_value = Arguments::get_property(prop_name);
-    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
-    strcpy(p, prop_value);
+    if (prop_value == nullptr) {
+      break;
+    }
+    char* p = ResourceArea::strdup(prop_value);
     while (*p == ',') p++; // skip leading commas
     while (*p) {
       char* next = strchr(p, ',');
@@ -685,7 +665,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
   // list[2] = "java.base"
   // list[3] = ""
   // list[4] = ""
-  list.sort(ClassLoaderExt::compare_module_names);
+  list.sort(compare_module_names);
 
   const char* prefix = "";
   stringStream st;
@@ -695,15 +675,51 @@ const char* Modules::get_addmods_names_as_sorted_string() {
     if (strcmp(m, last_string) != 0) { // filter out duplicates
       st.print("%s%s", prefix, m);
       last_string = m;
-      prefix = "\n";
+      prefix = ",";
     }
   }
 
-  return (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
+  return (st.size() > 0) ? st.as_string() : nullptr;  // Example: "java.base,java.compiler"
+}
+
+void Modules::dump_archived_module_info() {
+  for (size_t i = 0; i < num_archived_props(); i++) {
+    archived_prop(i).dump();
+  }
+}
+
+void Modules::serialize_archived_module_info(SerializeClosure* soc) {
+  for (size_t i = 0; i < num_archived_props(); i++) {
+    archived_prop(i).serialize(soc);
+  }
+  if (soc->reading()) {
+    aot_log_info(aot)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    aot_log_info(aot)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+  }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
   assert(CDSConfig::is_using_full_module_graph(), "must be");
+  if (h_platform_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  }
+
+  if (h_system_loader.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  }
+
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // Already initialized
+    precond(SystemDictionary::java_platform_loader() == h_platform_loader());
+    precond(SystemDictionary::java_system_loader() == h_system_loader());
+  } else {
+    init_archived_modules(THREAD, h_platform_loader, h_system_loader);
+  }
+}
+
+void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loader, Handle h_system_loader) {
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
+  ExceptionMark em(current);
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
@@ -712,16 +728,15 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
          "CDS should be disabled if early class hooks are enabled");
 
-  Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
-  // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(THREAD, java_base_module);
-
-  if (h_platform_loader.is_null()) {
-    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
+    ClassLoaderDataShared::archived_boot_unnamed_module()->restore_archived_oops(boot_loader_data);
   }
 
-  if (h_system_loader.is_null()) {
-    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null system loader object");
+  Handle java_base_module(current, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    // Patch any previously loaded class's module field with java.base's java.lang.Module.
+    ModuleEntryTable::patch_javabase_entries(current, java_base_module);
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
@@ -777,9 +792,20 @@ void Modules::set_bootloader_unnamed_module(Handle module, TRAPS) {
   ClassLoaderData* boot_loader_data = ClassLoaderData::the_null_class_loader_data();
   ModuleEntry* unnamed_module = boot_loader_data->unnamed_module();
   assert(unnamed_module != nullptr, "boot loader's unnamed ModuleEntry not defined");
-  unnamed_module->set_module(boot_loader_data->add_handle(module));
-  // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
-  java_lang_Module::set_module_entry(module(), unnamed_module);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_using_full_module_graph()) {
+    precond(unnamed_module == ClassLoaderDataShared::archived_boot_unnamed_module());
+    if (!CDSConfig::is_using_aot_linked_classes()) {
+      unnamed_module->restore_archived_oops(boot_loader_data);
+    }
+  } else
+#endif
+  {
+    unnamed_module->set_module_handle(boot_loader_data->add_handle(module));
+    // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
+    java_lang_Module::set_module_entry(module(), unnamed_module);
+  }
 }
 
 void Modules::add_module_exports(Handle from_module, jstring package_name, Handle to_module, TRAPS) {
@@ -923,7 +949,6 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 
   LogTarget(Debug,module) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_Module::name(module);
@@ -934,6 +959,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
       ls.print("get_module(): Unnamed Module");
     }
     if (klass != nullptr) {
+      ResourceMark rm(THREAD);
       ls.print_cr(" for class %s", klass->external_name());
     } else {
       ls.print_cr(" for primitive class");
@@ -958,8 +984,8 @@ oop Modules::get_named_module(Handle h_loader, const char* package_name) {
     get_package_entry_by_name(package_sym, h_loader);
   const ModuleEntry* const module_entry = (pkg_entry != nullptr ? pkg_entry->module() : nullptr);
 
-  if (module_entry != nullptr && module_entry->module() != nullptr && module_entry->is_named()) {
-    return module_entry->module();
+  if (module_entry != nullptr && module_entry->module_oop() != nullptr && module_entry->is_named()) {
+    return module_entry->module_oop();
   }
   return nullptr;
 }

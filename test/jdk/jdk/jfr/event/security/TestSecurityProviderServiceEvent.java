@@ -42,7 +42,7 @@ import javax.crypto.NoSuchPaddingException;
  * @test
  * @bug 8254711
  * @summary Add JFR events for security crypto algorithms
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.events

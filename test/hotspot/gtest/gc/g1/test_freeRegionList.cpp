@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -29,8 +28,9 @@
 #include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/allocation.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
+
 #include "unittest.hpp"
 
 // @requires UseG1GC
@@ -44,13 +44,16 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
 
   // Create a fake heap. It does not need to be valid, as the G1HeapRegion constructor
   // does not access it.
-  MemRegion heap(nullptr, num_regions_in_test * G1HeapRegion::GrainWords);
+  const size_t szw = num_regions_in_test * G1HeapRegion::GrainWords;
+  const size_t sz = szw * BytesPerWord;
+  char* addr = os::reserve_memory_aligned(sz, G1HeapRegion::GrainBytes, mtTest);
+  MemRegion heap((HeapWord*)addr, szw);
 
   // Allocate a fake BOT because the G1HeapRegion constructor initializes
   // the BOT.
   size_t bot_size = G1BlockOffsetTable::compute_size(heap.word_size());
   HeapWord* bot_data = NEW_C_HEAP_ARRAY(HeapWord, bot_size, mtGC);
-  ReservedSpace bot_rs(G1BlockOffsetTable::compute_size(heap.word_size()));
+  ReservedSpace bot_rs = MemoryReserver::reserve(G1BlockOffsetTable::compute_size(heap.word_size()), mtGC);
   G1RegionToSpaceMapper* bot_storage =
     G1RegionToSpaceMapper::create_mapper(bot_rs,
                                          bot_rs.size(),
@@ -87,5 +90,6 @@ TEST_OTHER_VM(G1FreeRegionList, length) {
 
   bot_storage->uncommit_regions(0, num_regions_in_test);
   delete bot_storage;
+  os::release_memory(addr, sz);
   FREE_C_HEAP_ARRAY(HeapWord, bot_data);
 }

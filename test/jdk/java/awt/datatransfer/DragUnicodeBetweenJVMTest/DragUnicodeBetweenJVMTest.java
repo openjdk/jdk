@@ -101,7 +101,6 @@ public class DragUnicodeBetweenJVMTest {
         processResults.printProcessStandartOutput(System.out);
     }
 
-    //We cannot make an instance of the applet without the default constructor
     public DragUnicodeBetweenJVMTest () {
         super();
     }

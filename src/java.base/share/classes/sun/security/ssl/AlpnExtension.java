@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.*;
 import javax.net.ssl.SSLEngine;
@@ -63,10 +61,7 @@ final class AlpnExtension {
     static final Charset alpnCharset;
 
     static {
-        @SuppressWarnings("removal")
-        String alpnCharsetString = AccessController.doPrivileged(
-                (PrivilegedAction<String>) ()
-                        -> Security.getProperty("jdk.tls.alpnCharset"));
+        String alpnCharsetString = Security.getProperty("jdk.tls.alpnCharset");
         if ((alpnCharsetString == null)
                 || (alpnCharsetString.length() == 0)) {
             alpnCharsetString = "ISO_8859_1";
@@ -76,7 +71,7 @@ final class AlpnExtension {
 
     /**
      * The "application_layer_protocol_negotiation" extension.
-     *
+     * <p>
      * See RFC 7301 for the specification of this extension.
      */
     static final class AlpnSpec implements SSLExtensionSpec {
@@ -349,6 +344,13 @@ final class AlpnExtension {
             // The producing happens in server side only.
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
+            if (shc.sslConfig.isQuic) {
+                // RFC 9001: endpoints MUST use ALPN
+                throw shc.conContext.fatal(
+                        Alert.NO_APPLICATION_PROTOCOL,
+                        "Client did not offer application layer protocol");
+            }
+
             // Please don't use the previous negotiated application protocol.
             shc.applicationProtocol = "";
             shc.conContext.applicationProtocol = "";
@@ -517,6 +519,15 @@ final class AlpnExtension {
                 HandshakeMessage message) throws IOException {
             // The producing happens in client side only.
             ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            if (chc.sslConfig.isQuic) {
+                // RFC 9001: QUIC clients MUST use error 0x0178
+                // [no_application_protocol] to terminate a connection when
+                // ALPN negotiation fails
+                throw chc.conContext.fatal(
+                        Alert.NO_APPLICATION_PROTOCOL,
+                        "Server did not offer application layer protocol");
+            }
 
             // Please don't use the previous negotiated application protocol.
             chc.applicationProtocol = "";

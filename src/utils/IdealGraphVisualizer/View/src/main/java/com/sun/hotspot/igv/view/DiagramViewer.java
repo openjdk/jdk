@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
+import com.sun.hotspot.igv.data.InputLiveRange;
 import com.sun.hotspot.igv.data.InputNode;
 import java.awt.*;
 import java.util.Collection;
@@ -77,9 +78,15 @@ public interface DiagramViewer {
 
     void centerSelectedFigures();
 
+    void centerSelectedLiveRanges();
+
     void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden);
 
-    void clearSelectedNodes();
+    void addSelectedLiveRanges(Collection<InputLiveRange> liveRanges, boolean showIfHidden);
+
+    void addSelectedElements(Collection<InputNode> nodes, Collection<InputLiveRange> liveRanges, boolean showIfHidden);
+
+    void clearSelectedElements();
 
     void setInteractionMode(InteractionMode mode);
 

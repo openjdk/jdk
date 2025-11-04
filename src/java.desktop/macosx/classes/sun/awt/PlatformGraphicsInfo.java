@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
 @SuppressWarnings({"restricted"})
-public class PlatformGraphicsInfo {
+public final class PlatformGraphicsInfo {
 
     static {
             System.loadLibrary("awt");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,20 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciEnv.hpp"
+#include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/events.hpp"
@@ -152,7 +151,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   return _shared_library_handle;
 }
 
-void JVMCI::initialize_compiler(TRAPS) {
+void JVMCI::initialize_compiler_in_create_vm(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
     JNIJVMCI::initialize_ids(nullptr);
     ShouldNotReachHere();
@@ -163,7 +162,12 @@ void JVMCI::initialize_compiler(TRAPS) {
   } else {
       runtime = JVMCI::java_runtime();
   }
-  runtime->call_getCompiler(CHECK);
+
+  JVMCIENV_FROM_THREAD(THREAD);
+  JVMCIENV->check_init(CHECK);
+  JVMCIObject jvmciRuntime = runtime->get_HotSpotJVMCIRuntime(JVMCI_CHECK);
+  runtime->initialize(JVMCI_CHECK);
+  JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
 void JVMCI::initialize_globals() {
@@ -357,7 +361,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   intx current_thread_id = os::current_thread_id();
   intx invalid_id = -1;
   int log_fd;
-  if (_first_error_tid == invalid_id && Atomic::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
+  if (_first_error_tid == invalid_id && AtomicAccess::cmpxchg(&_first_error_tid, invalid_id, current_thread_id) == invalid_id) {
     if (ErrorFileToStdout) {
       log_fd = 1;
     } else if (ErrorFileToStderr) {
@@ -380,7 +384,7 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
     _fatal_log_fd = log_fd;
   } else if (_first_error_tid != current_thread_id) {
     // This is not the first thread reporting a libjvmci error
-    tty->print_cr("[thread " INTX_FORMAT " also had an error in the JVMCI native library]",
+    tty->print_cr("[thread %zd also had an error in the JVMCI native library]",
                     current_thread_id);
 
     // Fatal error reporting is single threaded so just block this thread.

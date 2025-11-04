@@ -67,6 +67,16 @@ private:
                                     Node* pre_val,
                                     BasicType bt) const;
 
+  void post_barrier(GraphKit* kit,
+                    Node* ctl,
+                    Node* store,
+                    Node* obj,
+                    Node* adr,
+                    uint adr_idx,
+                    Node* val,
+                    BasicType bt,
+                    bool use_precise) const;
+
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;
 
@@ -93,7 +103,7 @@ public:
 
   ShenandoahBarrierSetC2State* state() const;
 
-  static const TypeFunc* write_ref_field_pre_Type();
+  static const TypeFunc* write_barrier_pre_Type();
   static const TypeFunc* clone_barrier_Type();
   static const TypeFunc* load_reference_barrier_Type();
   virtual bool has_load_barrier_nodes() const { return true; }
@@ -110,8 +120,8 @@ public:
   virtual Node* step_over_gc_barrier(Node* c) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand || mode == LoopOptsShenandoahPostExpand; }
+  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
+  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
 
   // Support for macro expanded GC barriers
   virtual void register_potential_barrier_node(Node* node) const;

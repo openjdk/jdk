@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerUtils.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // *** WorkerThreadsBarrierSync
@@ -89,7 +88,7 @@ SubTasksDone::SubTasksDone(uint n) :
 
 #ifdef ASSERT
 void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
-  if (Atomic::cmpxchg(&_verification_done, false, true)) {
+  if (AtomicAccess::cmpxchg(&_verification_done, false, true)) {
     // another thread has done the verification
     return;
   }
@@ -117,7 +116,7 @@ void SubTasksDone::all_tasks_claimed_impl(uint skipped[], size_t skipped_size) {
 
 bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
-  return !_tasks[t] && !Atomic::cmpxchg(&_tasks[t], false, true);
+  return !_tasks[t] && !AtomicAccess::cmpxchg(&_tasks[t], false, true);
 }
 
 SubTasksDone::~SubTasksDone() {
@@ -130,7 +129,7 @@ SubTasksDone::~SubTasksDone() {
 bool SequentialSubTasksDone::try_claim_task(uint& t) {
   t = _num_claimed;
   if (t < _num_tasks) {
-    t = Atomic::add(&_num_claimed, 1u) - 1;
+    t = AtomicAccess::add(&_num_claimed, 1u) - 1;
   }
   return t < _num_tasks;
 }

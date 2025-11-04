@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
@@ -163,6 +162,11 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // sender_pc might be invalid so check that the frame
+      // actually belongs to a Continuation.
+      if (!Continuation::is_frame_in_continuation(thread, *this)) {
+        return false;
+      }
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
       frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
       sender_sp = s.sp();
@@ -224,8 +228,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
-      if (nm->is_deopt_mh_entry(sender_pc) || nm->is_deopt_entry(sender_pc) ||
-          nm->method()->is_method_handle_intrinsic()) {
+      if (nm->is_deopt_entry(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
         return false;
       }
     }
@@ -437,8 +440,8 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 
   JavaThread** thread_addr;
 #ifdef COMPILER1
-  if (cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
-      cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id)) {
+  if (cb == Runtime1::blob_for(StubId::c1_monitorenter_id) ||
+      cb == Runtime1::blob_for(StubId::c1_monitorenter_nofpu_id)) {
     thread_addr = (JavaThread**)(f.sp() + Runtime1::runtime_blob_current_thread_offset(f));
   } else
 #endif
@@ -451,48 +454,6 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 }
 
 //------------------------------------------------------------------------------
-// frame::verify_deopt_original_pc
-//
-// Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.
-#ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
-
-  address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
-}
-#endif
-
-//------------------------------------------------------------------------------
-// frame::adjust_unextended_sp
-#ifdef ASSERT
-void frame::adjust_unextended_sp() {
-  // On aarch64, sites calling method handle intrinsics and lambda forms are treated
-  // as any other call site. Therefore, no special action is needed when we are
-  // returning to any of these call sites.
-
-  if (_cb != nullptr) {
-    nmethod* sender_nm = _cb->as_nmethod_or_null();
-    if (sender_nm != nullptr) {
-      // If the sender PC is a deoptimization point, get the original PC.
-      if (sender_nm->is_deopt_entry(_pc) ||
-          sender_nm->is_deopt_mh_entry(_pc)) {
-        verify_deopt_original_pc(sender_nm, _unextended_sp);
-      }
-    }
-  }
-}
-#endif
-
-
-//------------------------------------------------------------------------------
 // frame::sender_for_interpreter_frame
 frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // SP is the raw SP from the sender after adapter or interpreter
@@ -503,11 +464,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if COMPILER2_OR_JVMCI
+#if defined(COMPILER1) || COMPILER2_OR_JVMCI
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // defined(COMPILER1) || COMPILER1_OR_COMPILER2
 
   // For ROP protection, Interpreter will have signed the sender_pc,
   // but there is no requirement to authenticate it here.
@@ -698,10 +659,10 @@ static void printbc(Method *m, intptr_t bcx) {
   if (m->validate_bci_from_bcp((address)bcx) < 0
       || !m->contains((address)bcx)) {
     name = "???";
-    snprintf(buf, sizeof buf, "(bad)");
+    os::snprintf_checked(buf, sizeof buf, "(bad)");
   } else {
     int bci = m->bci_from((address)bcx);
-    snprintf(buf, sizeof buf, "%d", bci);
+    os::snprintf_checked(buf, sizeof buf, "%d", bci);
     name = Bytecodes::name(m->code_at(bci));
   }
   ResourceMark rm;
@@ -824,7 +785,6 @@ void JavaFrameAnchor::make_walkable() {
   // already walkable?
   if (walkable()) return;
   vmassert(last_Java_sp() != nullptr, "not called from Java code?");
-  vmassert(last_Java_pc() == nullptr, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  * questions.
  */
 package sun.net.ftp.impl;
-
-
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -61,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
 import sun.net.ftp.FtpDirEntry;
 import sun.net.ftp.FtpDirParser;
 import sun.net.ftp.FtpProtocolException;
@@ -68,6 +67,7 @@ import sun.net.ftp.FtpReplyCode;
 import sun.net.util.IPAddressUtil;
 import sun.util.logging.PlatformLogger;
 
+import static sun.net.util.ProxyUtil.copyProxy;
 
 public class FtpClient extends sun.net.ftp.FtpClient {
 
@@ -710,13 +710,13 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         } else if (address.isLoopbackAddress() && s.startsWith("127.")) { // can be 127.0
             return new InetSocketAddress(s, port);
         } else if (address.isLoopbackAddress()) {
-            if (privilegedLocalHost().getHostAddress().equals(s)) {
+            if (getLocalHost().getHostAddress().equals(s)) {
                 return new InetSocketAddress(s, port);
             } else {
                 throw new FtpProtocolException(ERROR_MSG);
             }
         } else if (s.startsWith("127.")) {
-            if (privilegedLocalHost().equals(address)) {
+            if (getLocalHost().equals(address)) {
                 return new InetSocketAddress(s, port);
             } else {
                 throw new FtpProtocolException(ERROR_MSG);
@@ -724,7 +724,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         String hostName = address.getHostName();
         if (!(IPAddressUtil.isIPv4LiteralAddress(hostName) || IPAddressUtil.isIPv6LiteralAddress(hostName))) {
-            InetAddress[] names = privilegedGetAllByName(hostName);
+            InetAddress[] names = getAllByName(hostName);
             String resAddress = Arrays
                 .stream(names)
                 .map(InetAddress::getHostAddress)
@@ -738,7 +738,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         throw new FtpProtocolException(ERROR_MSG);
     }
 
-    private static InetAddress privilegedLocalHost() throws FtpProtocolException {
+    private static InetAddress getLocalHost() throws FtpProtocolException {
         try {
             return InetAddress.getLocalHost();
         } catch (Exception e) {
@@ -748,7 +748,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
     }
 
-    private static InetAddress[] privilegedGetAllByName(String hostName) throws FtpProtocolException {
+    private static InetAddress[] getAllByName(String hostName) throws FtpProtocolException {
         try {
             return InetAddress.getAllByName(hostName);
         } catch (Exception e) {
@@ -954,7 +954,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
     }
 
     public sun.net.ftp.FtpClient setProxy(Proxy p) {
-        proxy = p;
+        proxy = copyProxy(p);
         return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"
-#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
@@ -46,10 +46,9 @@
 
 class G1HeapRegion;
 class G1CollectionSet;
-class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
-class G1CollectionCandidateRegionList;
+class G1ConcurrentRefineStats;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -78,7 +77,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   GCPolicyCounters* _policy_counters;
 
-  double _full_collection_start_sec;
+  double _cur_pause_start_sec;
 
   // Desired young gen length without taking actually available free regions into
   // account.
@@ -103,9 +102,18 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _card_rs_length;
-
-  size_t _pending_cards_at_gc_start;
+  // Tracks the number of cards marked as dirty (only) during garbage collection
+  // (evacuation) on the card table.
+  // This is needed to properly account for those cards in the heuristics to start
+  // refinement at the correct time which needs to know how many cards are currently
+  // approximately on the card table.
+  // After the first completed refinement sweep of the refinement table between two
+  // garbage collections this value is reset to zero as that refinement processed all
+  // those cards.
+  size_t _pending_cards_from_gc;
+  // Tracks the approximate number of cards found as to-collection-set by either the
+  // garbage collection or the most recent refinement sweep.
+  size_t _to_collection_set_cards;
 
   G1ConcurrentStartToMixedTimeTracker _concurrent_start_to_mixed;
 
@@ -113,7 +121,7 @@ class G1Policy: public CHeapObj<mtGC> {
     return collector_state()->in_young_only_phase() && !collector_state()->mark_or_rebuild_in_progress();
   }
 
-  double logged_cards_processing_time() const;
+  double pending_cards_processing_time() const;
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -123,7 +131,6 @@ public:
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
   void set_region_eden(G1HeapRegion* hr) {
-    hr->set_eden();
     hr->install_surv_rate_group(_eden_surv_rate_group);
   }
 
@@ -132,15 +139,12 @@ public:
     hr->install_surv_rate_group(_survivor_surv_rate_group);
   }
 
-  void record_card_rs_length(size_t card_rs_length) {
-    _card_rs_length = card_rs_length;
+  double cur_pause_start_sec() const {
+    return _cur_pause_start_sec;
   }
-
-  double predict_base_time_ms(size_t pending_cards) const;
 
   double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
 
-private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
@@ -148,24 +152,16 @@ private:
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Merge-scan time for a region is handling card-based remembered sets of that region
-  // (as a single unit).
-  double predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Non-copy time for a region is handling remembered sets and other time.
-  double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
-public:
-
+  double predict_merge_scan_time(size_t card_rs_length) const;
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
+  double predict_non_young_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
-  // Total time for a region is handling remembered sets (as a single unit), copying its live data
-  // and other time.
-  double predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();
@@ -207,11 +203,6 @@ private:
   // Lazily initialized
   mutable G1GCPhaseTimes* _phase_times;
 
-  // This set of variables tracks the collector efficiency, in order to
-  // determine whether we should initiate a new marking.
-  double _mark_remark_start_sec;
-  double _mark_cleanup_start_sec;
-
   // Updates the internal young gen maximum and target and desired lengths.
   // If no parameters are passed, predict pending cards, card set remset length and
   // code root remset length using the prediction model.
@@ -247,12 +238,22 @@ private:
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
 
-  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
   double predict_retained_regions_evac_time() const;
 
 public:
-  size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
+  size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
+
+  double last_mutator_dirty_start_time_ms();
+  size_t pending_cards_from_gc() const { return _pending_cards_from_gc; }
+
+  size_t current_pending_cards();
+
+  size_t current_to_collection_set_cards();
+
+  // GC efficiency for collecting the region based on the time estimate for
+  // merging and scanning incoming references.
+  double predict_gc_efficiency(G1HeapRegion* hr);
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
   uint min_retained_old_cset_length() const;
@@ -268,7 +269,7 @@ public:
 private:
   void abandon_collection_set_candidates();
   // Sets up marking if proper conditions are met.
-  void maybe_start_marking();
+  void maybe_start_marking(size_t allocation_word_size);
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
@@ -295,7 +296,7 @@ public:
   // Check the current value of the young list RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the young list target length prediction.
-  void revise_young_list_target_length(size_t card_rs_length, size_t code_root_rs_length);
+  void revise_young_list_target_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
@@ -306,36 +307,35 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-  bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+  bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
 
-  bool concurrent_operation_is_full_mark(const char* msg = nullptr);
+  bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
 
   bool about_to_start_mixed_phase() const;
 
   // Record the start and end of the actual collection part of the evacuation pause.
+  void record_pause_start_time();
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool allocation_failure);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark,
+                                   bool allocation_failure,
+                                   size_t allocation_word_size);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
-  void record_full_collection_end();
+  void record_full_collection_end(size_t allocation_word_size);
 
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end();
 
-  // Record start and end of remark.
-  void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
-  void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
   bool next_gc_should_be_mixed() const;
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
-
 
 private:
 
@@ -363,24 +363,46 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
-  uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
+  uint young_list_desired_length() const { return AtomicAccess::load(&_young_list_desired_length); }
+  uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
 
   bool should_allocate_mutator_region() const;
 
   bool use_adaptive_young_list_length() const;
 
+  // Try to get an estimate of the currently available bytes in the young gen. This
+  // operation considers itself low-priority: if other threads need the resources
+  // required to get the information, return false to indicate that the caller
+  // should retry "soon".
+  bool try_get_available_bytes_estimate(size_t& bytes) const;
+  // Estimate time until next GC, based on remaining bytes available for
+  // allocation and the allocation rate.
+  double predict_time_to_next_gc_ms(size_t available_bytes) const;
+
+  // Adjust wait times to make them less frequent the longer the next GC is away.
+  // But don't increase the wait time too rapidly, further bound it by min_time_ms.
+  // This reduces the number of thread wakeups that just immediately
+  // go back to waiting, while still being responsive to behavior changes.
+  uint64_t adjust_wait_time_ms(double wait_time_ms, uint64_t min_time_ms);
+
+private:
   // Return an estimate of the number of bytes used in young gen.
   // precondition: holding Heap_lock
   size_t estimate_used_young_bytes_locked() const;
 
+public:
+
   void transfer_survivors_to_cset(const G1SurvivorRegions* survivors);
 
-  // Record and log stats and pending cards before not-full collection.
-  // thread_buffer_cards is the number of cards that were in per-thread
-  // buffers.  pending_cards includes thread_buffer_cards.
-  void record_concurrent_refinement_stats(size_t pending_cards,
-                                          size_t thread_buffer_cards);
+  // Record and log stats and pending cards to update predictors.
+  void record_refinement_stats(G1ConcurrentRefineStats* stats);
+
+  void record_dirtying_stats(double last_mutator_start_dirty_ms,
+                             double last_mutator_end_dirty_ms,
+                             size_t pending_cards,
+                             double yield_duration,
+                             size_t next_pending_cards_from_gc,
+                             size_t next_to_collection_set_cards);
 
   bool should_retain_evac_failed_region(G1HeapRegion* r) const {
     return should_retain_evac_failed_region(r->hrm_index());

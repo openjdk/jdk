@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.security.SecureRandom;
 /// An `IllegalStateException` will be thrown when the predefined
 /// bytes are exhausted.
 public class FixedSecureRandom extends SecureRandom {
+
+    private static final long serialVersionUID = -8753752741562231543L;
 
     private byte[] buffer;
     private int offset;

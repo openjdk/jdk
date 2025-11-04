@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -208,8 +208,8 @@ file system locations may be directories, JAR files or JMOD files.
     `-deprecation` option is shorthand for `-Xlint:deprecation`.
 
 <a id="option-enable-preview">`--enable-preview`</a>
-:   Enables preview language features. Used in conjunction with either
-    [`-source`](#option-source) or [`--release`](#option-release).
+:   Enables preview language features. Also disables the `preview` lint category.
+    Used in conjunction with either [`-source`](#option-source) or [`--release`](#option-release).
 
 <a id="option-encoding">`-encoding` *encoding*</a>
 :   Specifies character encoding used by source files, such as EUC-JP and
@@ -325,8 +325,7 @@ file system locations may be directories, JAR files or JMOD files.
 :   Specifies the version of modules that are being compiled.
 
 <a id="option-nowarn">`-nowarn`</a>
-:   Disables warning messages. This option operates the same as the
-    `-Xlint:none` option.
+:   Generate only mandatory warnings.
 
 <a id="option-parameters">`-parameters`</a>
 :   Generates metadata for reflection on method parameters. Stores formal
@@ -336,10 +335,18 @@ file system locations may be directories, JAR files or JMOD files.
 
 <a id="option-proc">`-proc:`\[`none`, `only`, `full`\]</a>
 :   Controls whether annotation processing and compilation are done.
-    `-proc:none` means that compilation takes place without annotation
-    processing. `-proc:only` means that only annotation processing is done,
-    without any subsequent compilation. If this option is not used, or
-    `-proc:full` is specified, annotation processing and compilation are done.
+
+    -   `-proc:none` means that compilation takes place without annotation
+    processing
+
+    -   `-proc:only` means that only annotation processing is done,
+    without any subsequent compilation.
+
+    -   `-proc:full` means annotation processing and compilation are done.
+
+    If this option is not used, annotation processing and compilation
+    are done if at least one other option is used to explicitly
+    configure annotation processing.
 
 <a id="option-processor">`-processor` *class1*\[`,`*class2*`,`*class3*...\]</a>
 :   Names of the annotation processors to run. This bypasses the default
@@ -441,7 +448,16 @@ file system locations may be directories, JAR files or JMOD files.
 :   Prints version information.
 
 <a id="option-Werror">`-Werror`</a>
-:   Terminates compilation when warnings occur.
+:   Terminates compilation when any warnings occur; this includes warnings in all lint
+    categories, as well as non-lint warnings.
+
+<a id="option-Werror-custom">`-Werror:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
+:   Specify lint categories for which warnings should terminate compilation. The keys
+    `all` and `none` include or exclude all categories (respectively); other keys include
+    the corresponding category, or exclude it if preceded by a hyphen (`-`). By default,
+    no categories are included. In order to terminate compilation, the category must also
+    be enabled (via [`-Xlint`](#option-Xlint-custom), if necessary).
+    See [`-Xlint`](#option-Xlint-custom) below for the list of lint category keys.
 
 ### Extra Options
 
@@ -550,16 +566,18 @@ file system locations may be directories, JAR files or JMOD files.
     section of the `javadoc` command documentation.
 
 <a id="option-Xlint">`-Xlint`</a>
-:   Enables all recommended warnings. In this release, enabling all available
-    warnings is recommended.
+:   Enables recommended lint warning categories. In this release, all available
+    lint warning categories are recommended.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
-:   Supplies warnings to enable or disable, separated by comma. Precede a key
-    by a hyphen (`-`) to disable the specified warning.
+:   Enables and/or disables lint warning categories using the one or more of the keys described
+    below separated by commas. The keys `all` and `none` enable or disable all categories
+    (respectively); other keys enable the corresponding category, or disable it if preceded
+    by a hyphen (`-`).
 
     Supported values for *key* are:
 
-    -   `all`: Enables all warnings.
+    -   `all`: Enables all warning categories.
 
     -   `auxiliaryclass`: Warns about an auxiliary class that is hidden in a
         source file, and is used from other files.
@@ -586,6 +604,9 @@ file system locations may be directories, JAR files or JMOD files.
         switch statement to the next.
 
     -   `finally`: Warns about `finally` clauses that do not terminate normally.
+
+    -   `identity`: Warns about use of a value-based class where an identity
+        class is expected
 
     -   `incubating`: Warns about the use of incubating modules.
 
@@ -636,8 +657,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
-    -   `synchronization`: Warns about synchronization attempts on instances
-        of value-based classes.
+    -   `synchronization`: Deprecated alias for `identity` with an identical
+        effect. Users are encouraged to use `identity` instead of `synchronization`
+        for all current and future uses.
 
     -   `text-blocks`: Warns about inconsistent white space characters in text
         block indentation.
@@ -651,11 +673,15 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `varargs`: Warns about the potentially unsafe `vararg` methods.
 
-    -   `none`: Disables all warnings.
+    -   `none`: Disables all warning categories.
 
-    With the exception of `all` and `none`, the keys can be used with
-    the `@SuppressWarnings` annotation to suppress warnings in a part
-    of the source code being compiled.
+    The keys listed above may be used in `@SuppressWarnings` annotations to suppress
+    warnings within the annotated declaration, with the exception of: `all`, `none`,
+    `classfile`, `incubating`, `options`, `output-file-clash`, `processing`, and `path`.
+
+    By default, the following lint warning categories are enabled: `dep-ann`, `identity`,
+    `incubating`, `module`, `opens`, `preview`, `removal`, `requires-transitive-automatic`,
+    and `strictfp`.
 
     See [Examples of Using -Xlint keys].
 
@@ -1433,15 +1459,26 @@ The API for annotation processors is defined in the
 
 ### How Annotation Processing Works
 
-Unless annotation processing is disabled with the [`-proc:none`](#option-proc) option, the
-compiler searches for any annotation processors that are available. The search
-path can be specified with the [`-processorpath`](#option-processor-path) option. If no path is
-specified, then the user class path is used. Processors are located by means of
-service provider-configuration files named
-`META-INF/services/javax.annotation.processing.Processor` on the search path.
-Such files should contain the names of any annotation processors to be used,
-listed one per line. Alternatively, processors can be specified explicitly,
-using the [`-processor`](#option-processor) option.
+Annotation processing is requested by using an option to configure
+annotation processing, such as [`-processor`](#option-processor),
+[`--processor-path`](#option-processor-path),
+[`--processor-module-path`](#option-processor-module-path) or by
+explicitly enabling processing with the [`-proc:full`](#option-proc)
+or [`-proc:only`](#option-proc) options.  Annotation processing is
+disabled using the [`-proc:none`](#option-proc) option.
+
+If annotation processing is requested, the compiler searches for any
+annotation processors that are available.
+
+The search path can be specified with the
+[`-processorpath`](#option-processor-path) option. If no path is
+specified, then the user class path is used. Processors are located by
+means of service provider-configuration files named
+`META-INF/services/javax.annotation.processing.Processor` on the
+search path.  Such files should contain the names of any
+annotationation processors to be used, listed one per
+line. Alternatively, processors can be specified explicitly, using the
+[`-processor`](#option-processor) option.
 
 After scanning the source files and classes on the command line to determine
 what annotations are present, the compiler queries the processors to determine
@@ -1654,7 +1691,7 @@ internal and subject to change at any time.
     public static int m() {
       try {
          throw new NullPointerException();
-      }  catch (NullPointerException(); {
+      }  catch (NullPointerException e) {
          System.err.println("Caught NullPointerException.");
          return 1;
        } finally {

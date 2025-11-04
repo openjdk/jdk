@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8331008
  * @summary basic HKDF operations
  * @library /test/lib
- * @enablePreview
  */
 
 import java.util.HexFormat;
@@ -52,14 +51,14 @@ public class HKDFBasicFunctionsTest {
         var extractAndExpand = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(info, len);
         var okm2 = kdf.deriveKey("OKM", extractAndExpand);
 
-        Asserts.assertEqualsByteArray(prk.getEncoded(), expectedPrk,
+        Asserts.assertEqualsByteArray(expectedPrk, prk.getEncoded(),
                                       "the PRK must match the expected value");
 
-        Asserts.assertEqualsByteArray(okm1.getEncoded(), expectedOkm,
+        Asserts.assertEqualsByteArray(expectedOkm, okm1.getEncoded(),
                                       "the OKM must match the expected value "
                                       + "(expand)");
 
-        Asserts.assertEqualsByteArray(okm2.getEncoded(), expectedOkm,
+        Asserts.assertEqualsByteArray(expectedOkm, okm2.getEncoded(),
                                       "the OKM must match the expected value "
                                       + "(extract expand)");
 

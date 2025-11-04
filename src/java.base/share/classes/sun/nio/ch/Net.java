@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.NotYetConnectedException;
@@ -91,6 +92,15 @@ public class Net {
      */
     static boolean useExclusiveBind() {
         return EXCLUSIVE_BIND;
+    }
+
+    private static final StableValue<Boolean> SHUTDOWN_WRITE_BEFORE_CLOSE = StableValue.of();
+
+    /**
+     * Tells whether a TCP connection should be shutdown for writing before closing.
+     */
+    static boolean shouldShutdownWriteBeforeClose() {
+        return SHUTDOWN_WRITE_BEFORE_CLOSE.orElseSet(Net::shouldShutdownWriteBeforeClose0);
     }
 
     /**
@@ -166,6 +176,8 @@ public class Net {
             nx = newSocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
             nx = newSocketException("Already bound");
+        else if (x instanceof AlreadyConnectedException)
+            nx = newSocketException("Already connected");
         else if (x instanceof NotYetBoundException)
             nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
@@ -190,30 +202,10 @@ public class Net {
         return new SocketException(msg);
     }
 
-    static void translateException(Exception x,
-                                   boolean unknownHostForUnresolved)
-        throws IOException
-    {
+    static void translateException(Exception x) throws IOException {
         if (x instanceof IOException ioe)
             throw ioe;
-        // Throw UnknownHostException from here since it cannot
-        // be thrown as a SocketException
-        if (unknownHostForUnresolved &&
-            (x instanceof UnresolvedAddressException))
-        {
-             throw new UnknownHostException();
-        }
         translateToSocketException(x);
-    }
-
-    static void translateException(Exception x)
-        throws IOException
-    {
-        translateException(x, false);
-    }
-
-    private static InetSocketAddress getLoopbackAddress(int port) {
-        return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
     private static final InetAddress ANY_LOCAL_INET4ADDRESS;
@@ -479,6 +471,8 @@ public class Net {
      */
     private static native int isExclusiveBindAvailable();
 
+    private static native boolean shouldShutdownWriteBeforeClose0();
+
     private static native boolean shouldSetBothIPv4AndIPv6Options0();
 
     private static native boolean canIPv6SocketJoinIPv4Group0();
@@ -487,8 +481,8 @@ public class Net {
 
     private static native boolean canUseIPv6OptionsWithIPv4LocalAddress0();
 
-    static FileDescriptor socket(boolean stream) throws IOException {
-        return socket(UNSPEC, stream);
+    static FileDescriptor socket() throws IOException {
+        return socket(UNSPEC, true);
     }
 
     static FileDescriptor socket(ProtocolFamily family, boolean stream) throws IOException {
@@ -497,14 +491,14 @@ public class Net {
         return IOUtil.newFD(socket0(preferIPv6, stream, false, FAST_LOOPBACK));
     }
 
-    static FileDescriptor serverSocket(boolean stream) {
-        return serverSocket(UNSPEC, stream);
+    static FileDescriptor serverSocket() {
+        return serverSocket(UNSPEC);
     }
 
-    static FileDescriptor serverSocket(ProtocolFamily family, boolean stream) {
+    static FileDescriptor serverSocket(ProtocolFamily family) {
         boolean preferIPv6 = isIPv6Available() &&
             (family != StandardProtocolFamily.INET);
-        return IOUtil.newFD(socket0(preferIPv6, stream, true, FAST_LOOPBACK));
+        return IOUtil.newFD(socket0(preferIPv6, true, true, FAST_LOOPBACK));
     }
 
     // Due to oddities SO_REUSEADDR on Windows reuse is ignored

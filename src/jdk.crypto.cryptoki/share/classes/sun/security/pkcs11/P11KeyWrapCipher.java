@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.security.pkcs11;
 
 import java.io.ByteArrayOutputStream;
@@ -577,8 +578,8 @@ final class P11KeyWrapCipher extends CipherSpi {
                         inOfs = 0;
                         inLen = in.length;
                     } else {
-                        if (inBuffer instanceof DirectBuffer dInBuffer) {
-                            inAddr = dInBuffer.address();
+                        if (inBuffer instanceof DirectBuffer) {
+                            inAddr = NIO_ACCESS.getBufferAddress(inBuffer);
                             inOfs = inBuffer.position();
                         } else {
                             if (inBuffer.hasArray()) {
@@ -593,8 +594,8 @@ final class P11KeyWrapCipher extends CipherSpi {
                     long outAddr = 0;
                     byte[] outArray = null;
                     int outOfs = 0;
-                    if (outBuffer instanceof DirectBuffer dOutBuffer) {
-                        outAddr = dOutBuffer.address();
+                    if (outBuffer instanceof DirectBuffer) {
+                        outAddr = NIO_ACCESS.getBufferAddress(outBuffer);
                         outOfs = outBuffer.position();
                     } else {
                         if (outBuffer.hasArray()) {

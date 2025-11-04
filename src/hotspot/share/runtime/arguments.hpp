@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
-#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -148,10 +148,12 @@ class SystemProperty : public PathString {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
+struct VMInitArgsGroup;
+template <typename E, MemTag MT> class GrowableArrayCHeap;
+
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
-  friend class CodeCacheExtensions;
   friend class ArgumentsTest;
   friend class LargeOptionsTest;
  public:
@@ -198,6 +200,10 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
+#if INCLUDE_JVMCI
+  // was jdk.internal.vm.ci module specified in the --add-modules option?
+  static bool _jvmci_module_added;
+#endif
 
   // Property list
   static SystemProperty* _system_properties;
@@ -239,8 +245,8 @@ class Arguments : AllStatic {
   // java launcher
   static const char* _sun_java_launcher;
 
-  // was this VM created via the -XXaltjvm=<path> option
-  static bool   _sun_java_launcher_is_altjvm;
+  // was this VM created with the -XX:+ExecutingUnitTests option
+  static bool _executing_unit_tests;
 
   // for legacy gc options (-verbose:gc and -Xloggc:)
   static LegacyGCLogging _legacyGCLogging;
@@ -254,6 +260,9 @@ class Arguments : AllStatic {
   // preview features
   static bool _enable_preview;
 
+  // jdwp
+  static bool _has_jdwp_agent;
+
   // Used to save default settings
   static bool _AlwaysCompileLoopMethods;
   static bool _UseOnStackReplacement;
@@ -264,6 +273,7 @@ class Arguments : AllStatic {
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static jint set_ergonomics_flags();
+  static void set_compact_headers_flags();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
@@ -289,7 +299,7 @@ class Arguments : AllStatic {
   static bool create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal);
   static bool create_numbered_module_property(const char* prop_base_name, const char* prop_value, unsigned int count);
 
-  static int process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase);
+  static int process_patch_mod_option(const char* patch_mod_tail);
 
   // Aggressive optimization flags.
   static jint set_aggressive_opts_flags();
@@ -303,6 +313,8 @@ class Arguments : AllStatic {
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_jdk_aot_vm_options_environment_variable(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args,
+                                                            ScopedVMInitArgs* jdk_aot_vm_options_args);
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize);
@@ -320,12 +332,9 @@ class Arguments : AllStatic {
 
   static bool handle_deprecated_print_gc_flags();
 
-  static jint parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
-                                 const JavaVMInitArgs *java_tool_options_args,
-                                 const JavaVMInitArgs *java_options_args,
-                                 const JavaVMInitArgs *cmd_line_args);
-  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_mod_javabase, JVMFlagOrigin origin);
-  static jint finalize_vm_init_args(bool patch_mod_javabase);
+  static jint parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args);
+  static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin origin);
+  static jint finalize_vm_init_args();
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);
 
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
@@ -363,6 +372,8 @@ class Arguments : AllStatic {
   // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
+
+  static bool internal_module_property_helper(const char* property, bool check_for_cds);
 
  public:
   // Parses the arguments, first phase
@@ -424,8 +435,8 @@ class Arguments : AllStatic {
   static const char* sun_java_launcher()    { return _sun_java_launcher; }
   // Was VM created by a Java launcher?
   static bool created_by_java_launcher();
-  // -Dsun.java.launcher.is_altjvm
-  static bool sun_java_launcher_is_altjvm();
+  // -XX:+ExecutingUnitTests
+  static bool executing_unit_tests();
 
   // abort, exit, vfprintf hooks
   static abort_hook_t    abort_hook()       { return _abort_hook; }
@@ -462,9 +473,7 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
-  static bool is_add_modules_property(const char* key);
-  static unsigned int addmods_count() { return  _addmods_count; }
-  static bool is_module_path_property(const char* key);
+  static bool is_incompatible_cds_internal_module_property(const char* property);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
@@ -473,7 +482,7 @@ class Arguments : AllStatic {
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
   // Set up the underlying pieces of the boot class path
-  static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
+  static void add_patch_mod_prefix(const char *module_name, const char *path);
   static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
     assert(get_boot_class_path() == nullptr, "Boot class path previously set");
@@ -504,6 +513,9 @@ class Arguments : AllStatic {
   // preview features
   static void set_enable_preview() { _enable_preview = true; }
   static bool enable_preview() { return _enable_preview; }
+
+  // jdwp
+  static bool has_jdwp_agent() { return _has_jdwp_agent; }
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);

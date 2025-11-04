@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,8 +38,9 @@
 #include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/stackWatermarkSet.hpp"
+#include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -52,7 +53,7 @@
 #include "utilities/ticks.hpp"
 #endif
 
-class AsyncExceptionHandshake;
+class AsyncExceptionHandshakeClosure;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
@@ -145,13 +146,8 @@ class JavaThread: public Thread {
   Method*       _callee_target;
 
   // Used to pass back results to the interpreter or generated code running Java code.
-  oop           _vm_result;    // oop result is GC-preserved
-  Metadata*     _vm_result_2;  // non-oop result
-
-  // See ReduceInitialCardMarks: this holds the precise space interval of
-  // the most recent slow path allocation for which compiled code has
-  // elided card-marks for performance along the fast-path.
-  MemRegion     _deferred_card_mark;
+  oop           _vm_result_oop;       // oop result is GC-preserved
+  Metadata*     _vm_result_metadata;  // non-oop result
 
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
@@ -166,24 +162,28 @@ class JavaThread: public Thread {
   // ID used as owner for inflated monitors. Same as the j.l.Thread.tid of the
   // current _vthread object, except during creation of the primordial and JNI
   // attached thread cases where this field can have a temporary value.
-  int64_t _lock_id;
+  int64_t _monitor_owner_id;
 
  public:
-  void set_lock_id(int64_t tid) {
-    assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "invalid tid");
-    _lock_id = tid;
+  void set_monitor_owner_id(int64_t id) {
+    ThreadIdentifier::verify_id(id);
+    _monitor_owner_id = id;
   }
-  int64_t lock_id() const { return _lock_id; }
+  int64_t monitor_owner_id() const {
+    int64_t id = _monitor_owner_id;
+    ThreadIdentifier::verify_id(id);
+    return id;
+  }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    // Use Atomic::load() to prevent data race between concurrent modification and
+    // Use AtomicAccess::load() to prevent data race between concurrent modification and
     // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
     // Especially, reloading pointer from thread after null check must be prevented.
-    return Atomic::load(&_current_pending_monitor);
+    return AtomicAccess::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_pending_monitor, monitor);
+    AtomicAccess::store(&_current_pending_monitor, monitor);
   }
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
@@ -193,10 +193,10 @@ class JavaThread: public Thread {
   }
   ObjectMonitor* current_waiting_monitor() {
     // See the comment in current_pending_monitor() above.
-    return Atomic::load(&_current_waiting_monitor);
+    return AtomicAccess::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_waiting_monitor, monitor);
+    AtomicAccess::store(&_current_waiting_monitor, monitor);
   }
 
   // JNI handle support
@@ -212,7 +212,6 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _trace_flag             = 0x00000004U, // call tracing backend
     _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
@@ -223,22 +222,19 @@ class JavaThread: public Thread {
   inline void clear_suspend_flag(SuspendFlags f);
 
  public:
-  inline void set_trace_flag();
-  inline void clear_trace_flag();
   inline void set_obj_deopt_flag();
   inline void clear_obj_deopt_flag();
-  bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
   bool is_obj_deopt_suspend()  { return (_suspend_flags & _obj_deopt) != 0; }
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshake;
-  friend class AsyncExceptionHandshake;
+  friend class InstallAsyncExceptionHandshakeClosure;
+  friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshake* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
@@ -321,12 +317,14 @@ class JavaThread: public Thread {
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
+  volatile bool         _throwing_unsafe_access_error;   // Thread has faulted and is throwing an exception
   bool                  _do_not_unlock_if_synchronized;  // Do not unlock the receiver of a synchronized method (since it was
                                                          // never locked) when throwing an exception. Used by interpreter only.
 #if INCLUDE_JVMTI
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_disable_suspend;             // JVMTI suspend is temporarily disabled; used on current thread only
+  bool                  _is_in_java_upcall;              // JVMTI is doing a Java upcall, so JVMTI events must be hidden
   bool                  _VTMS_transition_mark;           // used for sync between VTMS transitions and disablers
   bool                  _on_monitor_waited_event;        // Avoid callee arg processing for enterSpecial when posting waited event
   ObjectMonitor*        _contended_entered_monitor;      // Monitor for pending monitor_contended_entered callback
@@ -448,7 +446,6 @@ class JavaThread: public Thread {
   volatile oop     _exception_oop;               // Exception thrown in compiled code
   volatile address _exception_pc;                // PC where exception happened
   volatile address _exception_handler_pc;        // PC for handler of exception
-  volatile int     _is_method_handle_return;     // true (== 1) if the current exception PC is a MethodHandle call site.
 
  private:
   // support for JNI critical regions
@@ -475,9 +472,6 @@ class JavaThread: public Thread {
                             // frame inside the continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
 
-  // It's signed for error detection.
-  intx _held_monitor_count;  // used by continuations for fast lock detection
-  intx _jni_monitor_count;
   ObjectMonitor* _unlocked_inflated_monitor;
 
   // This is the field we poke in the interpreter and native
@@ -629,6 +623,9 @@ private:
   bool doing_unsafe_access()                     { return _doing_unsafe_access; }
   void set_doing_unsafe_access(bool val)         { _doing_unsafe_access = val; }
 
+  bool is_throwing_unsafe_access_error()          { return _throwing_unsafe_access_error; }
+  void set_throwing_unsafe_access_error(bool val) { _throwing_unsafe_access_error = val; }
+
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
@@ -661,13 +658,6 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  void inc_held_monitor_count(intx i = 1, bool jni = false);
-  void dec_held_monitor_count(intx i = 1, bool jni = false);
-
-  intx held_monitor_count() { return _held_monitor_count; }
-  intx jni_monitor_count()  { return _jni_monitor_count;  }
-  void clear_jni_monitor_count() { _jni_monitor_count = 0; }
-
   // Support for SharedRuntime::monitor_exit_helper()
   ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
   void clear_unlocked_inflated_monitor() {
@@ -693,9 +683,13 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
-  bool java_suspend();
-  bool java_resume();
-  bool is_suspended()     { return _handshake.is_suspended(); }
+private:
+  SuspendResumeManager _suspend_resume_manager;
+public:
+  bool java_suspend(bool register_vthread_SR);
+  bool java_resume(bool register_vthread_SR);
+  bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
+  SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);
@@ -705,11 +699,11 @@ private:
   void wait_for_object_deoptimization();
 
 #if INCLUDE_JVMTI
-  inline void set_carrier_thread_suspended();
-  inline void clear_carrier_thread_suspended();
+  inline bool set_carrier_thread_suspended();
+  inline bool clear_carrier_thread_suspended();
 
   bool is_carrier_thread_suspended() const {
-    return _carrier_thread_suspended;
+    return AtomicAccess::load(&_carrier_thread_suspended);
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
@@ -718,8 +712,17 @@ private:
   bool is_disable_suspend() const                { return _is_disable_suspend; }
   void toggle_is_disable_suspend()               { _is_disable_suspend = !_is_disable_suspend; };
 
-  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
-  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+  bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
+  void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
+
+  bool VTMS_transition_mark() const              { return AtomicAccess::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { AtomicAccess::store(&_VTMS_transition_mark, val); }
+
+  // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
+  // - is in a VTMS transition (_is_in_VTMS_transition)
+  // - is in an interruptLock or similar critical section (_is_disable_suspend)
+  // - JVMTI is making a Java upcall (_is_in_java_upcall)
+  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend || _is_in_java_upcall; }
 
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
@@ -737,11 +740,8 @@ private:
   // Support for object deoptimization and JFR suspension
   void handle_special_runtime_exit_condition();
   bool has_special_runtime_exit_condition() {
-    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & _obj_deopt) != 0;
   }
-
-  // Stack-locking support (not for LM_LIGHTWEIGHT)
-  bool is_lock_owned(address adr) const;
 
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
@@ -770,13 +770,10 @@ private:
   void set_callee_target  (Method* x)            { _callee_target   = x; }
 
   // Oop results of vm runtime calls
-  oop  vm_result() const                         { return _vm_result; }
-  void set_vm_result  (oop x)                    { _vm_result   = x; }
+  oop  vm_result_oop() const                     { return _vm_result_oop; }
+  void set_vm_result_oop(oop x)                  { _vm_result_oop   = x; }
 
-  void set_vm_result_2  (Metadata* x)            { _vm_result_2   = x; }
-
-  MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
-  void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
+  void set_vm_result_metadata(Metadata* x)       { _vm_result_metadata = x; }
 
   // Is thread in scope of an InternalOOMEMark?
   bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
@@ -805,7 +802,6 @@ private:
   void set_exception_oop(oop o);
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
-  void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
 
   void clear_exception_oop_and_pc() {
     set_exception_oop(nullptr);
@@ -839,8 +835,8 @@ private:
     return byte_offset_of(JavaThread, _anchor);
   }
   static ByteSize callee_target_offset()         { return byte_offset_of(JavaThread, _callee_target); }
-  static ByteSize vm_result_offset()             { return byte_offset_of(JavaThread, _vm_result); }
-  static ByteSize vm_result_2_offset()           { return byte_offset_of(JavaThread, _vm_result_2); }
+  static ByteSize vm_result_oop_offset()         { return byte_offset_of(JavaThread, _vm_result_oop); }
+  static ByteSize vm_result_metadata_offset()    { return byte_offset_of(JavaThread, _vm_result_metadata); }
   static ByteSize thread_state_offset()          { return byte_offset_of(JavaThread, _thread_state); }
   static ByteSize saved_exception_pc_offset()    { return byte_offset_of(JavaThread, _saved_exception_pc); }
   static ByteSize osthread_offset()              { return byte_offset_of(JavaThread, _osthread); }
@@ -854,7 +850,6 @@ private:
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
-  static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
   static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
 
@@ -884,12 +879,10 @@ private:
   static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
   NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
 
-  static ByteSize lock_id_offset()            { return byte_offset_of(JavaThread, _lock_id); }
+  static ByteSize monitor_owner_id_offset()   { return byte_offset_of(JavaThread, _monitor_owner_id); }
 
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
-  static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
-  static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
   static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
@@ -929,6 +922,9 @@ private:
     _jni_active_critical--;
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
+
+  // Atomic version; invoked by a thread other than the owning thread.
+  bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
@@ -1146,20 +1142,18 @@ private:
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is
   // only set to non-zero at a safepoint or using a direct handshake
-  // (see EnterInterpOnlyModeClosure).
+  // (see EnterInterpOnlyModeHandshakeClosure).
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.
+  // This field is checked by the interpreter which expects it to be an integer.
   int               _interp_only_mode;
 
  public:
   // used by the interpreter for fullspeed debugging support (see above)
   static ByteSize interp_only_mode_offset() { return byte_offset_of(JavaThread, _interp_only_mode); }
   bool is_interp_only_mode()                { return (_interp_only_mode != 0); }
-  int get_interp_only_mode()                { return _interp_only_mode; }
-  int set_interp_only_mode(int val)         { return _interp_only_mode = val; }
-  void increment_interp_only_mode()         { ++_interp_only_mode; }
-  void decrement_interp_only_mode()         { --_interp_only_mode; }
+  void set_interp_only_mode(bool val)       { _interp_only_mode = val ? 1 : 0; }
 
   // support for cached flag that indicates whether exceptions need to be posted for this thread
   // if this is false, we can avoid deoptimizing when events are thrown
@@ -1361,6 +1355,20 @@ class ThreadInClassInitializer : public StackObj {
   }
   ~ThreadInClassInitializer() {
     _thread->set_class_being_initialized(_previous);
+  }
+};
+
+class ThrowingUnsafeAccessError : public StackObj {
+  JavaThread* _thread;
+  bool _prev;
+public:
+  ThrowingUnsafeAccessError(JavaThread* thread) :
+      _thread(thread),
+      _prev(thread->is_throwing_unsafe_access_error()) {
+    _thread->set_throwing_unsafe_access_error(true);
+  }
+  ~ThrowingUnsafeAccessError() {
+    _thread->set_throwing_unsafe_access_error(_prev);
   }
 };
 

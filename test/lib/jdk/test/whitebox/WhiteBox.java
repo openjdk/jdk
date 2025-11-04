@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,20 @@
 package jdk.test.whitebox;
 
 import java.lang.management.MemoryUsage;
+import java.lang.ref.Reference;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.security.BasicPermission;
 import java.util.Objects;
 
 import jdk.test.whitebox.parser.DiagnosticCommand;
 
 public class WhiteBox {
-  @SuppressWarnings("serial")
-  public static class WhiteBoxPermission extends BasicPermission {
-    public WhiteBoxPermission(String s) {
-      super(s);
-    }
-  }
 
   private WhiteBox() {}
   private static final WhiteBox instance = new WhiteBox();
@@ -81,6 +78,8 @@ public class WhiteBox {
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
 
+  public native boolean  hasExternalSymbolsStripped();
+
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
     Objects.requireNonNull(o);
@@ -98,6 +97,8 @@ public class WhiteBox {
   // Returns the potentially abridged form of `str` as it would be
   // printed by the VM.
   public native String printString(String str, int maxLength);
+
+  public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
     // Make sure class name is in the correct format
@@ -298,10 +299,6 @@ public class WhiteBox {
   public native int g1ActiveMemoryNodeCount();
   public native int[] g1MemoryNodeIds();
 
-  // Parallel GC
-  public native long psVirtualSpaceAlignment();
-  public native long psHeapGenerationAlignment();
-
   /**
    * Enumerates old regions with liveness less than specified and produces some statistics
    * @param liveness percent of region's liveness (live_objects / total_region_size * 100).
@@ -326,6 +323,10 @@ public class WhiteBox {
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
   public native void NMTArenaMalloc(long arena, long size);
+
+  // Sanitizers
+  public native boolean isAsanEnabled();
+  public native boolean isUbsanEnabled();
 
   // Compiler
 
@@ -491,6 +492,12 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
+  private native void     relocateNMethodFromMethod0(Executable method, int type);
+  public         void     relocateNMethodFromMethod(Executable method, int type) {
+    Objects.requireNonNull(method);
+    relocateNMethodFromMethod0(method, type);
+  }
+  public native void    relocateNMethodFromAddr(long address, int type);
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
@@ -560,6 +567,53 @@ public class WhiteBox {
 
   // Force Full GC
   public native void fullGC();
+
+  // Infrastructure for waitForReferenceProcessing()
+  private static volatile Method waitForReferenceProcessingMethod = null;
+
+  private static Method getWaitForReferenceProcessingMethod() {
+    Method wfrp = waitForReferenceProcessingMethod;
+    if (wfrp == null) {
+      try {
+        wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+        wfrp.setAccessible(true);
+        assert wfrp.getReturnType().equals(boolean.class);
+        Class<?>[] ev = wfrp.getExceptionTypes();
+        assert ev.length == 1;
+        assert ev[0] == InterruptedException.class;
+        waitForReferenceProcessingMethod = wfrp;
+      } catch (InaccessibleObjectException e) {
+        throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open to test?", e);
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return wfrp;
+  }
+
+  /**
+   * Wait for reference processing, via Reference.waitForReferenceProcessing().
+   * Callers of this method will need the
+   * @modules java.base/java.lang.ref:open
+   * jtreg tag.
+   *
+   * This method should usually be called after a call to WhiteBox.fullGC().
+   */
+  public boolean waitForReferenceProcessing() throws InterruptedException {
+    try {
+      Method wfrp = getWaitForReferenceProcessingMethod();
+      return (Boolean) wfrp.invoke(null);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Shouldn't happen, we call setAccessible()", e);
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof InterruptedException) {
+        throw (InterruptedException) cause;
+      } else {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 
   // Returns true if the current GC supports concurrent collection control.
   public native boolean supportsConcurrentGCBreakpoints();
@@ -647,6 +701,8 @@ public class WhiteBox {
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
   public native void readFromNoaccessArea();
+
+  public native void decodeNKlassAndAccessKlass(int nKlass);
   public native long getThreadStackSize();
   public native long getThreadRemainingStackSize();
 
@@ -762,11 +818,13 @@ public class WhiteBox {
 
   // Container testing
   public native boolean isContainerized();
-  public native int validateCgroup(String procCgroups,
+  public native int validateCgroup(boolean cgroupsV2Enabled,
+                                   String controllersFile,
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
   public native long hostPhysicalMemory();
+  public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 
@@ -791,9 +849,11 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
-  public native void lockCritical();
+  public native void busyWaitCPUTime(int cpuTimeMs);
 
-  public native void unlockCritical();
+
+  // returns true if supported, false if not
+  public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
 
   public native void pinObject(Object o);
 
@@ -803,4 +863,9 @@ public class WhiteBox {
 
   public native void preTouchMemory(long addr, long size);
   public native long rss();
+
+  public native boolean isStatic();
+
+  // Force a controlled crash (debug builds only)
+  public native void controlledCrash(int how);
 }

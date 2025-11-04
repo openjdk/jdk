@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
@@ -79,6 +78,7 @@ public class ClassFileVersionsTest {
         // for JDK 10 through FEATURE.
         for (int i = 10; i <= FEATURE; i++) {
             result.add(new Object[]{ 44 + i, 0, Set.of()});
+            result.add(new Object[]{ 44 + i, 0, Set.of(TRANSITIVE)});
         }
 
         result.add(new Object[]{ 44 + FEATURE,
@@ -111,7 +111,6 @@ public class ClassFileVersionsTest {
         for (int i = 10; i <= FEATURE ; i++) {
             // Major class file version of JDK N is 44+n
             result.add(new Object[]{i + 44, 0, Set.of(STATIC)});
-            result.add(new Object[]{i + 44, 0, Set.of(TRANSITIVE)});
             result.add(new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)});
         }
 

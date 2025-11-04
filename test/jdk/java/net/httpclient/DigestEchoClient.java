@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -44,7 +45,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,15 +52,19 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
 
 import static java.lang.System.out;
+import static java.lang.System.err;
 import static java.lang.String.format;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
-/**
+/*
  * @test
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server.
@@ -188,7 +192,11 @@ public class DigestEchoClient {
     static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
     public HttpClient newHttpClient(DigestEchoServer server) {
         clientCount.incrementAndGet();
-        HttpClient.Builder builder = HttpClient.newBuilder();
+        HttpClient.Builder builder = switch (server.version()) {
+            case HTTP_3 -> HttpServerAdapters.createClientBuilderForH3()
+                    .version(Version.HTTP_3);
+            default -> HttpClient.newBuilder();
+        };
         builder = builder.proxy(ProxySelector.of(null));
         if (useSSL) {
             builder.sslContext(context);
@@ -222,11 +230,11 @@ public class DigestEchoClient {
     }
 
     public static List<Version> serverVersions(Version clientVersion) {
-        if (clientVersion == Version.HTTP_1_1) {
-            return List.of(clientVersion);
-        } else {
-            return List.of(Version.values());
-        }
+        return switch (clientVersion) {
+            case HTTP_1_1 -> List.of(clientVersion);
+            case HTTP_2 -> List.of(Version.HTTP_1_1, Version.HTTP_2);
+            case HTTP_3 -> List.of(Version.HTTP_2, Version.HTTP_3);
+        };
     }
 
     public static List<Version> clientVersions() {
@@ -260,8 +268,9 @@ public class DigestEchoClient {
         }
         try {
             for (DigestEchoServer.HttpAuthType authType : types) {
-                // The test server does not support PROXY305 properly
-                if (authType == DigestEchoServer.HttpAuthType.PROXY305) continue;
+                // The test server does not support PROXY305 or SERVER307 properly
+                if (authType == DigestEchoServer.HttpAuthType.PROXY305 ||
+                    authType == DigestEchoServer.HttpAuthType.SERVER307) continue;
                 EnumSet<DigestEchoServer.HttpAuthSchemeType> basics =
                         EnumSet.of(DigestEchoServer.HttpAuthSchemeType.BASICSERVER,
                                 DigestEchoServer.HttpAuthSchemeType.BASIC);
@@ -271,6 +280,13 @@ public class DigestEchoClient {
                             authType);
                     for (Version clientVersion : clientVersions()) {
                         for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
                             for (boolean expectContinue : expectContinue(serverVersion)) {
                                 for (boolean async : BOOLEANS) {
                                     for (boolean preemptive : BOOLEANS) {
@@ -291,6 +307,13 @@ public class DigestEchoClient {
                             authType);
                     for (Version clientVersion : clientVersions()) {
                         for (Version serverVersion : serverVersions(clientVersion)) {
+                            if (serverVersion == Version.HTTP_3) {
+                                if (!useSSL) continue;
+                                switch (authType) {
+                                    case PROXY, PROXY305: continue;
+                                    default: break;
+                                }
+                            }
                             for (boolean expectContinue : expectContinue(serverVersion)) {
                                 for (boolean async : BOOLEANS) {
                                     dec.testDigest(clientVersion, serverVersion,
@@ -304,12 +327,15 @@ public class DigestEchoClient {
         } catch(Throwable t) {
             out.println(DigestEchoServer.now()
                     + ": Unexpected exception: " + t);
+            t.printStackTrace(System.out);
+            err.println(DigestEchoServer.now()
+                    + ": Unexpected exception: " + t);
             t.printStackTrace();
             failed = t;
             throw t;
         } finally {
             Thread.sleep(100);
-            AssertionError trackFailed = TRACKER.check(500);
+            AssertionError trackFailed = TRACKER.check(Utils.adjustTimeout(1000));
             EchoServers.stop();
             System.out.println(" ---------------------------------------------------------- ");
             System.out.println(String.format("DigestEchoClient %s %s", useSSL ? "SSL" : "CLEAR", types));
@@ -365,6 +391,14 @@ public class DigestEchoClient {
                 .isPresent();
     }
 
+    static Http3DiscoveryMode serverConfig(int step, DigestEchoServer server) {
+        var config = server.serverConfig();
+        return switch (config) {
+            case HTTP_3_URI_ONLY -> config;
+            default -> Http3DiscoveryMode.ALT_SVC;
+        };
+    }
+
     final static AtomicLong basics = new AtomicLong();
     final static AtomicLong basicCount = new AtomicLong();
     // @Test
@@ -393,15 +427,22 @@ public class DigestEchoClient {
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         String auth = null;
+        Throwable failed = null;
+        URI reqURI = null;
 
         try {
-            for (int i=0; i<data.length; i++) {
+            for (int i = 0; i < data.length; i++) {
                 out.println(DigestEchoServer.now() + " ----- iteration " + i + " -----");
-                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i+1));
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
                 assert lines.size() == i + 1;
                 String body = lines.stream().collect(Collectors.joining("\r\n"));
                 BodyPublisher reqBody = BodyPublishers.ofString(body);
-                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).version(clientVersion)
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",addHeaders=" + addHeaders + ",preemptive=" + preemptive
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",basicCount=" + basicCount.get());
+                HttpRequest.Builder builder = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
                         .POST(reqBody).expectContinue(expectContinue);
                 boolean isTunnel = isProxy(authType) && useSSL;
                 if (addHeaders) {
@@ -433,9 +474,21 @@ public class DigestEchoClient {
                 HttpResponse<Stream<String>> resp;
                 try {
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
                     }
                 } catch (Throwable t) {
                     long stop = System.nanoTime();
@@ -443,17 +496,10 @@ public class DigestEchoClient {
                         long n = basicCount.getAndIncrement();
                         basics.set((basics.get() * n + (stop - start)) / (n + 1));
                     }
-                    // unwrap CompletionException
-                    if (t instanceof CompletionException) {
-                        assert t.getCause() != null;
-                        t = t.getCause();
-                    }
-                    out.println(DigestEchoServer.now()
-                            + ": Unexpected exception: " + t);
-                    throw new RuntimeException("Unexpected exception: " + t, t);
+                    throw t;
                 }
 
-                if (addHeaders && !preemptive && (i==0 || isSchemeDisabled())) {
+                if (addHeaders && !preemptive && (i == 0 || isSchemeDisabled())) {
                     assert resp.statusCode() == 401 || resp.statusCode() == 407;
                     Stream<String> respBody = resp.body();
                     if (respBody != null) {
@@ -462,12 +508,27 @@ public class DigestEchoClient {
                     }
                     System.out.println(String.format("%s received: adding header %s: %s",
                             resp.statusCode(), authorizationKey(authType), auth));
-                    request = HttpRequest.newBuilder(uri).version(clientVersion)
+                    reqURI = URI.create(baseReq + ",withAuthorization="
+                            + authType + ",basicCount=" + basicCount.get());
+                    request = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                            .setOption(H3_DISCOVERY, server.serverConfig())
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
+                    }
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
                     }
                 }
                 final List<String> respLines;
@@ -500,15 +561,30 @@ public class DigestEchoClient {
                     throw new RuntimeException("Unexpected response: " + respLines);
                 }
             }
-        } finally {
-            client = null;
-            System.gc();
-            while (!ref.refersTo(null)) {
-                System.gc();
-                if (queue.remove(100) == ref) break;
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
             }
-            var error = TRACKER.checkShutdown(900);
-            if (error != null) throw error;
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
+        } finally {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(900), false);
+                if (error != null) {
+                    if (failed != null) error.addSuppressed(failed);
+                    throw error;
+                }
+            }
         }
         System.out.println("OK");
     }
@@ -541,21 +617,28 @@ public class DigestEchoClient {
                 server.getServerAddress(), "/foo/");
 
         HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         byte[] cnonce = new byte[16];
         String cnonceStr = null;
         DigestEchoServer.DigestResponse challenge = null;
-
+        URI reqURI = null;
+        Throwable failed = null;
         try {
-            for (int i=0; i<data.length; i++) {
+            for (int i = 0; i < data.length; i++) {
                 out.println(DigestEchoServer.now() + "----- iteration " + i + " -----");
-                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i+1));
+                List<String> lines = List.of(Arrays.copyOfRange(data, 0, i + 1));
                 assert lines.size() == i + 1;
                 String body = lines.stream().collect(Collectors.joining("\r\n"));
                 HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
+                URI baseReq = URI.create(uri + "?iteration=" + i + ",async=" + async
+                        + ",expectContinue=" + expectContinue + ",version=" + clientVersion);
+                reqURI = URI.create(baseReq + ",digestCount=" + digestCount.get());
                 HttpRequest.Builder reqBuilder = HttpRequest
-                        .newBuilder(uri).version(clientVersion).POST(reqBody)
+                        .newBuilder(reqURI).version(clientVersion).POST(reqBody)
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
                         .expectContinue(expectContinue);
 
                 boolean isTunnel = isProxy(authType) && useSSL;
@@ -578,9 +661,21 @@ public class DigestEchoClient {
                 HttpRequest request = reqBuilder.build();
                 HttpResponse<Stream<String>> resp;
                 if (async) {
+                    out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                     resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                 } else {
+                    out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                     resp = client.send(request, BodyHandlers.ofLines());
+                }
+                if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                    out.println("Response version [" + i + "]: " + resp.version());
+                    int required = isRedirecting(authType) ? 1 : 0;
+                    if (i > required) {
+                        if (resp.version() != serverVersion) {
+                            throw new AssertionError("Expected HTTP/3, but got: "
+                                    + resp.version());
+                        }
+                    }
                 }
                 System.out.println(resp);
                 assert challenge != null || resp.statusCode() == 401 || resp.statusCode() == 407
@@ -609,19 +704,32 @@ public class DigestEchoClient {
                     challenge = DigestEchoServer.DigestResponse
                             .create(authenticate.substring("Digest ".length()));
                     String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
+                    reqURI = URI.create(baseReq + ",withAuth=" + authType + ",digestCount=" + digestCount.get());
                     try {
-                        request = HttpRequest.newBuilder(uri).version(clientVersion)
-                            .POST(reqBody).header(authorizationKey(authType), auth).build();
+                        request = HttpRequest.newBuilder(reqURI).version(clientVersion)
+                                .setOption(H3_DISCOVERY, serverConfig(i, server))
+                                .POST(reqBody).header(authorizationKey(authType), auth).build();
                     } catch (IllegalArgumentException x) {
                         throw x;
                     }
-
                     if (async) {
+                        out.printf("%s client.sendAsync(%s)%n", DigestEchoServer.now(), request);
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
                     } else {
+                        out.printf("%s client.send(%s)%n", DigestEchoServer.now(), request);
                         resp = client.send(request, BodyHandlers.ofLines());
                     }
                     System.out.println(resp);
+                    if (serverVersion == Version.HTTP_3 && clientVersion == Version.HTTP_3) {
+                        out.println("Response version [" + i + "]: " + resp.version());
+                        int required = isRedirecting(authType) ? 1 : 0;
+                        if (i > required) {
+                            if (resp.version() != serverVersion) {
+                                throw new AssertionError("Expected HTTP/3, but got: "
+                                        + resp.version());
+                            }
+                        }
+                    }
                 }
                 final List<String> respLines;
                 try {
@@ -649,12 +757,37 @@ public class DigestEchoClient {
                     throw new RuntimeException("Unexpected response: " + respLines);
                 }
             }
+        } catch (Throwable t) {
+            if (reqURI == null) {
+                failed = t;
+                throw t;
+            }
+            String decoration = "%s Unexpected exception %s for %s".formatted(DigestEchoServer.now(), t, reqURI);
+            RuntimeException decorated = new RuntimeException(decoration, t);
+            failed = decorated;
+            throw decorated;
         } finally {
+            if (client != null) {
+                var tracker = TRACKER.getTracker(client);
+                client = null;
+                System.gc();
+                while (!ref.refersTo(null)) {
+                    System.gc();
+                    if (queue.remove(100) == ref) break;
+                }
+                var error = TRACKER.checkShutdown(tracker, Utils.adjustTimeout(900), false);
+                if (error != null) {
+                    if (failed != null) {
+                        error.addSuppressed(failed);
+                    }
+                    throw error;
+                }
+            }
         }
         System.out.println("OK");
     }
 
-    // WARNING: This is not a full fledged implementation of DIGEST.
+    // WARNING: This is not a full-fledged implementation of DIGEST.
     // It does contain bugs and inaccuracy.
     static String digestResponse(URI uri, String method, DigestEchoServer.DigestResponse challenge, String cnonce)
             throws NoSuchAlgorithmException {
@@ -675,32 +808,34 @@ public class DigestEchoClient {
     }
 
     static String authenticateKey(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return "www-authenticate";
-            case SERVER307: return "www-authenticate";
-            case PROXY: return "proxy-authenticate";
-            case PROXY305: return "proxy-authenticate";
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER    -> "www-authenticate";
+            case SERVER307 -> "www-authenticate";
+            case PROXY     -> "proxy-authenticate";
+            case PROXY305  -> "proxy-authenticate";
+        };
     }
 
     static String authorizationKey(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return "authorization";
-            case SERVER307: return "Authorization";
-            case PROXY: return "Proxy-Authorization";
-            case PROXY305: return "proxy-Authorization";
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER    -> "authorization";
+            case SERVER307 -> "Authorization";
+            case PROXY     -> "Proxy-Authorization";
+            case PROXY305  -> "proxy-Authorization";
+        };
     }
 
     static boolean isProxy(DigestEchoServer.HttpAuthType authType) {
-        switch (authType) {
-            case SERVER: return false;
-            case SERVER307: return false;
-            case PROXY: return true;
-            case PROXY305: return true;
-            default: throw new InternalError("authType: " + authType);
-        }
+        return switch (authType) {
+            case SERVER, SERVER307 -> false;
+            case PROXY,  PROXY305  -> true;
+        };
+    }
+
+    static boolean isRedirecting(DigestEchoServer.HttpAuthType authType) {
+        return switch (authType) {
+            case SERVER307, PROXY305 -> true;
+            case SERVER,    PROXY    -> false;
+        };
     }
 }

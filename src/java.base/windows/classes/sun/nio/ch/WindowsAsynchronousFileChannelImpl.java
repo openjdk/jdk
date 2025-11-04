@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.util.concurrent.*;
 import java.nio.ByteBuffer;
@@ -34,6 +36,7 @@ import java.io.FileDescriptor;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.event.FileForceEvent;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -383,10 +386,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates read operation and handles completion result.
      */
     private class ReadTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer dst;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to dst if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -404,9 +410,12 @@ public class WindowsAsynchronousFileChannelImpl
             this.result = result;
         }
 
-        void releaseBufferIfSubstituted() {
-            if (buf != dst)
+        void releaseScopeOrCacheSubstitute() {
+            if (buf == dst) {
+                IOUtil.releaseScope(dst);
+            } else if (RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {
@@ -437,12 +446,13 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (dst instanceof DirectBuffer) {
+            if (dst.isDirect()) {
                 buf = dst;
-                address = ((DirectBuffer)dst).address() + pos;
+                IOUtil.acquireScope(dst, true);
+                address = IOUtil.bufferAddress(dst) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
-                address = ((DirectBuffer)buf).address();
+                address = IOUtil.bufferAddress(buf) + pos;
             }
 
             boolean pending = false;
@@ -472,7 +482,7 @@ public class WindowsAsynchronousFileChannelImpl
             } finally {
                 if (!pending)
                     // release resources
-                    releaseBufferIfSubstituted();
+                    releaseScopeOrCacheSubstitute();
                 end();
             }
 
@@ -487,8 +497,8 @@ public class WindowsAsynchronousFileChannelImpl
         public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
 
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
+            // release direct buffer scope or return substitute to cache
+            releaseScopeOrCacheSubstitute();
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
@@ -505,8 +515,8 @@ public class WindowsAsynchronousFileChannelImpl
             if (error == ERROR_HANDLE_EOF) {
                 completed(-1, false);
             } else {
-                // return direct buffer to cache if substituted
-                releaseBufferIfSubstituted();
+                // release direct buffer scope or return substitute to cache
+                releaseScopeOrCacheSubstitute();
 
                 // release waiters
                 if (isOpen()) {
@@ -569,10 +579,13 @@ public class WindowsAsynchronousFileChannelImpl
      * Task that initiates write operation and handles completion result.
      */
     private class WriteTask<A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer src;
         private final int pos, rem;     // buffer position/remaining
         private final long position;    // file position
         private final PendingFuture<Integer,A> result;
+        private volatile boolean released;
 
         // set to src if direct; otherwise set to substituted direct buffer
         private volatile ByteBuffer buf;
@@ -590,9 +603,12 @@ public class WindowsAsynchronousFileChannelImpl
             this.result = result;
         }
 
-        void releaseBufferIfSubstituted() {
-            if (buf != src)
+        void releaseScopeOrCacheSubstitute() {
+            if (buf == src) {
+                IOUtil.releaseScope(src);
+            } else if (RELEASED.compareAndSet(this, false, true)) {
                 Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
 
         void updatePosition(int bytesTransferred) {
@@ -613,9 +629,10 @@ public class WindowsAsynchronousFileChannelImpl
             long address;
 
             // Substitute a native buffer if not direct
-            if (src instanceof DirectBuffer) {
+            if (src.isDirect()) {
                 buf = src;
-                address = ((DirectBuffer)src).address() + pos;
+                IOUtil.acquireScope(src, true);
+                address = IOUtil.bufferAddress(src) + pos;
             } else {
                 buf = Util.getTemporaryDirectBuffer(rem);
                 buf.put(src);
@@ -623,7 +640,7 @@ public class WindowsAsynchronousFileChannelImpl
                 // temporarily restore position as we don't know how many bytes
                 // will be written
                 src.position(pos);
-                address = ((DirectBuffer)buf).address();
+                address = IOUtil.bufferAddress(buf) + pos;
             }
 
             try {
@@ -646,7 +663,7 @@ public class WindowsAsynchronousFileChannelImpl
                 result.setFailure(toIOException(x));
 
                 // release resources
-                releaseBufferIfSubstituted();
+                releaseScopeOrCacheSubstitute();
                 if (overlapped != 0L)
                     ioCache.remove(overlapped);
 
@@ -665,8 +682,8 @@ public class WindowsAsynchronousFileChannelImpl
         public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
 
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
+            // release direct buffer scope or return substitute to cache
+            releaseScopeOrCacheSubstitute();
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
@@ -679,8 +696,8 @@ public class WindowsAsynchronousFileChannelImpl
 
         @Override
         public void failed(int error, IOException x) {
-            // return direct buffer to cache if substituted
-            releaseBufferIfSubstituted();
+            // release direct buffer scope or return substitute to cache
+            releaseScopeOrCacheSubstitute();
 
             // release waiters and invoker completion handler
             if (isOpen()) {

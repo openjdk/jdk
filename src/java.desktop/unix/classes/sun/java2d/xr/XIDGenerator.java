@@ -33,7 +33,7 @@ package sun.java2d.xr;
  * @author Clemens Eisserer
  */
 
-public class XIDGenerator {
+public final class XIDGenerator {
     private static final int XID_BUFFER_SIZE = 512;
 
     int[] xidBuffer = new int[XID_BUFFER_SIZE];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
  /*
  * @test
- * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269
+ * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269 8346948
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
- * @run testng/othervm -Djava.locale.providers=CLDR TimeZoneNamesTest
+ * @run testng TimeZoneNamesTest
  */
 
 import java.text.DateFormatSymbols;
@@ -51,7 +51,7 @@ public class TimeZoneNamesTest {
         return new Object[][] {
             // tzid, locale, style, expected
 
-            // This list is as of CLDR version 44, and should be examined
+            // This list is as of CLDR version 47, and should be examined
             // on the CLDR data upgrade.
 
             // no "metazone" zones
@@ -193,7 +193,7 @@ public class TimeZoneNamesTest {
                         "AWST",
                         "Australian Western Daylight Time",
                         "AWDT",
-                        "Western Australia Time",
+                        "Australian Western Time",
                         "AWT"},
             {"Africa/Harare",    Locale.US, "Central Africa Time",
                         "CAT",

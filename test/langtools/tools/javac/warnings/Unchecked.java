@@ -3,7 +3,7 @@
  * @bug 4986256
  * @compile/ref=Unchecked.noLint.out                         -XDrawDiagnostics Unchecked.java
  * @compile/ref=Unchecked.lintUnchecked.out -Xlint:unchecked -XDrawDiagnostics Unchecked.java
- * @compile/ref=Unchecked.lintAll.out       -Xlint:all,-path -XDrawDiagnostics Unchecked.java
+ * @compile/ref=Unchecked.lintAll.out       -Xlint:all       -XDrawDiagnostics Unchecked.java
  */
 
 import java.util.ArrayList;

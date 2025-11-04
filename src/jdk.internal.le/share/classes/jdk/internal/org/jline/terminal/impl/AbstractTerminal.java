@@ -287,4 +287,12 @@ public abstract class AbstractTerminal implements TerminalExt {
     public ColorPalette getPalette() {
         return palette;
     }
+
+    @Override
+    public String toString() {
+        return getKind() + "[" + "name='"
+                + name + '\'' + ", type='"
+                + type + '\'' + ", size='"
+                + getSize() + '\'' + ']';
+    }
 }

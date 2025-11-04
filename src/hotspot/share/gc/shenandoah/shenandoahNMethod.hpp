@@ -71,7 +71,7 @@ public:
   static inline void attach_gc_data(nmethod* nm, ShenandoahNMethod* gc_data);
 
   void assert_correct() NOT_DEBUG_RETURN;
-  void assert_same_oops(bool allow_dead = false) NOT_DEBUG_RETURN;
+  void assert_same_oops() NOT_DEBUG_RETURN;
 
 private:
   static void detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops, bool& _has_non_immed_oops);

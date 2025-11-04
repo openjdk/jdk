@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,8 @@
                                  -XX:NativeMemoryTracking=detail TestElfDirectRead
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.whitebox.WhiteBox;
 
 public class TestElfDirectRead {
@@ -68,10 +67,8 @@ public class TestElfDirectRead {
     wb.disableElfSectionCache();
     ProcessBuilder pb = new ProcessBuilder();
     OutputAnalyzer output;
-    // Grab my own PID
-    String pid = Long.toString(ProcessTools.getProcessId());
 
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail"});
+    pb.command(new PidJcmdExecutor().getCommandLine("VM.native_memory", "detail"));
     output = new OutputAnalyzer(pb.start());
     // This is a pre-populated stack frame, should always exist if can decode
     output.shouldContain("MallocSiteTable::new_entry");

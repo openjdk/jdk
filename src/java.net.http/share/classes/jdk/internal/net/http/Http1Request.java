@@ -81,15 +81,20 @@ class Http1Request {
 
     private void logHeaders(String completeHeaders) {
         if (Log.headers()) {
-            //StringBuilder sb = new StringBuilder(256);
-            //sb.append("REQUEST HEADERS:\n");
-            //Log.dumpHeaders(sb, "    ", systemHeaders);
-            //Log.dumpHeaders(sb, "    ", userHeaders);
-            //Log.logHeaders(sb.toString());
-
-            String s = completeHeaders.replaceAll("\r\n", "\n");
-            if (s.endsWith("\n\n")) s = s.substring(0, s.length() - 2);
-            Log.logHeaders("REQUEST HEADERS:\n{0}\n", s);
+            StringBuilder sb = new StringBuilder(completeHeaders.length());
+            sb.append("REQUEST HEADERS:\n");
+            boolean[] firstLine = {true};
+            completeHeaders.lines().forEach(line -> {
+                // First line contains `GET /foo HTTP/1.1`.
+                // Convert it to look like other `Log.logHeaders()` outputs.
+                if (firstLine[0]) {
+                    sb.append("  ").append(line).append('\n');
+                    firstLine[0] = false;
+                } else if (!line.isBlank()) {
+                    sb.append("    ").append(line).append('\n');
+                }
+            });
+            Log.logHeaders(sb.toString());
         }
     }
 
@@ -285,7 +290,8 @@ class Http1Request {
         }
         String uriString = requestURI();
         StringBuilder sb = new StringBuilder(64);
-        sb.append(request.method())
+        String method = request.method();
+        sb.append(method)
           .append(' ')
           .append(uriString)
           .append(" HTTP/1.1\r\n");
@@ -295,11 +301,15 @@ class Http1Request {
             systemHeadersBuilder.setHeader("Host", hostString());
         }
 
-        // GET, HEAD and DELETE with no request body should not set the Content-Length header
         if (requestPublisher != null) {
             contentLength = requestPublisher.contentLength();
             if (contentLength == 0) {
-                systemHeadersBuilder.setHeader("Content-Length", "0");
+                // PUT and POST with no request body should set the Content-Length header
+                // even when the content is empty.
+                // Other methods defined in RFC 9110 should not send the header in that case.
+                if ("POST".equals(method) || "PUT".equals(method)) {
+                    systemHeadersBuilder.setHeader("Content-Length", "0");
+                }
             } else if (contentLength > 0) {
                 systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
                 streaming = false;

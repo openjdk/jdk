@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import java.util.Map;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.im.InputMethodAdapter;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 final class WInputMethod extends InputMethodAdapter
 {
@@ -124,6 +126,8 @@ final class WInputMethod extends InputMethodAdapter
     public WInputMethod()
     {
         context = createNativeContext();
+        disposerRecord = new ContextDisposerRecord(context);
+        Disposer.addRecord(this, disposerRecord);
         cmode = getConversionStatus(context);
         open = getOpenStatus(context);
         currentLocale = getNativeLocale();
@@ -132,16 +136,23 @@ final class WInputMethod extends InputMethodAdapter
         }
     }
 
-    @Override
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable
-    {
-        // Release the resources used by the native input context.
-        if (context!=0) {
-            destroyNativeContext(context);
-            context=0;
+    private final ContextDisposerRecord disposerRecord;
+
+    private static final class ContextDisposerRecord implements DisposerRecord {
+
+        private final int context;
+        private volatile boolean disposed;
+
+        ContextDisposerRecord(int c) {
+            context = c;
         }
-        super.finalize();
+
+        public synchronized void dispose() {
+            if (!disposed) {
+                destroyNativeContext(context);
+            }
+            disposed = true;
+        }
     }
 
     @Override
@@ -151,9 +162,7 @@ final class WInputMethod extends InputMethodAdapter
 
     @Override
     public void dispose() {
-        // Due to a memory management problem in Windows 98, we should retain
-        // the native input context until this object is finalized. So do
-        // nothing here.
+        disposerRecord.dispose();
     }
 
     /**
@@ -319,6 +328,10 @@ final class WInputMethod extends InputMethodAdapter
             isLastFocussedActiveClient = isAc;
         }
         isActive = true;
+
+        // Sync currentLocale with the Windows keyboard layout which could be changed
+        // while the component was inactive.
+        getLocale();
         if (currentLocale != null) {
             setLocale(currentLocale, true);
         }
@@ -444,6 +457,7 @@ final class WInputMethod extends InputMethodAdapter
     @Override
     public void removeNotify() {
         endCompositionNative(context, DISCARD_INPUT);
+        disableNativeIME(awtFocussedComponentPeer);
         awtFocussedComponent = null;
         awtFocussedComponentPeer = null;
     }
@@ -654,8 +668,8 @@ final class WInputMethod extends InputMethodAdapter
 
     }
 
-    private native int createNativeContext();
-    private native void destroyNativeContext(int context);
+    private static native int createNativeContext();
+    private static native void destroyNativeContext(int context);
     private native void enableNativeIME(WComponentPeer peer, int context, boolean useNativeCompWindow);
     private native void disableNativeIME(WComponentPeer peer);
     private native void handleNativeIMEEvent(WComponentPeer peer, AWTEvent e);

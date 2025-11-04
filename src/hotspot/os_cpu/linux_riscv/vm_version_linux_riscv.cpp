@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"
@@ -101,21 +100,28 @@
 #endif
 
 uint32_t VM_Version::cpu_vector_length() {
-  assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
+}
+
+void VM_Version::RVExtFeatureValue::log_enabled() {
+  log_debug(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+}
+
+void VM_Version::RVNonExtFeatureValue::log_enabled() {
+  log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
 void VM_Version::setup_cpu_available_features() {
 
-  assert(ext_I.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
-  assert(ext_M.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
-  assert(ext_A.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
-  assert(ext_F.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
-  assert(ext_D.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
-  assert(ext_C.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
-  assert(ext_Q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
-  assert(ext_H.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
-  assert(ext_V.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
+  assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
+  assert(ext_m.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
+  assert(ext_a.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
+  assert(ext_f.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
+  assert(ext_d.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
+  assert(ext_c.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
+  assert(ext_q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
+  assert(ext_h.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
+  assert(ext_v.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
 
   if (!RiscvHwprobe::probe_features()) {
     os_aux_features();
@@ -127,9 +133,12 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
+    os::snprintf_checked(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
+
+  int features_offset = strnlen(buf, sizeof(buf));
+
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
@@ -143,9 +152,8 @@ void VM_Version::setup_cpu_available_features() {
         continue;
       }
 
-      log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
-             _feature_list[i]->pretty(),
-             _feature_list[i]->value());
+      _feature_list[i]->log_enabled();
+
       // The feature string
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
@@ -192,7 +200,9 @@ void VM_Version::setup_cpu_available_features() {
     }
   }
 
-  _features_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf);
+
+  _features_string = _cpu_info_string + features_offset;
 }
 
 void VM_Version::os_aux_features() {
@@ -299,7 +309,7 @@ void VM_Version::rivos_features() {
 
   ext_Zvfh.enable_feature();
 
-  unaligned_access.enable_feature(MISALIGNED_FAST);
+  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.

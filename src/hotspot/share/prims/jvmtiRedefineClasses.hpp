@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,8 +441,8 @@ class VM_RedefineClasses: public VM_Operation {
   void map_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
   void map_operand_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
   bool merge_constant_pools(const constantPoolHandle& old_cp,
-    const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
-    int *merge_cp_length_p, TRAPS);
+    const constantPoolHandle& scratch_cp, constantPoolHandle& merge_cp_p,
+    int& merge_cp_length_p, TRAPS);
   jvmtiError merge_cp_and_rewrite(InstanceKlass* the_class,
     InstanceKlass* scratch_class, TRAPS);
   u2 rewrite_cp_ref_in_annotation_data(

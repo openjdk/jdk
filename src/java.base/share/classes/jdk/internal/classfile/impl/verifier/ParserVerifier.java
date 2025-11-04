@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import java.util.stream.Collectors;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static jdk.internal.classfile.impl.StackMapGenerator.*;
 
-/**
- * ParserVerifier performs selected checks of the class file format according to
- * {@jvms 4.8 Format Checking}
- *
- * @see <a href="https://raw.githubusercontent.com/openjdk/jdk/master/src/hotspot/share/classfile/classFileParser.cpp">hotspot/share/classfile/classFileParser.cpp</a>
- */
+/// ParserVerifier performs selected checks of the class file format according to
+/// {@jvms 4.8 Format Checking}.
+///
+/// From `classFileParser.cpp`.
+///
 public record ParserVerifier(ClassModel classModel) {
 
     List<VerifyError> verify() {
@@ -65,48 +64,77 @@ public record ParserVerifier(ClassModel classModel) {
 
     private void verifyConstantPool(List<VerifyError> errors) {
         for (var cpe : classModel.constantPool()) {
-            Consumer<Runnable> check = c -> {
-                try {
-                    c.run();
-                } catch (VerifyError|Exception e) {
-                    errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel))));
+            try {
+                switch (cpe) {
+                    case DoubleEntry de -> de.doubleValue();
+                    case FloatEntry fe -> fe.floatValue();
+                    case IntegerEntry ie -> ie.intValue();
+                    case LongEntry le -> le.longValue();
+                    case Utf8Entry ue -> ue.stringValue();
+                    case ConstantDynamicEntry cde -> cde.asSymbol();
+                    case InvokeDynamicEntry ide -> ide.asSymbol();
+                    case ClassEntry ce -> ce.asSymbol();
+                    case StringEntry se -> se.stringValue();
+                    case MethodHandleEntry mhe -> mhe.asSymbol();
+                    case MethodTypeEntry mte -> mte.asSymbol();
+                    case FieldRefEntry fre -> {
+                        try {
+                            fre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            fre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyFieldName(fre.name().stringValue());
+                    }
+                    case InterfaceMethodRefEntry imre -> {
+                        try {
+                            imre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            imre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyMethodName(imre.name().stringValue());
+                    }
+                    case MethodRefEntry mre -> {
+                        try {
+                            mre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            mre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        verifyMethodName(mre.name().stringValue());
+                    }
+                    case ModuleEntry me -> me.asSymbol();
+                    case NameAndTypeEntry nate -> {
+                        try {
+                            nate.name().stringValue();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        nate.type().stringValue();
+                    }
+                    case PackageEntry pe -> pe.asSymbol();
                 }
-            };
-            check.accept(switch (cpe) {
-                case DoubleEntry de -> de::doubleValue;
-                case FloatEntry fe -> fe::floatValue;
-                case IntegerEntry ie -> ie::intValue;
-                case LongEntry le -> le::longValue;
-                case Utf8Entry ue -> ue::stringValue;
-                case ConstantDynamicEntry cde -> cde::asSymbol;
-                case InvokeDynamicEntry ide -> ide::asSymbol;
-                case ClassEntry ce -> ce::asSymbol;
-                case StringEntry se -> se::stringValue;
-                case MethodHandleEntry mhe -> mhe::asSymbol;
-                case MethodTypeEntry mte -> mte::asSymbol;
-                case FieldRefEntry fre -> {
-                    check.accept(fre.owner()::asSymbol);
-                    check.accept(fre::typeSymbol);
-                    yield () -> verifyFieldName(fre.name().stringValue());
-                }
-                case InterfaceMethodRefEntry imre -> {
-                    check.accept(imre.owner()::asSymbol);
-                    check.accept(imre::typeSymbol);
-                    yield () -> verifyMethodName(imre.name().stringValue());
-                }
-                case MethodRefEntry mre -> {
-                    check.accept(mre.owner()::asSymbol);
-                    check.accept(mre::typeSymbol);
-                    yield () -> verifyMethodName(mre.name().stringValue());
-                }
-                case ModuleEntry me -> me::asSymbol;
-                case NameAndTypeEntry nate -> {
-                    check.accept(nate.name()::stringValue);
-                    yield () -> nate.type().stringValue();
-                }
-                case PackageEntry pe -> pe::asSymbol;
-            });
+            } catch (VerifyError|Exception e) {
+                errors.add(cpeVerifyError(cpe, e));
+            }
         }
+    }
+
+    private VerifyError cpeVerifyError(final PoolEntry cpe, final Throwable e) {
+        return new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel)));
     }
 
     private void verifyFieldName(String name) {
@@ -422,20 +450,21 @@ public record ParserVerifier(ClassModel classModel) {
 
     private int stackMapFrameSize(StackMapFrameInfo frame) {
         int ft = frame.frameType();
-        if (ft < 64) return 1;
-        if (ft < 128) return 1 + verificationTypeSize(frame.stack().getFirst());
-        if (ft > 246) {
-            if (ft == 247) return 3 + verificationTypeSize(frame.stack().getFirst());
-            if (ft < 252) return 3;
-            if (ft < 255) {
+        if (ft <= SAME_FRAME_END) return 1;
+        if (ft <= SAME_LOCALS_1_STACK_ITEM_FRAME_END) return 1 + verificationTypeSize(frame.stack().getFirst());
+        if (ft > RESERVED_END) {
+            if (ft == SAME_LOCALS_1_STACK_ITEM_EXTENDED) return 3 + verificationTypeSize(frame.stack().getFirst());
+            if (ft <= SAME_FRAME_EXTENDED) return 3;
+            if (ft <= APPEND_FRAME_END) {
                 var loc = frame.locals();
                 int l = 3;
-                for (int i = loc.size() + 251 - ft; i < loc.size(); i++) {
+                var k = ft - APPEND_FRAME_START + 1;
+                for (int i = loc.size() - k; i < loc.size(); i++) {
                     l += verificationTypeSize(loc.get(i));
                 }
                 return l;
             }
-            if (ft == 255) {
+            if (ft == FULL_FRAME) {
                 int l = 7;
                 for (var vt : frame.stack()) {
                     l += verificationTypeSize(vt);

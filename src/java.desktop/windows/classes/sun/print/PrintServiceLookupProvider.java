@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.print.attribute.standard.PrinterName;
 
 import sun.awt.util.ThreadGroupUtils;
 
-public class PrintServiceLookupProvider extends PrintServiceLookup {
+public final class PrintServiceLookupProvider extends PrintServiceLookup {
 
     private PrintService defaultPrintService;
     private PrintService[] printServices; /* includes the default printer */
@@ -105,12 +105,8 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
      * This isn't required by the API and there's a risk doing this will
      * lead people to assume its guaranteed.
      */
+    @Override
     public synchronized PrintService[] getPrintServices() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         if (printServices == null) {
             refreshServices();
         }
@@ -204,14 +200,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return true;
     }
 
+    @Override
     public PrintService[] getPrintServices(DocFlavor flavor,
                                            AttributeSet attributes) {
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         PrintRequestAttributeSet requestSet = null;
         PrintServiceAttributeSet serviceSet = null;
 
@@ -270,25 +262,16 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     /*
      * return empty array as don't support multi docs
      */
+    @Override
     public MultiDocPrintService[]
         getMultiDocPrintServices(DocFlavor[] flavors,
                                  AttributeSet attributes) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
         return new MultiDocPrintService[0];
     }
 
 
+    @Override
     public synchronized PrintService getDefaultPrintService() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPrintJobAccess();
-        }
-
 
         // Windows does not have notification for a change in default
         // so we always get the latest.

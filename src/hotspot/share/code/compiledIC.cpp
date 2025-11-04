@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
@@ -33,7 +32,7 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -56,8 +55,8 @@ CompiledICLocker::~CompiledICLocker() {
   }
 }
 
-bool CompiledICLocker::is_safe(nmethod* method) {
-  return CompiledICProtectionBehaviour::current()->is_safe(method);
+bool CompiledICLocker::is_safe(nmethod* nm) {
+  return CompiledICProtectionBehaviour::current()->is_safe(nm);
 }
 
 bool CompiledICLocker::is_safe(address code) {
@@ -105,8 +104,8 @@ void CompiledICData::clean_metadata() {
   // subsequent miss handlers will upgrade the callsite to megamorphic,
   // which makes sense as it obviously is megamorphic then.
   if (!speculated_klass()->is_loader_alive()) {
-    Atomic::store(&_speculated_klass, (uintptr_t)0);
-    Atomic::store(&_speculated_method, (Method*)nullptr);
+    AtomicAccess::store(&_speculated_klass, (uintptr_t)0);
+    AtomicAccess::store(&_speculated_method, (Method*)nullptr);
   }
 
   assert(_speculated_method == nullptr || _speculated_method->method_holder()->is_loader_alive(),

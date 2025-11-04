@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,17 +23,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.aarch64.windows;
 
-import jdk.internal.foreign.abi.aarch64.CallArranger;
-import jdk.internal.foreign.abi.aarch64.TypeClass;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.VMStorage;
+import jdk.internal.foreign.abi.aarch64.CallArranger;
+import jdk.internal.foreign.abi.aarch64.TypeClass;
 
 import java.lang.foreign.MemoryLayout;
 
-import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.abiFor;
 
 /**
  * AArch64 CallArranger specialized for Windows ABI.

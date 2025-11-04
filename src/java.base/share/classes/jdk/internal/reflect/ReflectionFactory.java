@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,15 @@ import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
+import java.lang.classfile.ClassFile;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.security.PrivilegedAction;
+import java.lang.reflect.*;
+import java.util.Set;
+
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -66,24 +64,9 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
+
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
-    }
-
-    /**
-     * A convenience class for acquiring the capability to instantiate
-     * reflective objects.  Use this instead of a raw call to {@link
-     * #getReflectionFactory} in order to avoid being limited by the
-     * permissions of your callers.
-     *
-     * <p>An instance of this class can be used as the argument of
-     * <code>AccessController.doPrivileged</code>.
-     */
-    public static final class GetReflectionFactoryAction
-        implements PrivilegedAction<ReflectionFactory> {
-        public ReflectionFactory run() {
-            return getReflectionFactory();
-        }
     }
 
     /**
@@ -363,6 +346,46 @@ public class ReflectionFactory {
         }
     }
 
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        if (hasDefaultOrNoSerialization(cl)) {
+            return null;
+        }
+
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultReadObject(cl);
+    }
+
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        if (hasDefaultOrNoSerialization(cl)) {
+            return null;
+        }
+
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultWriteObject(cl);
+    }
+
+    /**
+     * These are specific leaf classes which appear to be Serializable, but which
+     * have special semantics according to the serialization specification. We
+     * could theoretically include array classes here, but it is easier and clearer
+     * to just use `Class#isArray` instead.
+     */
+    private static final Set<Class<?>> nonSerializableLeafClasses = Set.of(
+        Class.class,
+        String.class,
+        ObjectStreamClass.class
+    );
+
+    private static boolean hasDefaultOrNoSerialization(Class<?> cl) {
+        return ! Serializable.class.isAssignableFrom(cl)
+            || cl.isInterface()
+            || cl.isArray()
+            || Proxy.isProxyClass(cl)
+            || Externalizable.class.isAssignableFrom(cl)
+            || cl.isEnum()
+            || cl.isRecord()
+            || cl.isHidden()
+            || nonSerializableLeafClasses.contains(cl);
+    }
+
     /**
      * Returns a MethodHandle for {@code writeReplace} on the serializable class
      * or null if no match found.
@@ -468,6 +491,53 @@ public class ReflectionFactory {
         }
     }
 
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
+            return null;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialPersistentFields");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return null;
+            }
+            if (field.getType() != ObjectStreamField[].class) {
+                return null;
+            }
+            field.setAccessible(true);
+            ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
+            return array != null && array.length > 0 ? array.clone() : array;
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    public final Set<AccessFlag> parseAccessFlags(int mask, AccessFlag.Location location, Class<?> classFile) {
+        var cffv = classFileFormatVersion(classFile);
+        return cffv == null ?
+                AccessFlag.maskToAccessFlags(mask, location) :
+                AccessFlag.maskToAccessFlags(mask, location, cffv);
+    }
+
+    private final ClassFileFormatVersion classFileFormatVersion(Class<?> cl) {
+        int raw = SharedSecrets.getJavaLangAccess().classFileVersion(cl);
+
+        int major = raw & 0xFFFF;
+        int minor = raw >>> Character.SIZE;
+
+        assert VM.isSupportedClassFileVersion(major, minor) : major + "." + minor;
+
+        if (major >= ClassFile.JAVA_12_VERSION) {
+            if (minor == 0)
+                return ClassFileFormatVersion.fromMajor(raw);
+            return null; // preview or old preview, fallback to default handling
+        } else if (major == ClassFile.JAVA_1_VERSION) {
+            return minor < 3 ? ClassFileFormatVersion.RELEASE_0 : ClassFileFormatVersion.RELEASE_1;
+        }
+        return ClassFileFormatVersion.fromMajor(major);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Internals only below this point
@@ -556,5 +626,4 @@ public class ReflectionFactory {
         return cl1.getClassLoader() == cl2.getClassLoader() &&
                 cl1.getPackageName() == cl2.getPackageName();
     }
-
 }

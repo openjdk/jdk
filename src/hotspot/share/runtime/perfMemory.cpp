@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -35,7 +34,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/statSampler.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -67,16 +65,16 @@ void perfMemory_exit() {
   if (!UsePerfData) return;
   if (!PerfMemory::is_usable()) return;
 
-  // Only destroy PerfData objects if we're at a safepoint and the
-  // StatSampler is not active. Otherwise, we risk removing PerfData
-  // objects that are currently being used by running JavaThreads
-  // or the StatSampler. This method is invoked while we are not at
+  // Only destroy PerfData objects if we're at a safepoint.
+  // Otherwise, we risk removing PerfData objects
+  // that are currently being used by running JavaThreads.
+  // This method is invoked while we are not at
   // a safepoint during a VM abort so leaving the PerfData objects
   // around may also help diagnose the failure. In rare cases,
   // PerfData objects are used in parallel with a safepoint. See
   // the work around in PerfDataManager::destroy().
   //
-  if (SafepointSynchronize::is_at_safepoint() && !StatSampler::is_active()) {
+  if (SafepointSynchronize::is_at_safepoint()) {
     PerfDataManager::destroy();
   }
 
@@ -97,8 +95,8 @@ void PerfMemory::initialize() {
                              os::vm_allocation_granularity());
 
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
-                          " os::vm_allocation_granularity = " SIZE_FORMAT
-                          ", adjusted size = " SIZE_FORMAT,
+                          " os::vm_allocation_granularity = %zu"
+                          ", adjusted size = %zu",
                           PerfDataMemorySize,
                           os::vm_allocation_granularity(),
                           capacity);
@@ -116,9 +114,7 @@ void PerfMemory::initialize() {
     // the warning is issued only in debug mode in order to avoid
     // additional output to the stdout or stderr output streams.
     //
-    if (PrintMiscellaneous && Verbose) {
-      warning("Could not create PerfData Memory region, reverting to malloc");
-    }
+    log_debug(perf)("could not create PerfData Memory region, reverting to malloc");
 
     _prologue = NEW_C_HEAP_OBJ(PerfDataPrologue, mtInternal);
   }
@@ -127,7 +123,7 @@ void PerfMemory::initialize() {
     // the PerfMemory region was created as expected.
 
     log_debug(perf, memops)("PerfMemory created: address = " INTPTR_FORMAT ","
-                            " size = " SIZE_FORMAT,
+                            " size = %zu",
                             p2i(_start),
                             _capacity);
 
@@ -156,7 +152,7 @@ void PerfMemory::initialize() {
   _prologue->overflow = 0;
   _prologue->mod_time_stamp = 0;
 
-  Atomic::release_store(&_initialized, 1);
+  AtomicAccess::release_store(&_initialized, 1);
 }
 
 void PerfMemory::destroy() {
@@ -178,8 +174,8 @@ void PerfMemory::destroy() {
     //
     if (PrintMiscellaneous && Verbose) {
       warning("PerfMemory Overflow Occurred.\n"
-              "\tCapacity = " SIZE_FORMAT " bytes"
-              "  Used = " SIZE_FORMAT " bytes"
+              "\tCapacity = %zu bytes"
+              "  Used = %zu bytes"
               "  Overflow = " INT32_FORMAT " bytes"
               "\n\tUse -XX:PerfDataMemorySize=<size> to specify larger size.",
               PerfMemory::capacity(),
@@ -252,10 +248,7 @@ char* PerfMemory::get_perfdata_file_path() {
     if(!Arguments::copy_expand_pid(PerfDataSaveFile, strlen(PerfDataSaveFile),
                                    dest_file, JVM_MAXPATHLEN)) {
       FREE_C_HEAP_ARRAY(char, dest_file);
-      if (PrintMiscellaneous && Verbose) {
-        warning("Invalid performance data file path name specified, "\
-                "fall back to a default name");
-      }
+      log_debug(perf)("invalid performance data file path name specified, fall back to a default name");
     } else {
       return dest_file;
     }
@@ -269,5 +262,5 @@ char* PerfMemory::get_perfdata_file_path() {
 }
 
 bool PerfMemory::is_initialized() {
-  return Atomic::load_acquire(&_initialized) != 0;
+  return AtomicAccess::load_acquire(&_initialized) != 0;
 }

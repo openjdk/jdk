@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import sun.nio.fs.DefaultFileSystemProvider;
 
@@ -112,11 +113,9 @@ public final class FileSystems {
             if (propValue != null) {
                 for (String cn: propValue.split(",")) {
                     try {
-                        Class<?> c = Class
-                            .forName(cn, true, ClassLoader.getSystemClassLoader());
-                        Constructor<?> ctor = c
-                            .getDeclaredConstructor(FileSystemProvider.class);
-                        provider = (FileSystemProvider)ctor.newInstance(provider);
+                        Class<?> c = Class.forName(cn, true, ClassLoaders.appClassLoader());
+                        Constructor<?> ctor = c.getDeclaredConstructor(FileSystemProvider.class);
+                        provider = (FileSystemProvider) ctor.newInstance(provider);
 
                         // must be "file"
                         if (!provider.getScheme().equals("file"))
@@ -146,13 +145,17 @@ public final class FileSystems {
      * is invoked to create the default file system.
      *
      * <p> If the system property {@code java.nio.file.spi.DefaultFileSystemProvider}
-     * is defined then it is taken to be a list of one or more fully-qualified
-     * names of concrete provider classes identified by the URI scheme
-     * {@code "file"}. Where the property is a list of more than one name then
-     * the names are separated by a comma. Each class is loaded, using the system
-     * class loader, and instantiated by invoking a one argument constructor
-     * whose formal parameter type is {@code FileSystemProvider}. The providers
-     * are loaded and instantiated in the order they are listed in the property.
+     * is defined then it is taken to be a list of one or more fully-qualified names
+     * of concrete provider classes identified by the URI scheme {@code "file"}.
+     * If the property is a list of more than one name then the names are separated
+     * by a comma character. Each provider class is a {@code public} class with a
+     * {@code public} constructor that has one formal parameter of type {@code
+     * FileSystemProvider}. If the provider class is in a named module then the module
+     * exports the package containing the provider class to at least {@code java.base}.
+     * Each provider class is loaded, using the
+     * {@linkplain ClassLoader#getSystemClassLoader() default system class loader},
+     * and instantiated by invoking the constructor. The providers are loaded and
+     * instantiated in the order they are listed in the property.
      * If this process fails or a provider's scheme is not equal to {@code "file"}
      * then an unspecified error is thrown. URI schemes are normally compared
      * without regard to case but for the default provider, the scheme is
@@ -254,8 +257,9 @@ public final class FileSystems {
      *
      * @throws  IllegalArgumentException
      *          if the pre-conditions for the {@code uri} parameter are not met,
-     *          or the {@code env} parameter does not contain properties required
-     *          by the provider, or a property value is invalid
+     *          or if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  FileSystemAlreadyExistsException
      *          if the file system has already been created
      * @throws  ProviderNotFoundException
@@ -293,8 +297,9 @@ public final class FileSystems {
      *
      * @throws  IllegalArgumentException
      *          if the pre-conditions for the {@code uri} parameter are not met,
-     *          or the {@code env} parameter does not contain properties required
-     *          by the provider, or a property value is invalid
+     *          or if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  FileSystemAlreadyExistsException
      *          if the URI scheme identifies an installed provider and the file
      *          system has already been created
@@ -397,6 +402,10 @@ public final class FileSystems {
      *
      * @return  a new file system
      *
+     * @throws  IllegalArgumentException
+     *          if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  ProviderNotFoundException
      *          if a provider supporting this file type cannot be located
      * @throws  ServiceConfigurationError
@@ -473,6 +482,10 @@ public final class FileSystems {
      *
      * @return  a new file system
      *
+     * @throws  IllegalArgumentException
+     *          if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  ProviderNotFoundException
      *          if a provider supporting this file type cannot be located
      * @throws  ServiceConfigurationError

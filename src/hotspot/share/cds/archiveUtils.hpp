@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
-#include "runtime/nonJavaThread.hpp"
-#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -106,7 +106,7 @@ public:
 // within the archive (e.g., InstanceKlass::_name points to a Symbol in the archive). During dumping, we
 // built a bitmap that marks the locations of all these pointers (using ArchivePtrMarker, see comments above).
 //
-// The contents of the archive assumes that it’s mapped at the default SharedBaseAddress (e.g. 0x800000000).
+// The contents of the archive assumes that it's mapped at the default SharedBaseAddress (e.g. 0x800000000).
 // If the archive ends up being mapped at a different address (e.g. 0x810000000), SharedDataRelocator
 // is used to shift each marked pointer by a delta (0x10000000 in this example), so that it points to
 // the actually mapped location of the target object.
@@ -136,12 +136,12 @@ class SharedDataRelocator: public BitMapClosure {
     _valid_old_base(valid_old_base), _valid_old_end(valid_old_end),
     _valid_new_base(valid_new_base), _valid_new_end(valid_new_end),
     _delta(delta) {
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
-    log_debug(cds, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_base     = " PTR_FORMAT, p2i(_patch_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_patch_end      = " PTR_FORMAT, p2i(_patch_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_base = " PTR_FORMAT, p2i(_valid_old_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_old_end  = " PTR_FORMAT, p2i(_valid_old_end));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_base = " PTR_FORMAT, p2i(_valid_new_base));
+    log_debug(aot, reloc)("SharedDataRelocator::_valid_new_end  = " PTR_FORMAT, p2i(_valid_new_end));
   }
 
   bool do_bit(size_t offset);
@@ -164,7 +164,7 @@ public:
   DumpRegion(const char* name, uintx max_delta = 0)
     : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
       _max_delta(max_delta), _is_packed(false),
-      _rs(NULL), _vs(NULL) {}
+      _rs(nullptr), _vs(nullptr) {}
 
   char* expand_top_to(char* newtop);
   char* allocate(size_t num_bytes, size_t alignment = 0);
@@ -180,6 +180,7 @@ public:
   bool is_allocatable() const {
     return !is_packed() && _base != nullptr;
   }
+  bool is_empty()   const { return _base == _top; }
 
   void print(size_t total_bytes) const;
   void print_out_of_space_msg(const char* failing_region, size_t needed_bytes);
@@ -255,29 +256,66 @@ public:
 };
 
 class ArchiveUtils {
+  template <typename T> static Array<T>* archive_non_ptr_array(GrowableArray<T>* tmp_array);
+  template <typename T> static Array<T>* archive_ptr_array(GrowableArray<T>* tmp_array);
+
 public:
   static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
-  template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
+
+  template <typename T, ENABLE_IF(!std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_non_ptr_array(tmp_array);
+  }
+
+  template <typename T, ENABLE_IF(std::is_pointer<T>::value)>
+  static Array<T>* archive_array(GrowableArray<T>* tmp_array) {
+    return archive_ptr_array(tmp_array);
+  }
+
+  // The following functions translate between a u4 offset and an address in the
+  // the range of the mapped CDS archive (e.g., Metaspace::in_aot_cache()).
+  // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
+  // we know that offset 0 never represents a valid object. As a result, an offset of 0
+  // is used to encode a nullptr.
+  //
+  // Use the "archived_address_or_null" variants if a nullptr may be encoded.
 
   // offset must represent an object of type T in the mapped shared space. Return
   // a direct pointer to this object.
-  template <typename T> T static from_offset(u4 offset) {
+  template <typename T> T static offset_to_archived_address(u4 offset) {
+    assert(offset != 0, "sanity");
     T p = (T)(SharedBaseAddress + offset);
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     return p;
   }
 
+  template <typename T> T static offset_to_archived_address_or_null(u4 offset) {
+    if (offset == 0) {
+      return nullptr;
+    } else {
+      return offset_to_archived_address<T>(offset);
+    }
+  }
+
   // p must be an archived object. Get its offset from SharedBaseAddress
-  template <typename T> static u4 to_offset(T p) {
+  template <typename T> static u4 archived_address_to_offset(T p) {
     uintx pn = (uintx)p;
     uintx base = (uintx)SharedBaseAddress;
-    assert(Metaspace::is_in_shared_metaspace(p), "must be");
+    assert(Metaspace::in_aot_cache(p), "must be");
     assert(pn > base, "sanity"); // No valid object is stored at 0 offset from SharedBaseAddress
     uintx offset = pn - base;
     assert(offset <= MAX_SHARED_DELTA, "range check");
     return static_cast<u4>(offset);
+  }
+
+  template <typename T> static u4 archived_address_or_null_to_offset(T p) {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return archived_address_to_offset<T>(p);
+    }
   }
 };
 
@@ -326,7 +364,6 @@ class ArchiveWorkers;
 // A task to be worked on by worker threads
 class ArchiveWorkerTask : public CHeapObj<mtInternal> {
   friend class ArchiveWorkers;
-  friend class ArchiveWorkerShutdownTask;
 private:
   const char* _name;
   int _max_chunks;
@@ -348,28 +385,18 @@ class ArchiveWorkerThread : public NamedThread {
 private:
   ArchiveWorkers* const _pool;
 
+  void post_run() override;
+
 public:
   ArchiveWorkerThread(ArchiveWorkers* pool);
   const char* type_name() const override { return "Archive Worker Thread"; }
   void run() override;
 };
 
-class ArchiveWorkerShutdownTask : public ArchiveWorkerTask {
-public:
-  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown") {
-    // This task always have only one chunk.
-    configure_max_chunks(1);
-  }
-  void work(int chunk, int max_chunks) override {
-    // Do nothing.
-  }
-};
-
-// Special worker pool for archive workers. The goal for this pool is to
-// startup fast, distribute spiky workloads efficiently, and being able to
-// shutdown after use. This makes the implementation quite different from
-// the normal GC worker pool.
-class ArchiveWorkers {
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
   friend class ArchiveWorkerThread;
 private:
   // Target number of chunks per worker. This should be large enough to even
@@ -377,38 +404,28 @@ private:
   static constexpr int CHUNKS_PER_WORKER = 4;
   static int max_workers();
 
-  // Global shared instance. Can be uninitialized, can be shut down.
-  static ArchiveWorkers _workers;
-
-  ArchiveWorkerShutdownTask _shutdown_task;
-  Semaphore _start_semaphore;
   Semaphore _end_semaphore;
 
   int _num_workers;
   int _started_workers;
-  int _waiting_workers;
-  int _running_workers;
+  int _finish_tokens;
 
-  typedef enum { NOT_READY, READY, SHUTDOWN } State;
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
   volatile State _state;
 
   ArchiveWorkerTask* _task;
 
-  bool run_as_worker();
+  void run_as_worker();
   void start_worker_if_needed();
-  void signal_worker_if_needed();
 
   void run_task_single(ArchiveWorkerTask* task);
   void run_task_multi(ArchiveWorkerTask* task);
 
   bool is_parallel();
 
-  ArchiveWorkers();
-
 public:
-  static ArchiveWorkers* workers() { return &_workers; }
-  void initialize();
-  void shutdown();
+  ArchiveWorkers();
+  ~ArchiveWorkers();
   void run_task(ArchiveWorkerTask* task);
 };
 

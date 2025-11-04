@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,7 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "downcallLinker.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
 #include <cerrno>
@@ -34,7 +32,7 @@
 
 // We call this from _thread_in_native, right after a downcall
 JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask))
-  // keep in synch with jdk.internal.foreign.abi.PreservableValues
+  // keep in synch with jdk.internal.foreign.abi.CapturableState
   enum PreservableValues {
     NONE = 0,
     GET_LAST_ERROR = 1,

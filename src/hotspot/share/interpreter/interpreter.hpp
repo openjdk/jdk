@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ class InterpreterMacroAssembler;
 
 class InterpreterCodelet: public Stub {
   friend class VMStructs;
-  friend class CodeCacheDumper; // possible extension [do not remove]
  private:
   NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
   NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.

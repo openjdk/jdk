@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -355,6 +355,16 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pulOutputLen);
                      free(((CK_TLS_PRF_PARAMS*)tmp)->pOutput);
                      break;
+                 case CKM_HKDF_DERIVE:
+                     TRACE0("[ CK_HKDF_PARAMS ]\n");
+                     free(((CK_HKDF_PARAMS*)tmp)->pSalt);
+                     free(((CK_HKDF_PARAMS*)tmp)->pInfo);
+                     break;
+                 case CKM_CONCATENATE_BASE_AND_DATA:
+                 case CKM_CONCATENATE_DATA_AND_BASE:
+                     TRACE0("[ CK_KEY_DERIVATION_STRING_DATA ]\n");
+                     free(((CK_KEY_DERIVATION_STRING_DATA*)tmp)->pData);
+                     break;
                  case CKM_SSL3_MASTER_KEY_DERIVE:
                  case CKM_TLS_MASTER_KEY_DERIVE:
                  case CKM_SSL3_MASTER_KEY_DERIVE_DH:
@@ -471,6 +481,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS => CK_GCM_PARAMS_NO_IVBITS
             pParams = (CK_GCM_PARAMS*) mechPtr->pParameter;
             pParamsNoIvBits = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
+            if (pParamsNoIvBits == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParamsNoIvBits->pIv = pParams->pIv;
             pParamsNoIvBits->ulIvLen = pParams->ulIvLen;
             pParamsNoIvBits->pAAD = pParams->pAAD;
@@ -485,6 +499,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
             // CK_GCM_PARAMS_NO_IVBITS => CK_GCM_PARAMS
             pParamsNoIvBits = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
             pParams = calloc(1, sizeof(CK_GCM_PARAMS));
+            if (pParams == NULL) {
+                p11ThrowOutOfMemoryError(env, 0);
+                return NULL;
+            }
             pParams->pIv = pParamsNoIvBits->pIv;
             pParams->ulIvLen = pParamsNoIvBits->ulIvLen;
             pParams->ulIvBits = pParamsNoIvBits->ulIvLen << 3;
@@ -1191,7 +1209,7 @@ CK_VOID_PTR jObjectToPrimitiveCKObjectPtr(JNIEnv *env, jobject jObject, CK_ULONG
     jclass jBooleanArrayClass, jIntArrayClass, jLongArrayClass;
     jclass jStringClass;
     jclass jObjectClass, jClassClass;
-    CK_VOID_PTR ckpObject;
+    CK_VOID_PTR ckpObject = NULL;
     jmethodID jMethod;
     jobject jClassObject;
     jstring jClassNameString;

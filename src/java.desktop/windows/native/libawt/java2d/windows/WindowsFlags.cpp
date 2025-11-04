@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 BOOL      useD3D = TRUE;      // d3d enabled flag
                               // initially is TRUE to allow D3D preloading
 BOOL      forceD3DUsage;      // force d3d on or off
-jboolean  g_offscreenSharing; // JAWT accelerated surface sharing
 BOOL      setHighDPIAware;    // Whether to set the high-DPI awareness flag
 
 extern WCHAR *j2dAccelKey;       // Name of java2d root key
@@ -89,23 +88,17 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
     }
     useD3D = d3dEnabled;
     forceD3DUsage = d3dSet;
-    g_offscreenSharing = GetStaticBoolean(env, wFlagsClass,
-                                          "offscreenSharingEnabled");
-    JNU_CHECK_EXCEPTION(env);
-
     setHighDPIAware =
         (IS_WINVISTA && GetStaticBoolean(env, wFlagsClass, "setHighDPIAware"));
     JNU_CHECK_EXCEPTION(env);
 
     J2dTraceLn(J2D_TRACE_INFO, "WindowsFlags (native):");
-    J2dTraceLn1(J2D_TRACE_INFO, "  d3dEnabled = %s",
-                (useD3D ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  d3dSet = %s",
-                (forceD3DUsage ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  offscreenSharing = %s",
-                (g_offscreenSharing ? "true" : "false"));
-    J2dTraceLn1(J2D_TRACE_INFO, "  setHighDPIAware = %s",
-                (setHighDPIAware ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  d3dEnabled = %s",
+               (useD3D ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  d3dSet = %s",
+               (forceD3DUsage ? "true" : "false"));
+    J2dTraceLn(J2D_TRACE_INFO, "  setHighDPIAware = %s",
+               (setHighDPIAware ? "true" : "false"));
 }
 
 void SetD3DEnabledFlag(JNIEnv *env, BOOL d3dEnabled, BOOL d3dSet)

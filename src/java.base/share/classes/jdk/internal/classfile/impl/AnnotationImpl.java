@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         implements Annotation {
     public AnnotationImpl {
         requireNonNull(className);
-        elements = List.copyOf(elements);
+        elements = Util.sanitizeU2List(elements);
     }
 
     @Override
@@ -72,7 +72,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfStringImpl(Utf8Entry constant)
             implements AnnotationValue.OfString {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_STRING;
         }
 
@@ -85,7 +85,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfDoubleImpl(DoubleEntry constant)
             implements AnnotationValue.OfDouble {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_DOUBLE;
         }
 
@@ -98,7 +98,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfFloatImpl(FloatEntry constant)
             implements AnnotationValue.OfFloat {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_FLOAT;
         }
 
@@ -111,7 +111,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfLongImpl(LongEntry constant)
             implements AnnotationValue.OfLong {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_LONG;
         }
 
@@ -124,7 +124,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfIntImpl(IntegerEntry constant)
             implements AnnotationValue.OfInt {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_INT;
         }
 
@@ -137,7 +137,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfShortImpl(IntegerEntry constant)
             implements AnnotationValue.OfShort {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_SHORT;
         }
 
@@ -150,7 +150,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfCharImpl(IntegerEntry constant)
             implements AnnotationValue.OfChar {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_CHAR;
         }
 
@@ -163,7 +163,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfByteImpl(IntegerEntry constant)
             implements AnnotationValue.OfByte {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_BYTE;
         }
 
@@ -176,7 +176,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfBooleanImpl(IntegerEntry constant)
             implements AnnotationValue.OfBoolean {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_BOOLEAN;
         }
 
@@ -189,11 +189,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfArrayImpl(List<AnnotationValue> values)
             implements AnnotationValue.OfArray {
         public OfArrayImpl {
-            values = List.copyOf(values);
+            values = Util.sanitizeU2List(values);
         }
 
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ARRAY;
         }
     }
@@ -201,7 +201,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfEnumImpl(Utf8Entry className, Utf8Entry constantName)
             implements AnnotationValue.OfEnum {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ENUM;
         }
     }
@@ -209,7 +209,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfAnnotationImpl(Annotation annotation)
             implements AnnotationValue.OfAnnotation {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ANNOTATION;
         }
     }
@@ -217,7 +217,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfClassImpl(Utf8Entry className)
             implements AnnotationValue.OfClass {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_CLASS;
         }
     }

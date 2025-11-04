@@ -226,6 +226,8 @@ class Bytecode_invoke: public Bytecode_member_ref {
 
   bool has_appendix();
 
+  bool has_member_arg() const;
+
   int size_of_parameters() const;
 
  private:

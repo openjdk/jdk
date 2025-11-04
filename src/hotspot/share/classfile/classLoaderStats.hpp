@@ -25,15 +25,13 @@
 #ifndef SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 #define SHARE_CLASSFILE_CLASSLOADERSTATS_HPP
 
-
 #include "classfile/classLoaderData.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/vmOperation.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "utilities/resourceHash.hpp"
-
+#include "utilities/hashTable.hpp"
 
 class ClassLoaderStatsDCmd : public DCmd {
 public:
@@ -57,12 +55,6 @@ public:
 
   static int num_arguments() {
     return 0;
-  }
-
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", nullptr};
-    return p;
   }
 };
 
@@ -111,7 +103,7 @@ protected:
     return hash;
   }
 
-  typedef ResourceHashtable<oop, ClassLoaderStats,
+  typedef HashTable<oop, ClassLoaderStats,
                             256, AnyObj::C_HEAP, mtStatistics,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 

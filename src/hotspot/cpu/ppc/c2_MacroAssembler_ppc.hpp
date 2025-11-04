@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,5 +72,7 @@
                            Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
 
   void count_positives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
+
+  void reduceI(int opcode, Register dst, Register iSrc, VectorRegister vSrc, VectorRegister vTmp1, VectorRegister vTmp2);
 
 #endif // CPU_PPC_C2_MACROASSEMBLER_PPC_HPP

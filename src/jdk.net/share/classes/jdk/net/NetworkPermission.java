@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.security.BasicPermission;
  * defined in the jdk.net package. These permissions contain a target
  * name, but no actions list. Callers either possess the permission or not.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
@@ -41,6 +41,7 @@ import java.security.BasicPermission;
  * @since 1.8
  */
 
+@Deprecated(since = "25", forRemoval = true)
 public final class NetworkPermission extends BasicPermission {
 
     private static final long serialVersionUID = -2012939586906722291L;

@@ -40,7 +40,7 @@ public class TestIterativeEA {
 
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-server", "-XX:-TieredCompilation", "-Xbatch", "-XX:+PrintEliminateAllocations",
+                 "-XX:-TieredCompilation", "-Xbatch", "-XX:+PrintEliminateAllocations",
                  Launcher.class.getName());
 
     OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
@@ -48,9 +48,13 @@ public class TestIterativeEA {
     System.out.println(analyzer.getOutput());
 
     analyzer.shouldHaveExitValue(0);
-    analyzer.shouldContain("++++ Eliminated: 26 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 48 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 78 Allocate");
+    analyzer.shouldMatch(
+            "(?s)" + // Let .* also match line terminators.
+            "Eliminated: \\d+ Allocate" +
+            ".*" +
+            "Eliminated: \\d+ Allocate" +
+            ".*" +
+            "Eliminated: \\d+ Allocate");
   }
 
   static class A {

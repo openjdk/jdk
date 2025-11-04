@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
@@ -51,8 +50,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/safefetch.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -207,10 +206,7 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    if (nm->is_method_handle_return(pc()))
-      return nm->deopt_mh_handler_begin() - pc_return_offset;
-    else
-      return nm->deopt_handler_begin() - pc_return_offset;
+    return nm->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -230,7 +226,15 @@ void frame::set_pc(address newpc) {
   _deopt_state = unknown;
   _pc = newpc;
   _cb = CodeCache::find_blob(_pc);
+}
 
+// This is optimized for intra-blob pc adjustments only.
+void frame::adjust_pc(address newpc) {
+  assert(_cb != nullptr, "invariant");
+  assert(_cb == CodeCache::find_blob(newpc), "invariant");
+  // Unsafe to use the is_deoptimized tester after changing pc
+  _deopt_state = unknown;
+  _pc = newpc;
 }
 
 // type testers
@@ -351,9 +355,7 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt handler.
   nmethod* nm = _cb->as_nmethod();
-  address deopt = nm->is_method_handle_return(pc()) ?
-                        nm->deopt_mh_handler_begin() :
-                        nm->deopt_handler_begin();
+  address deopt = nm->deopt_handler_begin();
 
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 
@@ -1090,7 +1092,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
     return nullptr;
   }
   oop r = *oop_adr;
-  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", p2i(r), p2i(r));
+  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (%zd)", p2i(r), p2i(r));
   return r;
 }
 
@@ -1162,10 +1164,7 @@ void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
-  if (CrashGCForDumpingJavaThread) {
-    char *t = nullptr;
-    *t = 'c';
-  }
+  guarantee(!CrashGCForDumpingJavaThread, "");
 #endif
   if (is_interpreted_frame()) {
     oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
@@ -1557,6 +1556,39 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
 }
 
 #endif
+
+/**
+ * Gets the caller frame of `fr` for thread `t`.
+ *
+ * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
+ */
+frame frame::next_frame(frame fr, Thread* t) {
+  // Compiled code may use EBP register on x86 so it looks like
+  // non-walkable C frame. Use frame.sender() for java frames.
+  frame invalid;
+  if (t != nullptr && t->is_Java_thread()) {
+    // Catch very first native frame by using stack address.
+    // For JavaThread stack_base and stack_size should be set.
+    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_interpreted_frame() || (fr.cb() != nullptr && fr.cb()->frame_size() > 0)) {
+      RegisterMap map(JavaThread::cast(t),
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip); // No update
+      return fr.sender(&map);
+    } else {
+      // is_first_C_frame() does only simple checks for frame pointer,
+      // it will pass if java compiled code has a pointer in EBP.
+      if (os::is_first_C_frame(&fr)) return invalid;
+      return os::get_sender_for_C_frame(&fr);
+    }
+  } else {
+    if (os::is_first_C_frame(&fr)) return invalid;
+    return os::get_sender_for_C_frame(&fr);
+  }
+}
 
 #ifndef PRODUCT
 

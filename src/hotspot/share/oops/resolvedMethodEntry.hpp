@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_OOPS_RESOLVEDMETHODENTRY_HPP
 
 #include "interpreter/bytecodes.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/sizes.hpp"
 
 // ResolvedMethodEntry contains the resolution information for the invoke bytecodes
@@ -82,6 +82,8 @@ class ResolvedMethodEntry {
   bool _has_table_index;
 #endif
 
+  // See comments in resolvedFieldEntry.hpp about copy_from and padding.
+  // We have unused padding on debug builds.
   void copy_from(const ResolvedMethodEntry& other) {
     _method = other._method;
     _entry_specific = other._entry_specific;
@@ -143,7 +145,7 @@ class ResolvedMethodEntry {
   bool has_resolved_references_index() const { return (_flags & (1 << has_resolved_ref_shift))    != 0; }
 
   // Getters
-  Method* method() const { return Atomic::load_acquire(&_method); }
+  Method* method() const { return AtomicAccess::load_acquire(&_method); }
   InstanceKlass* interface_klass() const {
     assert(_bytecode1 == Bytecodes::_invokeinterface, "Only invokeinterface has a klass %d", _bytecode1);
     assert(_has_interface_klass, "sanity");
@@ -162,8 +164,8 @@ class ResolvedMethodEntry {
   u2 constant_pool_index() const { return _cpool_index; }
   u1 tos_state() const { return _tos_state; }
   u2 number_of_parameters() const { return _number_of_parameters; }
-  u1 bytecode1() const { return Atomic::load_acquire(&_bytecode1); }
-  u1 bytecode2() const { return Atomic::load_acquire(&_bytecode2); }
+  u1 bytecode1() const { return AtomicAccess::load_acquire(&_bytecode1); }
+  u1 bytecode2() const { return AtomicAccess::load_acquire(&_bytecode2); }
 
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
@@ -198,7 +200,7 @@ class ResolvedMethodEntry {
     volatile Bytecodes::Code c = (Bytecodes::Code)*code;
     assert(c == 0 || c == new_code || new_code == 0, "update must be consistent old: %d, new: %d", c, new_code);
   #endif
-    Atomic::release_store(code, new_code);
+    AtomicAccess::release_store(code, new_code);
   }
 
   void set_bytecode1(u1 b1) {
@@ -210,7 +212,7 @@ class ResolvedMethodEntry {
   }
 
   void set_method(Method* m) {
-    Atomic::release_store(&_method, m);
+    AtomicAccess::release_store(&_method, m);
   }
 
   void set_klass(InstanceKlass* klass) {

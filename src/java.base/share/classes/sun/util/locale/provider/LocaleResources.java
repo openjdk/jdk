@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
-import sun.util.resources.ParallelListResourceBundle;
 import sun.util.resources.TimeZoneNamesBundle;
 
 /**
@@ -580,11 +578,7 @@ public class LocaleResources {
      * resources required by JSR 310.
      */
     public ResourceBundle getJavaTimeFormatData() {
-        ResourceBundle rb = localeData.getDateFormatData(locale);
-        if (rb instanceof ParallelListResourceBundle) {
-            localeData.setSupplementary((ParallelListResourceBundle) rb);
-        }
-        return rb;
+        return localeData.getDateFormatData(locale);
     }
 
     /**
@@ -899,7 +893,7 @@ public class LocaleResources {
     }
 
     private static final boolean TRACE_ON = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
+        System.getProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {
         if (TRACE_ON) {

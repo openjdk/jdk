@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,12 @@
 # questions.
 #
 
-# This must be the first rule
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
-include JavaCompilation.gmk
+################################################################################
+
 include Execute.gmk
+include JavaCompilation.gmk
 
 ifeq ($(call isTargetOs, windows), true)
   # The next part is a bit hacky. We include the CompileJvm.gmk to be
@@ -144,11 +143,11 @@ ifeq ($(call isTargetOs, windows), true)
 
   TARGETS += $(vcproj_file_TARGET)
 
-  all: $(TARGETS)
-
 else
   all:
 	$(info Hotspot Visual Studio generation only supported on Windows)
 endif
 
-.PHONY: all
+################################################################################
+
+include MakeFileEnd.gmk

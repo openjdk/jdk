@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,14 +39,18 @@
     return return_pc == call_stub_return_pc();
   }
 
-  enum platform_dependent_constants {
-    // The assembler will fail with a guarantee if these are too small.
-    // Simply increase them if that happens.
-    _initial_stubs_code_size      = 0,
-    _continuation_stubs_code_size = 0,
-    _compiler_stubs_code_size     = 0,
-    _final_stubs_code_size        = 0
-  };
+// emit enum used to size per-blob code buffers
+
+#define DEFINE_BLOB_SIZE(blob_name, size) \
+  _ ## blob_name ## _code_size = size,
+
+enum platform_dependent_constants {
+  STUBGEN_ARCH_BLOBS_DO(DEFINE_BLOB_SIZE)
+};
+
+#undef DEFINE_BLOB_SIZE
+
+// zero has no arch-specific stubs nor any associated entries
 
   enum method_handles_platform_dependent_constants {
     method_handles_adapters_code_size = 0

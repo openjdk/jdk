@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.cs.Surrogate;
-import sun.nio.cs.ArrayDecoder;
-import sun.nio.cs.ArrayEncoder;
+
 import static sun.nio.cs.CharsetMapping.*;
 
 /*
@@ -684,40 +682,7 @@ public class DoubleByte {
         }
 
         @Override
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + len;
-            if (isASCIICompatible) {
-                int n = JLA.encodeASCII(src, sp, dst, dp, len);
-                sp += n;
-                dp += n;
-            }
-            while (sp < sl) {
-                char c = src[sp++];
-                int bb = encodeChar(c);
-                if (bb == UNMAPPABLE_ENCODING) {
-                    if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(src[sp])) {
-                        sp++;
-                    }
-                    dst[dp++] = repl[0];
-                    if (repl.length > 1)
-                        dst[dp++] = repl[1];
-                    continue;
-                } //else
-                if (bb > MAX_SINGLEBYTE) { // DoubleByte
-                    dst[dp++] = (byte)(bb >> 8);
-                    dst[dp++] = (byte)bb;
-                } else {                          // SingleByte
-                    dst[dp++] = (byte)bb;
-                }
-            }
-            return dp;
-        }
-
-        @Override
-        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
             while (sp < sl) {
                 char c = (char)(src[sp++] & 0xff);
@@ -742,8 +707,7 @@ public class DoubleByte {
         }
 
         @Override
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);
@@ -1002,49 +966,7 @@ public class DoubleByte {
         }
 
         @Override
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + len;
-            while (sp < sl) {
-                char c = src[sp++];
-                int bb = encodeChar(c);
-
-                if (bb == UNMAPPABLE_ENCODING) {
-                    if (Character.isHighSurrogate(c) && sp < sl &&
-                        Character.isLowSurrogate(src[sp])) {
-                        sp++;
-                    }
-                    dst[dp++] = repl[0];
-                    if (repl.length > 1)
-                        dst[dp++] = repl[1];
-                    continue;
-                } //else
-                if (bb > MAX_SINGLEBYTE) {           // DoubleByte
-                    if (currentState == SBCS) {
-                        currentState = DBCS;
-                        dst[dp++] = SO;
-                    }
-                    dst[dp++] = (byte)(bb >> 8);
-                    dst[dp++] = (byte)bb;
-                } else {                             // SingleByte
-                    if (currentState == DBCS) {
-                         currentState = SBCS;
-                         dst[dp++] = SI;
-                    }
-                    dst[dp++] = (byte)bb;
-                }
-            }
-
-            if (currentState == DBCS) {
-                 currentState = SBCS;
-                 dst[dp++] = SI;
-            }
-            return dp;
-        }
-
-        @Override
-        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
             while (sp < sl) {
                 char c = (char)(src[sp++] & 0xff);
@@ -1079,8 +1001,7 @@ public class DoubleByte {
         }
 
         @Override
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + len;
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);

@@ -40,7 +40,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.event.io.TestAsynchronousFileChannelEvents

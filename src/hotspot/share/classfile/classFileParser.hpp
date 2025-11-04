@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,7 @@ class ClassFileParser {
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
   Array<u1>* _fieldinfo_stream;
+  Array<u1>* _fieldinfo_search_table;
   Array<FieldStatus>* _fields_status;
   Array<Method*>* _methods;
   Array<u2>* _inner_classes;
@@ -191,6 +192,7 @@ class ClassFileParser {
   bool _has_localvariable_table;
   bool _has_final_method;
   bool _has_contended_fields;
+  bool _has_aot_runtime_setup_method;
 
   // precomputed flags
   bool _has_finalizer;
@@ -240,10 +242,10 @@ class ClassFileParser {
                         bool* has_nonstatic_concrete_methods,
                         TRAPS);
 
-  const InstanceKlass* parse_super_class(ConstantPool* const cp,
-                                         const int super_class_index,
-                                         const bool need_verify,
-                                         TRAPS);
+  void check_super_class(ConstantPool* const cp,
+                         const int super_class_index,
+                         const bool need_verify,
+                         TRAPS);
 
   // Field parsing
   void parse_field_attributes(const ClassFileStream* const cfs,
@@ -367,6 +369,10 @@ class ClassFileParser {
                             const Klass* k,
                             TRAPS) const;
 
+  // Uses msg directly in the ICCE, with no additional content
+  void classfile_icce_error(const char* msg,
+                            TRAPS) const;
+
   void classfile_ucve_error(const char* msg,
                             const Symbol* class_name,
                             u2 major,
@@ -426,7 +432,8 @@ class ClassFileParser {
 
   void verify_class_version(u2 major, u2 minor, Symbol* class_name, TRAPS);
 
-  void verify_legal_class_modifiers(jint flags, TRAPS) const;
+  void verify_legal_class_modifiers(jint flags, Symbol* inner_name,
+                                    bool is_anonymous_inner_class, TRAPS) const;
   void verify_legal_field_modifiers(jint flags, bool is_interface, TRAPS) const;
   void verify_legal_method_modifiers(jint flags,
                                      bool is_interface,
@@ -508,11 +515,6 @@ class ClassFileParser {
 
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
-  bool is_abstract() const { return _access_flags.is_abstract(); }
-
-  // Returns true if the Klass to be generated will need to be addressable
-  // with a narrow Klass ID.
-  bool klass_needs_narrow_id() const;
 
   ClassLoaderData* loader_data() const { return _loader_data; }
   const Symbol* class_name() const { return _class_name; }

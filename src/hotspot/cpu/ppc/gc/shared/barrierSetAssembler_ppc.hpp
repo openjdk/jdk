@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,8 +40,7 @@ class Node;
 
 enum class NMethodPatchingType {
   stw_instruction_and_data_patch,
-  conc_instruction_and_data_patch,
-  conc_data_patch
+  conc_instruction_and_data_patch
 };
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {

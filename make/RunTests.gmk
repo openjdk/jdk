@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 # questions.
 #
 
-default: all
+include MakeFileStart.gmk
 
-include $(SPEC)
-include MakeBase.gmk
+################################################################################
+
 include FindTests.gmk
 
 # We will always run multiple tests serially
@@ -72,9 +72,6 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ################################################################################
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, RunTests.gmk))
-################################################################################
 
 # This is the JDK that we will test
 JDK_UNDER_TEST := $(JDK_IMAGE_DIR)
@@ -108,8 +105,8 @@ ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
       #
 endif
 
-GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher, %, \
-    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher))
+GTEST_LAUNCHER_DIRS := $(patsubst %/gtestLauncher$(EXECUTABLE_SUFFIX), %, \
+    $(wildcard $(TEST_IMAGE_DIR)/hotspot/gtest/*/gtestLauncher$(EXECUTABLE_SUFFIX)))
 GTEST_VARIANTS := $(strip $(patsubst $(TEST_IMAGE_DIR)/hotspot/gtest/%, %, \
     $(GTEST_LAUNCHER_DIRS)))
 
@@ -118,6 +115,7 @@ JTREG_COV_OPTIONS :=
 
 ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_OUTPUT_DIR := $(TEST_RESULTS_DIR)/jcov-output
+  JCOV_SUPPORT_DIR := $(TEST_SUPPORT_DIR)/jcov-support
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
   JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
@@ -206,8 +204,9 @@ $(eval $(call SetTestOpt,AOT_JDK,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
-        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT \
+        MAX_MEM RUN_PROBLEM_LISTS RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT \
+        AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -510,7 +509,7 @@ define SetupRunGtestTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/gtest, \
 	    $$(CD) $$($1_TEST_SUPPORT_DIR) && \
 	    $$(FIXPATH) $$(TEST_IMAGE_DIR)/hotspot/gtest/$$($1_VARIANT)/gtestLauncher \
 	        -jdk $(JDK_UNDER_TEST) $$($1_GTEST_FILTER) \
@@ -521,7 +520,7 @@ define SetupRunGtestTestBody
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/gtest.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
 
@@ -530,21 +529,33 @@ define SetupRunGtestTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	      test (cases?|suites?) ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
+	  $$(eval $1_RUN := $$(shell $$(AWK) \
+	      '/==========.* tests? from .* test (cases?|suites?) ran/ { print $$$$2 }' \
+	      $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUN), , $$(eval $1_RUN := 0)) \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(eval $1_GTEST_DISABLED := $$(shell $$(AWK) '/YOU HAVE .* DISABLED TEST/ \
+	      { print $$$$3 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_GTEST_DISABLED), , $$(eval $1_GTEST_DISABLED := 0)) \
+	  $$(eval $1_GTEST_SKIPPED := $$(shell $$(AWK) '/\[  SKIPPED \] .* tests?.*/ \
+	      { print $$$$4 }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_GTEST_SKIPPED), , $$(eval $1_GTEST_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(EXPR) $$($1_GTEST_DISABLED) + $$($1_GTEST_SKIPPED))) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '/\[  FAILED  \] .* tests?, \
 	      listed below/ { print $$$$4 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
 	  $$(eval $1_ERROR := $$(shell \
-	      $$(EXPR) $$($1_TOTAL) - $$($1_PASSED) - $$($1_FAILED))) \
+	      $$(EXPR) $$($1_RUN) - $$($1_PASSED) - $$($1_FAILED) - $$($1_GTEST_SKIPPED))) \
+	  $$(eval $1_TOTAL := $$(shell \
+	      $$(EXPR) $$($1_RUN) + $$($1_GTEST_DISABLED))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_TOTAL := 1) \
 	)
 
@@ -573,6 +584,8 @@ define SetMicroValue
   else
     ifneq ($3, )
       $1_$2 := $3
+    else
+      $1_$2 :=
     endif
   endif
 endef
@@ -631,7 +644,7 @@ define SetupRunMicroTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/micro, \
 	    $$(CD) $$(TEST_IMAGE_DIR) && \
 	    $$(FIXPATH) $$($1_MICRO_TEST_JDK)/bin/java $$($1_MICRO_JAVA_OPTIONS) \
 	        -jar $$($1_MICRO_BENCHMARKS_JAR) \
@@ -642,7 +655,7 @@ define SetupRunMicroTestBody
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/micro.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/micro.txt
 
@@ -668,6 +681,7 @@ define SetupRunMicroTestBody
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
 	)
+	$$(eval $1_SKIPPED := 0)
 
   $1: run-test-$1 parse-test-$1
 
@@ -698,62 +712,86 @@ define SetJtregValue
     else
       ifneq ($3, )
         $1_$2 := $3
+      else
+        $1_$2 :=
       endif
     endif
   endif
 endef
 
+################################################################################
+# Helper function for creating a customized AOT cache for running tests
+################################################################################
 
 # Parameter 1 is the name of the rule.
 #
 # Remaining parameters are named arguments.
+#   TRAINING    The AOT training mode: onestep or twostep
 #   VM_OPTIONS  List of JVM arguments to use when creating AOT cache
 #
 #  After calling this, the following variables are defined
 #   $1_AOT_TARGETS   List of all targets that the test rule will need to depend on
 #   $1_AOT_JDK_CACHE The AOT cache file to be used to run the test with
 #
-SetupAot = $(NamedParamsMacroTemplate)
-define SetupAotBody
-  $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
-  $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
+SetupAOT = $(NamedParamsMacroTemplate)
+define SetupAOTBody
+  $1_AOT_JDK_OUTPUT_DIR := $$($1_TEST_SUPPORT_DIR)/aot
+  $1_AOT_JDK_CONF := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotconf
+  $1_AOT_JDK_CACHE := $$($1_AOT_JDK_OUTPUT_DIR)/jdk.aotcache
+  $1_AOT_JDK_LOG := $$($1_AOT_JDK_OUTPUT_DIR)/TestSetupAOT.log
 
-  $1_JAVA_TOOL_OPTS := $$(addprefix -J, $$($1_VM_OPTIONS))
+  # We execute the training run with the TestSetupAOT class from $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar
+  # to touch a fair number of classes inside the JDK. Note that we can't specify a classpath,
+  # or else the AOT cache cannot be used with jtreg test cases that use a different value
+  # for their classpaths. Instead, we cd in the $$($1_AOT_JDK_OUTPUT_DIR) directory,
+  # extract the TestSetupAOT.jar there, and run in that directory without specifying a classpath.
+  # The "java" launcher will have an implicit classpath of ".", so it can pick up the TestSetupAOT
+  # class from the JVM's current directory.
+  #
+  # The TestSetupAOT class (or any other classes that are loaded from ".") will be excluded
+  # from the the AOT cache as "." is an unsupported location. As a result, the AOT cache will contain
+  # only classes from the JDK.
 
   $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
-	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
+	$$(call MakeDir, $$($1_AOT_JDK_OUTPUT_DIR))
 
-	$(foreach jtool, javac javap jlink jar, \
-	    $(info AOT: Create cache configuration for $(jtool)) \
-	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
-	        $$(FIXPATH) $(JDK_UNDER_TEST)/bin/$(jtool) $$($1_JAVA_TOOL_OPTS) \
-	                    -J-XX:AOTMode=record -J-XX:AOTConfiguration=$$($1_AOT_JDK_CONF).$(jtool) --help \
-	    ))
-	)
+        ifeq ($$($1_TRAINING), onestep)
 
-	$$(info AOT: Copy $(JDK_UNDER_TEST)/lib/classlist to $$($1_AOT_JDK_CONF).jdk )
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(CP) $(JDK_UNDER_TEST)/lib/classlist $$($1_AOT_JDK_CONF).jdk \
-	))
+	  $$(call LogWarn, AOT: Create AOT cache $$($1_AOT_JDK_CACHE) in one step with flags: $$($1_VM_OPTIONS)) \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
+	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	          -Xlog:class+load$$(COMMA)aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CACHE).log  -Xlog:cds*=error -Xlog:aot*=error  \
+	          -XX:AOTMode=record -XX:AOTCacheOutput=$$($1_AOT_JDK_CACHE) \
+	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
+	  )
 
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).* > $$($1_AOT_JDK_CONF).temp
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) -v '#' | $(GREP) -v '@' | $(SORT) | \
-	        $(SED) -e 's/id:.*//g' | uniq \
-		> $$($1_AOT_JDK_CONF)
-	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) '@cp' | $(SORT) \
-	        >> $$($1_AOT_JDK_CONF)
+        else
 
-	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
-		$$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
-	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log \
-		-XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
-	))
+	  $$(call LogWarn, AOT: Create cache configuration) \
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
+	      cd $$($1_AOT_JDK_OUTPUT_DIR); \
+	      $(JAR) --extract --file $(TEST_IMAGE_DIR)/setup_aot/TestSetupAOT.jar; \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java $$($1_VM_OPTIONS) \
+	          -Xlog:class+load$$(COMMA)aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CONF).log  -Xlog:cds*=error -Xlog:aot*=error \
+	          -XX:AOTMode=record -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) \
+	          TestSetupAOT $$($1_AOT_JDK_OUTPUT_DIR) > $$($1_AOT_JDK_LOG) \
+	  )
+
+	  $$(call LogWarn, AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
+	  $$(call ExecuteWithLog, $$($1_AOT_JDK_OUTPUT_DIR), \
+	      $$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
+	          $$($1_VM_OPTIONS) -Xlog:aot$$(COMMA)aot+class=debug:file=$$($1_AOT_JDK_CACHE).log -Xlog:cds*=error -Xlog:aot*=error \
+	          -XX:ExtraSharedClassListFile=$(JDK_UNDER_TEST)/lib/classlist \
+	          -XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
+	  )
+
+        endif
 
   $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
 
 endef
-
 
 SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
@@ -815,7 +853,7 @@ define SetupRunJtregTestBody
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
   JTREG_REPORT ?= files
-  JTREG_AOT_JDK ?= false
+  JTREG_AOT_JDK ?= none
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -825,6 +863,12 @@ define SetupRunJtregTestBody
     endif
   endif
 
+  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
+    JTREG_PROBLEM_LIST_PREFIX := -match:
+  else
+    JTREG_PROBLEM_LIST_PREFIX := -exclude:
+  endif
+
   ifneq ($$(JTREG_TEST_THREAD_FACTORY), )
     $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
@@ -832,6 +876,15 @@ define SetupRunJtregTestBody
 	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
     ))
   endif
+
+  ifneq ($$(JTREG_JVMTI_STRESS_AGENT), )
+    AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
+    $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:$(TEST_IMAGE_DIR)/hotspot/jtreg/native/$$(AGENT)'
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+	    $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+        ))
+  endif
+
 
   ifneq ($$(JTREG_LAUNCHER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += $$(JTREG_LAUNCHER_OPTIONS)
@@ -853,7 +906,7 @@ define SetupRunJtregTestBody
   # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
-      -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
+      -concurrency:$$($1_JTREG_JOBS) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
       -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
@@ -886,12 +939,6 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -nativepath:$$($1_JTREG_NATIVEPATH)
   endif
 
-  ifeq ($$(JTREG_RUN_PROBLEM_LISTS), true)
-    JTREG_PROBLEM_LIST_PREFIX := -match:
-  else
-    JTREG_PROBLEM_LIST_PREFIX := -exclude:
-  endif
-
   ifneq ($$($1_JTREG_PROBLEM_LIST), )
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$($1_JTREG_PROBLEM_LIST))
   endif
@@ -899,6 +946,7 @@ define SetupRunJtregTestBody
   JTREG_ALL_OPTIONS := $$(JTREG_JAVA_OPTIONS) $$(JTREG_VM_OPTIONS)
 
   JTREG_AUTO_PROBLEM_LISTS :=
+  # Please reach consensus before changing this.
   JTREG_AUTO_TIMEOUT_FACTOR := 4
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
@@ -914,6 +962,11 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-shenandoah.txt
   endif
 
+  ifneq ($$(findstring --enable-preview, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
+  endif
+
+
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
@@ -924,6 +977,11 @@ define SetupRunJtregTestBody
 
   ifneq ($$(JIB_HOME), )
     $1_JTREG_BASIC_OPTIONS += -e:JIB_HOME=$$(JIB_HOME)
+  endif
+
+  ifneq ($$(JDK_FOR_COMPILE), )
+    # Allow overriding the JDK used for compilation from the command line
+    $1_JTREG_BASIC_OPTIONS += -compilejdk:$$(JDK_FOR_COMPILE)
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_DIR=$(TEST_IMAGE_DIR)
@@ -945,13 +1003,12 @@ define SetupRunJtregTestBody
     endif
   endif
 
-  ifeq ($$(JTREG_AOT_JDK), true)
-    $$(info Add AOT target for $1)
-    $$(eval $$(call SetupAot, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
-
-    $$(info AOT_TARGETS=$$($1_AOT_TARGETS))
-    $$(info AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
-
+  ifneq ($$(filter $$(JTREG_AOT_JDK), onestep twostep), )
+    $$(call LogWarn, Add AOT target for $1)
+    $$(eval $$(call SetupAOT, $1, \
+        TRAINING := $$(JTREG_AOT_JDK), \
+        VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
+    $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
   endif
 
@@ -969,6 +1026,7 @@ define SetupRunJtregTestBody
   endif
 
   JTREG_TIMEOUT_FACTOR ?= $$(JTREG_AUTO_TIMEOUT_FACTOR)
+  $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
 	$$(call LogWarn, Clean up dirs for $1)
@@ -997,7 +1055,8 @@ define SetupRunJtregTestBody
     $1_COMMAND_LINE := \
         for i in {0..$$(JTREG_RETRY_COUNT)}; do \
           if [ "$$$$i" != 0 ]; then \
-            $$(PRINTF) "\nRetrying Jtreg run. Attempt: $$$$i\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Retrying Jtreg run. Attempt: $$$$i"; \
           fi; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" = "0" ]; then \
@@ -1010,10 +1069,12 @@ define SetupRunJtregTestBody
   ifneq ($$(JTREG_REPEAT_COUNT), 0)
     $1_COMMAND_LINE := \
         for i in {1..$$(JTREG_REPEAT_COUNT)}; do \
-          $$(PRINTF) "\nRepeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)\n"; \
+          $$(ECHO) ""; \
+          $$(ECHO) "Repeating Jtreg run: $$$$i out of $$(JTREG_REPEAT_COUNT)"; \
           $$($1_COMMAND_LINE); \
           if [ "`$$(CAT) $$($1_EXITCODE)`" != "0" ]; then \
-            $$(PRINTF) "\nFailures detected, no more repeats.\n"; \
+            $$(ECHO) ""; \
+            $$(ECHO) "Failures detected, no more repeats."; \
             break; \
           fi; \
         done
@@ -1024,9 +1085,9 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
 	    $$($1_TEST_TMP_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
             $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
-	))
+	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
 
@@ -1034,23 +1095,64 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Finished running test '$$($1_TEST)')
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
+
+	# Read jtreg documentation to learn on the test stats categories:
+	# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+	# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
+	# At the same time these tests contribute to "passed:" tests.
+	# In here we don't want that and so we substract number of "skipped:" from "passed:".
+
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
-	  $$(eval $1_PASSED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "passed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
-	  $$(if $$($1_PASSED), , $$(eval $1_PASSED := 0)) \
+	  $$(if $$($1_PASSED_AND_RUNTIME_SKIPPED), , $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0)) \
 	  $$(eval $1_FAILED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "failed:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_FAILED), , $$(eval $1_FAILED := 0)) \
+	  $$(eval $1_RUNTIME_SKIPPED := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
+	      for (i=1; i<=NF; i++) { if ($$$$i == "skipped:") \
+	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
+	  $$(if $$($1_RUNTIME_SKIPPED), , $$(eval $1_RUNTIME_SKIPPED := 0)) \
+	  $$(eval $1_SKIPPED := $$(shell \
+	      $$(AWK) \
+	        'BEGIN { \
+	          overall_skipped = 0; \
+	          patterns[1] = "skipped"; \
+	          patterns[2] = "excluded"; \
+	          patterns[3] = "not in match-list"; \
+	          patterns[4] = "did not match keywords"; \
+	          patterns[5] = "did not meet module requirements"; \
+	          patterns[6] = "did not meet platform requirements"; \
+	          patterns[7] = "did not match prior status"; \
+	          patterns[8] = "did not meet time-limit requirements"; \
+	        } { \
+	          split($$$$0, arr, ";"); \
+	          for (item in arr) { \
+	            for (p in patterns) { \
+	              if (match(arr[item], patterns[p] ": [0-9]+")) { \
+	                overall_skipped += substr(arr[item], RSTART + length(patterns[p]) + 2, RLENGTH); \
+	              } \
+	            } \
+	          } \
+	          print overall_skipped; \
+	        }' \
+	        $$($1_RESULT_FILE) \
+	  )) \
 	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_ERROR), , $$(eval $1_ERROR := 0)) \
+	  \
+	  $$(eval $1_PASSED := $$(shell \
+	      $$(EXPR) $$($1_PASSED_AND_RUNTIME_SKIPPED) - $$($1_RUNTIME_SKIPPED))) \
 	  $$(eval $1_TOTAL := $$(shell \
-	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR))) \
+	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
-	  $$(eval $1_PASSED := 0) \
+	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
@@ -1102,14 +1204,12 @@ define SetupRunSpecialTestBody
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR))
-	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, ( \
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/test-execution, \
 	    $$($1_TEST_COMMAND_LINE) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/test-output.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
-	))
-
-  $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/gtest.txt
+	)
 
   # We can not parse the various "special" tests.
   parse-test-$1: run-test-$1
@@ -1120,6 +1220,7 @@ define SetupRunSpecialTestBody
 	$$(eval $1_PASSED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 1; else $(ECHO) 0; fi \
 	))
+	$$(eval $1_SKIPPED := 0)
 	$$(eval $1_FAILED := $$(shell \
 	  if [ `$(CAT) $$($1_EXITCODE)` = "0" ]; then $(ECHO) 0; else $(ECHO) 1; fi \
 	))
@@ -1153,7 +1254,7 @@ UseSpecialTestHandler = \
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
   $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
     $(eval $(call SetupRunCustomTest, $(TEST_ID), \
@@ -1229,28 +1330,28 @@ run-test-report: post-run-test
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
 	$(ECHO) >> $(TEST_SUMMARY) Test summary
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
-	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %2s\n" "  " \
-	    TEST TOTAL PASS FAIL ERROR " "
+	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
+	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
 	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
-	      $(TR) -cs '[a-z][A-Z][0-9]\n' '[_*1000]')) \
+	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
 	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
-	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '[_*1000]')) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '_')) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
 	  , \
 	    $(eval TEST_NAME := $(test)) \
 	  ) \
-	  $(if $(filter $($(TEST_ID)_PASSED), $($(TEST_ID)_TOTAL)), \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
-	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "  " $(NEWLINE) \
-	  , \
-	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %2s\n" \
+	  $(if $(filter-out 0, $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR)), \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
 	         ">>" "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
-	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) "<<" $(NEWLINE) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "<<" $(NEWLINE) \
 	    $(eval TEST_FAILURE := true) \
+	  , \
+	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5d %5d %5d %5d %5d %2s\n" \
+	        "  " "$(TEST_NAME)" $($(TEST_ID)_TOTAL) $($(TEST_ID)_PASSED) \
+	        $($(TEST_ID)_FAILED) $($(TEST_ID)_ERROR) $($(TEST_ID)_SKIPPED) "  " $(NEWLINE) \
 	  ) \
 	)
 	$(ECHO) >> $(TEST_SUMMARY) ==============================
@@ -1276,12 +1377,14 @@ TARGETS += run-all-tests pre-run-test post-run-test run-test-report run-test
 
 ifeq ($(TEST_OPTS_JCOV), true)
 
+  JCOV_VM_OPTS := -Xmx4g -Djdk.xml.totalEntitySizeLimit=0 -Djdk.xml.maxGeneralEntitySizeLimit=0
+
   jcov-do-start-grabber:
 	$(call MakeDir, $(JCOV_OUTPUT_DIR))
 	if $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -status 1>/dev/null 2>&1 ; then \
 	  $(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600 ; \
 	fi
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
@@ -1294,6 +1397,10 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	$(JAVA) -jar $(JCOV_HOME)/lib/jcov.jar GrabberManager -stop -stoptimeout 3600
 
   JCOV_REPORT_TITLE := JDK code coverage report<br/>
+  ifneq ($(JCOV_MODULES), )
+    JCOV_MODULES_FILTER := $(foreach m, $(JCOV_MODULES), -include_module $m)
+    JCOV_REPORT_TITLE += Included modules: $(JCOV_MODULES)<br>
+  endif
   ifneq ($(JCOV_FILTERS), )
     JCOV_REPORT_TITLE += Code filters: $(JCOV_FILTERS)<br>
   endif
@@ -1301,11 +1408,12 @@ ifeq ($(TEST_OPTS_JCOV), true)
 
   jcov-gen-report: jcov-stop-grabber
 	$(call LogWarn, Generating JCov report ...)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
+	$(call ExecuteWithLog, $(JCOV_SUPPORT_DIR)/run-jcov-repgen, \
+	    $(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar RepGen -sourcepath \
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
-	    $(JCOV_FILTERS) \
+	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
-	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE)
+	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE))
 
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \
       jcov-gen-report
@@ -1325,7 +1433,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
     jcov-gen-diffcoverage: jcov-stop-grabber
 	$(call LogWarn, Generating diff coverage with changeset $(TEST_OPTS_JCOV_DIFF_CHANGESET) ... )
 	$(DIFF_COMMAND)
-	$(JAVA) -Xmx4g -jar $(JCOV_HOME)/lib/jcov.jar \
+	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar \
 	  DiffCoverage -replaceDiff "src/.*/classes/:" -all \
 	    $(JCOV_RESULT_FILE) $(JCOV_SOURCE_DIFF) > \
 	    $(JCOV_DIFF_COVERAGE_REPORT)
@@ -1353,4 +1461,8 @@ endif
 
 all: run-test
 
-.PHONY: default all $(TARGETS)
+.PHONY: $(TARGETS)
+
+################################################################################
+
+include MakeFileEnd.gmk

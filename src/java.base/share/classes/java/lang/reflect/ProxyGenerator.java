@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,6 @@ final class ProxyGenerator {
     /**
      * debugging flag for saving generated class files
      */
-    @SuppressWarnings("removal")
     private static final boolean SAVE_GENERATED_FILES =
             Boolean.getBoolean("jdk.proxy.ProxyGenerator.saveGeneratedFiles");
 
@@ -203,7 +202,6 @@ final class ProxyGenerator {
      * @param interfaces  proxy interfaces
      * @param accessFlags access flags of the proxy class
      */
-    @SuppressWarnings("removal")
     static byte[] generateProxyClass(ClassLoader loader,
                                      final String name,
                                      List<Class<?>> interfaces,

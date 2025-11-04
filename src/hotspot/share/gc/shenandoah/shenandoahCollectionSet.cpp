@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +24,16 @@
  *
  */
 
-#include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomic.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/copy.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
@@ -41,9 +43,13 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _cset_map(_map_space.base() + ((uintx)heap_base >> _region_size_bytes_shift)),
   _biased_cset_map(_map_space.base()),
   _heap(heap),
+  _has_old_regions(false),
   _garbage(0),
   _used(0),
+  _live(0),
   _region_count(0),
+  _old_garbage(0),
+  _preselected_regions(nullptr),
   _current_index(0) {
 
   // The collection set map is reserved to cover the entire heap *and* zero addresses.
@@ -58,7 +64,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   // subsystem for mapping not-yet-written-to pages to a single physical backing page,
   // but this is not guaranteed, and would confuse NMT and other memory accounting tools.
 
-  MemTracker::record_virtual_memory_tag(_map_space.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(_map_space, mtGC);
 
   size_t page_size = os::vm_page_size();
 
@@ -84,17 +90,35 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
-  _cset_map[r->index()] = 1;
-  _region_count++;
-  _garbage += r->garbage();
-  _used += r->used();
+  assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
+  _cset_map[r->index()] = 1;
+  size_t live    = r->get_live_data_bytes();
+  size_t garbage = r->garbage();
+  size_t free    = r->free();
+  if (r->is_young()) {
+    _young_bytes_to_evacuate += live;
+    _young_available_bytes_collected += free;
+    if (ShenandoahHeap::heap()->mode()->is_generational() && ShenandoahGenerationalHeap::heap()->is_tenurable(r)) {
+      _young_bytes_to_promote += live;
+    }
+  } else if (r->is_old()) {
+    _old_bytes_to_evacuate += live;
+    _old_garbage += garbage;
+  }
+
+  _region_count++;
+  _has_old_regions |= r->is_old();
+  _garbage += garbage;
+  _used += r->used();
+  _live += live;
   // Update the region status too. State transition would be checked internally.
   r->make_cset();
 }
 
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
+
   Copy::zero_to_bytes(_cset_map, _map_size);
 
 #ifdef ASSERT
@@ -104,10 +128,20 @@ void ShenandoahCollectionSet::clear() {
 #endif
 
   _garbage = 0;
+  _old_garbage = 0;
   _used = 0;
+  _live = 0;
 
   _region_count = 0;
   _current_index = 0;
+
+  _young_bytes_to_evacuate = 0;
+  _young_bytes_to_promote = 0;
+  _old_bytes_to_evacuate = 0;
+
+  _young_available_bytes_collected = 0;
+
+  _has_old_regions = false;
 }
 
 ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
@@ -116,11 +150,11 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
   // before hitting the (potentially contended) atomic index.
 
   size_t max = _heap->num_regions();
-  size_t old = Atomic::load(&_current_index);
+  size_t old = AtomicAccess::load(&_current_index);
 
   for (size_t index = old; index < max; index++) {
     if (is_in(index)) {
-      size_t cur = Atomic::cmpxchg(&_current_index, old, index + 1, memory_order_relaxed);
+      size_t cur = AtomicAccess::cmpxchg(&_current_index, old, index + 1, memory_order_relaxed);
       assert(cur >= old, "Always move forward");
       if (cur == old) {
         // Successfully moved the claim index, this is our region.
@@ -151,14 +185,53 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
 }
 
 void ShenandoahCollectionSet::print_on(outputStream* out) const {
-  out->print_cr("Collection Set : " SIZE_FORMAT "", count());
+  out->print_cr("Collection Set: Regions: "
+                "%zu, Garbage: %zu%s, Live: %zu%s, Used: %zu%s", count(),
+                byte_size_in_proper_unit(garbage()), proper_unit_for_byte_size(garbage()),
+                byte_size_in_proper_unit(live()),    proper_unit_for_byte_size(live()),
+                byte_size_in_proper_unit(used()),    proper_unit_for_byte_size(used()));
 
-  debug_only(size_t regions = 0;)
+  DEBUG_ONLY(size_t regions = 0;)
   for (size_t index = 0; index < _heap->num_regions(); index ++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);
-      debug_only(regions ++;)
+      DEBUG_ONLY(regions ++;)
     }
   }
   assert(regions == count(), "Must match");
+}
+
+void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const {
+  const LogTarget(Info, gc, ergo) lt;
+  LogStream ls(lt);
+  if (lt.is_enabled()) {
+    const size_t cset_percent = (total_garbage == 0) ? 0 : (garbage() * 100 / total_garbage);
+    const size_t collectable_garbage = garbage() + immediate_garbage;
+    const size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
+    const size_t immediate_percent = (total_garbage == 0) ? 0 : (immediate_garbage * 100 / total_garbage);
+
+    ls.print_cr("Collectable Garbage: " PROPERFMT " (%zu%%), "
+                 "Immediate: " PROPERFMT " (%zu%%), %zu regions, "
+                 "CSet: " PROPERFMT " (%zu%%), %zu regions",
+                 PROPERFMTARGS(collectable_garbage),
+                 collectable_garbage_percent,
+
+                 PROPERFMTARGS(immediate_garbage),
+                 immediate_percent,
+                 immediate_regions,
+
+                 PROPERFMTARGS(garbage()),
+                 cset_percent,
+                 count());
+
+    if (garbage() > 0) {
+      const size_t young_evac_bytes = get_live_bytes_in_untenurable_regions();
+      const size_t promote_evac_bytes = get_live_bytes_in_tenurable_regions();
+      const size_t old_evac_bytes = get_live_bytes_in_old_regions();
+      const size_t total_evac_bytes = young_evac_bytes + promote_evac_bytes + old_evac_bytes;
+      ls.print_cr("Evacuation Targets: "
+                  "YOUNG: " PROPERFMT ", " "PROMOTE: " PROPERFMT ", " "OLD: " PROPERFMT ", " "TOTAL: " PROPERFMT,
+                  PROPERFMTARGS(young_evac_bytes), PROPERFMTARGS(promote_evac_bytes), PROPERFMTARGS(old_evac_bytes), PROPERFMTARGS(total_evac_bytes));
+    }
+  }
 }

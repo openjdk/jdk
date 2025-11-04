@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ var getJibProfiles = function (input) {
     // Exclude list to use when Jib creates a source bundle
     data.src_bundle_excludes = [
         "build", "{,**/}webrev*", "{,**/}.hg", "{,**/}JTwork*", "{,**/}JTreport*",
-        "{,**/}.git"
+        "{,**/}.git",
+        "{,**/}core.[0-9]*"
     ];
     // Include list to use when creating a minimal jib source bundle which
     // contains just the jib configuration files.
@@ -240,10 +241,10 @@ var getJibProfilesCommon = function (input, data) {
 
     // List of the main profile names used for iteration
     common.main_profile_names = [
-        "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
-        "windows-x64", "windows-x86", "windows-aarch64",
-        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
-        "linux-riscv64"
+        "macosx-x64", "macosx-aarch64",
+        "windows-x64", "windows-aarch64",
+        "linux-x64", "linux-aarch64",
+        "linux-arm32", "linux-ppc64le", "linux-s390x", "linux-riscv64"
     ];
 
     // These are the base settings for all the main build profiles.
@@ -280,9 +281,6 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: ["--enable-openjdk-only"],
         labels: "open"
     };
-
-    common.configure_args_64bit = ["--with-target-bits=64"];
-    common.configure_args_32bit = ["--with-target-bits=32"];
 
     /**
      * Define common artifacts template for all main profiles
@@ -389,7 +387,7 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "23";
+    common.boot_jdk_version = "25";
     common.boot_jdk_build_number = "37";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
@@ -410,67 +408,34 @@ var getJibProfilesProfiles = function (input, common, data) {
 
     // Main SE profiles
     var profiles = {
-
-        "linux-x64": {
-            target_os: "linux",
-            target_cpu: "x64",
-            dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
-            configure_args: concat(
-                (input.build_cpu == "x64" ? common.configure_args_64bit
-                 : "--openjdk-target=x86_64-linux-gnu"),
-                "--with-zlib=system", "--disable-dtrace",
-                (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
-                    "--build=x86_64-unknown-linux-gnu" ] : [])),
-        },
-
-        "linux-x86": {
-            target_os: "linux",
-            target_cpu: "x86",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest", "libffi"],
-            configure_args: concat(common.configure_args_32bit, [
-                "--with-jvm-variants=minimal,server",
-                "--with-zlib=system",
-                "--with-libffi=" + input.get("libffi", "home_path"),
-                "--enable-libffi-bundling",
-                "--enable-fallback-linker"
-            ])
-        },
-
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+            configure_args: [
+                "--with-zlib=system",
                 "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
-                "SETFILE=/usr/bin/SetFile"),
+                "SETFILE=/usr/bin/SetFile"
+            ],
         },
 
         "macosx-aarch64": {
             target_os: "macosx",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "graphviz", "pandoc", "tidy"],
-            configure_args: concat(common.configure_args_64bit,
-                "--with-macosx-version-max=11.00.00"),
+            configure_args: [
+                "--with-macosx-version-max=11.00.00"
+            ],
         },
 
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
-            configure_args: concat(common.configure_args_64bit),
-        },
-
-        "windows-x86": {
-            target_os: "windows",
-            target_cpu: "x86",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--enable-deprecated-ports"),
+            configure_args: [],
         },
 
         "windows-aarch64": {
@@ -482,7 +447,19 @@ var getJibProfilesProfiles = function (input, common, data) {
             ],
         },
 
-        "linux-aarch64": {
+        "linux-x64": {
+          target_os: "linux",
+          target_cpu: "x64",
+          dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
+          configure_args: concat(
+              "--with-zlib=system",
+              "--disable-dtrace",
+              (cross_compiling ? [ "--openjdk-target=x86_64-linux-gnu" ] : []),
+              (isWsl(input) ? [ "--host=x86_64-unknown-linux-gnu",
+                  "--build=x86_64-unknown-linux-gnu" ] : [])),
+        },
+
+       "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "build_devkit", "graphviz", "pandoc", "tidy"],
@@ -499,8 +476,10 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit"],
             configure_args: [
-                "--openjdk-target=arm-linux-gnueabihf", "--with-freetype=bundled",
-                "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
+                "--openjdk-target=arm-linux-gnueabihf",
+                "--with-freetype=bundled",
+                "--with-abi-profile=arm-vfp-hflt",
+                "--disable-warnings-as-errors"
             ],
         },
 
@@ -510,7 +489,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit"],
             configure_args: [
-                "--openjdk-target=ppc64le-linux-gnu", "--with-freetype=bundled",
+                "--openjdk-target=ppc64le-linux-gnu",
+                "--with-freetype=bundled",
                 "--disable-warnings-as-errors"
             ],
         },
@@ -521,7 +501,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit"],
             configure_args: [
-                "--openjdk-target=s390x-linux-gnu", "--with-freetype=bundled",
+                "--openjdk-target=s390x-linux-gnu",
+                "--with-freetype=bundled",
                 "--disable-warnings-as-errors"
             ],
         },
@@ -532,7 +513,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit"],
             configure_args: [
-                "--openjdk-target=riscv64-linux-gnu", "--with-freetype=bundled",
+                "--openjdk-target=riscv64-linux-gnu",
+                "--with-freetype=bundled",
                 "--disable-warnings-as-errors"
             ],
         },
@@ -593,24 +575,24 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "libffi"],
-            configure_args: concat(common.configure_args_64bit, [
+            configure_args: [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling",
-            ])
+            ]
         },
 
         "linux-aarch64-zero": {
             target_os: "linux",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "libffi"],
-            configure_args: concat(common.configure_args_64bit, [
+            configure_args: [
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
-            ])
+            ]
         },
 
         "linux-x86-zero": {
@@ -618,12 +600,13 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: ["devkit", "gtest", "libffi"],
-            configure_args:  concat(common.configure_args_32bit, [
+            configure_args: [
+                "--with-target-bits=32",
                 "--with-zlib=system",
                 "--with-jvm-variants=zero",
                 "--with-libffi=" + input.get("libffi", "home_path"),
                 "--enable-libffi-bundling"
-            ])
+            ]
         }
     }
     profiles = concatObjects(profiles, zeroProfiles);
@@ -642,8 +625,10 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_64bit,
-                "--with-zlib=system", "--disable-precompiled-headers"),
+            configure_args: [
+                "--with-zlib=system",
+                "--disable-precompiled-headers"
+            ],
         },
     };
     profiles = concatObjects(profiles, noPchProfiles);
@@ -700,9 +685,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             platform: "linux-x64",
         },
-        "linux-x86": {
-            platform: "linux-x86",
-        },
         "macosx-x64": {
             platform: "macos-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
@@ -713,10 +695,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
         "windows-x64": {
             platform: "windows-x64",
-            jdk_suffix: "zip",
-        },
-        "windows-x86": {
-            platform: "windows-x86",
             jdk_suffix: "zip",
         },
         "windows-aarch64": {
@@ -792,7 +770,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+                "autoconf", "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
             configure_args: concat(
                 "--enable-full-docs",
@@ -883,7 +861,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[cmpBaselineName].configure_args = concat(
                 profiles[cmpBaselineName].configure_args,
                 "--with-hotspot-build-time=n/a",
-                "--disable-precompiled-headers");
+                "--disable-precompiled-headers",
+                "--with-source-date=version");
             // Do not inherit artifact definitions from base profile
             delete profiles[cmpBaselineName].artifacts;
         });
@@ -1099,14 +1078,14 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc13.2.0-OL6.4+1.0",
-        macosx: "Xcode14.3.1+1.0",
-        windows_x64: "VS2022-17.6.5+1.0",
-        linux_aarch64: "gcc13.2.0-OL7.6+1.0",
+        linux_x64: "gcc14.2.0-OL6.4+1.0",
+        macosx: "Xcode15.4+1.0",
+        windows_x64: "VS2022-17.13.2+1.0",
+        linux_aarch64: "gcc14.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
-        linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
+        linux_ppc64le: "gcc14.2.0-Fedora_41+1.0",
+        linux_s390x: "gcc14.2.0-Fedora_41+1.0",
+        linux_riscv64: "gcc14.2.0-Fedora_41+1.0"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1172,10 +1151,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-" + devkit_cross_prefix + devkit_platform,
-            revision: devkit_platform_revisions[devkit_platform],
-            environment: {
-                "DEVKIT_HOME": input.get("devkit", "home_path"),
-            }
+            revision: devkit_platform_revisions[devkit_platform]
         },
 
         build_devkit: {
@@ -1198,9 +1174,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.4",
+            version: "8.1",
             build_number: "1",
-            file: "bundles/jtreg-7.4+1.zip",
+            file: "bundles/jtreg-8.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1213,9 +1189,11 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            organization: common.organization,
-            revision: "3.0-17-jdk-asm+1.0",
-            ext: "zip",
+            server: "jpg",
+            product: "jcov",
+            version: "3.0",
+            build_number: "3",
+            file: "bundles/jcov-3.0+3.zip",
             environment_name: "JCOV_HOME",
         },
 
@@ -1246,7 +1224,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             revision: "9.0.0+1.0",
-            module: "graphviz-" + input.target_platform,
+            module: "graphviz-" + input.build_platform,
             configure_args: "DOT=" + input.get("graphviz", "install_path") + "/dot",
             environment_path: input.get("graphviz", "install_path")
         },
