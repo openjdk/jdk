@@ -145,7 +145,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         MAX_BUFFERED_HIGH = maxBufferHigh;
         MAX_BUFFERED_LOW = maxBufferLow;
         String useVtForSelector =
-                System.getProperty("jdk.internal.httpclient.quic.useVTForSelector", "default");
+                System.getProperty("jdk.internal.httpclient.quic.selector.useVirtualThreads", "default");
         USE_VT_FOR_SELECTOR = Stream.of(UseVTForSelector.values())
                 .filter((v) -> v.name().equalsIgnoreCase(useVtForSelector))
                 .findFirst().orElse(UseVTForSelector.DEFAULT);
