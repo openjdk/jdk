@@ -56,6 +56,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
+import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
@@ -2309,7 +2310,8 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
-                addTypeAnnotationsToSymbol(sym, newList);
+                Assert.check(sym.completer == Completer.NULL_COMPLETER);
+                sym.completer = sym -> addTypeAnnotationsToSymbol(sym, newList);
             } finally {
                 currentClassFile = previousClassFile;
             }
@@ -2331,7 +2333,7 @@ public class ClassReader {
         } catch (CompletionFailure ex) {
             JavaFileObject prev = log.useSource(currentClassFile);
             try {
-                log.warning(Warnings.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
+                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
             } finally {
                 log.useSource(prev);
             }
