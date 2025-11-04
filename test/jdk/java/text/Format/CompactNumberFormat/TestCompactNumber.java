@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8177552 8217721 8222756 8295372 8306116 8319990 8338690 8363972
+ *      8354548
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run junit/othervm TestCompactNumber

@@ -849,8 +849,8 @@ class Bundle {
     }
 
     /**
-     * Escape reserved pattern characters, '#', '{', and '}' in the pattern
-     * string.
+     * Escape reserved pattern characters or optional start/ends,
+     * '#', '{', '}', '[', and ']' in the pattern string.
      *
      * @param pattern original pattern string
      * @return escaped pattern string
@@ -871,7 +871,8 @@ class Bundle {
                     inQuote = !inQuote;
                     out.append(c);
                 }
-            } else if (!inQuote && (c == '#' || c == '{' || c == '}')) {
+            } else if (!inQuote &&
+                (c == '#' || c == '{' || c == '}' || c == '[' || c == ']')) {
                 // escape the reserved char
                 out.append('\'').append(c).append('\'');
             } else {
