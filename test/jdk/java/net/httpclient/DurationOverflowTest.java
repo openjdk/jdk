@@ -83,9 +83,11 @@ import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuil
  *      -Djdk.httpclient.keepalive.timeout=9223372036854775807
  *      DurationOverflowTest
  *
+ * @comment `h3` infra is also enabled for this test since `j.h.k.timeout.h3`
+ *          defaults to `j.h.k.timeout.h2`
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout.h2=9223372036854775807
- *      -DallowedInfras=h2,h2s
+ *      -DallowedInfras=h2,h2s,h3
  *      DurationOverflowTest
  *
  * @run junit/othervm
