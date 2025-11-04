@@ -2889,6 +2889,20 @@ Node* Node::find_similar(int opc) {
   return nullptr;
 }
 
+Node* Node::unique_multiple_edges_out_or_null() const {
+  Node* use = nullptr;
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* u = fast_out(k);
+    if (use == nullptr) {
+      use = u; // first use
+    } else if (u != use) {
+      return nullptr; // not unique
+    } else {
+      // secondary use
+    }
+  }
+  return use;
+}
 
 //--------------------------unique_ctrl_out_or_null-------------------------
 // Return the unique control out if only one. Null if none or more than one.
