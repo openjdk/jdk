@@ -34,60 +34,90 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class DataFetcher {
-    /// Fetches data.
-    ///
-    /// By default, this method fetches a ZIP from an artifact server,
-    /// extracts an entry inside, and returns its content.
-    ///
-    /// Users can also specify the "jdk.tests.repos.pattern" system property
-    /// to fetch the extracted file in an alternative location. The value of
-    /// this system property is a [format][java.util.Formatter] string that
-    /// takes the last part of [organization name][Artifact#organization()],
-    /// the [name][Artifact#name()], the [version][Artifact#revision()],
-    /// and `entry` as arguments. For example:
-    ///
-    /// With the [CMS_ML_DSA] class inside this test, the pattern
-    /// `file:///Users/tester/repos/external/%s/%s/%4$s` will be resolved to
-    /// a local file like `/Users/tester/repos/external/lamps-wg/cms-ml-dsa/entry`;
-    /// and a pattern `https://raw.repos.com/%s/%s/%s/%s` will be resolved to
-    /// a URL like `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
-    ///
+/// Fetches data for a repo.
+///
+/// By default, data is extracted from ZIP file on an artifact server.
+///
+/// Users can specify the "jdk.tests.repos.pattern" system property
+/// to fetch the file in an alternative location. The value of this
+/// system property represents the URL for the entry with "%o" mapping to
+/// the last part of [organization name][Artifact#organization()], "%n"
+/// to [name][Artifact#name()], "%r" to[version][Artifact#revision()],
+/// and "%e" to the entry name. For example:
+///
+/// With the [CMS_ML_DSA] class inside this test, the pattern
+/// `file:///Users/tester/repos/external/%o/%n/%e` will be resolved to
+/// a local file like `/Users/tester/repos/external/lamps-wg/cms-ml-dsa/entry`;
+/// and a pattern `https://raw.repos.com/%o/%n/%r/%e` will be resolved to
+/// a URL like `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
+///
+public interface DataFetcher extends AutoCloseable {
+
+    byte[] fetch(String entry) throws IOException;
+
     /// @param klass the `Artifact` class
     /// @param zipPrefix the common prefix for each entry in the ZIP file
-    /// @param entry the entry name without `zipPrefix`
-    public static byte[] fetchData(Class<?> klass, String zipPrefix, String entry)
+    static DataFetcher of(Class<?> klass, String zipPrefix)
             throws IOException {
         Artifact artifact = klass.getAnnotation(Artifact.class);
         var org = artifact.organization();
         var prop = System.getProperty("jdk.tests.repos.pattern");
         if (prop != null && org.startsWith("jpg.tests.jdk.repos.")) {
-            var url = String.format(prop,
-                    org.substring(org.lastIndexOf('.') + 1),
-                    artifact.name(),
-                    artifact.revision(),
-                    entry);
-            System.out.println("fetching " + url + "...");
-            try (var is = new URI(url).toURL().openStream()) {
-                return is.readAllBytes();
-            } catch (URISyntaxException e) {
-                throw new IOException("Invalid URL: " + url);
-            }
+            prop = prop.replace("%o", org.substring(org.lastIndexOf('.') + 1));
+            prop = prop.replace("%n", artifact.name());
+            prop = prop.replace("%r", artifact.revision());
+            System.out.println("Creating FileFetcher on " + prop);
+            return new FileFetcher(prop);
         } else {
             try {
                 Path p = ArtifactResolver.resolve(klass).entrySet().stream()
                         .findAny().get().getValue();
-                System.out.println("fetching " + zipPrefix + entry + " in " + p + "...");
-                try (ZipFile zf = new ZipFile(p.toFile())) {
-                    ZipEntry ze = zf.getEntry(zipPrefix + entry);
-                    if (ze != null) {
-                        return zf.getInputStream(ze).readAllBytes();
-                    } else {
-                        throw new RuntimeException("Entry not found: " + entry);
-                    }
-                }
+                System.out.println("Creating ZipFetcher on " + p);
+                return new ZipFetcher(new ZipFile(p.toFile()), zipPrefix);
             } catch (ArtifactResolverException e) {
-                throw new SkippedException("Cannot find the artifact " + artifact.name(), e);
+                throw new SkippedException("Cannot find " + artifact.name(), e);
+            }
+        }
+    }
+
+    /// Fetches data from a URL.
+    /// @param base the base URL string, contains "%e" mapping to entry name
+    record FileFetcher(String base) implements DataFetcher {
+        @Override
+        public void close() throws Exception {
+            // nothing to do
+        }
+
+        @Override
+        public byte[] fetch(String entry) throws IOException {
+            System.out.println("Reading " + entry + "...");
+            try (var is = new URI(base.replace("%e", entry)).toURL().openStream()) {
+                return is.readAllBytes();
+            } catch (URISyntaxException e) {
+                throw new IOException("Cannot create URI", e);
+            }
+        }
+    }
+
+    /// Fetches data from a ZIP file.
+    /// @param zf the `ZipFile`
+    /// @param zipPrefix optional prefix string inside the ZIP file. For
+    ///     example, if an entry "sample/data" is "archive/sample/data"
+    ///     inside the ZIP, "archive/" should be provided as `zipPrefix`.
+    record ZipFetcher(ZipFile zf, String zipPrefix) implements DataFetcher {
+        @Override
+        public void close() throws Exception {
+            zf.close();
+        }
+
+        @Override
+        public byte[] fetch(String entry) throws IOException {
+            System.out.println("Reading " + entry + "...");
+            ZipEntry ze = zf.getEntry(zipPrefix + entry);
+            if (ze != null) {
+                return zf.getInputStream(ze).readAllBytes();
+            } else {
+                throw new RuntimeException("Entry not found: " + entry);
             }
         }
     }

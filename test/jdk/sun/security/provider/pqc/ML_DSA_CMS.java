@@ -29,6 +29,7 @@
  * @modules java.base/sun.security.pkcs
  */
 import jdk.test.lib.Asserts;
+import jdk.test.lib.security.DataFetcher;
 import sun.security.pkcs.PKCS7;
 
 import java.io.BufferedReader;
@@ -45,9 +46,17 @@ import static jdk.test.lib.security.DataFetcher.*;
 public class ML_DSA_CMS {
     public static void main(String[] args) throws Exception {
         // See https://datatracker.ietf.org/doc/html/rfc9882#name-examples
-        test(readCMS("mldsa44-signed-attrs.pem"), readCert("ML-DSA-44.crt"));
-        test(readCMS("mldsa65-signed-attrs.pem"), readCert("ML-DSA-65.crt"));
-        test(readCMS("mldsa87-signed-attrs.pem"), readCert("ML-DSA-87.crt"));
+        try (var cmsFetcher = DataFetcher.of(CMS_ML_DSA.class,
+                    "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/");
+            var dsaFetcher = DataFetcher.of(DILITHIUM_CERTIFICATES.class,
+                    "dilithium-certificates-draft-ietf-lamps-dilithium-certificates-13/")) {
+            test(readCMS(cmsFetcher, "mldsa44-signed-attrs.pem"),
+                    readCert(dsaFetcher, "ML-DSA-44.crt"));
+            test(readCMS(cmsFetcher, "mldsa65-signed-attrs.pem"),
+                    readCert(dsaFetcher, "ML-DSA-65.crt"));
+            test(readCMS(cmsFetcher, "mldsa87-signed-attrs.pem"),
+                    readCert(dsaFetcher, "ML-DSA-87.crt"));
+        }
     }
 
     /// Verifies a signed file.
@@ -61,10 +70,8 @@ public class ML_DSA_CMS {
     }
 
     // Read data in https://datatracker.ietf.org/doc/html/rfc9882#name-examples
-    static byte[] readCMS(String entry) throws IOException  {
-        var data = fetchData(CMS_ML_DSA.class,
-                "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/",
-                "examples/" + entry);
+    static byte[] readCMS(DataFetcher f, String entry) throws IOException  {
+        var data = f.fetch("examples/" + entry);
         var pem = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data)))
                 .lines()
                 .filter(s -> !s.contains("-----"))
@@ -73,10 +80,8 @@ public class ML_DSA_CMS {
     }
 
     // Read data in https://datatracker.ietf.org/doc/html/rfc9881#name-example-certificates
-    static X509Certificate readCert(String entry) throws Exception {
-        var data = fetchData(DILITHIUM_CERTIFICATES.class,
-                "dilithium-certificates-draft-ietf-lamps-dilithium-certificates-13/",
-                "examples/" + entry);
+    static X509Certificate readCert(DataFetcher f, String entry) throws Exception {
+        var data = f.fetch("examples/" + entry);
         var cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data));
     }
