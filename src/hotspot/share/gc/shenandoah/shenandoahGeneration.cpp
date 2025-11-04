@@ -40,6 +40,8 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/quickSort.hpp"
 
+using idx_t = ShenandoahSimpleBitMap::idx_t;
+
 template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
@@ -148,19 +150,8 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
-size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return AtomicAccess::load(&_bytes_allocated_since_gc_start);
-}
-
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
-  AtomicAccess::store(&_bytes_allocated_since_gc_start, initial_bytes_allocated);
-}
-
-void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  AtomicAccess::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
-}
-
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
+  shenandoah_assert_heaplocked();
   _evacuation_reserve = new_val;
 }
 
@@ -294,7 +285,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
   const size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
-  const size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
+  size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
   // clamped by the old generation space available.
@@ -363,6 +354,11 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   log_info(gc, ergo)("Initial evacuation reserves: young: " PROPERFMT ", promotion: " PROPERFMT ", old: " PROPERFMT,
                      PROPERFMTARGS(young_evacuation_reserve), PROPERFMTARGS(consumed_by_advance_promotion), PROPERFMTARGS(old_evacuation_reserve));
+
+  // If any regions have been selected for promotion in place, this has the effect of decreasing available within mutator
+  // and collector partitions, due to padding of remnant memory within each promoted in place region.  This will affect
+  // young_evacuation_reserve but not old_evacuation_reserve or consumed_by_advance_promotion.  So recompute.
+  young_evacuation_reserve = MIN2(young_evacuation_reserve, young_generation->available_with_reserve());
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
@@ -433,50 +429,11 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   size_t excess_old = old_available - old_consumed;
   const size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
   const size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
-  assert(old_available >= unaffiliated_old, "Unaffiliated old is a subset of old available");
+  assert(old_available >= unaffiliated_old,
+         "Unaffiliated old (%zu is %zu * %zu) is a subset of old available (%zu)",
+         unaffiliated_old, unaffiliated_old_regions, region_size_bytes, old_available);
   log_debug(gc, cset)("excess_old is: %zu, unaffiliated_old_regions is: %zu", excess_old, unaffiliated_old_regions);
 
-  // Make sure old_evac_committed is unaffiliated
-  if (old_consumed > 0) {
-    if (unaffiliated_old > old_consumed) {
-      const size_t giveaway = unaffiliated_old - old_consumed;
-      const size_t giveaway_regions = giveaway / region_size_bytes;  // round down
-      if (giveaway_regions > 0) {
-        excess_old = MIN2(excess_old, giveaway_regions * region_size_bytes);
-        log_debug(gc, cset)("Changed excess_old to: %zu", excess_old);
-      } else {
-        excess_old = 0;
-      }
-    } else {
-      excess_old = 0;
-    }
-  }
-
-  // If we find that OLD has excess regions, give them back to YOUNG now to reduce likelihood we run out of allocation
-  // runway during evacuation and update-refs.
-  size_t regions_to_xfer = 0;
-  if (excess_old > unaffiliated_old) {
-    // we can give back unaffiliated_old (all of unaffiliated is excess)
-    if (unaffiliated_old_regions > 0) {
-      regions_to_xfer = unaffiliated_old_regions;
-    }
-  } else if (unaffiliated_old_regions > 0) {
-    // excess_old < unaffiliated old: we can give back MIN(excess_old/region_size_bytes, unaffiliated_old_regions)
-    const size_t excess_regions = excess_old / region_size_bytes;
-    regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
-  }
-
-  if (regions_to_xfer > 0) {
-    assert(excess_old >= regions_to_xfer * region_size_bytes,
-           "Cannot transfer (%zu, %zu) more than excess old (%zu)",
-           regions_to_xfer, region_size_bytes, excess_old);
-    log_debug(gc, ergo)("Giving away %zu old regions (old_available, " PROPERFMT ", old_evac: " PROPERFMT ", unaffiliated_old: " PROPERFMT ")",
-                        regions_to_xfer, PROPERFMTARGS(old_available), PROPERFMTARGS(old_evacuated_committed), PROPERFMTARGS(unaffiliated_old));
-    const bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
-    excess_old -= regions_to_xfer * region_size_bytes;
-    log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
-                       result? "Successfully": "Unsuccessfully", regions_to_xfer);
-  }
 
   old_generation->reset_promoted_expended();
   log_info(gc, ergo)("Adjusted evacuation reserves: young: " PROPERFMT ", promotion: " PROPERFMT ", old: " PROPERFMT,
@@ -533,6 +490,8 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   assert_no_in_place_promotions();
 
   auto const heap = ShenandoahGenerationalHeap::heap();
+  ShenandoahYoungGeneration* young_gen = heap->young_generation();
+  ShenandoahFreeSet* free_set = heap->free_set();
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
@@ -549,12 +508,28 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
   // Sort the promotion-eligible regions in order of increasing live-data-bytes so that we can first reclaim regions that require
   // less evacuation effort.  This prioritizes garbage first, expanding the allocation pool early before we reclaim regions that
   // have more live data.
-  const size_t num_regions = heap->num_regions();
+  const idx_t num_regions = heap->num_regions();
 
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
 
-  for (size_t i = 0; i < num_regions; i++) {
+  ShenandoahFreeSet* freeset = heap->free_set();
+
+  // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
+  idx_t pip_low_collector_idx = freeset->max_regions();
+  idx_t pip_high_collector_idx = -1;
+  idx_t pip_low_mutator_idx = freeset->max_regions();
+  idx_t pip_high_mutator_idx = -1;
+  size_t collector_regions_to_pip = 0;
+  size_t mutator_regions_to_pip = 0;
+
+  size_t pip_mutator_regions = 0;
+  size_t pip_collector_regions = 0;
+  size_t pip_mutator_bytes = 0;
+  size_t pip_collector_bytes = 0;
+
+  size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
+  for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
       // skip over regions that aren't regular young with some live data
@@ -571,18 +546,54 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
           // we use this field to indicate that this region should be promoted in place during the evacuation
           // phase.
           r->save_top_before_promote();
-
-          size_t remnant_size = r->free() / HeapWordSize;
-          if (remnant_size > ShenandoahHeap::min_fill_size()) {
-            ShenandoahHeap::fill_with_object(original_top, remnant_size);
+          size_t remnant_bytes = r->free();
+          size_t remnant_words = remnant_bytes / HeapWordSize;
+          assert(ShenandoahHeap::min_fill_size() <= PLAB::min_size(), "Implementation makes invalid assumptions");
+          if (remnant_words >= ShenandoahHeap::min_fill_size()) {
+            ShenandoahHeap::fill_with_object(original_top, remnant_words);
             // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
             // newly allocated objects will not be parsable when promote in place tries to register them.  Furthermore, any
             // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
-            promote_in_place_pad += remnant_size * HeapWordSize;
+            // The region r is either in the Mutator or Collector partition if remnant_words > heap()->plab_min_size.
+            // Otherwise, the region is in the NotFree partition.
+            ShenandoahFreeSetPartitionId p = free_set->membership(i);
+            if (p == ShenandoahFreeSetPartitionId::Mutator) {
+              mutator_regions_to_pip++;
+              if (i < pip_low_mutator_idx) {
+                pip_low_mutator_idx = i;
+              }
+              if (i > pip_high_mutator_idx) {
+                pip_high_mutator_idx = i;
+              }
+              pip_mutator_regions++;
+              pip_mutator_bytes += remnant_bytes;
+            } else if (p == ShenandoahFreeSetPartitionId::Collector) {
+              collector_regions_to_pip++;
+              if (i < pip_low_collector_idx) {
+                pip_low_collector_idx = i;
+              }
+              if (i > pip_high_collector_idx) {
+                pip_high_collector_idx = i;
+              }
+              pip_collector_regions++;
+              pip_collector_bytes += remnant_bytes;
+            } else {
+              assert((p == ShenandoahFreeSetPartitionId::NotFree) && (remnant_words < heap->plab_min_size()),
+                     "Should be NotFree if not in Collector or Mutator partitions");
+              // In this case, the memory is already counted as used and the region has already been retired.  There is
+              // no need for further adjustments to used.  Further, the remnant memory for this region will not be
+              // unallocated or made available to OldCollector after pip.
+              remnant_bytes = 0;
+            }
+            promote_in_place_pad += remnant_bytes;
+            free_set->prepare_to_promote_in_place(i, remnant_bytes);
           } else {
-            // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
-            // allocations occurring within this region before the region is promoted in place.
+            // Since the remnant is so small that this region has already been retired, we don't have to worry about any
+            // accidental allocations occurring within this region before the region is promoted in place.
+
+            // This region was already not in the Collector or Mutator set, so no need to remove it.
+            assert(free_set->membership(i) == ShenandoahFreeSetPartitionId::NotFree, "sanity");
           }
         }
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
@@ -623,7 +634,21 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
     // Subsequent regions may be selected if they have smaller live data.
   }
 
-  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: " PROPERFMT, PROPERFMTARGS(promo_potential));
+  if (pip_mutator_regions + pip_collector_regions > 0) {
+    freeset->account_for_pip_regions(pip_mutator_regions, pip_mutator_bytes, pip_collector_regions, pip_collector_bytes);
+  }
+
+  // Retire any regions that have been selected for promote in place
+  if (collector_regions_to_pip > 0) {
+    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Collector,
+                                                               pip_low_collector_idx, pip_high_collector_idx,
+                                                               collector_regions_to_pip);
+  }
+  if (mutator_regions_to_pip > 0) {
+    freeset->shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId::Mutator,
+                                                               pip_low_mutator_idx, pip_high_mutator_idx,
+                                                               mutator_regions_to_pip);
+  }
 
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
@@ -768,9 +793,15 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
     size_t first_old, last_old, num_old;
-    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+
+    if (heap->mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      gen_heap->compute_old_generation_balance(young_cset_regions, old_cset_regions);
+    }
+
     // Free set construction uses reserve quantities, because they are known to be valid here
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old, true);
   }
 }
 
@@ -814,14 +845,12 @@ void ShenandoahGeneration::cancel_marking() {
 }
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
-                                           uint max_workers,
-                                           size_t max_capacity) :
+                                           uint max_workers) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(this, MAX2(max_workers, 1U))),
-  _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
-  _used(0), _bytes_allocated_since_gc_start(0),
-  _max_capacity(max_capacity),
+  _evacuation_reserve(0),
+  _free_set(nullptr),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
@@ -838,6 +867,11 @@ ShenandoahGeneration::~ShenandoahGeneration() {
     delete q;
   }
   delete _task_queues;
+}
+
+void ShenandoahGeneration::post_initialize(ShenandoahHeap* heap) {
+  _free_set = heap->free_set();
+  assert(_free_set != nullptr, "bad initialization order");
 }
 
 void ShenandoahGeneration::reserve_task_queues(uint workers) {
@@ -867,159 +901,26 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
-size_t ShenandoahGeneration::increment_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
-  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
-  // a coherent value.
-  return AtomicAccess::add(&_affiliated_region_count, (size_t) 1);
-}
-
-size_t ShenandoahGeneration::decrement_affiliated_region_count() {
-  shenandoah_assert_heaplocked_or_safepoint();
-  // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
-  // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
-  // a coherent value.
-  auto affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-         "used + humongous cannot exceed regions");
-  return affiliated_region_count;
-}
-
-size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
-  return AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
-}
-
-size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  return AtomicAccess::add(&_affiliated_region_count, delta);
-}
-
-size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  assert(AtomicAccess::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
-
-  auto const affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, delta);
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-         "used + humongous cannot exceed regions");
-  return affiliated_region_count;
-}
-
-void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
-  assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  AtomicAccess::store(&_affiliated_region_count, num_regions);
-  AtomicAccess::store(&_used, num_bytes);
-  _humongous_waste = humongous_waste;
-}
-
-void ShenandoahGeneration::increase_used(size_t bytes) {
-  AtomicAccess::add(&_used, bytes);
-}
-
-void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
-  if (bytes > 0) {
-    AtomicAccess::add(&_humongous_waste, bytes);
-  }
-}
-
-void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
-  if (bytes > 0) {
-    assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
-           "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
-    AtomicAccess::sub(&_humongous_waste, bytes);
-  }
-}
-
-void ShenandoahGeneration::decrease_used(size_t bytes) {
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used >= bytes), "cannot reduce bytes used by generation below zero");
-  AtomicAccess::sub(&_used, bytes);
-}
-
-size_t ShenandoahGeneration::used_regions() const {
-  return AtomicAccess::load(&_affiliated_region_count);
-}
-
-size_t ShenandoahGeneration::free_unaffiliated_regions() const {
-  size_t result = max_capacity() / ShenandoahHeapRegion::region_size_bytes();
-  auto const used_regions = this->used_regions();
-  if (used_regions > result) {
-    result = 0;
-  } else {
-    result -= used_regions;
-  }
-  return result;
-}
-
-size_t ShenandoahGeneration::used_regions_size() const {
-  return used_regions() * ShenandoahHeapRegion::region_size_bytes();
-}
-
 size_t ShenandoahGeneration::available() const {
-  return available(max_capacity());
+  size_t result = available(max_capacity());
+  return result;
 }
 
 // For ShenandoahYoungGeneration, Include the young available that may have been reserved for the Collector.
 size_t ShenandoahGeneration::available_with_reserve() const {
-  return available(max_capacity());
+  size_t result = available(max_capacity());
+  return result;
 }
 
 size_t ShenandoahGeneration::soft_available() const {
-  return available(ShenandoahHeap::heap()->soft_max_capacity());
+  size_t result = available(ShenandoahHeap::heap()->soft_max_capacity());
+  return result;
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {
-  size_t in_use = used() + get_humongous_waste();
-  return in_use > capacity ? 0 : capacity - in_use;
-}
-
-size_t ShenandoahGeneration::increase_capacity(size_t increment) {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  // We do not enforce that new capacity >= heap->max_size_for(this).  The maximum generation size is treated as a rule of thumb
-  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
-  // in place.
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_max_capacity + increment <= ShenandoahHeap::heap()->max_capacity()), "Generation cannot be larger than heap size");
-  assert(increment % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
-  _max_capacity += increment;
-
-  // This detects arithmetic wraparound on _used
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() >= used()),
-         "Affiliated regions must hold more than what is currently used");
-  return _max_capacity;
-}
-
-size_t ShenandoahGeneration::set_capacity(size_t byte_size) {
-  shenandoah_assert_heaplocked_or_safepoint();
-  _max_capacity = byte_size;
-  return _max_capacity;
-}
-
-size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
-  shenandoah_assert_heaplocked_or_safepoint();
-
-  // We do not enforce that new capacity >= heap->min_size_for(this).  The minimum generation size is treated as a rule of thumb
-  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
-  // in place.
-  assert(decrement % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
-  assert(_max_capacity >= decrement, "Generation capacity cannot be negative");
-
-  _max_capacity -= decrement;
-
-  // This detects arithmetic wraparound on _used
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() >= used()),
-         "Affiliated regions must hold more than what is currently used");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used <= _max_capacity), "Cannot use more than capacity");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() <= _max_capacity),
-         "Cannot use more than capacity");
-  return _max_capacity;
+  size_t in_use = used();
+  size_t result = in_use > capacity ? 0 : capacity - in_use;
+  return result;
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {

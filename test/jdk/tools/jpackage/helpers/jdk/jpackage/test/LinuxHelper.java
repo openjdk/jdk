@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -101,7 +100,7 @@ public final class LinuxHelper {
         return cmd.pathToUnpackedPackageFile(
                 Path.of("/lib/systemd/system").resolve(getServiceUnitFileName(
                         getPackageName(cmd),
-                        Optional.ofNullable(launcherName).orElseGet(cmd::name))));
+                        Optional.ofNullable(launcherName).orElseGet(cmd::mainLauncherName))));
     }
 
     static String getBundleName(JPackageCommand cmd) {
@@ -371,12 +370,11 @@ public final class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final var desktopFiles = getDesktopFiles(cmd);
-        final var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
 
         return desktopFiles.stream().map(desktopFile -> {
             var systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
             return new InvokeShortcutSpec.Stub(
-                    launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile),
+                    launcherNameFromDesktopFile(cmd, desktopFile),
                     LauncherShortcut.LINUX_SHORTCUT,
                     new DesktopFile(systemDesktopFile, false).findQuotedValue("Path").map(Path::of),
                     List.of("gtk-launch", PathUtils.replaceSuffix(systemDesktopFile.getFileName(), "").toString()));
@@ -532,16 +530,11 @@ public final class LinuxHelper {
         TKit.assertEquals(List.of(), unreferencedIconFiles, "Check there are no unreferenced icon files in the package");
     }
 
-    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
+    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Path desktopFile) {
         Objects.requireNonNull(cmd);
-        Objects.requireNonNull(predefinedAppImage);
         Objects.requireNonNull(desktopFile);
 
-        return predefinedAppImage.map(v -> {
-            return v.launchers().keySet().stream();
-        }).orElseGet(() -> {
-            return Stream.concat(Stream.of(cmd.name()), cmd.addLauncherNames().stream());
-        }).filter(name-> {
+        return Stream.concat(Stream.of(cmd.mainLauncherName()), cmd.addLauncherNames(true).stream()).filter(name-> {
             return getDesktopFile(cmd, name).equals(desktopFile);
         }).findAny().orElseThrow(() -> {
             TKit.assertUnexpected(String.format("Failed to find launcher corresponding to [%s] file", desktopFile));
@@ -557,7 +550,7 @@ public final class LinuxHelper {
 
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
 
-        var launcherName = launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile);
+        var launcherName = launcherNameFromDesktopFile(cmd, desktopFile);
 
         var data = new DesktopFile(desktopFile, true);
 
@@ -887,8 +880,9 @@ public final class LinuxHelper {
         return arch;
     }
 
-    private static String getServiceUnitFileName(String packageName,
-            String launcherName) {
+    private static String getServiceUnitFileName(String packageName, String launcherName) {
+        Objects.requireNonNull(packageName);
+        Objects.requireNonNull(launcherName);
         try {
             return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
         } catch (InvocationTargetException | IllegalAccessException ex) {
