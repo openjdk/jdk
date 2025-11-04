@@ -1586,7 +1586,7 @@ Java_sun_awt_windows_WPrinterJob_deleteDC
 
     if ((HDC)dc != NULL) {
         DeletePrintDC((HDC)dc);
-     }
+    }
 
     if ((HGLOBAL)devmode != NULL){
          ::GlobalFree((HGLOBAL)devmode);
@@ -1854,8 +1854,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_printBand
 
     HDC printDC = AwtPrintControl::getPrintDC(env, self);
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
     doPrintBand(env, printDC, imageArray, x, y, width, height);
 }
 
@@ -1869,8 +1869,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_beginPath
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::BeginPath((HDC)printDC);
 
@@ -1887,8 +1887,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_endPath
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::EndPath((HDC)printDC);
 
@@ -1905,8 +1905,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_fillPath
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::FillPath((HDC)printDC);
 
@@ -1923,8 +1923,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_closeFigure
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::CloseFigure((HDC)printDC);
 
@@ -1941,8 +1941,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_lineTo
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::LineTo((HDC)printDC, ROUND_TO_LONG(x), ROUND_TO_LONG(y));
 
@@ -1960,8 +1960,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_moveTo
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::MoveToEx((HDC)printDC, ROUND_TO_LONG(x), ROUND_TO_LONG(y), NULL);
 
@@ -1982,8 +1982,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_polyBezierTo
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     POINT points[3];
 
@@ -2008,7 +2008,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setPolyFillMode
 (JNIEnv *env, jobject self, jlong printDC, jint fillRule) {
     TRY;
 
-    if ((HDC)printDC == NULL) {
+    if ((HDC)rintDC == NULL) {
          return;
      }
 
@@ -2027,8 +2027,8 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_setAdvancedGraphicsMode
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return 0;
-     }
+        return 0;
+    }
 
     int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, GM_ADVANCED);
     DASSERT(oldGraphicsMode != 0);
@@ -2047,8 +2047,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setGraphicsMode
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     int oldGraphicsMode = ::SetGraphicsMode((HDC)printDC, mode);
     DASSERT(oldGraphicsMode != 0);
@@ -2066,8 +2066,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_scale
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     XFORM xForm;
 
@@ -2094,8 +2094,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_getWorldTransform
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     double elems[6];
     XFORM xForm;
@@ -2125,8 +2125,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setWorldTransform
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     double *elems;
     XFORM xForm;
@@ -2159,8 +2159,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_selectSolidBrush
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     HBRUSH colorBrush = ::CreateSolidBrush(RGB(red, green, blue));
     HBRUSH oldBrush = (HBRUSH)::SelectObject((HDC)printDC, colorBrush);
@@ -2180,8 +2180,8 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getPenX
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return 0;
-     }
+        return 0;
+    }
 
     POINT where;
     ::GetCurrentPositionEx((HDC)printDC, &where);
@@ -2202,8 +2202,8 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getPenY
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return 0;
-     }
+        return 0;
+    }
 
     POINT where;
     ::GetCurrentPositionEx((HDC)printDC, &where);
@@ -2224,8 +2224,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_selectClipPath
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     ::SelectClipPath((HDC)printDC, RGN_COPY);
 
@@ -2244,9 +2244,9 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_frameRect
 
   TRY;
 
-    if ((HDC)printDC == NULL) {
-         return;
-     }
+  if ((HDC)printDC == NULL) {
+      return;
+  }
 
   POINT points[5];
 
@@ -2278,9 +2278,9 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_fillRect
 
   TRY;
 
-    if ((HDC)printDC == NULL) {
-         return;
-     }
+  if ((HDC)printDC == NULL) {
+      return;
+  }
 
   RECT rect;
   rect.left = ROUND_TO_LONG(x);
@@ -2340,9 +2340,9 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_selectStylePen
 
   TRY;
 
-    if ((HDC)printDC == NULL) {
-         return JNI_FALSE;
-     }
+  if ((HDC)printDC == NULL) {
+      return JNI_FALSE;
+  }
 
   LOGBRUSH logBrush;
 
@@ -2378,7 +2378,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WPrinterJob_setFont
    jfloat awScale)
 {
     if ((HDC)printDC == NULL) {
-         return JNI_FALSE;
+        return JNI_FALSE;
     }
 
     jboolean didSetFont = JNI_FALSE;
@@ -2412,8 +2412,8 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     BOOL foundFont = false;     // Assume we didn't find a matching GDI font.
 
     if ((HDC)printDC == NULL) {
-         return JNI_FALSE;
-     }
+        return JNI_FALSE;
+    }
 
     memset(&matchedLogFont, 0, sizeof(matchedLogFont));
 
@@ -2577,8 +2577,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setTextColor
 (JNIEnv *env, jobject self, jlong printDC, jint red, jint green, jint blue) {
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::SetTextColor( (HDC)printDC, RGB(red, green, blue));
 
@@ -2589,8 +2589,8 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
 {
 
     if ((HDC)printDC == NULL) {
-         return 0;
-     }
+        return 0;
+    }
 
     SIZE size;
     LPCWSTR wText = JNU_GetStringPlatformChars(env, text, NULL);
@@ -2646,8 +2646,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
      jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     long posX = ROUND_TO_LONG(x);
     long posY = ROUND_TO_LONG(y);
@@ -3038,7 +3038,7 @@ static void doPrintBand(JNIEnv *env, HDC printDC, jbyteArray imageArray,
 
     if ((HDC)printDC == NULL) {
          return;
-     }
+    }
 
     jbyte *image = NULL;
     try {
@@ -3085,8 +3085,8 @@ static int bitsToDevice(HDC printDC, jbyte *image, long destX, long destY,
     int result = 0;
 
     if ((HDC)printDC == NULL) {
-         return result;
-     }
+        return result;
+    }
 
     assert(printDC != NULL);
     assert(image != NULL);
@@ -3830,8 +3830,8 @@ static double convertToPoints(long value, int units) {
 void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     jboolean err;
     // width of page in pixels
