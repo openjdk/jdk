@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,14 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_MODREFBARRIERSETASSEMBLER_HPP
-#define SHARE_GC_SHARED_MODREFBARRIERSETASSEMBLER_HPP
+/*
+ * @test
+ * @bug 8327012 8327963
+ * @summary Test that initializing store gets captured, i.e. moved before the InitializeNode
+ *          and made into a raw-store.
+ * @library /test/lib /
+ * @run driver compiler.macronodes.TestInitializingStoreCapturing
+ */
 
-#include "utilities/macros.hpp"
+package compiler.macronodes;
 
-#include CPU_HEADER(gc/shared/modRefBarrierSetAssembler)
+import compiler.lib.ir_framework.*;
 
-#endif // SHARE_GC_SHARED_MODREFBARRIERSETASSEMBLER_HPP
+public class TestInitializingStoreCapturing {
+
+    static class A {
+        float value;
+        A(float v) { value = v; }
+    };
+
+    static public void main(String[] args) {
+        TestFramework.run();
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_F, "= 0"})
+    static A testInitializeField() {
+        return new A(4.2f);
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_F, "= 0"})
+    static float[] testInitializeArray() {
+        return new float[] {4.2f};
+    }
+}
