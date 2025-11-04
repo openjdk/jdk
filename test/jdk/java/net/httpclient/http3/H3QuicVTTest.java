@@ -221,6 +221,6 @@ public class H3QuicVTTest implements HttpServerAdapters {
             msg = "%s not found in %s".formatted(name, threads);
             System.out.printf("%s: %s%n", status, msg);
         }
-        Assertions.assertEquals(!isQuicSelectorThreadVirtual(), threads.contains(name), msg);
+        Assertions.assertEquals(!isQuicSelectorThreadVirtual(), found, msg);
     }
 }
