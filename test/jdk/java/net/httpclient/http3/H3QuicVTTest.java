@@ -50,8 +50,8 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 /*
  * @test id=default
  * @bug 8369920
- * @summary Verifies whether `QuicSelector` uses virtual threads when
-            no explicit configuration is provided
+ * @summary Verifies whether `QuicSelector` uses virtual threads
+ *          as expected when no explicit configuration is provided
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
@@ -63,12 +63,12 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @test id=never
  * @bug 8369920
  * @summary Verifies that `QuicSelector` does *not* use virtual threads
-            when explicitly configured so
+            when explicitly configured to "never" use them
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
- *              -Djdk.internal.httpclient.quic.useVTForSelector=never
+ *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=never
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
  *              H3QuicVTTest
  */
@@ -76,25 +76,25 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @test id=always
  * @bug 8369920
  * @summary Verifies that `QuicSelector` does *always* use virtual threads
-            when explicitly configured so
+            when explicitly configured to "always" use them
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
- *              -Djdk.internal.httpclient.quic.useVTForSelector=always
+ *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=always
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
  *              H3QuicVTTest
  */
 /*
  * @test id=explicit-default
  * @bug 8369920
- * @summary Verifies whether `QuicSelector` uses virtual threads when
-            `default` is explicitly configured
+ * @summary Verifies whether `QuicSelector` uses virtual threads
+ *          as expected when `default` is explicitly configured
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
- *              -Djdk.internal.httpclient.quic.useVTForSelector=default
+ *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=default
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
  *              H3QuicVTTest
  */
@@ -107,7 +107,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
- *              -Djdk.internal.httpclient.quic.useVTForSelector=garbage
+ *              -Djdk.internal.httpclient.quic.selector.useVirtualThreads=garbage
  *              -Djdk.httpclient.HttpClient.log=requests,responses,headers,errors,http3
  *              H3QuicVTTest
  */
@@ -119,7 +119,7 @@ class H3QuicVTTest implements HttpServerAdapters {
     private static String requestURI;
 
     enum UseVTForSelector { ALWAYS, NEVER, DEFAULT }
-    private static final String PROP_NAME = "jdk.internal.httpclient.quic.useVTForSelector";
+    private static final String PROP_NAME = "jdk.internal.httpclient.quic.selector.useVirtualThreads";
     private static final UseVTForSelector USE_VT_FOR_SELECTOR;
     static {
         String useVtForSelector =
