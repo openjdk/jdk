@@ -133,7 +133,7 @@ public class WriteP12Test {
 
     public static void main(String[] args) throws UnrecoverableKeyException,
             KeyStoreException, NoSuchProviderException,
-            NoSuchAlgorithmException, IOException {
+            NoSuchAlgorithmException, IOException, CertificateException {
         WriteP12Test jstest = new WriteP12Test();
         out.println("test WriteP12CertChain");
         /*
