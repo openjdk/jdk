@@ -196,7 +196,7 @@ class H3QuicVTTest implements HttpServerAdapters {
         }
     }
 
-    void assertSelectorThread(HttpClient client) {
+    private static void assertSelectorThread(HttpClient client) {
         Objects.requireNonNull(client);
         String clientId = client.toString().substring(client.toString().indexOf('('));
         String name = "Thread(QuicSelector(HttpClientImpl" + clientId + "))";
