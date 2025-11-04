@@ -100,10 +100,7 @@ public:
     InsertionIterator(BSMAttributeEntries* insert_into, int cur_offset, int cur_array)
     : _insert_into(insert_into),
       _cur_offset(cur_offset),
-      _cur_array(cur_array) {
-      assert(insert_into->offsets() != nullptr, "must");
-      assert(insert_into->bootstrap_methods() != nullptr, "must");
-    }
+      _cur_array(cur_array) {}
     InsertionIterator(const InsertionIterator&) = default;
     InsertionIterator& operator=(const InsertionIterator&) = default;
 

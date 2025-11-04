@@ -28,6 +28,9 @@
 #include "oops/bsmAttribute.hpp"
 
 inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
+  assert(_insert_into->offsets() != nullptr, "must");
+  assert(_insert_into->bootstrap_methods() != nullptr, "must");
+
   if (_cur_offset + 1 > _insert_into->offsets()->length() ||
       _cur_array + BSMAttributeEntry::u2s_required(argc) > _insert_into->bootstrap_methods()->length()) {
     return nullptr;
