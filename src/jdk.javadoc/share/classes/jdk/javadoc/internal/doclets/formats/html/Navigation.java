@@ -502,6 +502,10 @@ public class Navigation {
         target.add(HtmlTree.LI(HtmlTree.BUTTON(HtmlIds.THEME_BUTTON)
                 .put(HtmlAttr.ARIA_LABEL, selectTheme.toString())
                 .put(HtmlAttr.TITLE, selectTheme.toString())));
+    }
+
+    private void addThemePanel(Content target) {
+        var selectTheme = contents.getContent("doclet.theme.select_theme");
         target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
                 .add(HtmlTree.DIV(selectTheme))
                 .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
@@ -567,6 +571,7 @@ public class Navigation {
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);
+        addThemePanel(navContent);
         var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
         navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));

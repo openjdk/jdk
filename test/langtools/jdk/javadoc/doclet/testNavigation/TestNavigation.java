@@ -72,14 +72,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#overview">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/package-summary.html", true,
@@ -92,14 +84,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -112,14 +96,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -132,14 +108,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -152,14 +120,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -386,14 +346,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/A.html", true,
@@ -406,14 +358,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/C.html", true,
@@ -426,14 +370,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/E.html", true,
@@ -446,14 +382,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""");
 
         checkOutput("pkg/I.html", true,
@@ -494,14 +422,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">
@@ -518,14 +438,6 @@ public class TestNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li><a href="help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    <div id="theme-panel">
-                    <div>Select Theme</div>
-                    <div><label for="theme-light"><input type="radio" id="theme-light" disabled name="theme" \
-                    value="theme-light"><span>Light</span></label><label for="theme-dark"><input type="radio"\
-                     id="theme-dark" disabled name="theme" value="theme-dark"><span>Dark</span></label><label\
-                     for="theme-os"><input type="radio" id="theme-os" disabled name="theme" value="theme-os">\
-                    <span>System Setting</span></label></div>
-                    </div>
                     </ul>""",
                 """
                     <ol class="sub-nav-list">

@@ -468,6 +468,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     var windowWidth;
     var bodyHeight;
     function collapse() {
+        closeThemePanel();
         if (expanded) {
             mainnav.removeAttribute("style");
             if (tocMenu) {
