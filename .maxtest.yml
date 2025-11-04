@@ -4,6 +4,7 @@ tests:
   tags:
     - daily
   commands:
+    - bash configure
     - make jdk.javadoc
     - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
     - cp -vR ../build ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
