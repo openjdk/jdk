@@ -200,7 +200,7 @@
   }
 
   static bool supports_vectorize_cmove_bool_unconditionally() {
-    return true;
+    return false;
   }
 
   static bool supports_transform_cmove_to_vectorblend(int cmove_opc) {
