@@ -358,8 +358,8 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @since 1.5
      *
-     * @deprecated This function has always been a no-op.
-     * It is deprecated for removal without any replacement.
+     * @deprecated This method was intended to allow for protocols that are now
+     *             obsolete.
      */
     @Deprecated(since = "26", forRemoval = true)
     protected void setPerformancePreferences(int connectionTime,
