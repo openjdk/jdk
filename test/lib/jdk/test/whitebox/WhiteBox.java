@@ -78,6 +78,8 @@ public class WhiteBox {
   public native long getHeapSpaceAlignment();
   public native long getHeapAlignment();
 
+  public native boolean  hasExternalSymbolsStripped();
+
   private native boolean isObjectInOldGen0(Object o);
   public         boolean isObjectInOldGen(Object o) {
     Objects.requireNonNull(o);
