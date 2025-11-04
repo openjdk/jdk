@@ -358,6 +358,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @since 1.5
      */
+    @Deprecated(since = "26", forRemoval = true)
     protected void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)

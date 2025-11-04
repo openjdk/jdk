@@ -948,6 +948,7 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @since 1.5
      */
+    @Deprecated(since = "26", forRemoval = true)
     public void setPerformancePreferences(int connectionTime,
                                           int latency,
                                           int bandwidth)
