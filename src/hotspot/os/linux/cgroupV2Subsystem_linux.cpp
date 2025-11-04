@@ -62,6 +62,8 @@ int CgroupV2CpuController::cpu_shares() {
     log_debug(os, container)("CPU Shares is: %d", -1);
     return -1;
   }
+  // cg v2 values must be in range [1-10000]
+  assert(shares_int >= 1 && shares_int <= 10000, "invariant");
 
   // CPU shares (OCI) value needs to get translated into
   // a proper Cgroups v2 value. See:

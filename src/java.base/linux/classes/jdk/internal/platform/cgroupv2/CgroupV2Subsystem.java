@@ -156,7 +156,8 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     @Override
     public long getCpuShares() {
         long sharesRaw = getLongVal("cpu.weight");
-        if (sharesRaw == 100 || sharesRaw <= 0) {
+        // cg v2 value must be in range [1,10000]
+        if (sharesRaw == 100 || sharesRaw <= 0 || sharesRaw > 10000) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
         int shares = (int)sharesRaw;
