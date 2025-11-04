@@ -27,7 +27,19 @@
 
 #include "runtime/os.hpp"
 
+#ifdef __APPLE__
+#include <mach/vm_statistics.h>
+#endif
+
 // Bsd_OS defines the interface to Bsd operating systems
+
+// Shared constant for mmap file descriptor used across BSD OS implementations
+static constexpr int bsd_mmap_fd =
+#ifdef __APPLE__
+  VM_MAKE_TAG(VM_MEMORY_JAVA);
+#else
+  -1;
+#endif
 
 class os::Bsd {
   friend class os;

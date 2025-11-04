@@ -1518,7 +1518,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
     }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
-                                       MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, VM_MAKE_TAG(VM_MEMORY_JAVA), 0);
+                                       MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, bsd_mmap_fd, 0);
     if (res != (uintptr_t) MAP_FAILED) {
       return true;
     } else {
@@ -1645,7 +1645,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
     }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
-        MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, VM_MAKE_TAG(VM_MEMORY_JAVA), 0);
+        MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, bsd_mmap_fd, 0);
     if (res == (uintptr_t) MAP_FAILED) {
       ErrnoPreserver ep;
       log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
@@ -1690,13 +1690,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
-  constexpr int mmap_fd =
-  #ifdef __APPLE__
-    VM_MAKE_TAG(VM_MEMORY_JAVA);
-  #else
-    -1;
-  #endif
-  char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, mmap_fd, 0);
+  char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, bsd_mmap_fd, 0);
   if (addr == MAP_FAILED) {
     ErrnoPreserver ep;
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
