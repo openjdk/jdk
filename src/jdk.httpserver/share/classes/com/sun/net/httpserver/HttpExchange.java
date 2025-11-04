@@ -78,11 +78,15 @@ public abstract class HttpExchange implements AutoCloseable, Request {
 
     /**
      * No response body is being sent with this response
+     *
+     * @since 26
      */
     public static final long RSPBODY_EMPTY = -1l;
 
     /**
      * The response body is unspecified and will be chunk encoded
+     *
+     * @since 26
      */
     public static final long RSPBODY_CHUNKED = 0;
 
@@ -186,7 +190,7 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * response length parameter is greater than {@code zero}, this specifies an
      * exact number of bytes to send and the application must send that exact
      * amount of data. If the response length parameter has the value
-     * {@link #RSPBODY_CHUNKED} then the response body uses
+     * {@link #RSPBODY_CHUNKED} (zero) then the response body uses
      * chunked transfer encoding and an arbitrary amount of data may be
      * sent. The application terminates the response body by closing the
      * {@link OutputStream}.
@@ -198,6 +202,14 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * parameter.
      *
      * <p> This method must be called prior to calling {@link #getResponseBody()}.
+     *
+     * @apiNote If a response body is to be sent from a byte array and the
+     * length of the array is used as the responseLength parameter, then note
+     * the behavior in the case when the array is empty. In that case, the
+     * responseLength will be zero which is the value of {@link #RSPBODY_CHUNKED}
+     * resulting in a zero length, but chunked encoded response body. While this
+     * is not incorrect, it may be preferable to check for an empty array and set
+     * responseLength to {@link #RSPBODY_EMPTY} instead.
      *
      * @implNote This implementation allows the caller to instruct the
      * server to force a connection close after the exchange terminates, by
