@@ -161,8 +161,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     PhaseGVN& gvn = opt_access.gvn();
     int alias = gvn.C->get_alias_index(gvn.type(adr)->isa_ptr());
     Node* mem = mm->memory_at(alias);
-
-    StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), val.node(), bt, mo, requires_atomic_access);
+    StoreNode* st = StoreNode::make(gvn, ctl, mem, adr, val.node(), bt, mo, requires_atomic_access);
     if (unaligned) {
       st->set_unaligned_access();
     }

@@ -37,12 +37,14 @@
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -1735,7 +1737,6 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
   if (UseCompactObjectHeaders) {
     Node* klass_node = in(AllocateNode::KlassNode);
     Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
-    assert(phase->C->get_alias_index(phase->type(proto_adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
   } else {
     // For now only enable fast locking for non-array types

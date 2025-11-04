@@ -1603,6 +1603,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 int barrier_data) {
   int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
+  const TypePtr* adr_type = nullptr;
+  DEBUG_ONLY(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
   Node* st = StoreNode::make(_gvn, ctl, mem, adr, val, bt, mo, require_atomic_access);
   if (unaligned) {
@@ -2993,8 +2995,6 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
 void GraphKit::guard_klass_being_initialized(Node* klass) {
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
-
-  assert(C->get_alias_index(gvn().type(adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     TypeInt::BYTE, T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
@@ -3008,12 +3008,9 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
     uncommon_trap(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
   }
 }
-
 void GraphKit::guard_init_thread(Node* klass) {
   int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
   Node* adr = basic_plus_adr(top(), klass, init_thread_off);
-
-  assert(C->get_alias_index(gvn().type(adr)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
   Node* init_thread = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                      TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
   init_thread = _gvn.transform(init_thread);
