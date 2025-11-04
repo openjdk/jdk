@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test that date parsing with DateTimeFormatter pattern
  *   that contains timezone field doesn't trigger NPE. All supported
  *   locales are tested.
- * @run testng Bug8139107
+ * @run testng/timeout=480 Bug8139107
  */
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -56,4 +56,3 @@ public class Bug8139107 {
     // Pattern with time zone field
     static final String pattern = "dd-MM-yyyy HH:mm:ss z";
 }
-

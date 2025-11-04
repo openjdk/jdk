@@ -24,6 +24,7 @@
  *
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -42,8 +43,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
-
-#include <type_traits>
 
 const int LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
 const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
@@ -77,7 +76,6 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
   assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _top %d start_offset %d", _top, start_offset());
   if (SafepointSynchronize::is_at_safepoint() || (Thread::current()->is_Java_thread() && is_owning_thread())) {

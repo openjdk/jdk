@@ -132,9 +132,6 @@ class Abstract_VM_Version: AllStatic {
   static const char* features_string() { return _features_string; }
 
   static const char* cpu_info_string() { return _cpu_info_string; }
-  static const char* extract_features_string(const char* cpu_info_string,
-                                             size_t cpu_info_string_len,
-                                             size_t features_offset);
 
   static VirtualizationType get_detected_virtualization() {
     return _detected_virtualization;

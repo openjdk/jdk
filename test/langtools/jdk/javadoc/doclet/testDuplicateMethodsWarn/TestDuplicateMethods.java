@@ -214,7 +214,7 @@ public class TestDuplicateMethods extends JavadocTester {
                 """
                 <div class="inherited-list">
                 <h3 id="methods-inherited-from-class-hm.PubJ">Methods inherited from class&nbsp;<a href="PubJ.html#method-summary" title="class in hm">PubJ</a></h3>
-                <code><a href="PubJ.html#testJ()" title="testJ()">testJ</a></code></div>
+                <code><a href="PubJ.html#testJ()" title="testJ()">testJ</a></code>
                 """);
     }
 }

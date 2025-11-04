@@ -189,7 +189,7 @@ inline void ZRelocationSetSelector::clear_empty_pages() {
 
 inline size_t ZRelocationSetSelector::total() const {
   size_t sum = 0;
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     sum += _small.stats(age).total() + _medium.stats(age).total() + _large.stats(age).total();
   }
   return sum;
@@ -197,7 +197,7 @@ inline size_t ZRelocationSetSelector::total() const {
 
 inline size_t ZRelocationSetSelector::empty() const {
   size_t sum = 0;
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     sum += _small.stats(age).empty() + _medium.stats(age).empty() + _large.stats(age).empty();
   }
   return sum;
@@ -205,7 +205,7 @@ inline size_t ZRelocationSetSelector::empty() const {
 
 inline size_t ZRelocationSetSelector::relocate() const {
   size_t sum = 0;
-  for (ZPageAge age : ZPageAgeRange()) {
+  for (ZPageAge age : ZPageAgeRangeAll) {
     sum += _small.stats(age).relocate() + _medium.stats(age).relocate() + _large.stats(age).relocate();
   }
   return sum;

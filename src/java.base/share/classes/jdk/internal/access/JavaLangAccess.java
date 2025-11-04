@@ -113,6 +113,11 @@ public interface JavaLangAccess {
     byte[] getRawExecutableTypeAnnotations(Executable executable);
 
     /**
+     * Get the int value of the Class's class-file access flags.
+     */
+    int getClassFileAccessFlags(Class<?> klass);
+
+    /**
      * Returns the elements of an enum class or null if the
      * Class object does not represent an enum type;
      * the result is uncloned, cached, and shared by all callers.
@@ -313,8 +318,20 @@ public interface JavaLangAccess {
     int countNonZeroAscii(String s);
 
     /**
+     * Constructs a new {@code String} with the supplied Latin1 bytes.
+     * <p>
+     * <b>WARNING: The caller of this method shall relinquish and transfer the
+     * ownership of the byte array to the callee</b>, since the latter will not
+     * make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     */
+    String uncheckedNewStringWithLatin1Bytes(byte[] bytes);
+
+    /**
      * Constructs a new {@code String} by decoding the specified byte array
-     * using the specified {@linkplain java.nio.charset.Charset charset}.
+     * using the specified {@code Charset}.
      * <p>
      * <b>WARNING: The caller of this method shall relinquish and transfer the
      * ownership of the byte array to the callee</b>, since the latter will not
@@ -324,36 +341,24 @@ public interface JavaLangAccess {
      * @param cs the Charset
      * @return the newly created string
      * @throws CharacterCodingException for malformed or unmappable bytes
+     * @throws NullPointerException If {@code bytes} or {@code cs} is null
      */
-    String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
+    String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
-     * Encode the given string into a sequence of bytes using the specified
-     * {@linkplain java.nio.charset.Charset charset}.
+     * {@return the sequence of bytes obtained by encoding the given string in
+     * the specified {@code Charset}}
      * <p>
      * <b>WARNING: This method returns the {@code byte[]} backing the provided
      * {@code String}, if the input is ASCII. Hence, the returned byte array
      * must not be modified.</b>
-     * <p>
-     * This method throws {@code CharacterCodingException} instead of replacing
-     * when malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
-     * @return the encoded bytes
+     * @throws NullPointerException If {@code s} or {@code cs} is null
      * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
-
-    /**
-     * Returns a new string by decoding from the given UTF-8 bytes array.
-     *
-     * @param off the index of the first byte to decode
-     * @param len the number of bytes to decode
-     * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes.
-     */
-    String newStringUTF8NoRepl(byte[] bytes, int off, int len);
+    byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Get the {@code char} at {@code index} in a {@code byte[]} in internal
@@ -379,13 +384,13 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Encode the given string into a sequence of bytes using utf8.
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
-     * @return the encoded bytes in utf8
-     * @throws IllegalArgumentException for malformed surrogates
+     * @throws NullPointerException If {@code s} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    byte[] getBytesUTF8NoRepl(String s);
+    byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException;
 
     /**
      * Inflated copy from {@code byte[]} to {@code char[]}, as defined by
@@ -417,15 +422,19 @@ public interface JavaLangAccess {
     PrintStream initialSystemErr();
 
     /**
-     * Encodes as many ASCII codepoints as possible from the source array into
-     * the destination byte array, assuming that the encoding is ASCII
-     * compatible.
-     * <p>
-     * <b>WARNING: This method does not perform any bound checks.</b>
+     * Encodes as many ASCII codepoints as possible from the source
+     * character array into the destination byte array, assuming that
+     * the encoding is ASCII compatible.
      *
-     * @return the number of bytes successfully encoded, or 0 if none
+     * @param sa the source character array
+     * @param sp the index of the source array to start reading from
+     * @param da the target byte array
+     * @param dp the index of the target array to start writing to
+     * @param len the total number of characters to be encoded
+     * @return the total number of characters successfully encoded
+     * @throws NullPointerException if any of the provided arrays is null
      */
-    int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len);
+    int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
      * Set the cause of Throwable
@@ -442,21 +451,6 @@ public interface JavaLangAccess {
      * Get a method handle of string concat helper method
      */
     MethodHandle stringConcatHelper(String name, MethodType methodType);
-
-    /**
-     * Get the string concat initial coder
-     */
-    long stringConcatInitialCoder();
-
-    /**
-     * Update lengthCoder for constant
-     */
-    long stringConcatMix(long lengthCoder, String constant);
-
-    /**
-     * Mix value length and coder into current length and coder.
-     */
-    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Creates helper for string concatenation.

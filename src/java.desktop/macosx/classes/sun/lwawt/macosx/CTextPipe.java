@@ -71,6 +71,7 @@ public class CTextPipe implements TextPipe {
         sg2d.setRenderingHint(SunHints.KEY_ANTIALIASING, oldAliasingHint);
     }
 
+    @Override
     public void drawString(final SunGraphics2D sg2d, final String s, final double x, final double y) {
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
@@ -141,6 +142,7 @@ public class CTextPipe implements TextPipe {
         }
     }
 
+    @Override
     public void drawGlyphVector(final SunGraphics2D sg2d, final GlyphVector gV, final float x, final float y) {
         final Font prevFont = sg2d.getFont();
         sg2d.setFont(gV.getFont());
@@ -167,6 +169,7 @@ public class CTextPipe implements TextPipe {
         sg2d.setFont(prevFont);
     }
 
+    @Override
     public void drawChars(final SunGraphics2D sg2d, final char[] data, final int offset, final int length, final int x, final int y) {
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
@@ -181,22 +184,25 @@ public class CTextPipe implements TextPipe {
         return new Tracer();
     }
 
-    public static class Tracer extends CTextPipe {
+    public static final class Tracer extends CTextPipe {
         void doDrawString(final SurfaceData sData, final long nativeStrikePtr, final String s, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawString");
             super.doDrawString(sData, nativeStrikePtr, s, x, y);
         }
 
+        @Override
         public void doDrawGlyphs(final SurfaceData sData, final long nativeStrikePtr, final GlyphVector gV, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawGlyphs");
             super.doDrawGlyphs(sData, nativeStrikePtr, gV, x, y);
         }
 
+        @Override
         public void doUnicodes(final SurfaceData sData, final long nativeStrikePtr, final char[] unicodes, final int offset, final int length, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawUnicodes");
             super.doUnicodes(sData, nativeStrikePtr, unicodes, offset, length, x, y);
         }
 
+        @Override
         public void doOneUnicode(final SurfaceData sData, final long nativeStrikePtr, final char aUnicode, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawUnicode");
             super.doOneUnicode(sData, nativeStrikePtr, aUnicode, x, y);
