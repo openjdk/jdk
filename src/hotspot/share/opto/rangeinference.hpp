@@ -25,11 +25,9 @@
 #ifndef SHARE_OPTO_RANGEINFERENCE_HPP
 #define SHARE_OPTO_RANGEINFERENCE_HPP
 
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ostream.hpp"
-
-#include <limits>
-#include <type_traits>
 
 class outputStream;
 class Type;

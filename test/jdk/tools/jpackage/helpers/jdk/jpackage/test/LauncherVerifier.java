@@ -204,12 +204,35 @@ public final class LauncherVerifier {
                     verifier.setExpectedIcon(icon);
                 }
             }, () -> {
-                // No "icon" property in the property file
+                // No "icon" property in the property file.
                 iconInResourceDir(cmd, name).ifPresentOrElse(verifier::setExpectedIcon, () -> {
                     // No icon for this additional launcher in the resource directory.
                     mainLauncherIcon.ifPresentOrElse(verifier::setExpectedIcon, verifier::setExpectedDefaultIcon);
                 });
             });
+        }
+
+        if (TKit.isLinux()) {
+            // On Linux, a launcher may have an icon only if it has a corresponding .desktop file.
+            // In case of "app-image" packaging there are no .desktop files, but jpackage will add icon files
+            // in the app image anyways so that in two-step packaging jpackage can pick the icons for .desktop files.
+            // jpackage should not add the default icon to the app image in case of "app-image" packaging.
+            if (cmd.isImagePackageType()) {
+                // This is "app-image" packaging. Let's see if, in two-step packaging,
+                // jpackage creates a .desktop file for this launcher.
+                if (!withLinuxDesktopFile(cmd.createMutableCopy().setPackageType(PackageType.LINUX_RPM))) {
+                    // No .desktop file in the "future" package for this launcher,
+                    // then don't expect an icon in the app image produced by the `cmd`.
+                    verifier.setExpectedNoIcon();
+                } else if (verifier.expectDefaultIcon()) {
+                    // A .desktop file in the "future" package for this launcher,
+                    // but it will use the default icon.
+                    // Don't expect an icon in the app image produced by the `cmd`.
+                    verifier.setExpectedNoIcon();
+                }
+            } else if (!withLinuxDesktopFile(cmd)) {
+                verifier.setExpectedNoIcon();
+            }
         }
 
         return verifier;
@@ -339,9 +362,20 @@ public final class LauncherVerifier {
 
         TKit.assertTrue(entitlements.isPresent(), String.format("Check [%s] launcher is signed with entitlements", name));
 
+        var customFile = Optional.ofNullable(cmd.getArgumentValue("--mac-entitlements")).map(Path::of);
+        if (customFile.isEmpty()) {
+            // Try from the resource dir.
+            var resourceDirFile = Optional.ofNullable(cmd.getArgumentValue("--resource-dir")).map(Path::of).map(resourceDir -> {
+                return resourceDir.resolve(cmd.name() + ".entitlements");
+            }).filter(Files::exists);
+            if (resourceDirFile.isPresent()) {
+                customFile = resourceDirFile;
+            }
+        }
+
         Map<String, Object> expected;
-        if (cmd.hasArgument("--mac-entitlements")) {
-            expected = new PListReader(Files.readAllBytes(Path.of(cmd.getArgumentValue("--mac-entitlements")))).toMap(true);
+        if (customFile.isPresent()) {
+            expected = new PListReader(Files.readAllBytes(customFile.orElseThrow())).toMap(true);
         } else if (cmd.hasArgument("--mac-app-store")) {
             expected = DefaultEntitlements.APP_STORE;
         } else {
@@ -394,7 +428,7 @@ public final class LauncherVerifier {
     private static final class DefaultEntitlements {
         private static Map<String, Object> loadFromResources(String resourceName) {
             return ThrowingSupplier.toSupplier(() -> {
-                var bytes = ResourceLocator.class.getResourceAsStream("entitlements.plist").readAllBytes();
+                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
                 return new PListReader(bytes).toMap(true);
             }).get();
         }

@@ -939,11 +939,15 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
 
     /**
      * An unprocessed exchange is one that hasn't been processed by a peer. The local end of the
-     * connection would be notified about such exchanges when it receives a GOAWAY frame with
-     * a stream id that tells which exchanges have been unprocessed.
+     * connection would be notified about such exchanges in either of the following 2 ways:
+     * <ul>
+     *  <li> when it receives a GOAWAY frame with a stream id that tells which
+     *    exchanges have been unprocessed.
+     *  <li> or when a particular request's stream is reset with the H3_REQUEST_REJECTED error code.
+     * </ul>
+     * <p>
      * This method is called on such unprocessed exchanges and the implementation of this method
-     * will arrange for the request, corresponding to this exchange, to be retried afresh on a
-     * new connection.
+     * will arrange for the request, corresponding to this exchange, to be retried afresh.
      */
     void closeAsUnprocessed() {
         // null exchange implies a PUSH stream and those aren't
@@ -1335,14 +1339,21 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         String resetReason = Http3Error.stringForCode(errorCode);
         Http3Error resetError = Http3Error.fromCode(errorCode)
                 .orElse(Http3Error.H3_REQUEST_CANCELLED);
-        if (!requestSent || !responseReceived) {
+        if (debug.on()) {
+            debug.log("Stream %s reset by peer [%s]: ", streamId(), resetReason);
+        }
+        // if the error is H3_REQUEST_REJECTED then it implies
+        // the request wasn't processed and the client is allowed to reissue
+        // that request afresh
+        if (resetError == Http3Error.H3_REQUEST_REJECTED) {
+            closeAsUnprocessed();
+        } else if (!requestSent || !responseReceived) {
             cancelImpl(new IOException("Stream %s reset by peer: %s"
                             .formatted(streamId(), resetReason)),
                     resetError);
         }
         if (debug.on()) {
-            debug.log("Stream %s reset by peer [%s]: Stopping scheduler",
-                    streamId(), resetReason);
+            debug.log("stopping scheduler for stream %s", streamId());
         }
         readScheduler.stop();
     }

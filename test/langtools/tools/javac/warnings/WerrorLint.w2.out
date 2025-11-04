@@ -1,0 +1,3 @@
+WerrorLint.java:20:19: compiler.warn.strictfp
+WerrorLint.java:21:30: compiler.warn.empty.if
+2 warnings
