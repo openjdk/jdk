@@ -38,7 +38,7 @@ public class NoLDAP {
     public static void main(String[] args) throws Exception {
         try {
             Class.forName("javax.naming.ldap.LdapName");
-            throw new SkippedException("Test skipped :: LDAP is present");
+            throw new SkippedException("LDAP is present");
         } catch (ClassNotFoundException ignore) {
             System.err.println("Expected: class not found exception " + ignore.getMessage());
         }
