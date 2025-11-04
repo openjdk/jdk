@@ -10,6 +10,8 @@ tests:
     - cp -vR ../build ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
   sharedEnvironment:
       MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  localEnvironment:
+      JAVA_HOME: /network-raid/opt/java/jdk-25.0.1
   clusterParameters:
     cpus: 1.0
     mem: 1024.0
