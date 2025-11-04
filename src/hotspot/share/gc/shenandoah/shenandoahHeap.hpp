@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
@@ -183,6 +182,7 @@ public:
   void post_initialize() override;
   void initialize_mode();
   virtual void initialize_heuristics();
+  virtual void post_initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
@@ -212,14 +212,7 @@ private:
   volatile size_t _committed;
   shenandoah_padding(1);
 
-  void increase_used(const ShenandoahAllocRequest& req);
-
 public:
-  void increase_used(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_used(ShenandoahGeneration* generation, size_t bytes);
-  void increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
 
@@ -530,7 +523,7 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
+    assert(ShenandoahCardBarrier, "Card mark barrier should be on");
     return _old_generation;
   }
 
@@ -669,7 +662,8 @@ public:
   void unpin_object(JavaThread* thread, oop obj) override;
 
   void sync_pinned_region_status();
-  void assert_pinned_region_status() NOT_DEBUG_RETURN;
+  void assert_pinned_region_status() const NOT_DEBUG_RETURN;
+  void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;
 
 // ---------- CDS archive support
 
@@ -696,8 +690,6 @@ public:
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
-
-  void notify_mutator_alloc_words(size_t words, size_t waste);
 
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
   size_t tlab_capacity(Thread *thr) const override;
