@@ -123,7 +123,7 @@ public class AltServiceUsageTest implements HttpServerAdapters {
     public void afterClass() throws Exception {
         safeStop(originServer);
         safeStop(altServer);
-        udpNotResponding.close();
+        safeClose(udpNotResponding);
     }
 
     private static void safeStop(final HttpTestServer server) {
@@ -137,6 +137,19 @@ public class AltServiceUsageTest implements HttpServerAdapters {
         } catch (Exception e) {
             System.err.println("Ignoring exception: " + e.getMessage() + " that occurred " +
                     "during stop of server: " + serverAddr);
+        }
+    }
+
+    private static void safeClose(final DatagramChannel channel) {
+        if (channel == null) {
+            return;
+        }
+        try {
+            System.out.println("Closing DatagramChannel " + channel.getLocalAddress());
+            channel.close();
+        } catch (Exception e) {
+            System.err.println("Ignoring exception: " + e.getMessage() + " that occurred " +
+                    "during close of DatagramChannel: " + channel);
         }
     }
 
