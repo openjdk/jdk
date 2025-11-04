@@ -36,23 +36,24 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class NewInstance {
 
     public static void main(String[] args) throws Exception {
-        String skippedProvider = "";
-        for (Provider p : Security.getProviders()) {
+
+        System.out.println("Removing SunPCSC provider from the list (A smartcard might not be installed).");
+        final List<Provider> providers = Arrays.stream(Security.getProviders())
+                .filter(provider -> !provider.getName().equals("SunPCSC"))
+                .collect(Collectors.toList());
+
+        for (Provider p : providers) {
             System.out.println("---------");
             System.out.println(p.getName() + ":" + p.getInfo());
-            if (p.getName().equals("SunPCSC")) {
-                skippedProvider = "SunPCSC";
-                System.err.println("Skip test :: A smartcard might not be installed.");
-                continue;
-            }
             Set<Provider.Service> set = p.getServices();
             Iterator<Provider.Service> i = set.iterator();
 
@@ -72,12 +73,6 @@ public class NewInstance {
                     }
                 }
             }
-        }
-        //Check if tests were skipped.
-        if (skippedProvider.isEmpty()) {
-            System.out.println("All Tests Passed");
-        } else {
-            throw new SkippedException("Test was skipped for the " + skippedProvider + " provider.");
         }
     }
 }
