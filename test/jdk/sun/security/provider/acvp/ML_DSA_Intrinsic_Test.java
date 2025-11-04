@@ -34,17 +34,29 @@ import java.util.HexFormat;
 /*
  * @test
  * @library /test/lib
- * @modules java.base/sun.security.provider:open
+ * @key randomness
+ * @modules java.base/sun.security.provider:+open
+ * @run main/othervm ML_DSA_Intrinsic_Test -XX:+UnlockDiagnosticVMOptions -XX:-UseDilithiumIntrinsics
+ */
+/*
+ * @test
+ * @library /test/lib
+ * @key randomness
+ * @modules java.base/sun.security.provider:+open
+ * @run main/othervm -XX:UseAVX=2 ML_DSA_Intrinsic_Test
+ */
+/*
+ * @test
+ * @library /test/lib
+ * @key randomness
+ * @modules java.base/sun.security.provider:+open
  * @run main ML_DSA_Intrinsic_Test
  */
 public class ML_DSA_Intrinsic_Test {
     public static void main(String[] args) throws Exception {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
-        Class<?> kClazz = Class.forName("sun.security.provider.ML_DSA");
-        Constructor<?> constructor = kClazz.getDeclaredConstructor(
-                int.class);
-        constructor.setAccessible(true);
-        
+        Class<?> kClazz = sun.security.provider.ML_DSA.class;
+
         Method m = kClazz.getDeclaredMethod("implDilithiumNttMult",
                 int[].class, int[].class, int[].class);
         m.setAccessible(true);
@@ -123,10 +135,10 @@ public class ML_DSA_Intrinsic_Test {
     }
 
     private static final int ML_DSA_N = 256;
-    public static void testMult(int[] prod1, int[] prod2, int[] coeffs1, int[] coeffs2, 
-        MethodHandle mult, MethodHandle multJava, Random rnd, 
+    public static void testMult(int[] prod1, int[] prod2, int[] coeffs1, int[] coeffs2,
+        MethodHandle mult, MethodHandle multJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
-        
+
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = rnd.nextInt();
             coeffs2[j] = rnd.nextInt();
@@ -134,35 +146,35 @@ public class ML_DSA_Intrinsic_Test {
 
         mult.invoke(prod1, coeffs1, coeffs2);
         multJava.invoke(prod2, coeffs1, coeffs2);
-        
+
         if (!Arrays.equals(prod1, prod2)) {
                 throw new RuntimeException("[Seed "+seed+"@"+i+"] Result mult mismatch: " + formatOf(prod1) + " != " + formatOf(prod2));
         }
     }
 
     public static void testMultConst(int[] prod1, int[] prod2,
-        MethodHandle multConst, MethodHandle multConstJava, Random rnd, 
+        MethodHandle multConst, MethodHandle multConstJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
-        
+
         for (int j = 0; j<ML_DSA_N; j++) {
             prod1[j] = prod2[j] = rnd.nextInt();
         }
         // Per Algorithm 3 in https://eprint.iacr.org/2018/039.pdf, one of the inputs is bound, which prevents overflows
         int dilithium_q = 8380417;
-        int c = rnd.nextInt(dilithium_q); 
+        int c = rnd.nextInt(dilithium_q);
 
         multConst.invoke(prod1, c);
         multConstJava.invoke(prod2, c);
-        
+
         if (!Arrays.equals(prod1, prod2)) {
                 throw new RuntimeException("[Seed "+seed+"@"+i+"] Result multConst mismatch: " + formatOf(prod1) + " != " + formatOf(prod2));
         }
     }
 
-    public static void testDecompose(int[] low1, int[] high1, int[] low2, int[] high2, int[] coeffs1, int[] coeffs2, 
-        MethodHandle decompose, MethodHandle decomposeJava, Random rnd, 
+    public static void testDecompose(int[] low1, int[] high1, int[] low2, int[] high2, int[] coeffs1, int[] coeffs2,
+        MethodHandle decompose, MethodHandle decomposeJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
-        
+
         for (int j = 0; j<ML_DSA_N; j++) {
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }
@@ -174,7 +186,7 @@ public class ML_DSA_Intrinsic_Test {
 
         decompose.invoke(coeffs1, low1, high1, 2 * gamma2, multiplier);
         decomposeJava.invoke(coeffs2, low2, high2, 2 * gamma2, multiplier);
-        
+
         if (!Arrays.equals(low1, low2)) {
                 throw new RuntimeException("[Seed "+seed+"@"+i+"] Result low mismatch: " + formatOf(low1) + " != " + formatOf(low2));
         }
@@ -184,12 +196,10 @@ public class ML_DSA_Intrinsic_Test {
         }
     }
 
-    public static void testAlmostNtt(int[] coeffs1, int[] coeffs2, 
-        MethodHandle almostNtt, MethodHandle almostNttJava, Random rnd, 
+    public static void testAlmostNtt(int[] coeffs1, int[] coeffs2,
+        MethodHandle almostNtt, MethodHandle almostNttJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
-        //int[] coeffs3 = new int[ML_DSA_N];
         for (int j = 0; j<ML_DSA_N; j++) {
-            //coeffs3[j] = 
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }
 
@@ -201,12 +211,12 @@ public class ML_DSA_Intrinsic_Test {
         }
     }
 
-    public static void testInverseNtt(int[] coeffs1, int[] coeffs2, 
-        MethodHandle inverseNtt, MethodHandle inverseNttJava, Random rnd, 
+    public static void testInverseNtt(int[] coeffs1, int[] coeffs2,
+        MethodHandle inverseNtt, MethodHandle inverseNttJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
         int[] coeffs3 = new int[ML_DSA_N];
         for (int j = 0; j<ML_DSA_N; j++) {
-            coeffs3[j] = 
+            coeffs3[j] =
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }
 

@@ -79,7 +79,7 @@ public class MLDSABench extends CryptoBase {
         Constructor<?> constructor = kClazz.getDeclaredConstructor(
                 int.class);
         constructor.setAccessible(true);
-        
+
         Method m = kClazz.getDeclaredMethod("implDilithiumNttMult",
                 int[].class, int[].class, int[].class);
         m.setAccessible(true);
