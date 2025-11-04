@@ -865,10 +865,6 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
     phase->igvn().set_type(_node, t);
   }
 
-  tty->print_cr("VTransformLoopPhiNode::apply");
-  tty->print("t: "); t->dump(); tty->cr();
-  _node->dump_bfs(3,0,"#d");
-
   return VTransformApplyResult::make_scalar(_node);
 }
 
