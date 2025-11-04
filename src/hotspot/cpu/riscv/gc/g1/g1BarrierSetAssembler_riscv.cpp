@@ -345,7 +345,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  CardTableBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
   if (on_oop && on_reference) {
     // RA is live.  It must be saved around calls.
     __ enter(); // barrier may call runtime
