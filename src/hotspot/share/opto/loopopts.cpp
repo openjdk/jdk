@@ -228,6 +228,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
   }
 
+  split_thru_phi_yank_old_nodes(n, region);
+  _igvn.replace_node(n, phi);
+
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print_cr("Split %d %s through %d Phi in %d %s",
@@ -236,6 +239,28 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 #endif // !PRODUCT
 
   return phi;
+}
+
+// If the region is a Loop, we are removing the old n,
+// and need to yank it from the _body. If any phi we
+// just split through now has no use any more, it also
+// has to be removed.
+void PhaseIdealLoop::split_thru_phi_yank_old_nodes(Node* n, Node* region) {
+  IdealLoopTree* region_loop = get_loop(region);
+  if (region->is_Loop() && region_loop->is_innermost()) {
+    region_loop->_body.yank(n);
+    for (uint j = 1; j < n->req(); j++) {
+      PhiNode* phi = n->in(j)->isa_Phi();
+      // Check that phi belongs to the region and only has n as a use.
+      if (phi != nullptr &&
+          phi->in(0) == region &&
+          phi->unique_multiple_edges_out_or_null() == n) {
+        assert(get_ctrl(phi) == region, "sanity");
+        assert(get_ctrl(n) == region, "sanity");
+        region_loop->_body.yank(phi);
+      }
+    }
+  }
 }
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
@@ -1207,13 +1232,10 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   if (must_throttle_split_if()) return n;
 
-  // Split 'n' through the merge point if it is profitable
-  Node *phi = split_thru_phi( n, n_blk, policy );
-  if (!phi) return n;
+  // Split 'n' through the merge point if it is profitable, replacing it with a new phi.
+  Node* phi = split_thru_phi(n, n_blk, policy);
+  if (phi == nullptr) { return n; }
 
-  // Found a Phi to split thru!
-  // Replace 'n' with the new phi
-  _igvn.replace_node( n, phi );
   // Moved a load around the loop, 'en-registering' something.
   if (n_blk->is_Loop() && n->is_Load() &&
       !phi->in(LoopNode::LoopBackControl)->is_Load())
@@ -1444,15 +1466,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       return;
     }
 
-    // Found a Phi to split thru!
-    // Replace 'n' with the new phi
-    _igvn.replace_node(n, phi);
-
     // Now split the bool up thru the phi
-    Node *bolphi = split_thru_phi(bol, n_ctrl, -1);
+    Node* bolphi = split_thru_phi(bol, n_ctrl, -1);
     guarantee(bolphi != nullptr, "null boolean phi node");
-
-    _igvn.replace_node(bol, bolphi);
     assert(iff->in(1) == bolphi, "");
 
     if (bolphi->Value(&_igvn)->singleton()) {
@@ -1461,8 +1477,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Conditional-move?  Must split up now
     if (!iff->is_If()) {
-      Node *cmovphi = split_thru_phi(iff, n_ctrl, -1);
-      _igvn.replace_node(iff, cmovphi);
+      Node* cmovphi = split_thru_phi(iff, n_ctrl, -1);
       return;
     }
 

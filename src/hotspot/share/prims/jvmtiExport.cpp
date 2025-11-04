@@ -2207,6 +2207,11 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled in 2 cases:
+  // 1) Field events and interp_only mode are not enabled for this thread.
+  // This method is called from any thread. The thread filtering is done later.
+  // 2) The same JNI call is stll executing after event was enabled.
+  // In this case the last frame is only marked for deoptimization but still remains compiled.
   assert(thread->has_last_Java_frame(), "must be called with a Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2229,10 +2234,16 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_access(thread,
-                    thread->last_frame().interpreter_frame_method(),
-                    thread->last_frame().interpreter_frame_bcp(),
-                    klass, h_obj, fieldID);
+
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  Method* method = jvf->method();
+  address address = jvf->method()->code_base();
+
+  post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
 
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
@@ -2293,6 +2304,11 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled in 2 cases:
+  // 1) Field events and interp_only mode are not enabled for this thread.
+  // This method is called from any thread. The thread filtering is done later.
+  // 2) The same JNI call is stll executing after event was enabled.
+  // In this case the last frame is only marked for deoptimization but still remains compiled.
   assert(thread->has_last_Java_frame(), "must be called with Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2316,9 +2332,16 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_modification(thread,
-                          thread->last_frame().interpreter_frame_method(),
-                          thread->last_frame().interpreter_frame_bcp(),
+
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::skip,
+                      RegisterMap::WalkContinuation::skip);
+  javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  Method* method = jvf->method();
+  address address = jvf->method()->code_base();
+
+  post_field_modification(thread, method, address,
                           klass, h_obj, fieldID, sig_type, value);
 }
 

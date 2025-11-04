@@ -101,6 +101,11 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher removeProperty(String name) {
+        rawProperties.remove(Objects.requireNonNull(name));
+        return this;
+    }
+
     public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
         if (TKit.isLinux()) {
             setShortcut(LINUX_SHORTCUT, desktop);

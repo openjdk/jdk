@@ -41,6 +41,7 @@ public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
   void initialize_heuristics() override;
+  void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
     assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
@@ -138,8 +139,6 @@ public:
     void print_on(const char* when, outputStream* ss) const;
   };
 
-  const ShenandoahGenerationSizer* generation_sizer()  const { return &_generation_sizer;  }
-
   // Zeros out the evacuation and promotion reserves
   void reset_generation_reserves();
 
@@ -163,8 +162,6 @@ private:
 
   MemoryPool* _young_gen_memory_pool;
   MemoryPool* _old_gen_memory_pool;
-
-  ShenandoahGenerationSizer     _generation_sizer;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
