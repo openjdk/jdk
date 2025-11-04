@@ -33,7 +33,6 @@ import java.nio.MappedByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -55,8 +54,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.fromPublisher;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /*
@@ -122,20 +119,6 @@ public class FlowAdapterPublisherTest implements HttpServerAdapters {
                      .setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         return builder;
     }
-
-    @Test
-    public void testAPIExceptions() {
-        assertThrows(NPE, () -> fromPublisher(null));
-        assertThrows(NPE, () -> fromPublisher(null, 1));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), 0));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), -1));
-        assertThrows(IAE, () -> fromPublisher(new BBPublisher(), Long.MIN_VALUE));
-
-        Publisher publisher = fromPublisher(new BBPublisher());
-        assertThrows(NPE, () -> publisher.subscribe(null));
-    }
-
-    //  Flow.Publisher<ByteBuffer>
 
     @Test(dataProvider = "uris")
     void testByteBufferPublisherUnknownLength(String uri) {

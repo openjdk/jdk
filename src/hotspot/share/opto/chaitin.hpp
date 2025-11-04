@@ -103,11 +103,11 @@ public:
 
 private:
   RegMask _mask;                // Allowed registers for this LRG
-  uint _mask_size;              // cache of _mask.Size();
+  uint _mask_size;              // cache of _mask.size();
 public:
-  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.Size(); }
+  int compute_mask_size() const { return _mask.is_infinite_stack() ? INFINITE_STACK_SIZE : _mask.size(); }
   void set_mask_size( int size ) {
-    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.Size()), "");
+    assert((size == (int)INFINITE_STACK_SIZE) || (size == (int)_mask.size()), "");
     _mask_size = size;
 #ifdef ASSERT
     _msize_valid=1;
@@ -128,14 +128,17 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
-  void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
-  void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+  void set_mask(const RegMask& rm) { _mask.assignFrom(rm); DEBUG_ONLY(_msize_valid = 0;) }
+  void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
+  void and_with( const RegMask &rm ) { _mask.and_with(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract( const RegMask &rm ) { _mask.subtract(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void subtract_inner(const RegMask& rm) { _mask.subtract_inner(rm); DEBUG_ONLY(_msize_valid = 0;) }
+  void clear()   { _mask.clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
+  void set_all() { _mask.set_all(); DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); }
+  bool rollover() { DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); return _mask.rollover(); }
 
-  void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
-  void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void insert( OptoReg::Name reg ) { _mask.insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
+  void remove( OptoReg::Name reg ) { _mask.remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); DEBUG_ONLY(_msize_valid=0;) }
 
 private:
@@ -621,7 +624,7 @@ private:
       void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
         // this pressure is only valid at this instruction, i.e. we don't need to lower
         // the register pressure since the fat proj was never live before (going backwards)
-        uint new_pressure = current_pressure() + fatproj_mask.Size();
+        uint new_pressure = current_pressure() + fatproj_mask.size();
         if (new_pressure > final_pressure()) {
           _final_pressure = new_pressure;
         }
@@ -697,9 +700,9 @@ private:
   // Return TRUE if any spills occurred.
   uint Select( );
   // Helper function for select which allows biased coloring
-  OptoReg::Name choose_color( LRG &lrg, int chunk );
+  OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
-  OptoReg::Name bias_color( LRG &lrg, int chunk );
+  OptoReg::Name bias_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges

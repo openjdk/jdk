@@ -152,7 +152,7 @@ java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/List/KeyEventsTest/KeyEventsTest.java 8201307 linux-all
 java/awt/Paint/ListRepaint.java 8201307 linux-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8370584 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
@@ -188,7 +188,6 @@ java/awt/Mixing/AWT_Mixing/JTextFieldOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JToggleButtonOverlapping.java 8158801 windows-all
 java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
@@ -249,13 +248,13 @@ sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
+sun/java2d/OpenGL/OpaqueDest.java#id1 8367574 macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8297175 linux-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 
-sun/java2d/X11SurfaceData/SharedMemoryPixmapsTest/SharedMemoryPixmapsTest.sh 7184899,8221451 linux-all,macosx-aarch64
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469,8273617 windows-all,macosx-aarch64
 java/awt/FullScreen/UninitializedDisplayModeChangeTest/UninitializedDisplayModeChangeTest.java 8273617 macosx-all
 java/awt/print/PrinterJob/PSQuestionMark.java 7003378 generic-all
@@ -270,6 +269,7 @@ java/awt/Clipboard/ClipboardSecurity.java 8054809 macosx-all
 java/awt/Clipboard/GetAltContentsTest/SystemClipboardTest.java 8234140 macosx-all
 java/awt/Clipboard/ImageTransferTest.java 8030710 generic-all
 java/awt/Clipboard/NoDataConversionFailureTest.java 8234140 macosx-all
+java/awt/Dialog/ModalExcludedTest.java 7125054 macosx-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8266244 macosx-aarch64
 java/awt/Modal/FileDialog/FileDialogAppModal1Test.java 7186009 macosx-all
 java/awt/Modal/FileDialog/FileDialogAppModal2Test.java 7186009 macosx-all
@@ -487,7 +487,6 @@ java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
 java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.java 8302787 windows-all
 java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedTest.java 8302787 windows-all
-java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.java 8321303 linux-all
 
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/Dialog/ChoiceModalDialogTest.java 8161475 macosx-all
@@ -529,7 +528,6 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-all
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-java/lang/ProcessBuilder/Basic.java#id0                         8368192 macosx-all
 
 ############################################################################
 
@@ -549,8 +547,6 @@ java/lang/IO/IO.java                                            8337935 linux-pp
 
 # jdk_management
 
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
@@ -564,7 +560,6 @@ sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc6
 
 # jdk_jmx
 
-javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
@@ -592,6 +587,7 @@ java/net/MulticastSocket/Test.java                              7145658,8308807 
 # jdk_nio
 
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
+java/nio/channels/AsyncCloseAndInterrupt.java                   8368290 macosx-26.0.1
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
@@ -611,7 +607,6 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-al
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 java/rmi/registry/multipleRegistries/MultipleRegistries.java    8268182 macosx-all
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       8365398 generic-all
 java/rmi/Naming/DefaultRegistryPort.java                        8005619 windows-all
 java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      8005619 windows-all
 
@@ -682,7 +677,6 @@ javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-al
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JFileChooser/8194044/FileSystemRootTest.java 8327236 windows-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
-javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
 javax/swing/JFileChooser/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
@@ -756,7 +750,7 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
-jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
+jdk/jfr/jvm/TestWaste.java                                      8369949 generic-all
 
 ############################################################################
 

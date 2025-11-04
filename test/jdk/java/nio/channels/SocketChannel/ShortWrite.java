@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 7176630 7074436
  * @summary Check for short writes on SocketChannels configured in blocking mode
  * @key randomness
+ * @requires test.thread.factory != "Virtual"
  */
 
 import java.net.*;

@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Signatures.
- * @bug 8321540 8319463 8357955
+ * @bug 8321540 8319463 8357955 8368050 8368331
  * @run junit SignaturesTest
  */
 import java.io.IOException;
@@ -120,6 +120,20 @@ class SignaturesTest {
         assertEqualsDeep(
                 ArrayTypeSig.of(2, TypeVarSig.of("E")),
                 Signature.parseFrom("[[TE;"));
+
+        assertEqualsDeep(
+                MethodSignature.of(
+                        List.of(TypeParam.of("A", ClassTypeSig.of("one/Two")), // /
+                                TypeParam.of("B", ClassTypeSig.of(ClassTypeSig.of("Outer"), "Inner")), // .
+                                TypeParam.of("C", ArrayTypeSig.of(BaseTypeSig.of('I'))), // [
+                                TypeParam.of("D", ClassTypeSig.of("Generic", TypeArg.unbounded())), // <
+                                TypeParam.of("E", TypeVarSig.of("A")), // ;
+                                TypeParam.of("F", (ClassTypeSig) null), // :
+                                TypeParam.of("G", (ClassTypeSig) null)), // >
+                        List.of(),
+                        BaseTypeSig.of('V')),
+                MethodSignature.parseFrom("<A:Lone/Two;B:LOuter.Inner;C:[ID:LGeneric<*>;E:TA;F:G:>()V")
+        );
     }
 
     @Test

@@ -1131,31 +1131,27 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 }
 
 // Register for DIVI projection of divmodI
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REGP_mask();
+  return RegMask::EMPTY;
 }
 
 bool maybe_far_call(const CallNode *n) {
@@ -1246,23 +1242,6 @@ encode %{
     assert(off1 - off0 == 2 * Assembler::InstructionSize, "correct size prediction");
     // restore mark
     __ set_inst_mark(mark);
-  %}
-
-  enc_class preserve_SP %{
-    // preserve mark
-    address mark = __ inst_mark();
-    DEBUG_ONLY(int off0 = __ offset());
-    // FP is preserved across all calls, even compiled calls.
-    // Use it to preserve SP in places where the callee might change the SP.
-    __ mov(Rmh_SP_save, SP);
-    DEBUG_ONLY(int off1 = __ offset());
-    assert(off1 - off0 == 4, "correct size prediction");
-    // restore mark
-    __ set_inst_mark(mark);
-  %}
-
-  enc_class restore_SP %{
-    __ mov(SP, Rmh_SP_save);
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{
@@ -8799,26 +8778,11 @@ instruct safePoint_poll(iRegP poll, R12RegI tmp, flagsReg icc) %{
 // Call Java Static Instruction
 instruct CallStaticJavaDirect( method meth ) %{
   match(CallStaticJava);
-  predicate(! ((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth);
 
   ins_cost(CALL_COST);
   format %{ "CALL,static ==> " %}
   ins_encode( SetInstMark, Java_Static_Call( meth ), call_epilog, ClearInstMark );
-  ins_pipe(simple_call);
-%}
-
-// Call Java Static Instruction (method handle version)
-instruct CallStaticJavaHandle( method meth ) %{
-  match(CallStaticJava);
-  predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
-  effect(USE meth);
-  // FP is saved by all callees (for interpreter stack correction).
-  // We use it here for a similar purpose, in {preserve,restore}_FP.
-
-  ins_cost(CALL_COST);
-  format %{ "CALL,static/MethodHandle ==> " %}
-  ins_encode( SetInstMark, preserve_SP, Java_Static_Call( meth ), restore_SP, call_epilog, ClearInstMark );
   ins_pipe(simple_call);
 %}
 

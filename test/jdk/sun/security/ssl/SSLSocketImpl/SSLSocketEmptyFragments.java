@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,9 +351,9 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         tests.executeTest(
                 tests::testEmptyHandshakeRecord, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
+                tests::testEmptyAlertNotHandshaking, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertDuringHandshake, SSLHandshakeException.class);
+                tests::testEmptyAlertDuringHandshake, SSLProtocolException.class);
         tests.executeTest(
                 tests::testEmptyChangeCipherSpecMessage, SSLProtocolException.class);
 
@@ -361,6 +361,6 @@ public class SSLSocketEmptyFragments extends SSLContextTemplate {
         tests.executeTest(
                 tests::testEmptyHandshakeRecord, SSLProtocolException.class);
         tests.executeTest(
-                tests::testEmptyAlertNotHandshaking, SSLHandshakeException.class);
+                tests::testEmptyAlertNotHandshaking, SSLProtocolException.class);
     }
 }

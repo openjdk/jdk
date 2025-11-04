@@ -181,6 +181,16 @@ public enum Alert {
 
         AlertMessage(TransportContext context,
                 ByteBuffer m) throws IOException {
+            // From RFC 8446 "Implementations
+            // MUST NOT send Handshake and Alert records that have a zero-length
+            // TLSInnerPlaintext.content; if such a message is received, the
+            // receiving implementation MUST terminate the connection with an
+            // "unexpected_message" alert."
+            if (m.remaining() == 0) {
+                throw context.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Alert fragments must not be zero length.");
+            }
+
             //  struct {
             //      AlertLevel level;
             //      AlertDescription description;

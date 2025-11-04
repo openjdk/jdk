@@ -200,7 +200,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       // make a copy of class bytes so GC will not affect us.
       char *buf = NEW_RESOURCE_ARRAY(char, len);
       memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
-      ClassFileStream st((u1*)buf, len, nullptr);
+      ClassFileStream st((u1*)buf, len, "jrt:/java.base");
       regenerate_class(class_name, st, CHECK);
     }
   }

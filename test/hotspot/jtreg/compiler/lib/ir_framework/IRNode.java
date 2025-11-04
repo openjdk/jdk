@@ -610,9 +610,29 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2I, "ConvD2I");
+    }
+
+    public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2L, "ConvD2L");
+    }
+
     public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_F2HF, "ConvF2HF");
+    }
+
+    public static final String CONV_F2I = PREFIX + "CONV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2I, "ConvF2I");
+    }
+
+    public static final String CONV_F2L = PREFIX + "CONV_F2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2L, "ConvF2L");
     }
 
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
@@ -1615,6 +1635,11 @@ public class IRNode {
         beforeMatchingNameRegex(PHI, "Phi");
     }
 
+    public static final String POPCOUNT_I = PREFIX + "POPCOUNT_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(POPCOUNT_I, "PopCountI");
+    }
+
     public static final String POPCOUNT_L = PREFIX + "POPCOUNT_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(POPCOUNT_L, "PopCountL");
@@ -1877,6 +1902,11 @@ public class IRNode {
     static {
         String regex = "(.*# ScObj.*" + END;
         optoOnly(SCOPE_OBJECT, regex);
+    }
+
+    public static final String SAFEPOINT_SCALAROBJECT_OF = COMPOSITE_PREFIX + "SAFEPOINT_SCALAROBJECT_OF" + POSTFIX;
+    static {
+        safepointScalarobjectOfNodes(SAFEPOINT_SCALAROBJECT_OF, "SafePointScalarObject");
     }
 
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
@@ -2675,6 +2705,66 @@ public class IRNode {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
+    public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2I, "convD2I_reg_reg");
+    }
+
+    public static final String X86_SCONV_D2L = PREFIX + "X86_SCONV_D2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2L, "convD2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_F2I = PREFIX + "X86_SCONV_F2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2I, "convF2I_reg_reg");
+    }
+
+    public static final String X86_SCONV_F2L = PREFIX + "X86_SCONV_F2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_D2I_AVX10 = PREFIX + "X86_SCONV2_D2I_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2I_AVX10, "convD2I_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_D2L_AVX10 = PREFIX + "X86_SCONV_D2L_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2L_AVX10, "convD2L_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_F2I_AVX10 = PREFIX + "X86_SCONV_F2I_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2I_AVX10, "convF2I_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_F2L_AVX10 = PREFIX + "X86_SCONV_F2L_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2L_AVX10, "convF2L_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_VCAST_F2X = PREFIX + "X86_VCAST_F2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_F2X, "castFtoX_reg_(av|eve)x");
+    }
+
+    public static final String X86_VCAST_D2X = PREFIX + "X86_VCAST_D2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_D2X, "castDtoX_reg_(av|eve)x");
+    }
+
+    public static final String X86_VCAST_F2X_AVX10 = PREFIX + "X86_VCAST_F2X_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_F2X_AVX10, "castFtoX_(reg|mem)_avx10");
+    }
+
+    public static final String X86_VCAST_D2X_AVX10 = PREFIX + "X86_VCAST_D2X_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_D2X_AVX10, "castDtoX_(reg|mem)_avx10");
+    }
+
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
     static {
         beforeMatchingNameRegex(XOR, "Xor(I|L)");
@@ -2753,6 +2843,36 @@ public class IRNode {
     public static final String EXPAND_BITS_VL = VECTOR_PREFIX + "EXPAND_BITS_VL" + POSTFIX;
     static {
         vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
+    }
+
+    public static final String COMPRESS_VB = VECTOR_PREFIX + "COMPRESS_VB" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VB, "CompressV", TYPE_BYTE);
+    }
+
+    public static final String COMPRESS_VS = VECTOR_PREFIX + "COMPRESS_VS" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VS, "CompressV", TYPE_SHORT);
+    }
+
+    public static final String COMPRESS_VI = VECTOR_PREFIX + "COMPRESS_VI" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VI, "CompressV", TYPE_INT);
+    }
+
+    public static final String COMPRESS_VL = VECTOR_PREFIX + "COMPRESS_VL" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VL, "CompressV", TYPE_LONG);
+    }
+
+    public static final String COMPRESS_VF = VECTOR_PREFIX + "COMPRESS_VF" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VF, "CompressV", TYPE_FLOAT);
+    }
+
+    public static final String COMPRESS_VD = VECTOR_PREFIX + "COMPRESS_VD" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VD, "CompressV", TYPE_DOUBLE);
     }
 
     public static final String EXPAND_VB = VECTOR_PREFIX + "EXPAND_VB" + POSTFIX;
@@ -3096,6 +3216,11 @@ public class IRNode {
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+        beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void safepointScalarobjectOfNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + ".*" + IS_REPLACED + ".*" + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
