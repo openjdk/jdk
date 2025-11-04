@@ -35,12 +35,12 @@ import java.time.temporal.UnsupportedTemporalTypeException;
  * An instantaneous point on the {@linkplain TimeLine time-line}.
  * <p>
  * This class is immutable and thread-safe.
- * <p>
- * On <b>numeric overflows</b>, all {@code Deadline} methods will return a
- * semantically meaningful extremum instead of throwing. For instance, on a
- * numeric overflow, {@link #plus(Duration) plus()} will return
- * {@link Deadline#MAX} if the provided duration is positive,
- * {@link Deadline#MIN} otherwise.
+ * <p id="overflow">
+ * Operations that add durations to a {@code Deadline}, whether represented as a
+ * {@link Duration} or as a {@code long} time increment (such as seconds or
+ * nanoseconds) do not throw on numeric overflow if the resulting
+ * {@code Deadline} would exceed {@link #MAX} or be less than {@link #MIN}.
+ * Instead, {@code MAX} or {@code MIN} is returned, respectively.
  */
 public final class Deadline implements Comparable<Deadline> {
 
@@ -58,8 +58,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MAX} if
-     * the provided duration is positive, {@link Deadline#MIN} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MAX} if the provided duration is positive,
+     * {@link Deadline#MIN} otherwise.
      *
      * @param nanosToAdd  the nanoseconds to add, positive or negative
      */
@@ -104,8 +105,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MIN} if
-     * the provided duration is positive, {@link Deadline#MAX} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MIN} if the provided duration is positive,
+     * {@link Deadline#MAX} otherwise.
      *
      * @param duration the amount to subtract, not null
      */
@@ -128,8 +130,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MAX} if
-     * the provided amount is positive, {@link Deadline#MIN} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MAX} if the provided amount is positive,
+     * {@link Deadline#MIN} otherwise.
      *
      * @see Instant#plus(long, TemporalUnit)
      *
@@ -152,8 +155,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MAX} if
-     * the provided duration is positive, {@link Deadline#MIN} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MAX} if the provided duration is positive,
+     * {@link Deadline#MIN} otherwise.
      *
      * @param secondsToAdd  the seconds to add, positive or negative
      */
@@ -172,8 +176,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MAX} if
-     * the provided duration is positive, {@link Deadline#MIN} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MAX} if the provided duration is positive,
+     * {@link Deadline#MIN} otherwise.
      *
      * @param millisToAdd  the milliseconds to add, positive or negative
      */
@@ -192,8 +197,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Deadline#MAX} if
-     * the provided duration is positive, {@link Deadline#MIN} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Deadline#MAX} if the provided duration is positive,
+     * {@link Deadline#MIN} otherwise.
      *
      * @param duration the duration to add, not null
      */
@@ -219,9 +225,9 @@ public final class Deadline implements Comparable<Deadline> {
      * <p>
      * This instance is immutable and unaffected by this method call.
      * <p>
-     * On numeric overflows, this method will return {@link Long#MAX_VALUE} if
-     * the current deadline is before the provided end deadline,
-     * {@link Long#MIN_VALUE} otherwise.
+     * On {@linkplain ##overflow numeric overflows}, this method will return
+     * {@link Long#MAX_VALUE} if the current deadline is before the provided end
+     * deadline, {@link Long#MIN_VALUE} otherwise.
      *
      * @param endExclusive  the end deadline, exclusive
      * @param unit  the unit to measure the amount in, not null
