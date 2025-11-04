@@ -726,8 +726,8 @@ DwarfFile::DebugAranges::CacheHint DwarfFile::DebugAranges::ensure_cached() {
 
   // Start with reasonable initial capacity to minimize number of grow/realloc calls.
   // Assume ~3% of the .debug_aranges is DebugArangesSetHeader and the rest is made up of AddressDescriptors.
-  const uintptr_t estimatedSetHeaderSize = _size_bytes / 32;
-  const size_t initial_capacity = (_size_bytes - estimatedSetHeaderSize) / sizeof(AddressDescriptor);
+  const uintptr_t estimated_set_header_size = _size_bytes / 32;
+  const size_t initial_capacity = (_size_bytes - estimated_set_header_size) / sizeof(AddressDescriptor);
   _cache._entries = NEW_C_HEAP_ARRAY_RETURN_NULL(ArangesEntry, initial_capacity, mtInternal);
   if (_cache._entries == nullptr) {
     _cache.destroy(true);
@@ -753,6 +753,7 @@ DwarfFile::DebugAranges::CacheHint DwarfFile::DebugAranges::ensure_cached() {
       }
       if (!is_terminating_entry(set_header, descriptor) && descriptor.range_length > 0 &&
           !_cache.add_entry(descriptor, set_header._debug_info_offset)) {
+        _cache.destroy(true);
         _reader.set_position(pos);
         return CacheHint::TRY_LINEAR_SCAN;
       }
@@ -928,7 +929,6 @@ void DwarfFile::ArangesCache::sort() {
 
 bool DwarfFile::ArangesCache::add_entry(const AddressDescriptor& descriptor, uint32_t debug_info_offset) {
   if (_count >= _capacity && !grow()) {
-    destroy(true);
     return false;
   }
   _entries[_count] = ArangesEntry(
