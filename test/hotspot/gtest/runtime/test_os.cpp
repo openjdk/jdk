@@ -773,10 +773,10 @@ TEST_VM(os, show_mappings_full_range) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     }
-    
+
 #ifdef __APPLE__
     // Validate BSD memory tagging for JVM-allocated memory
-    EXPECT_TRUE(is_memory_tagged_as_java(p, 1 * M)) 
+    EXPECT_TRUE(is_memory_tagged_as_java(p, 1 * M))
       << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
   }
@@ -1153,7 +1153,7 @@ TEST_VM(os, free_without_uncommit) {
 
 #ifdef __APPLE__
   // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(is_memory_tagged_as_java(base, size)) 
+  EXPECT_TRUE(is_memory_tagged_as_java(base, size))
     << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
 
@@ -1179,10 +1179,10 @@ TEST_VM(os, commit_memory_or_exit) {
 
   char* base = os::reserve_memory(size, mtTest, false);
   ASSERT_NOT_NULL(base);
-  
+
 #ifdef __APPLE__
   // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(is_memory_tagged_as_java(base, size)) 
+  EXPECT_TRUE(is_memory_tagged_as_java(base, size))
     << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
 #endif
 
