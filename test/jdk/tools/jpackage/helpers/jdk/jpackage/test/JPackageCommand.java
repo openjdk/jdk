@@ -28,20 +28,21 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toCollection;
 import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -50,6 +51,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -347,7 +349,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         DEFAULT,
         LAUNCHER_VERIFIER,
         ;
-    };
+    }
 
     JPackageCommand addVerifyAction(ThrowingConsumer<JPackageCommand> action, ActionRole actionRole) {
         verifyActions.add(action, actionRole);
@@ -1072,7 +1074,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private Map<ReadOnlyPathAssert, List<TKit.PathSnapshot>> createSnapshots() {
             return asserts.entrySet().stream()
                     .map(e -> {
-                        return Map.entry(e.getKey(), e.getValue().stream().map(TKit.PathSnapshot.build()::create).toList());
+                        return Map.entry(e.getKey(), e.getValue().stream().map(TKit.PathSnapshot::new).toList());
                     }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
@@ -1230,46 +1232,45 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);
             }).map(Path::of).ifPresent(predefinedAppImage -> {
 
-                Function<Path, String> computeDigest = ThrowingFunction.toFunction(path -> {
-                    var md = MessageDigest.getInstance("MD5");
-                    md.update(Files.readAllBytes(path));
-                    return HexFormat.of().formatHex(md.digest());
-                });
-
-                var snapshotBuilder = TKit.PathSnapshot.build().hasher(computeDigest);
-
-                if (!cmd.expectAppImageFile()) {
-                    var appImageFile = AppImageFile.getPathInAppImage(predefinedAppImage);
-                    // Exclude ".jpackage.xml" as it should no be in the output bundle.
-                    var pred = Predicate.<Path>isEqual(appImageFile).negate();
-                    if (TKit.isOSX()) {
-                        // On MacOS exclude files that can be signed as their digests change.
-                        pred = pred.and(path -> {
-                            return MacHelper.isVerbatimCopyFromPredefinedAppImage(cmd, path);
-                        });
-                    }
-
-                    snapshotBuilder.filter(pred);
-                }
-
-                var fromSnapshot = snapshotBuilder.create(predefinedAppImage);
+                TKit.trace(String.format(
+                        "Check contents of the predefined app image [%s] copied verbatim",
+                        predefinedAppImage));
 
                 var outputAppImageDir = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
 
-                var toSnapshot = new TKit.PathSnapshot(fromSnapshot.contentHashes().stream().map(pathHash -> {
-                    if (pathHash.hash().isEmpty()) {
-                        // path is a directory
-                        return pathHash;
-                    } else {
-                        return new TKit.PathSnapshot.PathHash(
-                                pathHash.path(),
-                                computeDigest.apply(outputAppImageDir.resolve(pathHash.path())));
-                    }
-                }).toList());
+                try (var walk = Files.walk(predefinedAppImage)) {
+                    var filteredWalk = walk;
+                    if (!cmd.expectAppImageFile()) {
+                        var appImageFile = AppImageFile.getPathInAppImage(predefinedAppImage);
+                        // Exclude ".jpackage.xml" as it should no be in the output bundle.
+                        var pred = Predicate.<Path>isEqual(appImageFile).negate();
+                        if (TKit.isOSX()) {
+                            // On MacOS exclude files that can be signed as their digests change.
+                            pred = pred.and(path -> {
+                                return MacHelper.isVerbatimCopyFromPredefinedAppImage(cmd, path);
+                            });
+                        }
 
-                toSnapshot.assertEquals(fromSnapshot,
-                        String.format("Check contents of the predefined app image [%s] copied verbatim",
-                                predefinedAppImage));
+                        filteredWalk = walk.filter(pred);
+                    }
+
+                    var verbatimPaths = filteredWalk.collect(toCollection(TreeSet::new));
+
+                    // Remove nonempty directories for the collection of paths copied verbatim.
+                    verbatimPaths.removeAll(verbatimPaths.stream().map(Path::getParent).toList());
+
+                    verbatimPaths.forEach(ThrowingConsumer.toConsumer(p -> {
+                        if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
+                            TKit.assertDirectoryExists(p);
+                        } else {
+                            TKit.assertSameFileContent(p, outputAppImageDir.resolve(predefinedAppImage.relativize(p)));
+                        }
+                    }));
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+
+                TKit.trace("Done");
             });
         })
         ;
