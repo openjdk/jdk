@@ -1499,11 +1499,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return getPrintableCommandLine();
     }
 
-    final public JPackageCommand verifyIsOfType(PackageType ... types) {
+    public final JPackageCommand verifyIsOfType(PackageType ... types) {
         return verifyIsOfType(Set.of(types));
     }
 
-    final public JPackageCommand verifyIsOfType(Iterable<PackageType> types) {
+    public final JPackageCommand verifyIsOfType(Iterable<PackageType> types) {
         return verifyIsOfType(StreamSupport.stream(types.spliterator(), false).collect(toSet()));
     }
 
