@@ -46,6 +46,8 @@ class CopyrightHeaders {
     private static final String UNICODE =
         """
         /*
+         * UNICODE LICENSE V3
+         *
          * COPYRIGHT AND PERMISSION NOTICE
          *
          * Copyright © 1991-2025 Unicode, Inc.
