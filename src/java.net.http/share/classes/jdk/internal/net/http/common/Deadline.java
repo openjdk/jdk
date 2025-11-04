@@ -36,11 +36,14 @@ import java.time.temporal.UnsupportedTemporalTypeException;
  * <p>
  * This class is immutable and thread-safe.
  * <p id="overflow">
- * Operations that add durations to a {@code Deadline}, whether represented as a
- * {@link Duration} or as a {@code long} time increment (such as seconds or
- * nanoseconds) do not throw on numeric overflow if the resulting
+ * Operations that add or subtract durations to a {@code Deadline}, whether
+ * represented as a {@link Duration} or as a {@code long} time increment (such
+ * as seconds or nanoseconds) do not throw on numeric overflow if the resulting
  * {@code Deadline} would exceed {@link #MAX} or be less than {@link #MIN}.
- * Instead, {@code MAX} or {@code MIN} is returned, respectively.
+ * Instead, {@code MAX} or {@code MIN} is returned, respectively. Similarly,
+ * methods that return a duration as a {@code long} will either return
+ * {@link Long#MAX_VALUE} or {@link Long#MIN_VALUE} if the returned quantity
+ * would exceed the capacity of a {@code long}.
  */
 public final class Deadline implements Comparable<Deadline> {
 
