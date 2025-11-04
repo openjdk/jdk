@@ -28,10 +28,12 @@ package jdk.jfr.internal;
 import java.util.Properties;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.DnsCacheStatisticsEvent;
 import jdk.internal.event.JFRTracing;
 import jdk.internal.event.ThrowableTracer;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import java.net.InetAddress;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
@@ -58,6 +60,7 @@ public final class JDKEvents {
         // event class to be listed in the MirrorEvents class.
         jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.DnsLookupEvent.class,
+        jdk.internal.event.DnsCacheStatisticsEvent.class,
         jdk.internal.event.ErrorThrownEvent.class,
         jdk.internal.event.ExceptionStatisticsEvent.class,
         jdk.internal.event.ExceptionThrownEvent.class,
@@ -85,6 +88,7 @@ public final class JDKEvents {
 
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
+    private static final Runnable emitDnsCacheStatistics = JDKEvents::emitDnsCacheStatistics;
     private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
     private static final Runnable emitContainerCPUUsage = JDKEvents::emitContainerCPUUsage;
     private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
@@ -104,6 +108,7 @@ public final class JDKEvents {
                 }
                 PeriodicEvents.addJavaEvent(jdk.internal.event.ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 PeriodicEvents.addJavaEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                PeriodicEvents.addJavaEvent(jdk.internal.event.DnsCacheStatisticsEvent.class, emitDnsCacheStatistics);
                 PeriodicEvents.addJavaEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
                 PeriodicEvents.addJavaEvent(MethodTimingEvent.class, emitMethodTiming);
 
@@ -209,6 +214,7 @@ public final class JDKEvents {
     public static void remove() {
         PeriodicEvents.removeEvent(emitExceptionStatistics);
         PeriodicEvents.removeEvent(emitDirectBufferStatistics);
+        PeriodicEvents.removeEvent(emitDnsCacheStatistics);
         PeriodicEvents.removeEvent(emitInitialSecurityProperties);
         PeriodicEvents.removeEvent(emitMethodTiming);
 
@@ -222,6 +228,14 @@ public final class JDKEvents {
     private static void emitDirectBufferStatistics() {
         DirectBufferStatisticsEvent e = new DirectBufferStatisticsEvent();
         e.commit();
+    }
+
+    private static void emitDnsCacheStatistics() {
+        if (DnsCacheStatisticsEvent.enabled()) {
+            long[] stats = InetAddress.getDnsCacheStatistics();
+            long timestamp = DnsCacheStatisticsEvent.timestamp();
+            DnsCacheStatisticsEvent.commit(timestamp, stats[0], stats[1], stats[2]);
+        }
     }
 
     private static void emitInitialSecurityProperties() {

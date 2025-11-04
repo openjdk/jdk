@@ -29,44 +29,28 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
-import jdk.jfr.Throttle;
-import jdk.jfr.Timespan;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
-@Name(Type.EVENT_NAME_PREFIX + "DnsLookup")
-@Label("DNS Lookup")
-@Category("Java Application")
-@Description("DNS hostname resolution lookup. Records actual network DNS queries and cache hits/misses.")
-@StackFilter({"java.net.InetAddress",
-              "java.net.InetAddress$NameServiceAddresses",
-              "java.net.InetAddress$PlatformResolver"})
-@Throttle
-public final class DnsLookupEvent extends MirrorEvent {
+@Name(Type.EVENT_NAME_PREFIX + "DnsCacheStatistics")
+@Label("DNS Cache Statistics")
+@Category({ "Java Application", "Statistics" })
+@Description("DNS cache statistics including cache size, stale entries, and cleanup metrics")
+@RemoveFields({"duration", "eventThread", "stackTrace"})
+public final class DnsCacheStatisticsEvent extends MirrorEvent {
 
-    @Label("Host")
-    @Description("Hostname being resolved")
-    public String host;
+    @Label("Cache Size")
+    @Description("Current number of entries in the DNS cache")
+    public long cacheSize;
 
-    @Label("Result")
-    @Description("Resolved IP addresses (comma-separated) or error message")
-    public String result;
+    @Label("Stale Entries")
+    @Description("Number of stale entries in the cache")
+    public long staleEntries;
 
-    @Label("Success")
-    @Description("Whether the DNS lookup was successful")
-    public boolean success;
-
-    @Label("Cached")
-    @Description("Whether the result was retrieved from cache (true) or from actual DNS network query (false)")
-    public boolean cached;
-
-    @Label("TTL")
-    @Description("Time to live in seconds (0 if forever cached, -1 if not cached, actual TTL if cached)")
-    @Timespan(Timespan.SECONDS)
-    public long ttl;
-
-    @Label("Stale")
-    @Description("Whether stale cached data was used (only valid when cached=true)")
-    public boolean stale;
+    @Label("Entries Removed")
+    @Description("Number of entries removed during cache cleanup")
+    public long entriesRemoved;
 
 }
+

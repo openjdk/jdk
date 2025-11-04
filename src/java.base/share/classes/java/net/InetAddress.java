@@ -983,7 +983,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         public InetAddress[] get() {
             long now = System.nanoTime();
             if ((refreshTime - now) < 0L && lookupLock.tryLock()) {
-                // JFR event tracking for background DNS refresh
+                // JFR event tracking for background DNS refresh (actual network query)
                 long jfrStart = DnsLookupEvent.enabled() ? DnsLookupEvent.timestamp() : 0L;
                 try {
                     // cachePolicy is in [s] - we need [ns]
@@ -991,24 +991,28 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     // getAddressesFromNameService returns non-empty/non-null value
                     InetAddress[] refreshedAddresses = getAddressesFromNameService(host);
                     
-                    // Emit JFR event for successful background DNS refresh
+                    // Emit JFR event for successful background DNS refresh (actual network query)
                     if (DnsLookupEvent.enabled()) {
-                        DnsLookupEvent.offer(jfrStart, host, refreshedAddresses, true);
+                        DnsLookupEvent.offerNetworkQuery(jfrStart, host, refreshedAddresses, true);
                     }
                     
                     inetAddresses = refreshedAddresses;
                     // don't update the "expirySet", will do that later
                     staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
                 } catch (UnknownHostException uhe) {
-                    // Emit JFR event for failed background DNS refresh
+                    // Emit JFR event for failed background DNS refresh (actual network query)
                     if (DnsLookupEvent.enabled() && jfrStart != 0L) {
-                        DnsLookupEvent.offer(jfrStart, host, uhe.getMessage());
+                        DnsLookupEvent.offerNetworkQuery(jfrStart, host, uhe.getMessage());
                     }
                     // Ignore exception, continue using stale data
                 } finally {
                     lookupLock.unlock();
                 }
             }
+            
+            // Note: Cache hit events (including stale data) are recorded in getAllByName0()
+            // to avoid duplicate recording. This method only records actual network queries
+            // during background refresh.
             return inetAddresses;
         }
 
@@ -1067,7 +1071,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 }
                 // still us ?
                 if (addresses == this) {
-                    // JFR event tracking for actual DNS query
+                    // JFR event tracking for actual DNS network query
                     long jfrStart = DnsLookupEvent.enabled() ? DnsLookupEvent.timestamp() : 0L;
                     
                     // lookup name services
@@ -1079,18 +1083,18 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                         ex = null;
                         cachePolicy = InetAddressCachePolicy.get();
                         
-                        // Emit JFR event for successful DNS query
+                        // Emit JFR event for successful actual DNS network query
                         if (DnsLookupEvent.enabled()) {
-                            DnsLookupEvent.offer(jfrStart, host, inetAddresses, true);
+                            DnsLookupEvent.offerNetworkQuery(jfrStart, host, inetAddresses, true);
                         }
                     } catch (UnknownHostException uhe) {
                         inetAddresses = null;
                         ex = uhe;
                         cachePolicy = InetAddressCachePolicy.getNegative();
                         
-                        // Emit JFR event for failed DNS query
+                        // Emit JFR event for failed actual DNS network query
                         if (DnsLookupEvent.enabled()) {
-                            DnsLookupEvent.offer(jfrStart, host, uhe.getMessage());
+                            DnsLookupEvent.offerNetworkQuery(jfrStart, host, uhe.getMessage());
                         }
                     }
                     // remove or replace us with cached addresses according to cachePolicy
@@ -1699,6 +1703,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             }
         }
 
+        // JFR event tracking for cache lookup
+        long jfrStart = DnsLookupEvent.enabled() ? DnsLookupEvent.timestamp() : 0L;
+
         // look-up or remove from cache
         Addresses addrs;
         if (useCache) {
@@ -1714,6 +1721,48 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             }
         }
 
+        // Check if we have a cached result
+        if (addrs != null && (addrs instanceof CachedLookup || addrs instanceof ValidCachedLookup)) {
+            // Cached result - record event with cache information
+            CachedLookup cached = (CachedLookup) addrs;
+            boolean isStale = false;
+            long ttlSeconds = 0;
+            
+            if (cached instanceof ValidCachedLookup) {
+                ValidCachedLookup validCached = (ValidCachedLookup) cached;
+                long refreshTime = validCached.refreshTime;
+                isStale = (refreshTime - now) < 0L;
+                if (validCached.expiryTime > 0) {
+                    long remainingNanos = validCached.expiryTime - now;
+                    ttlSeconds = remainingNanos > 0 ? remainingNanos / 1_000_000_000L : 0;
+                } else {
+                    ttlSeconds = -1; // Forever
+                }
+            } else {
+                if (cached.expiryTime > 0) {
+                    long remainingNanos = cached.expiryTime - now;
+                    ttlSeconds = remainingNanos > 0 ? remainingNanos / 1_000_000_000L : 0;
+                } else {
+                    ttlSeconds = -1; // Forever
+                }
+            }
+
+            try {
+                InetAddress[] result = addrs.get().clone();
+                // Record cached success result
+                if (DnsLookupEvent.enabled()) {
+                    DnsLookupEvent.offerCachedResult(jfrStart, host, result, true, ttlSeconds, isStale);
+                }
+                return result;
+            } catch (UnknownHostException e) {
+                // Record cached error result
+                if (DnsLookupEvent.enabled()) {
+                    DnsLookupEvent.offerCachedError(jfrStart, host, e.getMessage(), ttlSeconds);
+                }
+                throw e;
+            }
+        }
+
         if (addrs == null) {
             // create a NameServiceAddresses instance which will look up
             // the name service and install it within cache...
@@ -1723,12 +1772,50 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             );
             if (oldAddrs != null) { // lost putIfAbsent race
                 addrs = oldAddrs;
+                // If we got a cached entry from the race, handle it
+                if (oldAddrs instanceof CachedLookup || oldAddrs instanceof ValidCachedLookup) {
+                    CachedLookup cached = (CachedLookup) oldAddrs;
+                    // Reuse 'now' variable defined earlier in the method
+                    boolean isStale = false;
+                    long ttlSeconds = 0;
+                    
+                    if (cached instanceof ValidCachedLookup) {
+                        ValidCachedLookup validCached = (ValidCachedLookup) cached;
+                        long refreshTime = validCached.refreshTime;
+                        isStale = (refreshTime - now) < 0L;
+                        if (validCached.expiryTime > 0) {
+                            long remainingNanos = validCached.expiryTime - now;
+                            ttlSeconds = remainingNanos > 0 ? remainingNanos / 1_000_000_000L : 0;
+                        } else {
+                            ttlSeconds = -1;
+                        }
+                    } else {
+                        if (cached.expiryTime > 0) {
+                            long remainingNanos = cached.expiryTime - now;
+                            ttlSeconds = remainingNanos > 0 ? remainingNanos / 1_000_000_000L : 0;
+                        } else {
+                            ttlSeconds = -1;
+                        }
+                    }
+
+                    try {
+                        InetAddress[] result = addrs.get().clone();
+                        if (DnsLookupEvent.enabled()) {
+                            DnsLookupEvent.offerCachedResult(jfrStart, host, result, true, ttlSeconds, isStale);
+                        }
+                        return result;
+                    } catch (UnknownHostException e) {
+                        if (DnsLookupEvent.enabled()) {
+                            DnsLookupEvent.offerCachedError(jfrStart, host, e.getMessage(), ttlSeconds);
+                        }
+                        throw e;
+                    }
+                }
             }
         }
 
         // ask Addresses to get an array of InetAddress(es) and clone it
-        // Note: JFR events for DNS queries are recorded in NameServiceAddresses.get()
-        // and ValidCachedLookup.get(), only for actual DNS queries, not cache hits
+        // Note: JFR events for actual DNS network queries are recorded in NameServiceAddresses.get()
         return addrs.get().clone();
     }
 
@@ -1911,5 +1998,39 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         if (host.indexOf(0) != -1) {
             throw new UnknownHostException("NUL character not allowed in hostname");
         }
+    }
+
+    /**
+     * Collect DNS cache statistics for JFR periodic events.
+     * This method is called periodically by JFR to emit cache statistics.
+     *
+     * @return array of three long values: [cacheSize, staleEntries, entriesRemoved]
+     */
+    public static long[] getDnsCacheStatistics() {
+        long now = System.nanoTime();
+        long cacheSize = cache.size();
+        long staleEntries = 0;
+        long entriesRemoved = 0;
+
+        // Count stale entries
+        for (CachedLookup caddrs : expirySet) {
+            if (caddrs instanceof ValidCachedLookup) {
+                ValidCachedLookup validCached = (ValidCachedLookup) caddrs;
+                if ((validCached.refreshTime - now) < 0L && (validCached.staleTime - now) >= 0L) {
+                    staleEntries++;
+                }
+            }
+        }
+
+        // Count entries that would be removed (expired but not yet cleaned)
+        for (CachedLookup caddrs : expirySet) {
+            if ((caddrs.expiryTime - now) < 0L) {
+                entriesRemoved++;
+            } else {
+                break; // entries are ordered by expiry time
+            }
+        }
+
+        return new long[]{cacheSize, staleEntries, entriesRemoved};
     }
 }

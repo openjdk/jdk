@@ -807,6 +807,11 @@
       <setting name="throttle">100/s</setting>
     </event>
 
+    <event name="jdk.DnsCacheStatistics">
+      <setting name="enabled">true</setting>
+      <setting name="period">5000 ms</setting>
+    </event>
+
     <event name="jdk.Deserialization">
       <setting name="enabled">false</setting>
       <setting name="stackTrace">true</setting>
