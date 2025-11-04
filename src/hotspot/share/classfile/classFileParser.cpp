@@ -156,6 +156,8 @@
 
 #define JAVA_26_VERSION                   70
 
+#define JAVA_27_VERSION                   71
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
