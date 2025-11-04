@@ -35,6 +35,7 @@
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
+#include "utilities/ostream.hpp"
 
 #include <fenv.h>
 
@@ -837,14 +838,14 @@ void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, P
   block_hrp_index = i;
 }
 
-void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
+void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str, outputStream *out) {
   if (str != nullptr) {
-    tty->print_cr("#  *** %s ***", str);
+    out->print_cr("#  *** %s ***", str);
   }
-  tty->print_cr("#     start pressure is = %d", pressure.start_pressure());
-  tty->print_cr("#     max pressure is = %d", pressure.final_pressure());
-  tty->print_cr("#     end pressure is = %d", pressure.current_pressure());
-  tty->print_cr("#");
+  out->print_cr("#     start pressure is = %d", pressure.start_pressure());
+  out->print_cr("#     max pressure is = %d", pressure.final_pressure());
+  out->print_cr("#     end pressure is = %d", pressure.current_pressure());
+  out->print_cr("#");
 }
 
 /* Build an interference graph:

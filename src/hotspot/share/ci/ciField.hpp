@@ -179,6 +179,7 @@ public:
 
   // Debugging output
   void print();
+  void print_on(outputStream* out);
   void print_name_on(outputStream* st);
 };
 

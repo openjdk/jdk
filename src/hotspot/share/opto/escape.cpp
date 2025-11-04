@@ -43,6 +43,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation) :
   // If ReduceAllocationMerges is enabled we might call split_through_phi during
@@ -5033,7 +5034,7 @@ void PointsToNode::dump(bool print_state, outputStream* out, bool newline) const
   }
 }
 
-void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
+void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist, outputStream* out) {
   bool first = true;
   int ptnodes_length = ptnodes_worklist.length();
   for (int i = 0; i < ptnodes_length; i++) {
@@ -5049,26 +5050,26 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
     if (n->is_Allocate() || (n->is_CallStaticJava() &&
                              n->as_CallStaticJava()->is_boxing_method())) {
       if (first) {
-        tty->cr();
-        tty->print("======== Connection graph for ");
-        _compile->method()->print_short_name();
-        tty->cr();
-        tty->print_cr("invocation #%d: %d iterations and %f sec to build connection graph with %d nodes and worklist size %d",
+        out->cr();
+        out->print("======== Connection graph for ");
+        _compile->method()->print_short_name(out);
+        out->cr();
+        out->print_cr("invocation #%d: %d iterations and %f sec to build connection graph with %d nodes and worklist size %d",
                       _invocation, _build_iterations, _build_time, nodes_size(), ptnodes_worklist.length());
-        tty->cr();
+        out->cr();
         first = false;
       }
-      ptn->dump();
+      ptn->dump(true, out);
       // Print all locals and fields which reference this allocation
       for (UseIterator j(ptn); j.has_next(); j.next()) {
         PointsToNode* use = j.get();
         if (use->is_LocalVar()) {
-          use->dump(Verbose);
+          use->dump(Verbose, out);
         } else if (Verbose) {
-          use->dump();
+          use->dump(true, out);
         }
       }
-      tty->cr();
+      out->cr();
     }
   }
 }

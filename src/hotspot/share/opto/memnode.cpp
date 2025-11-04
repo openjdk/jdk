@@ -53,6 +53,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 
@@ -2888,7 +2889,7 @@ private:
   }
 #endif
 
-  NOT_PRODUCT( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+  NOT_PRODUCT( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store, outputStream* out = tty) const; )
 };
 
 StoreNode* MergePrimitiveStores::run() {
@@ -3356,7 +3357,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
 }
 
 #ifndef PRODUCT
-void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
+void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store, outputStream* out) const {
   stringStream ss;
   ss.print_cr("[TraceMergeStores]: Replace");
   for (int i = (int)merge_list.size() - 1; i >= 0; i--) {
@@ -3365,7 +3366,7 @@ void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged
   ss.print_cr("[TraceMergeStores]: with");
   merged_input_value->dump("\n", false, &ss);
   merged_store->dump("\n", false, &ss);
-  tty->print("%s", ss.as_string());
+  out->print("%s", ss.as_string());
 }
 #endif
 

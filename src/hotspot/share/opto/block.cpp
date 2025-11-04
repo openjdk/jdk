@@ -35,6 +35,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow(uint i) {
@@ -358,16 +359,16 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
   st->cr();
 }
 
-void Block::dump() const {
-  dump(nullptr);
+void Block::dump(outputStream* out) const {
+  dump(nullptr, out);
 }
 
-void Block::dump(const PhaseCFG* cfg) const {
-  dump_head(cfg);
+void Block::dump(const PhaseCFG* cfg, outputStream* out) const {
+  dump_head(cfg, out);
   for (uint i=0; i< number_of_nodes(); i++) {
-    get_node(i)->dump();
+    get_node(i)->dump(out);
   }
-  tty->print("\n");
+  out->print("\n");
 }
 #endif
 
@@ -1257,7 +1258,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
 
 //------------------------------dump-------------------------------------------
 #ifndef PRODUCT
-void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
+void PhaseCFG::_dump_cfg(const Node *end, VectorSet &visited, outputStream *out) const {
   const Node *x = end->is_block_proj();
   assert( x, "not a CFG" );
 
@@ -1273,23 +1274,23 @@ void PhaseCFG::_dump_cfg( const Node *end, VectorSet &visited  ) const {
 
   // Recursively visit
   for (uint i = 1; i < p->req(); i++) {
-    _dump_cfg(p->in(i), visited);
+    _dump_cfg(p->in(i), visited, out);
   }
 
   // Dump the block
-  get_block_for_node(p)->dump(this);
+  get_block_for_node(p)->dump(this, out);
 }
 
-void PhaseCFG::dump( ) const {
-  tty->print("\n--- CFG --- %d BBs\n", number_of_blocks());
+void PhaseCFG::dump(outputStream *out) const {
+  out->print("\n--- CFG --- %d BBs\n", number_of_blocks());
   if (_blocks.size()) {        // Did we do basic-block layout?
     for (uint i = 0; i < number_of_blocks(); i++) {
       const Block* block = get_block(i);
-      block->dump(this);
+      block->dump(this, out);
     }
   } else {                      // Else do it with a DFS
     VectorSet visited(_block_arena);
-    _dump_cfg(_root,visited);
+    _dump_cfg(_root,visited, out);
   }
 }
 

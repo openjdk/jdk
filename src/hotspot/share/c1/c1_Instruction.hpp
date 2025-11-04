@@ -29,6 +29,7 @@
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "ci/ciField.hpp"
+#include "utilities/ostream.hpp"
 
 // Predefined classes
 class ciField;
@@ -582,7 +583,7 @@ class Instruction: public CompilationResourceObj {
   // debugging
   static void check_state(ValueStack* state)     PRODUCT_RETURN;
   void print()                                   PRODUCT_RETURN;
-  void print_line()                              PRODUCT_RETURN;
+  void print_line(outputStream* out = tty)       PRODUCT_RETURN;
   void print(InstructionPrinter& ip)             PRODUCT_RETURN;
 };
 

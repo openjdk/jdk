@@ -42,6 +42,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/ostream.hpp"
 
 // Static array so we can figure out which bytecodes stop us from compiling
 // the most. Some of the non-static variables are needed in bytecodeInfo.cpp
@@ -2374,10 +2375,10 @@ void Parse::dump() {
 }
 
 // Dump information associated with a byte code index, 'bci'
-void Parse::dump_bci(int bci) {
+void Parse::dump_bci(int bci, outputStream* out) {
   // Output info on merge-points, cloning, and within _jsr..._ret
   // NYI
-  tty->print(" bci:%d", bci);
+  out->print(" bci:%d", bci);
 }
 
 #endif

@@ -63,34 +63,40 @@ bool ciConstant::is_loaded() const {
 // ------------------------------------------------------------------
 // ciConstant::print
 void ciConstant::print() {
-  tty->print("<ciConstant type=%s value=",
+  print_on(tty);
+}
+
+// ------------------------------------------------------------------
+// ciConstant::print_on
+void ciConstant::print_on(outputStream* out) {
+  out->print("<ciConstant type=%s value=",
              basictype_to_str(basic_type()));
   switch (basic_type()) {
   case T_BOOLEAN:
-    tty->print("%s", bool_to_str(_value._int != 0));
+    out->print("%s", bool_to_str(_value._int != 0));
     break;
   case T_CHAR:
   case T_BYTE:
   case T_SHORT:
   case T_INT:
-    tty->print("%d", _value._int);
+    out->print("%d", _value._int);
     break;
   case T_LONG:
-    tty->print(INT64_FORMAT, (int64_t)(_value._long));
+    out->print(INT64_FORMAT, (int64_t)(_value._long));
     break;
   case T_FLOAT:
-    tty->print("%f", _value._float);
+    out->print("%f", _value._float);
     break;
   case T_DOUBLE:
-    tty->print("%lf", _value._double);
+    out->print("%lf", _value._double);
     break;
   default:
     if (is_reference_type(basic_type())) {
-      _value._object->print();
+      _value._object->print(out);
     } else {
-      tty->print("ILLEGAL");
+      out->print("ILLEGAL");
     }
     break;
   }
-  tty->print(">");
+  out->print(">");
 }

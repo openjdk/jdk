@@ -34,6 +34,7 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
+#include "utilities/ostream.hpp"
 
 class Matcher;
 class PhaseCFG;
@@ -224,7 +225,8 @@ public:
   bool is_singledef() const { return _def != NodeSentinel; }
 
 #ifndef PRODUCT
-  void dump( ) const;
+  void dump() const;
+  void dump_on(outputStream* out) const;
 #endif
 };
 
@@ -675,7 +677,7 @@ public:
   void raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure);
   void compute_entry_block_pressure(Block* b);
   void compute_exit_block_pressure(Block* b);
-  void print_pressure_info(Pressure& pressure, const char *str);
+  void print_pressure_info(Pressure& pressure, const char *str, outputStream *out = tty);
 
 private:
   // Force the bases of derived pointers to be alive at GC points.
@@ -791,15 +793,15 @@ private:
 #ifndef PRODUCT
   static uint _high_pressure, _low_pressure;
 
-  void dump() const;
-  void dump(const Node* n) const;
-  void dump(const Block* b) const;
+  void dump(outputStream* out = tty) const;
+  void dump(const Node* n, outputStream* out = tty) const;
+  void dump(const Block* b, outputStream* out = tty) const;
   void dump_degree_lists() const;
   void dump_simplified() const;
-  void dump_lrg(uint lidx, bool defs_only) const;
-  void dump_lrg(uint lidx) const {
+  void dump_lrg(uint lidx, bool defs_only, outputStream* out = tty) const;
+  void dump_lrg(uint lidx, outputStream* out = tty) const {
     // dump defs and uses by default
-    dump_lrg(lidx, false);
+    dump_lrg(lidx, false, out);
   }
   void dump_bb(uint pre_order) const;
   void dump_for_spill_split_recycle() const;
