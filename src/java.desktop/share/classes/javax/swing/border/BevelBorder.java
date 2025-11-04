@@ -114,6 +114,10 @@ public class BevelBorder extends AbstractBorder
     /**
      * Creates a bevel border with the specified type, highlight and
      * shadow colors.
+     * If any of the highlight color is {@code null}, the highlight color
+     * is derived from the specified component's background color.
+     * If any of the shadow color is {@code null}, the shadow color
+     * is derived from the specified component's background color.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
      * no bevel border will be painted.
