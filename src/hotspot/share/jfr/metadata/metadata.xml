@@ -1289,11 +1289,11 @@
     <Field type="ulong" name="known" label="Known" />
     <Field type="ulong" name="shared" label="Shared" />
     <Field type="ulong" name="newStrings" label="New Strings" />
-    <Field type="ulong" name="newBytes" contentType="bytes" label="New Bytes" />
+    <Field type="ulong" name="newSize" contentType="bytes" label="New Size" />
     <Field type="ulong" name="replaced" label="Replaced" />
     <Field type="ulong" name="deleted" label="Deleted" />
     <Field type="ulong" name="deduplicated" label="Deduplicated" />
-    <Field type="ulong" name="deduplicatedBytes" contentType="bytes" label="Deduplicated Bytes" />
+    <Field type="ulong" name="deduplicatedSize" contentType="bytes" label="Deduplicated Size" />
     <Field type="ulong" name="skippedDead" label="Skipped Dead" />
     <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
     <Field type="ulong" name="skippedShared" label="Skipped Shared" />

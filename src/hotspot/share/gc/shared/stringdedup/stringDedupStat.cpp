@@ -240,11 +240,11 @@ void StringDedup::Stat::emit_statistics(bool total) const {
     e.set_known(_known);
     e.set_shared(_known_shared);
     e.set_newStrings(_new);
-    e.set_newBytes(_new_bytes);
+    e.set_newSize(_new_bytes);
     e.set_replaced(_replaced);
     e.set_deleted(_deleted);
     e.set_deduplicated(_deduped);
-    e.set_deduplicatedBytes(_deduped_bytes);
+    e.set_deduplicatedSize(_deduped_bytes);
     e.set_skippedDead(_skipped_dead);
     e.set_skippedIncomplete(_skipped_incomplete);
     e.set_skippedShared(_skipped_shared);
