@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define CPU_RISCV_GC_G1_G1BARRIERSETASSEMBLER_RISCV_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef COMPILER1
@@ -35,11 +35,9 @@ class LIR_Assembler;
 #endif
 class StubAssembler;
 class G1PreBarrierStub;
-class G1PostBarrierStub;
 class G1PreBarrierStubC2;
-class G1PostBarrierStubC2;
 
-class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
+class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
 protected:
   void gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                        Register addr, Register count, RegSet saved_regs);
@@ -68,10 +66,16 @@ protected:
 public:
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
-  void gen_post_barrier_stub(LIR_Assembler* ce, G1PostBarrierStub* stub);
 
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
-  void generate_c1_post_barrier_runtime_stub(StubAssembler* sasm);
+
+  void g1_write_barrier_post_c1(MacroAssembler* masm,
+                                Register store_addr,
+                                Register new_val,
+                                Register thread,
+                                Register tmp1,
+                                Register tmp2);
+
 #endif
 
 #ifdef COMPILER2
@@ -90,9 +94,7 @@ public:
                                 Register thread,
                                 Register tmp1,
                                 Register tmp2,
-                                G1PostBarrierStubC2* c2_stub);
-  void generate_c2_post_barrier_stub(MacroAssembler* masm,
-                                     G1PostBarrierStubC2* stub) const;
+                                bool new_val_may_be_null);
 #endif
 
   void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

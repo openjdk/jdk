@@ -46,4 +46,8 @@ inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
   return allocator.allocate();
 }
 
+inline void CollectedHeap::add_vmthread_cpu_time(jlong time) {
+  _vmthread_cpu_time += time;
+}
+
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP

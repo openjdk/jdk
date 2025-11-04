@@ -72,7 +72,7 @@ import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
 import sun.swing.SwingAccessor;
 
-class CAccessibility implements PropertyChangeListener {
+final class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
 
     static {
@@ -104,6 +104,7 @@ class CAccessibility implements PropertyChangeListener {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", this);
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         if (newValue == null) return;

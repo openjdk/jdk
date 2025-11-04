@@ -41,6 +41,7 @@ class outputStream;
   LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
+  LOG_TAG(asan) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
@@ -149,6 +150,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(package) \
   LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8274148 8301580
+ * @bug 8274148 8301580 8359497
  * @summary Check snippet highlighting
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -32,22 +32,22 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run testng SnippetHighlightTest
+ * @run junit SnippetHighlightTest
  */
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.Test;
 
 import jdk.jshell.SourceCodeAnalysis.Highlight;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class SnippetHighlightTest extends KullaTesting {
 
+    @Test
     public void testMemberExpr() {
         assertEval("@Deprecated class TestClass { }");
         assertEval("class TestConstructor { @Deprecated TestConstructor() {} }");
@@ -99,6 +99,7 @@ public class SnippetHighlightTest extends KullaTesting {
                          "Highlight[start=5, end=11, attributes=[DECLARATION]]");
     }
 
+    @Test
     public void testClassErrorRecovery() { //JDK-8301580
         assertHighlights("""
                          class C {
@@ -114,9 +115,16 @@ public class SnippetHighlightTest extends KullaTesting {
                          "Highlight[start=32, end=38, attributes=[KEYWORD]]");
     }
 
+    @Test
+    public void testNoCrashOnLexicalErrors() { //JDK-8359497
+        assertHighlights("""
+                         "
+                         """);
+    }
+
     private void assertHighlights(String code, String... expected) {
         List<String> completions = computeHighlights(code);
-        assertEquals(completions, Arrays.asList(expected), "Input: " + code + ", " + completions.toString());
+        assertEquals(Arrays.asList(expected), completions, "Input: " + code + ", " + completions.toString());
     }
 
     private List<String> computeHighlights(String code) {

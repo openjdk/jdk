@@ -334,6 +334,9 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
 #endif
 }
 
+inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
+}
+
 //////// Thaw
 
 // Fast path

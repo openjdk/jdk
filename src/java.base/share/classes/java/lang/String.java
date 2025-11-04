@@ -604,14 +604,14 @@ public final class String
             }
             byte[] utf16 = StringUTF16.newBytesFor(length);
             StringLatin1.inflate(latin1, 0, utf16, 0, dp);
-            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
+            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp);
             if (dp != length) {
                 utf16 = Arrays.copyOf(utf16, dp << 1);
             }
             return new String(utf16, UTF16);
         } else { // !COMPACT_STRINGS
             byte[] dst = StringUTF16.newBytesFor(length);
-            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
+            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0);
             if (dp != length) {
                 dst = Arrays.copyOf(dst, dp << 1);
             }
@@ -688,16 +688,25 @@ public final class String
         }
     }
 
-    /*
-     * Throws iae, instead of replacing, if malformed or unmappable.
+    /**
+     * {@return a new string by decoding from the given UTF-8 bytes array}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
      *
-     * @param  noShare
-     *         {@code true} if the resulting string MUST NOT share the byte array,
-     *         {@code false} if the byte array can be exclusively used to construct
-     *         the string and is not modified or used for any other purpose.
+     * @param bytes byte array containing UTF-8 encoded characters
+     * @param offset the index of the first byte to decode
+     * @param length the number of bytes to decode
+     * @throws NullPointerException If {@code bytes} is null
+     * @throws StringIndexOutOfBoundsException If {@code offset} is negative,
+     *         {@code length} is negative, or {@code offset} is greater than
+     *         {@code bytes.length - length}
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noShare) {
-        checkBoundsOffCount(offset, length, bytes.length);
+    private static String newStringUTF8OrThrow(byte[] bytes, int offset, int length)
+            throws CharacterCodingException {
+        checkBoundsOffCount(offset, length, bytes.length);  // Implicit null check on `bytes`
         if (length == 0) {
             return "";
         }
@@ -707,7 +716,7 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                if (noShare || length != bytes.length) {
+                if (length != bytes.length) {
                     return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
                 } else {
                     return new String(bytes, LATIN1);
@@ -748,10 +757,10 @@ public final class String
                 StringLatin1.inflate(dst, 0, buf, 0, dp);
                 dst = buf;
             }
-            dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
+            dp = decodeUTF8_UTF16OrThrow(bytes, offset, sl, dst, dp);
         } else { // !COMPACT_STRINGS
             dst = StringUTF16.newBytesFor(length);
-            dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, false);
+            dp = decodeUTF8_UTF16OrThrow(bytes, offset, offset + length, dst, 0);
         }
         if (dp != length) {
             dst = Arrays.copyOf(dst, dp << 1);
@@ -759,26 +768,43 @@ public final class String
         return new String(dst, UTF16);
     }
 
-    static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
-        try {
-            return newStringNoRepl1(src, cs);
-        } catch (IllegalArgumentException e) {
-            //newStringNoRepl1 throws IAE with MalformedInputException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof MalformedInputException mie) {
-                throw mie;
-            }
-            throw (CharacterCodingException)cause;
-        }
-    }
-
-    private static String newStringNoRepl1(byte[] src, Charset cs) {
+    /**
+     * {@return a new String created using the supplied latin1 bytes}
+     * @param src a byte array with the bytes for a latin1 string
+     */
+    static String newStringWithLatin1Bytes(byte[] src) {
         int len = src.length;
         if (len == 0) {
             return "";
         }
+
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
+    /**
+     * {@return a new {@code String} created using the given byte array that is
+     * encoded in specified charset}
+     * <p>
+     * <b>WARNING: The caller of this method is assumed to have relinquished
+     * and transferred the ownership of the byte array</b>. It can thus be
+     * exclusively used to construct the {@code String}.
+     *
+     * @param src byte array containing encoded characters
+     * @param cs charset the byte array encoded in
+     *
+     * @throws CharacterCodingException for malformed input or unmappable characters
+     * @throws NullPointerException If {@code src} or {@code cs} is null
+     */
+    static String newStringOrThrow(byte[] src, Charset cs) throws CharacterCodingException {
+        Objects.requireNonNull(cs);
+        int len = src.length;   // Implicit null check on `src`
+        if (len == 0) {
+            return "";
+        }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length, false);
+            return newStringUTF8OrThrow(src, 0, src.length);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -791,7 +817,7 @@ public final class String
                     return new String(src, LATIN1);
                 return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
             } else {
-                throwMalformed(src);
+                throw malformedASCII(src);
             }
         }
 
@@ -806,13 +832,7 @@ public final class String
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
-        int caLen;
-        try {
-            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
-        } catch (CharacterCodingException x) {
-            // throw via IAE
-            throw new IllegalArgumentException(x);
-        }
+        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
             byte coder = StringUTF16.coderFromArrayLen(val, caLen);
@@ -849,7 +869,7 @@ public final class String
 
     private static byte[] encode(Charset cs, byte coder, byte[] val) {
         if (cs == UTF_8.INSTANCE) {
-            return encodeUTF8(coder, val, true);
+            return encodeUTF8(coder, val);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             return encode8859_1(coder, val);
@@ -857,13 +877,30 @@ public final class String
         if (cs == US_ASCII.INSTANCE) {
             return encodeASCII(coder, val);
         }
-        return encodeWithEncoder(cs, coder, val, true);
+        return encodeWithEncoder(cs, coder, val, null);
     }
 
-    private static byte[] encodeWithEncoder(Charset cs, byte coder, byte[] val, boolean doReplace) {
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with the encoder of {@code
+     * cs}}
+     *
+     * @param cs a charset to obtain the encoder from
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    private static <E extends Exception> byte[] encodeWithEncoder(
+            Charset cs, byte coder, byte[] val, Class<E> exClass)
+            throws E {
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
+        boolean doReplace = exClass == null;
         // fastpath with ArrayEncoder implies `doReplace`.
         if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
@@ -877,11 +914,10 @@ public final class String
                 return ba;
             }
 
-            int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
-                    : ae.encodeFromUTF16(val, 0, len, ba);
-            if (blen != -1) {
-                return trimArray(ba, blen);
-            }
+            int blen = coder == LATIN1
+                    ? ae.encodeFromLatin1(val, 0, len, ba, 0)
+                    : ae.encodeFromUTF16(val, 0, len, ba, 0);
+            return trimArray(ba, blen);
         }
 
         byte[] ba = new byte[en];
@@ -905,7 +941,9 @@ public final class String
                 cr.throwException();
         } catch (CharacterCodingException x) {
             if (!doReplace) {
-                throw new IllegalArgumentException(x);
+                @SuppressWarnings("unchecked")
+                E cce = (E) x;
+                throw cce;
             } else {
                 throw new Error(x);
             }
@@ -913,60 +951,69 @@ public final class String
         return trimArray(ba, bb.position());
     }
 
-    /*
-     * Throws iae, instead of replacing, if unmappable.
+    /**
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
+     *
+     * @param s the string to encode
+     * @throws NullPointerException If {@code s} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    static byte[] getBytesUTF8NoRepl(String s) {
-        return encodeUTF8(s.coder(), s.value(), false);
+    static byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
+        return encodeUTF8OrThrow(s.coder(), s.value());  // Implicit null check on `s`
     }
 
     private static boolean isASCII(byte[] src) {
         return !StringCoding.hasNegatives(src, 0, src.length);
     }
 
-    /*
-     * Throws CCE, instead of replacing, if unmappable.
+    /**
+     * {@return the sequence of bytes obtained by encoding the given string in
+     * the specified {@code Charset}}
+     * <p>
+     * <b>WARNING: This method returns the {@code byte[]} backing the provided
+     * {@code String}, if the input is ASCII. Hence, the returned byte array
+     * must not be modified.</b>
+     *
+     * @param s the string to encode
+     * @param cs the charset
+     * @throws NullPointerException If {@code s} or {@code cs} is null
+     * @throws CharacterCodingException For malformed input or unmappable characters
      */
-    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-        try {
-            return getBytesNoRepl1(s, cs);
-        } catch (IllegalArgumentException e) {
-            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
-            Throwable cause = e.getCause();
-            if (cause instanceof UnmappableCharacterException) {
-                throw (UnmappableCharacterException)cause;
-            }
-            throw (CharacterCodingException)cause;
-        }
-    }
-
-    private static byte[] getBytesNoRepl1(String s, Charset cs) {
-        byte[] val = s.value();
+    static byte[] getBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
+        Objects.requireNonNull(cs);
+        byte[] val = s.value();     // Implicit null check on `s`
         byte coder = s.coder();
         if (cs == UTF_8.INSTANCE) {
             if (coder == LATIN1 && isASCII(val)) {
                 return val;
             }
-            return encodeUTF8(coder, val, false);
+            return encodeUTF8OrThrow(coder, val);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (coder == LATIN1) {
                 return val;
             }
-            return encode8859_1(coder, val, false);
+            return encode8859_1OrThrow(coder, val);
         }
         if (cs == US_ASCII.INSTANCE) {
             if (coder == LATIN1) {
                 if (isASCII(val)) {
                     return val;
                 } else {
-                    throwUnmappable(val);
+                    throw unmappableASCII(val);
                 }
             }
         }
-        return encodeWithEncoder(cs, coder, val, false);
+        return encodeWithEncoder(cs, coder, val, CharacterCodingException.class);
     }
 
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with US-ASCII}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
+     */
     private static byte[] encodeASCII(byte coder, byte[] val) {
         if (coder == LATIN1) {
             int positives = StringCoding.countPositives(val, 0, val.length);
@@ -1006,10 +1053,26 @@ public final class String
     }
 
     private static byte[] encode8859_1(byte coder, byte[] val) {
-        return encode8859_1(coder, val, true);
+        return encode8859_1(coder, val, null);
     }
 
-    private static byte[] encode8859_1(byte coder, byte[] val, boolean doReplace) {
+    private static byte[] encode8859_1OrThrow(byte coder, byte[] val) throws UnmappableCharacterException {
+        return encode8859_1(coder, val, UnmappableCharacterException.class);
+    }
+
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with ISO-8859-1}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    private static <E extends Exception> byte[] encode8859_1(byte coder, byte[] val, Class<E> exClass) throws E {
         if (coder == LATIN1) {
             return val.clone();
         }
@@ -1019,12 +1082,12 @@ public final class String
         int sp = 0;
         int sl = len;
         while (sp < sl) {
-            int ret = StringCoding.implEncodeISOArray(val, sp, dst, dp, len);
+            int ret = StringCoding.encodeISOArray(val, sp, dst, dp, len);
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
-                if (!doReplace) {
-                    throwUnmappable(sp);
+                if (exClass != null) {
+                    throw String.<E>unmappableCharacterException(sp);
                 }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
@@ -1118,7 +1181,26 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
-    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
+    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
+    }
+
+    private static int decodeUTF8_UTF16OrThrow(
+            byte[] src, int sp, int sl, byte[] dst, int dp)
+            throws MalformedInputException {
+        return decodeUTF8_UTF16(src, sp, sl, dst, dp, MalformedInputException.class);
+    }
+
+    /**
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    private static <E extends Exception> int decodeUTF8_UTF16(
+            byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
+            throws E {
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -1127,8 +1209,8 @@ public final class String
                 if (sp < sl) {
                     int b2 = src[sp++];
                     if (isNotContinuation(b2)) {
-                        if (!doReplace) {
-                            throwMalformed(sp - 1, 1);
+                        if (exClass != null) {
+                            throw String.<E>malformedInputException(sp - 1, 1);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp--;
@@ -1137,8 +1219,8 @@ public final class String
                     }
                     continue;
                 }
-                if (!doReplace) {
-                    throwMalformed(sp, 1);  // underflow()
+                if (exClass != null) {
+                    throw String.<E>malformedInputException(sp, 1);  // underflow()
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1147,8 +1229,8 @@ public final class String
                     int b2 = src[sp++];
                     int b3 = src[sp++];
                     if (isMalformed3(b1, b2, b3)) {
-                        if (!doReplace) {
-                            throwMalformed(sp - 3, 3);
+                        if (exClass != null) {
+                            throw String.<E>malformedInputException(sp - 3, 3);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 3;
@@ -1156,8 +1238,8 @@ public final class String
                     } else {
                         char c = decode3(b1, b2, b3);
                         if (Character.isSurrogate(c)) {
-                            if (!doReplace) {
-                                throwMalformed(sp - 3, 3);
+                            if (exClass != null) {
+                                throw String.<E>malformedInputException(sp - 3, 3);
                             }
                             StringUTF16.putChar(dst, dp++, REPL);
                         } else {
@@ -1167,14 +1249,14 @@ public final class String
                     continue;
                 }
                 if (sp < sl && isMalformed3_2(b1, src[sp])) {
-                    if (!doReplace) {
-                        throwMalformed(sp - 1, 2);
+                    if (exClass != null) {
+                        throw String.<E>malformedInputException(sp - 1, 2);
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (!doReplace) {
-                    throwMalformed(sp, 1);
+                if (exClass != null) {
+                    throw String.<E>malformedInputException(sp, 1);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
                 break;
@@ -1186,8 +1268,8 @@ public final class String
                     int uc = decode4(b1, b2, b3, b4);
                     if (isMalformed4(b2, b3, b4) ||
                             !Character.isSupplementaryCodePoint(uc)) { // shortest form check
-                        if (!doReplace) {
-                            throwMalformed(sp - 4, 4);
+                        if (exClass != null) {
+                            throw String.<E>malformedInputException(sp - 4, 4);
                         }
                         StringUTF16.putChar(dst, dp++, REPL);
                         sp -= 4;
@@ -1200,14 +1282,14 @@ public final class String
                 }
                 b1 &= 0xff;
                 if (b1 > 0xf4 || sp < sl && isMalformed4_2(b1, src[sp] & 0xff)) {
-                    if (!doReplace) {
-                        throwMalformed(sp - 1, 1);  // or 2
+                    if (exClass != null) {
+                        throw String.<E>malformedInputException(sp - 1, 1);  // or 2
                     }
                     StringUTF16.putChar(dst, dp++, REPL);
                     continue;
                 }
-                if (!doReplace) {
-                    throwMalformed(sp - 1, 1);
+                if (exClass != null) {
+                    throw String.<E>malformedInputException(sp - 1, 1);
                 }
                 sp++;
                 StringUTF16.putChar(dst, dp++, REPL);
@@ -1216,8 +1298,8 @@ public final class String
                 }
                 break;
             } else {
-                if (!doReplace) {
-                    throwMalformed(sp - 1, 1);
+                if (exClass != null) {
+                    throw String.<E>malformedInputException(sp - 1, 1);
                 }
                 StringUTF16.putChar(dst, dp++, REPL);
             }
@@ -1259,38 +1341,90 @@ public final class String
         return 3;
     }
 
-    private static void throwMalformed(int off, int nb) {
-        String msg = "malformed input off : " + off + ", length : " + nb;
-        throw new IllegalArgumentException(msg, new MalformedInputException(nb));
+    /**
+     * {@return a new {@link MalformedInputException} for the sub-range denoted
+     * by specified {@code offset} and {@code length}}
+     *
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    @SuppressWarnings("unchecked")
+    private static <E extends Exception> E malformedInputException(int offset, int length) {
+        MalformedInputException mie = new MalformedInputException(length);
+        String msg = "malformed input offset : " + offset + ", length : " + length;
+        mie.initCause(new IllegalArgumentException(msg));
+        return (E) mie;
     }
 
-    private static void throwMalformed(byte[] val) {
+    /**
+     * {@return a new {@link MalformedInputException} for the given malformed
+     * ASCII string}
+     */
+    private static MalformedInputException malformedASCII(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        throwMalformed(dp, 1);
+        return malformedInputException(dp, 1);
     }
 
-    private static void throwUnmappable(int off) {
-        String msg = "malformed input off : " + off + ", length : 1";
-        throw new IllegalArgumentException(msg, new UnmappableCharacterException(1));
+    /**
+     * {@return a new {@link UnmappableCharacterException} at given {@code offset}}
+     *
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    @SuppressWarnings("unchecked")
+    private static <E extends Exception> E unmappableCharacterException(int offset) {
+        UnmappableCharacterException uce = new UnmappableCharacterException(1);
+        String msg = "malformed input offset : " + offset + ", length : 1";
+        uce.initCause(new IllegalArgumentException(msg, uce));
+        return (E) uce;
     }
 
-    private static void throwUnmappable(byte[] val) {
+    /**
+     * {@return a new {@link UnmappableCharacterException} for the given
+     * malformed ASCII string}
+     */
+    private static UnmappableCharacterException unmappableASCII(byte[] val) {
         int dp = StringCoding.countPositives(val, 0, val.length);
-        throwUnmappable(dp);
+        return unmappableCharacterException(dp);
     }
 
-    private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
+    private static byte[] encodeUTF8(byte coder, byte[] val) {
+        return encodeUTF8(coder, val, null);
+    }
+
+    private static byte[] encodeUTF8OrThrow(byte coder, byte[] val) throws UnmappableCharacterException {
+        return encodeUTF8(coder, val, UnmappableCharacterException.class);
+    }
+
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * {@code coder}, and then encoding the result with UTF-8}
+     *
+     * @param coder a coder to decode {@code val} with
+     * @param val a string byte array encoded with {@code coder}
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    private static <E extends Exception> byte[] encodeUTF8(byte coder, byte[] val, Class<E> exClass) throws E {
         if (coder == UTF16) {
-            return encodeUTF8_UTF16(val, doReplace);
+            return encodeUTF8_UTF16(val, exClass);
         }
 
-        if (!StringCoding.hasNegatives(val, 0, val.length)) {
+        int positives = StringCoding.countPositives(val, 0, val.length);
+        if (positives == val.length) {
             return val.clone();
         }
 
-        int dp = 0;
         byte[] dst = StringUTF16.newBytesFor(val.length);
-        for (byte c : val) {
+        if (positives > 0) {
+            System.arraycopy(val, 0, dst, 0, positives);
+        }
+        int dp = positives;
+        for (int i = dp; i < val.length; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
@@ -1304,13 +1438,24 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    private static byte[] encodeUTF8_UTF16(byte[] val, boolean doReplace) {
+    /**
+     * {@return the byte array obtained by first decoding {@code val} with
+     * UTF-16, and then encoding the result with UTF-8}
+     *
+     * @param val a string byte array encoded with UTF-16
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting replaced.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
+     */
+    private static <E extends Exception> byte[] encodeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
         // UTF-8 encoded can be as much as 3 times the string length
         // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
-        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, exClass) : sl * 3;
         if (allocLen > (long)Integer.MAX_VALUE) {
             throw new OutOfMemoryError("Required length exceeds implementation limit");
         }
@@ -1339,10 +1484,10 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    if (doReplace) {
+                    if (exClass == null) {
                         dst[dp++] = '?';
                     } else {
-                        throwUnmappable(sp - 1);
+                        throw String.<E>unmappableCharacterException(sp - 1);
                     }
                 } else {
                     dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
@@ -1366,10 +1511,14 @@ public final class String
 
     /**
      * {@return the exact size required to UTF_8 encode this UTF16 string}
-     * @param val UTF16 encoded byte array
-     * @param doReplace true to replace unmappable characters
+     *
+     * @param exClass The exception class where any non-null value indicates
+     *                malformed or unmappable bytes will result in an exception
+     *                to be thrown instead of getting discarded.
+     * @param <E> The exception type parameter to enable callers to avoid
+     *           having to declare the exception
      */
-    private static long computeSizeUTF8_UTF16(byte[] val, boolean doReplace) {
+    private static <E extends Exception> long computeSizeUTF8_UTF16(byte[] val, Class<E> exClass) throws E {
         long dp = 0L;
         int sp = 0;
         int sl = val.length >> 1;
@@ -1388,10 +1537,10 @@ public final class String
                     uc = Character.toCodePoint(c, c2);
                 }
                 if (uc < 0) {
-                    if (doReplace) {
+                    if (exClass == null) {
                         dp++;
                     } else {
-                        throwUnmappable(sp - 1);
+                        throw String.<E>unmappableCharacterException(sp - 1);
                     }
                 } else {
                     dp += 4;
@@ -3560,7 +3709,7 @@ public final class String
         if (len < 0L || (len <<= coder) != (int) len) {
             throw new OutOfMemoryError("Requested string length exceeds VM limit");
         }
-        byte[] value = StringConcatHelper.newArray(len);
+        byte[] value = StringConcatHelper.newArray((int) len);
 
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();

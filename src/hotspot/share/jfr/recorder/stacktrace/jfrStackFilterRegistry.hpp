@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
 #define SHARE_JFR_RECORDER_STACKTRACE_JFRSTCKFILTERREGISTRY_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jni.h"
 
 class JavaThread;
 class JfrStackFilter;

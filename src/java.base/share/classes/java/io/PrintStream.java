@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,9 +508,6 @@ public class PrintStream extends FilterOutputStream
                     out.flush();
             }
         }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
         catch (IOException x) {
             trouble = true;
         }
@@ -540,9 +537,6 @@ public class PrintStream extends FilterOutputStream
                 if (autoFlush)
                     out.flush();
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         }
         catch (IOException x) {
             trouble = true;
@@ -626,8 +620,6 @@ public class PrintStream extends FilterOutputStream
                         }
                 }
             }
-        } catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         } catch (IOException x) {
             trouble = true;
         }
@@ -649,9 +641,6 @@ public class PrintStream extends FilterOutputStream
                     out.flush();
             }
         }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
         catch (IOException x) {
             trouble = true;
         }
@@ -667,9 +656,6 @@ public class PrintStream extends FilterOutputStream
                 if (autoFlush && (s.indexOf('\n') >= 0))
                     out.flush();
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         }
         catch (IOException x) {
             trouble = true;
@@ -692,9 +678,6 @@ public class PrintStream extends FilterOutputStream
                     out.flush();
             }
         }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
-        }
         catch (IOException x) {
             trouble = true;
         }
@@ -710,9 +693,6 @@ public class PrintStream extends FilterOutputStream
                 if (autoFlush)
                     out.flush();
             }
-        }
-        catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         }
         catch (IOException x) {
             trouble = true;
@@ -1182,8 +1162,6 @@ public class PrintStream extends FilterOutputStream
                     formatter = new Formatter((Appendable) this);
                 formatter.format(Locale.getDefault(Locale.Category.FORMAT), format, args);
             }
-        } catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         } catch (IOException x) {
             trouble = true;
         }
@@ -1238,8 +1216,6 @@ public class PrintStream extends FilterOutputStream
                     formatter = new Formatter(this, l);
                 formatter.format(l, format, args);
             }
-        } catch (InterruptedIOException x) {
-            Thread.currentThread().interrupt();
         } catch (IOException x) {
             trouble = true;
         }

@@ -182,7 +182,7 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path = false);
+  Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,

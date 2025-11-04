@@ -165,18 +165,11 @@ public class Dialog extends Window {
         /**
          * An {@code APPLICATION_MODAL} dialog blocks all top-level windows
          * from the same Java application except those from its own child hierarchy.
-         * If there are several applets launched in a browser, they can be
-         * treated either as separate applications or a single one. This behavior
-         * is implementation-dependent.
          */
         APPLICATION_MODAL,
         /**
          * A {@code TOOLKIT_MODAL} dialog blocks all top-level windows run
-         * from the same toolkit except those from its own child hierarchy. If there
-         * are several applets launched in a browser, all of them run with the same
-         * toolkit; thus, a toolkit-modal dialog displayed by an applet may affect
-         * other applets and all windows of the browser instance which embeds the
-         * Java runtime environment for this toolkit.
+         * from the same toolkit except those from its own child hierarchy.
          */
         TOOLKIT_MODAL
     }

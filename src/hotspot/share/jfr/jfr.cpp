@@ -26,17 +26,16 @@
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/support/jfrKlassExtension.hpp"
 #include "jfr/support/jfrResolution.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/support/methodtracer/jfrMethodTracer.hpp"
-#include "oops/instanceKlass.hpp"
+#include "jfr/support/methodtracer/jfrTraceTagging.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.hpp"
 #include "runtime/java.hpp"
@@ -88,11 +87,9 @@ void Jfr::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) 
   }
 }
 
-void Jfr::on_klass_redefinition(const InstanceKlass* ik, Thread* thread) {
-  assert(JfrMethodTracer::in_use(), "invariant");
-  JfrMethodTracer::on_klass_redefinition(ik, thread);
+void Jfr::on_klass_redefinition(const InstanceKlass* ik, const InstanceKlass* scratch_klass) {
+  JfrTraceTagging::on_klass_redefinition(ik, scratch_klass);
 }
-
 
 bool Jfr::is_excluded(Thread* t) {
   return JfrJavaSupport::is_excluded(t);
@@ -152,9 +149,9 @@ void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
 }
 #endif
 
-void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+void Jfr::on_vm_shutdown(bool emit_old_object_samples, bool emit_event_shutdown, bool halt) {
   if (!halt && JfrRecorder::is_recording()) {
-    JfrEmergencyDump::on_vm_shutdown(exception_handler);
+    JfrEmergencyDump::on_vm_shutdown(emit_old_object_samples, emit_event_shutdown);
   }
 }
 

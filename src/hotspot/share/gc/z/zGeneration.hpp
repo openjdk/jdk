@@ -87,7 +87,6 @@ protected:
 
   void free_empty_pages(ZRelocationSetSelector* selector, int bulk);
   void flip_age_pages(const ZRelocationSetSelector* selector);
-  void flip_age_pages(const ZArray<ZPage*>* pages);
 
   void mark_free();
 
