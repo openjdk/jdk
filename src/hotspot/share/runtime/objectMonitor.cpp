@@ -1941,7 +1941,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         assert(!has_owner(current), "invariant");
         guarantee(node.TState == ObjectWaiter::TS_RUN, "invariant");
         current->set_current_pending_monitor(nullptr);
-        enter(current, false);
+        enter(current, false /* post_jvmti_events */);
       }
       assert(has_owner(current), "invariant");
       node.wait_reenter_end(this);
