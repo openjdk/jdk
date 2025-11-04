@@ -87,5 +87,4 @@ inline oop ConstantPool::resolved_reference_from_indy(int index) const {
 inline oop ConstantPool::resolved_reference_from_method(int index) const {
   return resolved_references()->obj_at(cache()->resolved_method_entry_at(index)->resolved_references_index());
 }
-
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP
