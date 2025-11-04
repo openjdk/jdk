@@ -2483,7 +2483,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
     }
   }
 
