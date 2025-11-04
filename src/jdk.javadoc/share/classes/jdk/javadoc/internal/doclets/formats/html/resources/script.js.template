@@ -358,7 +358,6 @@ document.addEventListener("readystatechange", (e) => {
 
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    const subnav = document.querySelector("ol.sub-nav-list");
     const keymap = new Map();
     const searchInput = document.getElementById("search-input")
                    || document.getElementById("page-search-input");
@@ -371,10 +370,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
         keymap.set(".", filterInput);
     }
     // Clone TOC sidebar to header for mobile navigation
-    const navbar = document.querySelector("div#navbar-top");
     const sidebar = document.querySelector(".main-grid nav.toc");
     const main = document.querySelector(".main-grid main");
-    const mainnav = navbar.querySelector("ul.nav-list");
+    const mainnav = document.querySelector("div#navbar-top ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const tocMenu = sidebar ? sidebar.cloneNode(true) : null;
     const themeButton = document.querySelector("button#theme-button");
@@ -427,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     });
     makeFilterWidget(sidebar, updateToc);
     if (tocMenu) {
-        navbar.appendChild(tocMenu);
+        document.querySelector("div#navbar-top").appendChild(tocMenu);
         makeFilterWidget(tocMenu, updateToc);
         var menuInput = tocMenu.querySelector("input.filter-input");
     }
@@ -487,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         expanded = true;
         mainnav.style.display = "block";
         mainnav.style.removeProperty("height");
-        var maxHeight = window.innerHeight - subnav.offsetTop + 4;
+        var maxHeight = window.innerHeight - document.querySelector("div.sub-nav").offsetTop;
         var expandedHeight = Math.min(maxHeight, mainnav.scrollHeight + 10);
         if (tocMenu) {
             tocMenu.style.display = "flex";

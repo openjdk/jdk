@@ -289,7 +289,6 @@ hr {
     height: 100%;
     max-width: var(--max-content-width);
     margin: var(--content-margin);
-    position: relative;
 }
 .top-nav {
     background-color:var(--navbar-background-color);
@@ -636,6 +635,7 @@ nav.toc div.toc-header {
 nav.toc > ol.toc-list {
     overflow: hidden auto;
     overscroll-behavior: contain;
+    height: inherit;
 }
 nav.toc ol.toc-list {
     list-style: none;
