@@ -507,29 +507,29 @@ public class SignerInfo implements DerEncoder {
                 }
 
                 if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
             case "Ed25519":
                 if (!digAlgId.equalsOID(AlgorithmId.SHA512_oid)) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
             case "Ed448":
                 if (directSign) {
                     if (!digAlgId.equalsOID(AlgorithmId.SHAKE256_512_oid)) {
-                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                     }
                 } else {
                     if (!digAlgId.equals(SignatureUtil.DigestAlgHolder.shake256lenWith512)) {
-                        throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                        throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                     }
                 }
                 break;
             case "HSS/LMS":
                 // RFC 8708 requires the same hash algorithm used as in the HSS/LMS algorithm
                 if (!digAlgId.equalsOID(KeyUtil.hashAlgFromHSS(key))) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
             case "ML-DSA-44":
@@ -543,7 +543,7 @@ public class SignerInfo implements DerEncoder {
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHAKE128_256_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHAKE256_512_oid)) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm" + digAlgId);
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
             case "ML-DSA-65":
@@ -552,14 +552,14 @@ public class SignerInfo implements DerEncoder {
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_384_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHAKE256_512_oid)) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
             case "ML-DSA-87":
                 if (!digAlgId.equalsOID(AlgorithmId.SHA512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHA3_512_oid)
                         && !digAlgId.equalsOID(AlgorithmId.SHAKE256_512_oid)) {
-                    throw new NoSuchAlgorithmException("Incompatible digest algorithm");
+                    throw new NoSuchAlgorithmException("Incompatible digest algorithm " + digAlgId);
                 }
                 break;
         }
@@ -572,7 +572,7 @@ public class SignerInfo implements DerEncoder {
      * The digest algorithm is in the form "DIG", and the encryption
      * algorithm can be in any of the 3 forms:
      *
-     * 1. Simply key algorithm like RSA, DSA, EC, this method returns
+     * 1. Simple key algorithm like RSA, DSA, EC, this method returns
      *    DIGwithKEY.
      * 2. Traditional signature algorithm in the form of HASHwithKEY, this
      *    method returns DIGwithKEY. Please note this is not HASHwithKEY.
