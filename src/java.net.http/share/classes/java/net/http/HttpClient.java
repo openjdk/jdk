@@ -112,7 +112,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
- *    HttpRequest request = HttpRequest.newBuilder()
+ *   HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
