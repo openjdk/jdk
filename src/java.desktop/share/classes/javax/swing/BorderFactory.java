@@ -144,6 +144,10 @@ public class BorderFactory
      * edge of the highlighted area uses a brighter shade of
      * the highlight color. The inner edge of the shadow area
      * uses a brighter shade of the shadow color.
+     * If highlight color is {@code null}, the highlight color
+     * is derived from the specified component's background color.
+     * If shadow color is {@code null}, the shadow color
+     * is derived from the specified component's background color.
      * If bevelType is not of known type that is neither
      * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}
      * no bevel border will be painted.
@@ -264,6 +268,10 @@ public class BorderFactory
      * a brighter shade of the {@code highlight} color.
      * The inner edge of the shadow area uses
      * a brighter shade of the {@code shadow} color.
+     * If highlight color is {@code null}, the highlight color
+     * is derived from the specified component's background color.
+     * If shadow color is {@code null}, the shadow color
+     * is derived from the specified component's background color.
      *
      * @param type       a type of a bevel
      * @param highlight  a basic color of the highlight area
