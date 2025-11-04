@@ -584,8 +584,8 @@ void InterpreterMacroAssembler::load_resolved_klass_at_index(Register klass,
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Label& ok_is_subtype) {
   assert(Rsub_klass != rax, "rax holds superklass");
-  LP64_ONLY(assert(Rsub_klass != r14, "r14 holds locals");)
-  LP64_ONLY(assert(Rsub_klass != r13, "r13 holds bcp");)
+  assert(Rsub_klass != r14, "r14 holds locals");
+  assert(Rsub_klass != r13, "r13 holds bcp");
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
   assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
