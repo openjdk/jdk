@@ -112,7 +112,7 @@ import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
  *              H3QuicVTTest
  */
 // -Djava.security.debug=all
-public class H3QuicVTTest implements HttpServerAdapters {
+class H3QuicVTTest implements HttpServerAdapters {
 
     private static SSLContext sslContext;
     private static HttpTestServer h3Server;
