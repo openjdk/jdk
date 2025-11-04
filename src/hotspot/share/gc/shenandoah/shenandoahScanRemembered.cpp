@@ -123,6 +123,18 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   log_develop_debug(gc, barrier)("Cleaned read_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(read_table[0])), p2i(end_bp));
 }
 
+void ShenandoahDirectCardMarkRememberedSet::mark_write_table_as_clean() {
+  CardValue* write_table = _card_table->write_byte_map();
+  CardValue* bp = &(write_table)[0];
+  CardValue* end_bp = &(write_table)[_card_table->last_valid_index()];
+
+  while (bp <= end_bp) {
+    *bp++ = CardTable::clean_card_val();
+  }
+
+  log_develop_debug(gc, barrier)("Cleaned write_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(write_table[0])), p2i(end_bp));
+}
+
 // No lock required because arguments align with card boundaries.
 void ShenandoahCardCluster::reset_object_range(HeapWord* from, HeapWord* to) {
   assert(((((unsigned long long) from) & (CardTable::card_size() - 1)) == 0) &&
@@ -328,6 +340,10 @@ void ShenandoahScanRemembered::mark_range_as_clean(HeapWord* p, size_t num_heap_
 
 void ShenandoahScanRemembered::mark_read_table_as_clean() {
   _rs->mark_read_table_as_clean();
+}
+
+void ShenandoahScanRemembered::mark_write_table_as_clean() {
+  _rs->mark_write_table_as_clean();
 }
 
 void ShenandoahScanRemembered::reset_object_range(HeapWord* from, HeapWord* to) {

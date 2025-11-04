@@ -135,12 +135,14 @@ public:
 
   virtual bool do_unique_ref(Ref* ref, bool read_only) {
     ArchivedObjInfo info;
-    info._src_addr = ref->obj();
-    info._buffered_addr = ref->obj();
-    info._requested_addr = ref->obj();
-    info._bytes = ref->size() * BytesPerWord;
-    info._type = ref->msotype();
-    _objs.append(info);
+    if (AOTMetaspace::in_aot_cache(ref->obj())) {
+      info._src_addr = ref->obj();
+      info._buffered_addr = ref->obj();
+      info._requested_addr = ref->obj();
+      info._bytes = ref->size() * BytesPerWord;
+      info._type = ref->msotype();
+      _objs.append(info);
+    }
 
     return true; // keep iterating
   }

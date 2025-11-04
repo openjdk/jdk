@@ -28,6 +28,7 @@
 #include "code/nmethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -73,8 +74,6 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
 #endif
-
-#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -1626,13 +1625,15 @@ static void invalidate_jvmti_stack(JavaThread* thread) {
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (!cont.entry()->is_virtual_thread() && JvmtiExport::has_frame_pops(thread)) {
-    int num_frames = num_java_frames(cont);
+  if (!cont.entry()->is_virtual_thread()) {
+    if (JvmtiExport::has_frame_pops(thread)) {
+      int num_frames = num_java_frames(cont);
 
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
-    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
+      ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+      JvmtiExport::continuation_yield_cleanup(thread, num_frames);
+    }
+    invalidate_jvmti_stack(thread);
   }
-  invalidate_jvmti_stack(thread);
 }
 
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
@@ -2310,7 +2311,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   assert(_cont.chunk_invariant(), "");
 
-  JVMTI_ONLY(invalidate_jvmti_stack(_thread));
+  JVMTI_ONLY(if (!_cont.entry()->is_virtual_thread()) invalidate_jvmti_stack(_thread));
 
   _thread->set_cont_fastpath(_fastpath);
 
@@ -3053,7 +3054,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:

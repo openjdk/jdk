@@ -100,6 +100,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     const char* mount_point() override { return reader()->mount_point(); }
     const char* cgroup_path() override { return reader()->cgroup_path(); }
   private:
+    jlong uses_mem_hierarchy();
     jlong read_mem_swappiness();
     jlong read_mem_swap(julong upper_memsw_bound);
 
