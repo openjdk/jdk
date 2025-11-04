@@ -907,7 +907,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     void appendLatin1(char c1, char c2) {
-        assert !isLatin1(StringLatin1.coderFromChar((char) (c1 | c2))) : "must be latin1";
+        assert isLatin1(StringLatin1.coderFromChar((char) (c1 | c2))) : "must be latin1";
 
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
