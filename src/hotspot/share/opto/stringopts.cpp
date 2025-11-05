@@ -53,6 +53,11 @@ class StringConcat : public ResourceObj {
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
 
+  static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
+                                                          // The value 256 was derived by measuring
+                                                          // compilation time on variable length sequences
+                                                          // of stackable concatenations and chosen to keep
+                                                          // a safe margin to any critical point.
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -295,6 +300,8 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   }
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
+
+  uint arguments_appended = 0;
   for (int x = 0; x < num_arguments(); x++) {
     Node* argx = argument_uncast(x);
     if (argx == arg) {
@@ -303,8 +310,21 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       for (int y = 0; y < other->num_arguments(); y++) {
         result->append(other->argument(y), other->mode(y));
       }
+      arguments_appended += other->num_arguments();
     } else {
       result->append(argx, mode(x));
+      arguments_appended++;
+    }
+    // Check if this concatenation would result in an excessive number of arguments
+    // -- leading to high memory use, compilation time, and later, a large number of IR nodes
+    // -- and bail out in that case.
+    if (arguments_appended > STACKED_CONCAT_UPPER_BOUND) {
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print_cr("Merge candidate of length %d exceeds argument limit", arguments_appended);
+      }
+#endif
+      return nullptr;
     }
   }
   result->set_allocation(other->_begin);
@@ -360,17 +380,13 @@ void StringConcat::eliminate_initialize(InitializeNode* init) {
   Compile* C = _stringopts->C;
 
   // Eliminate Initialize node.
-  assert(init->outcnt() <= 2, "only a control and memory projection expected");
   assert(init->req() <= InitializeNode::RawStores, "no pending inits");
   Node *ctrl_proj = init->proj_out_or_null(TypeFunc::Control);
   if (ctrl_proj != nullptr) {
     C->gvn_replace_by(ctrl_proj, init->in(TypeFunc::Control));
   }
-  Node *mem_proj = init->proj_out_or_null(TypeFunc::Memory);
-  if (mem_proj != nullptr) {
-    Node *mem = init->in(TypeFunc::Memory);
-    C->gvn_replace_by(mem_proj, mem);
-  }
+  Node* mem = init->in(TypeFunc::Memory);
+  init->replace_mem_projs_by(mem, C);
   C->gvn_replace_by(init, C->top());
   init->disconnect_inputs(C);
 }
@@ -680,7 +696,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-            if (merged->validate_control_flow() && merged->validate_mem_flow()) {
+            if (merged != nullptr && merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
               AtomicAccess::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {

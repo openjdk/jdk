@@ -252,6 +252,10 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
+void Klass::initialize_preemptable(TRAPS) {
+  ShouldNotReachHere();
+}
+
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."
@@ -279,16 +283,17 @@ static markWord make_prototype(const Klass* kls) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therfore seed the mark word with the narrow Klass ID.
-    // Note that only those Klass that can be instantiated have a narrow Klass ID.
-    // For those who don't, we leave the klass bits empty and assert if someone
-    // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
-        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    // We therefore seed the mark word with the narrow Klass ID.
+    precond(CompressedKlassPointers::is_encodable(kls));
+    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
   }
 #endif
   return prototype;
+}
+
+void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
@@ -613,8 +618,7 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
-// The log parameter is for clean_weak_klass_links to report unlinked classes.
-Klass* Klass::subklass(bool log) const {
+Klass* Klass::subklass() const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
   for (Klass* chain = AtomicAccess::load_acquire(&_subklass);
@@ -625,11 +629,6 @@ Klass* Klass::subklass(bool log) const {
   {
     if (chain->is_loader_alive()) {
       return chain;
-    } else if (log) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
-      }
     }
   }
   return nullptr;
@@ -700,15 +699,20 @@ void Klass::append_to_sibling_list() {
   DEBUG_ONLY(verify();)
 }
 
-void Klass::clean_subklass() {
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
     Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
-      return;
+      return subklass;
+    }
+    if (log && log_is_enabled(Trace, class, unload)) {
+      ResourceMark rm;
+      log_trace(class, unload)("unlinking class (subclass): %s", subklass->external_name());
     }
     // Try to fix _subklass until it points at something not dead.
-    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling(log));
   }
 }
 
@@ -727,8 +731,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass(true);
-    current->clean_subklass();
+    Klass* sub = current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }
@@ -873,11 +876,10 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
-
-    // Add to class loader list first before creating the mirror
-    // (same order as class file parsing)
-    loader_data->add_class(this);
   }
+  // Add to class loader list first before creating the mirror
+  // (same order as class file parsing)
+  loader_data->add_class(this);
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -1060,7 +1062,7 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
 #ifdef ASSERT
-  if (UseCompressedClassPointers && needs_narrow_id()) {
+  if (UseCompressedClassPointers) {
     // Stricter checks for both correct alignment and placement
     CompressedKlassPointers::check_encodable(this);
   } else {

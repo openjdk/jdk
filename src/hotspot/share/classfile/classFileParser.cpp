@@ -2446,7 +2446,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
-      if (!vmClasses::Parameter_klass_loaded())
+      if (!vmClasses::reflect_Parameter_klass_is_loaded())
         method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
@@ -3965,7 +3965,7 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (vmClasses::Cloneable_klass_loaded()) {
+  if (vmClasses::Cloneable_klass_is_loaded()) {
     if (ik->is_subtype_of(vmClasses::Cloneable_klass())) {
       ik->set_is_cloneable();
     }
@@ -4664,11 +4664,15 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       return signature + 1;
     case JVM_SIGNATURE_CLASS: {
       if (_major_version < JAVA_1_5_VERSION) {
+        signature++;
+        length--;
         // Skip over the class name if one is there
-        const char* const p = skip_over_field_name(signature + 1, true, --length);
-
+        const char* const p = skip_over_field_name(signature, true, length);
+        assert(p == nullptr || p > signature, "must parse one character at least");
         // The next character better be a semicolon
-        if (p && (p - signature) > 1 && p[0] == JVM_SIGNATURE_ENDCLASS) {
+        if (p != nullptr                             && // Parse of field name succeeded.
+            p - signature < static_cast<int>(length) && // There is at least one character left to parse.
+            p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
       }
@@ -5149,46 +5153,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
 
-  // AOT-related checks.
-  // Note we cannot check this in general due to instrumentation or module patching
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // Check the aot initialization safe status.
-    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
-    // in the AOT assembly phase.
-    if (ik->has_aot_safe_initializer()) {
-      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
-      //   - all super classes must be included
-      //   - all super interfaces that have <clinit> must be included.
-      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-      // ik's <clinit>.
-      if (_super_klass != nullptr) {
-        guarantee_property(_super_klass->has_aot_safe_initializer(),
-                           "Missing @AOTSafeClassInitializer in superclass %s for class %s",
-                           _super_klass->external_name(),
-                           CHECK);
-      }
-
-      int len = _local_interfaces->length();
-      for (int i = 0; i < len; i++) {
-        InstanceKlass* intf = _local_interfaces->at(i);
-        guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
-                           "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
-                           intf->external_name(),
-                           CHECK);
-      }
-
-      if (log_is_enabled(Info, aot, init)) {
-        ResourceMark rm;
-        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
-      }
-    } else {
-      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
-      guarantee_property(!ik->is_runtime_setup_required(),
-                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
-                         CHECK);
-    }
-  }
-
   apply_parsed_class_attributes(ik);
 
   // Miranda methods
@@ -5545,6 +5509,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
+    guarantee_property((u4)cp_size < 0xffff, "Overflow in constant pool size for hidden class %s", CHECK);
     cp_size++;
   }
 
@@ -5913,15 +5878,6 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   }
 
   return _super_klass->reference_type() != REF_NONE;
-}
-
-// Returns true if the future Klass will need to be addressable with a narrow Klass ID.
-bool ClassFileParser::klass_needs_narrow_id() const {
-  // Classes that are never instantiated need no narrow Klass Id, since the
-  // only point of having a narrow id is to put it into an object header. Keeping
-  // never instantiated classes out of class space lessens the class space pressure.
-  // For more details, see JDK-8338526.
-  return !is_interface() && !is_abstract();
 }
 
 // ----------------------------------------------------------------------------

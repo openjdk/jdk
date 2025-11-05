@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_ATOMICACCESS_HPP
 #define SHARE_RUNTIME_ATOMICACCESS_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
@@ -33,8 +34,6 @@
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
-
-#include <type_traits>
 
 enum atomic_memory_order {
   // The modes that align with C++11 are intended to
@@ -859,7 +858,7 @@ class ScopedFence : public ScopedFenceGeneral<T> {
 
 // platform specific in-line definitions - must come before shared definitions
 
-#include OS_CPU_HEADER(atomic)
+#include OS_CPU_HEADER(atomicAccess)
 
 // shared in-line definitions
 

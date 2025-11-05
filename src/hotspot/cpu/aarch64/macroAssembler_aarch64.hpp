@@ -81,6 +81,7 @@ class MacroAssembler: public Assembler {
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
+    Label*   return_pc,                // to set up last_Java_frame; use nullptr otherwise
     address  entry_point,              // the entry point
     int      number_of_arguments,      // the number of arguments (w/o thread) to pop after the call
     bool     check_exceptions          // whether to check for pending exceptions after return
@@ -676,16 +677,8 @@ public:
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
-  static address target_addr_for_insn(address insn_addr, unsigned insn);
-  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
-  static address target_addr_for_insn(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn(insn_addr, insn);
-  }
-  static address target_addr_for_insn_or_null(address insn_addr) {
-    unsigned insn = *(unsigned*)insn_addr;
-    return target_addr_for_insn_or_null(insn_addr, insn);
-  }
+  static address target_addr_for_insn(address insn_addr);
+  static address target_addr_for_insn_or_null(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -982,9 +975,6 @@ public:
 
   void push_cont_fastpath(Register java_thread = rthread);
   void pop_cont_fastpath(Register java_thread = rthread);
-
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -1623,7 +1613,7 @@ public:
                     FloatRegister p, FloatRegister z, FloatRegister t1);
   void ghash_reduce_wide(int index, FloatRegister result, FloatRegister lo, FloatRegister hi,
                     FloatRegister p, FloatRegister z, FloatRegister t1);
-  void ghash_processBlocks_wide(address p, Register state, Register subkeyH,
+  void ghash_processBlocks_wide(Label& p, Register state, Register subkeyH,
                                 Register data, Register blocks, int unrolls);
 
 

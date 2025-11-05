@@ -31,7 +31,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "utilities/growableArray.hpp"
 
 class CardTableRS;
@@ -56,10 +55,10 @@ class TenuredGeneration;
 //                                              +-- generation boundary (fixed after startup)
 //                                              |
 // |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
-// +-----------------+--------+--------+--------+---------------+-------------------+
-// |       eden      |  from  |   to   |        |      old      |                   |
-// |                 |  (to)  | (from) |        |               |                   |
-// +-----------------+--------+--------+--------+---------------+-------------------+
+// +--------+--------+-----------------+--------+---------------+-------------------+
+// |  from  |   to   |       eden      |        |      old      |                   |
+// |  (to)  | (from) |                 |        |               |                   |
+// +--------+--------+-----------------+--------+---------------+-------------------+
 // |<-          committed            ->|        |<- committed ->|
 //
 class SerialHeap : public CollectedHeap {
@@ -103,10 +102,6 @@ private:
   bool _is_heap_almost_full;
 
   void do_full_collection(bool clear_all_soft_refs) override;
-
-  // Does the "cause" of GC indicate that
-  // we absolutely __must__ clear soft refs?
-  bool must_clear_all_soft_refs();
 
   bool is_young_gc_safe() const;
 
@@ -194,9 +189,9 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
@@ -227,6 +222,7 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
@@ -261,9 +257,6 @@ public:
 
   void scan_evacuated_objs(YoungGenScanClosure* young_cl,
                            OldGenScanClosure* old_cl);
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
   bool can_load_archived_objects() const override { return true; }
