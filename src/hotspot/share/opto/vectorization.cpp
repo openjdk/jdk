@@ -569,10 +569,10 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
 }
 
 // Compute the cost over all operations in the (scalar) loop.
-float VLoopAnalyzer::cost() const {
+float VLoopAnalyzer::cost_for_scalar_loop() const {
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
-    tty->print_cr("\nVLoopAnalyzer::cost:");
+    tty->print_cr("\nVLoopAnalyzer::cost_for_scalar_loop:");
   }
 #endif
 
@@ -580,7 +580,7 @@ float VLoopAnalyzer::cost() const {
   for (int j = 0; j < body().body().length(); j++) {
     Node* n = body().body().at(j);
     if (!has_zero_cost(n)) {
-      float c = cost_for_scalar(n->Opcode());
+      float c = cost_for_scalar_node(n->Opcode());
       sum += c;
 #ifndef PRODUCT
       if (_vloop.is_trace_cost_verbose()) {
@@ -601,7 +601,7 @@ float VLoopAnalyzer::cost() const {
 // For now, we use unit cost. We might refine that in the future.
 // If needed, we could also use platform specific costs, if the
 // default here is not accurate enough.
-float VLoopAnalyzer::cost_for_scalar(int opcode) const {
+float VLoopAnalyzer::cost_for_scalar_node(int opcode) const {
   float c = 1;
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
@@ -614,7 +614,7 @@ float VLoopAnalyzer::cost_for_scalar(int opcode) const {
 // For now, we use unit cost. We might refine that in the future.
 // If needed, we could also use platform specific costs, if the
 // default here is not accurate enough.
-float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
+float VLoopAnalyzer::cost_for_vector_node(int opcode, int vlen, BasicType bt) const {
   float c = 1;
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
@@ -629,7 +629,7 @@ float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
 // that the vtnode will use. We might refine that in the future.
 // If needed, we could also use platform specific costs, if the
 // default here is not accurate enough.
-float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+float VLoopAnalyzer::cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
   // Each reduction is composed of multiple instructions, each estimated with a unit cost.
   //                                Linear: shuffle and reduce    Recursive: shuffle and reduce
   float c = requires_strict_order ? 2 * vlen                    : 2 * exact_log2(vlen);

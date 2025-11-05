@@ -853,13 +853,13 @@ public:
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
   // Compute the cost of the (scalar) body.
-  float cost() const;
+  float cost_for_scalar_loop() const;
   bool has_zero_cost(Node* n) const;
 
   // Cost-modeling with tracing.
-  float cost_for_scalar(int opcode) const;
-  float cost_for_vector(int opcode, int vlen, BasicType bt) const;
-  float cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
+  float cost_for_scalar_node(int opcode) const;
+  float cost_for_vector_node(int opcode, int vlen, BasicType bt) const;
+  float cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
 
 private:
   bool setup_submodules();

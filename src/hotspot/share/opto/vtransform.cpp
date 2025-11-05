@@ -241,11 +241,11 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   }
 }
 
-float VTransformGraph::cost() const {
+float VTransformGraph::cost_for_vector_loop() const {
   assert(is_scheduled(), "must already be scheduled");
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
-    tty->print_cr("\nVTransformGraph::cost:");
+    tty->print_cr("\nVTransformGraph::cost_for_vector_loop:");
   }
 #endif
 
@@ -927,7 +927,7 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
 float VTransformMemopScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   // This is an identity transform, but loads and stores must be counted.
   assert(!vloop_analyzer.has_zero_cost(_node), "memop nodes must be counted");
-  return vloop_analyzer.cost_for_scalar(_node->Opcode());
+  return vloop_analyzer.cost_for_scalar_node(_node->Opcode());
 }
 
 VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& apply_state) const {
@@ -948,7 +948,7 @@ float VTransformDataScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
   if (vloop_analyzer.has_zero_cost(_node)) {
     return 0;
   } else {
-    return vloop_analyzer.cost_for_scalar(_node->Opcode());
+    return vloop_analyzer.cost_for_scalar_node(_node->Opcode());
   }
 }
 
@@ -1005,7 +1005,7 @@ VTransformApplyResult VTransformOuterNode::apply(VTransformApplyState& apply_sta
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_Replicate, _vlen, _element_type);
+  return vloop_analyzer.cost_for_vector_node(Op_Replicate, _vlen, _element_type);
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
@@ -1016,7 +1016,7 @@ VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply
 }
 
 float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_scalar(Op_ConvI2L);
+  return vloop_analyzer.cost_for_scalar_node(Op_ConvI2L);
 }
 
 VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_state) const {
@@ -1028,8 +1028,8 @@ VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_s
 
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
-  return vloop_analyzer.cost_for_scalar(Op_AndI) +
-         vloop_analyzer.cost_for_vector(shift_count_opc, _vlen, _element_bt);
+  return vloop_analyzer.cost_for_scalar_node(Op_AndI) +
+         vloop_analyzer.cost_for_vector_node(shift_count_opc, _vlen, _element_bt);
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
@@ -1048,7 +1048,7 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);
+  return vloop_analyzer.cost_for_vector_node(Op_PopulateIndex, _vlen, _element_bt);
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
@@ -1063,7 +1063,7 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(_vector_opcode, vector_length(), element_basic_type());
+  return vloop_analyzer.cost_for_vector_node(_vector_opcode, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1086,8 +1086,8 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
 
 float VTransformElementWiseLongOpWithCastToIntVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int vopc = VectorNode::opcode(scalar_opcode(), element_basic_type());
-  return vloop_analyzer.cost_for_vector(vopc, vector_length(), element_basic_type()) +
-         vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vector_length(), T_INT);
+  return vloop_analyzer.cost_for_vector_node(vopc, vector_length(), element_basic_type()) +
+         vloop_analyzer.cost_for_vector_node(Op_VectorCastL2X, vector_length(), T_INT);
 }
 
 VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1106,7 +1106,7 @@ VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(
 }
 
 float VTransformReinterpretVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_VectorReinterpret, vector_length(), element_basic_type());
+  return vloop_analyzer.cost_for_vector_node(Op_VectorReinterpret, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1123,7 +1123,7 @@ VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyStat
 
 float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   assert(scalar_opcode() == Op_Bool, "");
-  return vloop_analyzer.cost_for_vector(Op_VectorMaskCmp, vector_length(), element_basic_type());
+  return vloop_analyzer.cost_for_vector_node(Op_VectorMaskCmp, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1386,7 +1386,7 @@ float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) c
   BasicType bt = element_basic_type();
   int vopc = vector_reduction_opcode();
   bool requires_strict_order = ReductionNode::auto_vectorization_requires_strict_order(vopc);
-  return vloop_analyzer.cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
+  return vloop_analyzer.cost_for_vector_reduction_node(vopc, vlen, bt, requires_strict_order);
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1401,7 +1401,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
 float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-  return vloop_analyzer.cost_for_vector(Op_LoadVector, vlen, bt);
+  return vloop_analyzer.cost_for_vector_node(Op_LoadVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1436,7 +1436,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
 float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-  return vloop_analyzer.cost_for_vector(Op_StoreVector, vlen, bt);
+  return vloop_analyzer.cost_for_vector_node(Op_StoreVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& apply_state) const {

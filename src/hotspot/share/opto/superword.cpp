@@ -1930,8 +1930,8 @@ bool VTransform::is_profitable() const {
   if (has_store_to_load_forwarding_failure()) { return false; }
 
   // Cost-model
-  float scalar_cost = _vloop_analyzer.cost();
-  float vector_cost = cost();
+  float scalar_cost = _vloop_analyzer.cost_for_scalar_loop();
+  float vector_cost = cost_for_vector_loop();
 #ifndef PRODUCT
   if (_trace._info) {
     tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
