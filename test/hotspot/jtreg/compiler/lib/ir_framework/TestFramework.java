@@ -49,6 +49,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -748,21 +749,22 @@ public class TestFramework {
      */
     private void startWithScenarios(boolean parallel) {
         Map<Scenario, Exception> exceptionMap = new TreeMap<>(Comparator.comparingInt(Scenario::getIndex));
-        record Outcome(Scenario scenario, TestFormatException tfe, Exception other) {}
+        record Outcome(Scenario scenario, Exception other) {}
         final Object printLock = new Object();
-
+        AtomicReference<TestFormatException> testFormatException = new AtomicReference<>();
         Stream<Scenario> stream = parallel ? scenarios.parallelStream() : scenarios.stream();
         List<Outcome> outcomes = stream.map(scenario -> {
-            Outcome outcome;
+            if (testFormatException.get() != null) {
+                return null;
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(baos);
             try {
                 start(scenario, ps);
-                outcome = new Outcome(scenario, null, null);
             } catch (TestFormatException e) {
-                outcome = new Outcome(scenario, e, null);
+                testFormatException.compareAndSet(null, e);
             } catch (Exception e) {
-                outcome = new Outcome(scenario, null, e);
+                return new Outcome(scenario, e);
             } finally {
                 // Print the output to stdout in one go
                 synchronized (printLock) {
@@ -772,19 +774,17 @@ public class TestFramework {
                     }
                 }
             }
-            return outcome;
+            return null;
         }).toList();
-        // Rethrow first TestFormatException
-        Optional<TestFormatException> tfe = outcomes.stream()
-                .map(Outcome::tfe)
-                .filter(Objects::nonNull)
-                .findFirst();
-        if (tfe.isPresent()) {
-            throw tfe.get();
+        // Rethrow TestFormatException if it occurred
+        TestFormatException tfe = testFormatException.get();
+        if (tfe != null) {
+            throw tfe;
         }
+
         // Handle other exceptions
         outcomes.stream()
-                .filter(o -> o.other() != null)
+                .filter(o -> o != null && o.other() != null)
                 .forEach(o -> exceptionMap.put(o.scenario(), o.other()));
         if (!exceptionMap.isEmpty()) {
             reportScenarioFailures(exceptionMap);
