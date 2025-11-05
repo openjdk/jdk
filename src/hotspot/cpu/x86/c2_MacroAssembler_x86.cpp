@@ -6164,7 +6164,7 @@ void C2_MacroAssembler::vector_count_leading_zeros_long_avx(XMMRegister dst, XMM
 
   // Move the top half result to the bottom half of xtmp1, setting the top half to 0.
   vpsrlq(xtmp1, dst, 32, vec_enc);
-  // By moving the top half result to the right by 6 bytes, if the top half was empty (i.e. 32 is returned) the result bit will
+  // By moving the top half result to the right by 6 bits, if the top half was empty (i.e. 32 is returned) the result bit will
   // be in the most significant position of the bottom half.
   vpsrlq(xtmp2, dst, 6, vec_enc);
 
