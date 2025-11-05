@@ -64,15 +64,6 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
   f(value, method, args, thread);
 }
 
-// Returns an estimate of the current stack pointer. Result must be guaranteed
-// to point into the calling threads stack, and be no lower than the current
-// stack pointer.
-NOINLINE address os::current_stack_pointer() {
-  CONTEXT context;
-  RtlCaptureContext(&context);
-  return reinterpret_cast<address>(context.Sp);
-}
-
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
   address  epc;
