@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,8 @@ public class TestBadFormat {
     }
 
     private static void expectTestFormatException(Class<?> clazz, Class<?>... helpers) {
+        // Single test
+        boolean exceptionCatched = false;
         try {
             if (helpers == null) {
                 TestFramework.run(clazz);
@@ -132,9 +134,25 @@ public class TestBadFormat {
             }
         } catch (Exception e) {
             checkException(clazz, e, helpers);
-            return;
+            exceptionCatched = true;
         }
-        throw new RuntimeException("Should catch an exception");
+        Asserts.assertTrue(exceptionCatched, "Should catch an exception");\
+
+        // Parallel scenarios
+        exceptionCatched = false;
+        try {
+            if (helpers == null) {
+                new TestFramework(clazz).addScenarios(new Scenario(1), new Scenario(2), new Scenario(3))
+                                        .startParallel();
+            } else {
+                new TestFramework(clazz).addScenarios(new Scenario(1), new Scenario(2), new Scenario(3))
+                                        .addHelperClasses(helpers).startParallel();
+            }
+        } catch (Exception e) {
+            checkException(clazz, e, helpers);
+            exceptionCatched = true;
+        }
+        Asserts.assertTrue(exceptionCatched, "Should catch an exception");
     }
 
     private static void checkException(Class<?> clazz, Exception e, Class<?>[] helpers) {
