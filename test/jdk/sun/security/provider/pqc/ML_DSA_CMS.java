@@ -29,7 +29,7 @@
  * @modules java.base/sun.security.pkcs
  */
 import jdk.test.lib.Asserts;
-import jdk.test.lib.security.DataFetcher;
+import jdk.test.lib.security.RepositoryFileReader;
 import sun.security.pkcs.PKCS7;
 
 import java.io.BufferedReader;
@@ -41,21 +41,21 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.stream.Collectors;
 
-import static jdk.test.lib.security.DataFetcher.*;
+import static jdk.test.lib.security.RepositoryFileReader.*;
 
 public class ML_DSA_CMS {
     public static void main(String[] args) throws Exception {
         // See https://datatracker.ietf.org/doc/html/rfc9882#name-examples
-        try (var cmsFetcher = DataFetcher.of(CMS_ML_DSA.class,
+        try (var cmsReader = RepositoryFileReader.of(CMS_ML_DSA.class,
                     "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/");
-            var dsaFetcher = DataFetcher.of(DILITHIUM_CERTIFICATES.class,
+            var dsaReader = RepositoryFileReader.of(DILITHIUM_CERTIFICATES.class,
                     "dilithium-certificates-draft-ietf-lamps-dilithium-certificates-13/")) {
-            test(readCMS(cmsFetcher, "mldsa44-signed-attrs.pem"),
-                    readCert(dsaFetcher, "ML-DSA-44.crt"));
-            test(readCMS(cmsFetcher, "mldsa65-signed-attrs.pem"),
-                    readCert(dsaFetcher, "ML-DSA-65.crt"));
-            test(readCMS(cmsFetcher, "mldsa87-signed-attrs.pem"),
-                    readCert(dsaFetcher, "ML-DSA-87.crt"));
+            test(readCMS(cmsReader, "mldsa44-signed-attrs.pem"),
+                    readCert(dsaReader, "ML-DSA-44.crt"));
+            test(readCMS(cmsReader, "mldsa65-signed-attrs.pem"),
+                    readCert(dsaReader, "ML-DSA-65.crt"));
+            test(readCMS(cmsReader, "mldsa87-signed-attrs.pem"),
+                    readCert(dsaReader, "ML-DSA-87.crt"));
         }
     }
 
@@ -70,8 +70,8 @@ public class ML_DSA_CMS {
     }
 
     // Read data in https://datatracker.ietf.org/doc/html/rfc9882#name-examples
-    static byte[] readCMS(DataFetcher f, String entry) throws IOException  {
-        var data = f.fetch("examples/" + entry);
+    static byte[] readCMS(RepositoryFileReader f, String entry) throws IOException  {
+        var data = f.read("examples/" + entry);
         var pem = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data)))
                 .lines()
                 .filter(s -> !s.contains("-----"))
@@ -80,8 +80,8 @@ public class ML_DSA_CMS {
     }
 
     // Read data in https://datatracker.ietf.org/doc/html/rfc9881#name-example-certificates
-    static X509Certificate readCert(DataFetcher f, String entry) throws Exception {
-        var data = f.fetch("examples/" + entry);
+    static X509Certificate readCert(RepositoryFileReader f, String entry) throws Exception {
+        var data = f.read("examples/" + entry);
         var cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data));
     }

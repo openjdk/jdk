@@ -34,18 +34,18 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/// A helper class to fetch files from a code repository.
+/// A helper class to read files from a code repository.
 ///
 /// By default, the code repository is stored on the artifact server
 /// as a ZIP file.
 ///
-/// Users can specify the "jdk.tests.repos.pattern" system property to fetch
+/// Users can specify the "jdk.tests.repos.pattern" system property to read
 /// the files from an alternative location. The value of this system property
 /// represents the URL for each file entry where:
 /// - "%o" maps to the last part of [organization name][Artifact#organization()],
 /// - "%n" maps to [name][Artifact#name()],
 /// - "%r" maps to [version][Artifact#revision()],
-/// - "%e" maps to the name of the file entry to fetch.
+/// - "%e" maps to the name of the file entry to read.
 ///
 /// For example, with the [CMS_ML_DSA] class inside this test:
 /// - The pattern `file:///Users/tester/repos/external/%o/%n/%e` resolves to
@@ -53,21 +53,21 @@ import java.util.zip.ZipFile;
 /// - The pattern `https://raw.repos.com/%o/%n/%r/%e` resolves to
 ///   `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
 ///
-public sealed interface DataFetcher extends AutoCloseable {
+public sealed interface RepositoryFileReader extends AutoCloseable {
 
-    /// Fetches the content of `entry` as a byte array.
-    byte[] fetch(String entry) throws IOException;
+    /// Reads the content of `entry` as a byte array.
+    byte[] read(String entry) throws IOException;
 
     /// Overrides the method with a different exception type
     /// to avoid compiler warnings about `InterruptedException`.
     @Override
     void close() throws IOException;
 
-    /// Returns a fetcher.
+    /// Returns a `RepositoryFileReader`.
     /// @param klass the `Artifact` class
     /// @param zipPrefix the prefix used in the ZIP file. See
-    ///         [ZipFetcher#ZipFetcher(ZipFile, String)].
-    static DataFetcher of(Class<?> klass, String zipPrefix) {
+    ///         [ZipReader#ZipReader(ZipFile, String)].
+    static RepositoryFileReader of(Class<?> klass, String zipPrefix) {
         Artifact artifact = klass.getAnnotation(Artifact.class);
         var org = artifact.organization();
         var prop = System.getProperty("jdk.tests.repos.pattern");
@@ -75,30 +75,30 @@ public sealed interface DataFetcher extends AutoCloseable {
             prop = prop.replace("%o", org.substring(org.lastIndexOf('.') + 1));
             prop = prop.replace("%n", artifact.name());
             prop = prop.replace("%r", artifact.revision());
-            System.out.println("Creating FileFetcher on " + prop);
-            return new FileFetcher(prop);
+            System.out.println("Creating URLReader on " + prop);
+            return new URLReader(prop);
         } else {
             try {
                 Path p = ArtifactResolver.resolve(klass).entrySet().stream()
                         .findAny().get().getValue();
-                System.out.println("Creating ZipFetcher on " + p);
-                return new ZipFetcher(new ZipFile(p.toFile()), zipPrefix);
+                System.out.println("Creating ZipReader on " + p);
+                return new ZipReader(new ZipFile(p.toFile()), zipPrefix);
             } catch (ArtifactResolverException | IOException e) {
                 throw new SkippedException("Cannot find " + artifact.name(), e);
             }
         }
     }
 
-    /// A `DataFetcher` to fetch file from a URL.
+    /// A `RepositoryFileReader` to read file from a URL.
     /// @param base the base URL string, contains "%e" mapping to entry name
-    record FileFetcher(String base) implements DataFetcher {
+    record URLReader(String base) implements RepositoryFileReader {
         @Override
         public void close() {
             // nothing to do
         }
 
         @Override
-        public byte[] fetch(String entry) throws IOException {
+        public byte[] read(String entry) throws IOException {
             System.out.println("Reading " + entry + "...");
             try (var is = new URI(base.replace("%e", entry)).toURL().openStream()) {
                 return is.readAllBytes();
@@ -108,19 +108,19 @@ public sealed interface DataFetcher extends AutoCloseable {
         }
     }
 
-    /// A `DataFetcher` to fetch file from a ZIP file.
+    /// A `RepositoryFileReader` to read file from a ZIP file.
     /// @param zf the `ZipFile`
     /// @param zipPrefix optional prefix string inside the ZIP file. For example,
     ///     if an entry "folder/file" is represented as "archive/folder/file"
     ///     inside the ZIP, "archive/" should be provided as `zipPrefix`.
-    record ZipFetcher(ZipFile zf, String zipPrefix) implements DataFetcher {
+    record ZipReader(ZipFile zf, String zipPrefix) implements RepositoryFileReader {
         @Override
         public void close() throws IOException {
             zf.close();
         }
 
         @Override
-        public byte[] fetch(String entry) throws IOException {
+        public byte[] read(String entry) throws IOException {
             System.out.println("Reading " + entry + "...");
             ZipEntry ze = zf.getEntry(zipPrefix + entry);
             if (ze != null) {
