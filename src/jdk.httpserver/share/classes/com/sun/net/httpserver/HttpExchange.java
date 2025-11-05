@@ -183,9 +183,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract OutputStream getResponseBody();
 
     /**
-     * Starts sending the final response back to the client using the current set of
-     * response headers obtained from {@link #getResponseHeaders()} and the numeric
-     * response code as specified in this
+     * Starts sending the response back to the client using the current set of
+     * response headers and the numeric response code as specified in this
      * method. The response body length is also specified as follows. If the
      * response length parameter is greater than {@code zero}, this specifies an
      * exact number of bytes to send and the application must send that exact
