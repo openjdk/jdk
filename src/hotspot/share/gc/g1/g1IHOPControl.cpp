@@ -44,13 +44,18 @@ void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
   _target_occupancy = new_target_occupancy;
 }
 
+void G1IHOPControl::report_statistics(G1NewTracer* new_tracer, size_t occupancy) {
+  print_log(occupancy);
+  send_jfr_event(new_tracer, occupancy);
+}
+
 void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t additional_buffer_size) {
   assert(allocation_time_s >= 0.0, "Allocation time must be positive but is %.3f", allocation_time_s);
 
   _last_allocation_time_s = allocation_time_s;
 }
 
-void G1IHOPControl::print() {
+void G1IHOPControl::print_log(size_t occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
   log_debug(gc, ihop)("Basic information (value update), threshold: %zuB (%1.2f), target occupancy: %zuB, current occupancy: %zuB, "
@@ -58,18 +63,18 @@ void G1IHOPControl::print() {
                       cur_conc_mark_start_threshold,
                       percent_of(cur_conc_mark_start_threshold, _target_occupancy),
                       _target_occupancy,
-                      G1CollectedHeap::heap()->used(),
+                      occupancy,
                       _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                       _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _old_gen_alloc_tracker->last_period_old_gen_bytes() / _last_allocation_time_s : 0.0,
                       last_marking_length_s() * 1000.0);
 }
 
-void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
+void G1IHOPControl::send_jfr_event(G1NewTracer* tracer, size_t occupancy) {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
                                        _target_occupancy,
-                                       G1CollectedHeap::heap()->used(),
+                                       occupancy,
                                        _old_gen_alloc_tracker->last_period_old_gen_bytes(),
                                        _last_allocation_time_s,
                                        last_marking_length_s());
@@ -165,8 +170,8 @@ void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
   _marking_times_s.add(marking_length_s);
 }
 
-void G1AdaptiveIHOPControl::print() {
-  G1IHOPControl::print();
+void G1AdaptiveIHOPControl::print_log(size_t occupancy) {
+  G1IHOPControl::print_log(occupancy);
   size_t actual_target = actual_target_threshold();
   log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: %zuB (%1.2f), internal target occupancy: %zuB, "
                       "occupancy: %zuB, additional buffer size: %zuB, predicted old gen allocation rate: %1.2fB/s, "
@@ -174,18 +179,18 @@ void G1AdaptiveIHOPControl::print() {
                       get_conc_mark_start_threshold(),
                       percent_of(get_conc_mark_start_threshold(), actual_target),
                       actual_target,
-                      G1CollectedHeap::heap()->used(),
+                      occupancy,
                       _last_unrestrained_young_size,
                       predict(&_allocation_rate_s),
                       predict(&_marking_times_s) * 1000.0,
                       have_enough_data_for_prediction() ? "true" : "false");
 }
 
-void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {
-  G1IHOPControl::send_trace_event(tracer);
+void G1AdaptiveIHOPControl::send_jfr_event(G1NewTracer* tracer, size_t occupancy) {
+  G1IHOPControl::send_jfr_event(tracer, occupancy);
   tracer->report_adaptive_ihop_statistics(get_conc_mark_start_threshold(),
                                           actual_target_threshold(),
-                                          G1CollectedHeap::heap()->used(),
+                                          occupancy,
                                           _last_unrestrained_young_size,
                                           predict(&_allocation_rate_s),
                                           predict(&_marking_times_s),

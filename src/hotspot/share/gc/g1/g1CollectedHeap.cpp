@@ -350,6 +350,14 @@ size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
   return align_up(word_size, G1HeapRegion::GrainWords) / G1HeapRegion::GrainWords;
 }
 
+size_t G1CollectedHeap::allocation_used_bytes(size_t allocation_word_size) {
+  if (is_humongous(allocation_word_size)) {
+    return humongous_obj_size_in_regions(allocation_word_size) * G1HeapRegion::GrainBytes;
+  } else {
+    return allocation_word_size;
+  }
+}
+
 // If could fit into free regions w/o expansion, try.
 // Otherwise, if can expand, do so.
 // Otherwise, if using ex regions might help, try with ex given back.
