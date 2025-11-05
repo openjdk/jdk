@@ -87,6 +87,9 @@ public:
     const size_t page_sz = os::vm_page_size();
     size_t index;
     for (index = 0; index < touch_pages; index ++) {
+      if (page_num[index] < 0) { // negative values cause overflow in the following expression 'base + (-x) < base'
+        continue;
+      }
       address page_addr = base + page_num[index] * page_sz;
       // The range covers this page, marks the page
       if (page_addr >= addr && page_addr < addr + size) {
