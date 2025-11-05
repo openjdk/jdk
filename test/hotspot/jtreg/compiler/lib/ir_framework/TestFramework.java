@@ -918,9 +918,7 @@ public class TestFramework {
     }
 
     private void runTestVM(TestVMProcess testVMProcess, List<String> additionalFlags, PrintStream printStream) {
-        if (testVMProcess == null) {
-            throw new TestFrameworkException("TestVMProcess is null");
-        }
+        TestFramework.check(testVMProcess != null, "TestVMProcess is null");
         testVMProcess.runProcess(additionalFlags, testClass, helperClasses, defaultWarmup,
                                  isAllowNotCompilable, testClassesOnBootClassPath, printStream);
         if (shouldVerifyIR) {
