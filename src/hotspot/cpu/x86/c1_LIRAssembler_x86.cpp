@@ -2766,9 +2766,12 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 }
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
+                                          LIR_Opr freq_op, LIR_Opr step_op,
                                           CodeStub* overflow) {
   // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
+  // RegisterOrConstant dest_adr = addr->is_address() ? as_Address(addr->as_address_ptr())
+
   Address dest_adr = as_Address(addr->as_address_ptr());
 
   // assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
@@ -2811,7 +2814,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
     jint inc = incr->as_constant_ptr()->as_jint_bits();
     switch (dest->type()) {
       case T_INT: {
-        if (dest->is_register())  __ movl(dest->as_register(), inc);
+        // if (dest->is_register())  __ movl(dest->as_register(), inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
           if (! getenv("APH_DISABLE")) {
@@ -2831,7 +2834,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         break;
       }
       case T_LONG: {
-        if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
+        // if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
         if (profile_capture_ratio > 1) {
           __ cmpl(r_profile_rng, threshold);
           if (! getenv("APH_DISABLE")) {
@@ -2854,7 +2857,33 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         ShouldNotReachHere();
     }
   }
-  #ifndef PRODUCT
+
+  if (incr->is_valid() && overflow) {
+    if (!freq_op->is_valid()) {
+      if (!incr->is_constant()) {
+        __ cmpl(incr->as_register(), 0);
+        __ jcc(Assembler::notEqual, *(overflow->entry()));
+      } else {
+        __ jmp(*(overflow->entry()));
+      }
+    } else {
+      Register result =
+        dest->type() == T_INT ? dest->as_register() :
+        dest->type() == T_LONG ? dest->as_register_lo() :
+        noreg;
+      if (!incr->is_constant()) {
+        // If step is 0, make sure the overflow check below always fails 
+        __ cmpl(incr->as_register(), 0);
+        __ movl(temp, InvocationCounter::count_increment);
+        __ cmovl(Assembler::notEqual, result, temp);
+      }
+      __ andl(result, freq_op->as_jint());
+      __ jcc(Assembler::equal, *overflow->entry());
+    }
+    __ bind(*overflow->continuation());
+  }
+
+#ifndef PRODUCT
   if (CommentedAssembly) {
     __ block_comment("} " "increment_profile_ctr");
   }

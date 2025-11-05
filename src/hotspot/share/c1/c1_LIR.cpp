@@ -564,13 +564,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_ushr:
     case lir_xadd:
     case lir_xchg:
-    case lir_assert:
-    case lir_increment_profile_ctr:
-    {
-      assert(op->as_Op2() != nullptr, "must be");
+    case lir_assert: {
       LIR_Op2* op2 = (LIR_Op2*)op;
       assert(op2->_tmp2->is_illegal() && op2->_tmp3->is_illegal() &&
              op2->_tmp4->is_illegal() && op2->_tmp5->is_illegal(), "not used");
+    }
+    // fallthrough
+    case lir_increment_profile_ctr:
+    {
+      LIR_Op2* op2 = (LIR_Op2*)op;
+      assert(op->as_Op2() != nullptr, "must be");
 
       if (op2->_info)                     do_info(op2->_info);
       if (op2->_opr1->is_valid())         do_input(op2->_opr1);
@@ -1017,6 +1020,9 @@ void LIR_OpConvert::emit_code(LIR_Assembler* masm) {
 
 void LIR_Op2::emit_code(LIR_Assembler* masm) {
   masm->emit_op2(this);
+  if (overflow()) {
+    masm->append_code_stub(overflow());
+  }
 }
 
 void LIR_OpAllocArray::emit_code(LIR_Assembler* masm) {
@@ -1266,14 +1272,18 @@ void LIR_List::volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offs
 
 
 void LIR_List::increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp,
-                                     CodeStub* overflow) {
+                                     LIR_Opr freq, LIR_Opr step,
+                                     CodeStub* overflow, CodeEmitInfo* info) {
   append(new LIR_Op2(
             lir_increment_profile_ctr,
             src,
             LIR_OprFact::address(addr),
             res,
             tmp,
-            overflow));
+            freq,
+            tmp,
+            overflow,
+            info));
 }
 
 

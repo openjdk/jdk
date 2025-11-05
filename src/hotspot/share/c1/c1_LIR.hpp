@@ -1635,19 +1635,26 @@ class LIR_Op2: public LIR_Op {
     assert(code != lir_cmp && code != lir_branch && code != lir_cond_float_branch && is_in_range(code, begin_op2, end_op2), "code check");
   }
 
-  LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1, CodeStub* overflow)
-    : LIR_Op(code, result, nullptr)
+  LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1,
+          LIR_Opr freq, LIR_Opr step, CodeStub* overflow, CodeEmitInfo *info)
+    : LIR_Op(code, result, info)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(tmp1)
-    , _tmp2(LIR_OprFact::illegalOpr)
-    , _tmp3(LIR_OprFact::illegalOpr)
+    , _tmp2(freq)
+    , _tmp3(step)
     , _tmp4(LIR_OprFact::illegalOpr)
     , _tmp5(LIR_OprFact::illegalOpr)
     , _condition(lir_cond_unknown)
     , _type(T_ILLEGAL)
     , _overflow(overflow) {
     assert(code != lir_cmp && code != lir_branch && code != lir_cond_float_branch && is_in_range(code, begin_op2, end_op2), "code check");
+  }
+
+  LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1,
+          CodeStub* overflow) {
+    LIR_Op2(code, opr1, opr2, result, tmp1,
+            LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr);
   }
 
   LIR_Opr in_opr1() const                        { return _opr1; }
@@ -1658,6 +1665,8 @@ class LIR_Op2: public LIR_Op {
   LIR_Opr tmp3_opr() const                       { return _tmp3; }
   LIR_Opr tmp4_opr() const                       { return _tmp4; }
   LIR_Opr tmp5_opr() const                       { return _tmp5; }
+  LIR_Opr freq_opr() const                       { return _tmp2; }
+  LIR_Opr step_opr() const                       { return _tmp3; }
   LIR_Condition condition() const  {
     assert(code() == lir_cmp || code() == lir_branch || code() == lir_cond_float_branch || code() == lir_assert, "only valid for branch and assert"); return _condition;
   }
@@ -2259,7 +2268,10 @@ class LIR_List: public CompilationResourceObj {
   void volatile_store_mem_reg(LIR_Opr src, LIR_Address* address, CodeEmitInfo* info, LIR_PatchCode patch_code = lir_patch_none);
   void volatile_store_unsafe_reg(LIR_Opr src, LIR_Opr base, LIR_Opr offset, BasicType type, CodeEmitInfo* info, LIR_PatchCode patch_code);
 
-  void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeStub* overflow = nullptr);
+  void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, LIR_Opr freq, LIR_Opr step, CodeStub* overflow, CodeEmitInfo* info);
+  void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeStub* overflow = nullptr) {
+    increment_profile_ctr(src, addr, res,tmp, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, overflow, nullptr);
+  }
 
   void idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);
   void idiv(LIR_Opr left, int   right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);

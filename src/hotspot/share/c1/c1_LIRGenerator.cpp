@@ -3190,34 +3190,34 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
   LIR_Opr tmp = new_register(T_INT);
 
-  __ increment_profile_ctr(step, counter, result, tmp);
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
 
-    __ increment_profile_ctr(step, counter, result, tmp, overflow);
-
     int freq = frequency << InvocationCounter::count_shift;
-    if (freq == 0) {
-      if (!step->is_constant()) {
-        __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-        __ branch(lir_cond_notEqual, overflow);
-      } else {
-        __ branch(lir_cond_always, overflow);
-      }
-    } else {
-      LIR_Opr mask = load_immediate(freq, T_INT);
-      if (!step->is_constant()) {
-        // If step is 0, make sure the overflow check below always fails
-        __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-        __ cmove(lir_cond_notEqual, result, LIR_OprFact::intConst(InvocationCounter::count_increment), result, T_INT);
-      }
-      __ logical_and(result, mask, result);
-      __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
-      __ branch(lir_cond_equal, overflow);
-    }
-    __ branch_destination(overflow->continuation());
+    __ increment_profile_ctr(step, counter, result, tmp,
+                             LIR_OprFact::intConst(freq), step, overflow, info);
+
+    // if (freq == 0) {
+    //   if (!step->is_constant()) {
+    //     __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
+    //     __ branch(lir_cond_notEqual, overflow);
+    //   } else {
+    // __ branch(lir_cond_always, overflow);
+    //   }
+    // } else {
+    //   LIR_Opr mask = load_immediate(freq, T_INT);
+    //   if (!step->is_constant()) {
+    //     // If step is 0, make sure the overflow check below always fails
+    //     __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
+    //     __ cmove(lir_cond_notEqual, result, LIR_OprFact::intConst(InvocationCounter::count_increment), result, T_INT);
+    //   }
+    //   __ logical_and(result, mask, result);
+    //   __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+    //   __ branch(lir_cond_equal, overflow);
+    // }
+    // __ branch_destination(overflow->continuation());
   } else {
       __ increment_profile_ctr(step, counter, result, tmp);
   }
