@@ -182,7 +182,6 @@ public class Util {
         return null;
     }
 
-
      /**
      * Hits mnemonics by robot.
      */
