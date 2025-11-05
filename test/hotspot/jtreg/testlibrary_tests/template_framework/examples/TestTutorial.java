@@ -368,7 +368,7 @@ public class TestTutorial {
             // Using "transparentScope" means the scope is transparent, and the hashtag
             // replacements escape the scope.
             transparentScope(
-                let("x", 11), // escape escopes the "transparentScope".
+                let("x", 11), // escapes the "transparentScope".
                 """
                 static int v1_11a = #x;
                 """
@@ -496,7 +496,8 @@ public class TestTutorial {
 
         var template2 = Template.make("x", (Integer x) -> scope(
             """
-            // Let us go back to where we anchored the hook with anchor() and define a field named $field1 there.
+            // Let us go back to where we anchored the hook with anchor() (see 'templateClass' below) and define a field
+            // named $field1 there.
             """,
             myHook.insert(scope( // <- insertion scope
                 """
@@ -895,7 +896,7 @@ public class TestTutorial {
             // have the count as a Java variable so that one can take conditional
             // action based on the value. For that we have to capture the count
             // with a lambda and inner scope as above. If we only need to have
-            // the count as a hashtag replacement, we can also use the follwing
+            // the count as a hashtag replacement, we can also use the following
             // trick:
             dataNames(MUTABLE).exactOf(myInt).count(c -> transparentScope(let("ints", c))),
             dataNames(MUTABLE).exactOf(myLong).count(c -> transparentScope(let("longs", c))),
