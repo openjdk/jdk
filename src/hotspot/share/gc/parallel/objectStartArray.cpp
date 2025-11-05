@@ -47,7 +47,10 @@ ObjectStartArray::ObjectStartArray(MemRegion covered_region)
 
   // Do not use large-pages for the backing store. The one large page region
   // will be used for the heap proper.
-  ReservedSpace backing_store = MemoryReserver::reserve(bytes_to_reserve, mtGC);
+  ReservedSpace backing_store = MemoryReserver::reserve(bytes_to_reserve,
+                                                        os::vm_allocation_granularity(),
+                                                        os::vm_page_size(),
+                                                        mtGC);
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }

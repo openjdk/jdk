@@ -206,11 +206,6 @@ source %{
           return false;
         }
         break;
-      case Op_ExpandV:
-        if (UseSVE < 2 || is_subword_type(bt)) {
-          return false;
-        }
-        break;
       case Op_VectorMaskToLong:
         if (UseSVE > 0 && vlen > 64) {
           return false;
@@ -5074,37 +5069,68 @@ instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
 %}
 
 instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
-                    vReg tmp3, vReg tmp4, pReg ptmp, pRegGov pgtmp) %{
+                    vReg tmp3, pReg ptmp, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ptmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp, TEMP pgtmp);
   match(Set dst (CompressV src pg));
-  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, tmp4, $ptmp, $pgtmp" %}
+  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, $ptmp, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_compress_byte($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                         $tmp1$$FloatRegister,$tmp2$$FloatRegister,
-                         $tmp3$$FloatRegister,$tmp4$$FloatRegister,
-                         $ptmp$$PRegister, $pgtmp$$PRegister);
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister,
+                         $ptmp$$PRegister, $pgtmp$$PRegister, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcompressS(vReg dst, vReg src, pReg pg,
-                    vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
+instruct vcompressS(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ sve_dup($tmp1$$FloatRegister, __ H, 0);
     __ sve_compress_short($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                          $tmp1$$FloatRegister,$tmp2$$FloatRegister, $pgtmp$$PRegister);
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $pgtmp$$PRegister,
+                          length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
+instruct vexpand_neon(vReg dst, vReg src, vReg mask, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 0);
+  match(Set dst (ExpandV src mask));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "vexpand_neon $dst, $src, $mask\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int length_in_bytes = (int) Matcher::vector_length_in_bytes(this);
+    __ vector_expand_neon($dst$$FloatRegister, $src$$FloatRegister, $mask$$FloatRegister,
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vexpand_sve(vReg dst, vReg src, pRegGov pg, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 1 || (UseSVE == 2 && type2aelembytes(Matcher::vector_element_basic_type(n)) < 4));
+  match(Set dst (ExpandV src pg));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "vexpand_sve $dst, $src, $pg\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int length_in_bytes = (int) Matcher::vector_length_in_bytes(this);
+    __ vector_expand_sve($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vexpand_sve2_SD(vReg dst, vReg src, pRegGov pg) %{
+  predicate(UseSVE == 2 && type2aelembytes(Matcher::vector_element_basic_type(n)) >= 4);
   match(Set dst (ExpandV src pg));
   effect(TEMP_DEF dst);
-  format %{ "vexpand $dst, $pg, $src" %}
+  format %{ "vexpand_sve2_SD $dst, $src, $pg" %}
   ins_encode %{
     // Example input:   src   = 1 2 3 4 5 6 7 8
     //                  pg    = 1 0 0 1 1 0 1 1
@@ -5115,7 +5141,6 @@ instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
     // for TBL whose value is used to select the indexed element from src vector.
 
     BasicType bt = Matcher::vector_element_basic_type(this);
-    assert(UseSVE == 2 && !is_subword_type(bt), "unsupported");
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     // dst = 0 0 0 0 0 0 0 0
     __ sve_dup($dst$$FloatRegister, size, 0);

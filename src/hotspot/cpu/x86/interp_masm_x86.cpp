@@ -326,19 +326,26 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
   restore_locals();
 }
 
-void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
-                                                    address entry_point,
-                                                    Register arg_1) {
-  assert(arg_1 == c_rarg1, "");
+void InterpreterMacroAssembler::call_VM_preemptable_helper(Register oop_result,
+                                                           address entry_point,
+                                                           int number_of_arguments,
+                                                           bool check_exceptions) {
+  assert(InterpreterRuntime::is_preemptable_call(entry_point), "VM call not preemptable, should use call_VM()");
   Label resume_pc, not_preempted;
 
 #ifdef ASSERT
   {
-    Label L;
+    Label L1, L2;
     cmpptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
-    jcc(Assembler::equal, L);
-    stop("Should not have alternate return address set");
-    bind(L);
+    jcc(Assembler::equal, L1);
+    stop("call_VM_preemptable_helper: should not have alternate return address set");
+    bind(L1);
+    // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+    incrementl(Address(r15_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    cmpl(Address(r15_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()), 0);
+    jcc(Assembler::greater, L2);
+    stop("call_VM_preemptable_helper: should be > 0");
+    bind(L2);
   }
 #endif /* ASSERT */
 
@@ -346,13 +353,24 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   push_cont_fastpath();
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.
-  // Note: call_VM_helper requires last_Java_pc for anchor to be at the top of the stack.
   lea(rscratch1, resume_pc);
   push(rscratch1);
-  MacroAssembler::call_VM_helper(oop_result, entry_point, 1, false /*check_exceptions*/);
+  lea(rax, Address(rsp, wordSize));
+  call_VM_base(noreg, rax, entry_point, number_of_arguments, false);
   pop(rscratch1);
 
   pop_cont_fastpath();
+
+#ifdef ASSERT
+  {
+    Label L;
+    decrementl(Address(r15_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    cmpl(Address(r15_thread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()), 0);
+    jcc(Assembler::greaterEqual, L);
+    stop("call_VM_preemptable_helper: should be >= 0");
+    bind(L);
+  }
+#endif /* ASSERT */
 
   // Check if preempted.
   movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
@@ -366,6 +384,54 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   restore_after_resume(false /* is_native */);
 
   bind(not_preempted);
+  if (check_exceptions) {
+    // check for pending exceptions
+    cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
+    Label ok;
+    jcc(Assembler::equal, ok);
+    // Exception stub expects return pc to be at top of stack. We only need
+    // it to check Interpreter::contains(return_address) so anything will do.
+    lea(rscratch1, resume_pc);
+    push(rscratch1);
+    jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+    bind(ok);
+  }
+
+  // get oop result if there is one and reset the value in the thread
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result);
+  }
+}
+
+static void pass_arg1(MacroAssembler* masm, Register arg) {
+  if (c_rarg1 != arg ) {
+    masm->mov(c_rarg1, arg);
+  }
+}
+
+static void pass_arg2(MacroAssembler* masm, Register arg) {
+  if (c_rarg2 != arg ) {
+    masm->mov(c_rarg2, arg);
+  }
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         bool check_exceptions) {
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 1, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         Register arg_2,
+                                         bool check_exceptions) {
+  LP64_ONLY(assert_different_registers(arg_1, c_rarg2));
+  pass_arg2(this, arg_2);
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 2, check_exceptions);
 }
 
 void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
@@ -518,8 +584,8 @@ void InterpreterMacroAssembler::load_resolved_klass_at_index(Register klass,
 void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Label& ok_is_subtype) {
   assert(Rsub_klass != rax, "rax holds superklass");
-  LP64_ONLY(assert(Rsub_klass != r14, "r14 holds locals");)
-  LP64_ONLY(assert(Rsub_klass != r13, "r13 holds bcp");)
+  assert(Rsub_klass != r14, "r14 holds locals");
+  assert(Rsub_klass != r13, "r13 holds bcp");
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
   assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
@@ -799,6 +865,14 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // Note: Registers rdx xmm0 may be in use for the
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
+
+#ifdef ASSERT
+  Label not_preempted;
+  cmpptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+  jcc(Assembler::equal, not_preempted);
+  stop("remove_activation: should not have alternate return address set");
+  bind(not_preempted);
+#endif /* ASSERT */
 
   const Register rthread = r15_thread;
   const Register robj    = c_rarg1;

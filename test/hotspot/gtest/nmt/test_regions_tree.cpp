@@ -41,46 +41,69 @@ TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
   VMATree::RegionData rd2 = rt.make_region_data(ncs, mtGC);
-  VMATree::SummaryDiff diff;
-  diff = rt.reserve_mapping(0, 100, rd);
-  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  diff = rt.commit_region(0, 50, ncs);
-  diff = rt.reserve_mapping(0, 100, rd);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  diff = rt.reserve_mapping(0, 100, rd2);
-  EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
-  diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtGC)].commit);
-  diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  {
+    VMATree::SummaryDiff diff;
+    rt.reserve_mapping(0, 100, rd, diff);
+    EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  }
+  {
+    VMATree::SummaryDiff diff, not_used;
+    rt.commit_region(0, 50, ncs, not_used);
+    rt.reserve_mapping(0, 100, rd, diff);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  }
+  {
+    VMATree::SummaryDiff diff;
+    rt.reserve_mapping(0, 100, rd2, diff);
+    EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+  }
+
+  {
+    VMATree::SummaryDiff diff1, diff2;
+    rt.commit_region(0, 50, ncs, diff1);
+    EXPECT_EQ(0, diff1.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+    EXPECT_EQ(50, diff1.tag[NMTUtil::tag_to_index(mtGC)].commit);
+    rt.commit_region(0, 50, ncs, diff2);
+    EXPECT_EQ(0, diff2.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  }
 }
 
 TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  rt.reserve_mapping(0, 100, rd);
-  VMATree::SummaryDiff diff = rt.commit_region(0, 50, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  diff = rt.commit_region((address)60, 10, ncs);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  diff = rt.uncommit_region(0, 50);
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(0, 100, rd, not_used);
+  {
+    VMATree::SummaryDiff diff;
+    rt.commit_region(0, 50, ncs, diff);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  }
+  {
+    VMATree::SummaryDiff diff;
+    rt.commit_region((address)60, 10, ncs, diff);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  }
+  {
+    VMATree::SummaryDiff diff;
+    rt.uncommit_region(0, 50, diff);
+    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  }
 }
 
 TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  rt.reserve_mapping(1000, 50, rd);
-  rt.reserve_mapping(1200, 50, rd);
-  rt.reserve_mapping(1300, 50, rd);
-  rt.reserve_mapping(1400, 50, rd);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
   ReservedMemoryRegion rmr;
   rmr = rt.find_reserved_region((address)1205);
   EXPECT_EQ(rmr.base(), (address)1200);
@@ -95,10 +118,11 @@ TEST_VM_F(NMTRegionsTreeTest, FindReservedRegion) {
 TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  rt.reserve_mapping(1000, 50, rd);
-  rt.reserve_mapping(1200, 50, rd);
-  rt.reserve_mapping(1300, 50, rd);
-  rt.reserve_mapping(1400, 50, rd);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
 
   rt.visit_reserved_regions([&](const ReservedMemoryRegion& rgn) {
     EXPECT_EQ(((size_t)rgn.base()) % 100, 0UL);
@@ -110,15 +134,16 @@ TEST_VM_F(NMTRegionsTreeTest, VisitReservedRegions) {
 TEST_VM_F(NMTRegionsTreeTest, VisitCommittedRegions) {
   NativeCallStack ncs;
   VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
-  rt.reserve_mapping(1000, 50, rd);
-  rt.reserve_mapping(1200, 50, rd);
-  rt.reserve_mapping(1300, 50, rd);
-  rt.reserve_mapping(1400, 50, rd);
+  VMATree::SummaryDiff not_used;
+  rt.reserve_mapping(1000, 50, rd, not_used);
+  rt.reserve_mapping(1200, 50, rd, not_used);
+  rt.reserve_mapping(1300, 50, rd, not_used);
+  rt.reserve_mapping(1400, 50, rd, not_used);
 
-  rt.commit_region((address)1010, 5UL, ncs);
-  rt.commit_region((address)1020, 5UL, ncs);
-  rt.commit_region((address)1030, 5UL, ncs);
-  rt.commit_region((address)1040, 5UL, ncs);
+  rt.commit_region((address)1010, 5UL, ncs, not_used);
+  rt.commit_region((address)1020, 5UL, ncs, not_used);
+  rt.commit_region((address)1030, 5UL, ncs, not_used);
+  rt.commit_region((address)1040, 5UL, ncs, not_used);
   ReservedMemoryRegion rmr((address)1000, 50);
   size_t count = 0;
   rt.visit_committed_regions(rmr, [&](CommittedMemoryRegion& crgn) {
