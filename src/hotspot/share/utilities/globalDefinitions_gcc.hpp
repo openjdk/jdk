@@ -69,6 +69,19 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
+#ifdef __has_builtin
+#if !__has_builtin(__builtin_stack_address)
+#ifdef __clang__
+[[clang::noinline]]
+#elif defined(__GNUC__)
+[[gnu::noinline]]
+#endif
+static void* __builtin_stack_address() {
+  return S390_ONLY(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(__builtin_dwarf_cfa()) - 160)) NOT_S390(__builtin_dwarf_cfa());
+}
+#endif
+#endif
+
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
