@@ -99,6 +99,8 @@ public:
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
                                     address* stub);
+
+  static address current_stack_pointer();
 };
 
 #endif // OS_POSIX_OS_POSIX_HPP
