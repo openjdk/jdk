@@ -146,8 +146,8 @@ public class Util {
     public static Component findSubComponent(Component parent, String className) {
         return findComponentImpl((Container) parent,
                                  c -> c.getClass()
-                                                  .getName()
-                                                  .contains(className));
+                                       .getName()
+                                       .contains(className));
     }
 
     /**
@@ -167,7 +167,7 @@ public class Util {
     }
 
     private static Component findComponentImpl(final Container container,
-                                          final Predicate<Component> predicate) {
+                                               final Predicate<Component> predicate) {
         for (Component child : container.getComponents()) {
             if (predicate.test(child)) {
                 return child;
