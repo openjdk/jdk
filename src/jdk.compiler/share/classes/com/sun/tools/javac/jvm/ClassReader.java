@@ -2310,11 +2310,15 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
-                Completer previousCompleter = sym.completer;
-                sym.completer = sym -> {
+                if (sym instanceof ClassSymbol) {
                     addTypeAnnotationsToSymbol(sym, newList);
-                    previousCompleter.complete(sym);
-                };
+                } else {
+                    Completer previousCompleter = sym.completer;
+                    sym.completer = sym -> {
+                        previousCompleter.complete(sym);
+                        addTypeAnnotationsToSymbol(sym, newList);
+                    };
+                }
             } finally {
                 currentClassFile = previousClassFile;
             }
