@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARKSTACKENTRY_HPP
 
 #include "gc/z/zBitField.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "memory/allocation.hpp"
 
 //
@@ -73,14 +74,14 @@
 
 class ZMarkStackEntry  {
 private:
-  typedef ZBitField<uint64_t, bool,      0,  1>  field_finalizable;
-  typedef ZBitField<uint64_t, bool,      1,  1>  field_partial_array;
-  typedef ZBitField<uint64_t, bool,      2,  1>  field_follow;
-  typedef ZBitField<uint64_t, bool,      3,  1>  field_inc_live;
-  typedef ZBitField<uint64_t, bool,      4,  1>  field_mark;
-  typedef ZBitField<uint64_t, uintptr_t, 5,  59> field_object_address;
-  typedef ZBitField<uint64_t, size_t,    2,  30> field_partial_array_length;
-  typedef ZBitField<uint64_t, size_t,    32, 32> field_partial_array_offset;
+  typedef ZBitField<uint64_t, bool,      0,  1>                                field_finalizable;
+  typedef ZBitField<uint64_t, bool,      1,  1>                                field_partial_array;
+  typedef ZBitField<uint64_t, bool,      2,  1>                                field_follow;
+  typedef ZBitField<uint64_t, bool,      3,  1>                                field_inc_live;
+  typedef ZBitField<uint64_t, bool,      4,  1>                                field_mark;
+  typedef ZBitField<uint64_t, uintptr_t, 5,  59>                               field_object_address;
+  typedef ZBitField<uint64_t, size_t,    2,  30>                               field_partial_array_length;
+  typedef ZBitField<uint64_t, size_t,    32, ZMarkPartialArrayEntryOffsetBits> field_partial_array_offset;
 
   uint64_t _entry;
 
