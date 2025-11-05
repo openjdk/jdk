@@ -34,7 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 abstract class Function {
-    private static final long NANOS_PER_SECOND = 1000_000_000L;
+    private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
     interface FunctionFactory {
         Function newFunction();
@@ -380,7 +380,7 @@ abstract class Function {
                     long s = Math.addExact(seconds, secondsToAdd);
                     seconds = Math.addExact(s, nanosToAdd / NANOS_PER_SECOND);
                     nanos = nanos + nanosToAdd % NANOS_PER_SECOND;
-                    hasValue = true;;
+                    hasValue = true;
                 } catch (ArithmeticException ae) {
                     hasOverflowed = true;
                     hasValue = false;
