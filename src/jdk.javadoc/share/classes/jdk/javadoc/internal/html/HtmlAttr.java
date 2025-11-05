@@ -152,6 +152,7 @@ public enum HtmlAttr {
     TITLE(true),
     TRANSLATE(true),
     TYPE,
+    USEMAP,
     VALIGN,
     VALUE,
     VERSION,
