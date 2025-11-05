@@ -709,11 +709,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
-      if (FrameMap::method_handle_invoke_SP_save_opr() != LIR_OprFact::illegalOpr &&
-          opJavaCall->is_method_handle_invoke()) {
-        opJavaCall->_method_handle_invoke_SP_save_opr = FrameMap::method_handle_invoke_SP_save_opr();
-        do_temp(opJavaCall->_method_handle_invoke_SP_save_opr);
-      }
       do_call();
       if (opJavaCall->_result->is_valid())       do_output(opJavaCall->_result);
 
@@ -799,15 +794,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-
-// LIR_OpDelay
-    case lir_delay_slot: {
-      assert(op->as_OpDelay() != nullptr, "must be");
-      LIR_OpDelay* opDelay = (LIR_OpDelay*)op;
-
-      visit(opDelay->delay_op());
-      break;
-    }
 
 // LIR_OpTypeCheck
     case lir_instanceof:
@@ -1072,10 +1058,6 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
   masm->emit_assert(this);
 }
 #endif
-
-void LIR_OpDelay::emit_code(LIR_Assembler* masm) {
-  masm->emit_delay(this);
-}
 
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
@@ -1761,8 +1743,6 @@ const char * LIR_Op::name() const {
      // LIR_OpLock
      case lir_lock:                  s = "lock";          break;
      case lir_unlock:                s = "unlock";        break;
-     // LIR_OpDelay
-     case lir_delay_slot:            s = "delay";         break;
      // LIR_OpTypeCheck
      case lir_instanceof:            s = "instanceof";    break;
      case lir_checkcast:             s = "checkcast";     break;
@@ -2042,11 +2022,6 @@ void LIR_OpAssert::print_instr(outputStream* out) const {
   out->print("%s", msg());          out->print("\"");
 }
 #endif
-
-
-void LIR_OpDelay::print_instr(outputStream* out) const {
-  _op->print_on(out);
-}
 
 
 // LIR_OpProfileCall

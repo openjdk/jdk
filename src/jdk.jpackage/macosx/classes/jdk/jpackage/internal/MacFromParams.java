@@ -32,6 +32,8 @@ import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
@@ -39,13 +41,12 @@ import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FI
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
-import static jdk.jpackage.internal.model.MacPackage.RUNTIME_PACKAGE_LAYOUT;
+import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,7 @@ import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
 import jdk.jpackage.internal.model.MacLauncher;
+import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
@@ -75,27 +77,31 @@ final class MacFromParams {
     private static MacApplication createMacApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params).map(predefinedRuntimeImage -> {
-            if (Files.isDirectory(RUNTIME_PACKAGE_LAYOUT.resolveAt(predefinedRuntimeImage).runtimeDirectory())) {
-                return RUNTIME_PACKAGE_LAYOUT;
-            } else {
-                return RuntimeLayout.DEFAULT;
+        final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params)
+                .map(MacPackage::guessRuntimeLayout);
+
+        if (predefinedRuntimeLayout.isPresent()) {
+            validateRuntimeHasJliLib(predefinedRuntimeLayout.orElseThrow());
+            if (APP_STORE.findIn(params).orElse(false)) {
+                validateRuntimeHasNoBinDir(predefinedRuntimeLayout.orElseThrow());
             }
-        });
+        }
 
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
         final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, predefinedRuntimeLayout);
+        }), (MacLauncher _, Launcher launcher) -> {
+            return MacLauncher.create(launcher);
+        }, APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
 
         if (hasPredefinedAppImage(params)) {
             // Set the main launcher start up info.
             // AppImageFile assumes the main launcher start up info is available when
             // it is constructed from Application instance.
             // This happens when jpackage signs predefined app image.
-            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params).getMainClass());
+            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(superAppBuilder.mainLauncherClassName().orElseThrow());
             final var launchers = superAppBuilder.launchers().orElseThrow();
             final var mainLauncher = ApplicationBuilder.overrideLauncherStartupInfo(launchers.mainLauncher(), mainLauncherStartupInfo);
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
@@ -106,7 +112,7 @@ final class MacFromParams {
         final var appBuilder = new MacApplicationBuilder(app);
 
         if (hasPredefinedAppImage(params)) {
-            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.findIn(params).orElseThrow().resolve("Contents/Info.plist"));
+            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.findIn(params).map(MacBundle::new).orElseThrow().infoPlistFile());
         }
 
         ICON.copyInto(params, appBuilder::icon);
@@ -118,7 +124,7 @@ final class MacFromParams {
         final boolean appStore;
 
         if (hasPredefinedAppImage(params) && PACKAGE_TYPE.findIn(params).filter(Predicate.isEqual("app-image")).isEmpty()) {
-            final var appImageFileExtras = new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params));
+            final var appImageFileExtras = new MacAppImageFileExtras(superAppBuilder.externalApplication().orElseThrow());
             sign = appImageFileExtras.signed();
             appStore = appImageFileExtras.appStore();
         } else {

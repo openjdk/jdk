@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 package jdk.internal.net.http.frame;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
@@ -344,6 +346,8 @@ public class FramesDecoder {
                 return parseWindowUpdateFrame(frameLength, frameStreamid, frameFlags);
             case ContinuationFrame.TYPE:
                 return parseContinuationFrame(frameLength, frameStreamid, frameFlags);
+            case AltSvcFrame.TYPE:
+                return parseAltSvcFrame(frameLength, frameStreamid, frameFlags);
             default:
                 // RFC 7540 4.1
                 // Implementations MUST ignore and discard any frame that has a type that is unknown.
@@ -555,6 +559,34 @@ public class FramesDecoder {
                     "zero streamId for ContinuationFrame");
         }
         return new ContinuationFrame(streamid, flags, getBuffers(false, frameLength));
+    }
+
+    private Http2Frame parseAltSvcFrame(int frameLength, int frameStreamid, int frameFlags) {
+        var len = getShort();
+        byte[] origin;
+        Optional<String> originUri = Optional.empty();
+        if (len > 0) {
+            origin = getBytes(len);
+            if (!isUSAscii(origin)) {
+                return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
+                        "illegal character in AltSvcFrame");
+            }
+            originUri = Optional.of(new String(origin, StandardCharsets.US_ASCII));
+        }
+        byte[] altbytes = getBytes(frameLength - 2 - len);
+        if (!isUSAscii(altbytes)) {
+            return new MalformedFrame(ErrorFrame.PROTOCOL_ERROR, frameStreamid,
+                    "illegal character in AltSvcFrame");
+        }
+        String altSvc = new String(altbytes, StandardCharsets.US_ASCII);
+        return new AltSvcFrame(frameStreamid, 0, originUri, altSvc);
+    }
+
+    static boolean isUSAscii(byte[] bytes) {
+        for (int i=0; i < bytes.length; i++) {
+            if (bytes[i] < 0) return false;
+        }
+        return true;
     }
 
 }

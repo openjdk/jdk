@@ -206,11 +206,6 @@ source %{
           return false;
         }
         break;
-      case Op_ExpandV:
-        if (UseSVE < 2 || is_subword_type(bt)) {
-          return false;
-        }
-        break;
       case Op_VectorMaskToLong:
         if (UseSVE > 0 && vlen > 64) {
           return false;
@@ -244,6 +239,28 @@ source %{
       case Op_FmaVHF:
         // UseFMA flag needs to be checked along with FEAT_FP16
         if (!UseFMA || (UseSVE == 0 && !is_feat_fp16_supported())) {
+          return false;
+        }
+        break;
+      case Op_SelectFromTwoVector:
+        // The "tbl" instruction for two vector table is supported only in Neon and SVE2. Return
+        // false if vector length > 16B but supported SVE version < 2.
+        // For vector length of 16B, generate SVE2 "tbl" instruction if SVE2 is supported, else
+        // generate Neon "tbl" instruction to select from two vectors.
+        // This operation is disabled for doubles and longs on machines with SVE < 2 and instead
+        // the default VectorRearrange + VectorBlend is generated because the performance of the default
+        // implementation was better than or equal to the implementation for SelectFromTwoVector.
+        if (UseSVE < 2 && (type2aelembytes(bt) == 8 || length_in_bytes > 16)) {
+          return false;
+        }
+
+        // Because the SVE2 "tbl" instruction is unpredicated and partial operations cannot be generated
+        // using masks, we disable this operation on machines where length_in_bytes < MaxVectorSize
+        // on that machine with the only exception of 8B vector length. This is because at the time of
+        // writing this, there is no SVE2 machine available with length_in_bytes > 8 and
+        // length_in_bytes < MaxVectorSize to test this operation on (for example - there isn't an
+        // SVE2 machine available with MaxVectorSize = 32 to test a case with length_in_bytes = 16).
+        if (UseSVE == 2 && length_in_bytes > 8 && length_in_bytes < MaxVectorSize) {
           return false;
         }
         break;
@@ -3085,7 +3102,7 @@ instruct replicateB_imm8_gt128b(vReg dst, immI8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateI_imm8_gt128b(vReg dst, immI8_shift8 con) %{
+instruct replicateI_imm8_gt128b(vReg dst, immIDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16 &&
             (Matcher::vector_element_basic_type(n) == T_SHORT ||
              Matcher::vector_element_basic_type(n) == T_INT));
@@ -3108,7 +3125,7 @@ instruct replicateL_imm_128b(vReg dst, immL con) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
+instruct replicateL_imm8_gt128b(vReg dst, immLDupV con) %{
   predicate(Matcher::vector_length_in_bytes(n) > 16);
   match(Set dst (Replicate con));
   format %{ "replicateL_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
@@ -3119,19 +3136,27 @@ instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
   ins_pipe(pipe_slow);
 %}
 
-// Replicate a 16-bit half precision float value
-instruct replicateHF_imm(vReg dst, immH con) %{
+// Replicate an immediate 16-bit half precision float value
+instruct replicateHF_imm_le128b(vReg dst, immH con) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 16);
   match(Set dst (Replicate con));
-  format %{ "replicateHF_imm $dst, $con\t# replicate immediate half-precision float" %}
+  format %{ "replicateHF_imm_le128b $dst, $con\t# vector <= 128 bits" %}
   ins_encode %{
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     int imm = (int)($con$$constant) & 0xffff;
-    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
-      __ mov($dst$$FloatRegister, get_arrangement(this), imm);
-    } else { // length_in_bytes must be > 16 and SVE should be enabled
-      assert(UseSVE > 0, "must be sve");
-      __ sve_dup($dst$$FloatRegister, __ H, imm);
-    }
+    __ mov($dst$$FloatRegister, get_arrangement(this), imm);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Replicate a 16-bit half precision float which is within the limits
+// for the operand - immHDupV
+instruct replicateHF_imm8_gt128b(vReg dst, immHDupV con) %{
+  predicate(Matcher::vector_length_in_bytes(n) > 16);
+  match(Set dst (Replicate con));
+  format %{ "replicateHF_imm8_gt128b $dst, $con\t# vector > 128 bits" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    __ sve_dup($dst$$FloatRegister, __ H, (int)($con$$constant));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5044,37 +5069,68 @@ instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
 %}
 
 instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
-                    vReg tmp3, vReg tmp4, pReg ptmp, pRegGov pgtmp) %{
+                    vReg tmp3, pReg ptmp, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ptmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp, TEMP pgtmp);
   match(Set dst (CompressV src pg));
-  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, tmp4, $ptmp, $pgtmp" %}
+  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, $ptmp, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_compress_byte($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                         $tmp1$$FloatRegister,$tmp2$$FloatRegister,
-                         $tmp3$$FloatRegister,$tmp4$$FloatRegister,
-                         $ptmp$$PRegister, $pgtmp$$PRegister);
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister,
+                         $ptmp$$PRegister, $pgtmp$$PRegister, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcompressS(vReg dst, vReg src, pReg pg,
-                    vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
+instruct vcompressS(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ sve_dup($tmp1$$FloatRegister, __ H, 0);
     __ sve_compress_short($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                          $tmp1$$FloatRegister,$tmp2$$FloatRegister, $pgtmp$$PRegister);
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $pgtmp$$PRegister,
+                          length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
+instruct vexpand_neon(vReg dst, vReg src, vReg mask, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 0);
+  match(Set dst (ExpandV src mask));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "vexpand_neon $dst, $src, $mask\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int length_in_bytes = (int) Matcher::vector_length_in_bytes(this);
+    __ vector_expand_neon($dst$$FloatRegister, $src$$FloatRegister, $mask$$FloatRegister,
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vexpand_sve(vReg dst, vReg src, pRegGov pg, vReg tmp1, vReg tmp2) %{
+  predicate(UseSVE == 1 || (UseSVE == 2 && type2aelembytes(Matcher::vector_element_basic_type(n)) < 4));
+  match(Set dst (ExpandV src pg));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "vexpand_sve $dst, $src, $pg\t# KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int length_in_bytes = (int) Matcher::vector_length_in_bytes(this);
+    __ vector_expand_sve($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vexpand_sve2_SD(vReg dst, vReg src, pRegGov pg) %{
+  predicate(UseSVE == 2 && type2aelembytes(Matcher::vector_element_basic_type(n)) >= 4);
   match(Set dst (ExpandV src pg));
   effect(TEMP_DEF dst);
-  format %{ "vexpand $dst, $pg, $src" %}
+  format %{ "vexpand_sve2_SD $dst, $src, $pg" %}
   ins_encode %{
     // Example input:   src   = 1 2 3 4 5 6 7 8
     //                  pg    = 1 0 0 1 1 0 1 1
@@ -5085,7 +5141,6 @@ instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
     // for TBL whose value is used to select the indexed element from src vector.
 
     BasicType bt = Matcher::vector_element_basic_type(this);
-    assert(UseSVE == 2 && !is_subword_type(bt), "unsupported");
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     // dst = 0 0 0 0 0 0 0 0
     __ sve_dup($dst$$FloatRegister, size, 0);
@@ -5154,3 +5209,34 @@ BITPERM(vcompressBits, CompressBitsV, sve_bext)
 
 // ----------------------------------- ExpandBitsV ---------------------------------
 BITPERM(vexpandBits, ExpandBitsV, sve_bdep)
+
+// ------------------------------------- SelectFromTwoVector ------------------------------------
+// The Neon and SVE2 tbl instruction for two vector lookup requires both the source vectors to be
+// consecutive. The match rules for SelectFromTwoVector reserve two consecutive vector registers
+// for src1 and src2.
+// Four combinations of vector registers for vselect_from_two_vectors are chosen at random
+// (two from volatile and two from non-volatile set) which gives more freedom to the register
+// allocator to choose the best pair of source registers at that point.
+dnl
+dnl SELECT_FROM_TWO_VECTORS($1,        $2        )
+dnl SELECT_FROM_TWO_VECTORS(first_reg, second_reg)
+define(`SELECT_FROM_TWO_VECTORS', `
+instruct vselect_from_two_vectors_$1_$2(vReg dst, vReg_V$1 src1, vReg_V$2 src2,
+                                        vReg index, vReg tmp) %{
+  effect(TEMP_DEF dst, TEMP tmp);
+  match(Set dst (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "vselect_from_two_vectors_$1_$2 $dst, $src1, $src2, $index\t# KILL $tmp" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ select_from_two_vectors($dst$$FloatRegister, $src1$$FloatRegister,
+                               $src2$$FloatRegister, $index$$FloatRegister,
+                               $tmp$$FloatRegister, bt, length_in_bytes);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+SELECT_FROM_TWO_VECTORS(10, 11)
+SELECT_FROM_TWO_VECTORS(12, 13)
+SELECT_FROM_TWO_VECTORS(17, 18)
+SELECT_FROM_TWO_VECTORS(23, 24)

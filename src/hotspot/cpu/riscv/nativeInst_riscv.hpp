@@ -93,7 +93,6 @@ class NativeInstruction {
   static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
 
  public:
-
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
@@ -111,6 +110,7 @@ NativeCall* nativeCall_before(address return_address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
+// NativeCall is reloc call on RISC-V. See MacroAssembler::reloc_call.
 class NativeCall: private NativeInstruction {
  // private: when common code is using byte_size()
  private:
@@ -118,21 +118,21 @@ class NativeCall: private NativeInstruction {
     // Use byte_size() as it can be changed in runtime
     // Since instruction_size exists on NativeInstruction we need
     // to overload and hide it.
-    instruction_size = 3 * Assembler::instruction_size // auipc + ld + jalr
+    instruction_size = 3 * NativeInstruction::instruction_size // auipc + ld + jalr
   };
- public:
 
+ public:
   static int byte_size() {
-    return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
+    return NativeCall::instruction_size; // auipc + ld + jalr
   }
 
   // Creation
   friend NativeCall* nativeCall_at(address addr);
   friend NativeCall* nativeCall_before(address return_address);
 
-  address instruction_address() const;
-  address next_instruction_address() const;
-  address return_address() const;
+  address instruction_address() const      { return addr_at(0); }
+  address next_instruction_address() const { return addr_at(NativeCall::instruction_size); }
+  address return_address() const           { return addr_at(NativeCall::instruction_size); }
   address destination() const;
   address reloc_destination();
 
@@ -140,12 +140,26 @@ class NativeCall: private NativeInstruction {
   void verify();
   void print();
 
-  void set_destination(address dest);
+  void set_destination(address dest) { Unimplemented(); }
+  // patch stub to target address of the reloc call
   bool set_destination_mt_safe(address dest);
+  // patch reloc call to stub address
   bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
+
+ private:
+  // return stub address, without checking stub address in locs
+  address stub_address();
+  // set target address at stub
+  static void set_stub_address_destination_at(address dest, address value);
+  // return target address at stub
+  static address stub_address_destination_at(address src);
+  // We either have a jalr or jal depending on distance to old destination.
+  // This method emits a new jal if new destination is within jal reach.
+  // Otherwise restores the jalr which can reach any destination.
+  void optimize_call(address dest, bool mt_safe = true);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
@@ -280,12 +294,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
- public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const {
   uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
@@ -339,14 +347,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(instruction_size); }
 
-  void verify();
-
-  static bool is_deopt_at(address instr) {
-    assert(instr != nullptr, "");
-    uint32_t value = Assembler::ld_instr(instr);
-    // 0xc0201073 encodes CSRRW x0, instret, x0
-    return value == 0xc0201073;
-  }
+  static bool is_deopt_at(address instr);
 
   // MT-safe patching
   static void insert(address code_pos);

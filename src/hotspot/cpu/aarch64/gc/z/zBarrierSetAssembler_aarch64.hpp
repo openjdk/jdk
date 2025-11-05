@@ -275,7 +275,6 @@ public:
   Label* entry();
 };
 
-
 class ZStoreBarrierStubC2Aarch64 : public ZStoreBarrierStubC2 {
 private:
   bool _deferred_emit;

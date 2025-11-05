@@ -1668,6 +1668,30 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
+Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
+  assert(store != nullptr && store->is_Store(), "starting point should be a store node");
+  // Follow the memory uses until we get out of the loop.
+  // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
+  // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
+  // except for the phi node associated with the loop head), we have the guarantee of a
+  // linear memory subgraph within the outer loop body.
+  Node* last = store;
+  Node* unique_next = store;
+  do {
+    last = unique_next;
+    for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
+      Node* use = last->fast_out(l);
+      if (use->is_Store() && use->in(MemNode::Memory) == last) {
+        if (is_member(outer_loop, get_ctrl(use))) {
+          assert(unique_next == last, "memory node should only have one usage in the loop body");
+          unique_next = use;
+        }
+      }
+    }
+  } while (last != unique_next);
+  return last;
+}
+
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
 Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
@@ -1756,6 +1780,26 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                                             visited, clones);
       _igvn.hash_delete(cur_phi);
       cur_phi->set_req(LoopNode::EntryControl, fallnew);
+    }
+  }
+  // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
+  // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
+  // right after the execution of the inner CountedLoop.
+  // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
+  // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+  const Node* if_false = main_end->proj_out(false);
+  for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+    Node* store = if_false->out(j);
+    if (store->is_Store()) {
+      // We only make changes if the memory input of the store is outside the outer loop body,
+      // as this is when we would normally expect a Phi as input. If the memory input
+      // is in the loop body as well, then we can safely assume it is still correct as the entire
+      // body was cloned as a unit
+      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+        Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
+        Node* store_new = old_new[store->_idx];
+        store_new->set_req(MemNode::Memory, mem_out);
+      }
     }
   }
 
@@ -1926,8 +1970,19 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     if (opaq == nullptr) {
       return;
     }
-    // Zero-trip test uses an 'opaque' node which is not shared.
-    assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
+    // Zero-trip test uses an 'opaque' node which is not shared, otherwise bail out.
+    if (opaq->outcnt() != 1 || opaq->in(1) != limit) {
+#ifdef ASSERT
+      // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
+      // limit and the input of opaq by equivalent but distinct phis.
+      // Next IGVN should clean it up. Let's try to detect we are in such a case.
+      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
+      assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
+      assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
+#endif
+      return;
+    }
   }
 
   C->set_major_progress();
@@ -3987,7 +4042,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
   call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out_or_null(TypeFunc::ReturnAdr));
-  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out_or_null(TypeFunc::FramePtr));
+  Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  _igvn.register_new_node_with_optimizer(frame);
+  call->init_req(TypeFunc::FramePtr,  frame);
   _igvn.register_new_node_with_optimizer(call);
   result_ctrl = new ProjNode(call,TypeFunc::Control);
   _igvn.register_new_node_with_optimizer(result_ctrl);
@@ -4027,7 +4084,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* outer_sfpt = head->outer_safepoint();
     Node* in = outer_sfpt->in(0);
     Node* outer_out = head->outer_loop_exit();
-    lazy_replace(outer_out, in);
+    replace_node_and_forward_ctrl(outer_out, in);
     _igvn.replace_input_of(outer_sfpt, 0, C->top());
   }
 
@@ -4036,7 +4093,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  lazy_replace(exit, result_ctrl);
+  replace_node_and_forward_ctrl(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());

@@ -35,7 +35,6 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
-#include "interpreter/bytecode.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
@@ -62,13 +61,12 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/escapeBarrier.hpp"
-#include "runtime/fieldDescriptor.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -91,8 +89,8 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
@@ -137,7 +135,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
 
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
-  Atomic::store(&nm->_deoptimization_status, status);
+  AtomicAccess::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
@@ -561,7 +559,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #endif // !PRODUCT
 
     GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
-    guarantee(expressions != nullptr && expressions->length() > 0, "must have exception to throw");
+    guarantee(expressions != nullptr && expressions->length() == 1, "should have only exception on stack");
+    guarantee(exec_mode != Unpack_exception, "rethrow_exception set with Unpack_exception");
     ScopeValue* topOfStack = expressions->top();
     exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
     guarantee(exceptionObject() != nullptr, "exception oop can not be null");
@@ -590,12 +589,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Verify we have the right vframeArray
   assert(cb->frame_size() >= 0, "Unexpected frame size");
   intptr_t* unpack_sp = stub_frame.sp() + cb->frame_size();
-
-  // If the deopt call site is a MethodHandle invoke call site we have
-  // to adjust the unpack_sp.
-  nmethod* deoptee_nm = deoptee.cb()->as_nmethod_or_null();
-  if (deoptee_nm != nullptr && deoptee_nm->is_method_handle_return(deoptee.pc()))
-    unpack_sp = deoptee.unextended_sp();
+  assert(unpack_sp == deoptee.unextended_sp(), "must be");
 
 #ifdef ASSERT
   assert(cb->is_deoptimization_stub() ||
@@ -737,6 +731,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (exceptionObject() != nullptr) {
     current->set_exception_oop(exceptionObject());
     exec_mode = Unpack_exception;
+    assert(array->element(0)->rethrow_exception(), "must be");
   }
 #endif
 
@@ -844,6 +839,7 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
 }
 
 #ifndef PRODUCT
+#ifdef ASSERT
 // Return true if the execution after the provided bytecode continues at the
 // next bytecode in the code. This is not the case for gotos, returns, and
 // throws.
@@ -867,6 +863,7 @@ static bool falls_through(Bytecodes::Code bc) {
       return true;
   }
 }
+#endif
 #endif
 
 // Return BasicType of value being returned
@@ -932,116 +929,114 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
                    RegisterMap::ProcessFrames::include,
                    RegisterMap::WalkContinuation::skip);
     rm.set_include_argument_oops(false);
-    bool is_top_frame = true;
     int callee_size_of_parameters = 0;
-    int callee_max_locals = 0;
-    for (int i = 0; i < cur_array->frames(); i++) {
-      vframeArrayElement* el = cur_array->element(i);
+    for (int frame_idx = 0; frame_idx < cur_array->frames(); frame_idx++) {
+      bool is_top_frame = (frame_idx == 0);
+      vframeArrayElement* el = cur_array->element(frame_idx);
       frame* iframe = el->iframe();
       guarantee(iframe->is_interpreted_frame(), "Wrong frame type");
+      methodHandle mh(thread, iframe->interpreter_frame_method());
+      bool reexecute = el->should_reexecute();
+
+      int cur_invoke_parameter_size = 0;
+      int top_frame_expression_stack_adjustment = 0;
+      int max_bci = mh->code_size();
+      BytecodeStream str(mh, iframe->interpreter_frame_bci());
+      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+      Bytecodes::Code cur_code = str.next();
+
+      if (!reexecute && !Bytecodes::is_invoke(cur_code)) {
+        // We can only compute OopMaps for the before state, so we need to roll forward
+        // to the next bytecode.
+        assert(is_top_frame, "must be");
+        assert(falls_through(cur_code), "must be");
+        assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
+        assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+
+        // Need to subtract off the size of the result type of
+        // the bytecode because this is not described in the
+        // debug info but returned to the interpreter in the TOS
+        // caching register
+        BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
+        if (bytecode_result_type != T_ILLEGAL) {
+          top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
+        }
+        assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
+
+        cur_code = str.next();
+        // Reflect the fact that we have rolled forward and now need
+        // top_frame_expression_stack_adjustment
+        reexecute = true;
+      }
+
+      assert(cur_code != Bytecodes::_illegal, "illegal bytecode");
+      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
 
       // Get the oop map for this bci
       InterpreterOopMap mask;
-      int cur_invoke_parameter_size = 0;
-      bool try_next_mask = false;
-      int next_mask_expression_stack_size = -1;
-      int top_frame_expression_stack_adjustment = 0;
-      methodHandle mh(thread, iframe->interpreter_frame_method());
-      OopMapCache::compute_one_oop_map(mh, iframe->interpreter_frame_bci(), &mask);
-      BytecodeStream str(mh, iframe->interpreter_frame_bci());
-      int max_bci = mh->code_size();
-      // Get to the next bytecode if possible
-      assert(str.bci() < max_bci, "bci in interpreter frame out of bounds");
+      OopMapCache::compute_one_oop_map(mh, str.bci(), &mask);
       // Check to see if we can grab the number of outgoing arguments
       // at an uncommon trap for an invoke (where the compiler
       // generates debug info before the invoke has executed)
-      Bytecodes::Code cur_code = str.next();
-      Bytecodes::Code next_code = Bytecodes::_shouldnotreachhere;
       if (Bytecodes::is_invoke(cur_code)) {
-        Bytecode_invoke invoke(mh, iframe->interpreter_frame_bci());
+        Bytecode_invoke invoke(mh, str.bci());
         cur_invoke_parameter_size = invoke.size_of_parameters();
-        if (i != 0 && invoke.has_member_arg()) {
+        if (!is_top_frame && invoke.has_member_arg()) {
           callee_size_of_parameters++;
-        }
-      }
-      if (str.bci() < max_bci) {
-        next_code = str.next();
-        if (next_code >= 0) {
-          // The interpreter oop map generator reports results before
-          // the current bytecode has executed except in the case of
-          // calls. It seems to be hard to tell whether the compiler
-          // has emitted debug information matching the "state before"
-          // a given bytecode or the state after, so we try both
-          if (!Bytecodes::is_invoke(cur_code) && falls_through(cur_code)) {
-            // Get expression stack size for the next bytecode
-            InterpreterOopMap next_mask;
-            OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
-            next_mask_expression_stack_size = next_mask.expression_stack_size();
-            if (Bytecodes::is_invoke(next_code)) {
-              Bytecode_invoke invoke(mh, str.bci());
-              next_mask_expression_stack_size += invoke.size_of_parameters();
-            }
-            // Need to subtract off the size of the result type of
-            // the bytecode because this is not described in the
-            // debug info but returned to the interpreter in the TOS
-            // caching register
-            BasicType bytecode_result_type = Bytecodes::result_type(cur_code);
-            if (bytecode_result_type != T_ILLEGAL) {
-              top_frame_expression_stack_adjustment = type2size[bytecode_result_type];
-            }
-            assert(top_frame_expression_stack_adjustment >= 0, "stack adjustment must be positive");
-            try_next_mask = true;
-          }
         }
       }
 
       // Verify stack depth and oops in frame
-      // This assertion may be dependent on the platform we're running on and may need modification (tested on x86 and sparc)
-      if (!(
-            /* SPARC */
-            (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + callee_size_of_parameters) ||
-            /* x86 */
-            (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + callee_max_locals) ||
-            (try_next_mask &&
-             (iframe->interpreter_frame_expression_stack_size() == (next_mask_expression_stack_size -
-                                                                    top_frame_expression_stack_adjustment))) ||
-            (is_top_frame && (exec_mode == Unpack_exception) && iframe->interpreter_frame_expression_stack_size() == 0) ||
-            (is_top_frame && (exec_mode == Unpack_uncommon_trap || exec_mode == Unpack_reexecute || el->should_reexecute()) &&
-             (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + cur_invoke_parameter_size))
-            )) {
-        {
-          // Print out some information that will help us debug the problem
-          tty->print_cr("Wrong number of expression stack elements during deoptimization");
-          tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
-          tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
-          if (try_next_mask) {
-            tty->print_cr("  Next code %s", Bytecodes::name(next_code));
-          }
-          tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
-                        iframe->interpreter_frame_expression_stack_size());
-          tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
-          tty->print_cr("  try_next_mask = %d", try_next_mask);
-          tty->print_cr("  next_mask_expression_stack_size = %d", next_mask_expression_stack_size);
-          tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
-          tty->print_cr("  callee_max_locals = %d", callee_max_locals);
-          tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
-          tty->print_cr("  exec_mode = %d", exec_mode);
-          tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
-          tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
-          tty->print_cr("  Interpreted frames:");
-          for (int k = 0; k < cur_array->frames(); k++) {
-            vframeArrayElement* el = cur_array->element(k);
-            tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
-          }
-          cur_array->print_on_2(tty);
+      auto match = [&]() {
+        int iframe_expr_ssize = iframe->interpreter_frame_expression_stack_size();
+#if INCLUDE_JVMCI
+        if (is_top_frame && el->rethrow_exception()) {
+          return iframe_expr_ssize == 1;
         }
+#endif
+        // This should only be needed for C1
+        if (is_top_frame && exec_mode == Unpack_exception && iframe_expr_ssize == 0) {
+          return true;
+        }
+        if (reexecute) {
+          int expr_ssize_before = iframe_expr_ssize + top_frame_expression_stack_adjustment;
+          int oopmap_expr_invoke_ssize = mask.expression_stack_size() + cur_invoke_parameter_size;
+          return expr_ssize_before == oopmap_expr_invoke_ssize;
+        } else {
+          int oopmap_expr_callee_ssize = mask.expression_stack_size() + callee_size_of_parameters;
+          return iframe_expr_ssize == oopmap_expr_callee_ssize;
+        }
+      };
+      if (!match()) {
+        // Print out some information that will help us debug the problem
+        tty->print_cr("Wrong number of expression stack elements during deoptimization");
+        tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", frame_idx, cur_array->frames() - 1);
+        tty->print_cr("  Current code %s", Bytecodes::name(cur_code));
+        tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
+                      iframe->interpreter_frame_expression_stack_size());
+        tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
+        tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
+        tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
+        tty->print_cr("  exec_mode = %d", exec_mode);
+        tty->print_cr("  original should_reexecute = %s", el->should_reexecute() ? "true" : "false");
+        tty->print_cr("  reexecute = %s%s", reexecute ? "true" : "false",
+                      (reexecute != el->should_reexecute()) ? " (changed)" : "");
+#if INCLUDE_JVMCI
+        tty->print_cr("  rethrow_exception = %s", el->rethrow_exception() ? "true" : "false");
+#endif
+        tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
+        tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
+        tty->print_cr("  Interpreted frames:");
+        for (int k = 0; k < cur_array->frames(); k++) {
+          vframeArrayElement* el = cur_array->element(k);
+          tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
+        }
+        cur_array->print_on_2(tty);
         guarantee(false, "wrong number of expression stack elements during deopt");
       }
       VerifyOopClosure verify;
       iframe->oops_interpreted_do(&verify, &rm, false);
       callee_size_of_parameters = mh->size_of_parameters();
-      callee_max_locals = mh->max_locals();
-      is_top_frame = false;
     }
   }
 #endif // !PRODUCT
@@ -1119,7 +1114,7 @@ public:
   static BoxCache<PrimitiveType, CacheType, BoxType>* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BoxCache<PrimitiveType, CacheType, BoxType>* s = new BoxCache<PrimitiveType, CacheType, BoxType>(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1182,7 +1177,7 @@ public:
   static BooleanBoxCache* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BooleanBoxCache* s = new BooleanBoxCache(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1382,6 +1377,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1409,6 +1407,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
@@ -1474,7 +1475,7 @@ public:
 
 // Gets the fields of `klass` that are eliminated by escape analysis and need to be reassigned
 static GrowableArray<ReassignedField>* get_reassigned_fields(InstanceKlass* klass, GrowableArray<ReassignedField>* fields, bool is_jvmci) {
-  InstanceKlass* super = klass->superklass();
+  InstanceKlass* super = klass->super();
   if (super != nullptr) {
     get_reassigned_fields(super, fields, is_jvmci);
   }
@@ -1645,27 +1646,18 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
         if (exec_mode == Unpack_none) {
-          if (LockingMode == LM_LEGACY && mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
-            // With exec_mode == Unpack_none obj may be thread local and locked in
-            // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
-            markWord dmw = mark.displaced_mark_helper();
-            mark.locker()->set_displaced_header(markWord::encode((BasicLock*) nullptr));
-            obj->set_mark(dmw);
-          }
           if (mark.has_monitor()) {
             // defer relocking if the deoptee thread is currently waiting for obj
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              if (LockingMode == LM_LEGACY) {
-                mon_info->lock()->set_displaced_header(markWord::unused_mark());
-              } else if (UseObjectMonitorTable) {
+              if (UseObjectMonitorTable) {
                 mon_info->lock()->clear_object_monitor_cache();
               }
 #ifdef ASSERT
               else {
-                assert(LockingMode == LM_MONITOR || !UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_metadata_deopt();
+                assert(!UseObjectMonitorTable, "must be");
+                mon_info->lock()->set_bad_monitor_deopt();
               }
 #endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
@@ -1674,29 +1666,24 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
           }
         }
         BasicLock* lock = mon_info->lock();
-        if (LockingMode == LM_LIGHTWEIGHT) {
-          // We have lost information about the correct state of the lock stack.
-          // Entering may create an invalid lock stack. Inflate the lock if it
-          // was fast_locked to restore the valid lock stack.
-          if (UseObjectMonitorTable) {
-            // UseObjectMonitorTable expects the BasicLock cache to be either a
-            // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
-            // to nullptr.
-            lock->clear_object_monitor_cache();
-          }
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                                deoptee_thread, thread);
-          }
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
-          assert(obj->mark().has_monitor(), "must be");
-          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
-        } else {
-          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
-          assert(mon_info->owner()->is_locked(), "object must be locked now");
+        // We have lost information about the correct state of the lock stack.
+        // Entering may create an invalid lock stack. Inflate the lock if it
+        // was fast_locked to restore the valid lock stack.
+        if (UseObjectMonitorTable) {
+          // UseObjectMonitorTable expects the BasicLock cache to be either a
+          // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
+          // to nullptr.
+          lock->clear_object_monitor_cache();
         }
+        ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
+        if (deoptee_thread->lock_stack().contains(obj())) {
+            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                              deoptee_thread, thread);
+        }
+        assert(mon_info->owner()->is_locked(), "object must be locked now");
+        assert(obj->mark().has_monitor(), "must be");
+        assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+        assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
       }
     }
   }
@@ -1823,10 +1810,11 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
   deoptimize_single_frame(thread, fr, reason);
 }
 
-#if INCLUDE_JVMCI
-address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
+address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm, bool make_not_entrant) {
   // there is no exception handler for this pc => deoptimize
-  nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  if (make_not_entrant) {
+    nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  }
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -1840,6 +1828,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_nmethod_or_null() == nm, "expect top frame compiled method");
+
+  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
+
+  if (!nm->is_compiled_by_jvmci()) {
+    return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
+  }
+
+#if INCLUDE_JVMCI
+  // JVMCI support
   vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
   compiledVFrame* cvf = compiledVFrame::cast(vf);
   ScopeDesc* imm_scope = cvf->scope();
@@ -1855,16 +1852,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
     }
   }
 
-  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, nm->method()), true);
   if (trap_mdo != nullptr) {
     trap_mdo->inc_trap_count(Deoptimization::Reason_not_compiled_exception_handler);
   }
+#endif
 
   return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
 }
-#endif
 
 void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason) {
   assert(thread == Thread::current() ||
@@ -1985,7 +1981,7 @@ class DeoptActionSerializer : public JfrSerializer {
 
 static void register_serializers() {
   static int critical_section = 0;
-  if (1 == critical_section || Atomic::cmpxchg(&critical_section, 0, 1) == 1) {
+  if (1 == critical_section || AtomicAccess::cmpxchg(&critical_section, 0, 1) == 1) {
     return;
   }
   JfrSerializer::register_serializer(TYPE_DEOPTIMIZATIONREASON, true, new DeoptReasonSerializer());
@@ -2767,10 +2763,10 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "not_compiled_exception_handler",
   "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
   "transfer_to_interpreter",
-  "not_compiled_exception_handler",
   "unresolved",
   "jsr_mismatch",
 #endif
@@ -2924,8 +2920,6 @@ void Deoptimization::print_statistics() {
           if (counter != 0) {
             char name[1*K];
             Bytecodes::Code bc = (Bytecodes::Code)(counter & LSB_MASK);
-            if (bc_case == BC_CASE_LIMIT && (int)bc == 0)
-              bc = Bytecodes::_illegal;
             os::snprintf_checked(name, sizeof(name), "%s/%s/%s",
                     trap_reason_name(reason),
                     trap_action_name(action),
