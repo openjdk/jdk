@@ -386,6 +386,7 @@ public sealed class PacketSpaceManager implements PacketSpace
             // Handle is called from within the executor
             var nextDeadline = this.nextDeadline;
             Deadline now = now();
+            congestionController.updatePacer(now);
             do {
                 transmitNow = false;
                 var closed = !isOpenForTransmission();
@@ -404,6 +405,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 boolean needBackoff = isPTO(now);
                 int packetsSent = 0;
                 boolean cwndAvailable;
+                long startTime = System.nanoTime();
                 while ((cwndAvailable = congestionController.canSendPacket()) ||
                         (needBackoff && packetsSent < 2)) { // if PTO, try to send 2 packets
                     if (!isOpenForTransmission()) {
@@ -442,6 +444,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                                 + qkue.getMessage());
                     }
                     if (!sentNew) {
+                        congestionController.appLimited();
                         break;
                     } else {
                         if (needBackoff && packetsSent == 0 && Log.quicRetransmit()) {
@@ -451,7 +454,12 @@ public sealed class PacketSpaceManager implements PacketSpace
                     }
                     packetsSent++;
                 }
-                blockedByCC = !cwndAvailable;
+                if (packetsSent != 0 && Log.quicCC()) {
+                    Log.logQuic("%s OUT: sent: %s packets in %s ns, cwnd limited: %s, pacer limited: %s".formatted(
+                            packetEmitter.logTag(), packetsSent, System.nanoTime() - startTime,
+                            congestionController.isCwndLimited(), congestionController.isPacerLimited()));
+                }
+                blockedByCC = !cwndAvailable && congestionController.isCwndLimited();
                 if (!cwndAvailable && isOpenForTransmission()) {
                     if (debug.on()) debug.log("handle: blocked by CC");
                     // CC might be available already
@@ -1389,6 +1397,15 @@ public sealed class PacketSpaceManager implements PacketSpace
         Deadline ackDeadline = (ack == null || ack.sent() != null)
                 ? Deadline.MAX // if the ack frame has already been sent, getNextAck() returns null
                 : ack.deadline();
+        if (congestionController.isPacerLimited()) {
+            Deadline pacerDeadline = congestionController.pacerDeadline();
+            if (verbose && Log.quicTimer()) {
+                Log.logQuic(String.format("%s: [%s] pacer deadline: %s, ackDeadline: %s, deadline in %s",
+                        packetEmitter.logTag(), packetNumberSpace, pacerDeadline, ackDeadline,
+                        Utils.debugDeadline(now(), min(ackDeadline, pacerDeadline))));
+            }
+            return min(ackDeadline, pacerDeadline);
+        }
         Deadline lossDeadline = getLossTimer();
         // TODO: consider removing the debug traces in this method when integrating
         // if both loss deadline and PTO timer are set, loss deadline is always earlier
