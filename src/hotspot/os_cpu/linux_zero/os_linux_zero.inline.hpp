@@ -25,6 +25,12 @@
 #ifndef OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
 #define OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
 
-
+inline address os::current_stack_pointer() {
+#if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
+  return static_cast<address>(__builtin_stack_address());
+#else
+  return currentStackPointer();
+#endif
+}
 
 #endif // OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
