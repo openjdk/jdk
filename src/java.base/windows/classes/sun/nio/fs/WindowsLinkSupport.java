@@ -260,13 +260,48 @@ class WindowsLinkSupport {
                 if (resolveLinks &&
                     WindowsFileAttributes.isReparsePoint(fileData.attributes()))
                 {
-                    String result = null;
-                    IOException suppressed = null;
+                    long handle = INVALID_HANDLE_VALUE;
+                    boolean reparsePointOpened = false;
                     try {
-                        result = getFinalPath(input);
-                    } catch (IOException e) {
-                        suppressed = e;
+                        // first try opening while following links
+                        handle = input.openForReadAttributeAccess(true);
+                    } catch (WindowsException x) {
+                        try {
+                            // fall back to opening the reparse point itself
+                            handle = input.openForReadAttributeAccess(false);
+                            CloseHandle(handle);
+                            handle = INVALID_HANDLE_VALUE;
+
+                            // set flag to suppress the IOException below
+                            reparsePointOpened = true;
+                        } catch (WindowsException y) {
+                            // suppress exception from opening reparse point
+                            x.addSuppressed(y);
+                        }
+                        // fail if opening failed, following or not following
+                        if (!reparsePointOpened)
+                            x.rethrowAsIOException(input);
                     }
+
+                    // attempt to get the final path if the handle is valid
+                    String result = null;
+                    if (handle != INVALID_HANDLE_VALUE) {
+                        try {
+                            result = stripPrefix(GetFinalPathNameByHandle(handle));
+                        } catch (WindowsException x) {
+                            // ERROR_INVALID_LEVEL is the error returned when
+                            // not supported (a symlink to file on FAT32 or
+                            // Samba server for example)
+                            if (x.lastError() != ERROR_INVALID_LEVEL)
+                                x.rethrowAsIOException(input);
+                        } finally {
+                            CloseHandle(handle);
+                        }
+                    }
+
+                    // if the final path is null or is the UNC version of
+                    // a drive path, then derive the final path by stepping
+                    // through the elements of the path
                     if (result == null ||
                         (Character.isLetter(input.toString().charAt(0)) &&
                         result.charAt(0) == '\\' &&
@@ -274,17 +309,10 @@ class WindowsLinkSupport {
                         result.charAt(1) == '\\' &&
                         input.toString().charAt(2) == '\\')) {
                         // Fallback to slow path, usually because there is a sym
-                        // link to a file system that doesn't support sym links,
-                        // or a drive path was converted to a UNC path.
-                        try {
-                            WindowsPath resolved = resolveAllLinks(
-                                WindowsPath.createFromNormalizedPath(fs, path));
-                            result = getRealPath(resolved, false);
-                        } catch (IOException e) {
-                            if (suppressed != null)
-                                e.addSuppressed(suppressed);
-                            throw e;
-                        }
+                        // link to a file system that doesn't support sym links.
+                        WindowsPath resolved = resolveAllLinks(
+                            WindowsPath.createFromNormalizedPath(fs, path));
+                        result = getRealPath(resolved, false);
                     }
                     return result;
                 }
