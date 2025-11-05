@@ -34,32 +34,39 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/// Fetches data for a repo.
+/// A helper class to fetch files from a code repository.
 ///
-/// By default, data is extracted from ZIP file on an artifact server.
+/// By default, the code repository is stored on the artifact server
+/// as a ZIP file.
 ///
-/// Users can specify the "jdk.tests.repos.pattern" system property
-/// to fetch the file in an alternative location. The value of this
-/// system property represents the URL for the entry with "%o" mapping to
-/// the last part of [organization name][Artifact#organization()], "%n"
-/// to [name][Artifact#name()], "%r" to[version][Artifact#revision()],
-/// and "%e" to the entry name. For example:
+/// Users can specify the "jdk.tests.repos.pattern" system property to fetch
+/// the files from an alternative location. The value of this system property
+/// represents the URL for each file entry where:
+/// - "%o" maps to the last part of [organization name][Artifact#organization()],
+/// - "%n" maps to [name][Artifact#name()],
+/// - "%r" maps to [version][Artifact#revision()],
+/// - "%e" maps to the name of the file entry to fetch.
 ///
-/// With the [CMS_ML_DSA] class inside this test, the pattern
-/// `file:///Users/tester/repos/external/%o/%n/%e` will be resolved to
-/// a local file like `/Users/tester/repos/external/lamps-wg/cms-ml-dsa/entry`;
-/// and a pattern `https://raw.repos.com/%o/%n/%r/%e` will be resolved to
-/// a URL like `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
+/// For example, with the [CMS_ML_DSA] class inside this test:
+/// - The pattern `file:///Users/tester/repos/external/%o/%n/%e` resolves to
+///   a local file like `/Users/tester/repos/external/lamps-wg/cms-ml-dsa/entry`.
+/// - The pattern `https://raw.repos.com/%o/%n/%r/%e` resolves to
+///   `https://raw.repos.com/lamps-wg/cms-ml-dsa/c8f0cf7/entry`.
 ///
 public sealed interface DataFetcher extends AutoCloseable {
 
+    /// Fetches the content of `entry` as a byte array.
     byte[] fetch(String entry) throws IOException;
 
+    /// Overrides the method with a different exception type
+    /// to avoid compiler warnings about `InterruptedException`.
     @Override
-    void close() throws IOException; // to avoid InterruptedException warning
+    void close() throws IOException;
 
+    /// Returns a fetcher.
     /// @param klass the `Artifact` class
-    /// @param zipPrefix the common prefix for each entry in the ZIP file
+    /// @param zipPrefix the prefix used in the ZIP file. See
+    ///         [ZipFetcher#ZipFetcher(ZipFile, String)].
     static DataFetcher of(Class<?> klass, String zipPrefix) {
         Artifact artifact = klass.getAnnotation(Artifact.class);
         var org = artifact.organization();
@@ -82,7 +89,7 @@ public sealed interface DataFetcher extends AutoCloseable {
         }
     }
 
-    /// Fetches data from a URL.
+    /// A `DataFetcher` to fetch file from a URL.
     /// @param base the base URL string, contains "%e" mapping to entry name
     record FileFetcher(String base) implements DataFetcher {
         @Override
@@ -101,10 +108,10 @@ public sealed interface DataFetcher extends AutoCloseable {
         }
     }
 
-    /// Fetches data from a ZIP file.
+    /// A `DataFetcher` to fetch file from a ZIP file.
     /// @param zf the `ZipFile`
-    /// @param zipPrefix optional prefix string inside the ZIP file. For
-    ///     example, if an entry "sample/data" is "archive/sample/data"
+    /// @param zipPrefix optional prefix string inside the ZIP file. For example,
+    ///     if an entry "folder/file" is represented as "archive/folder/file"
     ///     inside the ZIP, "archive/" should be provided as `zipPrefix`.
     record ZipFetcher(ZipFile zf, String zipPrefix) implements DataFetcher {
         @Override
