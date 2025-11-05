@@ -26,24 +26,24 @@ interface InterruptedExceptionTest_I2 extends AutoCloseable {
     @Override void close();
 }
 
-interface InterruptedExceptionTest_I3 extends AutoCloseable {               // warning here
-    @Override void close() throws InterruptedException;
+interface InterruptedExceptionTest_I3 extends AutoCloseable {
+    @Override void close() throws InterruptedException;                     // warning here
 }
 
-interface InterruptedExceptionTest_I4 extends AutoCloseable {               // warning here
-    @Override void close() throws Exception;
+interface InterruptedExceptionTest_I4 extends AutoCloseable {
+    @Override void close() throws Exception;                                // warning here
 }
 
 interface InterruptedExceptionTest_I5 extends AutoCloseable {
     @Override default void close() { }
 }
 
-interface InterruptedExceptionTest_I6 extends AutoCloseable {               // warning here
-    @Override default void close() throws InterruptedException { }
+interface InterruptedExceptionTest_I6 extends AutoCloseable {
+    @Override default void close() throws InterruptedException { }          // warning here
 }
 
-interface InterruptedExceptionTest_I7 extends AutoCloseable {               // warning here
-    @Override default void close() throws Exception { }
+interface InterruptedExceptionTest_I7 extends AutoCloseable {
+    @Override default void close() throws Exception { }                     // warning here
 }
 
 interface InterruptedExceptionTest_I8 extends HasClose, AutoCloseable {
@@ -62,24 +62,24 @@ abstract class InterruptedExceptionTest_C2 implements AutoCloseable {
     @Override public abstract void close();
 }
 
-abstract class InterruptedExceptionTest_C3 implements AutoCloseable {       // warning here
-    @Override public abstract void close() throws InterruptedException;
+abstract class InterruptedExceptionTest_C3 implements AutoCloseable {
+    @Override public abstract void close() throws InterruptedException;     // warning here
 }
 
-abstract class InterruptedExceptionTest_C4 implements AutoCloseable {       // warning here
-    @Override public abstract void close() throws Exception;
+abstract class InterruptedExceptionTest_C4 implements AutoCloseable {
+    @Override public abstract void close() throws Exception;                // warning here
 }
 
 abstract class InterruptedExceptionTest_C5 implements AutoCloseable {
     @Override public void close() { }
 }
 
-abstract class InterruptedExceptionTest_C6 implements AutoCloseable {       // warning here
-    @Override public void close() throws InterruptedException { }
+abstract class InterruptedExceptionTest_C6 implements AutoCloseable {
+    @Override public void close() throws InterruptedException { }           // warning here
 }
 
-abstract class InterruptedExceptionTest_C7 implements AutoCloseable {       // warning here
-    @Override public void close() throws Exception { }
+abstract class InterruptedExceptionTest_C7 implements AutoCloseable {
+    @Override public void close() throws Exception { }                      // warning here
 }
 
 abstract class InterruptedExceptionTest_C8 implements HasClose, AutoCloseable {
