@@ -36,4 +36,8 @@ inline jlong os::rdtsc() {
   return (jlong)res;
 }
 
+ALWAYSINLINE address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_stack_address());
+}
+
 #endif // OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP
