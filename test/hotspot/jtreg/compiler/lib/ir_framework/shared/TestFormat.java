@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,11 @@ import java.util.List;
  * Utility class to report a {@link TestFormatException}.
  */
 public class TestFormat {
-    private static final List<String> FAILURES = new ArrayList<>();
+    private static final ThreadLocal<List<String>> threadLocalFailures = ThreadLocal.withInitial(ArrayList<String>::new);
 
     public static void checkAndReport(boolean test, String failureMessage) {
         if (!test) {
-            FAILURES.add(failureMessage);
+            threadLocalFailures.get().add(failureMessage);
             throwIfAnyFailures();
         }
     }
@@ -58,30 +58,30 @@ public class TestFormat {
     }
 
     public static void fail(String failureMessage) {
-        FAILURES.add(failureMessage);
+        threadLocalFailures.get().add(failureMessage);
         throw new TestFormatException(failureMessage);
     }
 
     public static void failNoThrow(String failureMessage) {
-        FAILURES.add(failureMessage);
+        threadLocalFailures.get().add(failureMessage);
     }
 
     public static void throwIfAnyFailures() {
-        if (FAILURES.isEmpty()) {
+        if (threadLocalFailures.get().isEmpty()) {
             // No format violation detected.
             return;
         }
         StringBuilder builder = new StringBuilder();
         builder.append(System.lineSeparator()).append("One or more format violations have been detected:")
                .append(System.lineSeparator()).append(System.lineSeparator());
-        builder.append("Violations (").append(FAILURES.size()).append(")").append(System.lineSeparator());
-        builder.append("-------------").append("-".repeat(String.valueOf(FAILURES.size()).length()))
+        builder.append("Violations (").append(threadLocalFailures.get().size()).append(")").append(System.lineSeparator());
+        builder.append("-------------").append("-".repeat(String.valueOf(threadLocalFailures.get().size()).length()))
                .append(System.lineSeparator());
-        for (String failure : FAILURES) {
+        for (String failure : threadLocalFailures.get()) {
             builder.append(" - ").append(failure).append(System.lineSeparator());
         }
         builder.append("/============/");
-        FAILURES.clear();
+        threadLocalFailures.get().clear();
         throw new TestFormatException(builder.toString());
     }
 }
