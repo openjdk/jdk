@@ -48,6 +48,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -748,14 +749,14 @@ public class TestFramework {
      * @param parallel Run tests concurrently
      */
     private void startWithScenarios(boolean parallel) {
-        Map<Scenario, Exception> exceptionMap = new TreeMap<>(Comparator.comparingInt(Scenario::getIndex));
+        Map<Scenario, Exception> exceptionMap = new ConcurrentSkipListMap<>(Comparator.comparingInt(Scenario::getIndex));
         record Outcome(Scenario scenario, Exception other) {}
         final Object printLock = new Object();
         AtomicReference<TestFormatException> testFormatException = new AtomicReference<>();
         Stream<Scenario> stream = parallel ? scenarios.parallelStream() : scenarios.stream();
-        List<Outcome> outcomes = stream.map(scenario -> {
+        stream.forEach(scenario -> {
             if (testFormatException.get() != null) {
-                return null;
+                return;
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintStream ps = new PrintStream(baos);
@@ -764,7 +765,7 @@ public class TestFramework {
             } catch (TestFormatException e) {
                 testFormatException.compareAndSet(null, e);
             } catch (Exception e) {
-                return new Outcome(scenario, e);
+                exceptionMap.put(scenario, e);
             } finally {
                 // Print the output to stdout in one go
                 synchronized (printLock) {
@@ -774,18 +775,12 @@ public class TestFramework {
                     }
                 }
             }
-            return null;
-        }).toList();
+        });
         // Rethrow TestFormatException if it occurred
         TestFormatException tfe = testFormatException.get();
         if (tfe != null) {
             throw tfe;
         }
-
-        // Handle other exceptions
-        outcomes.stream()
-                .filter(o -> o != null && o.other() != null)
-                .forEach(o -> exceptionMap.put(o.scenario(), o.other()));
         if (!exceptionMap.isEmpty()) {
             reportScenarioFailures(exceptionMap);
         }
