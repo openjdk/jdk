@@ -144,7 +144,7 @@ public class Util {
      * Find a subcomponent by class name.
      */
     public static Component findSubComponent(Component parent, String className) {
-        return findComponentImpl((Container) parent,
+        return findComponent((Container) parent,
                                  c -> c.getClass()
                                        .getName()
                                        .contains(className));
@@ -319,8 +319,8 @@ public class Util {
     */
     public static JDialog createModalDialogWithPassFailButtons(final String failString) {
         JDialog  retDialog = new JDialog();
-        Box buttonBox = Box.createHorizontalBox();
-        JButton passButton = new JButton("Pass");
+        Box      buttonBox = Box.createHorizontalBox();
+        JButton  passButton = new JButton("Pass");
         JButton  failButton = new JButton("Fail");
 
         passButton.addActionListener(new ActionListener() {
