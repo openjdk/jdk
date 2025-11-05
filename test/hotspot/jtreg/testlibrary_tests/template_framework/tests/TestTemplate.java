@@ -1256,7 +1256,7 @@ public class TestTemplate {
         var template = Template.make(() -> scope(
             let("global", "GLOBAL"),
             "g: #global. $a\n",
-            // Create a dummy DataName soe we can create the scope.
+            // Create a dummy DataName so we don't get an exception from sample.
             addDataName("x", myInt, MUTABLE),
             dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
                 "g: #global. $b\n",
@@ -1898,7 +1898,7 @@ public class TestTemplate {
                 let("v1", "a"),
                 "int #v1 = x + 1;\n"
             )),
-            // Using "transparentScope", is is available.
+            // Using "transparentScope", it is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> transparentScope(
                 addDataName("b", dn.type(), MUTABLE),
                 let("v2", "b"),
@@ -1910,13 +1910,13 @@ public class TestTemplate {
                 let("v3", "c"),
                 "int #v3 = x + 3;\n"
             )),
-            // Using "hashtagScope", is is available.
+            // Using "hashtagScope", it is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> hashtagScope(
                 addDataName("d", dn.type(), MUTABLE),
                 let("v4", "d"),
                 "int #v4 = x + 4;\n"
             )),
-            // Using "setFuelCostScope", is is available.
+            // Using "setFuelCostScope", it is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> setFuelCostScope(
                 addDataName("e", dn.type(), MUTABLE),
                 let("v5", "e"),
