@@ -136,7 +136,7 @@ public class TestBadFormat {
             checkException(clazz, e, helpers);
             exceptionCatched = true;
         }
-        Asserts.assertTrue(exceptionCatched, "Should catch an exception");\
+        Asserts.assertTrue(exceptionCatched, "Should catch an exception");
 
         // Parallel scenarios
         exceptionCatched = false;
