@@ -2309,12 +2309,6 @@ perform extensive debugging.
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
 
-`-XX:+AggressiveHeap`
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 `-XX:+AlwaysPreTouch`
 :   Requests the VM to touch every page on the Java heap after requesting it from
     the operating system and before handing memory out to the application.
@@ -2950,6 +2944,12 @@ they're used.
     memory for sizing the Java heap to 2 GB:
 
     >   `-XX:MaxRAM=2G`
+
+`-XX:+AggressiveHeap`
+:   Enables Java heap optimization. This sets various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    is disabled and the heap sizes are configured less aggressively.
 
 ## Obsolete Java Options
 
