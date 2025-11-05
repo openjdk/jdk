@@ -298,16 +298,16 @@ private:
   }
 
   // Statistics (for one round of start_recording_subgraph ... done_recording_subgraph)
-  static int _num_new_walked_objs;
-  static int _num_new_archived_objs;
-  static int _num_old_recorded_klasses;
+  static size_t _num_new_walked_objs;
+  static size_t _num_new_archived_objs;
+  static size_t _num_old_recorded_klasses;
 
   // Statistics (for all archived subgraphs)
-  static int _num_total_subgraph_recordings;
-  static int _num_total_walked_objs;
-  static int _num_total_archived_objs;
-  static int _num_total_recorded_klasses;
-  static int _num_total_verifications;
+  static size_t _num_total_subgraph_recordings;
+  static size_t _num_total_walked_objs;
+  static size_t _num_total_archived_objs;
+  static size_t _num_total_recorded_klasses;
+  static size_t _num_total_verifications;
 
   static void start_recording_subgraph(InstanceKlass *k, const char* klass_name,
                                        bool is_full_module_graph);
