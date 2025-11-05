@@ -26,7 +26,6 @@
 #define OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP
 
 #include "runtime/os.hpp"
-#include "os_linux_x86.hpp"
 
 // See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
 inline jlong os::rdtsc() {
