@@ -51,10 +51,6 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
-address currentStackPointer() {
-  return NOT_S390(static_cast<address>(__builtin_dwarf_cfa())) S390_ONLY(reinterpret_cast<address>(reinterpret_cast<uintptr_t>(__builtin_dwarf_cfa()) - 160));
-}
-
 frame os::get_sender_for_C_frame(frame* fr) {
   ShouldNotCallThis();
   return frame(nullptr, nullptr); // silence compile warning.
