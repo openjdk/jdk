@@ -263,10 +263,10 @@
           "before pushing a continuation entry")                            \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
-          "Never act like a server-class machine")                          \
+          "(Deprecated) Never act like a server-class machine")             \
                                                                             \
   product(bool, AlwaysActAsServerClassMachine, false,                       \
-          "Always act like a server-class machine")                         \
+          "(Deprecated) Always act like a server-class machine")            \
                                                                             \
   product(uint64_t, MaxRAM, 0,                                              \
           "(Deprecated) Real memory size (in bytes) used to set maximum "   \
