@@ -97,6 +97,7 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     private final QuicCongestionController congestionController;
     private volatile boolean blockedByCC;
+    private volatile boolean blockedByPacer;
     // packet threshold for loss detection; RFC 9002 suggests 3
     private static final long kPacketThreshold = 3;
     // Multiplier for persistent congestion; RFC 9002 suggests 3
@@ -460,11 +461,13 @@ public sealed class PacketSpaceManager implements PacketSpace
                             congestionController.isCwndLimited(), congestionController.isPacerLimited()));
                 }
                 blockedByCC = !cwndAvailable && congestionController.isCwndLimited();
+                blockedByPacer = !cwndAvailable && congestionController.isPacerLimited();
                 if (!cwndAvailable && isOpenForTransmission()) {
                     if (debug.on()) debug.log("handle: blocked by CC");
                     // CC might be available already
                     if (congestionController.canSendPacket()) {
                         if (debug.on()) debug.log("handle: unblocked immediately");
+                        blockedByCC = blockedByPacer = false;
                         transmitNow = true;
                     }
                 }
@@ -1397,7 +1400,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         Deadline ackDeadline = (ack == null || ack.sent() != null)
                 ? Deadline.MAX // if the ack frame has already been sent, getNextAck() returns null
                 : ack.deadline();
-        if (congestionController.isPacerLimited()) {
+        if (blockedByPacer) {
             Deadline pacerDeadline = congestionController.pacerDeadline();
             if (verbose && Log.quicTimer()) {
                 Log.logQuic(String.format("%s: [%s] pacer deadline: %s, ackDeadline: %s, deadline in %s",
