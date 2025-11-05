@@ -150,8 +150,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Our executable name (should not be quoted)
-    java_args[0] = argv[0];
+    // Our executable name
+    java_args[0] = quote_argument(argv[0]);
+    if (java_args[0] == NULL) {
+        perror("malloc failed");
+        return 1;
+    }
 
     // Launcher arguments
     for (int i = 0; i < launcher_argsc; i++) {
