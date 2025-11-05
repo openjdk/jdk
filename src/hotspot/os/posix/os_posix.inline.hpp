@@ -34,6 +34,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
+#define HAS_STACK_INTRINSIC
+inline address os::current_stack_pointer() {
+  return static_cast<address>(__builtin_stack_address());
+}
+#endif
+
 // Platform Mutex/Monitor implementation
 
 inline void PlatformMutex::lock() {
