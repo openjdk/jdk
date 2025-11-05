@@ -39,4 +39,13 @@ inline bool os::platform_print_native_stack(outputStream* st, const void* contex
   return os::win32::platform_print_native_stack(st, context, buf, buf_size, lastpc);
 }
 
+// Returns an estimate of the current stack pointer. Result must be guaranteed
+// to point into the calling threads stack, and be no lower than the current
+// stack pointer.
+ALWAYSINLINE address os::current_stack_pointer() {
+  CONTEXT context;
+  RtlCaptureContext(&context);
+  return reinterpret_cast<address>(context.Sp);
+}
+
 #endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
