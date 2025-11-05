@@ -34,7 +34,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-inline address os::current_stack_pointer() {
+ALWAYSINLINE address os::current_stack_pointer() {
 #if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
   return static_cast<address>(__builtin_stack_address());
 #else
