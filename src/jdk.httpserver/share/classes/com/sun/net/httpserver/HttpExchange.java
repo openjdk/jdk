@@ -208,7 +208,9 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * responseLength will be zero which is the value of {@link #RSPBODY_CHUNKED}
      * resulting in a zero length, but chunked encoded response body. While this
      * is not incorrect, it may be preferable to check for an empty array and set
-     * responseLength to {@link #RSPBODY_EMPTY} instead.
+     * responseLength to {@link #RSPBODY_EMPTY} instead. Also, when sending a
+     * chunked encoded response body, whatever length, the output stream must
+     * be explicitly closed by the handler.
      *
      * @implNote This implementation allows the caller to instruct the
      * server to force a connection close after the exchange terminates, by
