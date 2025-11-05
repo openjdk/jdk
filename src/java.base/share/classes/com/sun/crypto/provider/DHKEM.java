@@ -308,7 +308,11 @@ public class DHKEM implements KEMSpi {
                         // Should not happen if format is "RAW"
                         throw new UnsupportedOperationException("Key extract failed");
                     } else {
-                        return new SecretKeySpec(km, from, to - from, alg);
+                        try {
+                            return new SecretKeySpec(km, from, to - from, alg);
+                        } finally {
+                            Arrays.fill(km, (byte)0);
+                        }
                     }
                 } else if (fullKey instanceof SliceableSecretKey ssk) {
                     return ssk.slice(alg, from, to);
