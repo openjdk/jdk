@@ -2054,7 +2054,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     // collect shared symbols and strings
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
-    tty->print_cr("Number of shared symbols: %ld", cl.total());
+    tty->print_cr("Number of shared symbols: %zu", cl.total());
     tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == nullptr || _archive_loading_failed) {
