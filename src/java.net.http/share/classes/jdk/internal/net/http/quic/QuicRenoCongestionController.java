@@ -153,7 +153,7 @@ class QuicRenoCongestionController implements QuicCongestionController {
             // Here we limit cwnd growth based on the maximum bytes in flight
             // observed since the last congestion event
             if (inCongestionRecovery(sentTime)) {
-                if (Log.quicCC()) {
+                if (Log.quicCC() && Log.trace()) {
                     Log.logQuic(dbgTag + " Acked, in recovery: bytes: " + packetBytes +
                             ", in flight: " + bytesInFlight);
                 }
@@ -171,7 +171,7 @@ class QuicRenoCongestionController implements QuicCongestionController {
                     congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
                 }
             }
-            if (Log.quicCC()) {
+            if (Log.quicCC() && Log.trace()) {
                 if (isAppLimited) {
                     Log.logQuic(dbgTag + " Acked, not blocked: bytes: " + packetBytes +
                             ", in flight: " + bytesInFlight);
