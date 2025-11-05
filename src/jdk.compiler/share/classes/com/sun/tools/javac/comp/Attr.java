@@ -2050,7 +2050,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (close.kind == MTH &&
                     (useSite || close.owner != syms.autoCloseableType.tsym) &&
-                    close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
+                    ((MethodSymbol)close).binaryOverrides(syms.autoCloseableClose, resource.tsym, types) &&
                     chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
                 log.warning(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
             }
