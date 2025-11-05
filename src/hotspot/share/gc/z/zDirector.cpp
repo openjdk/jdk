@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "cppstdlib/limits.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -32,8 +33,6 @@
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 #include "runtime/init.hpp"
-
-#include <limits>
 
 ZDirector* ZDirector::_director;
 
