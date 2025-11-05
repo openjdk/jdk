@@ -1,3 +1,23 @@
-InterruptedExceptionTest2.java:38:40: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest2
-InterruptedExceptionTest2.java:62:40: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest5
-2 warnings
+InterruptedExceptionTest2.java:29:1: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I3
+InterruptedExceptionTest2.java:33:1: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I4
+InterruptedExceptionTest2.java:41:1: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I6
+InterruptedExceptionTest2.java:45:1: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I7
+InterruptedExceptionTest2.java:65:10: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C3
+InterruptedExceptionTest2.java:69:10: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C4
+InterruptedExceptionTest2.java:77:10: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C6
+InterruptedExceptionTest2.java:81:10: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C7
+InterruptedExceptionTest2.java:92:10: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C10
+InterruptedExceptionTest2.java:99:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I1
+InterruptedExceptionTest2.java:115:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I3
+InterruptedExceptionTest2.java:123:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I4
+InterruptedExceptionTest2.java:139:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I6
+InterruptedExceptionTest2.java:147:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I7
+InterruptedExceptionTest2.java:155:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_I8
+InterruptedExceptionTest2.java:173:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C1
+InterruptedExceptionTest2.java:189:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C3
+InterruptedExceptionTest2.java:197:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C4
+InterruptedExceptionTest2.java:213:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C6
+InterruptedExceptionTest2.java:221:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C7
+InterruptedExceptionTest2.java:229:42: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C8
+InterruptedExceptionTest2.java:245:43: compiler.warn.try.resource.throws.interrupted.exc: InterruptedExceptionTest_C10
+22 warnings
