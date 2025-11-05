@@ -244,6 +244,16 @@ final class Validator {
                 warn(formatMsg("warn.validator.invalid.entry.name", entryName));
                 isValid = false;
             }
+            int entryCenOrder = entryInfo.cen().order();
+            if ("META-INF/MANIFEST.MF".equals(entryName)) {
+                validatePosition(entryName, entryCenOrder, entryCenOrder <= 1);
+                if (entryCenOrder == 1) {
+                    var firstName = entries.sequencedKeySet().getFirst();
+                    if (!"META-INF/".equals(firstName)) {
+                        errorAndInvalid(formatMsg("error.validator.wrong.position", firstName, "0"));
+                    }
+                }
+            }
             // Check duplicate entries in CEN
             checkDuplicates(entryInfo.cen().count(), "warn.validator.duplicate.cen.entry", entryName);
             // Check duplicate entries in LOC
@@ -255,11 +265,19 @@ final class Validator {
             } else if (entryInfo.loc().isPlaceHolder()) {
                 warn(formatMsg("warn.validator.cen.only.entry", entryName));
                 isValid = false;
-            } else if (!outOfOrder && entryInfo.loc().order() != entryInfo.cen().order()) {
+            } else if (!outOfOrder && entryInfo.loc().order() != entryCenOrder) {
                 outOfOrder = true;
                 isValid = false;
                 warn(getMsg("warn.validator.order.mismatch"));
             }
+        }
+
+        private void validatePosition(String entryName, int order, boolean ok) {
+            if (ok) {
+                return;
+            }
+            String position = Integer.toString(order);
+            errorAndInvalid(formatMsg("error.validator.wrong.position", entryName, position));
         }
 
         /**
