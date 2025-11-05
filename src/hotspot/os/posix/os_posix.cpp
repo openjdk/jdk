@@ -1552,6 +1552,10 @@ void os::Posix::to_RTC_abstime(timespec* abstime, int64_t millis) {
              true  /* use real-time clock */);
 }
 
+address os::Posix::current_stack_pointer() {
+  return NOT_S390(static_cast<address>(__builtin_dwarf_cfa())) S390_ONLY(reinterpret_cast<address>(reinterpret_cast<uintptr_t>(__builtin_dwarf_cfa()) - 160));
+}
+
 // Common (partly) shared time functions
 
 jlong os::javaTimeMillis() {
