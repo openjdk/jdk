@@ -202,14 +202,6 @@
 # define context_err uc_mcontext.__gregs[_REG_ERR]
 #endif
 
-address os::current_stack_pointer() {
-  using get_sp_func = address();
-  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
-                                     StubRoutines::x86::get_previous_sp_entry());
-  assert(func != nullptr, "get_previous_sp_entry() returned null pointer");
-  return (*func)();
-}
-
 char* os::non_memory_address_word() {
   // Must never look like an address returned by reserve_memory,
   // even in its subfields (as defined by the CPU immediate fields,
