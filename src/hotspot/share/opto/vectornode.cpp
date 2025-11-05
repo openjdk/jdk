@@ -314,8 +314,8 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    if (vopc == Op_VectorBlend) {
-      return VectorBlendNode::implemented(opc);
+    if (vopc == Op_VectorBlend && VectorBlendNode::implemented(opc)) {
+      return true;
     }
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
