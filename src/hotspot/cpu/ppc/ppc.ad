@@ -2088,17 +2088,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    // The exception_handler is a b64_patchable.
-    return MacroAssembler::b64_patchable_size;
-  }
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2114,22 +2108,6 @@ public:
 
 source %{
 
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
-                       relocInfo::runtime_call_type);
-  assert(__ offset() - offset == (int)size_exception_handler(), "must be fixed size");
-  __ end_a_stub();
-
-  return offset;
-}
-
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
@@ -2140,12 +2118,21 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_offset = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
