@@ -383,8 +383,12 @@ class MultiExchange<T> implements Cancelable {
                 result.complete(setNewResponse(r.request(), r, nullBody, exch));
             }
         });
-        // ensure that the connection is closed or returned to the pool.
-        return result.whenComplete(exch::nullBody);
+        return result.whenComplete((response, throwable) -> {
+            // Ensure that the timer is cancelled
+            cancelTimer();
+            // Ensure that the connection is closed or returned to the pool
+            exch.nullBody(response, throwable);
+        });
     }
 
     // creates a new HttpResponseImpl object and assign it to this.response
