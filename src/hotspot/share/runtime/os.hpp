@@ -1109,4 +1109,6 @@ class os: AllStatic {
 
 extern "C" int SpinPause();
 
+extern "C" address currentStackPointer();
+
 #endif // SHARE_RUNTIME_OS_HPP
