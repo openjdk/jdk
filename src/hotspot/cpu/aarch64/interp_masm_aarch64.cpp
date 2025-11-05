@@ -479,6 +479,14 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // result check if synchronized method
   Label unlocked, unlock, no_unlock;
 
+#ifdef ASSERT
+  Label not_preempted;
+  ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  cbz(rscratch1, not_preempted);
+  stop("remove_activation: should not have alternate return address set");
+  bind(not_preempted);
+#endif /* ASSERT */
+
   // get the value of _do_not_unlock_if_synchronized into r3
   const Address do_not_unlock_if_synchronized(rthread,
     in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
@@ -1371,6 +1379,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
 void InterpreterMacroAssembler::call_VM_base(Register oop_result,
                                              Register java_thread,
                                              Register last_java_sp,
+                                             Label*   return_pc,
                                              address  entry_point,
                                              int      number_of_arguments,
                                              bool     check_exceptions) {
@@ -1394,26 +1403,34 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 #endif /* ASSERT */
   // super call
   MacroAssembler::call_VM_base(oop_result, noreg, last_java_sp,
-                               entry_point, number_of_arguments,
-                     check_exceptions);
+                               return_pc, entry_point,
+                               number_of_arguments, check_exceptions);
 // interpreter specific
   restore_bcp();
   restore_locals();
 }
 
-void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
-                                                    address entry_point,
-                                                    Register arg_1) {
-  assert(arg_1 == c_rarg1, "");
+void InterpreterMacroAssembler::call_VM_preemptable_helper(Register oop_result,
+                                                           address entry_point,
+                                                           int number_of_arguments,
+                                                           bool check_exceptions) {
+  assert(InterpreterRuntime::is_preemptable_call(entry_point), "VM call not preemptable, should use call_VM()");
   Label resume_pc, not_preempted;
 
 #ifdef ASSERT
   {
-    Label L;
+    Label L1, L2;
     ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
-    cbz(rscratch1, L);
-    stop("Should not have alternate return address set");
-    bind(L);
+    cbz(rscratch1, L1);
+    stop("call_VM_preemptable_helper: Should not have alternate return address set");
+    bind(L1);
+    // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+    incrementw(Address(rthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    ldrw(rscratch1, Address(rthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    cmpw(rscratch1, 0);
+    br(Assembler::GT, L2);
+    stop("call_VM_preemptable_helper: should be > 0");
+    bind(L2);
   }
 #endif /* ASSERT */
 
@@ -1421,11 +1438,22 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   push_cont_fastpath();
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.
-  adr(rscratch1, resume_pc);
-  str(rscratch1, Address(rthread, JavaThread::last_Java_pc_offset()));
-  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+  // Note: call_VM_base will use resume_pc label to set last_Java_pc.
+  call_VM_base(noreg, noreg, noreg, &resume_pc, entry_point, number_of_arguments, false /*check_exceptions*/);
 
   pop_cont_fastpath();
+
+#ifdef ASSERT
+  {
+    Label L;
+    decrementw(Address(rthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    ldrw(rscratch1, Address(rthread, JavaThread::interp_at_preemptable_vmcall_cnt_offset()));
+    cmpw(rscratch1, 0);
+    br(Assembler::GE, L);
+    stop("call_VM_preemptable_helper: should be >= 0");
+    bind(L);
+  }
+#endif /* ASSERT */
 
   // Check if preempted.
   ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
@@ -1438,6 +1466,51 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
   restore_after_resume(false /* is_native */);
 
   bind(not_preempted);
+  if (check_exceptions) {
+    // check for pending exceptions
+    ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    Label ok;
+    cbz(rscratch1, ok);
+    lea(rscratch1, RuntimeAddress(StubRoutines::forward_exception_entry()));
+    br(rscratch1);
+    bind(ok);
+  }
+
+  // get oop result if there is one and reset the value in the thread
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result, rthread);
+  }
+}
+
+static void pass_arg1(MacroAssembler* masm, Register arg) {
+  if (c_rarg1 != arg ) {
+    masm->mov(c_rarg1, arg);
+  }
+}
+
+static void pass_arg2(MacroAssembler* masm, Register arg) {
+  if (c_rarg2 != arg ) {
+    masm->mov(c_rarg2, arg);
+  }
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         bool check_exceptions) {
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 1, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                         address entry_point,
+                                         Register arg_1,
+                                         Register arg_2,
+                                         bool check_exceptions) {
+  LP64_ONLY(assert_different_registers(arg_1, c_rarg2));
+  pass_arg2(this, arg_2);
+  pass_arg1(this, arg_1);
+  call_VM_preemptable_helper(oop_result, entry_point, 2, check_exceptions);
 }
 
 void InterpreterMacroAssembler::restore_after_resume(bool is_native) {

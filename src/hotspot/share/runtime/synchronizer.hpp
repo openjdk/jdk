@@ -126,6 +126,7 @@ public:
   static const char* inflate_cause_name(const InflateCause cause);
 
   static ObjectMonitor* read_monitor(markWord mark);
+  static ObjectMonitor* read_monitor(Thread* current, oop obj);
   static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
 
   // Returns the identity hash value for an oop
@@ -261,13 +262,13 @@ class ObjectLocker : public StackObj {
   Handle      _obj;
   BasicLock   _lock;
   NoPreemptMark _npm;
+  bool    _skip_exit;
  public:
-  ObjectLocker(Handle obj, JavaThread* current);
+  ObjectLocker(Handle obj, TRAPS);
   ~ObjectLocker();
 
   // Monitor behavior
-  void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
-  void wait_uninterruptibly(TRAPS)  { ObjectSynchronizer::waitUninterruptibly(_obj, 0, CHECK); } // wait forever
+  void wait_uninterruptibly(TRAPS);
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
 };
 

@@ -243,10 +243,7 @@ public class ServiceTest {
 
         new PackageTest().excludeTypes(MAC_DMG)
                 .addRunOnceInitializer(appImageCmd.cmd().orElseThrow()::execute)
-                .addInitializer(cmd -> {
-                    cmd.removeArgumentWithValue("--input");
-                    cmd.addArguments("--app-image", appImageCmd.cmd().orElseThrow().outputBundle());
-                })
+                .usePredefinedAppImage(appImageCmd.cmd().orElseThrow())
                 .addInitializer(cmd -> {
                     if (mainLauncherAsService) {
                         cmd.addArgument("--launcher-as-service");

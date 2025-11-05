@@ -1049,15 +1049,10 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
-  static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
-  }
-
   static uint size_deopt_handler() {
-    // count auipc + far branch
+    // count far call + j
     return NativeInstruction::instruction_size + MacroAssembler::far_branch_size();
   }
 };
@@ -1183,6 +1178,8 @@ bool is_CAS(int opcode, bool maybe_volatile)
       return false;
   }
 }
+
+constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
 
 // predicate controlling translation of CAS
 //
@@ -1363,10 +1360,15 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
   }
 
-  st->print("sd  fp, [sp, #%d]\n\t", - 2 * wordSize);
-  st->print("sd  ra, [sp, #%d]\n\t", - wordSize);
-  if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
+  st->print("sd  fp, [sp, #%d]\n\t", framesize - 2 * wordSize);
+  st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
+  if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
+
+  if (VerifyStackAtCalls) {
+    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
+    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
+  }
 
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
@@ -1408,6 +1410,11 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
+  if (VerifyStackAtCalls) {
+    __ mv(t2, MAJIK_DWORD);
+    __ sd(t2, Address(sp, framesize - 3 * wordSize));
+  }
+
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     // Dummy labels for just measuring the code size
@@ -1427,10 +1434,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
     bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
-  }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
   }
 
   C->output()->set_frame_complete(__ offset());
@@ -1830,25 +1833,6 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-// Emit exception handler code.
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
-{
-  // auipc t1, #exception_blob_entry_point
-  // jr (offset)t1
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a handler.
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-  int offset = __ offset();
-  __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
-  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
-  __ end_a_stub();
-  return offset;
-}
-
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
 {
@@ -1859,12 +1843,17 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
   }
   int offset = __ offset();
 
-  __ auipc(ra, 0);
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+  __ j(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
-  return offset;
+  return entry_offset;
 
 }
 // REQUIRED MATCHER CODE
@@ -2431,7 +2420,13 @@ encode %{
   enc_class riscv_enc_call_epilog() %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
-      __ call_Unimplemented();
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
+      Label stack_ok;
+      __ ld(t1, Address(sp, framesize));
+      __ mv(t2, MAJIK_DWORD);
+      __ beq(t2, t1, stack_ok);
+      __ stop("MAJIK_DWORD not found");
+      __ bind(stack_ok);
     }
   %}
 
