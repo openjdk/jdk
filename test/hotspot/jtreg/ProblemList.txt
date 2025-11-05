@@ -94,6 +94,9 @@ gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
+gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
+gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
+gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
 
 #############################################################################
 
