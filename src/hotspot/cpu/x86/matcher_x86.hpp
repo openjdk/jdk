@@ -236,11 +236,7 @@
     }
   }
 
-  static bool supports_vectorize_cmove_bool_unconditionally() {
-    return false;
-  }
-
-  static bool supports_transform_cmove_to_vectorblend(int cmove_opc) {
+  static bool supports_vector_different_use_def_size() {
     return false;
   }
 
