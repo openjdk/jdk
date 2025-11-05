@@ -79,13 +79,15 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     /**
      * No response body is being sent with this response
      *
+     * @see #sendResponseHeaders(int, long)
      * @since 26
      */
     public static final long RSPBODY_EMPTY = -1l;
 
     /**
-     * The response body is unspecified and will be chunk encoded
+     * The response body length is unspecified and will be chunk encoded
      *
+     * @see #sendResponseHeaders(int, long)
      * @since 26
      */
     public static final long RSPBODY_CHUNKED = 0;
