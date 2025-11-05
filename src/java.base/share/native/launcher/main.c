@@ -59,12 +59,12 @@ static void check_relauncher_argument(char* arg) {
         cpwildcard = JNI_FALSE;
     }
     const char *progname_prefix = "-J-DjavaLauncherProgname=";
-    int progname_prefix_len = strlen(progname_prefix);
+    size_t progname_prefix_len = strlen(progname_prefix);
     if (strncmp(arg, progname_prefix, progname_prefix_len) == 0) {
         progname = arg + progname_prefix_len;
     }
     const char *args_prefix = "-J-DjavaLauncherArgs=";
-    int args_prefix_len = strlen(args_prefix);
+    size_t args_prefix_len = strlen(args_prefix);
     if (strncmp(arg, args_prefix, args_prefix_len) == 0) {
         char* java_args_ptr = arg + args_prefix_len;
         size_t java_args_len = strlen(arg) - args_prefix_len;
