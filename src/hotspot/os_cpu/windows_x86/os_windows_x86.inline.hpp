@@ -46,4 +46,12 @@ inline bool os::register_code_area(char *low, char *high) {
   return os::win32::register_code_area(low, high);
 }
 
+// Returns the current stack pointer. Accurate value needed for
+// os::verify_stack_alignment().
+ALWAYSINLINE address os::current_stack_pointer() {
+  CONTEXT context;
+  RtlCaptureContext(&context);
+  return reinterpret_cast<address>(context.Rsp);
+}
+
 #endif // OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_INLINE_HPP
