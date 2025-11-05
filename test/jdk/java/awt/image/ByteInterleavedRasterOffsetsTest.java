@@ -36,7 +36,7 @@ import java.awt.image.WritableRaster;
  * @summary Verify DataBuffer offsets are handled by ByteInterleavedRaster
  */
 
-public class ByteInterleavedOffsetsTest {
+public class ByteInterleavedRasterOffsetsTest {
 
     public static void main(String[] args) {
         byte[] data = { 0, -1, 0, 0 }; // only set the R sample.
