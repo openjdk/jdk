@@ -21,15 +21,30 @@
  * questions.
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Predicate;
+
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
 
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
@@ -126,27 +141,13 @@ public class Util {
     }
 
     /**
-     * Find a sub component by class name.
-     * Always run this method on the EDT thread
+     * Find a subcomponent by class name.
      */
     public static Component findSubComponent(Component parent, String className) {
-        String parentClassName = parent.getClass().getName();
-
-        if (parentClassName.contains(className)) {
-            return parent;
-        }
-
-        if (parent instanceof Container) {
-            for (Component child : ((Container) parent).getComponents()) {
-                Component subComponent = findSubComponent(child, className);
-
-                if (subComponent != null) {
-                    return subComponent;
-                }
-            }
-        }
-
-        return null;
+        return findComponentImpl((Container) parent,
+                                 c -> c.getClass()
+                                       .getName()
+                                       .contains(className));
     }
 
     /**
@@ -318,8 +319,8 @@ public class Util {
     */
     public static JDialog createModalDialogWithPassFailButtons(final String failString) {
         JDialog  retDialog = new JDialog();
-        Box      buttonBox = Box.createHorizontalBox();
-        JButton  passButton = new JButton("Pass");
+        Box buttonBox = Box.createHorizontalBox();
+        JButton passButton = new JButton("Pass");
         JButton  failButton = new JButton("Fail");
 
         passButton.addActionListener(new ActionListener() {

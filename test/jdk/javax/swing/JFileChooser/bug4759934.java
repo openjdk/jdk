@@ -31,11 +31,10 @@
  * @run main bug4759934
  */
 
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -73,10 +72,8 @@ public class bug4759934 {
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
 
-            SwingUtilities.invokeAndWait(() -> {
-                JButton cancel = findCancelButton(jfc);
-                cancel.doClick();
-            });
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(() -> {
@@ -123,12 +120,5 @@ public class bug4759934 {
         dlg.setSize(300, 200);
         dlg.setLocation(fr.getX() + fr.getWidth() + 10, fr.getY());
         dlg.setVisible(true);
-    }
-
-    private static JButton findCancelButton(final Container container) {
-        Component result = Util.findComponent(container,
-                                              c -> c instanceof JButton button
-                                                   && "Cancel".equals(button.getText()));
-        return (JButton) result;
     }
 }
