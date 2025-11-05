@@ -1191,9 +1191,7 @@ bool G1Policy::should_allocate_mutator_region() const {
     return true;
   }
 
-  if (!is_init_completed()) {
-    // We can't do a GC during init so allow additional mutator
-    // allocations until we can GC.
+  if (should_expand_on_mutator_allocation()) {
     return true;
   }
 
@@ -1201,6 +1199,8 @@ bool G1Policy::should_allocate_mutator_region() const {
 }
 
 bool G1Policy::should_expand_on_mutator_allocation() const {
+  // We can't do a GC during init so allow additional mutator
+  // allocations until we can GC.
   return !is_init_completed();
 }
 
