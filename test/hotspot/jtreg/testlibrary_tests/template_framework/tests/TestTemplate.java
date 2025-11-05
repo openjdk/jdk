@@ -2629,7 +2629,7 @@ public class TestTemplate {
             let("q", "QQQ2"),
             "q: #q.\n",
             listDataNames.asToken(),
-            // A "setFuelCostScope" nesting behaves the same as "transparentScope", as we are not useing fuel here.
+            // A "setFuelCostScope" nesting behaves the same as "transparentScope", as we are not using fuel here.
             "open setFuelCostScope:\n",
             setFuelCostScope(
                 "$setFuelCostScope\n",
