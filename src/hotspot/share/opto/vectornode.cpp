@@ -314,9 +314,6 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    if (vopc == Op_VectorBlend && VectorBlendNode::implemented(opc)) {
-      return true;
-    }
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
@@ -409,8 +406,8 @@ bool VectorNode::is_populate_index_supported(BasicType bt) {
   return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
 }
 
-bool VectorNode::is_vectorize_cmove_bool_unconditionally_supported() {
-  return Matcher::supports_vectorize_cmove_bool_unconditionally();
+bool VectorNode::is_different_use_def_size_supported() {
+  return Matcher::supports_vector_different_use_def_size();
 }
 
 bool VectorNode::is_shift_opcode(int opc) {
@@ -2308,13 +2305,6 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
-}
-
-bool VectorBlendNode::implemented(int opc) {
-  assert(opc == Op_CMoveF || opc == Op_CMoveD ||
-         opc == Op_CMoveI || opc == Op_CMoveL ||
-         opc == Op_CMoveN || opc == Op_CMoveP, "must");
-  return Matcher::supports_transform_cmove_to_vectorblend(opc);
 }
 
 static bool is_replicate_uint_constant(const Node* n) {
