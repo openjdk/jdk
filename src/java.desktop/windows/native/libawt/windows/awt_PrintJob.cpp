@@ -2009,8 +2009,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_setPolyFillMode
     TRY;
 
     if ((HDC)printDC == NULL) {
-         return;
-     }
+        return;
+    }
 
     (void) ::SetPolyFillMode((HDC)printDC, fillRule);
 
