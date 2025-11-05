@@ -338,12 +338,8 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
-    stub = new MonitorExitStub(FrameMap::r10_opr, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ j(*stub->entry());
-    } else {
-      __ unlock_object(x15, x14, x10, x16, *stub->entry());
-    }
+    stub = new MonitorExitStub(FrameMap::r10_opr, 0);
+    __ unlock_object(x15, x14, x10, x16, *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -381,12 +377,18 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ auipc(ra, 0);
-  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+  Label start;
+  __ bind(start);
+
+  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
+  int entry_offset = __ offset();
+  __ j(start);
+
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
@@ -1354,6 +1356,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1364,6 +1367,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 }
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1497,21 +1501,13 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   Register temp = op->scratch_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj, -1);
-    }
-    __ j(*op->stub()->entry());
-  } else if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+  if (op->code() == lir_lock) {
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
@@ -1599,8 +1595,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ increment(counter_addr, DataLayout::counter_increment);
   }
 }
-
-void LIR_Assembler::emit_delay(LIR_OpDelay*) { Unimplemented(); }
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
@@ -1831,7 +1825,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
   }
 
   LIR_Address* adr = addr->as_address_ptr();
-  Register dst = dest->as_register_lo();
+  Register dst = dest->as_pointer_register();
 
   assert_different_registers(dst, t0);
   if (adr->base()->is_valid() && dst == adr->base()->as_pointer_register() && (!adr->index()->is_cpu_register())) {
@@ -1855,6 +1849,10 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
+
+  Assembler::IncompressibleScope scope(_masm);
+  // Post call nops must be natural aligned due to cmodx rules.
+  align_call(lir_rtcall);
 
   __ rt_call(dest);
 

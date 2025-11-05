@@ -28,11 +28,11 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -157,7 +157,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::Instance::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 

@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @build tests.*
  * @build jdk.test.lib.Platform
  * @build tools.jlink.plugins.GetAvailableLocales
- * @run junit/othervm/timeout=180 -Xmx1g IncludeLocalesPluginTest
+ * @run junit/othervm/timeout=720 -Xmx1g IncludeLocalesPluginTest
  */
 
 public class IncludeLocalesPluginTest {

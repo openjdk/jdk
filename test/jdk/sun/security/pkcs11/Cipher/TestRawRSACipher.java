@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.HexFormat;
 import java.util.Random;
 import javax.crypto.Cipher;
 import jdk.test.lib.security.SecurityUtils;
+import jtreg.SkippedException;
 
 public class TestRawRSACipher extends PKCS11Test {
 
@@ -49,8 +50,7 @@ public class TestRawRSACipher extends PKCS11Test {
         try {
             Cipher.getInstance("RSA/ECB/NoPadding", p);
         } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
-            return;
+            throw new SkippedException("Algorithm RSA/ECB/NoPadding is not supported by provider, skipping");
         }
 
         String kpgAlgorithm = "RSA";

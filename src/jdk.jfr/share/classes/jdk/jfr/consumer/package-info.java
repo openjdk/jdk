@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * Typically this is expressed as {@code "not null"}. If a {@code null}
  * parameter is used where it is not allowed, a
  * {@code java.lang.NullPointerException} is thrown. If a {@code null}
- * parameters is passed to a method that throws other exceptions, such as
+ * parameter is passed to a method that throws other exceptions, such as
  * {@code java.io.IOException}, the {@code java.lang.NullPointerException} takes
  * precedence, unless the Javadoc for the method explicitly states how
  * {@code null} is handled, i.e. by throwing {@code java.lang.IllegalArgumentException}.

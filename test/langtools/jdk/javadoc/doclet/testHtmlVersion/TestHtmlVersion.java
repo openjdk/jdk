@@ -85,7 +85,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <nav role="navigation">
                     <!-- ========= START OF TOP NAVBAR ======= -->""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -109,7 +109,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <section class="package-description" id="package-description">
                     <div class="block">Test package.</div>""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
         // No package description
@@ -150,7 +150,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <section class="hierarchy">
                     <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""" );
 
@@ -171,7 +171,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -199,7 +199,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="pkg.*">pkg.*</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -220,7 +220,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <main role="main">
                     <div class="header">""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -243,7 +243,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Package">Package&nbsp;<a href="pkg/package-summary.html">pkg</a></h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -279,7 +279,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2 title="Enum Class Hierarchy">Enum Class Hierarchy</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -299,7 +299,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <div class="main-grid">
                     <main role="main">""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -337,7 +337,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h3>Class or Interface</h3>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -387,7 +387,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -428,7 +428,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -460,7 +460,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Method Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -487,7 +487,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Constructor Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -514,7 +514,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Constructor Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -552,7 +552,7 @@ public class TestHtmlVersion extends JavadocTester {
                     <h2>Element Details</h2>
                     """,
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
 
@@ -581,7 +581,7 @@ public class TestHtmlVersion extends JavadocTester {
                     /span></div>
                     <div class="summary-table three-column-summary">""",
                 """
-                    <footer role="contentinfo">""",
+                    <footer>""",
                 """
                     bottom text""");
     }

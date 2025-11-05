@@ -38,8 +38,6 @@ class ShenandoahGenerationalHeap;
 class ShenandoahHeap;
 
 class ShenandoahGenerationalControlThread: public ShenandoahController {
-  friend class VMStructs;
-
 public:
   typedef enum {
     none,
@@ -129,9 +127,6 @@ private:
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);
 
-  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
-  void process_phase_timings() const;
-
   // Set the gc mode and post a notification if it has changed. The overloaded variant should be used
   // when the _control_lock is already held.
   void set_gc_mode(GCMode new_mode);
@@ -160,6 +155,9 @@ private:
   GCMode prepare_for_allocation_failure_gc(ShenandoahGCRequest &request);
   GCMode prepare_for_explicit_gc(ShenandoahGCRequest &request) const;
   GCMode prepare_for_concurrent_gc(const ShenandoahGCRequest &request) const;
+
+  // Print table for young region ages if log is enabled
+  void maybe_print_young_region_ages() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

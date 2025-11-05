@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,20 +34,20 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting Compiler
- * @run testng ExecutionControlSpecTest
+ * @run junit ExecutionControlSpecTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ExecutionControlSpecTest extends KullaTesting {
 
     ClassLoader ccl;
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         String mod = "my.ec";
@@ -86,7 +86,7 @@ public class ExecutionControlSpecTest extends KullaTesting {
         setUp(builder -> builder.executionEngine("prefixing"));
     }
 
-    @AfterMethod
+    @AfterEach
     @Override
     public void tearDown() {
         super.tearDown();

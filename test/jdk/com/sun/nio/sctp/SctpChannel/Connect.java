@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /* @test
  * @bug 4927640
+ * @library /test/lib
  * @summary Tests the SCTP protocol implementation
  * @author chegar
+ * @run main/timeout=480 Connect
  */
 
 import java.net.InetSocketAddress;
@@ -43,6 +45,8 @@ import com.sun.nio.sctp.SctpServerChannel;
 import static java.lang.System.out;
 import static java.lang.System.err;
 
+import jtreg.SkippedException;
+
 /**
  * Tests connect, finishConnect, isConnectionPending,
  * getRemoteAddresses and association.
@@ -50,12 +54,6 @@ import static java.lang.System.err;
 public class Connect {
 
     void test(String[] args) {
-        if (!Util.isSCTPSupported()) {
-            out.println("SCTP protocol is not supported");
-            out.println("Test cannot be run");
-            return;
-        }
-
         doTest();
     }
 
@@ -235,6 +233,10 @@ public class Connect {
     void check(boolean cond, String failMessage) {if (cond) pass(); else fail(failMessage);}
     void debug(String message) {if(debug) { System.out.println(message); }  }
     public static void main(String[] args) throws Throwable {
+        if (!Util.isSCTPSupported()) {
+            throw new SkippedException("SCTP protocol is not supported");
+        }
+
         Class<?> k = new Object(){}.getClass().getEnclosingClass();
         try {k.getMethod("instanceMain",String[].class)
                 .invoke( k.newInstance(), (Object) args);}

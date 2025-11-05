@@ -27,7 +27,6 @@
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -201,34 +200,6 @@ void CollectedHeap::print_relative_to_gc(GCWhen::Type when) const {
   }
 }
 
-class CPUTimeThreadClosure : public ThreadClosure {
-private:
-  jlong _cpu_time = 0;
-
-public:
-  virtual void do_thread(Thread* thread) {
-    jlong cpu_time = os::thread_cpu_time(thread);
-    if (cpu_time != -1) {
-      _cpu_time += cpu_time;
-    }
-  }
-  jlong cpu_time() { return _cpu_time; };
-};
-
-double CollectedHeap::elapsed_gc_cpu_time() const {
-  double string_dedup_cpu_time = UseStringDeduplication ?
-    os::thread_cpu_time((Thread*)StringDedup::_processor->_thread) : 0;
-
-  if (string_dedup_cpu_time == -1) {
-    string_dedup_cpu_time = 0;
-  }
-
-  CPUTimeThreadClosure cl;
-  gc_threads_do(&cl);
-
-  return (double)(cl.cpu_time() + _vmthread_cpu_time + string_dedup_cpu_time) / NANOSECS_PER_SEC;
-}
-
 void CollectedHeap::print_before_gc() const {
   print_relative_to_gc(GCWhen::BeforeGC);
 }
@@ -305,7 +276,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -415,6 +385,12 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
     if (op.gc_succeeded()) {
       return op.result();
     }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
+
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
@@ -473,12 +449,6 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
 }
 
 #ifdef ASSERT
-void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
-{
-  assert(words >= min_fill_size(), "too small to fill");
-  assert(is_object_aligned(words), "unaligned size");
-}
-
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
@@ -524,14 +494,16 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
@@ -633,35 +605,27 @@ void CollectedHeap::post_initialize() {
   initialize_serviceability();
 }
 
-void CollectedHeap::log_gc_cpu_time() const {
-  LogTarget(Info, gc, cpu) out;
-  if (os::is_thread_cpu_time_supported() && out.is_enabled()) {
-    double process_cpu_time = os::elapsed_process_cpu_time();
-    double gc_cpu_time = elapsed_gc_cpu_time();
+bool CollectedHeap::is_shutting_down() const {
+  return Universe::is_shutting_down();
+}
 
-    if (process_cpu_time == -1 || gc_cpu_time == -1) {
-      log_warning(gc, cpu)("Could not sample CPU time");
-      return;
-    }
+void CollectedHeap::stall_for_vm_shutdown() {
+  assert(is_shutting_down(), "Precondition");
+  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
+  // if the VM shutdown triggers a GC.
+  // The 2-seconds sleep is:
+  //   - long enough to keep daemon threads stalled, while the shutdown
+  //     sequence completes in the common case.
+  //   - short enough to avoid excessive stall time if the shutdown itself
+  //     triggers a GC.
+  JavaThread::current()->sleep(2 * MILLIUNITS);
 
-    double usage;
-    if (gc_cpu_time > process_cpu_time ||
-        process_cpu_time == 0 || gc_cpu_time == 0) {
-      // This can happen e.g. for short running processes with
-      // low CPU utilization
-      usage = 0;
-    } else {
-      usage = 100 * gc_cpu_time / process_cpu_time;
-    }
-    out.print("GC CPU usage: %.2f%% (Process: %.4fs GC: %.4fs)", usage, process_cpu_time, gc_cpu_time);
-  }
+  ResourceMark rm;
+  log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
 }
 
 void CollectedHeap::before_exit() {
   print_tracing_info();
-
-  // Log GC CPU usage.
-  log_gc_cpu_time();
 
   // Stop any on-going concurrent work and prepare for exit.
   stop();

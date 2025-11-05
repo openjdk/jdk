@@ -237,8 +237,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
-          "page size for the environment as the maximum)")                  \
+          "page size for the environment as the maximum) "                  \
+          "(must be a power of 2)")                                         \
           range(0, max_uintx)                                               \
+          constraint(LargePageSizeInBytesConstraintFunc, AtParse)           \
                                                                             \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
           "Use large pages if maximum heap is at least this big")           \
@@ -483,6 +485,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, ZapFillerObjects, trueInDebug,                              \
           "Zap filler objects")                                             \
                                                                             \
+  develop(bool, ZapCHeap, trueInDebug,                                      \
+          "Zap allocated/freed C heap space")                               \
+                                                                            \
   develop(bool, ZapTLAB, trueInDebug,                                       \
           "Zap allocated TLABs")                                            \
   develop(bool, TestingAsyncLoggingDeathTest, false,                        \
@@ -497,7 +502,7 @@ const int ObjectAlignmentInBytes = 8;
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
-          range(0, 17)                                                      \
+          range(0, 18)                                                      \
                                                                             \
   develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
@@ -1043,10 +1048,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  develop(bool, VerifyHeavyMonitors, false,                                 \
-          "Checks that no stack locking happens when using "                \
-          "-XX:LockingMode=0 (LM_MONITOR)")                                 \
-                                                                            \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
                                                                             \
@@ -1564,6 +1565,9 @@ const int ObjectAlignmentInBytes = 8;
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
+  product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
+          "Enables use of experimental function nmethod::relocate()")       \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -1998,6 +2002,7 @@ const int ObjectAlignmentInBytes = 8;
   develop(uint, BinarySearchThreshold, 16,                                  \
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 
