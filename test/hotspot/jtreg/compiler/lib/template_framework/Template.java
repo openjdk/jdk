@@ -828,6 +828,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
+     * <p>
+     * Note that a {@code let} definition makes the hashtag replacement available
+     * for anything that follows it, until the the end of the next outer scope
+     * that is non-transparent for hashtag replacements. Additionally, hashtag
+     * replacements are limited to the template they were defined in.
+     *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
      * @return A token that represents the hashtag replacement definition.
@@ -928,6 +934,9 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link DataName} in the current {@link scope}.
+     * If the current scope is transparent to {@link DataName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addDataName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -953,6 +962,9 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link DataName} in the current {@link scope}, with a {@code weight} of 1.
+     * If the current scope is transparent to {@link DataName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addDataName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -977,6 +989,9 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current {@link scope}.
+     * If the current scope is transparent to {@link StructuralName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addStructuralName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
@@ -994,6 +1009,9 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current {@link scope}, with a {@code weight} of 1.
+     * If the current scope is transparent to {@link StructuralName}s, it escapes to the next
+     * outer scope that is non-transparent, and is available for everything that follows
+     * the {@code addStructuralName} until the end of that non-transparent scope.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.

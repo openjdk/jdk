@@ -79,8 +79,13 @@ import java.util.function.Function;
  * }
  *
  * <p>
- * Similarly, it may or may not be desirable for hashtag replacements to escape
- * an insertion scope or an anchoring scope.
+ * Note, that if we use {@link insert} with {@link transparentScope}, then {@link DataName}s
+ * and {@link StructuralName}s escape from the inserted scope to the anchor scope, but
+ * hashtag replacements and {@link setFuelCost} escapes to the caller, i.e. from where
+ * we inserted the scope. This makes sense if we consider {@link DataName}s belong to
+ * the structure of the generated code, and the inserted scope thus belongs nested into
+ * the anchor scope. On the other hand, hashtag replacements and {@link setFuelCost}
+ * rather belongs to the code generation that happens within the context of a template.
  *
  * @param name The name of the Hook, for debugging purposes only.
  */

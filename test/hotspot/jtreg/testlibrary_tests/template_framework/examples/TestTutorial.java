@@ -206,6 +206,12 @@ public class TestTutorial {
     // Note: hashtag replacements are a workaround for the missing string templates.
     //       If we had string templates, we could just capture the typed lambda
     //       arguments, and use them directly in the String via string templating.
+    //
+    // Important: hashtag replacements are always constrained to a single template
+    //            and are not available in any nested templates. Hashtag replacements
+    //            are only there to facilitate string templating within the limited
+    //            scope of a template. You may consider it like a "local variable"
+    //            for code generation purposes only.
     public static String generateWithHashtagAndDollarReplacements() {
         var template1 = Template.make("x", (Integer x) -> scope(
             // We have the "#x" hashtag replacement from the argument capture above.
@@ -503,6 +509,8 @@ public class TestTutorial {
                 """
                 public static int $field1 = #x;
                 """
+                // Note that we were able to use the dollar replacement "$field1" and the hashtag
+                // replacement "#x" inside the scope that is inserted to myHook.
             )),
             """
             // We can do that by inserting a scope like above, or by inserting a template, like below.
@@ -735,6 +743,12 @@ public class TestTutorial {
     //
     // To get started, we show an example where all DataNames have the same type, and where
     // all Names are mutable. For simplicity, our type represents the primitive int type.
+    //
+    // Note: the template library contains a lot of types that model the Java types,
+    //       such as primitive types ({@code PrimitiveType}). The following examples
+    //       give insight into how those types work. If you are just interested in
+    //       how to use the predefined types, then you can find other examples in
+    //       {@code examples/TestPrimitiveTypes.java}.
     private record MySimpleInt() implements DataName.Type {
         // The type is only subtype of itself. This is relevant when sampling or weighing
         // DataNames, because we do not just sample from the given type, but also its subtypes.
@@ -760,9 +774,16 @@ public class TestTutorial {
             // We make all DataNames mutable, and with the same weight of 1,
             // so that they have equal probability of being sampled.
             // Note: the default weight is 1, so we can also omit the weight.
+            //
+            // Also note that DataNames are only available once they are defined:
+            //
+            // Nothing defined, yet: dataNames() = {}
             addDataName($("f1"), mySimpleInt, MUTABLE, 1),
+            // Only now dataNames() contains f1: dataNames() = {f1}
             addDataName($("f2"), mySimpleInt, MUTABLE, 1),
+            // dataNames() = {f1, f2}
             addDataName($("f3"), mySimpleInt, MUTABLE), // omit weight, default is 1.
+            // dataNames() = {f1, f2, f3}
             """
             package p.xyz;
 
@@ -841,7 +862,8 @@ public class TestTutorial {
     public static String generateWithDataNamesForFieldsAndVariables() {
         // Define a static field.
         // Note: it is very important that we use a "transparentScope" for the template here,
-        //       so that the DataName can escape to outer scopes.
+        //       so that the DataName can escape to outer scopes, so that it is available to
+        //       everything that follows the DataName definition in the outer scope.
         //       (We could also use "hashtagScope", since those are also transparent for
         //        names. But it is not great style, because template boundaries are
         //        non-transparent for hashtags and setFuelCost anyway. So we might as
