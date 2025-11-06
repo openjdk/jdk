@@ -1049,7 +1049,7 @@ void HeapShared::write_subgraph_info_table() {
 
   _run_time_subgraph_info_table.reset();
 
-  CompactHashtableWriter writer(d_table->_count, &stats);
+  CompactHashtableWriter writer(d_table->number_of_entries(), &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
   d_table->iterate(&copy);
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
@@ -1820,15 +1820,15 @@ void HeapShared::check_special_subgraph_classes() {
 
 HeapShared::SeenObjectsTable* HeapShared::_seen_objects_table = nullptr;
 HeapShared::PendingOop HeapShared::_object_being_archived;
-int HeapShared::_num_new_walked_objs;
-int HeapShared::_num_new_archived_objs;
-int HeapShared::_num_old_recorded_klasses;
+size_t HeapShared::_num_new_walked_objs;
+size_t HeapShared::_num_new_archived_objs;
+size_t HeapShared::_num_old_recorded_klasses;
 
-int HeapShared::_num_total_subgraph_recordings = 0;
-int HeapShared::_num_total_walked_objs = 0;
-int HeapShared::_num_total_archived_objs = 0;
-int HeapShared::_num_total_recorded_klasses = 0;
-int HeapShared::_num_total_verifications = 0;
+size_t HeapShared::_num_total_subgraph_recordings = 0;
+size_t HeapShared::_num_total_walked_objs = 0;
+size_t HeapShared::_num_total_archived_objs = 0;
+size_t HeapShared::_num_total_recorded_klasses = 0;
+size_t HeapShared::_num_total_verifications = 0;
 
 bool HeapShared::has_been_seen_during_subgraph_recording(oop obj) {
   return _seen_objects_table->get(obj) != nullptr;
@@ -1851,10 +1851,10 @@ void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_na
 }
 
 void HeapShared::done_recording_subgraph(InstanceKlass *k, const char* class_name) {
-  int num_new_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses() -
+  size_t num_new_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses() -
     _num_old_recorded_klasses;
   log_info(aot, heap)("Done recording subgraph(s) for archived fields in %s: "
-                      "walked %d objs, archived %d new objs, recorded %d classes",
+                      "walked %zu objs, archived %zu new objs, recorded %zu classes",
                       class_name, _num_new_walked_objs, _num_new_archived_objs,
                       num_new_recorded_klasses);
 
@@ -2102,18 +2102,18 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
     done_recording_subgraph(info->klass, klass_name);
   }
 
-  log_info(aot, heap)("Archived subgraph records = %d",
+  log_info(aot, heap)("Archived subgraph records = %zu",
                       _num_total_subgraph_recordings);
-  log_info(aot, heap)("  Walked %d objects", _num_total_walked_objs);
-  log_info(aot, heap)("  Archived %d objects", _num_total_archived_objs);
-  log_info(aot, heap)("  Recorded %d klasses", _num_total_recorded_klasses);
+  log_info(aot, heap)("  Walked %zu objects", _num_total_walked_objs);
+  log_info(aot, heap)("  Archived %zu objects", _num_total_archived_objs);
+  log_info(aot, heap)("  Recorded %zu klasses", _num_total_recorded_klasses);
 
 #ifndef PRODUCT
   for (int i = 0; fields[i].valid(); i++) {
     ArchivableStaticFieldInfo* f = &fields[i];
     verify_subgraph_from_static_field(f->klass, f->offset);
   }
-  log_info(aot, heap)("  Verified %d references", _num_total_verifications);
+  log_info(aot, heap)("  Verified %zu references", _num_total_verifications);
 #endif
 }
 
@@ -2165,8 +2165,8 @@ void HeapShared::debug_trace() {
 class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   void* _start;
   BitMap *_oopmap;
-  int _num_total_oops;
-  int _num_null_oops;
+  size_t _num_total_oops;
+  size_t _num_null_oops;
  public:
   FindEmbeddedNonNullPointers(void* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
@@ -2192,8 +2192,8 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
       _num_null_oops ++;
     }
   }
-  int num_total_oops() const { return _num_total_oops; }
-  int num_null_oops()  const { return _num_null_oops; }
+  size_t num_total_oops() const { return _num_total_oops; }
+  size_t num_null_oops()  const { return _num_null_oops; }
 };
 #endif
 
