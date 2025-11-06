@@ -23,7 +23,12 @@
  */
 
 #include "cds/archiveBuilder.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "oops/resolvedFieldEntry.hpp"
+#include "utilities/debug.hpp"
+
+// Some compilers require trivially copyable types for memset()
+STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedFieldEntry> == true);
 
 void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr("Field Entry:");
@@ -46,11 +51,19 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   u2 saved_cpool_index = _cpool_index;
-  memset(this, 0, sizeof(*this));
+  memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
   _cpool_index = saved_cpool_index;
 }
 
+// Paddings in (*this) may get ramdom non-zero values when using ResolvedFieldEntry
+// in GrowableArrays (e.g., Rewriter::_initialized_field_entries). We need to zero
+// the paddings so that CDS archives are deterministic.
 void ResolvedFieldEntry::mark_and_relocate() {
+#if 0
+  ResolvedFieldEntry saved = *this;
+  memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+  copy_from(saved); // Get real data back, but leave zeros in paddings.
+#endif
   ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_field_holder);
 }
 #endif

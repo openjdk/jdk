@@ -116,16 +116,6 @@ class ResolvedMethodEntry {
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
 
-    ResolvedMethodEntry(const ResolvedMethodEntry& other) {
-      copy_from(other);
-    }
-
-    ResolvedMethodEntry& operator=(const ResolvedMethodEntry& other) {
-      copy_from(other);
-      return *this;
-    }
-
-
   // Bit shift to get flags
   enum {
       is_vfinal_shift           = 0,
