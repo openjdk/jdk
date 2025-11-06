@@ -34,6 +34,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
+import java.nio.channels.NetworkChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -1224,8 +1225,12 @@ class Http2Connection  {
         }
     }
 
+    /**
+     * Returns true if this connection hasn't been terminated and the underlying
+     * {@linkplain NetworkChannel#isOpen() channel is open}. false otherwise.
+     */
     final boolean isOpen() {
-        return this.connTerminator.terminationCause.get() == null;
+        return this.connTerminator.terminationCause.get() == null && connection.channel().isOpen();
     }
 
     void resetStream(int streamid, int code) {
@@ -2099,7 +2104,18 @@ class Http2Connection  {
         }
 
         private Http2TerminationCause getTerminationCause() {
-            return this.terminationCause.get();
+            final Http2TerminationCause tc = this.terminationCause.get();
+            if (tc != null) {
+                return tc;
+            }
+            if (!connection.channel().isOpen()) {
+                // terminate the connection
+                terminate(Http2TerminationCause.forException(new IOException("channel is not open")));
+                final Http2TerminationCause terminated = this.terminationCause.get();
+                assert terminated != null : "missing termination cause";
+                return terminated;
+            }
+            return null;
         }
     }
 }
