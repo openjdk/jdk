@@ -67,8 +67,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 
-    final boolean useClassMetaspaceForAllClasses = getFlag("UseClassMetaspaceForAllClasses", Boolean.class);
-
     final int objectAlignment = getFlag("ObjectAlignmentInBytes", Integer.class);
 
     final int klassOffsetInBytes = getFieldValue("CompilerToVM::Data::oopDesc_klass_offset_in_bytes", Integer.class, "int");

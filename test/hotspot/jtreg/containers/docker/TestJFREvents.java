@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,19 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build JfrReporter
- * @run driver TestJFREvents
+ * @build JfrReporter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestJFREvents
  */
 import java.util.List;
+import jdk.internal.platform.Metrics;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
-import jdk.internal.platform.Metrics;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class TestJFREvents {
@@ -54,8 +56,8 @@ public class TestJFREvents {
     private static final String TEST_ENV_VARIABLE = "UNIQUE_VARIABLE_ABC592903XYZ";
     private static final String TEST_ENV_VALUE = "unique_value_abc592903xyz";
     private static final int availableCPUs = Runtime.getRuntime().availableProcessors();
-    private static final int UNKNOWN = -100;
     private static boolean isCgroupV1 = false;
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
@@ -99,7 +101,7 @@ public class TestJFREvents {
     }
 
     private static void containerInfoTestCase() throws Exception {
-        long hostTotalMemory = getHostTotalMemory();
+        long hostTotalMemory = wb.hostPhysicalMemory();
         System.out.println("Debug: Host total memory is " + hostTotalMemory);
         // Leave one CPU for system and tools, otherwise this test may be unstable.
         // Try the memory sizes that were verified by testMemory tests before.
@@ -108,18 +110,6 @@ public class TestJFREvents {
             for (int mem : new int[]{ 200, 500, 1024 }) {
                 testContainerInfo(cpus, mem, hostTotalMemory);
             }
-        }
-    }
-
-    private static long getHostTotalMemory() throws Exception {
-        DockerRunOptions opts = Common.newOpts(imageName);
-
-        String hostMem = Common.run(opts).firstMatch("total physical memory: (\\d+)", 1);
-        try {
-            return Long.parseLong(hostMem);
-        } catch (NumberFormatException e) {
-            System.out.println("Could not parse total physical memory '" + hostMem + "' returning " + UNKNOWN);
-            return UNKNOWN;
         }
     }
 

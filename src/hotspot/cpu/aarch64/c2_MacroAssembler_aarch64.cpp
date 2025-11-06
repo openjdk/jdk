@@ -147,215 +147,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   return pc();
 }
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,
-                                  Register tmp2Reg, Register tmp3Reg) {
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmpReg;
-  Register tmp = tmp2Reg;
-  Label cont;
-  Label object_has_monitor;
-  Label count, no_count;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr, rscratch2);
-
-  // Load markWord from object into displaced_header.
-  ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, oop);
-    ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-    tst(tmp, KlassFlags::_misc_is_value_based_class);
-    br(Assembler::NE, cont);
-  }
-
-  // Check for existing monitor
-  tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    b(cont);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    orr(tmp, disp_hdr, markWord::unlocked_value);
-
-    // Initialize the box. (Must happen before we update the object mark!)
-    str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-            /*release*/ true, /*weak*/ false, disp_hdr);
-    br(Assembler::EQ, cont);
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
-
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    mov(rscratch1, sp);
-    sub(disp_hdr, disp_hdr, rscratch1);
-    mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    // If condition is true we are cont and hence we can store 0 as the
-    // displaced header in the box, which indicates that it is a recursive lock.
-    ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    b(cont);
-  }
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-
-  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
-  add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
-  cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
-          /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
-
-  // Store a non-null value into the box to avoid looking like a re-entrant
-  // lock. The fast-path monitor unlock code checks for
-  // markWord::monitor_value so use markWord::unused_mark which has the
-  // relevant bit set, and also matches ObjectSynchronizer::enter.
-  mov(tmp, (address)markWord::unused_mark().value());
-  str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-  br(Assembler::EQ, cont); // CAS success means locking succeeded
-
-  cmp(tmp3Reg, rscratch2);
-  br(Assembler::NE, cont); // Check for recursive locking
-
-  // Recursive lock case
-  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1);
-  // flag == EQ still from the cmp above, checking if this is a reentrant lock
-
-  bind(cont);
-  // flag == EQ indicates success
-  // flag == NE indicates failure
-  br(Assembler::NE, no_count);
-
-  bind(count);
-  if (LockingMode == LM_LEGACY) {
-    inc_held_monitor_count(rscratch1);
-  }
-
-  bind(no_count);
-}
-
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmpReg,
-                                    Register tmp2Reg) {
-  Register oop = objectReg;
-  Register box = boxReg;
-  Register disp_hdr = tmpReg;
-  Register owner_addr = tmpReg;
-  Register tmp = tmp2Reg;
-  Label cont;
-  Label object_has_monitor;
-  Label count, no_count;
-  Label unlocked;
-
-  assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
-  assert_different_registers(oop, box, tmp, disp_hdr);
-
-  if (LockingMode == LM_LEGACY) {
-    // Find the lock address and load the displaced header from the stack.
-    ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    // If the displaced header is 0, we have a recursive unlock.
-    cmp(disp_hdr, zr);
-    br(Assembler::EQ, cont);
-  }
-
-  // Handle existing monitor.
-  ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-  tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
-
-  if (LockingMode == LM_MONITOR) {
-    tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    b(cont);
-  } else {
-    assert(LockingMode == LM_LEGACY, "must be");
-    // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
-
-    cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-            /*release*/ true, /*weak*/ false, tmp);
-    b(cont);
-  }
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  // Handle existing monitor.
-  bind(object_has_monitor);
-  STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-  add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-
-  ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-
-  Label notRecursive;
-  cbz(disp_hdr, notRecursive);
-
-  // Recursive lock
-  sub(disp_hdr, disp_hdr, 1u);
-  str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
-  cmp(disp_hdr, disp_hdr); // Sets flags for result
-  b(cont);
-
-  bind(notRecursive);
-
-  // Compute owner address.
-  lea(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
-
-  // Set owner to null.
-  // Release to satisfy the JMM
-  stlr(zr, owner_addr);
-  // We need a full fence after clearing owner to avoid stranding.
-  // StoreLoad achieves this.
-  membar(StoreLoad);
-
-  // Check if the entry_list is empty.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::entry_list_offset()));
-  cmp(rscratch1, zr);
-  br(Assembler::EQ, cont);     // If so we are done.
-
-  // Check if there is a successor.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
-  cmp(rscratch1, zr);
-  br(Assembler::NE, unlocked); // If so we are done.
-
-  // Save the monitor pointer in the current thread, so we can try to
-  // reacquire the lock in SharedRuntime::monitor_exit_helper().
-  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
-
-  cmp(zr, rthread); // Set Flag to NE => slow path
-  b(cont);
-
-  bind(unlocked);
-  cmp(zr, zr); // Set Flag to EQ => fast path
-
-  // Intentional fall-through
-
-  bind(cont);
-  // flag == EQ indicates success
-  // flag == NE indicates failure
-  br(Assembler::NE, no_count);
-
-  bind(count);
-  if (LockingMode == LM_LEGACY) {
-    dec_held_monitor_count(rscratch1);
-  }
-
-  bind(no_count);
-}
-
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
-                                              Register t2, Register t3) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
+                                  Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -380,7 +173,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   const Register t1_mark = t1;
   const Register t3_t = t3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
     Label push;
@@ -510,9 +303,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
-                                                Register t2, Register t3) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "must be");
+void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
+                                    Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
@@ -526,7 +318,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   const Register t2_top = t2;
   const Register t3_t = t3;
 
-  { // Lightweight unlock
+  { // Fast unlock
 
     Label push_and_slow_path;
 
@@ -2411,114 +2203,117 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
 // Any remaining elements of dst will be filled with zero.
 // Clobbers: rscratch1
-// Preserves: src, mask
+// Preserves: mask, vzr
 void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                                           FloatRegister vtmp1, FloatRegister vtmp2,
-                                           PRegister pgtmp) {
+                                           FloatRegister vzr, FloatRegister vtmp,
+                                           PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2);
+  // When called by sve_compress_byte, src and vtmp may be the same register.
+  assert_different_registers(dst, src, vzr);
+  assert_different_registers(dst, vtmp, vzr);
   assert_different_registers(mask, pgtmp);
-
-  // Example input:   src   = 8888 7777 6666 5555 4444 3333 2222 1111
-  //                  mask  = 0001 0000 0000 0001 0001 0000 0001 0001
-  // Expected result: dst   = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_dup(vtmp2, H, 0);
+  // high <-- low
+  // Example input:   src   = hh gg ff ee dd cc bb aa, one character is 8 bits.
+  //                  mask  = 01 00 00 01 01 00 01 01, one character is 1 bit.
+  // Expected result: dst   = 00 00 00 hh ee dd bb aa
 
   // Extend lowest half to type INT.
-  // dst = 00004444 00003333 00002222 00001111
+  // dst   =  00dd  00cc  00bb  00aa
   sve_uunpklo(dst, S, src);
-  // pgtmp = 00000001 00000000 00000001 00000001
+  // pgtmp =  0001  0000  0001  0001
   sve_punpklo(pgtmp, mask);
   // Pack the active elements in size of type INT to the right,
   // and fill the remainings with zero.
-  // dst = 00000000 00004444 00002222 00001111
+  // dst   =  0000  00dd  00bb  00aa
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
-  // dst = 0000 0000 0000 0000 0000 4444 2222 1111
-  sve_uzp1(dst, H, dst, vtmp2);
+  // dst   = 00 00 00 00 00 dd bb aa
+  sve_uzp1(dst, H, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
+
   // Count the active elements of lowest half.
   // rscratch1 = 3
   sve_cntp(rscratch1, S, ptrue, pgtmp);
 
   // Repeat to the highest half.
-  // pgtmp = 00000001 00000000 00000000 00000001
+  // pgtmp =  0001  0000  0000  0001
   sve_punpkhi(pgtmp, mask);
-  // vtmp1 = 00008888 00007777 00006666 00005555
-  sve_uunpkhi(vtmp1, S, src);
-  // vtmp1 = 00000000 00000000 00008888 00005555
-  sve_compact(vtmp1, S, vtmp1, pgtmp);
-  // vtmp1 = 0000 0000 0000 0000 0000 0000 8888 5555
-  sve_uzp1(vtmp1, H, vtmp1, vtmp2);
+  // vtmp  =  00hh  00gg  00ff  00ee
+  sve_uunpkhi(vtmp, S, src);
+  // vtmp  =  0000  0000  00hh  00ee
+  sve_compact(vtmp, S, vtmp, pgtmp);
+  // vtmp  = 00 00 00 00 00 00 hh ee
+  sve_uzp1(vtmp, H, vtmp, vzr);
 
-  // Compressed low:   dst   = 0000 0000 0000 0000 0000 4444 2222 1111
-  // Compressed high:  vtmp1 = 0000 0000 0000 0000 0000 0000 8888  5555
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch1, rscratch1);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, H, rscratch1, 1);
-  // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, vtmp2);
-
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_orr(dst, dst, vtmp1);
+  // pgtmp = 00 00 00 00 00 01 01 01
+  sve_whilelt(pgtmp, H, zr, rscratch1);
+  // Compressed low:  dst  = 00 00 00 00 00 dd bb aa
+  // Compressed high: vtmp = 00 00 00 00 00 00 hh ee
+  // Combine the compressed low with the compressed high:
+  //                  dst  = 00 00 00 hh ee dd bb aa
+  sve_splice(dst, H, pgtmp, vtmp);
 }
 
 // Clobbers: rscratch1, rscratch2
 // Preserves: src, mask
 void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                                          FloatRegister vtmp1, FloatRegister vtmp2,
-                                          FloatRegister vtmp3, FloatRegister vtmp4,
-                                          PRegister ptmp, PRegister pgtmp) {
+                                          FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                          PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
+  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3);
   assert_different_registers(mask, ptmp, pgtmp);
-  // Example input:   src   = 88 77 66 55 44 33 22 11
-  //                  mask  = 01 00 00 01 01 00 01 01
-  // Expected result: dst   = 00 00 00 88 55 44 22 11
+  // high <-- low
+  // Example input:   src   = q p n m l k j i h g f e d c b a, one character is 8 bits.
+  //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
+  // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  FloatRegister vzr = vtmp3;
+  sve_dup(vzr, B, 0);
 
-  sve_dup(vtmp4, B, 0);
   // Extend lowest half to type SHORT.
-  // vtmp1 = 0044 0033 0022 0011
+  // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
   sve_uunpklo(vtmp1, H, src);
-  // ptmp = 0001 0000 0001 0001
+  // ptmp  =  00  01  00  00  00  01  00  01
   sve_punpklo(ptmp, mask);
+  // Pack the active elements in size of type SHORT to the right,
+  // and fill the remainings with zero.
+  // dst   =  00  00  00  00  00  0g  0c  0a
+  unsigned extended_size = vector_length_in_bytes << 1;
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  // Narrow the result back to type BYTE.
+  // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  sve_uzp1(dst, B, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
   // Count the active elements of lowest half.
   // rscratch2 = 3
   sve_cntp(rscratch2, H, ptrue, ptmp);
-  // Pack the active elements in size of type SHORT to the right,
-  // and fill the remainings with zero.
-  // dst = 0000 0044 0022 0011
-  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp);
-  // Narrow the result back to type BYTE.
-  // dst = 00 00 00 00 00 44 22 11
-  sve_uzp1(dst, B, dst, vtmp4);
 
   // Repeat to the highest half.
-  // ptmp = 0001 0000 0000 0001
+  // ptmp  =  00  01  00  00  00  00  00  01
   sve_punpkhi(ptmp, mask);
-  // vtmp1 = 0088 0077 0066 0055
+  // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
-  // vtmp1 = 0000 0000 0088 0055
-  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp3, vtmp4, pgtmp);
+  // vtmp1 =  00  00  00  00  00  00  0p  0i
+  sve_compress_short(vtmp1, vtmp2, ptmp, vzr, vtmp2, pgtmp, extended_size - MaxVectorSize);
+  // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  sve_uzp1(vtmp1, B, vtmp1, vzr);
 
-  sve_dup(vtmp4, B, 0);
-  // vtmp1 = 00 00 00 00 00 00 88 55
-  sve_uzp1(vtmp1, B, vtmp1, vtmp4);
-
-  // Compressed low:   dst   = 00 00 00 00 00 44 22 11
-  // Compressed high:  vtmp1 = 00 00 00 00 00 00 88 55
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch2, rscratch2);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, B, rscratch2, 1);
-  // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, vtmp2);
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 00 00 00 88 55 44 22 11
-  sve_orr(dst, dst, vtmp1);
+  // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
+  sve_whilelt(ptmp, B, zr, rscratch2);
+  // Compressed low:  dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  // Compressed high: vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  // Combine the compressed low with the compressed high:
+  //                  dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  sve_splice(dst, B, ptmp, vtmp1);
 }
 
 void C2_MacroAssembler::neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
@@ -2927,9 +2722,8 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   assert_different_registers(dst, src1, src2, index, tmp);
 
   // The cases that can reach this method are -
-  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 2, vector_length_in_bytes >= 8
+  // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
+  // - UseSVE = 2, vector_length_in_bytes >= 8, for all types
   //
   // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
   // and UseSVE = 2 with vector_length_in_bytes >= 8
@@ -2978,4 +2772,91 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
                                 // to select a set of 2B/4B
     select_from_two_vectors_neon(dst, src1, src2, dst, tmp, vector_length_in_bytes);
   }
+}
+
+// Vector expand implementation. Elements from the src vector are expanded into
+// the dst vector under the control of the vector mask.
+// Since there are no native instructions directly corresponding to expand before
+// SVE2p2, the following implementations mainly leverages the TBL instruction to
+// implement expand. To compute the index input for TBL, the prefix sum algorithm
+// (https://en.wikipedia.org/wiki/Prefix_sum) is used. The same algorithm is used
+// for NEON and SVE, but with different instructions where appropriate.
+
+// Vector expand implementation for NEON.
+//
+// An example of 128-bit Byte vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = g  f  e  d  c  b  a  9  8  7  6  5  4  3  2  1
+//         mask  = 0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+//   Expected result:
+//         dst   = 0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
+                                           FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                           int vector_length_in_bytes) {
+  assert(vector_length_in_bytes <= 16, "the vector length in bytes for NEON must be <= 16");
+  assert_different_registers(dst, src, mask, tmp1, tmp2);
+  // Since the TBL instruction only supports byte table, we need to
+  // compute indices in byte type for all types.
+  SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
+  // tmp1 =  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  dup(tmp1, size, zr);
+  // dst  =  0  0  1  1  0  0  1  1  0  0  1  1  0  0  1  1
+  negr(dst, size, mask);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // dst  =  8  8  8  7  6  6  6  5  4  4  4  3  2  2  2  1
+  for (int i = 1; i < vector_length_in_bytes; i <<= 1) {
+    ext(tmp2, size, tmp1, dst, vector_length_in_bytes - i);
+    addv(dst, size, tmp2, dst);
+  }
+  // tmp2 =  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+  orr(tmp2, size, mask, mask);
+  // tmp2 =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  bsl(tmp2, size, dst, tmp1);
+  // tmp1 =  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  movi(tmp1, size, 1);
+  // dst  = -1 -1  7  6 -1 -1  5  4 -1 -1  3  2 -1 -1  1  0
+  subv(dst, size, tmp2, tmp1);
+  // dst  =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  tbl(dst, size, src, 1, dst);
+}
+
+// Vector expand implementation for SVE.
+//
+// An example of 128-bit Short vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = gf ed cb a9 87 65 43 21
+//         pg    = 00 01 00 01 00 01 00 01
+//   Expected result:
+//         dst   = 00 87 00 65 00 43 00 21
+void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
+                                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                          int vector_length_in_bytes) {
+  assert(UseSVE > 0, "expand implementation only for SVE");
+  assert_different_registers(dst, src, tmp1, tmp2);
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+
+  // tmp1 = 00 00 00 00 00 00 00 00
+  sve_dup(tmp1, size, 0);
+  sve_movprfx(tmp2, tmp1);
+  // tmp2 = 00 01 00 01 00 01 00 01
+  sve_cpy(tmp2, size, pg, 1, true);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // tmp2 = 04 04 03 03 02 02 01 01
+  for (int i = type2aelembytes(bt); i < vector_length_in_bytes; i <<= 1) {
+    sve_movprfx(dst, tmp1);
+    // The EXT instruction operates on the full-width sve register. The correct
+    // index calculation method is:
+    // vector_length_in_bytes - i + MaxVectorSize - vector_length_in_bytes =>
+    // MaxVectorSize - i.
+    sve_ext(dst, tmp2, MaxVectorSize - i);
+    sve_add(tmp2, size, dst, tmp2);
+  }
+  // dst  = 00 04 00 03 00 02 00 01
+  sve_sel(dst, size, pg, tmp2, tmp1);
+  // dst  = -1 03 -1 02 -1 01 -1 00
+  sve_sub(dst, size, 1);
+  // dst  = 00 87 00 65 00 43 00 21
+  sve_tbl(dst, size, src, dst);
 }

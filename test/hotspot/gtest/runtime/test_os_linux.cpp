@@ -35,6 +35,7 @@
 #include "unittest.hpp"
 
 #include <sys/mman.h>
+#include <sys/prctl.h>
 
 static bool using_explicit_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
 
@@ -467,5 +468,28 @@ TEST_VM(os_linux, glibc_mallinfo_wrapper) {
 }
 #endif // ADDRESS_SANITIZER
 #endif // __GLIBC__
+
+static void test_set_thread_name(const char* name, const char* expected) {
+  os::set_native_thread_name(name);
+  char buf[16];
+  int rc = prctl(PR_GET_NAME, buf);
+  ASSERT_EQ(0, rc);
+  ASSERT_STREQ(buf, expected);
+}
+
+TEST_VM(os_linux, set_thread_name) {
+  char buf[16];
+  // retrieve current name
+  int rc = prctl(PR_GET_NAME, buf);
+  ASSERT_EQ(0, rc);
+
+  test_set_thread_name("shortname", "shortname");
+  test_set_thread_name("012345678901234",  "012345678901234");
+  test_set_thread_name("0123456789012345", "0123456..012345");
+  test_set_thread_name("MyAllocationWorkerThread22", "MyAlloc..read22");
+
+  // restore current name
+  test_set_thread_name(buf, buf);
+}
 
 #endif // LINUX

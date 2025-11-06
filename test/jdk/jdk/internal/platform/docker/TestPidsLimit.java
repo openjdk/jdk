@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
  * @requires !vm.asan
  * @library /test/lib
  * @build TestPidsLimit
- * @run driver TestPidsLimit
+ * @run driver/timeout=480 TestPidsLimit
  */
 import java.util.ArrayList;
 import java.util.List;

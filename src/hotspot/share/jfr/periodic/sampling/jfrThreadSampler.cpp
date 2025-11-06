@@ -23,16 +23,16 @@
  */
 
 #include "jfr/metadata/jfrSerializer.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
-#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/periodic/sampling/jfrThreadSampling.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -83,8 +83,9 @@ class JfrSamplerThread : public NonJavaThread {
   virtual const char* name() const { return "JFR Sampler Thread"; }
   virtual const char* type_name() const { return "JfrSamplerThread"; }
   bool is_JfrSampler_thread() const { return true; }
-  int64_t java_period() const { return Atomic::load(&_java_period_millis); };
-  int64_t native_period() const { return Atomic::load(&_native_period_millis); };
+  int64_t java_period() const { return AtomicAccess::load(&_java_period_millis); };
+  int64_t native_period() const { return AtomicAccess::load(&_native_period_millis); };
+  virtual void print_on(outputStream* st) const;
 };
 
 JfrSamplerThread::JfrSamplerThread(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames) :
@@ -376,12 +377,18 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
 
 void JfrSamplerThread::set_java_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
-  Atomic::store(&_java_period_millis, period_millis);
+  AtomicAccess::store(&_java_period_millis, period_millis);
 }
 
 void JfrSamplerThread::set_native_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");
-  Atomic::store(&_native_period_millis, period_millis);
+  AtomicAccess::store(&_native_period_millis, period_millis);
+}
+
+void JfrSamplerThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
 }
 
 // JfrThreadSampler;

@@ -54,6 +54,10 @@ public final class AdditionalLauncher {
         setPersistenceHandler(null);
     }
 
+    public String name() {
+        return name;
+    }
+
     public AdditionalLauncher withVerifyActions(Action... actions) {
         verifyActions.addAll(List.of(actions));
         return this;
@@ -94,6 +98,11 @@ public final class AdditionalLauncher {
 
     public AdditionalLauncher setProperty(String name, Object value) {
         rawProperties.put(Objects.requireNonNull(name), Objects.requireNonNull(value.toString()));
+        return this;
+    }
+
+    public AdditionalLauncher removeProperty(String name) {
+        rawProperties.remove(Objects.requireNonNull(name));
         return this;
     }
 
@@ -156,7 +165,7 @@ public final class AdditionalLauncher {
 
     public void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
-        cmd.addVerifyAction(createVerifierAsConsumer());
+        cmd.addVerifyAction(createVerifierAsConsumer(), JPackageCommand.ActionRole.LAUNCHER_VERIFIER);
     }
 
     public void applyTo(PackageTest test) {
@@ -194,7 +203,7 @@ public final class AdditionalLauncher {
         }
     }
 
-    static PropertyFile getAdditionalLauncherProperties(
+    public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {

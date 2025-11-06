@@ -26,6 +26,8 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLocation.hpp"
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "cds/aotOopChecker.hpp"
 #include "cds/aotReferenceObjSupport.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -35,7 +37,6 @@
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/cdsHeapVerifier.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -58,6 +59,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -159,10 +161,33 @@ bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
          is_subgraph_root_class_of(fmg_archive_subgraph_entry_fields, ik);
 }
 
+oop HeapShared::CachedOopInfo::orig_referrer() const {
+  return _orig_referrer.resolve();
+}
+
 unsigned HeapShared::oop_hash(oop const& p) {
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         JavaThread::current()->is_in_no_safepoint_scope(), "sanity");
   // Do not call p->identity_hash() as that will update the
   // object header.
   return primitive_hash(cast_from_oop<intptr_t>(p));
+}
+
+unsigned int HeapShared::oop_handle_hash_raw(const OopHandle& oh) {
+  return oop_hash(oh.resolve());
+}
+
+unsigned int HeapShared::oop_handle_hash(const OopHandle& oh) {
+  oop o = oh.resolve();
+  if (o == nullptr) {
+    return 0;
+  } else {
+    return o->identity_hash();
+  }
+}
+
+bool HeapShared::oop_handle_equals(const OopHandle& a, const OopHandle& b) {
+  return a.resolve() == b.resolve();
 }
 
 static void reset_states(oop obj, TRAPS) {
@@ -183,7 +208,7 @@ static void reset_states(oop obj, TRAPS) {
       JavaCalls::call_special(&result, h_obj, klass,
                               method_name, method_sig, CHECK);
     }
-    klass = klass->java_super();
+    klass = klass->super();
   }
 }
 
@@ -216,7 +241,8 @@ HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::has_been_archived(oop obj) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
-  return archived_object_cache()->get(obj) != nullptr;
+  OopHandle oh(&obj);
+  return archived_object_cache()->get(oh) != nullptr;
 }
 
 int HeapShared::append_root(oop obj) {
@@ -300,10 +326,14 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
     debug_trace();
     return false;
   } else {
+    AOTOopChecker::check(obj); // Make sure contents of this oop are safe.
+
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
     CachedOopInfo info = make_cached_oop_info(obj, referrer);
-    archived_object_cache()->put_when_absent(obj, info);
+
+    OopHandle oh(Universe::vm_global(), obj);
+    archived_object_cache()->put_when_absent(oh, info);
     archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
 
@@ -367,7 +397,7 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
   }
 }
 
-class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopHandle,
+class MetaspaceObjToOopHandleTable: public HashTable<MetaspaceObj*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared> {
@@ -585,7 +615,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   }
 }
 
-static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
+void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
   if (!orig_mirror->fast_no_hash_check()) {
@@ -600,6 +630,11 @@ static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
 
     DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
+  }
+
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    java_lang_Class::set_module(scratch_m, java_lang_Class::module(orig_mirror));
+    java_lang_Class::set_protection_domain(scratch_m, java_lang_Class::protection_domain(orig_mirror));
   }
 }
 
@@ -636,14 +671,16 @@ void HeapShared::mark_native_pointers(oop orig_obj) {
 }
 
 void HeapShared::get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers) {
-  CachedOopInfo* info = archived_object_cache()->get(src_obj);
+  OopHandle oh(&src_obj);
+  CachedOopInfo* info = archived_object_cache()->get(oh);
   assert(info != nullptr, "must be");
   has_oop_pointers = info->has_oop_pointers();
   has_native_pointers = info->has_native_pointers();
 }
 
 void HeapShared::set_has_native_pointers(oop src_obj) {
-  CachedOopInfo* info = archived_object_cache()->get(src_obj);
+  OopHandle oh(&src_obj);
+  CachedOopInfo* info = archived_object_cache()->get(oh);
   assert(info != nullptr, "must be");
   info->set_has_native_pointers();
 }
@@ -698,7 +735,7 @@ void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
 void HeapShared::scan_java_mirror(oop orig_mirror) {
   oop m = scratch_java_mirror(orig_mirror);
   if (m != nullptr) { // nullptr if for custom class loader
-    copy_java_mirror_hashcode(orig_mirror, m);
+    copy_java_mirror(orig_mirror, m);
     bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, m);
     assert(success, "sanity");
   }
@@ -873,7 +910,7 @@ void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   ResourceMark rm;
   log_error(aot, heap)("Class %s not allowed in archive heap. Must be in java.base%s%s",
                        ik->external_name(), lambda_msg, testcls_msg);
-  MetaspaceShared::unrecoverable_writing_error();
+  AOTMetaspace::unrecoverable_writing_error();
 }
 
 bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
@@ -1220,7 +1257,7 @@ const ArchivedKlassSubGraphInfoRecord*
 HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAPS) {
   assert(!CDSConfig::is_dumping_heap(), "Should not be called when dumping heap");
 
-  if (!k->is_shared()) {
+  if (!k->in_aot_cache()) {
     return nullptr;
   }
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(k);
@@ -1274,7 +1311,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     if (klasses != nullptr) {
       for (int i = 0; i < klasses->length(); i++) {
         Klass* klass = klasses->at(i);
-        if (!klass->is_shared()) {
+        if (!klass->in_aot_cache()) {
           return nullptr;
         }
         resolve_or_init(klass, do_init, CHECK_NULL);
@@ -1453,7 +1490,7 @@ public:
 HeapShared::CachedOopInfo HeapShared::make_cached_oop_info(oop obj, oop referrer) {
   PointsToOopsChecker points_to_oops_checker;
   obj->oop_iterate(&points_to_oops_checker);
-  return CachedOopInfo(referrer, points_to_oops_checker.result());
+  return CachedOopInfo(OopHandle(Universe::vm_global(), referrer), points_to_oops_checker.result());
 }
 
 void HeapShared::init_box_classes(TRAPS) {
@@ -1509,7 +1546,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     ResourceMark rm;
     log_error(aot, heap)("Cannot archive object " PTR_FORMAT " of class %s", p2i(orig_obj), orig_obj->klass()->external_name());
     debug_trace();
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   if (log_is_enabled(Debug, aot, heap) && java_lang_Class::is_instance(orig_obj)) {
@@ -1562,7 +1599,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
       // defined at the top of this file.
       log_error(aot, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
       debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
   }
 
@@ -1592,7 +1629,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
         // We don't know how to handle an object that has been archived, but some of its reachable
         // objects cannot be archived. Bail out for now. We might need to fix this in the future if
         // we have a real use case.
-        MetaspaceShared::unrecoverable_writing_error();
+        AOTMetaspace::unrecoverable_writing_error();
       }
     }
   }
@@ -1609,9 +1646,11 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
   }
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // The enum klasses are archived with aot-initialized mirror.
-    // See AOTClassInitializer::can_archive_initialized_mirror().
+    // The classes of all archived enum instances have been marked as aot-init,
+    // so there's nothing else to be done in the production run.
   } else {
+    // This is legacy support for enum classes before JEP 483 -- we cannot rerun
+    // the enum's <clinit> in the production run, so special handling is needed.
     if (CDSEnumKlass::is_enum_obj(orig_obj)) {
       CDSEnumKlass::handle_enum_obj(level + 1, subgraph_info, orig_obj);
     }
@@ -1770,7 +1809,8 @@ void HeapShared::check_special_subgraph_classes() {
           name != vmSymbols::java_lang_ArrayStoreException() &&
           name != vmSymbols::java_lang_ClassCastException() &&
           name != vmSymbols::java_lang_InternalError() &&
-          name != vmSymbols::java_lang_NullPointerException()) {
+          name != vmSymbols::java_lang_NullPointerException() &&
+          name != vmSymbols::jdk_internal_vm_PreemptedException()) {
         ResourceMark rm;
         fatal("special subgraph cannot have objects of type %s", subgraph_k->external_name());
       }
@@ -2094,6 +2134,18 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
 
 bool HeapShared::is_dumped_interned_string(oop o) {
   return _dumped_interned_strings->get(o) != nullptr;
+}
+
+// These tables should be used only within the CDS safepoint, so
+// delete them before we exit the safepoint. Otherwise the table will
+// contain bad oops after a GC.
+void HeapShared::delete_tables_with_raw_oops() {
+  assert(_seen_objects_table == nullptr, "should have been deleted");
+
+  delete _dumped_interned_strings;
+  _dumped_interned_strings = nullptr;
+
+  ArchiveHeapWriter::delete_tables_with_raw_oops();
 }
 
 void HeapShared::debug_trace() {

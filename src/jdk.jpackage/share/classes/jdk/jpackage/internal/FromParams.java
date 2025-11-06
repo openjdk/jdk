@@ -47,11 +47,13 @@ import static jdk.jpackage.internal.StandardBundlerParam.NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -59,30 +61,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.model.PackageType;
+import jdk.jpackage.internal.model.ParseUtils;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
 
 final class FromParams {
 
-    static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
+    static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
+            BiFunction<T, Launcher, T> launcherOverrideCtor,
             ApplicationLayout appLayout) throws ConfigException, IOException {
-        return createApplicationBuilder(params, launcherMapper, appLayout, Optional.of(RuntimeLayout.DEFAULT));
+        return createApplicationBuilder(params, launcherMapper, launcherOverrideCtor, appLayout, RuntimeLayout.DEFAULT, Optional.of(RuntimeLayout.DEFAULT));
     }
 
-    static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
+    static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
-            ApplicationLayout appLayout, Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
+            BiFunction<T, Launcher, T> launcherOverrideCtor,
+            ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
+            Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
 
         final var appBuilder = new ApplicationBuilder();
 
@@ -102,14 +110,14 @@ final class FromParams {
                 layout -> predefinedRuntimeImage.map(layout::resolveAt)).map(RuntimeLayout::runtimeDirectory);
 
         if (isRuntimeInstaller) {
-            appBuilder.appImageLayout(predefinedRuntimeLayout.orElseThrow());
+            appBuilder.appImageLayout(runtimeLayout);
         } else {
             appBuilder.appImageLayout(appLayout);
 
             if (hasPredefinedAppImage(params)) {
                 final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
                 appBuilder.initFromExternalApplication(appImageFile, launcherInfo -> {
-                    var launcherParams = mapLauncherInfo(launcherInfo);
+                    var launcherParams = mapLauncherInfo(appImageFile, launcherInfo);
                     return launcherMapper.apply(mergeParams(params, launcherParams));
                 });
             } else {
@@ -117,7 +125,7 @@ final class FromParams {
 
                 final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
-                MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
+                runtimeBuilderBuilder.modulePath(MODULE_PATH.fetchFrom(params));
 
                 predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
@@ -127,10 +135,12 @@ final class FromParams {
                     ADD_MODULES.copyInto(params, jlinkOptionsBuilder::addModules);
                     LIMIT_MODULES.copyInto(params, jlinkOptionsBuilder::limitModules);
                     JLINK_OPTIONS.copyInto(params, jlinkOptionsBuilder::options);
-                    jlinkOptionsBuilder.appy();
+                    jlinkOptionsBuilder.apply();
                 });
 
-                appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());
+                final var normalizedLaunchers = ApplicationBuilder.normalizeIcons(launchers, RESOURCE_DIR.findIn(params), launcherOverrideCtor);
+
+                appBuilder.launchers(normalizedLaunchers).runtimeBuilder(runtimeBuilderBuilder.create());
             }
         }
 
@@ -171,11 +181,11 @@ final class FromParams {
     }
 
     static Optional<LauncherShortcut> findLauncherShortcut(
-            BundlerParamInfo<Boolean> shortcutParam,
+            BundlerParamInfo<String> shortcutParam,
             Map<String, ? super Object> mainParams,
             Map<String, ? super Object> launcherParams) {
 
-        Optional<Boolean> launcherValue;
+        Optional<String> launcherValue;
         if (launcherParams == mainParams) {
             // The main launcher
             launcherValue = Optional.empty();
@@ -183,17 +193,19 @@ final class FromParams {
             launcherValue = shortcutParam.findIn(launcherParams);
         }
 
-        return launcherValue.map(withShortcut -> {
-            if (withShortcut) {
-                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
-            } else {
-                return Optional.<LauncherShortcutStartupDirectory>empty();
-            }
-        }).or(() -> {
-            return shortcutParam.findIn(mainParams).map(_ -> {
-                return Optional.of(LauncherShortcutStartupDirectory.DEFAULT);
-            });
-        }).map(LauncherShortcut::new);
+        return launcherValue.map(ParseUtils::parseLauncherShortcutForAddLauncher).or(() -> {
+            return Optional.ofNullable(mainParams.get(shortcutParam.getID())).map(toFunction(value -> {
+                if (value instanceof Boolean) {
+                    return new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT);
+                } else {
+                    try {
+                        return ParseUtils.parseLauncherShortcutForMainLauncher((String)value);
+                    } catch (IllegalArgumentException ex) {
+                        throw I18N.buildConfigException("error.invalid-option-value", value, "--" + shortcutParam.getID()).create();
+                    }
+                }
+            }));
+        });
     }
 
     private static ApplicationLaunchers createLaunchers(
@@ -209,10 +221,14 @@ final class FromParams {
         return new ApplicationLaunchers(mainLauncher, additionalLaunchers);
     }
 
-    private static Map<String, ? super Object> mapLauncherInfo(LauncherInfo launcherInfo) {
+    private static Map<String, ? super Object> mapLauncherInfo(ExternalApplication appImageFile, LauncherInfo launcherInfo) {
         Map<String, ? super Object> launcherParams = new HashMap<>();
         launcherParams.put(NAME.getID(), launcherInfo.name());
-        launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
+        if (!appImageFile.getLauncherName().equals(launcherInfo.name())) {
+            // This is not the main launcher, accept the value
+            // of "launcher-as-service" from the app image file (.jpackage.xml).
+            launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
+        }
         launcherParams.putAll(launcherInfo.extra());
         return launcherParams;
     }
