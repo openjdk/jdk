@@ -132,6 +132,7 @@ public class TestTemplate {
         testNestedTemplates();
         testHookSimple1();
         testHookSimple2();
+        testHookSimple3();
         testHookIsAnchored();
         testHookNested();
         testHookWithNestedTemplates();
@@ -459,6 +460,39 @@ public class TestTemplate {
             {
             Hello
             World
+            }""";
+        checkEQ(code, expected);
+    }
+
+    public static void testHookSimple3() {
+        var hook1 = new Hook("Hook1");
+
+        // Ensure that insert inside insert really goes first.
+        var template = Template.make(() -> scope(
+            "{\n",
+            hook1.anchor(scope(
+                "<Anchor\n",
+                hook1.insert(scope(
+                    "<Outer Insert\n",
+                    hook1.insert(scope(
+                        "Inner Insert\n"
+                    )),
+                    ">Outer Insert\n"
+                )),
+                ">Anchor\n"
+            )),
+            "}"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            {
+            Inner Insert
+            <Outer Insert
+            >Outer Insert
+            <Anchor
+            >Anchor
             }""";
         checkEQ(code, expected);
     }
