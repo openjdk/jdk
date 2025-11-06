@@ -31,6 +31,7 @@ import jdk.internal.net.http.common.Utils;
 import jdk.internal.util.OperatingSystem;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -174,9 +175,9 @@ public class QuicPacer {
         // Window increases at a rate of rtt / cwnd / N
         long rttMicros = rttEstimator.state().smoothedRttMicros();
         long cwnd = congestionController.congestionWindow();
-        return lastUpdate.plus(Duration.ofNanos(rttMicros
+        return lastUpdate.plus(rttMicros
                 * (congestionController.isSlowStart() ? 500 : 800) /* 1000/N */
-                * quotaNeeded / cwnd));
+                * quotaNeeded / cwnd, ChronoUnit.NANOS);
     }
 
     /**
