@@ -772,7 +772,7 @@ private:
   ShenandoahCollectionSet* _collection_set;
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
-  oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+  oop try_evacuate_object(oop src, Thread* thread);
 
 protected:
   // Used primarily to look for failed evacuation attempts.

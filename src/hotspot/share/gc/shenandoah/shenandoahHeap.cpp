@@ -1276,18 +1276,12 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   }
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
+  assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
-  ShenandoahHeapRegion* r = heap_region_containing(p);
-  assert(!r->is_humongous(), "never evacuate humongous objects");
-
-  ShenandoahAffiliation target_gen = r->affiliation();
-  return try_evacuate_object(p, thread, r, target_gen);
+  return try_evacuate_object(p, thread);
 }
 
-oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                               ShenandoahAffiliation target_gen) {
-  assert(target_gen == YOUNG_GENERATION, "Only expect evacuations to young in this mode");
-  assert(from_region->is_young(), "Only expect evacuations from young in this mode");
+oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread) {
   bool alloc_from_lab = true;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
@@ -1303,7 +1297,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     }
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
+      ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, YOUNG_GENERATION);
       copy = allocate_memory(req);
       alloc_from_lab = false;
     }
@@ -1320,7 +1314,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   if (ShenandoahEvacTracking) {
-    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, YOUNG_GENERATION, YOUNG_GENERATION);
   }
 
   // Copy the object:
@@ -1334,7 +1328,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
     if (ShenandoahEvacTracking) {
-      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, YOUNG_GENERATION, YOUNG_GENERATION);
     }
     return copy_val;
   }  else {
