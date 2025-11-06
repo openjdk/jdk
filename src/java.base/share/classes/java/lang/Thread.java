@@ -173,27 +173,30 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * method can be used to select if the initial values are inherited.
  *
  * <h2><a id="thread-interruption">Thread Interruption</a></h2>
- * A {@code Thread} has an <em>interrupted status</em> that serves as a "request" for
- * code executing in the thread to "cancel or stop what it is doing". The interrupted
- * status is set by invoking the target thread's {@link #interrupt()} method.
- * {@link #sleep(long) Thread.sleep(long)}, {@link Object#wait() Object.wait()} and
- * many other blocking methods detect the thread's interrupted status is set and cause the
- * thread to return early from the blocking method by throwing an exception.
+ * A {@code Thread} has an <em>interrupted status</em> which serves as a "request" for
+ * code executing in the thread to "stop or cancel its current activity". The interrupted
+ * status is set by invoking the target thread's {@link #interrupt()} method. Many methods
+ * that cause a thread to block or wait are <em>interruptible</em>, meaning they detect
+ * that the thread's interrupted status is set and cause execution to return early from
+ * the method, usually by throwing an exception.
  *
- * <p> Blocking methods that throw {@link InterruptedException} do so after first clearing
- * the interrupted status. Code that catches {@code InterruptedException} should rethrow
- * the exception, or restore the current thread's interrupted status, with
+ * <p> If a thread executing {@link #sleep(long) Thread.sleep} or {@link Object#wait()
+ * Object.wait} is interrupted then it causes the method to return early and throw
+ * {@link InterruptedException}. Methods that throw {@code InterruptedException} do so after
+ * first clearing the interrupted status. Code that catches {@code InterruptedException}
+ * should rethrow the exception, or restore the current thread's interrupted status, with
  * {@link #currentThread() Thread.currentThread()}.{@link #interrupt()}, before continuing
  * normally or handling it by throwing another type of exception.
  *
- * <p> Some blocking methods are specified to throw a different exception or return normally
- * when interrupted. Blocking I/O operations on an {@link java.nio.channels.InterruptibleChannel}
- * close the channel and throw {@link java.nio.channels.ClosedByInterruptException} with
- * the interrupted status set. A thread blocked in a {@link java.nio.channels.Selector}
- * will return immediately if interrupted, with the interrupted status set.
+ * <p> If a thread executing a blocking I/O operation on an {@link
+ * java.nio.channels.InterruptibleChannel} is interrupted then it causes the channel to be
+ * closed, and the blocking I/O operation to throw {@link java.nio.channels.ClosedByInterruptException}
+ * with the thread's interrupted status set. If a thread is blocked in a {@linkplain
+ * java.nio.channels.Selector selection operation} is interrupted then it causes the
+ * selection operation to return early, with the thread's interrupted status set.
  *
- * <p> Code that doesn't block but needs to detect interruption can poll the
- * current thread's interrupted status using
+ * <p> Code that doesn't invoke any interruptible methods can still respond to interrupt
+ * by polling the current thread's interrupt status with
  * {@link Thread#currentThread() Thread.currentThread()}.{@link #isInterrupted() isInterrupted()}.
  *
  * <p> In addition to the {@link #interrupt()} and {@link #isInterrupted()} methods,
