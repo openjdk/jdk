@@ -161,6 +161,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
+  _parse = nullptr;
 
   if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files);
@@ -597,7 +598,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       t->dump_on(&s2);
     } else if( t == Type::MEMORY ) {
       s2.print("  Memory:");
-      MemNode::dump_adr_type(node, node->adr_type(), &s2);
+      MemNode::dump_adr_type(node->adr_type(), &s2);
     }
 
     assert(s2.size() < sizeof(buffer), "size in range");
