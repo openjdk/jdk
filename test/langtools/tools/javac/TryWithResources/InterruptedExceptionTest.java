@@ -228,7 +228,8 @@ public class InterruptedExceptionTest {
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.WARNING &&
-                    diagnostic.getCode().contains("try.resource.throws.interrupted.exc")) {
+                    (diagnostic.getCode().contains("try.resource.throws.interrupted.exc") ||
+                     diagnostic.getCode().contains("try.resource.can.throw.interrupted.exc"))) {
                 tryWarnFound++;
             }
         }
