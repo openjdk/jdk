@@ -4054,19 +4054,19 @@ public class Check {
             switch (((OperatorSymbol)operator).opcode) {
             case ByteCodes.ishl, ByteCodes.ishr, ByteCodes.iushr, ByteCodes.ishll, ByteCodes.ishrl, ByteCodes.iushrl -> {
                 targetType = syms.intType;
-                maximumShift = 32;
+                maximumShift = 0x1f;
             }
             case ByteCodes.lshl, ByteCodes.lshr, ByteCodes.lushr, ByteCodes.lshll, ByteCodes.lshrl, ByteCodes.lushrl -> {
                 targetType = syms.longType;
-                maximumShift = 64;
+                maximumShift = 0x3f;
             }
             default -> {
                 return;
             }
             }
             long specifiedShift = shiftAmount.longValue();
-            int actualShift = (int)specifiedShift & (maximumShift - 1);
-            if (specifiedShift != actualShift) {
+            if (specifiedShift > maximumShift || specifiedShift < -maximumShift) {
+                int actualShift = (int)specifiedShift & (maximumShift - 1);
                 log.warning(pos, LintWarnings.BitShiftOutOfRange(targetType, specifiedShift, actualShift));
             }
         }

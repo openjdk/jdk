@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     private static boolean partInRange(int resSizeLog2, int phySizeLog2, int part) {
         // Let's try a branch-free version of this.
         int diff = (resSizeLog2 - phySizeLog2);
-        int sign = (diff >> 31);
+        int sign = (diff >> -1);
         //d = Math.abs(diff);
         //d = (sign == 0 ? diff : sign == -1 ? 1 + ~diff);
         int d = (diff ^ sign) - sign;

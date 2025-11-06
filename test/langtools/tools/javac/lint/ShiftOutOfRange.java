@@ -11,19 +11,25 @@ public class ShiftOutOfRange {
         int a = 123;
 
         // These should generate warnings
-        a = a << (byte)-1;
-        a = a >> (char)-1;
-        a = a >>> (short)-1;
-        a <<= -1;
-        a >>= -1L;          // also generates "implicit cast from long to int in compound assignment is possibly lossy"
-        a >>>= (byte)-1;
+        a = a << (byte)-32;
+        a = a >> (short)-32;
+        a = a >>> -32;
+        a <<= -32L;
+        a >>= (byte)-32;
+        a >>>= (short)-32;
 
         // These should not generate warnings
+        a = a << (byte)-31;
+        a = a >> (short)-23;
+        a = a >>> -17;
+        a <<= -13L;
+        a >>= (byte)-1;
+        a >>>= (short)0;
         a = a << (byte)0;
         a = a >> (char)7;
         a = a >>> (short)13;
         a <<= 17;
-        a >>= (long)23;     // also generates "implicit cast from long to int in compound assignment is possibly lossy"
+        a >>= (long)23;
         a >>>= (byte)31;
         a <<= hashCode();
         a >>= hashCode();
@@ -34,7 +40,7 @@ public class ShiftOutOfRange {
         a = a >> (char)32;
         a = a >>> (short)32;
         a <<= 32;
-        a >>= (long)32;     // also generates "implicit cast from long to int in compound assignment is possibly lossy"
+        a >>= (long)32;
         a >>>= (byte)32;
     }
 
@@ -42,14 +48,20 @@ public class ShiftOutOfRange {
         long a = 123;
 
         // These should generate warnings
-        a = a << (byte)-1;
-        a = a >> (char)-1;
-        a = a >>> (short)-1;
-        a <<= -1;
-        a >>= -1L;
-        a >>>= (byte)-1;
+        a = a << (byte)-64;
+        a = a >> (short)-64;
+        a = a >>> -64;
+        a <<= -64L;
+        a >>= (byte)-64L;
+        a >>>= (short)-64;
 
         // These should not generate warnings
+        a = a << (byte)-63;
+        a = a >> (short)-47;
+        a = a >>> -34;
+        a <<= -25L;
+        a >>= (byte)-15;
+        a >>>= (short)0;
         a = a << (byte)0;
         a = a >> (char)15;
         a = a >>> (short)25;

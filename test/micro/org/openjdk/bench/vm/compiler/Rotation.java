@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -57,7 +57,6 @@ public class Rotation {
     }
 
     @Benchmark
-    @SuppressWarnings("lossy-conversions")
     public void xorRotateRight(MyState s, Blackhole blackhole) {
         int x = s.xi;
         int y = s.yi;
@@ -68,7 +67,6 @@ public class Rotation {
     }
 
     @Benchmark
-    @SuppressWarnings("lossy-conversions")
     public void bicRotateRight(MyState s, Blackhole blackhole) {
         int x = s.xi;
         int y = s.yi;
@@ -79,7 +77,6 @@ public class Rotation {
     }
 
     @Benchmark
-    @SuppressWarnings("lossy-conversions")
     public void eonRotateRight(MyState s, Blackhole blackhole) {
         int x = s.xi;
         int y = s.yi;
@@ -90,7 +87,6 @@ public class Rotation {
     }
 
     @Benchmark
-    @SuppressWarnings("lossy-conversions")
     public void ornRotateRight(MyState s, Blackhole blackhole) {
         int x = s.xi;
         int y = s.yi;
@@ -101,7 +97,6 @@ public class Rotation {
     }
 
     @Benchmark
-    @SuppressWarnings("lossy-conversions")
     public void andRotateRight(MyState s, Blackhole blackhole) {
         int x = s.xi;
         int y = s.yi;

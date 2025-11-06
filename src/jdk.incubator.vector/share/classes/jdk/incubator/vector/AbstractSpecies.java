@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,7 +507,7 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
         }
         int diff = (inSizeLog2 - outSizeLog2);
         // Let's try a branch-free version of this.
-        int sign = (diff >> 31);
+        int sign = (diff >> -1);
         //d = Math.abs(diff);
         //d = (sign == 0 ? diff : sign == -1 ? 1 + ~diff);
         int d = (diff ^ sign) - sign;
