@@ -46,7 +46,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 public class CompressedClassSpaceSizeInJmapHeap {
-    static final boolean KELVIN_DEBUG = true;
 
     // Note that on some platforms it may require root privileges to run this test.
     public static void main(String[] args) throws Exception {
@@ -69,17 +68,16 @@ public class CompressedClassSpaceSizeInJmapHeap {
         File err = new File("CompressedClassSpaceSizeInJmapHeap.stderr.txt");
         pb.redirectError(err);
 
-        OutputAnalyzer output;
-        // If we attempt to attach to LingeredApp before it has initialized, the heap dump request will fail, so we allow 3 retries
-        int allowed_retries = 3;
+        // If we attempt to attach to LingeredApp before it has initialized, the heap dump request will fail, so we allow 3 tries
+        int allowedTries = 3;
         int exitValue;
         do {
             exitValue = run(pb);
-        } while ((exitValue != 0) && (allowed_retries-- > 0));
+        } while ((exitValue != 0) && (allowedTries-- > 0));
         if (exitValue != 0) {
             throw new Exception("jmap -heap exited with error code: " + exitValue);
         }
-        output = new OutputAnalyzer(read(out));
+        OutputAnalyzer output = new OutputAnalyzer(read(out));
         output.shouldContain("CompressedClassSpaceSize = 50331648 (48.0MB)");
         out.delete();
 

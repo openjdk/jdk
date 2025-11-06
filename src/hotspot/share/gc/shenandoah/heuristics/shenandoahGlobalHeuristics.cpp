@@ -88,9 +88,10 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
   log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: %zu"
-                     "%s, Max Old Evacuation: %zu%s, Actual Free: %zu%s.",
+                     "%s, Max Old Evacuation: %zu%s, Max Either Evacuation: %zu%s, Actual Free: %zu%s.",
                      byte_size_in_proper_unit(max_young_cset), proper_unit_for_byte_size(max_young_cset),
                      byte_size_in_proper_unit(max_old_cset), proper_unit_for_byte_size(max_old_cset),
+                     byte_size_in_proper_unit(unaffiliated_young_memory), proper_unit_for_byte_size(unaffiliated_young_memory),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
   ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
@@ -135,9 +136,8 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
       cset->add_region(r, context, region_index);
     }
   }
-
   if (regions_transferred_to_old > 0) {
-    heap->generation_sizer()->force_transfer_to_old(regions_transferred_to_old);
+    assert(young_evac_reserve > regions_transferred_to_old * region_size_bytes, "young reserve cannot be negative");
     heap->young_generation()->set_evacuation_reserve(young_evac_reserve - regions_transferred_to_old * region_size_bytes);
     heap->old_generation()->set_evacuation_reserve(old_evac_reserve + regions_transferred_to_old * region_size_bytes);
   }
