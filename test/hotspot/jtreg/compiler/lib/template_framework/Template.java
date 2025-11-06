@@ -656,7 +656,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static ScopeToken scope(Object... tokens) {
-        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, true);
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, false);
     }
 
     /**
@@ -681,7 +681,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static ScopeToken transparentScope(Object... tokens) {
-        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, false);
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, true);
     }
 
     /**
@@ -708,7 +708,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static ScopeToken nameScope(Object... tokens) {
-        return new ScopeTokenImpl(TokenParser.parse(tokens), true, false, false);
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, true, true);
     }
 
     /**
@@ -753,7 +753,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static ScopeToken hashtagScope(Object... tokens) {
-        return new ScopeTokenImpl(TokenParser.parse(tokens), false, true, false);
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, false, true);
     }
 
     /**
@@ -806,7 +806,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static ScopeToken setFuelCostScope(Object... tokens) {
-        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, true);
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, false);
     }
 
     /**

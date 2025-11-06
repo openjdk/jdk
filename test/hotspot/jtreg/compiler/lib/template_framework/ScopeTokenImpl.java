@@ -36,6 +36,6 @@ import java.util.List;
  *       record that allows easy destructuring with pattern matching.
  */
 record ScopeTokenImpl(List<Token> tokens,
-                      boolean nestedNamesAreLocal,
-                      boolean nestedHashtagsAreLocal,
-                      boolean nestedSetFuelCostAreLocal) implements ScopeToken, Token {}
+                      boolean isTransparentForNames,
+                      boolean isTransparentForHashtags,
+                      boolean isTransparentForSetFuelCost) implements ScopeToken, Token {}

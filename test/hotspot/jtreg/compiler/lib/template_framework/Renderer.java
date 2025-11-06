@@ -246,15 +246,15 @@ final class Renderer {
 
     private void renderScopeToken(ScopeToken st, Runnable preamble) {
         if (!(st instanceof ScopeTokenImpl(List<Token> tokens,
-                                           boolean nestedNamesAreLocal,
-                                           boolean nestedHashtagsAreLocal,
-                                           boolean nestedSetFuelCostAreLocal))) {
+                                           boolean isTransparentForNames,
+                                           boolean isTransparentForHashtags,
+                                           boolean isTransparentForSetFuelCost))) {
             throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
         }
 
         // We need the CodeFrame for local names.
         CodeFrame outerCodeFrame = currentCodeFrame;
-        if (nestedNamesAreLocal) {
+        if (!isTransparentForNames) {
             currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
         }
 
@@ -263,10 +263,10 @@ final class Renderer {
         // replacement as the outer frame. And we need to be able to allow
         // local setFuelCost definitions.
         TemplateFrame innerTemplateFrame = null;
-        if (nestedHashtagsAreLocal || nestedSetFuelCostAreLocal) {
+        if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
             innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
-                                                              !nestedHashtagsAreLocal,
-                                                              !nestedSetFuelCostAreLocal);
+                                                              isTransparentForHashtags,
+                                                              isTransparentForSetFuelCost);
             currentTemplateFrame = innerTemplateFrame;
         }
 
@@ -276,7 +276,7 @@ final class Renderer {
         // Now render the nested code.
         renderTokenList(tokens);
 
-        if (nestedHashtagsAreLocal || nestedSetFuelCostAreLocal) {
+        if (!isTransparentForHashtags || !isTransparentForSetFuelCost) {
             if (currentTemplateFrame != innerTemplateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
             }
@@ -285,7 +285,7 @@ final class Renderer {
 
         // Tear down CodeFrame nesting. If no nesting happened, the code is already
         // in the currendCodeFrame.
-        if (nestedNamesAreLocal) {
+        if (!isTransparentForNames) {
             outerCodeFrame.addCode(currentCodeFrame.getCode());
             currentCodeFrame = outerCodeFrame;
         }
@@ -301,12 +301,12 @@ final class Renderer {
 
                 // We need a CodeFrame to which the hook can insert code. If the nested names
                 // are to be local, the CodeFrame must be non-transparent for names.
-                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame, !innerScope.nestedNamesAreLocal());
+                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame, innerScope.isTransparentForNames());
                 hookCodeFrame.addHook(hook);
 
                 // We need a CodeFrame where the tokens can be rendered for code that is
                 // generated inside the anchor scope, but not inserted directly to the hook.
-                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, !innerScope.nestedNamesAreLocal());
+                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, innerScope.isTransparentForNames());
                 currentCodeFrame = innerCodeFrame;
 
                 renderScopeToken(innerScope);
