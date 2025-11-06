@@ -3989,7 +3989,14 @@ public class Attr extends JCTree.Visitor {
             chk.checkCastable(tree.rhs.pos(),
                               operator.type.getReturnType(),
                               owntype);
-            chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            switch (tree.getTag()) {
+            default -> {
+                chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            }
+            case SL_ASG, SR_ASG, USR_ASG -> {   // don't warn about shift amounts: we only use (at most) the lower 6 bits
+                break;
+            }
+            }
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
