@@ -24,7 +24,6 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,7 +113,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'fuel', etc. was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'fuel', etc. was called outside a template rendering call.");
         }
         return renderer;
     }
