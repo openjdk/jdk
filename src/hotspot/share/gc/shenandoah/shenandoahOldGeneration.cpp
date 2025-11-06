@@ -44,113 +44,17 @@
 #include "runtime/threads.hpp"
 #include "utilities/events.hpp"
 
-class ShenandoahFlushAllSATB : public ThreadClosure {
-private:
-  SATBMarkQueueSet& _satb_qset;
-
-public:
-  explicit ShenandoahFlushAllSATB(SATBMarkQueueSet& satb_qset) :
-    _satb_qset(satb_qset) {}
-
-  void do_thread(Thread* thread) override {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-  }
-};
-
-class ShenandoahProcessOldSATB : public SATBBufferClosure {
-private:
-  ShenandoahObjToScanQueue*       _queue;
-  ShenandoahHeap*                 _heap;
-  ShenandoahMarkingContext* const _mark_context;
-  size_t                          _trashed_oops;
-
-public:
-  explicit ShenandoahProcessOldSATB(ShenandoahObjToScanQueue* q) :
-    _queue(q),
-    _heap(ShenandoahHeap::heap()),
-    _mark_context(_heap->marking_context()),
-    _trashed_oops(0) {}
-
-  void do_buffer(void** buffer, size_t size) override {
-    assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
-    for (size_t i = 0; i < size; ++i) {
-      oop *p = (oop *) &buffer[i];
-      ShenandoahHeapRegion* region = _heap->heap_region_containing(*p);
-      if (region->is_old() && region->is_active()) {
-          ShenandoahMark::mark_through_ref<oop, OLD>(p, _queue, nullptr, _mark_context, false);
-      } else {
-        _trashed_oops++;
-      }
-    }
-  }
-
-  size_t trashed_oops() const {
-    return _trashed_oops;
-  }
-};
-
 class ShenandoahPurgeSATBTask : public WorkerTask {
-private:
-  ShenandoahObjToScanQueueSet* _mark_queues;
-  // Keep track of the number of oops that are not transferred to mark queues.
-  // This is volatile because workers update it, but the vm thread reads it.
-  volatile size_t             _trashed_oops;
-
 public:
-  explicit ShenandoahPurgeSATBTask(ShenandoahObjToScanQueueSet* queues) :
-    WorkerTask("Purge SATB"),
-    _mark_queues(queues),
-    _trashed_oops(0) {
+  explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {
     Threads::change_thread_claim_token();
-  }
-
-  ~ShenandoahPurgeSATBTask() {
-    if (_trashed_oops > 0) {
-      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
-    }
   }
 
   void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushAllSATB flusher(satb_queues);
+    ShenandoahFlushSATB flusher(satb_queues);
     Threads::possibly_parallel_threads_do(true /* is_par */, &flusher);
-
-    ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
-    ShenandoahProcessOldSATB processor(mark_queue);
-    while (satb_queues.apply_closure_to_completed_buffer(&processor)) {}
-
-    AtomicAccess::add(&_trashed_oops, processor.trashed_oops());
-  }
-};
-
-class ShenandoahTransferOldSATBTask : public WorkerTask {
-  ShenandoahSATBMarkQueueSet&  _satb_queues;
-  ShenandoahObjToScanQueueSet* _mark_queues;
-  // Keep track of the number of oops that are not transferred to mark queues.
-  // This is volatile because workers update it, but the control thread reads it.
-  volatile size_t              _trashed_oops;
-
-public:
-  explicit ShenandoahTransferOldSATBTask(ShenandoahSATBMarkQueueSet& satb_queues, ShenandoahObjToScanQueueSet* mark_queues) :
-    WorkerTask("Transfer SATB"),
-    _satb_queues(satb_queues),
-    _mark_queues(mark_queues),
-    _trashed_oops(0) {}
-
-  ~ShenandoahTransferOldSATBTask() {
-    if (_trashed_oops > 0) {
-      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
-    }
-  }
-
-  void work(uint worker_id) override {
-    ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
-    ShenandoahProcessOldSATB processor(mark_queue);
-    while (_satb_queues.apply_closure_to_completed_buffer(&processor)) {}
-
-    AtomicAccess::add(&_trashed_oops, processor.trashed_oops());
   }
 };
 
@@ -463,26 +367,11 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
   }
 }
 
-void ShenandoahOldGeneration::concurrent_transfer_pointers_from_satb() const {
-  const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
-  log_debug(gc)("Transfer SATB buffers");
-
-  // Step 1. All threads need to 'complete' partially filled, thread local SATB buffers. This
-  // is accomplished in ShenandoahConcurrentGC::complete_abbreviated_cycle using a Handshake
-  // operation.
-  // Step 2. Use worker threads to transfer oops from old, active regions in the completed
-  // SATB buffers to old generation mark queues.
-  ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-  ShenandoahTransferOldSATBTask transfer_task(satb_queues, task_queues());
-  heap->workers()->run_task(&transfer_task);
-}
-
 void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
   log_debug(gc)("Transfer SATB buffers");
-  ShenandoahPurgeSATBTask purge_satb_task(task_queues());
+  ShenandoahPurgeSATBTask purge_satb_task;
   heap->workers()->run_task(&purge_satb_task);
 }
 
