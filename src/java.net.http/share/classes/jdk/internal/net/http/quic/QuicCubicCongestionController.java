@@ -37,10 +37,10 @@ import java.util.concurrent.TimeUnit;
  * @spec https://www.rfc-editor.org/rfc/rfc9438.html
  *       RFC 9438: CUBIC for Fast and Long-Distance Networks
  */
-class QuicCubicCongestionController extends QuicBaseCongestionController {
+public class QuicCubicCongestionController extends QuicBaseCongestionController {
 
-    private static final double BETA = 0.7;
-    private static final double ALPHA = 3 * (1 - BETA) / (1 + BETA);
+    public static final double BETA = 0.7;
+    public static final double ALPHA = 3 * (1 - BETA) / (1 + BETA);
     private static final double C = 0.4;
     private final QuicRttEstimator rttEstimator;
     // Cubic curve inflection point, in bytes
@@ -91,16 +91,16 @@ class QuicCubicCongestionController extends QuicBaseCongestionController {
         if (!isAppLimited) {
             // C * (t-K [seconds])^3 + Wmax (segments)
             if (wEstBytes < cwndPriorBytes) {
-                wEstBytes += Math.max((long) (ALPHA * packetBytes / congestionWindow), 1);
+                wEstBytes += Math.max((long) (ALPHA * maxDatagramSize * packetBytes / maxBytesInFlight), 1);
             } else {
-                wEstBytes += Math.max(packetBytes / congestionWindow, 1);
+                wEstBytes += Math.max((long)maxDatagramSize * packetBytes / maxBytesInFlight, 1);
             }
             long targetBytes = (long)(C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
             if (targetBytes > 1.5 * congestionWindow) {
                 targetBytes = (long) (1.5 * congestionWindow);
             }
             if (targetBytes > congestionWindow) {
-                congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / congestionWindow, 1L);
+                congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / maxBytesInFlight, 1L);
             }
             if (wEstBytes > congestionWindow) {
                 congestionWindow = wEstBytes;
