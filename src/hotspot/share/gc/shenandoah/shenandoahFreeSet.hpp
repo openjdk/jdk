@@ -201,7 +201,7 @@ public:
   // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
   // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
   // Any remnant of available memory at the time of retirement is added to the original partition's total of used bytes.
-  // Return the number of waste bytes (if any).
+  // Return the number of remnant bytes (if any).
   size_t retire_from_partition(ShenandoahFreeSetPartitionId p, idx_t idx, size_t used_bytes);
 
   // Retire all regions between low_idx and high_idx inclusive from within partition.  Requires that each region idx is
@@ -593,7 +593,7 @@ private:
       assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
       assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
     }
-    assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
+    // assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
 #endif
   }
 

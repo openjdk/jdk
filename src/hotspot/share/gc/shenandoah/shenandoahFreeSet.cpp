@@ -425,14 +425,6 @@ inline void ShenandoahRegionPartitions::decrease_used(ShenandoahFreeSetPartition
           _used[int(which_partition)], _capacity[int(which_partition)], bytes);
 }
 
-void ShenandoahRegionPartitions::decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
-  shenandoah_assert_heaplocked();
-  assert (which_partition < NumPartitions, "Partition must be valid");
-  assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
-  _used[int(which_partition)] -= bytes;
-  _available[int(which_partition)] += bytes;
-}
-
 void ShenandoahRegionPartitions::increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
   assert (which_partition < NumPartitions, "Partition must be valid");
@@ -668,7 +660,7 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
 size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition,
                                                          idx_t idx, size_t used_bytes) {
 
-  size_t waste_bytes = 0;
+  size_t remnant_bytes = 0;
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
   assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
   assert (partition < NumPartitions, "Cannot remove from free partitions if not already free");
@@ -676,18 +668,16 @@ size_t ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartit
 
   if (used_bytes < _region_size_bytes) {
     // Count the alignment pad remnant of memory as used when we retire this region
-    size_t fill_padding = _region_size_bytes - used_bytes;
-    waste_bytes = fill_padding;
-    increase_used(partition, fill_padding);
+    remnant_bytes = _region_size_bytes - used_bytes;
+    increase_used(partition, remnant_bytes);
   }
   _membership[int(partition)].clear_bit(idx);
   decrease_region_counts(partition, 1);
   shrink_interval_if_boundary_modified(partition, idx);
 
   // This region is fully used, whether or not top() equals end().  It
-  // is retired and no more memory will be allocated from within it.
-
-  return waste_bytes;
+  // is retired and no more memory will be allocated from within it
+  return remnant_bytes;
 }
 
 void ShenandoahRegionPartitions::unretire_to_partition(ShenandoahHeapRegion* r, ShenandoahFreeSetPartitionId which_partition) {
@@ -948,12 +938,12 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
 
   for (idx_t i = 0; i < _max; i++) {
     ShenandoahFreeSetPartitionId partition = membership(i);
+    ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
     size_t capacity = _free_set->alloc_capacity(i);
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        assert(!validate_totals || (capacity != _region_size_bytes), "Should not be retired if empty");
-        ShenandoahHeapRegion* r = ShenandoahHeap::heap()->get_region(i);
+        assert(!validate_totals || r->reserved_for_direct_allocation() || (capacity != _region_size_bytes), "Should not be retired if empty");
         if (r->is_humongous()) {
           if (r->is_old()) {
             regions[int(ShenandoahFreeSetPartitionId::OldCollector)]++;
@@ -969,7 +959,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || r->reserved_for_direct_allocation() || (capacity < PLAB::min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
@@ -2263,8 +2253,8 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
       if (ac >= PLAB::min_size() * HeapWordSize) {
-        if (region->is_trash() || !region->is_old()) {
         if (!region->reserved_for_direct_allocation()) {
+          if (region->is_trash() || !region->is_old()) {
             // Both young and old collected regions (trashed) are placed into the Mutator set
             _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
             if (idx < mutator_leftmost) {
@@ -2288,25 +2278,26 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
             total_mutator_regions++;
             mutator_used += (region_size_bytes - ac);
           } else {
-            // region->reserved_for_direct_allocation(), a reserved region should count in mutator regions,
-            // but it won't be assigned to Mutator in the partition table, the entire region is counted as used.
-            mutator_regions++;
-            mutator_used += region_size_bytes;
+            // !region->is_trash() && region is_old()
+            _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::OldCollector);
+            if (idx < old_collector_leftmost) {
+              old_collector_leftmost = idx;
+            }
+            if (idx > old_collector_rightmost) {
+              old_collector_rightmost = idx;
+            }
+            assert(ac != region_size_bytes, "Empty regions should be in mutator partition");
+            affiliated_old_collector_regions++;
+            old_collector_regions++;
+            total_old_collector_regions++;
+            old_collector_used += region_size_bytes - ac;
           }
         } else {
-          // !region->is_trash() && region is_old()
-          _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::OldCollector);
-          if (idx < old_collector_leftmost) {
-            old_collector_leftmost = idx;
-          }
-          if (idx > old_collector_rightmost) {
-            old_collector_rightmost = idx;
-          }
-          assert(ac != region_size_bytes, "Empty regions should be in mutator partition");
-          affiliated_old_collector_regions++;
-          old_collector_regions++;
-          total_old_collector_regions++;
-          old_collector_used += region_size_bytes - ac;
+          // region->reserved_for_direct_allocation(), a reserved region should count in mutator regions,
+          // but it won't be assigned to Mutator in the partition table, the entire region is counted as used.
+          total_mutator_regions++;
+          mutator_used += region_size_bytes;
+          affiliated_mutator_regions++;
         }
       } else {
         // This region does not have enough free to be part of the free set.  Count all of its memory as used.
@@ -3003,7 +2994,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         young_used_regions++;
         young_used_bytes += region_size_bytes - ac;
       }
-    } else {
+    } else if (!r->reserved_for_direct_allocation()) {
       // Region is not in Mutator partition. Do the accounting.
       ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
       size_t ac = alloc_capacity(r);
@@ -3509,6 +3500,7 @@ public:
   HeapWord* &_obj;
   bool &_in_new_region;
   bool _new_region_allocated = false;
+  bool _affiliation_changed = false;
   uint _next_region_with_sufficient_mem;
   const size_t _min_req_byte_size;
 
@@ -3575,13 +3567,11 @@ public:
       assert(r->affiliation() == FREE, "Empty region must be free");
       r->set_affiliation(YOUNG_GENERATION);
       r->make_regular_allocation(YOUNG_GENERATION);
-      ShenandoahHeap::heap()->generation_for(r->affiliation())->increment_affiliated_region_count();
-    } else {
-      assert(r->affiliation() != FREE, "Non-empty region must not be free");
-      if (r->affiliation() == OLD_GENERATION) return  false;
+      _free_set->partitions()->one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId::Mutator);
+      _affiliation_changed = true;
     }
     assert(r->is_affiliated(), "Region %zu must be affiliated", r->index());
-    assert(r->affiliation() == YOUNG_GENERATION, "Region %zu must be affiliated with YOUNG_GENERATION", r->index());
+    assert(r->is_young(), "Region %zu must be young", r->index());
 
     if (_obj == nullptr) {
       _in_new_region = r->is_empty();
@@ -3590,6 +3580,7 @@ public:
       assert(_obj != nullptr, "Must have successfully allocated the object.");
       _req.set_actual_size(actual_size);
       _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, actual_size * HeapWordSize);
+      _free_set->increase_bytes_allocated(actual_size * HeapWordSize);
       ac = _free_set->alloc_capacity(r);
     }
 
@@ -3598,10 +3589,9 @@ public:
       ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
       assert(AtomicAccess::load(&shared_region._address) == nullptr, "Must have been released.");
       r->reserve_for_direct_allocation();
-      // Unassign the region from Mutator partition.
-      _free_set->partitions()->raw_unassign_membership(r->index(), ShenandoahFreeSetPartitionId::Mutator);
-      _free_set->partitions()->shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId::Mutator, r->index());
-      _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, ac);
+      // Remove region from Mutator partition.
+      size_t reserved_bytes = _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+      _free_set->increase_bytes_allocated(reserved_bytes);
       OrderAccess::fence();
       AtomicAccess::store(&shared_region._address, r);
       if (!_new_region_allocated) {
@@ -3610,8 +3600,8 @@ public:
       _next_retire_eligible_region = find_next_retire_eligible_region();
     } else if (ac < PLAB::min_size_bytes()) {
       // if the remaining memory is less than PLAB:min_size_bytes(), retire this region
-      _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
-      _free_set->partitions()->assert_bounds();
+      size_t wasted_bytes = _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
+      _free_set->increase_bytes_allocated(wasted_bytes);
     }
 
     return _next_retire_eligible_region == -1 && _obj != nullptr;
@@ -3634,6 +3624,16 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(uint start_ind
   if (cl._next_region_with_sufficient_mem != ShenandoahDirectlyAllocatableRegionCount && obj == nullptr) {
     new_start_index = cl._next_region_with_sufficient_mem;
   }
+  recompute_total_used</* UsedByMutatorChanged */ true,
+                       /* UsedByCollectorChanged */ false,
+                       /* UsedByOldCollectorChanged */ false>();
+  if (cl._affiliation_changed) {
+    recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                               /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                               /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                               /* UnaffiliatedChangesAreYoungNeutral */ false>();
+  }
   return cl._new_region_allocated;
 }
 
@@ -3642,11 +3642,16 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
   shenandoah_assert_heaplocked();
   for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
     ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[i];
-    ShenandoahHeapRegion* r = AtomicAccess::load_acquire(&shared_region._address);
+    ShenandoahHeapRegion* r = AtomicAccess::load(&shared_region._address);
     if (r != nullptr) {
       assert(r->reserved_for_direct_allocation(), "Must be");
       AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       r->release_from_direct_allocation();
+      if (r->free() >= PLAB::min_size_bytes()) {
+        _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, r->free());
+        partitions()->unretire_to_partition(r, ShenandoahFreeSetPartitionId::Mutator);
+      }
+
     }
   }
 }
@@ -3663,9 +3668,8 @@ void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion
   }
   region->release_from_direct_allocation();
   if (region->free() >= PLAB::min_size_bytes()) {
-    partitions()->raw_assign_membership(region->index(), ShenandoahFreeSetPartitionId::Mutator);
-    partitions()->expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId::Mutator, region->index(), region->free());
-    partitions()->decrease_used(ShenandoahFreeSetPartitionId::Mutator, region->free());
+    _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, region->free());
+    partitions()->unretire_to_partition(region, ShenandoahFreeSetPartitionId::Mutator);
   }
 }
 
