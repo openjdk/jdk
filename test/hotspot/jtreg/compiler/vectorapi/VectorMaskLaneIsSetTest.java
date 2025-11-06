@@ -33,6 +33,7 @@ import jdk.test.lib.Asserts;
  * @key randomness
  * @library /test/lib /
  * @summary VectorAPI: Re-intrinsify VectorMask.laneIsSet where the input index is a variable
+ * @requires vm.opt.EnableVectorSupport == true
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorMaskLaneIsSetTest
