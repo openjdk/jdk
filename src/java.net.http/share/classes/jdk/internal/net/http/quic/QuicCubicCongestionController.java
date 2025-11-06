@@ -25,8 +25,8 @@
 
 package jdk.internal.net.http.quic;
 
-class QuicRenoCongestionController extends QuicBaseCongestionController {
-    public QuicRenoCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
+class QuicCubicCongestionController extends QuicBaseCongestionController {
+    public QuicCubicCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         super(dbgTag, rttEstimator);
     }
 
