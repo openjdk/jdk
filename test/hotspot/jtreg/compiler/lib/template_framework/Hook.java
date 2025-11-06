@@ -79,13 +79,13 @@ import java.util.function.Function;
  * }
  *
  * <p>
- * Note that if we use {@link #insert} with {@link Template#transparentScope}, then 
- * {@link DataName}s  and {@link StructuralName}s escape from the inserted scope to the 
- * anchor scope, but hashtag replacements and {@link Template#setFuelCost} escape to 
- * the caller, i.e. from where we inserted the scope. This makes sense if we consider 
- * {@link DataName}s belonging to the structure of the generated code and the inserted 
- * scope belonging to the anchor scope. On the other hand, hashtag replacements and 
- * {@link Template#setFuelCost} rather belong to the code generation that happens 
+ * Note that if we use {@link #insert} with {@link Template#transparentScope}, then
+ * {@link DataName}s  and {@link StructuralName}s escape from the inserted scope to the
+ * anchor scope, but hashtag replacements and {@link Template#setFuelCost} escape to
+ * the caller, i.e. from where we inserted the scope. This makes sense if we consider
+ * {@link DataName}s belonging to the structure of the generated code and the inserted
+ * scope belonging to the anchor scope. On the other hand, hashtag replacements and
+ * {@link Template#setFuelCost} rather belong to the code generation that happens
  * within the context of a template.
  *
  * @param name The name of the Hook, for debugging purposes only.
