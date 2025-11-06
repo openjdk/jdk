@@ -175,10 +175,10 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DScenarios=1,2`: Provide a list of scenario indexes to specify which scenarios should be executed.
 - `-DWarmup=200`: Provide a new default value of the number of warm-up iterations (framework default is 2000). This might have an influence on the resulting IR and could lead to matching failures (the user can also set a fixed default warm-up value in a test with `testFrameworkObject.setDefaultWarmup(200)`).
 - `-DReportStdout=true`: Print the standard output of the test VM.
-- `-DVerbose=true`: Enable more fain-grained logging (slows the execution down).
+- `-DVerbose=true`: Enable more fine-grained logging (slows the execution down).
 - `-DReproduce=true`: Flag to use when directly running a test VM to bypass dependencies to the driver VM state (for example, when reproducing an issue).
 - `-DPrintTimes=true`: Print the execution time measurements of each executed test.
-- `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before meassurement.
+- `-DPrintRuleMatchingTime=true`: Print the time of matching IR rules per method. Slows down the execution as the rules are warmed up before measurement.
 - `-DVerifyVM=true`: The framework runs the test VM with additional verification flags (slows the execution down).
 - `-DExcludeRandom=true`: The framework randomly excludes some methods from compilation. IR verification is disabled completely with this flag.
 - `-DFlipC1C2=true`: The framework compiles all `@Test` annotated method with C1 if a C2 compilation would have been applied and vice versa. IR verification is disabled completely with this flag.
