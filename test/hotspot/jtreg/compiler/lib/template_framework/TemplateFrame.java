@@ -27,17 +27,38 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@link TemplateFrame} is the frame for a single rendering of a {@link Template} and
- * its inner {@link Template#scope}s. It ensures that each {@link Template} use has its own
- * unique {@link #id} used to deconflict names using {@link Template#$}. It also has a set
- * of hashtag replacements, which combine the key-value pairs from the template argument and
- * the {@link Template#let} definitions. Inner scopes of a {@link Template} have access to
+ * The {@link TemplateFrame} keeps track of the nested hashtag replacements available
+ * inside the {@link Template}, as well as the unique id of the {@link Template} use,
+ * and how much fuel is available for recursive {@link Template} calls. The name of
+ * the {@link TemplateFrame} indicates that it corresponds to the structure of the
+ * {@link Template}, whereas the {@link CodeFrame} corresponds to the structure of
+ * the generated code.
+ *
+ * <p>
+ * The unique id is used to deconflict names using {@link Template#$}.
+ *
+ * <p>
+ * A {@link Template} can have multiple {@link TemplateFrame}s, if there are nested
+ * scopes. The outermost {@link TemplateFrame} determines the id of the {@link Tmeplate}
+ * use and performs the subtraction of fuel from the outer {@link Template}. Inner
+ * {@link TemplateFrame}s ensure the correct availability of hashtag replacement and
+ * {@link Template#setFuelCost} definitions, so that they are local to their scope and
+ * nested scopes, and only escape if the scope is transparent.
+ *
+ * <p>
+ * The hashtag replacements are a set of key-value pairs from the template arguments
+ * and queries such as {@link Template#let} definitions. Each {@link TemplateFrame}
+ * has such a set of hashtag replacements, and implicitly provides access to the
+ * hashtag replacmeents of the outer {@link TemplateFrame}s, up to the outermost
+ * of the current {@link Template}. Inner scopes of a {@link Template} have access to
  * the outer scope hashtag replacements, and any hashtag replacement defined inside an
- * inner scope is local and disappears once we leave the scope. The {@link #parent} relationship
- * provides a trace for the use chain of templates and their inner scopes. The {@link #fuel}
- * is reduced over this chain to give a heuristic on how much time is spent on the code
- * from the template corresponding to the frame, and to give a termination criterion to avoid
- * nesting templates too deeply.
+ * inner scope is local and disappears once we leave the scope.
+ *
+ * <p>
+ * The {@link #parent} relationship provides a trace for the use chain of templates and
+ * their inner scopes. The {@link #fuel} is reduced over this chain to give a heuristic
+ * on how much time is spent on the code from the template corresponding to the frame,
+ * and to give a termination criterion to avoid nesting templates too deeply.
  *
  * <p>
  * The {@link TemplateFrame} thus implements the hashtag and {@link Template#setFuelCost}

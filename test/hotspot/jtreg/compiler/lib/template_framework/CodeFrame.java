@@ -59,47 +59,66 @@ import java.util.List;
  *
  * Example1: anchoring and insertion in the same Template
  *
+ * Explanations:
+ *  - Generally, every scope has a CodeFrame and a TemplateFrame. There can be multiple
+ *    scopes inside a Template, and so there can be multiple CodeFrames and TemplateFrames.
+ *    In the drawing below, we draw the frames vertically, and give each a unique id.
+ *  - When we nest scopes inside scopes, we create a new CodeFrame and a new TemplateFrame,
+ *    and so they grow the same nested structure. Example: t3 is nested inside t2 and
+ *    c3 is nested inside c2b.
+ *  - The exception to this:
+ *    - At a hook.anchor, there are two CodeFrames. The first one (e.g. c2a) we call the
+ *      hook CodeFrame, it is kept empty until we insert code to the hook. The second
+ *      (e.g. c2b) we call the inner CodeFrame of the anchoring, into which we keep
+ *      generating the code that is inside the scope of the hook.anchor.
+ *    - At a hook.insert, the TemplateFrame (e.g. t4) is nested into the caller (e.g. t3),
+ *      while the CodeFrame (e.g. c4) is nested into the anchoring CodeFrame (e.g. c2a).
+ *
  * Template(
- *   t c
- *   t c
- *   t c  Anchoring Scope
- *   t c  hook.anchor(scope(
- *   t c  t c
- *   t c  t c  <----- CodeFrame -------------+
- *   t c  t c         with Names             |
- *   t c  t                                  |
- *   t c  t c                                |
- *   t c  t c                                |
- *   t c  t c     Caller Scope               |
- *   t c  t c ... scope(                     |
- *   t c  t c ... t c                        |     Insertion Scope
- *   t c  t c ... t c                        |     hook.insert(transparentScope(
- *   t c  t c ... t c                        |     t c
- *   t c  t c ... t c                        +---  t c
- *   t c  t c ... t c                              t c
- *   t c  t c ... t c  <----- TemplateFrame -----  t c
- *   t c  t c ... t c         with hashtag and     t c
- *   t c  t c ... t c         setFuelCost          t c
- *   t c  t c ... t c                              t c "use hashtag #x"           -> t: hashtag queried in insertion and caller scope
- *   t c  t c ... t c                              t c                               c: code added to anchoring scope
- *   t c  t c ... t c                              t c
- *   t c  t c ... t c                              t c let("x", 42)               -> t: hashtag escapes to caller scope because
- *   t c  t c ... t c                              t c                                  insertion scope is transparent
- *   t c  t c ... t c                              t c
- *   t c  t c ... t c                              t c dataNames(...)...sample()  -> c: sample from insertion and anchoring scope
- *   t c  t c ... t c                              t c
- *   t c  t c ... t c                              t c addDataName(...)           -> c: names escape to the caller scope because
- *   t c  t c ... t c                              t c                                  insertion scope is transparent
- *   t c  t c ... t c                              t c
- *   t c  t c ... t c                              ))
- *   t c  t c ... t c
- *   t c  t c ... t c
- *   t c  t c ... )
- *   t c  t c
- *   t c  t c
- *   t c  ))
- *   t c
- *   t c
+ *   t1 c1
+ *   t1 c1
+ *   t1 c1  Anchoring Scope
+ *   t1 c1  hook.anchor(scope(
+ *   t1 c1  t2 c2a
+ *   t1 c1  t2 c2a <------ CodeFrame nesting--------+
+ *   t1 c1  t2 c2a         with generated code      |
+ *   t1 c1  t2             and Names                |
+ *   t1 c1  t2  ^                                   |
+ *   t1 c1  t2  +- Two CodeFramees                  |
+ *   t1 c1  t2  v                                   |
+ *   t1 c1  t2                                      |
+ *   t1 c1  t2 c2b                                  |
+ *   t1 c1  t2 c2b                                  |
+ *   t1 c1  t2 c2b     Caller Scope                 |
+ *   t1 c1  t2 c2b ... scope(                       |
+ *   t1 c1  t2 c2b ... t3 c3                        |     Insertion Scope
+ *   t1 c1  t2 c2b ... t3 c3                        |     hook.insert(transparentScope(
+ *   t1 c1  t2 c2b ... t3 c3                        |     t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                        +---- t4 ----c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3 <-- TemplateFrame nesting ---t4     c4
+ *   t1 c1  t2 c2b ... t3 c3     with hashtag             t4     c4
+ *   t1 c1  t2 c2b ... t3 c3     and setFuelCost          t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 "use hashtag #x"           -> t: hashtag queried in insertion and caller scope
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                               c: code added to anchoring scope
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 let("x", 42)               -> t: hashtag escapes to caller scope because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  insertion scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 dataNames(...)...sample()  -> c: sample from insertion and anchoring scope
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 addDataName(...)           -> c: names escape to the caller scope because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  insertion scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4
+ *   t1 c1  t2 c2b ... t3 c3                              ))
+ *   t1 c1  t2 c2b ... t3 c3
+ *   t1 c1  t2 c2b ... t3 c3
+ *   t1 c1  t2 c2b ... )
+ *   t1 c1  t2 c2b
+ *   t1 c1  t2 c2b
+ *   t1 c1  ))
+ *   t1 c1
+ *   t1 c1
  * )
  *
  */
