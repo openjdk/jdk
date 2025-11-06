@@ -25,12 +25,11 @@
 #ifndef SHARE_RUNTIME_ATOMIC_HPP
 #define SHARE_RUNTIME_ATOMIC_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // Atomic<T> is used to declare a variable of type T with atomic access.
 //

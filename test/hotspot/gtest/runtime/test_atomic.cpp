@@ -22,10 +22,9 @@
  *
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/atomic.hpp"
-
-#include <type_traits>
 
 #include "unittest.hpp"
 
