@@ -234,8 +234,13 @@ void StringDedup::Stat::emit_statistics(bool total) const {
     return;
   }
 
-  EventStringDeduplicationStatistics e;
+  EventStringDeduplication e;
   if (e.should_commit()) {
+    e.set_starttime(_active_start);
+    Ticks active_end = _active_start;
+    active_end += _active_elapsed;
+    e.set_endtime(active_end);
+
     e.set_inspected(_inspected);
     e.set_known(_known);
     e.set_shared(_known_shared);

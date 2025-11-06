@@ -138,8 +138,8 @@ public class TestStringDeduplicationEvent {
         boolean zgc = isZgc();
 
         try (RecordingStream recording = new RecordingStream()) {
-            recording.enable(EventNames.StringDeduplicationStatistics);
-            recording.onEvent(EventNames.StringDeduplicationStatistics, e -> recording.close());
+            recording.enable(EventNames.StringDeduplication);
+            recording.onEvent(EventNames.StringDeduplication, e -> recording.close());
             recording.startAsync();
 
             String base = TestStringDeduplicationEvent.class.getSimpleName();
