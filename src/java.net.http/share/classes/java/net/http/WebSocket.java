@@ -147,7 +147,7 @@ public interface WebSocket {
          * @implSpec
          * A connection timeout applies to the entire connection phase, from the
          * moment a connection is requested until it is established. The elapsed
-         * time includes any SSL/TLS handshake.
+         * time includes any WebSocket and SSL/TLS handshakes.
          *
          * @param timeout
          *         the timeout, non-{@linkplain Duration#isNegative() negative},
