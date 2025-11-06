@@ -370,10 +370,8 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     }
 
     if (target_gen == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size, from_region->is_young());
+      old_generation()->handle_evacuation(copy, size);
     } else {
-      // When copying to the old generation above, we don't care
-      // about recording object age in the census stats.
       assert(target_gen == YOUNG_GENERATION, "Error");
     }
     shenandoah_assert_correct(nullptr, copy_val);
