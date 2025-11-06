@@ -36,7 +36,6 @@ import org.junit.jupiter.api.function.Executable;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -95,7 +94,7 @@ public class TimeoutResponseTestSupport {
 
             // Verify that response failure wait duration is provided
             if (RESPONSE_FAILURE_WAIT_DURATION_MILLIS <= 0) {
-                String message = String.format(
+                var message = String.format(
                         "`jdk.httpclient.redirects.retrylimit` (%s) is greater than zero. " +
                                 "`test.responseFailureWaitDurationMillis` (%s) must be greater than zero too.",
                         RETRY_LIMIT, RESPONSE_FAILURE_WAIT_DURATION_MILLIS);
@@ -103,11 +102,11 @@ public class TimeoutResponseTestSupport {
             }
 
             // Verify that the total response failure waits exceed the request timeout
-            Duration totalResponseFailureWaitDuration = Duration
+            var totalResponseFailureWaitDuration = Duration
                     .ofMillis(RESPONSE_FAILURE_WAIT_DURATION_MILLIS)
                     .multipliedBy(RETRY_LIMIT);
             if (totalResponseFailureWaitDuration.compareTo(REQUEST_TIMEOUT) <= 0) {
-                String message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
+                var message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
                         "must be greater than `test.requestTimeoutMillis` (%s)")
                         .formatted(
                                 RESPONSE_FAILURE_WAIT_DURATION_MILLIS,
@@ -163,22 +162,22 @@ public class TimeoutResponseTestSupport {
         private static ServerRequestPair of(Version version, boolean secure) {
 
             // Create the server and the request URI
-            SSLContext sslContext = secure ? SSL_CONTEXT : null;
-            String serverId = "" + SERVER_COUNTER.getAndIncrement();
-            HttpTestServer server = createServer(version, sslContext);
+            var sslContext = secure ? SSL_CONTEXT : null;
+            var serverId = "" + SERVER_COUNTER.getAndIncrement();
+            var server = createServer(version, sslContext);
             server.getVersion();
-            String handlerPath = "/%s/".formatted(CLASS_NAME);
-            String requestUriScheme = secure ? "https" : "http";
-            URI requestUri = URI.create("%s://%s%s-".formatted(requestUriScheme, server.serverAuthority(), handlerPath));
+            var handlerPath = "/%s/".formatted(CLASS_NAME);
+            var requestUriScheme = secure ? "https" : "http";
+            var requestUri = URI.create("%s://%s%s-".formatted(requestUriScheme, server.serverAuthority(), handlerPath));
 
             // Register the request handler
             server.addHandler(createServerHandler(serverId), handlerPath);
 
             // Create the request
-            HttpRequest request = createRequestBuilder(requestUri, version).timeout(REQUEST_TIMEOUT).build();
+            var request = createRequestBuilder(requestUri, version).timeout(REQUEST_TIMEOUT).build();
 
             // Create the pair
-            ServerRequestPair pair = new ServerRequestPair(server, request, secure);
+            var pair = new ServerRequestPair(server, request, secure);
             pair.server.start();
             LOGGER.log("Server[%s] is started at `%s`", serverId, server.serverAuthority());
             return pair;
@@ -198,7 +197,7 @@ public class TimeoutResponseTestSupport {
 
         private static HttpTestHandler createServerHandler(String serverId) {
             return (exchange) -> {
-                String connectionKey = exchange.getConnectionKey();
+                var connectionKey = exchange.getConnectionKey();
                 LOGGER.log(
                         "Server[%s] has received request %s",
                         serverId, Map.of("connectionKey", connectionKey));
@@ -255,7 +254,7 @@ public class TimeoutResponseTestSupport {
                     }
 
                 } catch (Exception exception) {
-                    String message = String.format(
+                    var message = String.format(
                             "Server[%s] has failed! %s",
                             serverId, Map.of("connectionKey", connectionKey));
                     LOGGER.log(System.Logger.Level.ERROR, message, exception);
@@ -293,12 +292,12 @@ public class TimeoutResponseTestSupport {
 
         private static void sendResponseBodySlowly(String serverId, HttpTestExchange exchange, String connectionKey)
                 throws Exception {
-            Duration perBytePauseDuration = Duration.ofMillis(100);
+            var perBytePauseDuration = Duration.ofMillis(100);
             assertTrue(
                     perBytePauseDuration.multipliedBy(CONTENT_LENGTH).compareTo(REQUEST_TIMEOUT) > 0,
                     "Per-byte pause duration (%s) must be long enough to exceed the timeout (%s) when delivering the content (%s bytes)".formatted(
                             perBytePauseDuration, REQUEST_TIMEOUT, CONTENT_LENGTH));
-            try (OutputStream responseBody = exchange.getResponseBody()) {
+            try (var responseBody = exchange.getResponseBody()) {
                 for (int i = 0; i < CONTENT_LENGTH; i++) {
                     LOGGER.log(
                             "Server[%s] is sending the body %s/%s %s",
@@ -315,8 +314,8 @@ public class TimeoutResponseTestSupport {
         }
 
         public HttpClient createClientWithEstablishedConnection() throws IOException, InterruptedException {
-            Version version = server.getVersion();
-            HttpClient client = createClientBuilderFor(version)
+            var version = server.getVersion();
+            var client = createClientBuilderFor(version)
                     .version(version)
                     .sslContext(SSL_CONTEXT)
                     .proxy(NO_PROXY)
@@ -325,13 +324,13 @@ public class TimeoutResponseTestSupport {
             // helps to cross out any possibilities of a timeout before a
             // request makes it to the server handler. For instance, consider
             // HTTP/1.1 to HTTP/2 upgrades, or long-running TLS handshakes.
-            HttpRequest headRequest = createRequestBuilder(request.uri(), version).HEAD().build();
+            var headRequest = createRequestBuilder(request.uri(), version).HEAD().build();
             client.send(headRequest, HttpResponse.BodyHandlers.discarding());
             return client;
         }
 
         private static HttpRequest.Builder createRequestBuilder(URI uri, Version version) {
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri).version(version);
+            var requestBuilder = HttpRequest.newBuilder(uri).version(version);
             if (Version.HTTP_3.equals(version)) {
                 requestBuilder.setOption(HttpOption.H3_DISCOVERY, HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY);
             }
@@ -340,8 +339,8 @@ public class TimeoutResponseTestSupport {
 
         @Override
         public String toString() {
-            Version version = server.getVersion();
-            String versionString = version.toString();
+            var version = server.getVersion();
+            var versionString = version.toString();
             return switch (version) {
                 case HTTP_1_1, HTTP_2 -> secure ? versionString.replaceFirst("_", "S_") : versionString;
                 case HTTP_3 -> versionString;
@@ -398,7 +397,7 @@ public class TimeoutResponseTestSupport {
     }
 
     protected static void assertThrowsHttpTimeoutException(Executable executable) {
-        Exception rootException = assertThrows(Exception.class, executable);
+        var rootException = assertThrows(Exception.class, executable);
         // Due to intricacies involved in the way exceptions are generated and
         // nested, there is no bullet-proof way to determine at which level of
         // the causal chain an `HttpTimeoutException` will show up. Hence, we

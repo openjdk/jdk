@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
 
 import static jdk.internal.net.http.HttpClientTimerAccess.assertNoResponseTimerEventRegistrations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,11 +113,10 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
-                HttpResponse<InputStream> response = client.send(
-                        pair.request(), HttpResponse.BodyHandlers.ofInputStream());
+                var response = client.send(pair.request(), HttpResponse.BodyHandlers.ofInputStream());
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyDoesNotArrive(response);
             });
@@ -140,13 +138,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
-                CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
-                        pair.request(), HttpResponse.BodyHandlers.ofInputStream());
+                var responseFuture = client.sendAsync(pair.request(), HttpResponse.BodyHandlers.ofInputStream());
                 LOGGER.log("Obtaining the response");
-                HttpResponse<InputStream> response = responseFuture.get();
+                var response = responseFuture.get();
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyDoesNotArrive(response);
             });
@@ -159,8 +156,8 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
     private static void verifyResponseBodyDoesNotArrive(HttpResponse<InputStream> response) {
         assertEquals(200, response.statusCode());
         assertThrowsHttpTimeoutException(() -> {
-            try (InputStream responseBodyStream = response.body()) {
-                int readByte = responseBodyStream.read();
+            try (var responseBodyStream = response.body()) {
+                var readByte = responseBodyStream.read();
                 fail("Unexpected read byte: " + readByte);
             }
         });
@@ -178,11 +175,10 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
-                HttpResponse<InputStream> response = client.send(
-                        pair.request(), HttpResponse.BodyHandlers.ofInputStream());
+                var response = client.send(pair.request(), HttpResponse.BodyHandlers.ofInputStream());
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyArrivesSlow(response);
             });
@@ -204,13 +200,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
-                CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
-                        pair.request(), HttpResponse.BodyHandlers.ofInputStream());
+                var responseFuture = client.sendAsync(pair.request(), HttpResponse.BodyHandlers.ofInputStream());
                 LOGGER.log("Obtaining the response");
-                HttpResponse<InputStream> response = responseFuture.get();
+                var response = responseFuture.get();
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyArrivesSlow(response);
             });
@@ -223,12 +218,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
     private static void verifyResponseBodyArrivesSlow(HttpResponse<InputStream> response) {
         assertEquals(200, response.statusCode());
         assertThrowsHttpTimeoutException(() -> {
-            try (InputStream responseBodyStream = response.body()) {
+            try (var responseBodyStream = response.body()) {
                 int i = 0;
                 int l = ServerRequestPair.CONTENT_LENGTH;
                 for (; i < l; i++) {
                     LOGGER.log("Reading byte %s/%s", i, l);
-                    int readByte = responseBodyStream.read();
+                    var readByte = responseBodyStream.read();
                     if (readByte < 0) {
                         break;
                     }
@@ -252,7 +247,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_NO_BODY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
                 client.send(pair.request(), HttpResponse.BodyHandlers.discarding());
@@ -276,7 +271,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_NO_BODY;
 
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 client.sendAsync(pair.request(), HttpResponse.BodyHandlers.discarding()).get();

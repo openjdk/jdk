@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
 
 import static jdk.internal.net.http.HttpClientTimerAccess.assertNoResponseTimerEventRegistrations;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -102,7 +101,7 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSend(ServerRequestPair pair) throws Exception {
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(
                     REQUEST_TIMEOUT.multipliedBy(2),
                     () -> assertThrowsHttpTimeoutException(() -> {
@@ -122,11 +121,10 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendAsync(ServerRequestPair pair) throws Exception {
-        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+        try (var client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
-                CompletableFuture<HttpResponse<Void>> responseFuture =
-                        client.sendAsync(pair.request(), HttpResponse.BodyHandlers.discarding());
+                var responseFuture = client.sendAsync(pair.request(), HttpResponse.BodyHandlers.discarding());
                 assertThrowsHttpTimeoutException(() -> {
                     LOGGER.log("Obtaining the response");
                     responseFuture.get();
