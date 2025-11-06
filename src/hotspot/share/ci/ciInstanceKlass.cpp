@@ -391,12 +391,10 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
   return get_instanceKlass()->contains_field_offset(offset);
 }
 
-// ------------------------------------------------------------------
-// ciInstanceKlass::get_non_static_field_by_offset
 ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset) {
   for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
     ciField* field = _nonstatic_fields->at(i);
-    int  field_off = field->offset_in_bytes();
+    int field_off = field->offset_in_bytes();
     if (field_off == field_offset)
       return field;
   }
@@ -433,11 +431,8 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
-// ------------------------------------------------------------------
-// ciInstanceKlass::get_field_type_by_offset
-//
 // This is essentially a shortcut for:
-//  get_field_by_offset(field_offset, is_static)->layout_type()
+//   get_field_by_offset(field_offset, is_static)->layout_type()
 // except this does not require allocating memory for a new ciField
 BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, const bool is_static) {
   if (!is_static) {

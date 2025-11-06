@@ -29,7 +29,7 @@ package compiler.loopopts;
  * @summary Loop optimizations verification results in hitting the memory limit.
  *          This is caused by the high number of verification passes triggered
  *          in PhaseIdealLoop::split_if_with_blocks_post and repetitive memory
- *          allocations while building the ideal Loop tree in preparation for
+ *          allocations while building the ideal loop tree in preparation for
  *          the verification.
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
@@ -46,7 +46,6 @@ package compiler.loopopts;
  *      -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations
  *      compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
  * @run main compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
- *
  */
 
 public class TestVerifyLoopOptimizationsHitsMemLimit {
