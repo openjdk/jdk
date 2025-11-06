@@ -48,37 +48,37 @@ import sun.reflect.annotation.TypeAnnotationParser;
  * A {@code Field} provides information about, and dynamic access to, a
  * single field of a class or an interface.  The reflected field may
  * be a class (static) field or an instance field.
- * <p>
+ * <p id="value-conversion">
  * A {@code Field} declares {@link #get get} and {@link #set set} access
- * operations with overloads for all primitive types.  They convert their
- * argument and return values depending on whether the underlying field is of a
+ * operations with overloads for all primitive types.  They convert the
+ * retrieved and new values depending on whether the underlying field is of a
  * primitive or a reference type:
  * <ul>
  * <li>If the underlying field is of a primitive type P:
  *     <ul>
- *     <li>{@link #get get} wraps the accessed value in an instance of the
+ *     <li>{@link #get get} wraps the retrieved value in an instance of the
  *         {@linkplain java.lang##wrapperClass wrapper class} of P.
- *     <li>The get overload for primitive type O converts the accessed value
+ *     <li>The get overload for primitive type O converts the retrieved value
  *         from P to O via an identity conversion (JLS {@jls 5.1.1}) or a
  *         widening primitive conversion (JLS {@jls 5.1.2}), or throws an {@code
  *         IllegalArgumentException} if no such conversion exists.
- *     <li>{@link #set set} requires the argument value to be an instance of a
+ *     <li>{@link #set set} requires the new value to be an instance of a
  *         wrapper class, or throws an {@code IllegalArgumentException}. The
- *         argument value is unwrapped (JLS {@jls 5.1.8}) to a value of the
- *         wrapper class's corresponding primitive type I, and then converted
- *         from I to P via an identity conversion or a widening primitive
- *         conversion, or throws an {@code IllegalArgumentException} if no such
- *         conversion exists.
- *     <li>The set overload for primitive type I converts the argument value
- *         from I to P via an identity conversion or a widening primitive
- *         conversion, or throws an {@code IllegalArgumentException} if no such
- *         conversion exists.
+ *         new value is unwrapped (JLS {@jls 5.1.8}) to a value of the wrapper
+ *         class's corresponding primitive type I, and then converted from I to
+ *         P via an identity conversion or a widening primitive conversion, or
+ *         throws an {@code IllegalArgumentException} if no such conversion
+ *         exists.
+ *     <li>The set overload for primitive type I converts the new value from
+ *         I to P via an identity conversion or a widening primitive conversion,
+ *         or throws an {@code IllegalArgumentException} if no such conversion
+ *         exists.
  *     </ul>
  * <li>If the underlying field is of a reference type R:
  *     <ul>
  *     <li>{@code get} performs no conversion.
  *     <li>The primitive get overloads throw an {@code IllegalArgumentException}.
- *     <li>{@code set} converts the argument value to R as if through a narrowing
+ *     <li>{@code set} converts the new value to R as if through a narrowing
  *         reference conversion (JLS {@jls 5.1.6.3}), but throws an {@code
  *         IllegalArgumentException} instead of a {@code ClassCastException}.
  *     <li>The primitive set overloads throw an {@code IllegalArgumentException}.
@@ -815,12 +815,14 @@ class Field extends AccessibleObject implements Member {
      * any other context may have unpredictable effects, including cases
      * in which other parts of a program continue to use the original
      * value of this field.
-
+     *
+     * <p>The new value is {@linkplain ##value-conversion converted to be
+     * compatible} with the type of the underlying field.
      *
      * <p>If the underlying field is static, the class that declared the
      * field is initialized if it has not already been initialized.
      *
-     * <p>The field is set to the possibly unwrapped and widened new value.
+     * <p>The field is set to the possibly converted new value.
      *
      * <p>If the field is hidden in the type of {@code obj},
      * the field's value is set according to the preceding rules.
