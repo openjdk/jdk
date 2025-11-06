@@ -750,25 +750,17 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public boolean addAll(Collection<? extends E> c) {
+        Object[] a;
+        int numNew;
         if (c.getClass() == ArrayList.class) {
             ArrayList<?> src = (ArrayList<?>) c;
-            Object[] a = src.elementData;
-            int numNew = src.size;
-            modCount++;
-            if (numNew == 0)
-                return false;
-            Object[] elementData;
-            final int s;
-            if (numNew > (elementData = this.elementData).length - (s = size))
-                elementData = grow(s + numNew);
-            System.arraycopy(a, 0, elementData, s, numNew);
-            size = s + numNew;
-            return true;
+            a = src.elementData;
+            numNew = src.size;
+        } else {
+            a = c.toArray();
+            numNew = a.length;
         }
-
-        Object[] a = c.toArray();
         modCount++;
-        int numNew = a.length;
         if (numNew == 0)
             return false;
         Object[] elementData;
