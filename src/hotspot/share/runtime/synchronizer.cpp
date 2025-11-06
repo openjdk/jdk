@@ -475,22 +475,45 @@ void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
 // -----------------------------------------------------------------------------
 // Internal VM locks on java objects
 // standard constructor, allows locking failures
-ObjectLocker::ObjectLocker(Handle obj, JavaThread* thread) : _npm(thread) {
-  _thread = thread;
+ObjectLocker::ObjectLocker(Handle obj, TRAPS) : _thread(THREAD), _obj(obj),
+  _npm(_thread, _thread->at_preemptable_init() /* ignore_mark */), _skip_exit(false) {
+  assert(!_thread->preempting(), "");
+
   _thread->check_for_valid_safepoint_state();
-  _obj = obj;
 
   if (_obj() != nullptr) {
     ObjectSynchronizer::enter(_obj, &_lock, _thread);
+
+    if (_thread->preempting()) {
+      // If preemption was cancelled we acquired the monitor after freezing
+      // the frames. Redoing the vm call later in thaw will require us to
+      // release it since the call should look like the original one. We
+      // do it in ~ObjectLocker to reduce the window of time we hold the
+      // monitor since we can't do anything useful with it now, and would
+      // otherwise just force other vthreads to preempt in case they try
+      // to acquire this monitor.
+      _skip_exit = !_thread->preemption_cancelled();
+      ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+      _thread->set_pending_preempted_exception();
+
+    }
   }
 }
 
 ObjectLocker::~ObjectLocker() {
-  if (_obj() != nullptr) {
+  if (_obj() != nullptr && !_skip_exit) {
     ObjectSynchronizer::exit(_obj(), &_lock, _thread);
   }
 }
 
+void ObjectLocker::wait_uninterruptibly(TRAPS) {
+  ObjectSynchronizer::waitUninterruptibly(_obj, 0, _thread);
+  if (_thread->preempting()) {
+    _skip_exit = true;
+    ObjectSynchronizer::read_monitor(_thread, _obj())->set_object_strong();
+    _thread->set_pending_preempted_exception();
+  }
+}
 
 // -----------------------------------------------------------------------------
 //  Wait/Notify/NotifyAll
@@ -517,9 +540,7 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
 }
 
 void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
-  if (millis < 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
-  }
+  assert(millis >= 0, "timeout value is negative");
 
   ObjectMonitor* monitor;
   monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_wait, CHECK);

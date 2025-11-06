@@ -79,16 +79,7 @@ compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
-compiler/whitebox/DeoptimizeRelocatedNMethod.java#G1 8369147 generic-all
-compiler/whitebox/DeoptimizeRelocatedNMethod.java#Parallel 8369147 generic-all
-compiler/whitebox/DeoptimizeRelocatedNMethod.java#Serial 8369147 generic-all
-compiler/whitebox/DeoptimizeRelocatedNMethod.java#ZGC 8369147 generic-all
-compiler/whitebox/RelocateNMethod.java#G1 8369147 generic-all
-compiler/whitebox/RelocateNMethod.java#Parallel 8369147 generic-all
-compiler/whitebox/RelocateNMethod.java#Serial 8369147 generic-all
-compiler/whitebox/RelocateNMethod.java#ZGC 8369147 generic-all
-compiler/whitebox/StressNMethodRelocation.java 8369147,8369148,8369149 generic-all
-serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150,8369151 generic-all
+serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150 generic-all
 
 #############################################################################
 
@@ -103,6 +94,9 @@ gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 gc/shenandoah/TestEvilSyncBug.java#generational 8345501 generic-all
+gc/shenandoah/TestRetainObjects.java#no-tlab 8361099 generic-all
+gc/shenandoah/TestSieveObjects.java#no-tlab 8361099 generic-all
+gc/shenandoah/TestSieveObjects.java#no-tlab-genshen 8361099 generic-all
 
 #############################################################################
 
@@ -150,6 +144,7 @@ serviceability/sa/TestJmapCore.java               8318754 macosx-aarch64
 serviceability/sa/TestJmapCoreMetaspace.java      8318754 macosx-aarch64
 
 serviceability/sa/ClhsdbThreadContext.java        8356704 windows-x64
+serviceability/sa/TestJhsdbJstackMixedWithXComp.java 8371194 linux-x64
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 
@@ -176,6 +171,7 @@ vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8371103 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

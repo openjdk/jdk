@@ -499,6 +499,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
+  if (exec_mode == Unpack_deopt) {
+    assert(deoptee.is_deoptimized_frame(), "frame is not marked for deoptimization");
+  }
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
   nmethod* nm = deoptee.cb()->as_nmethod_or_null();
@@ -1377,6 +1380,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1404,6 +1410,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
