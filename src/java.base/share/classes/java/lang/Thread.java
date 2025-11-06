@@ -182,10 +182,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *
  * <p> Blocking methods that throw {@link InterruptedException} do so after first clearing
  * the interrupted status. Code that catches {@code InterruptedException} should rethrow
- * the exception, or <em>reset</em> the current thread's interrupted status before it
- * continues normally or handles it by throwing another type of exception. The
- * current thread's interrupted status is reset by interrupting the current thread with
- * {@link Thread#currentThread() Thread.currentThread()}.{@link #interrupt() interrupt()}.
+ * the exception, or restore the current thread's interrupted status, with
+ * {@link #currentThread() Thread.currentThread()}.{@link #interrupt()}, before continuing
+ * normally or handling it by throwing another type of exception.
  *
  * <p> Some blocking methods are specified to throw a different exception or return normally
  * when interrupted. Blocking I/O operations on an {@link java.nio.channels.InterruptibleChannel}
