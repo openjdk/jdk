@@ -1774,7 +1774,7 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
   JvmtiThreadEventMark jem(javaThread);
-  JvmtiJavaThreadEventTransition jet(javaThread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(javaThread)
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != nullptr) {
     for (int index = 0; index < objects->length(); index++) {
