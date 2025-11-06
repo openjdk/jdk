@@ -59,11 +59,9 @@ void ResolvedFieldEntry::remove_unshareable_info() {
 // in GrowableArrays (e.g., Rewriter::_initialized_field_entries). We need to zero
 // the paddings so that CDS archives are deterministic.
 void ResolvedFieldEntry::mark_and_relocate() {
-#if 0
   ResolvedFieldEntry saved = *this;
   memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
   copy_from(saved); // Get real data back, but leave zeros in paddings.
-#endif
   ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_field_holder);
 }
 #endif

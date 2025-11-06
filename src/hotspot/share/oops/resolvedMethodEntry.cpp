@@ -63,11 +63,9 @@ void ResolvedMethodEntry::remove_unshareable_info() {
 // in GrowableArrays (e.g., Rewriter::_initialized_method_entries). We need to zero
 // the paddings so that CDS archives are deterministic.
 void ResolvedMethodEntry::mark_and_relocate(ConstantPool* src_cp) {
-#if 0
   ResolvedMethodEntry saved = *this;
   memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
   copy_from(saved); // Get real data back, but leave zeros in paddings.
-#endif
 
   if (_method == nullptr) {
     assert(bytecode2() == Bytecodes::_invokevirtual, "");
