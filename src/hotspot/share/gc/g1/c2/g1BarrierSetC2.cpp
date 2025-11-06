@@ -479,7 +479,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   GraphKit* kit = (static_cast<C2ParseAccess&>(access)).kit();
   PhaseGVN& gvn = kit->gvn();
   Node* ctl = kit->control();
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
   uint adr_idx = kit->C->get_alias_index(gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
 

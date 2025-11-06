@@ -72,7 +72,7 @@ bool C2Access::needs_cpu_membar() const {
     // the barriers get omitted and the unsafe reference begins to "pollute"
     // the alias analysis of the rest of the graph, either Compile::can_alias
     // or Compile::must_alias will throw a diagnostic assert.)
-    if (is_mixed || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
+    if (is_mixed || !is_unordered || (mismatched && !gvn().type(_addr)->isa_aryptr())) {
       return true;
     }
   } else {
@@ -144,7 +144,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   MemNode::MemOrd mo = access.mem_node_mo();
 
   Node* store;
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
   BasicType bt = access.type();
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
@@ -182,7 +182,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   DecoratorSet decorators = access.decorators();
 
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
@@ -411,12 +411,11 @@ void C2Access::fixup_decorators() {
     // the one that guards them: pin the Load node
     _decorators |= C2_CONTROL_DEPENDENT_LOAD;
     _decorators |= C2_UNKNOWN_CONTROL_LOAD;
-    const TypePtr* adr_type = _addr.type();
-    Node* adr = _addr.node();
+    const TypePtr* adr_type = gvn().type(_addr)->isa_ptr();
     if (!needs_cpu_membar() && adr_type->isa_instptr()) {
       assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
       intptr_t offset = Type::OffsetBot;
-      AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
+      AddPNode::Ideal_base_and_offset(_addr, &gvn(), offset);
       if (offset >= 0) {
         int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
@@ -455,7 +454,7 @@ Node* BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, 
   MemNode::MemOrd mo = access.mem_node_mo();
   Node* mem = access.memory();
 
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
   Node* load_store = nullptr;
 
   if (access.is_oop()) {
@@ -515,7 +514,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
   Node* mem = access.memory();
   bool is_weak_cas = (decorators & C2_WEAK_CMPXCHG) != 0;
   Node* load_store = nullptr;
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   if (access.is_oop()) {
 #ifdef _LP64
@@ -587,7 +586,7 @@ Node* BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access,
 Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
   Node* mem = access.memory();
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
   Node* load_store = nullptr;
 
   if (access.is_oop()) {
@@ -637,7 +636,7 @@ Node* BarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* n
 Node* BarrierSetC2::atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* value_type) const {
   Node* load_store = nullptr;
   GraphKit* kit = access.kit();
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
   Node* mem = access.memory();
 
   switch(access.type()) {

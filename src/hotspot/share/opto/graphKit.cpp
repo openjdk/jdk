@@ -1647,9 +1647,8 @@ Node* GraphKit::access_store_at(Node* obj,
 
   assert(val != nullptr, "not dead path");
 
-  C2AccessValuePtr addr(adr, adr_type);
   C2AccessValue value(val, val_type);
-  C2ParseAccess access(this, decorators | C2_WRITE_ACCESS, bt, obj, addr);
+  C2ParseAccess access(this, decorators | C2_WRITE_ACCESS, bt, obj, adr);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::store_at(access, value);
   } else {
@@ -1667,8 +1666,7 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
     return top(); // Dead path ?
   }
 
-  C2AccessValuePtr addr(adr, adr_type);
-  C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, obj, addr);
+  C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, obj, adr);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
@@ -1684,8 +1682,7 @@ Node* GraphKit::access_load(Node* adr,   // actual address to load val at
     return top(); // Dead path ?
   }
 
-  C2AccessValuePtr addr(adr, adr->bottom_type()->is_ptr());
-  C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, nullptr, addr);
+  C2ParseAccess access(this, decorators | C2_READ_ACCESS, bt, nullptr, adr);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::load_at(access, val_type);
   } else {
@@ -1702,9 +1699,8 @@ Node* GraphKit::access_atomic_cmpxchg_val_at(Node* obj,
                                              const Type* value_type,
                                              BasicType bt,
                                              DecoratorSet decorators) {
-  C2AccessValuePtr addr(adr, adr_type);
   C2AtomicParseAccess access(this, decorators | C2_READ_ACCESS | C2_WRITE_ACCESS,
-                        bt, obj, addr, alias_idx);
+                        bt, obj, adr, alias_idx);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::atomic_cmpxchg_val_at(access, expected_val, new_val, value_type);
   } else {
@@ -1721,9 +1717,8 @@ Node* GraphKit::access_atomic_cmpxchg_bool_at(Node* obj,
                                               const Type* value_type,
                                               BasicType bt,
                                               DecoratorSet decorators) {
-  C2AccessValuePtr addr(adr, adr_type);
   C2AtomicParseAccess access(this, decorators | C2_READ_ACCESS | C2_WRITE_ACCESS,
-                        bt, obj, addr, alias_idx);
+                        bt, obj, adr, alias_idx);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::atomic_cmpxchg_bool_at(access, expected_val, new_val, value_type);
   } else {
@@ -1739,9 +1734,8 @@ Node* GraphKit::access_atomic_xchg_at(Node* obj,
                                       const Type* value_type,
                                       BasicType bt,
                                       DecoratorSet decorators) {
-  C2AccessValuePtr addr(adr, adr_type);
   C2AtomicParseAccess access(this, decorators | C2_READ_ACCESS | C2_WRITE_ACCESS,
-                        bt, obj, addr, alias_idx);
+                        bt, obj, adr, alias_idx);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::atomic_xchg_at(access, new_val, value_type);
   } else {
@@ -1757,8 +1751,7 @@ Node* GraphKit::access_atomic_add_at(Node* obj,
                                      const Type* value_type,
                                      BasicType bt,
                                      DecoratorSet decorators) {
-  C2AccessValuePtr addr(adr, adr_type);
-  C2AtomicParseAccess access(this, decorators | C2_READ_ACCESS | C2_WRITE_ACCESS, bt, obj, addr, alias_idx);
+  C2AtomicParseAccess access(this, decorators | C2_READ_ACCESS | C2_WRITE_ACCESS, bt, obj, adr, alias_idx);
   if (access.is_raw()) {
     return _barrier_set->BarrierSetC2::atomic_add_at(access, new_val, value_type);
   } else {

@@ -157,8 +157,7 @@ Node* ArrayCopyNode::load(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMe
   // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk floating
   // above runtime checks that guarantee it is within bounds.
   DecoratorSet decorators = C2_READ_ACCESS | C2_CONTROL_DEPENDENT_LOAD | IN_HEAP | C2_ARRAY_COPY | C2_UNKNOWN_CONTROL_LOAD;
-  C2AccessValuePtr addr(adr, adr_type);
-  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
+  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), adr);
   Node* res = bs->load_at(access, type);
   ctl = access.ctl();
   return res;
@@ -169,9 +168,8 @@ void ArrayCopyNode::store(BarrierSetC2* bs, PhaseGVN *phase, Node*& ctl, MergeMe
   if (is_alloc_tightly_coupled()) {
     decorators |= C2_TIGHTLY_COUPLED_ALLOC;
   }
-  C2AccessValuePtr addr(adr, adr_type);
   C2AccessValue value(val, type);
-  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), addr);
+  C2OptAccess access(*phase, ctl, mem, decorators, bt, adr->in(AddPNode::Base), adr);
   bs->store_at(access, value);
   ctl = access.ctl();
 }

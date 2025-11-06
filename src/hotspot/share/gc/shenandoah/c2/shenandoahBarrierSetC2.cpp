@@ -568,7 +568,7 @@ const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
 Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
@@ -630,7 +630,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
   // 3: apply keep-alive barrier for java.lang.ref.Reference if needed
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
     Node* top = Compile::current()->top();
-    Node* adr = access.addr().node();
+    Node* adr = access.addr();
     Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : top;
     Node* obj = access.base();
 
@@ -684,7 +684,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
 
     MemNode::MemOrd mo = access.mem_node_mo();
     Node* mem = access.memory();
-    Node* adr = access.addr().node();
+    Node* adr = access.addr();
     Node* load_store = nullptr;
 
 #ifdef _LP64
@@ -717,7 +717,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
     load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(nullptr, load_store, access.decorators()));
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), new_val, T_OBJECT, true);
     }
     return load_store;
   }
@@ -736,7 +736,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     Node* mem = access.memory();
     bool is_weak_cas = (decorators & C2_WEAK_CMPXCHG) != 0;
     Node* load_store = nullptr;
-    Node* adr = access.addr().node();
+    Node* adr = access.addr();
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = kit->gvn().transform(new EncodePNode(new_val, new_val->bottom_type()->make_narrowoop()));
@@ -775,7 +775,7 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     pin_atomic_op(access);
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), new_val, T_OBJECT, true);
     }
     return load_store;
   }
@@ -792,7 +792,7 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
                                  result /* pre_val */, T_OBJECT);
     if (ShenandoahCardBarrier) {
       post_barrier(kit, kit->control(), access.raw_access(), access.base(),
-                   access.addr().node(), access.alias_idx(), val, T_OBJECT, true);
+                   access.addr(), access.alias_idx(), val, T_OBJECT, true);
     }
   }
   return result;

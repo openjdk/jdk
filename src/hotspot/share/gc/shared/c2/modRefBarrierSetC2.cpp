@@ -30,7 +30,7 @@
 Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
 
-  Node* adr = access.addr().node();
+  Node* adr = access.addr();
 
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
@@ -59,7 +59,7 @@ Node* ModRefBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& ac
 
   Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
 
-  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+  post_barrier(access.kit(), access.base(), access.addr(), new_val, true);
 
   return result;
 }
@@ -87,7 +87,7 @@ Node* ModRefBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& a
   IdealKit ideal(kit);
   ideal.if_then(load_store, BoolTest::ne, ideal.ConI(0), PROB_STATIC_FREQUENT); {
     kit->sync_kit(ideal);
-    post_barrier(kit, access.base(), access.addr().node(), new_val, true);
+    post_barrier(kit, access.base(), access.addr(), new_val, true);
     ideal.sync_kit(kit);
   } ideal.end_if();
   kit->final_sync(ideal);
@@ -101,7 +101,7 @@ Node* ModRefBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, N
     return result;
   }
 
-  post_barrier(access.kit(), access.base(), access.addr().node(), new_val, true);
+  post_barrier(access.kit(), access.base(), access.addr(), new_val, true);
 
   return result;
 }
