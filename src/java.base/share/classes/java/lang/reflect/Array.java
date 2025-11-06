@@ -31,7 +31,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
  *
- * <p>
+ * <p id="value-conversion">
  * {@code Array} declares {@link #get get} and {@link #set set} access
  * operations with overloads for all primitive types.  They convert their
  * retrieved and new values depending on whether the array's component type
