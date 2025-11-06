@@ -33,9 +33,9 @@ import java.util.Map;
  * replacements, which combine the key-value pairs from the template argument and the
  * {@link Template#let} definitions. Inner scopes of a {@link Template} have access to
  * the outer scope hashtag replacements, and any hashtag replacement defined inside an
- * inner scope is local and disapears once we leave the scope. The {@link #parent} relationship
+ * inner scope is local and disappears once we leave the scope. The {@link #parent} relationship
  * provides a trace for the use chain of templates and their inner scopes. The {@link #fuel}
- * is reduced over this chain, to give a heuristic on how much time is spent on the code
+ * is reduced over this chain to give a heuristic on how much time is spent on the code
  * from the template corresponding to the frame, and to give a termination criterion to avoid
  * nesting templates too deeply.
  *

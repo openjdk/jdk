@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * Represents a scope with its tokens. Boolean flags indicate if names,
- * hashtag replacements and {@link setFuelCost} are local, or escape to
+ * hashtag replacements and {@link Template#setFuelCost} are local, or escape to
  * outer scopes.
  *
  * Note: we want the tokens to be package private, so we create this Impl

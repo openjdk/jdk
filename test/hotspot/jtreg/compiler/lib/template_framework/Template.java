@@ -200,19 +200,19 @@ import compiler.lib.ir_framework.TestFramework;
  * <table border="1">
  *   <caption>Scopes and (non-)transparency</caption>
  *   <tr>
- *     <th>                          </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link setFuelCost} </th>
+ *     <th>                          </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link #setFuelCost} </th>
  *   </tr>
  *   <tr>
- *     <th> {@link scope}            </th><th> non-transparent </th><th> non-transparent                             </th><th> non-transparent     </th>
+ *     <th> {@link #scope}            </th><th> non-transparent </th><th> non-transparent                             </th><th> non-transparent     </th>
  *   </tr>
  *   <tr>
- *     <th> {@link hashtagScope}     </th><th> non-transparent </th><th> transparent                                 </th><th> transparent         </th>
+ *     <th> {@link #hashtagScope}     </th><th> non-transparent </th><th> transparent                                 </th><th> transparent         </th>
  *   </tr>
  *   <tr>
- *     <th> {@link nameScope}        </th><th> transparent     </th><th> non-transparent                             </th><th> transparent         </th>
+ *     <th> {@link #nameScope}        </th><th> transparent     </th><th> non-transparent                             </th><th> transparent         </th>
  *   </tr>
  *   <tr>
- *     <th> {@link setFuelCostScope} </th><th> transparent     </th><th> transparent                                 </th><th> non-transparent     </th>
+ *     <th> {@link #setFuelCostScope} </th><th> transparent     </th><th> transparent                                 </th><th> non-transparent     </th>
  *   </tr>
  * </table>
  *
@@ -579,18 +579,23 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
-     * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
-     * {@link setFuelCost}. This means that any such name, hashtag-replacement or
-     * {@link setFuelCost} declared inside the scope is local and does not escape to outer
-     * scopes.
+     * Creates a {@link ScopeToken} that represents a scope that is completely
+     * non-transparent, <strong>not</strong> allowing anything to escape. This 
+     * means that no {@link DataName}, {@link StructuralName}s, hashtag-replacement
+     * or {@link #setFuelCost} defined inside the scope is available outside. All 
+     * these usages are only local to the defining scope here.
+     * 
+     * <p>
      * The scope is formed from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * If you require a scope that is transparent for some or all of the above, consider
-     * using {@link transparentScope}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     * If you require a scope that is either fully transparent (i.e. everything escapes)
+     * or only restricts a specific kind to not escape, consider using one of the other
+     * provided scopes: {@link #transparentScope}, {@link #nameScope}, {@link #hashtagScope}, 
+     * or {@link #setFuelCostScope}. A "scope-transparency-matrix" can also be found in
+     * the interface comment for {@link Template}.
      *
      * <p>
      * The most common use of {@link scope} is in the construction of templates:
@@ -608,14 +613,19 @@ public sealed interface Template permits Template.ZeroArgs,
      * }
      *
      * <p>
-     * Note that {@code Template.make} always implicitly are non-transparent to
-     * hashtag-replacements and {@link setFuelCost}, but they can be transparent
-     * for {@link DataName}s and {@link StructuralName}s. It is recommended to
-     * use {@link scope} by default for {@code Template.make} since in most cases
-     * template scopes align with code scopes that are non-transparent for fields,
-     * variables, etc. In rare cases where the scope of the template needs to be
-     * transparent (e.g. because we need to insert a variable or field into an
-     * outer scope), it is recommended to use {@link transparentScope}.
+     * Note that regardless of the chosen scope for {@code Template.make},
+     * hashtag-replacements and {@link #setFuelCost} are always implicitly
+     * non-transparent (i.e. non-escaping) for hashtag-replacements and 
+     * {@link #setFuelCost} (e.g. a {@link #let} will not escape the template
+     * scope even when using {@link #transparentScope}. As a default, it is 
+     * recommended to use {@link #scope} for {@code Template.make} since in 
+     * most cases template scopes align with code scopes that are 
+     * non-transparent for fields, variables, etc. In rare cases, where the 
+     * scope of the template needs to be transparent (e.g. because we need 
+     * to insert a variable or field into an outer scope), it is recommended 
+     * to use {@link #transparentScope}. This allows to make {@link DataName}s 
+     * and {@link StructuralName}s available outside this template crossing
+     * the template boundary.
      *
      * <p>
      * We can also use nested scopes inside of templates:
@@ -629,7 +639,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *       //        does not escape the inner scope.
      *     ),
      *     // CODE3: more code in the outer scope, names and hashtags from CODE2 are
-     *     //        not available any more because of the non-transparent "scope".
+     *     //        not available anymore because of the non-transparent "scope".
      *     transparentScope(
      *       // CODE4: some code in the inner "transparentScope". Names, hashtags and setFuelCost
      *       //        escape the "transparentScope" and are still available after the "transparentScope"
@@ -650,18 +660,19 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} which represents a scope that is transparent for
-     * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
-     * {@link setFuelCost}. This means that any such name, hashtag-replacement or
-     * {@link setFuelCost} declared inside the scope escapes that scope and is still
-     * available in the outer scope.
+     * Creates a {@link ScopeToken} that represents a completely transparent scope, allowing
+     * anything to escape anything. This means that {@link DataName}s, {@link StructuralName}s,
+     * hashtag-replacements and {@link #setFuelCost} declared inside the scope will be available
+     * in the outer scope.
      * The scope is formed from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     * If you require a scope that is non-transparent (i.e. nothing escapes) or only restricts 
+     * a specific kind to not escape, consider using one of the other provided scopes: 
+     * {@link #scope}, {@link #nameScope}, {@link #hashtagScope}, or {@link #setFuelCostScope}. 
+     * A "scope-transparency-matrix" can also be found in the interface comment for {@link Template}.
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
@@ -674,16 +685,21 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
-     * {@link DataName}s and {@link StructuralName}s, but transparent for hashtag-replacements
-     * and {@link setFuelCost}.
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * {@link DataName}s and {@link StructuralName}s (i.e. cannot escape), but
+     * transparent for hashtag-replacements and {@link #setFuelCost} (i.e. available
+     * in outer scope).
+     * 
+     * <p>
      * The scope is formed from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link transparentScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #hashtagScope}, or {@link #setFuelCostScope}. A "scope-transparency-matrix" can 
+     * also be found in the interface comment for {@link Template}.
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
@@ -696,16 +712,20 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
-     * hashtag-replacements, but transparent for {@link DataName}s and {@link StructuralName}s
-     * and {@link setFuelCost}.
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * hashtag-replacements (i.e. cannot escape), but transparent for {@link DataName}s
+     * and {@link StructuralName}s and {@link #setFuelCost} (i.e. available in outer scope).
+     *
+     * <p>
      * The scope is formed from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link transparentScope}, {@link nameScope}, {@link setFuelCostScope}.
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #nameScope}, or {@link #setFuelCostScope}. A "scope-transparency-matrix" can
+     * also be found in the interface comment for {@link Template}.
      *
      * <p>
      * Keeping hashtag-replacements local but letting {@link DataName}s escape can be
@@ -737,16 +757,18 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
-     * {@link setFuelCost}. but transparent for {@link DataName}s and {@link StructuralName}s
-     * and hashtag-replacements.
+     * Creates a {@link ScopeToken} that represents a scope that is non-transparent for
+     * {@link #setFuelCost} (i.e. cannot escape), but transparent for hashtag-replacements,
+     * {@link DataName}s and {@link StructuralName}s (i.e. available in outer scope).
      * The scope is formed from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link transparentScope}, {@link nameScope}, {@link setFuelCostScope}.
+     * If you require a scope that is transparent or uses a different restriction, consider
+     * using one of the other provided scopes: {@link #scope}, {@link #transparentScope},
+     * {@link #hashtagScope}, or {@link #nameScope}. A "scope-transparency-matrix" can
+     * also be found in the interface comment for {@link Template}.
      *
      * <p>
      * In some cases, it can be helpful to have different {@link setFuelCost} within
@@ -809,7 +831,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The dollar replacement for the {@code 'name'}.
      */
     static String $(String name) {
-        // Note, since the dollar replacements do not change during a template
+        // Note, since the dollar replacements do not change within a template
         // and the retrieval has no side effects, we can return the value immediately,
         // and do not need a token.
         return Renderer.getCurrent().$(name);
@@ -915,7 +937,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The amount of fuel left for nested Template use.
      */
     static float fuel() {
-        // Note, since the fuel amount does not change during a template
+        // Note, since the fuel amount does not change within a template
         // and the retrieval has no side effects, we can return the value immediately,
         // and do not need a token.
         return Renderer.getCurrent().fuel();
