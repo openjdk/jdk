@@ -861,6 +861,7 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   const Type* t = in1->bottom_type();
   if (t->isa_vect() != nullptr &&
       _node->bottom_type()->isa_vect() == nullptr) {
+    assert(!t->singleton(), "sanity");
     _node->as_Type()->set_type(t);
     phase->igvn().set_type(_node, t);
   }
