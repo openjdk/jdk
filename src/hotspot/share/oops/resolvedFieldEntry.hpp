@@ -69,8 +69,11 @@ public:
     _tos_state(0),
     _flags(0),
     _get_code(0),
-    _put_code(0),
-    _padding(0) {}
+    _put_code(0)
+#ifdef _LP64
+    , _padding(0)
+#endif
+    {}
 
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
