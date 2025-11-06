@@ -129,7 +129,7 @@ class QuicCubicCongestionController extends QuicBaseCongestionController {
             Log.logQuic(dbgTag + " Congestion: ssThresh: " + ssThresh +
                     ", in flight: " + bytesInFlight +
                     ", cwnd:" + congestionWindow +
-                    ", k: " + kNanos + " ns");
+                    ", K: " + TimeUnit.NANOSECONDS.toMillis(kNanos) + " ms");
         }
     }
 }
