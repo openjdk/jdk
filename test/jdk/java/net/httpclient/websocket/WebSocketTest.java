@@ -42,6 +42,7 @@ import java.net.http.WebSocket;
 import java.net.http.WebSocketHandshakeException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -168,10 +169,16 @@ public class WebSocketTest {
                 };
                 var webSocket = client
                         .newWebSocketBuilder()
+                        // Explicitly configure a timeout to get a response
+                        // timer event get registered at the client. The query
+                        // should succeed without timing out.
+                        .connectTimeout(Duration.ofMinutes(2))
                         .buildAsync(server.getURI(), webSocketListener)
                         .join();
                 try {
                     connectionEstablished.await();
+                    // We expect the response timer event to get evicted once
+                    // the WebSocket handshake headers are received.
                     assertNoResponseTimerEventRegistrations(client);
                 } finally {
                     webSocket.abort();
