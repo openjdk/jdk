@@ -23,31 +23,8 @@
 
 /*
  * @test
- * @bug 8356137
- * @summary This test verifies a non-zero transparent pixel in gifs works when
- * the disposal method changes from 2 to 1
+ * @bug 8368528
+ * @summary Verifies that `Deadline` returns extremums on numeric overflows
+ * @modules java.net.http/jdk.internal.net.http.common:+open
+ * @run junit java.net.http/jdk.internal.net.http.common.DeadlineOverflowTest
  */
-
-import java.io.File;
-
-public class GifEmptyBackgroundTest {
-    public static void main(String[] args) throws Throwable {
-        GifBuilder.FrameDescription[] frames =
-            new GifBuilder.FrameDescription[] {
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.restoreToBackgroundColor, false),
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.doNotDispose, false),
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.doNotDispose, false)
-        };
-
-        File dir = null;
-
-        // un-comment to visually inspect the frames:
-//        dir = new File("8356137-frames");
-//        dir.mkdir();
-
-        GifBuilder.test(frames, dir);
-    }
-}
