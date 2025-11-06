@@ -354,7 +354,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code boolean} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param z the new value of the indexed component
@@ -375,7 +374,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code byte} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param b the new value of the indexed component
@@ -396,7 +394,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code char} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param c the new value of the indexed component
@@ -417,7 +414,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code short} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param s the new value of the indexed component
@@ -438,7 +434,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code int} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param i the new value of the indexed component
@@ -459,7 +454,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code long} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param l the new value of the indexed component
@@ -480,7 +474,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code float} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param f the new value of the indexed component
@@ -501,7 +494,6 @@ class Array {
     /**
      * Sets the value of the indexed component of the specified array
      * object to the specified {@code double} value.
-     *
      * @param array the array
      * @param index the index into the array
      * @param d the new value of the indexed component
