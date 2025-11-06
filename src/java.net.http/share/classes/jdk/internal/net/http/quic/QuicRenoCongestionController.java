@@ -25,9 +25,35 @@
 
 package jdk.internal.net.http.quic;
 
+import jdk.internal.net.http.common.Deadline;
+import jdk.internal.net.http.common.Log;
+
 class QuicRenoCongestionController extends QuicBaseCongestionController {
     public QuicRenoCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         super(dbgTag, rttEstimator);
     }
 
+    protected boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
+        boolean isAppLimited;
+        isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
+        if (!isAppLimited) {
+            congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
+        }
+        return isAppLimited;
+    }
+
+    protected void onCongestionEvent(Deadline sentTime) {
+        if (inCongestionRecovery(sentTime)) {
+            return;
+        }
+        congestionRecoveryStartTime = timeSource.instant();
+        ssThresh = congestionWindow / 2;
+        congestionWindow = Math.max(minimumWindow, ssThresh);
+        maxBytesInFlight = 0;
+        if (Log.quicCC()) {
+            Log.logQuic(dbgTag + " Congestion: ssThresh: " + ssThresh +
+                    ", in flight: " + bytesInFlight +
+                    ", cwnd:" + congestionWindow);
+        }
+    }
 }

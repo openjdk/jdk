@@ -52,17 +52,17 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     private static final int MAX_BYTES_IN_FLIGHT = Math.clamp(
             Utils.getLongProperty("jdk.httpclient.quic.maxBytesInFlight", 1 << 24),
             1 << 14, 1 << 24);
-    private final TimeLine timeSource;
-    private final String dbgTag;
-    private final Lock lock = new ReentrantLock();
-    private long congestionWindow = INITIAL_WINDOW;
-    private int maxDatagramSize = QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE;
-    private int minimumWindow = 2 * maxDatagramSize;
-    private long bytesInFlight;
+    protected final TimeLine timeSource;
+    protected final String dbgTag;
+    protected final Lock lock = new ReentrantLock();
+    protected long congestionWindow = INITIAL_WINDOW;
+    protected int maxDatagramSize = QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE;
+    protected int minimumWindow = 2 * maxDatagramSize;
+    protected long bytesInFlight;
     // maximum bytes in flight seen since the last congestion event
-    private long maxBytesInFlight;
-    private Deadline congestionRecoveryStartTime;
-    private long ssThresh = Long.MAX_VALUE;
+    protected long maxBytesInFlight;
+    protected Deadline congestionRecoveryStartTime;
+    protected long ssThresh = Long.MAX_VALUE;
 
     private final QuicPacer pacer;
 
@@ -72,25 +72,12 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
         this.pacer = new QuicPacer(rttEstimator, this);
     }
 
-    private boolean inCongestionRecovery(Deadline sentTime) {
+    protected boolean inCongestionRecovery(Deadline sentTime) {
         return (congestionRecoveryStartTime != null &&
                 !sentTime.isAfter(congestionRecoveryStartTime));
     }
 
-    private void onCongestionEvent(Deadline sentTime) {
-        if (inCongestionRecovery(sentTime)) {
-            return;
-        }
-        congestionRecoveryStartTime = timeSource.instant();
-        ssThresh = congestionWindow / 2;
-        congestionWindow = Math.max(minimumWindow, ssThresh);
-        maxBytesInFlight = 0;
-        if (Log.quicCC()) {
-            Log.logQuic(dbgTag + " Congestion: ssThresh: " + ssThresh +
-                    ", in flight: " + bytesInFlight +
-                    ", cwnd:" + congestionWindow);
-        }
-    }
+    protected abstract void onCongestionEvent(Deadline sentTime);
 
     private static boolean inFlight(QuicPacket packet) {
         // packet is in flight if it contains anything other than a single ACK frame
@@ -166,10 +153,7 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
                     congestionWindow += packetBytes;
                 }
             } else {
-                isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
-                if (!isAppLimited) {
-                    congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
-                }
+                isAppLimited = congestionAvoidanceAcked(packetBytes, sentTime);
             }
             if (Log.quicCC() && Log.trace()) {
                 if (isAppLimited) {
@@ -185,6 +169,8 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
             lock.unlock();
         }
     }
+
+    protected abstract boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime);
 
     @Override
     public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) {
