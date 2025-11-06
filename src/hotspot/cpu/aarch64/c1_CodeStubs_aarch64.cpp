@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,7 +332,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   }
   Address resolve(SharedRuntime::get_resolve_static_call_stub(),
                   relocInfo::static_call_type);
-  address call = __ trampoline_call(resolve, info()->method());
+  address call = __ trampoline_call(resolve);
   if (call == nullptr) {
     ce->bailout("trampoline stub overflow");
     return;
