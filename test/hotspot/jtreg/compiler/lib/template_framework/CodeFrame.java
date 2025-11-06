@@ -46,8 +46,62 @@ import java.util.List;
  * jump back to the caller {@link CodeFrame}.
  *
  * <p>
- * Note, that {@link CodeFrame}s and {@link TemplateFrame}s often go together, but can also
- * diverge.
+ * Note, that {@link CodeFrame}s and {@link TemplateFrame}s often go together. But they do diverge when
+ * we call {@link Hook#insert}. On the {@link CodeFrame} side, the inserted scope is nested in the anchoring
+ * scope, so that the inserted scope has access to the Names of the anchoring scope, and not the caller
+ * scope. But the {@link TemplateFrame} of the inserted scope is nested in the caller scope, so
+ * that the inserted scope has access to hashtag replacements of the caller scope, and not the
+ * anchoring scope.
+ */
+
+/*
+ * Below, we look at a few examples, and show the use of CodeFrames (c) and TemplateFrames (t).
+ *
+ * Example1: anchoring and insertion in the same Template
+ *
+ * Template(
+ *   t c
+ *   t c
+ *   t c  Anchoring Scope
+ *   t c  hook.anchor(scope(
+ *   t c  t c
+ *   t c  t c  <----- CodeFrame -------------+
+ *   t c  t c         with Names             |
+ *   t c  t                                  |
+ *   t c  t c                                |
+ *   t c  t c                                |
+ *   t c  t c     Caller Scope               |
+ *   t c  t c ... scope(                     |
+ *   t c  t c ... t c                        |     Insertion Scope
+ *   t c  t c ... t c                        |     hook.insert(transparentScope(
+ *   t c  t c ... t c                        |     t c
+ *   t c  t c ... t c                        +---  t c
+ *   t c  t c ... t c                              t c
+ *   t c  t c ... t c  <----- TemplateFrame -----  t c
+ *   t c  t c ... t c         with hashtag and     t c
+ *   t c  t c ... t c         setFuelCost          t c
+ *   t c  t c ... t c                              t c "use hashtag #x"           -> t: hashtag queried in insertion and caller scope
+ *   t c  t c ... t c                              t c                               c: code added to anchoring scope
+ *   t c  t c ... t c                              t c
+ *   t c  t c ... t c                              t c let("x", 42)               -> t: hashtag escapes to caller scope because
+ *   t c  t c ... t c                              t c                                  insertion scope is transparent
+ *   t c  t c ... t c                              t c
+ *   t c  t c ... t c                              t c dataNames(...)...sample()  -> c: sample from insertion and anchoring scope
+ *   t c  t c ... t c                              t c
+ *   t c  t c ... t c                              t c addDataName(...)           -> c: names escape to the caller scope because
+ *   t c  t c ... t c                              t c                                  insertion scope is transparent
+ *   t c  t c ... t c                              t c
+ *   t c  t c ... t c                              ))
+ *   t c  t c ... t c
+ *   t c  t c ... t c
+ *   t c  t c ... )
+ *   t c  t c
+ *   t c  t c
+ *   t c  ))
+ *   t c
+ *   t c
+ * )
+ *
  */
 class CodeFrame {
     public final CodeFrame parent;

@@ -245,13 +245,16 @@ final class Renderer {
     }
 
     private void renderScopeToken(ScopeToken st, Runnable preamble) {
-        if (!(st instanceof ScopeTokenImpl sti)) {
+        if (!(st instanceof ScopeTokenImpl(List<Token> tokens,
+                                           boolean nestedNamesAreLocal,
+                                           boolean nestedHashtagsAreLocal,
+                                           boolean nestedSetFuelCostAreLocal))) {
             throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
         }
 
         // We need the CodeFrame for local names.
         CodeFrame outerCodeFrame = currentCodeFrame;
-        if (sti.nestedNamesAreLocal()) {
+        if (nestedNamesAreLocal) {
             currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
         }
 
@@ -260,10 +263,10 @@ final class Renderer {
         // replacement as the outer frame. And we need to be able to allow
         // local setFuelCost definitions.
         TemplateFrame innerTemplateFrame = null;
-        if (sti.nestedHashtagsAreLocal() || sti.nestedSetFuelCostAreLocal()) {
+        if (nestedHashtagsAreLocal || nestedSetFuelCostAreLocal) {
             innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
-                                                              !sti.nestedHashtagsAreLocal(),
-                                                              !sti.nestedSetFuelCostAreLocal());
+                                                              !nestedHashtagsAreLocal,
+                                                              !nestedSetFuelCostAreLocal);
             currentTemplateFrame = innerTemplateFrame;
         }
 
@@ -271,9 +274,9 @@ final class Renderer {
         preamble.run();
 
         // Now render the nested code.
-        renderTokenList(sti.tokens());
+        renderTokenList(tokens);
 
-        if (sti.nestedHashtagsAreLocal() || sti.nestedSetFuelCostAreLocal()) {
+        if (nestedHashtagsAreLocal || nestedSetFuelCostAreLocal) {
             if (currentTemplateFrame != innerTemplateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
             }
@@ -282,7 +285,7 @@ final class Renderer {
 
         // Tear down CodeFrame nesting. If no nesting happened, the code is already
         // in the currendCodeFrame.
-        if (sti.nestedNamesAreLocal()) {
+        if (nestedNamesAreLocal) {
             outerCodeFrame.addCode(currentCodeFrame.getCode());
             currentCodeFrame = outerCodeFrame;
         }

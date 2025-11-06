@@ -27,11 +27,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The {@link TemplateFrame} is the frame for a {@link Template} and its inner
- * {@link Template#scope}s. It ensures that each {@link Template} use has its own unique
- * {@link #id} used to deconflict names using {@link Template#$}. It also has a set of hashtag
- * replacements, which combine the key-value pairs from the template argument and the
- * {@link Template#let} definitions. Inner scopes of a {@link Template} have access to
+ * The {@link TemplateFrame} is the frame for a single rendering of a {@link Template} and
+ * its inner {@link Template#scope}s. It ensures that each {@link Template} use has its own
+ * unique {@link #id} used to deconflict names using {@link Template#$}. It also has a set
+ * of hashtag replacements, which combine the key-value pairs from the template argument and
+ * the {@link Template#let} definitions. Inner scopes of a {@link Template} have access to
  * the outer scope hashtag replacements, and any hashtag replacement defined inside an
  * inner scope is local and disappears once we leave the scope. The {@link #parent} relationship
  * provides a trace for the use chain of templates and their inner scopes. The {@link #fuel}
