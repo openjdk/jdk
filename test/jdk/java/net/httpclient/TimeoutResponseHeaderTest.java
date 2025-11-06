@@ -31,6 +31,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
+import static jdk.internal.net.http.HttpClientTimerAccess.assertNoResponseTimerEventRegistrations;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /*
@@ -41,7 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
+ *          access
  * @build TimeoutResponseTestSupport
+ *        java.net.http/jdk.internal.net.http.HttpClientTimerAccess
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  *
  * @run junit/othervm
  *      -Djdk.httpclient.auth.retrylimit=0
@@ -60,7 +65,11 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
  *
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
+ *          access
  * @build TimeoutResponseTestSupport
+ *        java.net.http/jdk.internal.net.http.HttpClientTimerAccess
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  *
  * @run junit/othervm
  *      -Djdk.httpclient.auth.retrylimit=0
@@ -100,6 +109,8 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
                         LOGGER.log("Sending the request");
                         client.send(pair.request(), HttpResponse.BodyHandlers.discarding());
                     }));
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
     }
 
@@ -121,6 +132,8 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
                     responseFuture.get();
                 });
             });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
     }
 

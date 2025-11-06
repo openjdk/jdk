@@ -152,7 +152,8 @@ public class TimeoutResponseTestSupport {
         public enum ServerHandlerBehaviour {
             BLOCK_BEFORE_HEADER_DELIVERY,
             BLOCK_BEFORE_BODY_DELIVERY,
-            DELIVER_BODY_SLOWLY
+            DELIVER_BODY_SLOWLY,
+            DELIVER_NO_BODY
         }
 
         public static volatile ServerHandlerBehaviour SERVER_HANDLER_BEHAVIOUR;
@@ -237,19 +238,20 @@ public class TimeoutResponseTestSupport {
 
                     switch (SERVER_HANDLER_BEHAVIOUR) {
 
-                        case BLOCK_BEFORE_HEADER_DELIVERY:
-                            sleepIndefinitely(serverId, connectionKey);
-                            break;
+                        case BLOCK_BEFORE_HEADER_DELIVERY -> sleepIndefinitely(serverId, connectionKey);
 
-                        case BLOCK_BEFORE_BODY_DELIVERY:
+                        case BLOCK_BEFORE_BODY_DELIVERY -> {
                             sendResponseHeaders(serverId, exchange, connectionKey);
                             sleepIndefinitely(serverId, connectionKey);
-                            break;
+                        }
 
-                        case DELIVER_BODY_SLOWLY:
+                        case DELIVER_BODY_SLOWLY -> {
                             sendResponseHeaders(serverId, exchange, connectionKey);
                             sendResponseBodySlowly(serverId, exchange, connectionKey);
-                            break;
+                        }
+
+                        case DELIVER_NO_BODY -> sendResponseHeaders(serverId, exchange, connectionKey, 204, 0);
+
                     }
 
                 } catch (Exception exception) {
@@ -273,8 +275,18 @@ public class TimeoutResponseTestSupport {
 
         private static void sendResponseHeaders(String serverId, HttpTestExchange exchange, String connectionKey)
                 throws IOException {
+            sendResponseHeaders(serverId, exchange, connectionKey, 200, CONTENT_LENGTH);
+        }
+
+        private static void sendResponseHeaders(
+                String serverId,
+                HttpTestExchange exchange,
+                String connectionKey,
+                int statusCode,
+                long contentLength)
+                throws IOException {
             LOGGER.log("Server[%s] is sending headers %s", serverId, Map.of("connectionKey", connectionKey));
-            exchange.sendResponseHeaders(200, CONTENT_LENGTH);
+            exchange.sendResponseHeaders(statusCode, contentLength);
             // Force the headers to be flushed
             exchange.getResponseBody().flush();
         }

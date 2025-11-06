@@ -32,6 +32,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
+import static jdk.internal.net.http.HttpClientTimerAccess.assertNoResponseTimerEventRegistrations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -44,7 +45,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
+ *          access
  * @build TimeoutResponseTestSupport
+ *        java.net.http/jdk.internal.net.http.HttpClientTimerAccess
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  *
  * @run junit/othervm
  *      -Djdk.httpclient.auth.retrylimit=0
@@ -63,7 +68,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
+ *          access
  * @build TimeoutResponseTestSupport
+ *        java.net.http/jdk.internal.net.http.HttpClientTimerAccess
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext
  *
  * @run junit/othervm
  *      -Djdk.httpclient.auth.retrylimit=0
@@ -113,6 +122,8 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyDoesNotArrive(response);
             });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
 
     }
@@ -139,6 +150,8 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyDoesNotArrive(response);
             });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
 
     }
@@ -173,6 +186,8 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyArrivesSlow(response);
             });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
 
     }
@@ -199,6 +214,8 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 LOGGER.log("Consuming the obtained response");
                 verifyResponseBodyArrivesSlow(response);
             });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
         }
 
     }
@@ -220,6 +237,54 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 fail("Should not have reached here! (i=%s)".formatted(i));
             }
         });
+    }
+
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#send(HttpRequest, HttpResponse.BodyHandler) HttpClient::send}
+     * against a server delivering 204, i.e., no content, which is handled
+     * through a specialized path served by {@code MultiExchange::handleNoBody}.
+     */
+    @ParameterizedTest
+    @MethodSource("serverRequestPairs")
+    void testSendOnNoBody(ServerRequestPair pair) throws Exception {
+
+        ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
+                ServerRequestPair.ServerHandlerBehaviour.DELIVER_NO_BODY;
+
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
+                LOGGER.log("Sending the request");
+                client.send(pair.request(), HttpResponse.BodyHandlers.discarding());
+            });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
+        }
+
+    }
+
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#sendAsync(HttpRequest, HttpResponse.BodyHandler) HttpClient::sendAsync}
+     * against a server delivering 204, i.e., no content, which is handled
+     * through a specialized path served by {@code MultiExchange::handleNoBody}.
+     */
+    @ParameterizedTest
+    @MethodSource("serverRequestPairs")
+    void testSendAsyncOnNoBody(ServerRequestPair pair) throws Exception {
+
+        ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
+                ServerRequestPair.ServerHandlerBehaviour.DELIVER_NO_BODY;
+
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
+                LOGGER.log("Sending the request asynchronously");
+                client.sendAsync(pair.request(), HttpResponse.BodyHandlers.discarding()).get();
+            });
+            LOGGER.log("Verifying the registered response timer events");
+            assertNoResponseTimerEventRegistrations(client);
+        }
+
     }
 
 }
