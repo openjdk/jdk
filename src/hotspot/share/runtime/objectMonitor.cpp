@@ -304,11 +304,26 @@ ObjectMonitor::ObjectMonitor(oop object) :
 
 ObjectMonitor::~ObjectMonitor() {
   _object.release(_oop_storage);
+  _object_strong.release(JavaThread::thread_oop_storage());
 }
 
 oop ObjectMonitor::object() const {
   check_object_context();
   return _object.resolve();
+}
+
+// Keep object protected during ObjectLocker preemption.
+void ObjectMonitor::set_object_strong() {
+  check_object_context();
+  if (_object_strong.is_empty()) {
+    if (AtomicAccess::cmpxchg(&_object_strong_lock, 0, 1) == 0) {
+      if (_object_strong.is_empty()) {
+        assert(_object.resolve() != nullptr, "");
+        _object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
+      }
+      AtomicAccess::release_store(&_object_strong_lock, 0);
+    }
+  }
 }
 
 void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
@@ -1813,7 +1828,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     current->set_current_waiting_monitor(this);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
-      vthread_wait(current, millis);
+      vthread_wait(current, millis, interruptible);
       current->set_current_waiting_monitor(nullptr);
       return;
     }
@@ -1863,10 +1878,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // could be profitable.
   //
   // TODO-FIXME: change the following logic to a loop of the form
-  //   while (!timeout && !interrupted && _notified == 0) park()
+  //   while (!timeout && !interrupted && node.TState == TS_WAIT) park()
 
   int ret = OS_OK;
-  int WasNotified = 0;
+  bool was_notified = false;
 
   // Need to check interrupt state whilst still _thread_in_vm
   bool interrupted = interruptible && current->is_interrupted(false);
@@ -1882,7 +1897,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
-      } else if (!node._notified) {
+      } else if (node.TState == ObjectWaiter::TS_WAIT) {
         if (millis <= 0) {
           current->_ParkEvent->park();
         } else {
@@ -1910,7 +1925,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       Thread::SpinAcquire(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
         dequeue_specific_waiter(&node);       // unlink from wait_set
-        assert(!node._notified, "invariant");
         node.TState = ObjectWaiter::TS_RUN;
       }
       Thread::SpinRelease(&_wait_set_lock);
@@ -1923,7 +1937,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     guarantee(node.TState != ObjectWaiter::TS_WAIT, "invariant");
     OrderAccess::loadload();
     if (has_successor(current)) clear_successor();
-    WasNotified = node._notified;
+    was_notified = node.TState == ObjectWaiter::TS_ENTER;
 
     // Reentry phase -- reacquire the monitor.
     // re-enter contended monitor after object.wait().
@@ -1936,7 +1950,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     if (JvmtiExport::should_post_monitor_waited()) {
       JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
 
-      if (node._notified && has_successor(current)) {
+      if (was_notified && has_successor(current)) {
         // In this part of the monitor wait-notify-reenter protocol it
         // is possible (and normal) for another thread to do a fastpath
         // monitor enter-exit while this thread is still trying to get
@@ -2003,7 +2017,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   }
 
   // check if the notification happened
-  if (!WasNotified) {
+  if (!was_notified) {
     // no, it could be timeout or Thread.interrupt() or both
     // check for interrupt event, otherwise it is timeout
     if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
@@ -2026,7 +2040,6 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
   ObjectWaiter* iterator = dequeue_waiter();
   if (iterator != nullptr) {
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
-    guarantee(!iterator->_notified, "invariant");
 
     if (iterator->is_vthread()) {
       oop vthread = iterator->vthread();
@@ -2048,7 +2061,6 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       inc_unmounted_vthreads();
     }
 
-    iterator->_notified = true;
     iterator->_notifier_tid = JFR_THREAD_ID(current);
     did_notify = true;
     add_to_entry_list(current, iterator);
@@ -2170,12 +2182,14 @@ void ObjectMonitor::quick_notifyAll(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis) {
+void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis, bool interruptible) {
   oop vthread = current->vthread();
   ObjectWaiter* node = new ObjectWaiter(vthread, this);
   node->_is_wait = true;
+  node->_interruptible = interruptible;
   node->TState = ObjectWaiter::TS_WAIT;
   java_lang_VirtualThread::set_notified(vthread, false);  // Reset notified flag
+  java_lang_VirtualThread::set_interruptible_wait(vthread, interruptible);
 
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
@@ -2210,7 +2224,6 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
     Thread::SpinAcquire(&_wait_set_lock);
     if (node->TState == ObjectWaiter::TS_WAIT) {
       dequeue_specific_waiter(node);       // unlink from wait_set
-      assert(!node->_notified, "invariant");
       node->TState = ObjectWaiter::TS_RUN;
     }
     Thread::SpinRelease(&_wait_set_lock);
@@ -2221,11 +2234,12 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   ObjectWaiter::TStates state = node->TState;
   bool was_notified = state == ObjectWaiter::TS_ENTER;
   assert(was_notified || state == ObjectWaiter::TS_RUN, "");
-  node->_interrupted = !was_notified && current->is_interrupted(false);
+  node->_interrupted = node->_interruptible && !was_notified && current->is_interrupted(false);
 
-  // Post JFR and JVMTI events.
+  // Post JFR and JVMTI events. If non-interruptible we are in
+  // ObjectLocker case so we don't post anything.
   EventJavaMonitorWait wait_event;
-  if (wait_event.should_commit() || JvmtiExport::should_post_monitor_waited()) {
+  if (node->_interruptible && (wait_event.should_commit() || JvmtiExport::should_post_monitor_waited())) {
     vthread_monitor_waited_event(current, node, cont, &wait_event, !was_notified && !node->_interrupted);
   }
 
@@ -2516,7 +2530,6 @@ ObjectWaiter::ObjectWaiter(JavaThread* current) {
   _notifier_tid = 0;
   _recursions = 0;
   TState    = TS_RUN;
-  _notified = false;
   _is_wait  = false;
   _at_reenter = false;
   _interrupted = false;

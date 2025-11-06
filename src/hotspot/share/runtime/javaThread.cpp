@@ -444,6 +444,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _terminated(_not_terminated),
   _in_deopt_handler(0),
   _doing_unsafe_access(false),
+  _throwing_unsafe_access_error(false),
   _do_not_unlock_if_synchronized(false),
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
@@ -493,6 +494,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _preempt_alternate_return(nullptr),
   _preemption_cancelled(false),
   _pending_interrupted_exception(false),
+  _at_preemptable_init(false),
+  DEBUG_ONLY(_preempt_init_klass(nullptr) COMMA)
+  DEBUG_ONLY(_interp_at_preemptable_vmcall_cnt(0) COMMA)
+  DEBUG_ONLY(_interp_redoing_vm_call(false) COMMA)
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
@@ -535,7 +540,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   set_requires_cross_modify_fence(false);
 
   pd_initialize();
-  assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
 JavaThread* JavaThread::create_attaching_thread() {
@@ -1359,9 +1363,6 @@ void JavaThread::pop_jni_handle_block() {
 }
 
 void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
-  // Verify that the deferred card marks have been flushed.
-  assert(deferred_card_mark().is_empty(), "Should be empty during GC");
-
   // Traverse the GCHandles
   Thread::oops_do_no_frames(f, cf);
 

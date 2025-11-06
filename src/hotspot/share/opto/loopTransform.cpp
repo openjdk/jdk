@@ -1970,8 +1970,19 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     if (opaq == nullptr) {
       return;
     }
-    // Zero-trip test uses an 'opaque' node which is not shared.
-    assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
+    // Zero-trip test uses an 'opaque' node which is not shared, otherwise bail out.
+    if (opaq->outcnt() != 1 || opaq->in(1) != limit) {
+#ifdef ASSERT
+      // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
+      // limit and the input of opaq by equivalent but distinct phis.
+      // Next IGVN should clean it up. Let's try to detect we are in such a case.
+      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
+      assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
+      assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
+#endif
+      return;
+    }
   }
 
   C->set_major_progress();
@@ -4031,7 +4042,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::I_O,       C->top());       // Does no I/O.
   call->init_req(TypeFunc::Memory,    mem_phi->in(LoopNode::EntryControl));
   call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out_or_null(TypeFunc::ReturnAdr));
-  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out_or_null(TypeFunc::FramePtr));
+  Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  _igvn.register_new_node_with_optimizer(frame);
+  call->init_req(TypeFunc::FramePtr,  frame);
   _igvn.register_new_node_with_optimizer(call);
   result_ctrl = new ProjNode(call,TypeFunc::Control);
   _igvn.register_new_node_with_optimizer(result_ctrl);
@@ -4071,7 +4084,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* outer_sfpt = head->outer_safepoint();
     Node* in = outer_sfpt->in(0);
     Node* outer_out = head->outer_loop_exit();
-    lazy_replace(outer_out, in);
+    replace_node_and_forward_ctrl(outer_out, in);
     _igvn.replace_input_of(outer_sfpt, 0, C->top());
   }
 
@@ -4080,7 +4093,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  lazy_replace(exit, result_ctrl);
+  replace_node_and_forward_ctrl(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());

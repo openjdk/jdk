@@ -449,12 +449,6 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
 }
 
 #ifdef ASSERT
-void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
-{
-  assert(words >= min_fill_size(), "too small to fill");
-  assert(is_object_aligned(words), "unaligned size");
-}
-
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
@@ -500,14 +494,16 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_object(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
   fill_with_object_impl(start, words, zap);
 }
 
 void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 {
-  DEBUG_ONLY(fill_args_check(start, words);)
+  assert(words >= min_fill_size(), "too small to fill");
+  assert(is_object_aligned(words), "unaligned size");
   HandleMark hm(Thread::current());  // Free handles before leaving.
 
   // Multiple objects may be required depending on the filler array maximum size. Fill
@@ -623,6 +619,8 @@ void CollectedHeap::stall_for_vm_shutdown() {
   //   - short enough to avoid excessive stall time if the shutdown itself
   //     triggers a GC.
   JavaThread::current()->sleep(2 * MILLIUNITS);
+
+  ResourceMark rm;
   log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
 }
 

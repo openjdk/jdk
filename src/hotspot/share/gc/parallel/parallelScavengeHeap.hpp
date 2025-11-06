@@ -76,6 +76,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSAdaptiveSizePolicy*       _size_policy;
   static GCPolicyCounters*           _gc_policy_counters;
 
+  // At startup, calculate the desired OS page-size based on heap size and large-page flags.
+  static size_t _desired_page_size;
+
   GCMemoryManager* _young_manager;
   GCMemoryManager* _old_manager;
 
@@ -85,7 +88,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
-  uint _gc_overhead_counter;
+  uintx _gc_overhead_counter;
 
   bool _is_heap_almost_full;
 
@@ -127,6 +130,18 @@ public:
     _workers("GC Thread", ParallelGCThreads),
     _gc_overhead_counter(0),
     _is_heap_almost_full(false) {}
+
+  // The alignment used for spaces in young gen and old gen
+  constexpr static size_t default_space_alignment() {
+    constexpr size_t alignment = 64 * K * HeapWordSize;
+    static_assert(is_power_of_2(alignment), "inv");
+    return alignment;
+  }
+
+  static void set_desired_page_size(size_t page_size) {
+    assert(is_power_of_2(page_size), "precondition");
+    _desired_page_size = page_size;
+  }
 
   Name kind() const override {
     return CollectedHeap::Parallel;
@@ -199,9 +214,9 @@ public:
   void ensure_parsability(bool retire_tlabs) override;
   void resize_all_tlabs() override;
 
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   void object_iterate(ObjectClosure* cl) override;
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);

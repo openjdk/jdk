@@ -26,6 +26,10 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -33,10 +37,7 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 class oopDesc;
 
@@ -1253,13 +1254,21 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
 // Some convenient bit shift operations that accepts a BasicType as the last
 // argument. These avoid potential mistakes with overloaded functions only
 // distinguished by lhs argument type.
 #define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
 inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
   if (bt == T_INT) {                                   \
-    return FUNC((jint) lhs, rhs);                      \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
   }                                                    \
   assert(bt == T_LONG, "unsupported basic type");      \
   return FUNC(lhs, rhs);                              \
