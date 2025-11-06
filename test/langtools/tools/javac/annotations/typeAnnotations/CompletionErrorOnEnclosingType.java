@@ -72,6 +72,7 @@ public class CompletionErrorOnEnclosingType {
 
                 class B {
                   private @Anno A<String> a;
+                  private @Anno A<String> f() { return null; };
                 }
                 """;
         String cSrc =
@@ -93,17 +94,17 @@ public class CompletionErrorOnEnclosingType {
     void testMissingEnclosingType() throws Exception {
         setup();
 
-        // now if we remove A.class there will be an error but javac should not crash
+        // Missing references through fields and methods are not reported as errors,
+        // because those symbols aren't completed here.
         tb.deleteFiles(out.resolve("A.class"));
-        List<String> log =
-                new JavacTask(tb)
-                        .outdir(out)
-                        .classpath(out)
-                        .options("-XDrawDiagnostics")
-                        .files(src.resolve("C.java"))
-                        .run(Expect.SUCCESS)
-                        .writeAll()
-                        .getOutputLines(Task.OutputKind.DIRECT);
+        new JavacTask(tb)
+                .outdir(out)
+                .classpath(out)
+                .options("-XDrawDiagnostics")
+                .files(src.resolve("C.java"))
+                .run(Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
     }
 
     @SupportedAnnotationTypes("*")
@@ -130,6 +131,15 @@ public class CompletionErrorOnEnclosingType {
                                 "%s (%s) has annotations [%s]"
                                         .formatted(f, t, t.getAnnotationMirrors()));
             }
+            for (var m : ElementFilter.methodsIn(te.getEnclosedElements())) {
+                TypeMirror t = m.getReturnType();
+                processingEnv
+                        .getMessager()
+                        .printMessage(
+                                Diagnostic.Kind.NOTE,
+                                "%s (%s) has annotations [%s]"
+                                        .formatted(m, t, t.getAnnotationMirrors()));
+            }
             first = false;
             return false;
         }
@@ -152,6 +162,8 @@ public class CompletionErrorOnEnclosingType {
         var expectedOutput =
                 List.of(
                         "- compiler.note.proc.messager: a (@Anno A<java.lang.String>) has"
+                            + " annotations [@Anno]",
+                        "- compiler.note.proc.messager: f() (@Anno A<java.lang.String>) has"
                             + " annotations [@Anno]");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
@@ -174,9 +186,11 @@ public class CompletionErrorOnEnclosingType {
 
         expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, a,"
-                                + " (compiler.misc.class.file.not.found: A)",
+                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, f,"
+                            + " (compiler.misc.class.file.not.found: A)",
                         "- compiler.note.proc.messager: a (A<java.lang.String>) has annotations []",
+                        "- compiler.note.proc.messager: f() (A<java.lang.String>) has annotations"
+                            + " []",
                         "1 error");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
