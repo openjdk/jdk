@@ -94,8 +94,8 @@ public:
   // deoptimization at monitor exit. Hence, it does not take a Handle argument.
 
   // This is the "slow path" version of monitor enter and exit.
-  static inline void enter(Handle obj, BasicLock* lock, JavaThread* current);
-  static inline void exit(oop obj, BasicLock* lock, JavaThread* current);
+  static void enter(Handle obj, BasicLock* lock, JavaThread* current);
+  static void exit(oop obj, BasicLock* lock, JavaThread* current);
 
   // Used to enter a monitor for another thread. This requires that the
   // locking_thread is suspended, and that entering on a potential
@@ -115,7 +115,7 @@ public:
   static void notifyall(Handle obj, TRAPS);
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
-  static inline bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
+  static bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
 
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk
@@ -125,9 +125,9 @@ public:
 public:
   static const char* inflate_cause_name(const InflateCause cause);
 
-  inline static ObjectMonitor* read_monitor(markWord mark);
-  inline static ObjectMonitor* read_monitor(Thread* current, oop obj);
-  inline static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
+  static ObjectMonitor* read_monitor(markWord mark);
+  static ObjectMonitor* read_monitor(Thread* current, oop obj);
+  static ObjectMonitor* read_monitor(Thread* current, oop obj, markWord mark);
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
@@ -195,7 +195,6 @@ public:
 
  private:
   friend class SynchronizerTest;
-  friend class LightweightSynchronizer;
 
   static MonitorList _in_use_list;
   static volatile bool _is_async_deflation_requested;
@@ -209,6 +208,44 @@ public:
   static u_char* get_gvars_stw_random_addr();
 
   static void handle_sync_on_value_based_class(Handle obj, JavaThread* locking_thread);
+
+  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
+  static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
+
+  static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
+  static bool remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
+
+  static void deflate_mark_word(oop object);
+
+  static void ensure_lock_stack_space(JavaThread* current);
+
+  class CacheSetter;
+  class LockStackInflateContendedLocks;
+  class VerifyThreadState;
+
+  static void create_om_table();
+
+ public:
+  static bool needs_resize();
+  static bool resize_table(JavaThread* current);
+
+ private:
+  static inline bool fast_lock_try_enter(oop obj, LockStack& lock_stack, JavaThread* current);
+  static bool fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation);
+
+ public:
+  static ObjectMonitor* inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, Thread* current);
+  static ObjectMonitor* inflate_locked_or_imse(oop object, ObjectSynchronizer::InflateCause cause, TRAPS);
+  static ObjectMonitor* inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
+  static ObjectMonitor* inflate_and_enter(oop object, BasicLock* lock, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
+
+  static void deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
+
+  static ObjectMonitor* get_monitor_from_table(Thread* current, oop obj);
+
+  static bool contains_monitor(Thread* current, ObjectMonitor* monitor);
+
+  static bool quick_enter_internal(oop obj, BasicLock* Lock, JavaThread* current);
 };
 
 // ObjectLocker enforces balanced locking and can never throw an

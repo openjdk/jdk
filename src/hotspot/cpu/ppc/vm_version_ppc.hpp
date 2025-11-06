@@ -62,7 +62,7 @@ public:
   // PPC64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
   constexpr static bool supports_secondary_supers_table() { return true; }
 
   static bool supports_float16() { return PowerArchitecturePPC64 >= 9; }

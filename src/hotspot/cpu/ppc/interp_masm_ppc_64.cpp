@@ -958,7 +958,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   assert_different_registers(header, tmp);
 
-  lightweight_lock(monitor, object, header, tmp, slow_case);
+  fast_lock(monitor, object, header, tmp, slow_case);
   b(done);
 
   bind(slow_case);
@@ -987,7 +987,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
   // The object address from the monitor is in object.
   ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
 
-  lightweight_unlock(object, header, slow_case);
+  fast_unlock(object, header, slow_case);
 
   b(free_slot);
 

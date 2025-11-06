@@ -35,7 +35,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -82,7 +82,7 @@ void LockStack::verify(const char* msg) const {
     int top = to_index(_top);
     for (int i = 0; i < top; i++) {
       assert(_base[i] != nullptr, "no zapped before top");
-      if (VM_Version::supports_recursive_lightweight_locking()) {
+      if (VM_Version::supports_recursive_fast_locking()) {
         oop o = _base[i];
         for (; i < top - 1; i++) {
           // Consecutive entries may be the same

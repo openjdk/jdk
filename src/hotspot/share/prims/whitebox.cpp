@@ -87,7 +87,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -1974,8 +1973,8 @@ WB_ENTRY(jint, WB_getLockStackCapacity(JNIEnv* env))
   return (jint) LockStack::CAPACITY;
 WB_END
 
-WB_ENTRY(jboolean, WB_supportsRecursiveLightweightLocking(JNIEnv* env))
-  return (jboolean) VM_Version::supports_recursive_lightweight_locking();
+WB_ENTRY(jboolean, WB_supportsRecursiveFastLocking(JNIEnv* env))
+  return (jboolean) VM_Version::supports_recursive_fast_locking();
 WB_END
 
 WB_ENTRY(jboolean, WB_DeflateIdleMonitors(JNIEnv* env, jobject wb))
@@ -2996,7 +2995,7 @@ static JNINativeMethod methods[] = {
   {CC"isUbsanEnabled", CC"()Z",                       (void*)&WB_IsUbsanEnabled },
   {CC"getInUseMonitorCount", CC"()J", (void*)&WB_getInUseMonitorCount  },
   {CC"getLockStackCapacity", CC"()I",                 (void*)&WB_getLockStackCapacity },
-  {CC"supportsRecursiveLightweightLocking", CC"()Z",  (void*)&WB_supportsRecursiveLightweightLocking },
+  {CC"supportsRecursiveFastLocking", CC"()Z",         (void*)&WB_supportsRecursiveFastLocking },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
