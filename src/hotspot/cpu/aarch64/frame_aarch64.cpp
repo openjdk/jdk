@@ -228,7 +228,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
-      if (nm->is_deopt_entry(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
+      if (nm->is_deopt_pc(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
         return false;
       }
     }

@@ -31,9 +31,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/frame.hpp"
 
-inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc); }
-
-inline bool nmethod::is_deopt_entry(address pc) {
+inline bool nmethod::is_deopt_pc(address pc) {
   return pc == deopt_handler_entry();
 }
 

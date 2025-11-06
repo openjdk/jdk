@@ -833,7 +833,6 @@ public:
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  inline bool is_deopt_entry(address pc);
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
