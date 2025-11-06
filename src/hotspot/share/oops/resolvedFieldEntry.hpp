@@ -54,6 +54,9 @@ class ResolvedFieldEntry {
   u1 _tos_state;                // TOS state
   u1 _flags;                    // Flags: [0000|00|is_final|is_volatile]
   u1 _get_code, _put_code;      // Get and Put bytecodes of the field
+#ifdef _LP64
+  u4 _padding;
+#endif
 
   void copy_from(const ResolvedFieldEntry& other) {
     _field_holder = other._field_holder;
@@ -64,6 +67,7 @@ class ResolvedFieldEntry {
     _flags = other._flags;
     _get_code = other._get_code;
     _put_code = other._put_code;
+    _padding = 0;
   }
 
 public:
@@ -75,7 +79,8 @@ public:
     _tos_state(0),
     _flags(0),
     _get_code(0),
-    _put_code(0) {}
+    _put_code(0),
+    _padding(0) {}
 
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
@@ -195,5 +200,11 @@ public:
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
 
 };
+
+#ifdef _LP64
+static_assert(sizeof(ResolvedFieldEntry) == 24, "Unsupported _LP64 compiler");
+#else
+static_assert(sizeof(ResolvedFieldEntry) == 16, "Unsupported !_LP64 compiler");
+#endif
 
 #endif //SHARE_OOPS_RESOLVEDFIELDENTRY_HPP

@@ -70,6 +70,7 @@ class ResolvedMethodEntry {
     InstanceKlass* _interface_klass; // for interface and static
     u2 _resolved_references_index;   // Index of resolved references array that holds the appendix oop for invokehandle
     u2 _table_index;                 // vtable/itable index for virtual and interface calls
+    // The padding field is unused here, as the parent constructor zeroes the union.
   } _entry_specific;
 
   u2 _cpool_index;                   // Constant pool index
@@ -80,6 +81,13 @@ class ResolvedMethodEntry {
 #ifdef ASSERT
   bool _has_interface_klass;
   bool _has_table_index;
+# ifdef _LP64
+  u2 _padding1;
+  u4 _padding2;
+# else
+  u1 _padding1;
+  u1 _padding2;
+# endif
 #endif
 
   // See comments in resolvedFieldEntry.hpp about copy_from and padding.
@@ -96,6 +104,8 @@ class ResolvedMethodEntry {
 #ifdef ASSERT
     _has_interface_klass = other._has_interface_klass;
     _has_table_index = other._has_table_index;
+    _padding1 = 0;
+    _padding2 = 0;
 #endif
   }
 
@@ -103,16 +113,20 @@ class ResolvedMethodEntry {
   public:
     ResolvedMethodEntry(u2 cpi) :
       _method(nullptr),
+      _entry_specific{nullptr},
       _cpool_index(cpi),
       _number_of_parameters(0),
       _tos_state(0),
       _flags(0),
       _bytecode1(0),
-      _bytecode2(0) {
-        _entry_specific._interface_klass = nullptr;
-        DEBUG_ONLY(_has_interface_klass = false;)
-        DEBUG_ONLY(_has_table_index = false;)
-      }
+      _bytecode2(0)
+#ifdef ASSERT
+      , _has_interface_klass(false),
+      _has_table_index(false),
+      _padding1(0),
+      _padding2(0)
+#endif
+      {}
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
 
@@ -268,5 +282,19 @@ class ResolvedMethodEntry {
   static ByteSize bytecode2_offset()                 { return byte_offset_of(ResolvedMethodEntry, _bytecode2);        }
 
 };
+
+#ifdef _LP64
+# ifdef ASSERT
+static_assert(sizeof(ResolvedMethodEntry) == 32, "Unsupported _LP64 compiler");
+# else
+static_assert(sizeof(ResolvedMethodEntry) == 24, "Unsupported _LP64 compiler");
+# endif
+#else
+# ifdef ASSERT
+static_assert(sizeof(ResolvedMethodEntry) == 20, "Unsupported !_LP64 compiler");
+# else
+static_assert(sizeof(ResolvedMethodEntry) == 16, "Unsupported !_LP64 compiler");
+# endif
+#endif
 
 #endif //SHARE_OOPS_RESOLVEDMETHODENTRY_HPP
