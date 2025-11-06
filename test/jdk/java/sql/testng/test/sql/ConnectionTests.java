@@ -22,42 +22,28 @@
  */
 package test.sql;
 
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import util.BaseTest;
 import util.StubConnection;
 
 import java.sql.SQLException;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
 public class ConnectionTests extends BaseTest {
 
     protected StubConnection conn;
-    protected static String maxIdentifier;
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
         conn = new StubConnection();
     }
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        int maxLen = 128;
-        StringBuilder s = new StringBuilder(maxLen);
-        for (int i = 0; i < maxLen; i++) {
-            s.append('a');
-        }
-        maxIdentifier = s.toString();
-    }
-
     /*
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
-
     @Test(dataProvider = "validEnquotedLiteralValues")
     public void test00(String s, String expected) throws SQLException {
         assertEquals(conn.enquoteLiteral(s), expected);
@@ -133,99 +119,5 @@ public class ConnectionTests extends BaseTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void test08() throws SQLException {
         conn.enquoteNCharLiteral(null);
-    }
-
-    /*
-     * DataProvider used to provide strings that will be used to validate
-     * that enquoteLiteral converts a string to a literal and every instance of
-     * a single quote will be converted into two single quotes in the literal.
-     */
-    @DataProvider(name = "validEnquotedLiteralValues")
-    protected Object[][] validEnquotedLiteralValues() {
-        return new Object[][]{
-            {"Hello", "'Hello'"},
-            {"G'Day", "'G''Day'"},
-            {"'G''Day'", "'''G''''Day'''"},
-            {"I'''M", "'I''''''M'"},
-            {"The Dark Knight", "'The Dark Knight'"}
-        };
-    }
-
-    /*
-     * DataProvider used to provide strings that will be used to validate
-     * that enqouteIdentifier returns a simple SQL Identifier or a double
-     * quoted identifier
-     */
-    @DataProvider(name = "validIdentifierValues")
-    protected Object[][] validEnquotedIdentifierValues() {
-        return new Object[][]{
-            {"b", false, "b"},
-            {"b", true, "\"b\""},
-            {maxIdentifier, false, maxIdentifier},
-            {maxIdentifier, true, "\"" + maxIdentifier + "\""},
-            {"Hello", false, "Hello"},
-            {"Hello", true, "\"Hello\""},
-            {"G'Day", false, "\"G'Day\""},
-            {"G'Day", true, "\"G'Day\""},
-            {"Bruce Wayne", false, "\"Bruce Wayne\""},
-            {"Bruce Wayne", true, "\"Bruce Wayne\""},
-            {"GoodDay$", false, "\"GoodDay$\""},
-            {"GoodDay$", true, "\"GoodDay$\""},
-        };
-    }
-
-    /*
-     * DataProvider used to provide strings are invalid for enquoteIdentifier
-     * resulting in a SQLException being thrown
-     */
-    @DataProvider(name = "invalidIdentifierValues")
-    protected Object[][] invalidEnquotedIdentifierValues() {
-        return new Object[][]{
-            {"Hel\"lo", false},
-            {"\"Hel\"lo\"", true},
-            {"Hello" + '\0', false},
-            {"", false},
-            {maxIdentifier + 'a', false},
-        };
-    }
-
-    /*
-     * DataProvider used to provide strings that will be used to validate
-     * that isSimpleIdentifier returns the correct value based on the
-     * identifier specified.
-     */
-    @DataProvider(name = "simpleIdentifierValues")
-    protected Object[][] simpleIdentifierValues() {
-        return new Object[][]{
-            {"b", true},
-            {"Hello", true},
-            {"\"Gotham\"", false},
-            {"G'Day", false},
-            {"Bruce Wayne", false},
-            {"GoodDay$", false},
-            {"Dick_Grayson", true},
-            {"Batmobile1966", true},
-            {maxIdentifier, true},
-            {maxIdentifier + 'a', false},
-            {"", false},
-        };
-    }
-
-    /*
-     * DataProvider used to provide strings that will be used to validate
-     * that enquoteNCharLiteral converts a string to a National Character
-     * literal and every instance of
-     * a single quote will be converted into two single quotes in the literal.
-     */
-    @DataProvider(name = "validEnquotedNCharLiteralValues")
-    protected Object[][] validEnquotedNCharLiteralValues() {
-        return new Object[][]{
-            {"Hello", "N'Hello'"},
-            {"G'Day", "N'G''Day'"},
-            {"'G''Day'", "N'''G''''Day'''"},
-            {"I'''M", "N'I''''''M'"},
-            {"N'Hello'", "N'N''Hello'''"},
-            {"The Dark Knight", "N'The Dark Knight'"}
-        };
     }
 }

@@ -177,7 +177,7 @@
  *  <UL>
  *      <LI>The interfaces {@code Array}, {@code Blob}, {@code Clob}, {@code NClob}
  *      and  {@code SQLXML} now extend the {@code AutoCloseable} interface and
- *      include a default {@code close} method implentation</LI>
+ *      include a default {@code close} method implementation</LI>
  *     <LI>Added support to {@code Connection} for enquoting literals
  *     and simple identifiers</LI>
  *      <LI> {@code SQLPermissions} has been deprecated for removal</LI>
@@ -259,7 +259,6 @@
  *
  * </UL>
  *
- *
  * <h3>{@code java.sql} and {@code javax.sql} Features Introduced in the JDBC 3.0 API</h3>
  * <UL>
  *   <LI>Pooled statements -- reuse of statements associated with a pooled
@@ -314,7 +313,6 @@
  *   <LI>{@code RowSet} technology -- providing a convenient means of
  *       handling and passing data
  * </UL>
- *
  *
  * <h3>Custom Mapping of UDTs</h3>
  * A user-defined type (UDT) defined in SQL can be mapped to a class in the Java

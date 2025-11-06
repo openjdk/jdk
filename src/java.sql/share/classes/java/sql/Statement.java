@@ -1411,41 +1411,46 @@ public interface Statement extends Wrapper, AutoCloseable {
          return SQLUtils.enquoteLiteral(val);
     }
 
-     /**
-     * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
+    /**
+     * Returns a {@link #isSimpleIdentifier(String) simple SQL identifier} or a
+     * delimited identifier.  A delimited identifier represents the name of a
+     * database object such as a table, column, or view that is enclosed by a
+     * delimiter, which is typically a double quote as defined by the SQL standard.
+     * <p>
+     * If {@code identifier} is a simple SQL identifier:
      * <ul>
-     * <li>Return the original value if {@code alwaysDelimit} is
-     * {@code false}</li>
-     * <li>Return a delimited identifier if {@code alwaysDelimit} is
-     * {@code true}</li>
+     * <li>If {@code alwaysDelimit} is {@code false}, return the original value</li>
+     * <li>if {@code alwaysDelimit} is {@code true}, enquote the original value
+     * and return as a delimited identifier</li>
      * </ul>
      *
-     * If {@code identifier} is not a simple SQL identifier, {@code identifier} will be
-     * enclosed in double quotes if not already present. If the datasource does
-     * not support double quotes for delimited identifiers, the
-     * identifier should be enclosed by the string returned from
-     * {@link DatabaseMetaData#getIdentifierQuoteString}.  If the datasource
-     * does not support delimited identifiers, a
-     * {@code SQLFeatureNotSupportedException} should be thrown.
+     * If {@code identifier} is not a simple SQL identifier, the delimited
+     * {@code identifier} to be returned must be enclosed by the delimiter
+     * returned from {@link DatabaseMetaData#getIdentifierQuoteString}. If
+     * the datasource does not support delimited identifiers, a
+     * {@code SQLFeatureNotSupportedException} is thrown.
      * <p>
      * A {@code SQLException} will be thrown if {@code identifier} contains any
-     * characters invalid in a delimited identifier or the identifier length is
-     * invalid for the datasource.
+     * invalid characters within a delimited identifier or the identifier length
+     * is invalid for the datasource.
      *
      * @implSpec
      * The default implementation uses the following criteria to
      * determine a valid simple SQL identifier:
      * <ul>
      * <li>The string is not enclosed in double quotes</li>
-     * <li>The first character is an alphabetic character from a through z, or
-     * from A through Z</li>
-     * <li>The name only contains alphanumeric characters or the character "_"</li>
+     * <li>The first character is an alphabetic character from a ({@code '\u005C0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
+     * <li>The name only contains alphanumeric characters([0-9A-Za-z])
+     * or the character "_"</li>
      * </ul>
      *
      * The default implementation will throw a {@code SQLException} if:
      * <ul>
-     * <li>{@code identifier} contains a {@code null} character or double quote and is not
-     * a simple SQL identifier.</li>
+     * <li> {@link DatabaseMetaData#getIdentifierQuoteString} does not return a
+     * double quote</li>
+     * <li>{@code identifier} contains a {@code null} character or double quote</li>
      * <li>The length of {@code identifier} is less than 1 or greater than 128 characters
      * </ul>
      * <blockquote>
@@ -1484,6 +1489,16 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <td>"Bruce Wayne"</td>
      * </tr>
      * <tr>
+     * <th scope="row">"select"</th>
+     * <td>false</td>
+     * <td>"select"</td>
+     * </tr>
+     * <tr>
+     * <th scope="row">"select"</th>
+     * <td>true</td>
+     * <td>"select"</td>
+     * </tr>
+     * <tr>
      * <th scope="row">GoodDay$</th>
      * <td>false</td>
      * <td>"GoodDay$"</td>
@@ -1517,22 +1532,42 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @since 9
      */
     default String enquoteIdentifier(String identifier, boolean alwaysDelimit) throws SQLException {
-        return SQLUtils.enquoteIdentifier(identifier, alwaysDelimit);
+        return getConnection().enquoteIdentifier(identifier,alwaysDelimit);
     }
 
     /**
-     * Retrieves whether {@code identifier} is a simple SQL identifier.
+     * Returns whether {@code identifier} is a simple SQL identifier.
+     * A simple SQL identifier is referred to as regular (or ordinary) identifier
+     * within the SQL standard.  A regular identifier represents the name of a database
+     * object such as a table, column, or view.
+     * <p>
+     * The rules for a regular Identifier are:
+     * <ul>
+     * <li>The first character is an alphabetic character from a ({@code '\u005Cu0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
+     * <li>The name only contains alphanumeric characters([0-9A-Za-z]) or the
+     * character "_"</li>
+     * <li>It cannot be a SQL reserved word</li>
+     * </ul>
+     * <p>
+     * A datasource may have additional rules for a regular identifier such as:
+     * <ul>
+     * <li>Supports additional characters within the name based on
+     * the locale being used</li>
+     * <li>Supports a different maximum length for the identifier</li>
+     * </ul>
      *
      * @implSpec The default implementation uses the following criteria to
      * determine a valid simple SQL identifier:
      * <ul>
-     * <li>The string is not enclosed in double quotes</li>
-     * <li>The first character is an alphabetic character from a ({@code '\u005Cu0061'})
-     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
-     * through Z ({@code '\u005Cu005A'})</li>
-     * <li>The string only contains alphanumeric characters or the character
-     * "_"</li>
-     * <li>The string is between 1 and 128 characters in length inclusive</li>
+     * <li>The identifier is not enclosed in double quotes</li>
+     * <li>The first character is an alphabetic character from a through z, or
+     * from A through Z</li>
+     * <li>The identifier only contains alphanumeric characters([0-9A-Za-z])
+     * or the character "_"</li>
+     * <li>The identifier is not a SQL reserved word</li>
+     * <li>The identifier is between 1 and 128 characters in length inclusive</li>
      * </ul>
      *
      * <blockquote>
@@ -1569,6 +1604,13 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <th scope="row">"Hello"World"</th>
      * <td>false</td>
      * </tr>
+     * <tr>
+     * <th scope="row">"select"</th>
+     * <td>false</td>
+     * <tr>
+     * <th scope="row">"from"</th>
+     * <td>false</td>
+     * </tr>
      * </tbody>
      * </table>
      * </blockquote>
@@ -1576,7 +1618,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * implementation of this method in order to meet the requirements of the
      * underlying datasource.
      * @param identifier a SQL identifier
-     * @return  true if  a simple SQL identifier, false otherwise
+     * @return true if a simple SQL identifier, false otherwise
      * @throws NullPointerException if identifier is {@code null}
      * @throws SQLException if a database access error occurs
      *
