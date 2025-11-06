@@ -21,14 +21,13 @@
  * questions.
  */
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
-
-#include <type_traits>
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
