@@ -114,17 +114,17 @@ public class QuicPacer {
      * @param now current time
      */
     public void updateQuota(Deadline now) {
+        if (lastUpdate != null && !now.isAfter(lastUpdate)) {
+            // might happen when transmission tasks from different packet spaces
+            // race to update quota. Keep the most recent update only.
+            return;
+        }
         long rttMicros = rttEstimator.state().smoothedRttMicros();
         long cwnd = congestionController.congestionWindow();
         if (rttMicros * TIMER_FREQ_HZ < TimeUnit.SECONDS.toMicros(2)) {
             // RTT less than two timer periods; don't pace
-            quota = cwnd;
+            quota = 2 * cwnd;
             lastUpdate = now;
-            return;
-        }
-        if (lastUpdate != null && !now.isAfter(lastUpdate)) {
-            // might happen when transmission tasks from different packet spaces
-            // race to update quota. Keep the most recent update only.
             return;
         }
         long pacingRate = cwnd * (congestionController.isSlowStart() ? 2_000_000 : 1_250_000) / rttMicros; // bytes per second

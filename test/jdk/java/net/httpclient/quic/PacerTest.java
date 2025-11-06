@@ -212,7 +212,7 @@ public class PacerTest {
         rtt.consumeRttSample(1000, 0, Deadline.MIN);
         QuicPacer pacer = new QuicPacer(rtt, cc);
         pacer.updateQuota(Deadline.MIN);
-        for (int i = 0; i < packetsInCwnd; i++) {
+        for (int i = 0; i < 2 * packetsInCwnd; i++) {
             assertTrue(pacer.canSend(), "Pacer blocked after " + i + " packets");
             pacer.packetSent(maxDatagramSize);
         }
@@ -220,7 +220,7 @@ public class PacerTest {
         // when RTT is short, permit cwnd on every update
         Deadline next = pacer.twoPacketDeadline();
         pacer.updateQuota(next);
-        for (int i = 0; i < packetsInCwnd; i++) {
+        for (int i = 0; i < 2 * packetsInCwnd; i++) {
             assertTrue(pacer.canSend(), "Two packet deadline: pacer blocked after " + i + " packets");
             pacer.packetSent(maxDatagramSize);
         }
