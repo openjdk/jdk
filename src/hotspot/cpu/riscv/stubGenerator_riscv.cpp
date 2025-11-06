@@ -2752,6 +2752,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(L_next);
 
     __ bind(L_main);
+    __ beqz(len, L_exit);
     __ vle32_v(v16, counter);
 
     Label L_aes128_loop_next, L_aes192_loop_next, L_exit_aes_loop_next;
@@ -2776,8 +2777,6 @@ class StubGenerator: public StubCodeGenerator {
     // Increase counter
     be_inc_counter_128(counter, tmp1, tmp2);
 
-    __ beqz(len, L_exit);
-
     __ blt(len, block_size, L_encrypt_next);
 
     __ vle32_v(v17, in);
@@ -2786,6 +2785,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(out, out, block_size);
     __ add(in, in, block_size);
     __ sub(len, len, block_size);
+    __ mv(used, block_size);
     __ j(L_main);
 
     __ bind(L_exit);
