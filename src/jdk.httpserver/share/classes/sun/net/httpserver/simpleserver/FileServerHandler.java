@@ -25,11 +25,7 @@
 
 package sun.net.httpserver.simpleserver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.lang.System.Logger;
 import java.net.URI;
 import java.nio.file.Files;
@@ -423,7 +419,7 @@ public final class FileServerHandler implements HttpHandler {
                 while (bytesToWrite > 0) {
                     int len = raf.read(buffer, 0, (int) Math.min(buffer.length, bytesToWrite));
                     if (len == -1) {
-                        throw new IOException("Unexpected EOF while reading file");
+                        throw new EOFException("Unexpected EOF while reading file");
                     }
                     os.write(buffer, 0, len);
                     bytesToWrite -= len;
