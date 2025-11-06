@@ -1850,10 +1850,10 @@ void HeapShared::start_recording_subgraph(InstanceKlass *k, const char* class_na
 }
 
 void HeapShared::done_recording_subgraph(InstanceKlass *k, const char* class_name) {
-  int num_new_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses() -
+  size_t num_new_recorded_klasses = get_subgraph_info(k)->num_subgraph_object_klasses() -
     _num_old_recorded_klasses;
   log_info(aot, heap)("Done recording subgraph(s) for archived fields in %s: "
-                      "walked %zu objs, archived %zu new objs, recorded %d classes",
+                      "walked %zu objs, archived %zu new objs, recorded %zu classes",
                       class_name, _num_new_walked_objs, _num_new_archived_objs,
                       num_new_recorded_klasses);
 
