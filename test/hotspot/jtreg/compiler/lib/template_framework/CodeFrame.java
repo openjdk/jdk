@@ -29,9 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
+ * The {@link CodeFrame} represents a frame (i.e. scope) of generated code by appending {@link Code} to the {@code 'codeList'}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
- * {@link Template#addDataName}. {@link Hook}s can be added to a frame, which allows code to be inserted at that
+ * {@link Template#addDataName}. {@link Hook}s can be added to a code frame, which allows code to be inserted at that
  * location later.
  *
  * <p>
