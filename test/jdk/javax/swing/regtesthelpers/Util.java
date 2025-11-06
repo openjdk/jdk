@@ -145,9 +145,9 @@ public class Util {
      */
     public static Component findSubComponent(Component parent, String className) {
         return findComponent((Container) parent,
-                                 c -> c.getClass()
-                                       .getName()
-                                       .contains(className));
+                             c -> c.getClass()
+                                   .getName()
+                                   .contains(className));
     }
 
     /**
