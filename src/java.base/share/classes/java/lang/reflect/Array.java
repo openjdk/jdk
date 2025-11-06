@@ -31,9 +31,42 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
  *
- * <p>{@code Array} permits widening conversions to occur during a get or set
- * operation, but throws an {@code IllegalArgumentException} if a narrowing
- * conversion would occur.
+ * <p>
+ * {@code Array} declares {@link #get get} and {@link #set set} access
+ * operations with overloads for all primitive types.  They convert their
+ * argument and return values depending on whether the array's component type
+ * is primitive or reference:
+ * <ul>
+ * <li>If the array component type is a primitive type P:
+ *     <ul>
+ *     <li>{@link #get get} wraps the accessed value in an instance of the
+ *         {@linkplain java.lang##wrapperClass wrapper class} of P.
+ *     <li>The get overload for primitive type O converts the accessed value
+ *         from P to O via an identity conversion (JLS {@jls 5.1.1}) or a
+ *         widening primitive conversion (JLS {@jls 5.1.2}), or throws an {@code
+ *         IllegalArgumentException} if no such conversion exists.
+ *     <li>{@link #set set} requires the argument value to be an instance of a
+ *         wrapper class, or throws an {@code IllegalArgumentException}. The
+ *         argument value is unwrapped (JLS {@jls 5.1.8}) to a value of the
+ *         wrapper class's corresponding primitive type I, and then converted
+ *         from I to P via an identity conversion or a widening primitive
+ *         conversion, or throws an {@code IllegalArgumentException} if no such
+ *         conversion exists.
+ *     <li>The set overload for primitive type I converts the argument value
+ *         from I to P via an identity conversion or a widening primitive
+ *         conversion, or throws an {@code IllegalArgumentException} if no such
+ *         conversion exists.
+ *     </ul>
+ * <li>If the array component type is a reference type R:
+ *     <ul>
+ *     <li>{@code get} performs no conversion.
+ *     <li>The primitive get overloads throw an {@code IllegalArgumentException}.
+ *     <li>{@code set} converts the argument value to R as if through a narrowing
+ *         reference conversion (JLS {@jls 5.1.6.3}), but throws an {@code
+ *         IllegalArgumentException} instead of a {@code ClassCastException}.
+ *     <li>The primitive set overloads throw an {@code IllegalArgumentException}.
+ *     </ul>
+ * </ul>
  *
  * @author Nakul Saraiya
  * @since 1.1
@@ -320,8 +353,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code boolean} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code boolean} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -342,8 +374,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code byte} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code byte} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -364,8 +395,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code char} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code char} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -386,8 +416,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code short} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code short} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -408,8 +437,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code int} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code int} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -430,8 +458,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code long} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code long} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -452,8 +479,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code float} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code float} value.
      *
      * @param array the array
      * @param index the index into the array
@@ -474,8 +500,7 @@ class Array {
 
     /**
      * Sets the value of the indexed component of the specified array
-     * object to the specified {@code double} value. This method never performs
-     * a boxing conversion.
+     * object to the specified {@code double} value.
      *
      * @param array the array
      * @param index the index into the array

@@ -48,10 +48,42 @@ import sun.reflect.annotation.TypeAnnotationParser;
  * A {@code Field} provides information about, and dynamic access to, a
  * single field of a class or an interface.  The reflected field may
  * be a class (static) field or an instance field.
- *
- * <p>A {@code Field} permits widening primitive conversions to occur during a
- * primitive get or set access operation, but throws an {@code IllegalArgumentException}
- * if a narrowing primitive conversion would occur.
+ * <p>
+ * A {@code Field} declares {@link #get get} and {@link #set set} access
+ * operations with overloads for all primitive types.  They convert their
+ * argument and return values depending on whether the underlying field is of a
+ * primitive or a reference type:
+ * <ul>
+ * <li>If the underlying field is of a primitive type P:
+ *     <ul>
+ *     <li>{@link #get get} wraps the accessed value in an instance of the
+ *         {@linkplain java.lang##wrapperClass wrapper class} of P.
+ *     <li>The get overload for primitive type O converts the accessed value
+ *         from P to O via an identity conversion (JLS {@jls 5.1.1}) or a
+ *         widening primitive conversion (JLS {@jls 5.1.2}), or throws an {@code
+ *         IllegalArgumentException} if no such conversion exists.
+ *     <li>{@link #set set} requires the argument value to be an instance of a
+ *         wrapper class, or throws an {@code IllegalArgumentException}. The
+ *         argument value is unwrapped (JLS {@jls 5.1.8}) to a value of the
+ *         wrapper class's corresponding primitive type I, and then converted
+ *         from I to P via an identity conversion or a widening primitive
+ *         conversion, or throws an {@code IllegalArgumentException} if no such
+ *         conversion exists.
+ *     <li>The set overload for primitive type I converts the argument value
+ *         from I to P via an identity conversion or a widening primitive
+ *         conversion, or throws an {@code IllegalArgumentException} if no such
+ *         conversion exists.
+ *     </ul>
+ * <li>If the underlying field is of a reference type R:
+ *     <ul>
+ *     <li>{@code get} performs no conversion.
+ *     <li>The primitive get overloads throw an {@code IllegalArgumentException}.
+ *     <li>{@code set} converts the argument value to R as if through a narrowing
+ *         reference conversion (JLS {@jls 5.1.6.3}), but throws an {@code
+ *         IllegalArgumentException} instead of a {@code ClassCastException}.
+ *     <li>The primitive set overloads throw an {@code IllegalArgumentException}.
+ *     </ul>
+ * </ul>
  *
  * @see Member
  * @see java.lang.Class
@@ -783,16 +815,7 @@ class Field extends AccessibleObject implements Member {
      * any other context may have unpredictable effects, including cases
      * in which other parts of a program continue to use the original
      * value of this field.
-     *
-     * <p>If the underlying field is of a primitive type, an unwrapping
-     * conversion is attempted to convert the new value to a value of
-     * a primitive type.  If this attempt fails, the method throws an
-     * {@code IllegalArgumentException}.
-     *
-     * <p>If, after possible unwrapping, the new value cannot be
-     * converted to the type of the underlying field by an identity or
-     * widening conversion, the method throws an
-     * {@code IllegalArgumentException}.
+
      *
      * <p>If the underlying field is static, the class that declared the
      * field is initialized if it has not already been initialized.
@@ -838,8 +861,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code boolean} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, zObj)}, where {@code zObj} is a {@code Boolean} object
-     * and {@code zObj.booleanValue() == z}. This method never performs a boxing
-     * conversion.
+     * and {@code zObj.booleanValue() == z}.
      *
      * @param obj the object whose field should be modified
      * @param z   the new value for the field of {@code obj}
@@ -877,8 +899,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code byte} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, bObj)}, where {@code bObj} is a {@code Byte} object and
-     * {@code bObj.byteValue() == b}. This method never performs a boxing
-     * conversion.
+     * {@code bObj.byteValue() == b}.
      *
      * @param obj the object whose field should be modified
      * @param b   the new value for the field of {@code obj}
@@ -916,8 +937,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code char} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, cObj)}, where {@code cObj} is a {@code Character} object
-     * and {@code cObj.charValue() == c}. This method never performs a boxing
-     * conversion.
+     * and {@code cObj.charValue() == c}.
      *
      * @param obj the object whose field should be modified
      * @param c   the new value for the field of {@code obj}
@@ -955,8 +975,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code short} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, sObj)}, where {@code sObj} is a {@code Short} object and
-     * {@code sObj.shortValue() == s}. This method never performs a boxing
-     * conversion.
+     * {@code sObj.shortValue() == s}.
      *
      * @param obj the object whose field should be modified
      * @param s   the new value for the field of {@code obj}
@@ -994,8 +1013,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as an {@code int} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, iObj)}, where {@code iObj} is an {@code Integer} object
-     * and {@code iObj.intValue() == i}. This method never performs a boxing
-     * conversion.
+     * and {@code iObj.intValue() == i}.
      *
      * @param obj the object whose field should be modified
      * @param i   the new value for the field of {@code obj}
@@ -1033,8 +1051,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code long} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, lObj)}, where {@code lObj} is a {@code Long} object and
-     * {@code lObj.longValue() == l}. This method never performs a boxing
-     * conversion.
+     * {@code lObj.longValue() == l}.
      *
      * @param obj the object whose field should be modified
      * @param l   the new value for the field of {@code obj}
@@ -1072,8 +1089,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code float} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, fObj)}, where {@code fObj} is a {@code Float} object and
-     * {@code fObj.floatValue() == f}. This method never performs a boxing
-     * conversion.
+     * {@code fObj.floatValue() == f}.
      *
      * @param obj the object whose field should be modified
      * @param f   the new value for the field of {@code obj}
@@ -1111,8 +1127,7 @@ class Field extends AccessibleObject implements Member {
      * Sets the value of a field as a {@code double} on the specified object.
      * If this field is of a primitive type, this method is equivalent to
      * {@code set(obj, dObj)}, where {@code dObj} is a {@code Double} object and
-     * {@code dObj.doubleValue() == d}. This method never performs a boxing
-     * conversion.
+     * {@code dObj.doubleValue() == d}.
      *
      * @param obj the object whose field should be modified
      * @param d   the new value for the field of {@code obj}
