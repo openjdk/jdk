@@ -24,17 +24,15 @@
 /*
  * @test
  * @bug 8017266
- * @key headful
  * @summary Verifies if Background is painted taller than needed for styled text.
  * @run main TestGlyphBGHeight
  */
 
 import java.io.File;
-import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.awt.Robot;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JTextPane;
@@ -45,64 +43,59 @@ import javax.swing.SwingUtilities;
 
 public class TestGlyphBGHeight {
 
-    static JFrame frame;
+    static final int WIDTH = 100;
+    static final int HEIGHT = 100;
+    static final int FONTSIZE = 32;
+
+    static int getEmptyPixel() {
+        return 0xFFFFFFFF;
+    }
+
+    static BufferedImage createImage() throws Exception {
+        final BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
+            SwingUtilities.invokeAndWait(new Runnable() {
+                @Override
+                public void run() {
+                    Graphics g = img.getGraphics();
+                    g.setColor(new Color(getEmptyPixel()));
+                    g.fillRect(0, 0, WIDTH, HEIGHT);
+                }
+            });
+        return img;
+    }
 
     public static void main(String[] args) throws Exception {
-        int width = 100;
-        int height = 100;
 
-        try {
-            Robot robot = new Robot();
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("TestGlyphBGHeight");
-                frame.setSize(width, height);
-                frame.getContentPane().setLayout(new BorderLayout());
+        final BufferedImage img = createImage();
+        SwingUtilities.invokeAndWait(() -> {
+            final JTextPane comp = new JTextPane();
+            final StyledDocument doc = comp.getStyledDocument();
 
-                final JTextPane comp = new JTextPane();
-                final StyledDocument doc = comp.getStyledDocument();
+            Style style = comp.addStyle("superscript", null);
+            StyleConstants.setSuperscript(style, true);
+            StyleConstants.setFontSize(style, FONTSIZE);
+            StyleConstants.setBackground(style, Color.YELLOW);
+            try {
+                doc.insertString(doc.getLength(), "hello", style);
+            } catch (Exception e) {}
 
-                Style style = comp.addStyle("superscript", null);
-                StyleConstants.setSuperscript(style, true);
-                StyleConstants.setFontSize(style, 32);
-                StyleConstants.setBackground(style, Color.YELLOW);
-                try {
-                    doc.insertString(doc.getLength(), "hello", style);
-                } catch (Exception e) {}
+            comp.setSize(WIDTH, HEIGHT);
+            comp.setDocument(doc);
+            comp.setBackground(Color.RED);
 
-                comp.setDocument(doc);
-                comp.setBackground(Color.RED);
+            comp.paint(img.getGraphics());
+        });
 
-                frame.getContentPane().add(comp, BorderLayout.CENTER);
+        ImageIO.write(img, "png", new File("AppTest.png"));
 
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            });
-            robot.waitForIdle();
-            robot.delay(1000);
-
-            BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = (Graphics2D) img.getGraphics();
-            frame.paint(g2d);
-            ImageIO.write(img, "png", new File("AppTest.png"));
-            g2d.dispose();
-
-            BufferedImage bimg = img.getSubimage(0, 80, width, 1);
-            ImageIO.write(bimg, "png", new File("AppTest1.png"));
-            robot.waitForIdle();
-            robot.delay(1000);
-            for (int x = 10; x < width / 2; x++) {
-                Color col = new Color(bimg.getRGB(x, 0));
-                System.out.println(Integer.toHexString(bimg.getRGB(x, 0)));
-                if (col.equals(Color.YELLOW)) {
-                    throw new RuntimeException(" Background is painted taller than needed for styled text");
-                }
+        BufferedImage bimg = img.getSubimage(0, FONTSIZE + 20, WIDTH, 1);
+        ImageIO.write(bimg, "png", new File("AppTest1.png"));
+        for (int x = 10; x < WIDTH/ 2; x++) {
+            Color col = new Color(bimg.getRGB(x, 0));
+            System.out.println(Integer.toHexString(bimg.getRGB(x, 0)));
+            if (col.equals(Color.YELLOW)) {
+                throw new RuntimeException(" Background is painted taller than needed for styled text");
             }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
         }
     }
 }
