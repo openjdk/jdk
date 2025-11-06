@@ -432,35 +432,13 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
     arraycopy_update(src, count);
   } else if ((gc_state & ShenandoahHeap::MARKING) != 0) {
-    const bool marking_old = gc_state & ShenandoahHeap::OLD_MARKING;
-    arraycopy_marking(src, dst, count, marking_old);
+    arraycopy_marking(src, dst, count);
   }
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count, bool is_old_marking) {
+void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
-  /*
-   * Note that an old-gen object is considered live if it is live at the start of OLD marking or if it is promoted
-   * following the start of OLD marking.
-   *
-   * 1. Every object promoted following the start of OLD marking will be above TAMS within its old-gen region
-   * 2. Every object live at the start of OLD marking will be referenced from a "root" or it will be referenced from
-   *    another live OLD-gen object.  With regards to old-gen, roots include stack locations and all of live young-gen.
-   *    All root references to old-gen are identified during a bootstrap young collection.  All references from other
-   *    old-gen objects will be marked during the traversal of all old objects, or will be marked by the SATB barrier.
-   *
-   * During old-gen marking (which is interleaved with young-gen collections), call arraycopy_work() if:
-   *
-   * 1. The overwritten array resides in old-gen and it is below TAMS within its old-gen region
-   * 2. Do not call arraycopy_work for any array residing in young-gen because young-gen collection is idle at this time
-   *
-   * During young-gen marking, call arraycopy_work() if:
-   *
-   * 1. The overwritten array resides in young-gen and is below TAMS within its young-gen region
-   * 2. Additionally, if array resides in old-gen, regardless of its relationship to TAMS because this old-gen array
-   *    may hold references to young-gen
-   */
   if (ShenandoahSATBBarrier) {
     if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
       arraycopy_work<T, false, false, true>(dst, count);
