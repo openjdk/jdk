@@ -22,24 +22,24 @@
  *
  */
 
-package sun.jvm.hotspot.runtime.x86;
+package sun.jvm.hotspot.runtime.amd64;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 
-public class X86RegisterMap extends RegisterMap {
+public class AMD64RegisterMap extends RegisterMap {
 
   /** This is the only public constructor */
-  public X86RegisterMap(JavaThread thread, boolean updateMap) {
+  public AMD64RegisterMap(JavaThread thread, boolean updateMap) {
     super(thread, updateMap);
   }
 
-  protected X86RegisterMap(RegisterMap map) {
+  protected AMD64RegisterMap(RegisterMap map) {
     super(map);
   }
 
   public Object clone() {
-    X86RegisterMap retval = new X86RegisterMap(this);
+    AMD64RegisterMap retval = new AMD64RegisterMap(this);
     return retval;
   }
 
