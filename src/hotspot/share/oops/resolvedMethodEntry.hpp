@@ -61,7 +61,7 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
-// Verify no compiler paddings are present, check the static_assert at the end of this file.
+// Verify no compiler paddings are present, check STATIC_ASSERTs in the .cpp file.
 
 class InstanceKlass;
 class ResolvedMethodEntry {
@@ -256,20 +256,5 @@ class ResolvedMethodEntry {
   static ByteSize bytecode2_offset()                 { return byte_offset_of(ResolvedMethodEntry, _bytecode2);        }
 
 };
-
-STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedMethodEntry> == true);
-#ifdef _LP64
-# ifdef ASSERT
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 32);
-# else
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 24);
-# endif
-#else
-# ifdef ASSERT
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 20);
-# else
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 16);
-# endif
-#endif
 
 #endif //SHARE_OOPS_RESOLVEDMETHODENTRY_HPP

@@ -23,7 +23,15 @@
  */
 
 #include "cds/archiveBuilder.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "oops/resolvedFieldEntry.hpp"
+
+STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedFieldEntry> == true);
+#ifdef _LP64
+STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 24);
+#else
+STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 16);
+#endif
 
 void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr("Field Entry:");

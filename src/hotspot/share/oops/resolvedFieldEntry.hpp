@@ -43,7 +43,7 @@
 // Field bytecodes start with a constant pool index as their operand, which is then rewritten to
 // a "field index", which is an index into the array of ResolvedFieldEntry.
 
-// Verify no compiler paddings are present, check the static_assert at the end of this file.
+// Verify no compiler paddings are present, check STATIC_ASSERTs in the .cpp file.
 
 //class InstanceKlass;
 class ResolvedFieldEntry {
@@ -153,12 +153,5 @@ public:
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
 
 };
-
-STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedFieldEntry> == true);
-#ifdef _LP64
-STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 24);
-#else
-STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 16);
-#endif
 
 #endif //SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
