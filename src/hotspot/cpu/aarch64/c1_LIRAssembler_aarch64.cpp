@@ -1984,7 +1984,10 @@ void LIR_Assembler::align_call(LIR_Code code) {  }
 
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype), op->method());
+  // Calls of type lir_dynamic_call use static_call_type but may resolve to different target
+  // methods depending on call site info at the time of a call.
+  ciMethod* bound_callee = op->method()->can_be_statically_bound() ? op->method() : nullptr;
+  address call = __ trampoline_call(Address(op->addr(), rtype), bound_callee);
   if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;
