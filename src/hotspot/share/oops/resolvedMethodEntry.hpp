@@ -61,6 +61,8 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
+// Verify no compiler paddings are present, check the static_assert at the end of this file.
+
 class InstanceKlass;
 class ResolvedMethodEntry {
   friend class VMStructs;
@@ -90,25 +92,6 @@ class ResolvedMethodEntry {
 # endif
 #endif
 
-  // See comments in resolvedFieldEntry.hpp about copy_from and padding.
-  // We have unused padding on debug builds.
-  void copy_from(const ResolvedMethodEntry& other) {
-    _method = other._method;
-    _entry_specific = other._entry_specific;
-    _cpool_index = other._cpool_index;
-    _number_of_parameters = other._number_of_parameters;
-    _tos_state = other._tos_state;
-    _flags = other._flags;
-    _bytecode1 = other._bytecode1;
-    _bytecode2 = other._bytecode2;
-#ifdef ASSERT
-    _has_interface_klass = other._has_interface_klass;
-    _has_table_index = other._has_table_index;
-    _padding1 = 0;
-    _padding2 = 0;
-#endif
-  }
-
   // Constructors
   public:
     ResolvedMethodEntry(u2 cpi) :
@@ -129,15 +112,6 @@ class ResolvedMethodEntry {
       {}
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
-
-    ResolvedMethodEntry(const ResolvedMethodEntry& other) {
-      copy_from(other);
-    }
-
-    ResolvedMethodEntry& operator=(const ResolvedMethodEntry& other) {
-      copy_from(other);
-      return *this;
-    }
 
 
   // Bit shift to get flags
@@ -283,17 +257,18 @@ class ResolvedMethodEntry {
 
 };
 
+STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedMethodEntry> == true);
 #ifdef _LP64
 # ifdef ASSERT
-static_assert(sizeof(ResolvedMethodEntry) == 32, "Unsupported _LP64 compiler");
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 32);
 # else
-static_assert(sizeof(ResolvedMethodEntry) == 24, "Unsupported _LP64 compiler");
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 24);
 # endif
 #else
 # ifdef ASSERT
-static_assert(sizeof(ResolvedMethodEntry) == 20, "Unsupported !_LP64 compiler");
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 20);
 # else
-static_assert(sizeof(ResolvedMethodEntry) == 16, "Unsupported !_LP64 compiler");
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 16);
 # endif
 #endif
 
