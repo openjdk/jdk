@@ -28,6 +28,7 @@
  *          that maxes out its LZW compression table at 4096 entries.
  */
 
+import java.io.File;
 import java.net.URL;
 
 public class GifMaxLZWTableTest {
@@ -37,6 +38,13 @@ public class GifMaxLZWTableTest {
         // https://upload.wikimedia.org/wikipedia/commons/8/8b/Scanner-abdominal-portal.gif
         URL srcURL = GifMaxLZWTableTest.class.getResource(
                 "Scanner-abdominal-portal.gif-44.gif");
-        GifComparison.run(srcURL);
+
+        File dir = null;
+
+        // un-comment to visually inspect the frames:
+//        dir = new File("GifMaxLZWTableTest-frames");
+//        dir.mkdir();
+
+        GifComparison.run(srcURL, dir);
     }
 }
