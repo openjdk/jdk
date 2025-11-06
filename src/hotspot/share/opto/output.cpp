@@ -1790,8 +1790,11 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
     if (C->failing()) {
       return; // CodeBuffer::expand failed
     }
-    // Emit the deopt handler code.
-    _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(masm));
+    // Emit the deopt handler code if needed.
+    if (AlwaysEmitDeoptStubCode
+        || frame_size_in_words() >= DeoptimizationBlob::UNPACK_SUBENTRY_COUNT) {
+      _code_offsets.set_value(CodeOffsets::Deopt, HandlerImpl::emit_deopt_handler(masm));
+    }
   }
 
   // One last check for failed CodeBuffer::expand:

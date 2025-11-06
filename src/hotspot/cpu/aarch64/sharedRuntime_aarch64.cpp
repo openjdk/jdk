@@ -2,6 +2,7 @@
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2089,7 +2090,11 @@ void SharedRuntime::generate_deopt_blob() {
     return;
   }
 
-  CodeBuffer buffer(name, 2048+pad, 1024);
+  constexpr int unpack_subentry_num = DeoptimizationBlob::UNPACK_SUBENTRY_COUNT;
+  constexpr int instruction_size = NativeInstruction::instruction_size;
+  constexpr int subentries_section_size = (unpack_subentry_num + 1) * instruction_size;
+
+  CodeBuffer buffer(name, 2048+pad+subentries_section_size, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
   OopMap* map = nullptr;
@@ -2130,6 +2135,22 @@ void SharedRuntime::generate_deopt_blob() {
   Label cont;
 
   // Prolog for non exception case!
+
+  int unpack_subentries_offset = __ pc() - start;
+
+  Label subentry_correction;
+
+  for (int subentry_index = 0; subentry_index < unpack_subentry_num; subentry_index++) {
+    __ bl(subentry_correction);
+  }
+
+  assert(__ pc() - start - unpack_subentries_offset == unpack_subentry_num * instruction_size,
+         "each subentry is one BL");
+
+  __ bind(subentry_correction);
+  __ sub(lr, lr, NativeInstruction::instruction_size);
+
+  int unpack_entry_offset = __ pc() - start;
 
   // Save everything in sight.
   map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
@@ -2444,7 +2465,9 @@ void SharedRuntime::generate_deopt_blob() {
   // Make sure all code is generated
   masm->flush();
 
-  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
+  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps,
+                                           unpack_subentries_offset, instruction_size, unpack_entry_offset,
+                                           exception_offset, reexecute_offset, frame_size_in_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {

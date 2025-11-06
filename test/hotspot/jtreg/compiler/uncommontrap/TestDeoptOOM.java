@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @bug 6898462 8198826
  * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
  *
@@ -42,6 +42,32 @@
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
  *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
  *      -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+UseZGC -XX:+LogCompilation -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
+ *      compiler.uncommontrap.TestDeoptOOM
+ */
+
+/*
+ * @test id=with-deopt-stub-code
+ * @summary failed reallocations of scalar replaced objects during deoptimization causes crash
+ *
+ * @requires !vm.graal.enabled
+ * @requires os.arch=="aarch64"
+ * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysEmitDeoptStubCode
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      compiler.uncommontrap.TestDeoptOOM
+ */
+
+/*
+ * @test id=Z-with-deopt-stub-code
+ * @summary Test that ttyLock is ranked above StackWatermark_lock
+ * @requires !vm.graal.enabled & vm.gc.Z
+ * @requires os.arch=="aarch64"
+ * @run main/othervm/timeout=480 -XX:-BackgroundCompilation -Xmx128M -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::main
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.TestDeoptOOM::m9_1
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+AlwaysEmitDeoptStubCode
  *      -XX:+UseZGC -XX:+LogCompilation -XX:+PrintDeoptimizationDetails -XX:+TraceDeoptimization -XX:+Verbose
  *      compiler.uncommontrap.TestDeoptOOM
  */

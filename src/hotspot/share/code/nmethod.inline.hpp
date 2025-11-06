@@ -31,8 +31,43 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/frame.hpp"
 
-inline bool nmethod::is_deopt_pc(address pc) {
+inline bool nmethod::is_deopt_pc(address pc) const {
   return pc == deopt_handler_entry();
+}
+
+inline int nmethod::orig_pc_offset() const {
+  assert(_orig_pc_offset == align_down(_orig_pc_offset, BytesPerWord),
+         "Required to be word-aligned.");
+  return _orig_pc_offset;
+}
+
+inline address nmethod::deopt_handler_entry() const {
+  int frame_size_in_words = frame_size();
+
+#ifdef INCLUDE_JVMCI
+  if (compiler_type() == compiler_jvmci) {
+    assert(_deopt_handler_entry_offset >= 0, "JVMCI must provide deoptimization handler");
+  }
+#endif
+
+  if (_deopt_handler_entry_offset >= 0) {
+    if (compiler_type() != compiler_jvmci && !is_native_method()) {
+      assert(AlwaysEmitDeoptStubCode
+             || frame_size_in_words >= DeoptimizationBlob::UNPACK_SUBENTRY_COUNT,
+             "This does not need nmethod-specific deoptimization handler entry point");
+    }
+    return header_begin() + _deopt_handler_entry_offset;
+  } else {
+    assert(!AlwaysEmitDeoptStubCode
+           && frame_size_in_words < DeoptimizationBlob::UNPACK_SUBENTRY_COUNT,
+           "This requires nmethod-specific deoptimization handler entry point");
+    assert(_orig_pc_offset >= 0, "The original PC slot must exist");
+
+    int orig_pc_offset_in_words = orig_pc_offset() >> LogBytesPerWord;
+    assert(orig_pc_offset_in_words < frame_size_in_words, "Original PC slot is outside the frame");
+
+    return SharedRuntime::deopt_blob()->unpack_subentry(orig_pc_offset_in_words);
+  }
 }
 
 // class ExceptionCache methods

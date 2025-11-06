@@ -30,6 +30,7 @@
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class AbstractCompiler;
 class CompiledDirectCall;
@@ -620,7 +621,6 @@ public:
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
   address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
-  address deopt_handler_entry   () const { return           header_begin() + _deopt_handler_entry_offset    ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }
@@ -832,7 +832,9 @@ public:
 
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
-  inline bool is_deopt_pc(address pc);
+  inline bool is_deopt_pc(address pc) const;
+  address deopt_handler_entry() const;
+  int orig_pc_offset() const;
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
@@ -999,8 +1001,6 @@ public:
   // copying of debugging information
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
-
-  int orig_pc_offset() { return _orig_pc_offset; }
 
   // Post successful compilation
   void post_compiled_method(CompileTask* task);

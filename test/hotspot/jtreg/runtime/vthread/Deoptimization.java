@@ -52,6 +52,40 @@
  *                   Deoptimization
  */
 
+/**
+ * @test id=vthread-deopt-c1-with-deopt-stub-code
+ * @summary Deoptimization test for virtual threads (C1)
+ * @requires vm.continuations
+ * @requires vm.compiler1.enabled
+ * @requires vm.opt.TieredStopAtLevel != 0
+ * @requires os.arch=="aarch64"
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:TieredStopAtLevel=1
+ *                   -XX:+AlwaysEmitDeoptStubCode
+ *                   Deoptimization
+ */
+
+/**
+ * @test id=vthread-deopt-c2-with-deopt-stub-code
+ * @summary Deoptimization test for virtual threads (C2)
+ * @requires vm.continuations
+ * @requires vm.compiler2.enabled
+ * @requires os.arch=="aarch64"
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:-BackgroundCompilation
+ *                   -XX:-TieredCompilation
+ *                   -XX:+AlwaysEmitDeoptStubCode
+ *                   Deoptimization
+ */
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.BrokenBarrierException;

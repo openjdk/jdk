@@ -116,9 +116,11 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
 }
 
 inline void frame::setup(address pc) {
-  address original_pc = get_deopt_original_pc();
+  CodeBlob* out_cb = nullptr;
+  address original_pc = get_deopt_original_pc_and_cb(out_cb);
   if (original_pc != nullptr) {
     _pc = original_pc;
+    _cb = out_cb;
     _deopt_state = is_deoptimized;
     assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
@@ -182,14 +184,13 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   _sp = sp;
   _unextended_sp = unextended_sp;
   _fp = fp;
-  _pc = pc;
-  _cb = CodeCache::find_blob_fast(pc);
   _oop_map = nullptr;
-  assert(_cb != nullptr, "pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(pc), p2i(sp), p2i(unextended_sp), p2i(fp));
   _on_heap = false;
   DEBUG_ONLY(_frame_index = -1;)
-
+  _pc = pc;
+  _cb = CodeCache::find_blob_fast(pc);
   setup(pc);
+  assert(_cb != nullptr, "pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(pc), p2i(sp), p2i(unextended_sp), p2i(fp));
 }
 
 inline frame::frame(intptr_t* sp)
@@ -217,15 +218,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // assert(_pc != nullptr, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
-
-  address original_pc = get_deopt_original_pc();
-  if (original_pc != nullptr) {
-    _pc = original_pc;
-    _deopt_state = is_deoptimized;
-  } else {
-    _deopt_state = not_deoptimized;
-  }
-  _sp_is_trusted = false;
+  setup(_pc);
 }
 
 // Accessors

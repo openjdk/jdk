@@ -22,7 +22,7 @@
  */
 
 /*
- * @test DeoptimizeFramesTest
+ * @test id=DeoptimizeFramesTest
  * @bug 8028595
  * @summary testing of WB::deoptimizeFrames()
  * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
@@ -40,6 +40,34 @@
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   compiler.whitebox.DeoptimizeFramesTest true
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -Xmixed
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
+ *                   -XX:CompileCommand=dontinline,java.util.concurrent.Phaser::*
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
+ *                   compiler.whitebox.DeoptimizeFramesTest false
+ */
+
+/*
+ * @test id=DeoptimizeFramesTest-with-deopt-stub-code
+ * @summary testing of WB::deoptimizeFrames()
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ *
+ * @requires vm.opt.DeoptimizeALot != true
+ * @requires os.arch=="aarch64"
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+AlwaysEmitDeoptStubCode
+ *                   -XX:+WhiteBoxAPI -Xmixed
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
+ *                   compiler.whitebox.DeoptimizeFramesTest true
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+AlwaysEmitDeoptStubCode
  *                   -XX:+WhiteBoxAPI -Xmixed
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.DeoptimizeFramesTest$TestCaseImpl::method
  *                   -XX:CompileCommand=dontinline,java.util.concurrent.Phaser::*

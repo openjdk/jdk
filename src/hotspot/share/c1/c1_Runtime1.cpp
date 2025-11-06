@@ -33,6 +33,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
+#include "code/codeCache.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
@@ -553,10 +554,9 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     StackWatermarkSet::after_unwind(current);
   }
 
-  nm = CodeCache::find_nmethod(pc);
-  assert(nm != nullptr, "this is not an nmethod");
   // Adjust the pc as needed/
-  if (nm->is_deopt_pc(pc)) {
+  CodeBlob* cb = CodeCache::find_blob(pc);
+  if (CodeCache::is_deopt_pc(pc, /*strictly_compiled = */true, cb)) {
     RegisterMap map(current,
                     RegisterMap::UpdateMap::skip,
                     RegisterMap::ProcessFrames::include,
@@ -564,7 +564,13 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     frame exception_frame = current->last_frame().sender(&map);
     // if the frame isn't deopted then pc must not correspond to the caller of last_frame
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
+
+    nm = exception_frame.cb()->as_nmethod();
+    assert(nm->is_deopt_pc(pc), "unexpected nmethod");
+
     pc = exception_frame.pc();
+  } else {
+    nm = cb->as_nmethod();
   }
   assert(exception.not_null(), "null exceptions should be handled by throw_exception");
   // Check that exception is a subclass of Throwable

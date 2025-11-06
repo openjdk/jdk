@@ -226,9 +226,14 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    if (CodeCache::is_deopt_pc(sender_pc, /*strictly_compiled = */false, sender_blob)) {
+      return false;
+    }
+
     nmethod* nm = sender_blob->as_nmethod_or_null();
     if (nm != nullptr) {
-      if (nm->is_deopt_pc(sender_pc) || nm->method()->is_method_handle_intrinsic()) {
+      assert(!nm->is_deopt_pc(sender_pc), "should have been rejected above");
+      if (nm->method()->is_method_handle_intrinsic()) {
         return false;
       }
     }
@@ -241,7 +246,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    // We should never be able to see anything here except an nmethod. If something in the
+    // We should never be able to see anything here except an nmethod or deoptimization blob. It
+    // should be the deoptimization blob in case the sender_pc is referring to one of the blob's
+    // subentries, with the same outcome as for is_deopt_pc check above. If something in the
     // code cache (current frame) is called by an entity within the code cache that entity
     // should not be anything but the call stub (already covered), the interpreter (already covered)
     // or an nmethod.
@@ -278,7 +285,14 @@ bool frame::safe_for_sender(JavaThread *thread) {
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
-  assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
+#ifdef ASSERT
+  CodeBlob *code_blob_for_new_pc = CodeCache::find_blob(pc);
+  if (_cb != code_blob_for_new_pc) {
+    nmethod* nm = _cb->as_nmethod_or_null();
+    assert(nm != nullptr && nm->is_deopt_pc(pc), "unexpected pc");
+  }
+#endif // ASSERT
+
   address* pc_addr = &(((address*) sp())[-1]);
   address signed_pc = pauth_sign_return_address(pc);
   address pc_old = pauth_strip_verifiable(*pc_addr);
@@ -299,10 +313,12 @@ void frame::patch_pc(Thread* thread, address pc) {
   assert(_pc == pc_old || pc == pc_old || pc_old == nullptr, "");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = signed_pc;
-  _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = get_deopt_original_pc();
+  _pc = pc; // must be set before call to get_deopt_original_pc_and_cb
+  CodeBlob* out_cb = nullptr;
+  address original_pc = get_deopt_original_pc_and_cb(out_cb);
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
+    assert(out_cb == _cb, "unexpected code blob");
     _deopt_state = is_deoptimized;
     _pc = original_pc;
   } else {

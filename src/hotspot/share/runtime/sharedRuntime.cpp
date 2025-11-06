@@ -30,7 +30,7 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
-#include "code/codeCache.hpp"
+#include "code/codeCache.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.inline.hpp"
 #include "code/scopeDesc.hpp"
@@ -581,36 +581,37 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
 
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
+  if (CodeCache::is_deopt_pc(return_address, /* strictly_compiled = */false, blob)) {
+    // If we come here because of a stack overflow, the stack may be
+    // unguarded. Reguard the stack otherwise if we return to the
+    // deopt blob and the stack bang causes a stack overflow we
+    // crash.
+    StackOverflow* overflow_state = current->stack_overflow_state();
+    bool guard_pages_enabled = overflow_state->reguard_stack_if_needed();
+    if (overflow_state->reserved_stack_activation() != current->stack_base()) {
+      overflow_state->set_reserved_stack_activation(current->stack_base());
+    }
+    assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // Deoptimization::fetch_unroll_info (with exec_mode == Unpack_exception)
+    return SharedRuntime::deopt_blob()->unpack_with_exception();
+  }
+
   nmethod* nm = (blob != nullptr) ? blob->as_nmethod_or_null() : nullptr;
   if (nm != nullptr) {
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
-    if (nm->is_deopt_pc(return_address)) {
-      // If we come here because of a stack overflow, the stack may be
-      // unguarded. Reguard the stack otherwise if we return to the
-      // deopt blob and the stack bang causes a stack overflow we
-      // crash.
-      StackOverflow* overflow_state = current->stack_overflow_state();
-      bool guard_pages_enabled = overflow_state->reguard_stack_if_needed();
-      if (overflow_state->reserved_stack_activation() != current->stack_base()) {
-        overflow_state->set_reserved_stack_activation(current->stack_base());
-      }
-      assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
-      // The deferred StackWatermarkSet::after_unwind check will be performed in
-      // Deoptimization::fetch_unroll_info (with exec_mode == Unpack_exception)
-      return SharedRuntime::deopt_blob()->unpack_with_exception();
-    } else {
-      // The deferred StackWatermarkSet::after_unwind check will be performed in
-      // * OptoRuntime::handle_exception_C_helper for C2 code
-      // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
+    assert(!nm->is_deopt_pc(return_address), "should have been already handled");
+    // The deferred StackWatermarkSet::after_unwind check will be performed in
+    // * OptoRuntime::handle_exception_C_helper for C2 code
+    // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
 #ifdef COMPILER2
-      if (nm->compiler_type() == compiler_c2) {
-        return OptoRuntime::exception_blob()->entry_point();
-      }
-#endif // COMPILER2
-      return nm->exception_begin();
+    if (nm->compiler_type() == compiler_c2) {
+      return OptoRuntime::exception_blob()->entry_point();
     }
+#endif // COMPILER2
+    return nm->exception_begin();
   }
 
   // Entry code
