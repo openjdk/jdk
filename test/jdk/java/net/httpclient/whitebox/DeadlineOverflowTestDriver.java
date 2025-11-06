@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.debugger.bsd.x86;
-
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.bsd.*;
-
-public class BsdX86ThreadContext extends X86ThreadContext {
-  private BsdDebugger debugger;
-
-  public BsdX86ThreadContext(BsdDebugger debugger) {
-    super();
-    this.debugger = debugger;
-  }
-
-  public void setRegisterAsAddress(int index, Address value) {
-    setRegister(index, debugger.getAddressValue(value));
-  }
-
-  public Address getRegisterAsAddress(int index) {
-    return debugger.newAddress(getRegister(index));
-  }
-}
+/*
+ * @test
+ * @bug 8368528
+ * @summary Verifies that `Deadline` returns extremums on numeric overflows
+ * @modules java.net.http/jdk.internal.net.http.common:+open
+ * @run junit java.net.http/jdk.internal.net.http.common.DeadlineOverflowTest
+ */

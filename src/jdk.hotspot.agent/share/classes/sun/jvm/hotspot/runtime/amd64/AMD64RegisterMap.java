@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,30 @@
  *
  */
 
-package sun.jvm.hotspot.runtime.x86;
+package sun.jvm.hotspot.runtime.amd64;
 
-import java.util.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.utilities.Observable;
-import sun.jvm.hotspot.utilities.Observer;
 
-public class X86JavaCallWrapper extends JavaCallWrapper {
-  private static AddressField lastJavaFPField;
+public class AMD64RegisterMap extends RegisterMap {
 
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
+  /** This is the only public constructor */
+  public AMD64RegisterMap(JavaThread thread, boolean updateMap) {
+    super(thread, updateMap);
   }
 
-  private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("JavaFrameAnchor");
-
-    lastJavaFPField  = type.getAddressField("_last_Java_fp");
+  protected AMD64RegisterMap(RegisterMap map) {
+    super(map);
   }
 
-  public X86JavaCallWrapper(Address addr) {
-    super(addr);
+  public Object clone() {
+    AMD64RegisterMap retval = new AMD64RegisterMap(this);
+    return retval;
   }
 
-  public Address getLastJavaFP() {
-    return lastJavaFPField.getValue(addr.addOffsetTo(anchorField.getOffset()));
-  }
+  // no PD state to clear or copy:
+  protected void clearPD() {}
+  protected void initializePD() {}
+  protected void initializeFromPD(RegisterMap map) {}
+  protected Address getLocationPD(VMReg reg) { return null; }
 }

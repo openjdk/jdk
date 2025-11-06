@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
+ */
+import java.io.File;
+
+import java.awt.color.ColorSpace;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
+import java.awt.image.ColorModel;
+
+import javax.imageio.ImageIO;
+
+/*
+ * @test
+ * @bug 8364583
+ * @summary Verify CMYK images work with ColorConvertOp
  */
 
-package sun.jvm.hotspot.debugger.linux.x86;
+public class ColorConvertOpCMYK {
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.linux.*;
-
-public class LinuxX86ThreadContext extends X86ThreadContext {
-  private LinuxDebugger debugger;
-
-  public LinuxX86ThreadContext(LinuxDebugger debugger) {
-    super();
-    this.debugger = debugger;
-  }
-
-  public void setRegisterAsAddress(int index, Address value) {
-    setRegister(index, debugger.getAddressValue(value));
-  }
-
-  public Address getRegisterAsAddress(int index) {
-    return debugger.newAddress(getRegister(index));
-  }
+    public static void main(String[] args) throws Exception {
+        String sep = System.getProperty("file.separator");
+        String dir = System.getProperty("test.src", ".");
+        String prefix = dir + sep;
+        File file = new File(prefix + "black_cmyk.jpg");
+        BufferedImage source = ImageIO.read(file);
+        ColorModel sourceModel = source.getColorModel();
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        ColorConvertOp convertOp = new ColorConvertOp(cs, null);
+        BufferedImage rgb = convertOp.filter(source, null);
+    }
 }
