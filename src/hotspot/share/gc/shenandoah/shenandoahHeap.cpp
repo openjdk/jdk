@@ -2029,8 +2029,8 @@ void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
     // If we are only marking old, we do not need to process young pointers
-    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
-      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_mode(
+      is_concurrent_young_mark_in_progress(), is_concurrent_old_mark_in_progress()
     );
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);

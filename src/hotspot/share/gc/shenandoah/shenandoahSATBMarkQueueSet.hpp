@@ -30,19 +30,31 @@
 
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
 private:
-  bool _filter_out_young;
+  enum FilterMode {
+    FILTER_MARKED,
+    FILTER_YOUNG,
+    FILTER_OLD
+  };
+
+  FilterMode _filter_mode;
 
 public:
   explicit ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator);
 
   SATBMarkQueue& satb_queue_for_thread(Thread* const t) const override;
   void filter(SATBMarkQueue& queue) override;
-  void set_filter_out_young(bool filter_out_young) {
-    _filter_out_young = filter_out_young;
+  void set_filter_mode(bool marking_young, bool marking_old) {
+    if (marking_young && !marking_old) {
+      _filter_mode = FILTER_OLD;
+    } else if (!marking_young && marking_old) {
+      _filter_mode = FILTER_YOUNG;
+    } else {
+      _filter_mode = FILTER_MARKED;
+    }
   }
 
   bool get_filter_out_young() const {
-    return _filter_out_young;
+    return _filter_mode == FILTER_YOUNG;
   }
 };
 
