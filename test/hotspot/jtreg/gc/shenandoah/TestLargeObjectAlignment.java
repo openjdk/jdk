@@ -30,11 +30,12 @@
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
  * @library /test/lib
+ * @requires os.maxMemory > 3G
  *
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
  */
 
 /*
@@ -43,12 +44,13 @@
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
+ * @requires os.maxMemory > 3G
  * @library /test/lib
  *
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
- * @run main/othervm -Xms3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
+ * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
  */
 import java.util.ArrayList;
 import java.util.List;
