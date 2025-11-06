@@ -164,7 +164,10 @@ public final class PBKDF2Parameters {
         tmp0.putInteger(keyLength);
 
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}}
-        tmp0.write(new AlgorithmId(prf));
+        // HmacSHA1 is the default and must not be encoded.
+        if (!prf.equals(ObjectIdentifier.of(KnownOIDs.HmacSHA1))) {
+            tmp0.write(new AlgorithmId(prf));
+        }
 
         // id-PBKDF2 OBJECT IDENTIFIER ::= {pkcs-5 12}
         out.putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2));

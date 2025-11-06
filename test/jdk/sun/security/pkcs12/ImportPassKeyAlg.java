@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8286069
+ * @bug 8286069 8371156
  * @summary keytool prints out wrong key algorithm for -importpass command
  * @library /test/lib
  * @modules java.base/sun.security.util
@@ -100,7 +100,11 @@ public class ImportPassKeyAlg {
         var data = Files.readAllBytes(Path.of(name));
         DerUtils.checkAlg(data, "110c010c01010c00", oids[0]);
         if (oids[0] == KnownOIDs.PBES2) {
-            DerUtils.checkAlg(data, "110c010c01010c010130", oids[1]);
+            if (oids[1] == KnownOIDs.HmacSHA1) {
+                DerUtils.shouldNotExist(data, "110c010c01010c010130");
+            } else {
+                DerUtils.checkAlg(data, "110c010c01010c010130", oids[1]);
+            }
             DerUtils.checkAlg(data, "110c010c01010c0110", oids[2]);
         }
     }
