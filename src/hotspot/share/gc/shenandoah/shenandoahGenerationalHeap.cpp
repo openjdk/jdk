@@ -74,7 +74,7 @@ size_t ShenandoahGenerationalHeap::calculate_max_plab() {
 }
 
 // Returns size in bytes
-size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
+size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc() const {
   return MIN2(ShenandoahHeapRegion::max_tlab_size_bytes(), young_generation()->available());
 }
 
