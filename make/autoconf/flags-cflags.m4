@@ -282,7 +282,6 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
 
-    # link time optimization can be additionally enabled on lib level
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
       C_O_FLAG_LTO="-flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects"
     else
