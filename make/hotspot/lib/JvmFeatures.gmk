@@ -175,15 +175,11 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
   # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
   # later on if desired
   JVM_OPTIMIZATION := HIGHEST_JVM
-  ifeq ($(call isCompiler, gcc), true)
-    JVM_CFLAGS_FEATURES += $(CXX_O_FLAG_LTO)
-    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) $(LDFLAGS_LTO)
-  else ifeq ($(call isCompiler, clang), true)
-    JVM_CFLAGS_FEATURES += $(CXX_O_FLAG_LTO)
-    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) $(LDFLAGS_LTO)
-  else ifeq ($(call isCompiler, microsoft), true)
-    JVM_CFLAGS_FEATURES += $(CXX_O_FLAG_LTO)
+  JVM_CFLAGS_FEATURES += $(CXX_O_FLAG_LTO)
+  ifeq ($(call isCompiler, microsoft), true)
     JVM_LDFLAGS_FEATURES += $(LDFLAGS_LTO)
+  else
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) $(LDFLAGS_LTO)
   endif
 else
   ifeq ($(call isCompiler, gcc), true)
