@@ -84,7 +84,7 @@ final class Renderer {
      * be separated. This could lead to unexpected behavior or even bugs.
      *
      * <p>
-     * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
+     * Instead, the user must create a {@link TemplateToken} from the inner {@link Template}, and
      * use that {@link TemplateToken} in the {@link Template#scope} of the outer {@link Template}.
      * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
      * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
@@ -232,13 +232,16 @@ final class Renderer {
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
 
         // If the ScopeToken is transparent to Names, then the Template is transparent to names.
-        ScopeToken st = templateToken.instantiate();
-        renderScopeToken(st, () -> {});
+        renderScopeToken(templateToken.instantiate());
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
+    }
+
+    private void renderScopeToken(ScopeToken st) {
+        renderScopeToken(st, () -> {});
     }
 
     private void renderScopeToken(ScopeToken st, Runnable preamble) {
@@ -303,7 +306,7 @@ final class Renderer {
                 CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, !innerScope.nestedNamesAreLocal());
                 currentCodeFrame = innerCodeFrame;
 
-                renderScopeToken(innerScope, () -> {});
+                renderScopeToken(innerScope);
 
                 // Close the hookCodeFrame and innerCodeFrame. hookCodeFrame code comes before the
                 // innerCodeFrame code from the tokens.
@@ -324,7 +327,7 @@ final class Renderer {
                 // the hookCodeFrame, and are not limited to the CodeFrame for the scopeToken.
                 currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
-                renderScopeToken(scopeToken, () -> {});
+                renderScopeToken(scopeToken);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
@@ -338,7 +341,7 @@ final class Renderer {
                 currentCodeFrame.addName(name);
             }
             case ScopeToken st -> {
-                renderScopeToken(st, () -> {});
+                renderScopeToken(st);
             }
             case NameSampleToken nst -> {
                 Name n = currentCodeFrame.sampleName(nst.predicate());
@@ -371,18 +374,15 @@ final class Renderer {
             }
             case NamesToListToken stlt -> {
                 List<Name> list = currentCodeFrame.listNames(stlt.predicate());
-                ScopeToken st = stlt.getScopeToken(list);
-                renderScopeToken(st, () -> {});
+                renderScopeToken(stlt.getScopeToken(list));
             }
             case NameCountToken nct -> {
                 int count = currentCodeFrame.countNames(nct.predicate());
-                ScopeToken st = nct.getScopeToken(count);
-                renderScopeToken(st, () -> {});
+                renderScopeToken(nct.getScopeToken(count));
             }
             case NameHasAnyToken nhat -> {
                 boolean hasAny = currentCodeFrame.hasAnyNames(nhat.predicate());
-                ScopeToken st = nhat.getScopeToken(hasAny);
-                renderScopeToken(st, () -> {});
+                renderScopeToken(nhat.getScopeToken(hasAny));
             }
             case SetFuelCostToken(float fuelCost) -> {
                 currentTemplateFrame.setFuelCost(fuelCost);
@@ -395,8 +395,7 @@ final class Renderer {
             }
             case HookIsAnchoredToken hiat -> {
                 boolean isAnchored = currentCodeFrame.codeFrameForHook(hiat.hook()) != null;
-                ScopeToken st = hiat.getScopeToken(isAnchored);
-                renderScopeToken(st, () -> {});
+                renderScopeToken(hiat.getScopeToken(isAnchored));
             }
         }
     }
