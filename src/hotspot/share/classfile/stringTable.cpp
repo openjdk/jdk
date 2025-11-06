@@ -973,7 +973,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
   }
 
   int total = (int)items_count_acquire();
-  size_t single_array_size = objArrayOopDesc::object_size(total);
+  size_t single_array_size = refArrayOopDesc::object_size(total);
 
   log_info(aot)("allocated string table for %d strings", total);
 
@@ -985,8 +985,8 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
   } else {
     // Split the table in two levels of arrays.
     int primary_array_length = (total + _secondary_array_max_length - 1) / _secondary_array_max_length;
-    size_t primary_array_size = objArrayOopDesc::object_size(primary_array_length);
-    size_t secondary_array_size = objArrayOopDesc::object_size(_secondary_array_max_length);
+    size_t primary_array_size = refArrayOopDesc::object_size(primary_array_length);
+    size_t secondary_array_size = refArrayOopDesc::object_size(_secondary_array_max_length);
 
     if (ArchiveHeapWriter::is_too_large_to_archive(secondary_array_size)) {
       // This can only happen if you have an extremely large number of classes that
@@ -1026,7 +1026,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
 void StringTable::verify_secondary_array_index_bits() {
   int max;
   for (max = 1; ; max++) {
-    size_t next_size = objArrayOopDesc::object_size(1 << (max + 1));
+    size_t next_size = refArrayOopDesc::object_size(1 << (max + 1));
     if (ArchiveHeapWriter::is_too_large_to_archive(next_size)) {
       break;
     }

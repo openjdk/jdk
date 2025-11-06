@@ -45,6 +45,7 @@ typedef class   instanceOopDesc*            instanceOop;
 typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
+typedef class       refArrayOopDesc*            refArrayOop;
 typedef class     typeArrayOopDesc*           typeArrayOop;
 
 #else
@@ -153,6 +154,7 @@ DEF_OOP(instance);
 DEF_OOP(stackChunk);
 DEF_OOP(array);
 DEF_OOP(objArray);
+DEF_OOP(refArray);
 DEF_OOP(typeArray);
 
 #endif // CHECK_UNHANDLED_OOPS

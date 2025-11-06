@@ -170,7 +170,7 @@ bool ZMark::follow_work_partial() {
 }
 
 bool ZMark::is_array(zaddress addr) const {
-  return to_oop(addr)->is_objArray();
+  return to_oop(addr)->is_refArray();
 }
 
 static uintptr_t encode_partial_array_offset(zpointer* addr) {

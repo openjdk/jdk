@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ DEF_HANDLE(instance         , is_instance_noinline         )
 DEF_HANDLE(stackChunk       , is_stackChunk_noinline       )
 DEF_HANDLE(array            , is_array_noinline            )
 DEF_HANDLE(objArray         , is_objArray_noinline         )
+DEF_HANDLE(refArray         , is_refArray_noinline         )
 DEF_HANDLE(typeArray        , is_typeArray_noinline        )
 
 //------------------------------------------------------------------------------------------------------------------------

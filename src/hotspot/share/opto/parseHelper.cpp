@@ -192,6 +192,10 @@ void Parse::array_store_check() {
     // Make a constant out of the exact array klass
     const TypeAryKlassPtr* extak = tak->cast_to_exactness(true)->is_aryklassptr();
     if (extak->exact_klass(true) != nullptr) {
+     // TODO 8366668 TestLWorld and TestLWorldProfiling are sensitive to this. But this hack just assumes we always have the default properties ...
+      if (extak->exact_klass()->is_obj_array_klass()) {
+        extak = extak->get_vm_type();
+      }
       Node* con = makecon(extak);
       Node* cmp = _gvn.transform(new CmpPNode(array_klass, con));
       Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
