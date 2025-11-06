@@ -27,7 +27,6 @@ package sun.security.util;
 
 import java.io.IOException;
 
-import sun.security.util.KnownOIDs;
 import sun.security.x509.AlgorithmId;
 
 /**
