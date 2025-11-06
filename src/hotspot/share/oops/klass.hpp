@@ -511,10 +511,11 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // Find the right-most non-zero (e.g., ...1000) bit of the diff of array-of-boolean and array-of-byte layout helpers.
+  // Return a value containing a single set bit that is in the bitset difference between the
+  // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
-    uint zlh = checked_cast<uint>(array_layout_helper(T_BOOLEAN));
-    uint blh = checked_cast<uint>(array_layout_helper(T_BYTE));
+    uint zlh = static_cast<uint>(array_layout_helper(T_BOOLEAN));
+    uint blh = static_cast<uint>(array_layout_helper(T_BYTE));
     // get all the bits that are set in zlh and clear in blh
     uint candidates = (zlh & ~blh);
     assert(candidates != 0, "must be"); // must be some if there is a solution.
@@ -522,7 +523,9 @@ protected:
     // The usual form is (x & -x), but VS warns (C4146) about unary minus of unsigned.
     // So use alternate form of negation to avoid warning.
     uint result = candidates & (~candidates + 1);
-    assert(((result - 1) & result) == 0, "post-condition");
+    assert(is_power_of_2(result), "must be power of 2");
+    assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
+    assert((result & blh) == 0, "must be clear in alh of T_BYTE");
     return static_cast<int>(result);
   }
 
