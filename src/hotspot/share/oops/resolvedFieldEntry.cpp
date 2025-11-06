@@ -51,7 +51,8 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   u2 saved_cpool_index = _cpool_index;
-  memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+  clear_all_data();
+  ::new (this) ResolvedFieldEntry{};  // Value initialization clears padding too.
   _cpool_index = saved_cpool_index;
 }
 
@@ -60,7 +61,7 @@ void ResolvedFieldEntry::remove_unshareable_info() {
 // the paddings so that CDS archives are deterministic.
 void ResolvedFieldEntry::mark_and_relocate() {
   ResolvedFieldEntry saved = *this;
-  memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+  clear_all_data();
   copy_from(saved); // Get real data back, but leave zeros in paddings.
   ArchiveBuilder::current()->mark_and_relocate_to_buffered_addr(&_field_holder);
 }

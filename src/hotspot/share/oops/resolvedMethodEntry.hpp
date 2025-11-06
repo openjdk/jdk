@@ -99,6 +99,15 @@ class ResolvedMethodEntry {
 #endif
   }
 
+  void clear_all_data() {
+    // Work around gcc bug: value initialization doesn't clear padding.
+    // See ... gcc bug reference ...
+#if defined(__GNUC__) && !defined(__clang__)
+    memset(this, 0, sizeof(*this));
+#endif
+    ::new (this) ResolvedMethodEntry{};  // Value initialization clears padding too.
+  }
+
   // Constructors
   public:
     ResolvedMethodEntry(u2 cpi) :

@@ -66,6 +66,15 @@ class ResolvedFieldEntry {
     _put_code = other._put_code;
   }
 
+  void clear_all_data() {
+    // Work around gcc bug: value initialization doesn't clear padding.
+    // See ... gcc bug reference ...
+#if defined(__GNUC__) && !defined(__clang__)
+    memset(this, 0, sizeof(*this));
+#endif
+    ::new (this) ResolvedFieldEntry{};  // Value initialization clears padding too.
+  }
+
 public:
   ResolvedFieldEntry(u2 cpi) :
     _field_holder(nullptr),

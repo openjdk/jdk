@@ -44,12 +44,12 @@ void ResolvedMethodEntry::reset_entry() {
   if (has_resolved_references_index()) {
     u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
     u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+    clear_all_data();
     set_resolved_references_index(saved_resolved_references_index);
     _cpool_index = saved_cpool_index;
   } else {
     u2 saved_cpool_index = _cpool_index;
-    memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+    clear_all_data();
     _cpool_index = saved_cpool_index;
   }
 }
@@ -64,7 +64,7 @@ void ResolvedMethodEntry::remove_unshareable_info() {
 // the paddings so that CDS archives are deterministic.
 void ResolvedMethodEntry::mark_and_relocate(ConstantPool* src_cp) {
   ResolvedMethodEntry saved = *this;
-  memset(this, 0, sizeof(*this)); // Clear all data, including paddings.
+  clear_all_data();
   copy_from(saved); // Get real data back, but leave zeros in paddings.
 
   if (_method == nullptr) {
