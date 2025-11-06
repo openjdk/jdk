@@ -76,7 +76,8 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
         comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
         comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest9",  generateWithScopes1());
+        comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithScopes1());
+        comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithScopes2());
         comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithDataNamesForFuzzing());
         comp.addJavaSourceCode("p.xyz.InnerTest11", generateWithStructuralNamesForMethods());
 
@@ -99,7 +100,8 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
-        comp.invoke("p.xyz.InnerTest9",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9a", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9b", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest10", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest11", "main", new Object[] {});
     }
@@ -345,6 +347,7 @@ public class TestTutorial {
     // Scopes are even more relevant for DataNames and Structural names.
     // See: generateWithDataNamesForFieldsAndVariables
     // See: generateWithScopes1
+    // See: generateWithScopes2
     public static String generateWithHashtagAndDollarReplacements3() {
 
         var template1 = Template.make(() -> scope(
@@ -488,6 +491,7 @@ public class TestTutorial {
     // important. A common use case is to insert a DataName.
     // See: generateWithDataNamesForFieldsAndVariables
     // See: generateWithScopes1
+    // See: generateWithScopes2
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
@@ -615,6 +619,7 @@ public class TestTutorial {
             // insertion. One might want to use "transparentScope" for the insertion scope.
             // See: generateWithDataNamesForFieldsAndVariables.
             // See: generateWithScopes1
+            // See: generateWithScopes2
         ));
 
         var templateClass = Template.make(() -> scope(
@@ -1133,7 +1138,7 @@ public class TestTutorial {
             """
             package p.xyz;
 
-            public class InnerTest9 {
+            public class InnerTest9a {
             """,
             Hooks.CLASS_HOOK.anchor(scope(
             """
@@ -1155,6 +1160,131 @@ public class TestTutorial {
         return templateClass.render();
     }
 
+    public static String generateWithScopes2() {
+
+        // In this section, we will look at some subtle facts about the behavior of
+        // transparent scopes around hook insertion. This inteded for expert users
+        // so feel free to skip it until you extensively use hook insertion.
+
+        // Helper method to check that the expected DataNames are available.
+        var templateVerify = Template.make("toList", (String toList) -> scope(
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> transparentScope(
+                let("toList2", String.join(", ", list.stream().map(DataName::name).toList()))
+            )),
+            """
+            if (!"#toList".equals("#toList2")) {
+                throw new RuntimeException("verify failed: '#toList' vs '#toList2'.");
+            }
+            """
+        ));
+
+        var myHook = new Hook("MyHook");
+
+        var templateMain = Template.make(() -> scope(
+            // Start with nothing:
+            templateVerify.asToken(""),
+            addDataName("v1", myInt, MUTABLE),
+            templateVerify.asToken("v1"),
+            // Non-transparent hook anchor:
+            myHook.anchor(scope(
+                templateVerify.asToken("v1"),
+                addDataName("v2", myInt, MUTABLE),
+                templateVerify.asToken("v1, v2"),
+                // Insert a non-transparent scope: nothing escapes.
+                myHook.insert(scope(
+                    // Note that at the anchor insertion point, v2 is not yet
+                    // available, because it is added after the anchoring.
+                    templateVerify.asToken("v1"),
+                    let("x3", 42),
+                    addDataName("v3", myInt, MUTABLE),
+                    templateVerify.asToken("v1, v3")
+                )),
+                // Note: x3 and v3 do not escape.
+                let("x3", 7), // we can define it again.
+                templateVerify.asToken("v1, v2"),
+                // While not letting hashtags escape may be helpful, it is probably
+                // not very helpful if the DataNames don't escape. For example, if
+                // we are inserting some variable at an outer scope, we would like
+                // it to be available for the rest of the scope.
+                // That's where a transparent scope can be helpful.
+                myHook.insert(transparentScope(
+                    // At the anchoring, still only v1 is available.
+                    templateVerify.asToken("v1"),
+                    let("x4", 42), // escapes to caller scope
+                    addDataName("v4", myInt, MUTABLE), // escapes to anchor scope
+                    templateVerify.asToken("v1, v4")
+                )),
+                // x4 escapes to the caller out here, and not to the anchor scope.
+                "// x4: #x4\n",
+                // And v4 escapes to the anchor scope, which is available from hee too.
+                // Interesting detail: the ordering in the list indicates that v1
+                // is from the outermost scope of the template, v4 is located at the
+                // anchor scope, and v2 is located inside the anchor scope, and
+                // thus comes last.
+                templateVerify.asToken("v1, v4, v2"),
+                // In most practical cases we probably don't want to let the hashtag
+                // escape, because they just represent something local. So we can
+                // use a hashtagScope, so that DataNames escape, but not hashtags.
+                myHook.insert(hashtagScope(
+                    // Note: both v1 and v4 are now available at the anchoring, since
+                    // v1 was inserted outside the anchoring scope, and v4 was just
+                    // inserted to the anchoring scope.
+                    templateVerify.asToken("v1, v4"),
+                    let("x5", 42), // local, does not escape.
+                    addDataName("v5", myInt, MUTABLE), // escapes to anchor scope
+                    templateVerify.asToken("v1, v4, v5")
+                )),
+                let("x5", 7), // we can define it again.
+                templateVerify.asToken("v1, v4, v5, v2")
+            )),
+            templateVerify.asToken("v1"),
+
+            // Let us now do something that probably should never be done. But still
+            // we want to demonstrate it for educational purposes: transparent anchoring
+            // scopes.
+            myHook.anchor(transparentScope(
+                templateVerify.asToken("v1"),
+                // For one, this means that DataName escape the scope directly.
+                addDataName("v6", myInt, MUTABLE),
+                templateVerify.asToken("v1, v6"),
+                // But also if we insert to the anchoring scope, DataNames don't just
+                // escape from the anchoring scope, but further out to the enclosing
+                // scope.
+                myHook.insert(transparentScope(
+                    templateVerify.asToken("v1, v6"),
+                    addDataName("v7", myInt, MUTABLE),
+                    templateVerify.asToken("v1, v6, v7")
+                )),
+                templateVerify.asToken("v1, v6, v7")
+            )),
+            templateVerify.asToken("v1, v6, v7")
+        ));
+
+        var templateClass = Template.make(() -> scope(
+            """
+            package p.xyz;
+
+            public class InnerTest9b {
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
+                public static void main() {
+            """,
+                Hooks.METHOD_HOOK.anchor(scope(
+                    templateMain.asToken()
+                )),
+            """
+                }
+            """
+            )),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
     // There are two more concepts to understand more deeply with DataNames.
     //
     // One is the use of mutable and immutable DataNames.
