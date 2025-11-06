@@ -63,7 +63,7 @@ void SingleWriterSynchronizer::synchronize() {
   do {
     old = value;
     new_exit.store_relaxed(++value);
-    value = _enter.cmpxchg(old, value);
+    value = _enter.compare_exchange(old, value);
   } while (old != value);
   // Critical sections entered before we changed the polarity will use
   // the old exit counter.  Critical sections entered after the change
@@ -95,5 +95,5 @@ void SingleWriterSynchronizer::synchronize() {
   // lead to semaphore overflow.  This doesn't guarantee no unrelated
   // wakeups for the next wait, but prevents unbounded accumulation.
   while (_wakeup.trywait()) {}
-  DEBUG_ONLY(_writers.atomic_dec();)
+  assert(_writers.sub_then_fetch(1u) == 0u, "invariant");
 }

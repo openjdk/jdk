@@ -75,7 +75,7 @@
 //     v.store_relaxed(x) -> void
 //     v.release_store(x) -> void
 //     v.release_store_fence(x) -> void
-//     v.cmpxchg(x, y [, o]) -> T
+//     v.compare_exchange(x, y [, o]) -> T
 //
 // (2) All atomic types are default constructible.
 //
@@ -93,19 +93,17 @@
 // (3) Atomic pointers and atomic integers additionally provide
 //
 //   member functions:
-//     v.fetch_then_set(x [, o]) -> T
+//     v.exchange(x [, o]) -> T
 //     v.add_then_fetch(i [, o]) -> T
 //     v.sub_then_fetch(i [, o]) -> T
 //     v.fetch_then_add(i [, o]) -> T
 //     v.fetch_then_sub(i [, o]) -> T
-//     v.atomic_inc([o]) -> void
-//     v.atomic_dec([o]) -> void
 //
 // sizeof(i) must not exceed sizeof(T). For atomic integers, both T and the
 // type of i must be signed, or both must be unsigned. Atomic pointers perform
 // element arithmetic.
 //
-// (4) An atomic translated type additionally provides the fetch_then_set
+// (4) An atomic translated type additionally provides the exchange
 // function if its associated atomic decayed type provides that function.
 //
 // (5) Atomic integers additionally provide
@@ -123,10 +121,6 @@
 //   nested types:
 //     ElementType -> std::remove_pointer_t<T>
 //
-//   member functions:
-//     v.replace_if_null(x [, o]) -> bool
-//     v.clear_if_equal(x [, o]) -> bool
-//
 // Some of the function names provided by (some variants of) Atomic<T> differ
 // from the corresponding functions provided by the AtomicAccess class. In
 // some cases this is done for regularity; there are some inconsistencies in
@@ -134,7 +128,7 @@
 // stand out a little more when used in surrounding non-atomic code. Without
 // the "AtomicAccess::" qualifier, some of those names are easily overlooked.
 //
-// Atomic bytes don't provide fetch_then_set. This is because that operation
+// Atomic bytes don't provide exchange(). This is because that operation
 // hasn't been implemented for 1 byte values. That could be changed if needed.
 //
 // Atomic for 2 byte integers is not supported. This is because atomic
@@ -191,14 +185,14 @@ private:
 
   // Helper base classes, providing various parts of the APIs.
   template<typename T> class CommonCore;
-  template<typename T> class SupportsFetchThenSet;
+  template<typename T> class SupportsExchange;
   template<typename T> class SupportsArithmetic;
 
-  // Support conditional fetch_then_set() for atomic translated types.
-  template<typename T> class HasFetchThenSet;
-  template<typename T> class DecayedHasFetchThenSet;
-  template<typename Derived, typename T, bool = DecayedHasFetchThenSet<T>::value>
-  class TranslatedFetchThenSet;
+  // Support conditional exchange() for atomic translated types.
+  template<typename T> class HasExchange;
+  template<typename T> class DecayedHasExchange;
+  template<typename Derived, typename T, bool = DecayedHasExchange<T>::value>
+  class TranslatedExchange;
 
 public:
   template<typename T, Category = category<T>()>
@@ -278,30 +272,30 @@ public:
     AtomicAccess::release_store_fence(value_ptr(), value);
   }
 
-  T cmpxchg(T compare_value, T new_value,
-            atomic_memory_order order = memory_order_conservative) {
+  T compare_exchange(T compare_value, T new_value,
+                     atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value);
   }
 };
 
 template<typename T>
-class AtomicImpl::SupportsFetchThenSet : public CommonCore<T> {
+class AtomicImpl::SupportsExchange : public CommonCore<T> {
   using Base = CommonCore<T>;
 
 protected:
-  explicit SupportsFetchThenSet(T value) : Base(value) {}
-  ~SupportsFetchThenSet() = default;
+  explicit SupportsExchange(T value) : Base(value) {}
+  ~SupportsExchange() = default;
 
 public:
-  T fetch_then_set(T new_value,
-                   atomic_memory_order order = memory_order_conservative) {
+  T exchange(T new_value,
+             atomic_memory_order order = memory_order_conservative) {
     return AtomicAccess::xchg(this->value_ptr(), new_value);
   }
 };
 
 template<typename T>
-class AtomicImpl::SupportsArithmetic : public SupportsFetchThenSet<T> {
-  using Base = SupportsFetchThenSet<T>;
+class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
+  using Base = SupportsExchange<T>;
 
   // Guarding the AtomicAccess calls with constexpr checking of I produces
   // better compile-time error messages.
@@ -354,14 +348,6 @@ public:
       // AtomicAccess doesn't currently provide fetch_then_sub.
       return sub_then_fetch(sub_value, order) + sub_value;
     }
-  }
-
-  void atomic_inc(atomic_memory_order order = memory_order_conservative) {
-    AtomicAccess::inc(this->value_ptr(), order);
-  }
-
-  void atomic_dec(atomic_memory_order order = memory_order_conservative) {
-    AtomicAccess::dec(this->value_ptr(), order);
   }
 };
 
@@ -442,67 +428,57 @@ public:
   static constexpr int value_offset_in_bytes() {
     return CommonCore<T>::template value_offset_in_bytes_impl<Atomic>();
   }
-
-  bool replace_if_null(T new_value,
-                       atomic_memory_order order = memory_order_conservative) {
-    return nullptr == this->cmpxchg(nullptr, new_value, order);
-  }
-
-  bool clear_if_equal(T compare_value,
-                      atomic_memory_order order = memory_order_conservative) {
-    return compare_value == this->cmpxchg(compare_value, nullptr, order);
-  }
 };
 
 // Atomic translated type
 
-// Test whether Atomic<T> has fetch_then_set().
+// Test whether Atomic<T> has exchange().
 template<typename T>
-class AtomicImpl::HasFetchThenSet {
-  template<typename Check> static char* test(decltype(&Check::fetch_then_set));
+class AtomicImpl::HasExchange {
+  template<typename Check> static char* test(decltype(&Check::exchange));
   template<typename> static char test(...);
   using test_type = decltype(test<Atomic<T>>(nullptr));
 public:
   static constexpr bool value = std::is_pointer_v<test_type>;
 };
 
-// Test whether the atomic decayed type associated with T has fetch_then_set().
+// Test whether the atomic decayed type associated with T has exchange().
 template<typename T>
-class AtomicImpl::DecayedHasFetchThenSet {
+class AtomicImpl::DecayedHasExchange {
   using Translator = PrimitiveConversions::Translate<T>;
   using Decayed = typename Translator::Decayed;
 
-  // "Unit test" HasFetchThenSet<>.
-  static_assert(HasFetchThenSet<int>::value);
-  static_assert(HasFetchThenSet<int*>::value);
-  static_assert(!HasFetchThenSet<char>::value);
+  // "Unit test" HasExchange<>.
+  static_assert(HasExchange<int>::value);
+  static_assert(HasExchange<int*>::value);
+  static_assert(!HasExchange<char>::value);
 
 public:
-  static constexpr bool value = HasFetchThenSet<Decayed>::value;
+  static constexpr bool value = HasExchange<Decayed>::value;
 };
 
 // Base class for atomic translated type if atomic decayed type doesn't have
-// fetch_then_set().
+// exchange().
 template<typename Derived, typename T, bool>
-class AtomicImpl::TranslatedFetchThenSet {};
+class AtomicImpl::TranslatedExchange {};
 
 // Base class for atomic translated type if atomic decayed type does have
-// fetch_then_set().
+// exchange().
 template<typename Derived, typename T>
-class AtomicImpl::TranslatedFetchThenSet<Derived, T, true> {
+class AtomicImpl::TranslatedExchange<Derived, T, true> {
 public:
-  T fetch_then_set(T new_value,
-                   atomic_memory_order order = memory_order_conservative) {
-    return static_cast<Derived*>(this)->fetch_then_set_impl(new_value, order);
+  T exchange(T new_value,
+             atomic_memory_order order = memory_order_conservative) {
+    return static_cast<Derived*>(this)->exchange_impl(new_value, order);
   }
 };
 
 template<typename T>
 class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated>
-  : public TranslatedFetchThenSet<Atomic<T>, T>
+  : public TranslatedExchange<Atomic<T>, T>
 {
-  // Give TranslatedFetchThenSet<> access to fetch_then_set_impl() if needed.
-  friend class TranslatedFetchThenSet<Atomic<T>, T>;
+  // Give TranslatedExchange<> access to exchange_impl() if needed.
+  friend class TranslatedExchange<Atomic<T>, T>;
 
   using Translator = PrimitiveConversions::Translate<T>;
   using Decayed = typename Translator::Decayed;
@@ -558,20 +534,20 @@ public:
     _value.release_store_fence(decay(value));
   }
 
-  T cmpxchg(T compare_value, T new_value,
-            atomic_memory_order order = memory_order_conservative) {
-    return recover(_value.cmpxchg(decay(compare_value),
-                                  decay(new_value),
-                                  order));
+  T compare_exchange(T compare_value, T new_value,
+                     atomic_memory_order order = memory_order_conservative) {
+    return recover(_value.compare_exchange(decay(compare_value),
+                                           decay(new_value),
+                                           order));
   }
 
 private:
-  // Implementation of fetch_then_set() if needed.
+  // Implementation of exchange() if needed.
   // Exclude when not needed, to prevent reference to non-existent function
   // of atomic decayed type if someone explicitly instantiates Atomic<T>.
-  template<typename Dep = Decayed, ENABLE_IF(HasFetchThenSet<Dep>::value)>
-  T fetch_then_set_impl(T new_value, atomic_memory_order order) {
-    return recover(_value.fetch_then_set(decay(new_value), order));
+  template<typename Dep = Decayed, ENABLE_IF(HasExchange<Dep>::value)>
+  T exchange_impl(T new_value, atomic_memory_order order) {
+    return recover(_value.exchange(decay(new_value), order));
   }
 };
 

@@ -108,14 +108,14 @@ void NonblockingQueue<T, next_access>::append(T& first, T& last) {
   // extend after last.  We will try to extend from the previous end of
   // queue.
   set_next(last, end_marker());
-  T* old_tail = _tail.fetch_then_set(&last);
+  T* old_tail = _tail.exchange(&last);
   if (old_tail == nullptr) {
     // If old_tail is null then the queue was empty, and _head must also be
     // null. The correctness of this assertion depends on try_pop clearing
     // first _head then _tail when taking the last entry.
     assert(_head.load_relaxed() == nullptr, "invariant");
     // Fall through to common update of _head.
-  } else if (is_end(NextAccess::cmpxchg(*old_tail, end_marker(), &first))) {
+  } else if (is_end(NextAccess::compare_exchange(*old_tail, end_marker(), &first))) {
     // Successfully extended the queue list from old_tail to first.  No
     // other push/append could have competed with us, because we claimed
     // old_tail for extension.  We won any races with try_pop by changing
@@ -124,8 +124,8 @@ void NonblockingQueue<T, next_access>::append(T& first, T& last) {
     // Note that ABA is possible here.  A concurrent try_pop could take
     // old_tail before our update of old_tail's next_ptr, old_tail gets
     // recycled and re-added to the end of this queue, and then we
-    // successfully cmpxchg, making the list in _tail circular.  Callers
-    // must ensure this can't happen.
+    // successfully compare_exchange, making the list in _tail circular.
+    // Callers must ensure this can't happen.
     return;
   } else {
     // A concurrent try_pop has claimed old_tail, so it is no longer in the
@@ -163,23 +163,23 @@ bool NonblockingQueue<T, next_access>::try_pop(T** node_ptr) {
     // _head.  The success or failure of that attempt, along with the value
     // of next_node, are used to partially determine which case we're in and
     // how to proceed.  In particular, advancement will fail for case (3).
-    if (old_head != _head.cmpxchg(old_head, next_node)) {
+    if (old_head != _head.compare_exchange(old_head, next_node)) {
       // [Clause 1a]
-      // The cmpxchg to advance the list failed; a concurrent try_pop won
-      // the race and claimed old_head.  This can happen for any of the
+      // The compare_exchange to advance the list failed; a concurrent try_pop
+      // won the race and claimed old_head.  This can happen for any of the
       // next_node cases.
       return false;
     } else if (next_node == nullptr) {
       // [Clause 1b]
-      // The cmpxchg to advance the list succeeded, but a concurrent try_pop
-      // has already claimed old_head (see [Clause 2] - old_head was the last
-      // entry in the list) by nulling old_head's next field.  The advance set
-      // _head to null, "helping" the competing try_pop.  _head will remain
-      // nullptr until a subsequent push/append.  This is a lost race, and we
-      // report it as such for consistency, though we could report the queue
-      // was empty.  We don't attempt to further help [Clause 2] by also
-      // trying to set _tail to nullptr, as that would just ensure that one or
-      // the other cmpxchg is a wasted failure.
+      // The compare_exchange to advance the list succeeded, but a concurrent
+      // try_pop has already claimed old_head (see [Clause 2] - old_head was
+      // the last entry in the list) by nulling old_head's next field.  The
+      // advance set _head to null, "helping" the competing try_pop.  _head
+      // will remain nullptr until a subsequent push/append.  This is a lost
+      // race, and we report it as such for consistency, though we could
+      // report the queue was empty.  We don't attempt to further help [Clause
+      // 2] by also trying to set _tail to nullptr, as that would just ensure
+      // that one or the other compare_exchange is a wasted failure.
       return false;
     } else {
       // [Clause 1c]
@@ -191,7 +191,7 @@ bool NonblockingQueue<T, next_access>::try_pop(T** node_ptr) {
       return true;
     }
 
-  } else if (is_end(NextAccess::cmpxchg(*old_head, next_node, nullptr))) {
+  } else if (is_end(NextAccess::compare_exchange(*old_head, next_node, nullptr))) {
     // [Clause 2]
     // Old_head was the last entry and we've claimed it by setting its next
     // value to null.  However, this leaves the queue in disarray.  Fix up
@@ -199,20 +199,21 @@ bool NonblockingQueue<T, next_access>::try_pop(T** node_ptr) {
     // Any further try_pops will consider the queue empty until a
     // push/append completes by installing a new head.
 
-    // The order of the two cmpxchgs doesn't matter algorithmically, but
+    // The order of the two compare_exchanges doesn't matter algorithmically, but
     // dealing with _head first gives a stronger invariant in append, and is
     // also consistent with [Clause 1b].
 
     // Attempt to change the queue head from old_head to null.  Failure of
-    // the cmpxchg indicates a concurrent operation updated _head first.  That
-    // could be either a push/append or a try_pop in [Clause 1b].
-    _head.cmpxchg(old_head, nullptr);
+    // the compare_exchange indicates a concurrent operation updated _head first.
+    // That could be either a push/append or a try_pop in [Clause 1b].
+    _head.compare_exchange(old_head, nullptr);
 
-    // Attempt to change the queue tail from old_head to null.  Failure of
-    // the cmpxchg indicates that a concurrent push/append updated _tail first.
-    // That operation will eventually recognize the old tail (our old_head) is
-    // no longer in the list and update _head from the list being appended.
-    _tail.cmpxchg(old_head, nullptr);
+    // Attempt to change the queue tail from old_head to null.  Failure of the
+    // compare_exchange indicates that a concurrent push/append updated _tail
+    // first.  That operation will eventually recognize the old tail (our
+    // old_head) is no longer in the list and update _head from the list being
+    // appended.
+    _tail.compare_exchange(old_head, nullptr);
 
     // The queue has been restored to order, and we can return old_head.
     *node_ptr = old_head;

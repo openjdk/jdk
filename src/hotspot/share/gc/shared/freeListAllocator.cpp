@@ -41,7 +41,7 @@ FreeListAllocator::PendingList::PendingList() :
 
 size_t FreeListAllocator::PendingList::add(FreeNode* node) {
   assert(node->next() == nullptr, "precondition");
-  FreeNode* old_head = _head.fetch_then_set(node);
+  FreeNode* old_head = _head.exchange(node);
   if (old_head != nullptr) {
     node->set_next(old_head);
   } else {
@@ -165,7 +165,7 @@ void FreeListAllocator::release(void* free_node) {
 bool FreeListAllocator::try_transfer_pending() {
   // Attempt to claim the lock.
   if (_transfer_lock.load_relaxed() || // Skip CAS if likely to fail.
-      _transfer_lock.cmpxchg(false, true)) {
+      _transfer_lock.compare_exchange(false, true)) {
     return false;
   }
   // Have the lock; perform the transfer.

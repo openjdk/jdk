@@ -56,7 +56,7 @@ struct AtomicNextAccess<T, next_access> {
     AtomicAccess::store(next_access(value), new_next);
   }
 
-  static T* cmpxchg(T& value, const T* compare, T* exchange) {
+  static T* compare_exchange(T& value, const T* compare, T* exchange) {
     return AtomicAccess::cmpxchg(next_access(value), compare, exchange);
   }
 };
@@ -75,8 +75,8 @@ struct AtomicNextAccess<T, next_access> {
     next_access(value)->store_relaxed(new_next);
   }
 
-  static T* cmpxchg(T& value, const T* compare, T* exchange) {
-    return next_access(value)->cmpxchg(compare, exchange);
+  static T* compare_exchange(T& value, const T* compare, T* exchange) {
+    return next_access(value)->compare_exchange(compare, exchange);
   }
 };
 

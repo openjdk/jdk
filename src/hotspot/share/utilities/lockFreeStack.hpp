@@ -69,7 +69,7 @@ class LockFreeStack {
     do {
       old = cur;
       set_next(*last, cur);
-      cur = _top.cmpxchg(cur, first);
+      cur = _top.compare_exchange(cur, first);
     } while (old != cur);
   }
 
@@ -93,7 +93,7 @@ public:
         new_top = next(*result);
       }
       // CAS even on empty pop, for consistent membar behavior.
-      result = _top.cmpxchg(result, new_top);
+      result = _top.compare_exchange(result, new_top);
     } while (result != old);
     if (result != nullptr) {
       set_next(*result, nullptr);
@@ -105,7 +105,7 @@ public:
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {
-    return _top.fetch_then_set(nullptr);
+    return _top.exchange(nullptr);
   }
 
   // Atomically adds value to the top of this stack.  Acts as a full

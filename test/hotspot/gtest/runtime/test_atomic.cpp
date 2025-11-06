@@ -73,20 +73,6 @@ struct AtomicIntegerArithmeticTestSupport {
     EXPECT_EQ(expected, _test_value.load_relaxed());
   }
 
-  void atomic_inc() {
-    _test_value.store_relaxed(_old_value);
-    T expected = _old_value + 1;
-    _test_value.atomic_inc();
-    EXPECT_EQ(expected, _test_value.load_relaxed());
-  }
-
-  void atomic_dec() {
-    _test_value.store_relaxed(_old_value);
-    T expected = _old_value - 1;
-    _test_value.atomic_dec();
-    EXPECT_EQ(expected, _test_value.load_relaxed());
-  }
-
 #define TEST_ARITHMETIC(name) { SCOPED_TRACE(XSTR(name)); name(); }
 
   void operator()() {
@@ -94,8 +80,6 @@ struct AtomicIntegerArithmeticTestSupport {
     TEST_ARITHMETIC(fetch_then_sub)
     TEST_ARITHMETIC(add_then_fetch)
     TEST_ARITHMETIC(sub_then_fetch)
-    TEST_ARITHMETIC(atomic_inc)
-    TEST_ARITHMETIC(atomic_dec)
   }
 
 #undef TEST_ARITHMETIC
@@ -127,7 +111,7 @@ struct AtomicIntegerXchgTestSupport {
     T zero = 0;
     T five = 5;
     _test_value.store_relaxed(zero);
-    T res = _test_value.fetch_then_set(five);
+    T res = _test_value.exchange(five);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(five, _test_value.load_relaxed());
   }
@@ -154,10 +138,10 @@ struct AtomicIntegerCmpxchgTestSupport {
     T five = 5;
     T ten = 10;
     _test_value.store_relaxed(zero);
-    T res = _test_value.cmpxchg(five, ten);
+    T res = _test_value.compare_exchange(five, ten);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(zero, _test_value.load_relaxed());
-    res = _test_value.cmpxchg(zero, ten);
+    res = _test_value.compare_exchange(zero, ten);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(ten, _test_value.load_relaxed());
   }
@@ -201,10 +185,10 @@ struct AtomicCmpxchg1ByteStressSupport {
 
   void test_index(int index) {
     char one = 1;
-    _array[index].cmpxchg(_default_val, one);
+    _array[index].compare_exchange(_default_val, one);
     validate(_default_val, one, index);
 
-    _array[index].cmpxchg(one, _default_val);
+    _array[index].compare_exchange(one, _default_val);
     validate(_default_val, _default_val, index);
   }
 
@@ -238,16 +222,16 @@ struct AtomicEnumTestSupport {
   void test_cmpxchg(T value1, T value2) {
     EXPECT_NE(value1, _test_value.load_relaxed());
     _test_value.store_relaxed(value1);
-    EXPECT_EQ(value1, _test_value.cmpxchg(value2, value2));
+    EXPECT_EQ(value1, _test_value.compare_exchange(value2, value2));
     EXPECT_EQ(value1, _test_value.load_relaxed());
-    EXPECT_EQ(value1, _test_value.cmpxchg(value1, value2));
+    EXPECT_EQ(value1, _test_value.compare_exchange(value1, value2));
     EXPECT_EQ(value2, _test_value.load_relaxed());
   }
 
   void test_xchg(T value1, T value2) {
     EXPECT_NE(value1, _test_value.load_relaxed());
     _test_value.store_relaxed(value1);
-    EXPECT_EQ(value1, _test_value.fetch_then_set(value2));
+    EXPECT_EQ(value1, _test_value.exchange(value2));
     EXPECT_EQ(value2, _test_value.load_relaxed());
   }
 };
@@ -412,60 +396,26 @@ struct AtomicPointerTestSupport {
     EXPECT_EQ(expected, _test_value.load_relaxed());
   }
 
-  void atomic_inc() {
-    _test_value.store_relaxed(_initial_ptr);
-    T* expected = _initial_ptr + 1;
-    _test_value.atomic_inc();
-    EXPECT_EQ(expected, _test_value.load_relaxed());
-  }
-
-  void atomic_dec() {
-    _test_value.store_relaxed(_initial_ptr);
-    T* expected = _initial_ptr - 1;
-    _test_value.atomic_dec();
-    EXPECT_EQ(expected, _test_value.load_relaxed());
-  }
-
-  void fetch_then_set() {
+  void exchange() {
     _test_value.store_relaxed(_initial_ptr);
     T* replace = _initial_ptr + 3;
-    T* result = _test_value.fetch_then_set(replace);
+    T* result = _test_value.exchange(replace);
     EXPECT_EQ(_initial_ptr, result);
     EXPECT_EQ(replace, _test_value.load_relaxed());
   }
 
-  void cmpxchg() {
+  void compare_exchange() {
     _test_value.store_relaxed(_initial_ptr);
     T* not_initial_ptr = _initial_ptr - 1;
     T* replace = _initial_ptr + 3;
 
-    T* result = _test_value.cmpxchg(not_initial_ptr, replace);
+    T* result = _test_value.compare_exchange(not_initial_ptr, replace);
     EXPECT_EQ(_initial_ptr, result);
     EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
 
-    result = _test_value.cmpxchg(_initial_ptr, replace);
+    result = _test_value.compare_exchange(_initial_ptr, replace);
     EXPECT_EQ(_initial_ptr, result);
     EXPECT_EQ(replace, _test_value.load_relaxed());
-  }
-
-  void replace_if_null() {
-    _test_value.store_relaxed(nullptr);
-    EXPECT_TRUE(_test_value.replace_if_null(_initial_ptr));
-    EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
-
-    T* replace = _initial_ptr + 3;
-    EXPECT_FALSE(_test_value.replace_if_null(replace));
-    EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
-  }
-
-  void clear_if_equal() {
-    _test_value.store_relaxed(_initial_ptr);
-    T* compare = _initial_ptr + 3;
-    EXPECT_FALSE(_test_value.clear_if_equal(compare));
-    EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
-
-    EXPECT_TRUE(_test_value.clear_if_equal(_initial_ptr));
-    EXPECT_EQ(nullptr, _test_value.load_relaxed());
   }
 
 #define TEST_OP(name) { SCOPED_TRACE(XSTR(name)); name(); }
@@ -475,12 +425,8 @@ struct AtomicPointerTestSupport {
     TEST_OP(fetch_then_sub)
     TEST_OP(add_then_fetch)
     TEST_OP(sub_then_fetch)
-    TEST_OP(atomic_inc)
-    TEST_OP(atomic_dec)
-    TEST_OP(fetch_then_set)
-    TEST_OP(cmpxchg)
-    TEST_OP(replace_if_null)
-    TEST_OP(clear_if_equal)
+    TEST_OP(exchange)
+    TEST_OP(compare_exchange)
   }
 
 #undef TEST_OP
@@ -569,16 +515,16 @@ struct PrimitiveConversions::Translate<TranslatedAtomicByteObject>
   static Value recover(Decayed x) { return Value(x); }
 };
 
-// Test whether Atomic<T> has fetch_then_set().
+// Test whether Atomic<T> has exchange().
 // Note: This is intentionally a different implementation from what is used
-// by the atomic translated type to decide whether to provide fetch_then_set().
+// by the atomic translated type to decide whether to provide exchange().
 // The intent is to make related testing non-tautological.
 // The two implementations must agree; it's a bug if they don't.
 template<typename T>
-class AtomicTypeHasFetchThenSet {
+class AtomicTypeHasExchange {
   template<typename U,
            typename AU = Atomic<U>,
-           typename = decltype(declval<AU>().fetch_then_set(declval<U>()))>
+           typename = decltype(declval<AU>().exchange(declval<U>()))>
   static char* test(int);
 
   template<typename> static char test(...);
@@ -589,18 +535,18 @@ public:
   static constexpr bool value = std::is_pointer_v<test_type>;
 };
 
-// Unit tests for AtomicTypeHasFetchThenSet.
-static_assert(AtomicTypeHasFetchThenSet<int>::value);
-static_assert(AtomicTypeHasFetchThenSet<int*>::value);
-static_assert(AtomicTypeHasFetchThenSet<TranslatedAtomicTestObject1>::value);
-static_assert(AtomicTypeHasFetchThenSet<TranslatedAtomicTestObject2>::value);
-static_assert(!AtomicTypeHasFetchThenSet<uint8_t>::value);
+// Unit tests for AtomicTypeHasExchange.
+static_assert(AtomicTypeHasExchange<int>::value);
+static_assert(AtomicTypeHasExchange<int*>::value);
+static_assert(AtomicTypeHasExchange<TranslatedAtomicTestObject1>::value);
+static_assert(AtomicTypeHasExchange<TranslatedAtomicTestObject2>::value);
+static_assert(!AtomicTypeHasExchange<uint8_t>::value);
 
-// Verify translated byte type *doesn't* have fetch_then_set.
-static_assert(!AtomicTypeHasFetchThenSet<TranslatedAtomicByteObject>::value);
+// Verify translated byte type *doesn't* have exchange.
+static_assert(!AtomicTypeHasExchange<TranslatedAtomicByteObject>::value);
 
 // Verify that explicit instantiation doesn't attempt to reference the
-// non-existent fetch_then_set of the atomic decayed type.
+// non-existent exchange of the atomic decayed type.
 template class AtomicImpl::Atomic<TranslatedAtomicByteObject>;
 
 template<typename T>
@@ -613,12 +559,12 @@ static void test_atomic_translated_type() {
   EXPECT_EQ(0, Translated::decay(_test_value.load_relaxed()));
   _test_value.store_relaxed(Translated::recover(5));
   EXPECT_EQ(5, Translated::decay(_test_value.load_relaxed()));
-  EXPECT_EQ(5, Translated::decay(_test_value.cmpxchg(Translated::recover(5),
-                                                     Translated::recover(10))));
+  EXPECT_EQ(5, Translated::decay(_test_value.compare_exchange(Translated::recover(5),
+                                                              Translated::recover(10))));
   EXPECT_EQ(10, Translated::decay(_test_value.load_relaxed()));
 
-  if constexpr (AtomicTypeHasFetchThenSet<T>::value) {
-    EXPECT_EQ(10, Translated::decay(_test_value.fetch_then_set(Translated::recover(20))));
+  if constexpr (AtomicTypeHasExchange<T>::value) {
+    EXPECT_EQ(10, Translated::decay(_test_value.exchange(Translated::recover(20))));
     EXPECT_EQ(20, Translated::decay(_test_value.load_relaxed()));
   }
 }
@@ -649,9 +595,9 @@ TEST_VM(AtomicTranslatedTypeTest, chain) {
             resolve(_test_value.load_relaxed()));
   _test_value.store_relaxed(construct(5));
   EXPECT_EQ(5, resolve(_test_value.load_relaxed()));
-  EXPECT_EQ(5, resolve(_test_value.cmpxchg(construct(5), construct(10))));
+  EXPECT_EQ(5, resolve(_test_value.compare_exchange(construct(5), construct(10))));
   EXPECT_EQ(10, resolve(_test_value.load_relaxed()));
-  EXPECT_EQ(10, resolve(_test_value.fetch_then_set(construct(20))));
+  EXPECT_EQ(10, resolve(_test_value.exchange(construct(20))));
   EXPECT_EQ(20, resolve(_test_value.load_relaxed()));
 };
 
