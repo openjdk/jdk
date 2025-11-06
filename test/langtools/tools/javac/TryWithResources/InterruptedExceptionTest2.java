@@ -13,8 +13,12 @@ interface HasClose {
     void close() throws Exception;
 }
 
-class WithClose {
+class WithConcreteClose {
     public void close() throws Exception { }
+}
+
+abstract class WithAbstractClose {
+    public abstract void close() throws Exception;
 }
 
 // Interface declaration tests
@@ -89,7 +93,10 @@ abstract class InterruptedExceptionTest_C9 implements HasClose, AutoCloseable {
     @Override public void close() { }
 }
 
-abstract class InterruptedExceptionTest_C10 extends WithClose implements AutoCloseable { // warning here
+abstract class InterruptedExceptionTest_C10 extends WithConcreteClose implements AutoCloseable { // warning here
+}
+
+abstract class InterruptedExceptionTest_C11 extends WithAbstractClose implements AutoCloseable {
 }
 
 // Interface use site tests
