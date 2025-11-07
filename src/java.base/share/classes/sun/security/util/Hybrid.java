@@ -115,14 +115,24 @@ public class Hybrid {
         private final KeyPairGenerator right;
         private final AlgorithmParameterSpec leftSpec;
         private final AlgorithmParameterSpec rightSpec;
-        private boolean initialized = false;
 
-        public KeyPairGeneratorImpl(String left, String right)
+        public KeyPairGeneratorImpl(String leftAlg, String rightAlg)
                 throws NoSuchAlgorithmException  {
-            this.left = getKeyPairGenerator(left);
-            this.right = getKeyPairGenerator(right);
-            leftSpec = getSpec(left);
-            rightSpec = getSpec(right);
+            left = getKeyPairGenerator(leftAlg);
+            right = getKeyPairGenerator(rightAlg);
+            leftSpec = getSpec(leftAlg);
+            rightSpec = getSpec(rightAlg);
+
+            try {
+                left.initialize(leftSpec);
+                right.initialize(rightSpec);
+            } catch (InvalidAlgorithmParameterException iape) {
+                throw new ProviderException("Invalid algorithm parameters " +
+                        "for hybrid keypair generator", iape);
+            } catch (Exception e) {
+                throw new ProviderException("Failed to initialize hybrid " +
+                        "keypair generator", e);
+            }
         }
 
         @Override
@@ -130,23 +140,16 @@ public class Hybrid {
             try {
                 left.initialize(leftSpec, random);
                 right.initialize(rightSpec, random);
-                initialized = true;
+            } catch (InvalidParameterException ipe) {
+                throw ipe;
             } catch (Exception e) {
-                throw new InvalidParameterException(e);
+                throw new ProviderException("Failed to initialize hybrid " +
+                        "keypair generator", e);
             }
         }
 
         @Override
         public KeyPair generateKeyPair() {
-            if (!initialized) {
-                try {
-                    left.initialize(leftSpec);
-                    right.initialize(rightSpec);
-                    initialized = true;
-                } catch (Exception e) {
-                    throw new ProviderException(e);
-                }
-            }
             var kp1 = left.generateKeyPair();
             var kp2 = right.generateKeyPair();
             return new KeyPair(
@@ -174,8 +177,23 @@ public class Hybrid {
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec)
                 throws InvalidKeySpecException {
+            if (keySpec == null) {
+                throw new InvalidKeySpecException("keySpec must not be null");
+            }
+
             if (keySpec instanceof RawKeySpec rks) {
                 byte[] key = rks.getKeyArr();
+                if (key == null) {
+                    throw new InvalidKeySpecException(
+                            "RawkeySpec contains null key data");
+                }
+                if (key.length <= leftlen) {
+                    throw new InvalidKeySpecException(
+                            "Hybrid key length " + key.length +
+                            " is too short and its left key length is " +
+                            leftlen);
+                }
+
                 byte[] leftKeyBytes = Arrays.copyOfRange(key, 0, leftlen);
                 byte[] rightKeyBytes = Arrays.copyOfRange(key, leftlen,
                         key.length);
@@ -227,8 +245,8 @@ public class Hybrid {
                 }
             }
 
-            throw new InvalidKeySpecException(keySpec.toString());
-
+            throw new InvalidKeySpecException(
+                    keySpec.getClass().getName() + " not supported");
         }
 
         private static int leftPublicLength(String name) {
@@ -432,4 +450,13 @@ public class Hybrid {
             return name != null && name.equals("X25519");
         }
     }
+
+    public static final NamedParameterSpec X25519_MLKEM768 =
+            new NamedParameterSpec("X25519MLKEM768");
+
+    public static final NamedParameterSpec SECP256R1_MLKEM768 =
+            new NamedParameterSpec("SecP256r1MLKEM768");
+
+    public static final NamedParameterSpec SECP384R1_MLKEM1024 =
+            new NamedParameterSpec("SecP384r1MLKEM1024");
 }
