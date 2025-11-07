@@ -521,7 +521,7 @@ protected:
     assert(candidates != 0, "must be"); // must be some if there is a solution.
     // Use well known bit hack to isolate the low bit of candidates.
     // The usual form is (x & -x), but VS warns (C4146) about unary minus of unsigned.
-    // So use alternate form of negation to avoid warning.
+    // So explicitly use two's complement to avoid warning.
     uint result = candidates & (~candidates + 1);
     assert(is_power_of_2(result), "must be power of 2");
     assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
