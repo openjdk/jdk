@@ -124,10 +124,13 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   }
 }
 
-jlong CgroupV1MemoryController::uses_mem_hierarchy() {
-  julong use_hierarchy;
-  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.use_hierarchy", "Use Hierarchy", use_hierarchy);
-  return (jlong)use_hierarchy;
+bool CgroupV1MemoryController::read_use_hierarchy_val(physical_memory_size_type& result) {
+  CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.use_hierarchy", "Use Hierarchy", result);
+}
+
+bool CgroupV1MemoryController::uses_mem_hierarchy() {
+  physical_memory_size_type use_hierarchy = 0;
+  return read_use_hierarchy_val(use_hierarchy) && use_hierarchy > 0;
 }
 
 /*
@@ -196,7 +199,6 @@ bool CgroupV1MemoryController::read_hierarchical_mem_swap_val(physical_memory_si
  *    * false if an error occurred
  *    * true if the limit value has been set in the result reference
  */
-<<<<<<< HEAD
 bool CgroupV1MemoryController::memory_and_swap_limit_in_bytes(physical_memory_size_type upper_mem_bound,
                                                               physical_memory_size_type upper_swap_bound,
                                                               physical_memory_size_type& result) {
@@ -213,11 +215,14 @@ bool CgroupV1MemoryController::memory_and_swap_limit_in_bytes(physical_memory_si
       log_trace(os, container)("Using hierarchical memory swap limit " PHYS_MEM_TYPE_FORMAT, hiermswlimit);
       memory_swap = hiermswlimit;
     } else {
-      log_trace(os, container)("Memory and Swap Limit is: Unlimited");
       memory_swap = value_unlimited;
     }
   }
-  // FIXME: Handle value_unlimited as before and return
+  if (memory_swap == value_unlimited) {
+    log_trace(os, container)("Memory and Swap Limit is: Unlimited");
+    result = value_unlimited;
+    return true;
+  }
 
   // If there is a swap limit, but swappiness == 0, reset the limit
   // to the memory limit. Do the same for cases where swap isn't
