@@ -79,12 +79,12 @@ public class TestRematerializeObjects {
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_L_OF_CLASS, "int\\[int:4\\]", "1",
                   IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},
-        applyIf = {"EliminateAllocations", "false"})
+        applyIfAnd = {"EliminateAllocations", "false", "UseUnalignedAccesses", "true"})
     @IR(counts = {IRNode.ALLOC_ARRAY, "0",
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_L_OF_CLASS, "int\\[int:4\\]", "0",
                   IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "2"},
-        applyIf = {"EliminateAllocations", "true"})
+        applyIfAnd = {"EliminateAllocations", "true", "UseUnalignedAccesses", "true"})
     static int test1(boolean flag) {
         int[] arr = new int[4];
         arr[0] = 0x0001_0000; // these slip into Initialize
@@ -124,12 +124,12 @@ public class TestRematerializeObjects {
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_I_OF_CLASS, "short\\[int:4\\]", "1",
                   IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "0"},
-        applyIf = {"EliminateAllocations", "false"})
+        applyIfAnd = {"EliminateAllocations", "false", "UseUnalignedAccesses", "true"})
     @IR(counts = {IRNode.ALLOC_ARRAY, "0",
                   IRNode.UNSTABLE_IF_TRAP, "1",
                   IRNode.STORE_I_OF_CLASS, "short\\[int:4\\]", "0",
                   IRNode.SAFEPOINT_SCALAROBJECT_OF, "fields@\\[0..3\\]", "2"},
-        applyIf = {"EliminateAllocations", "true"})
+        applyIfAnd = {"EliminateAllocations", "true", "UseUnalignedAccesses", "true"})
     static int test2(boolean flag) {
         short[] arr = new short[4];
         arr[0] = 1;
