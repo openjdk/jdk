@@ -233,17 +233,6 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
   return _object_starts[card_index].offsets.last;
 }
 
-// Given a card_index, return the starting address of the first object in the heap
-// that intersects with this card. This must be a valid, parsable object, and must
-// be the first such object that intersects with this card. The object may start before,
-// at, or after the start of the card, and may end in or after the card. If no
-// such object exists, a null value is returned.
-// Expects to be called for a card in an region affiliated with the old generation in
-// generational heap, otherwise behavior is undefined.
-// If not null, ctx holds the complete marking context of the old generation. If null,
-// we expect that the marking context isn't available and the crossing maps are valid.
-// Note that crossing maps may be invalid following class unloading and before dead
-// or unloaded objects have been coalesced and filled (updating the crossing maps).
 HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx,
                                                     HeapWord* tams, const size_t last_relevant_card_index) const {
 
@@ -259,7 +248,9 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #endif
 
   // if marking context is valid and we are below tams, we use the marking bit map to find the first marked object that
-  // intersects with this card, and if no such object exists, we return null
+  // intersects with this card.  If no such object exists, we return the first marked object that follows the start
+  // of this card's memory range if such an object is found at or before last_relevant_card_index.  If there are no
+  // marked objects in this range, we return nullptr.
   if ((ctx != nullptr) && (left < tams)) {
     if (ctx->is_marked(left)) {
       oop obj = cast_to_oop(left);
@@ -282,19 +273,20 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       }
     }
     // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins.
-    // In eiher case, find the next marked object if any on this card
+    // In eiher case, find the next marked object if any on this or a following card
     assert(!ctx->is_marked(left), "Was dealt with above");
-    HeapWord* right = MIN2(region->top(), ctx->top_at_mark_start(region));
+    HeapWord* right = MIN2(region->top(), tams);
     assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
     HeapWord* next = ctx->get_next_marked_addr(left, right);
 #ifdef ASSERT
     if (next < right) {
       oop obj = cast_to_oop(next);
       assert(oopDesc::is_oop(obj), "Should be an object");
+      return next;
+    } else {
+      return nullptr;
     }
 #endif
-    // Note: returned value may point beyond this card's range of memory, and may not point to an allocated object.
-    return next;
   }
 
   assert((ctx == nullptr) || (left >= tams), "Should have returned above");
@@ -317,7 +309,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   }
   // cur_index should start an object: we should not have walked
   // past the left end of the region.
-  assert(cur_index >= 0 && (cur_index <= (ssize_t)card_index), "Error");
+  assert(cur_index >= 0 && (cur_index <= (ssize_t) card_index), "Error");
   assert(region->bottom() <= _rs->addr_for_card_index(cur_index),
          "Fell off the bottom of containing region");
   assert(starts_object(cur_index), "Error");
