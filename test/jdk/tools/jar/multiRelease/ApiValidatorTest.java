@@ -460,8 +460,6 @@ public class ApiValidatorTest extends MRTestBase {
         Files.createDirectories(file.getParent());
         Files.deleteIfExists(file);
         try (FileSystem zipfs = FileSystems.newFileSystem(file, Map.of("create", "true"))) {
-            Path metaInf = Files.createDirectories(zipfs.getPath("META-INF"));
-            Files.createFile(metaInf.resolve("MANIFEST.MF"));
             for (var entry : copies) {
                 Path dstDir = zipfs.getPath(entry.getKey());
                 Path srcDir = entry.getValue();
