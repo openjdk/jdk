@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049834
+ * @bug 8049834 8371383
  * @summary Two security tools tests do not run with only JRE
  * @library /test/lib
  */
@@ -73,6 +73,10 @@ public class DefaultOptions {
 
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."),
                 Path.of("ks"), Path.of("js.conf"));
+
+        // Add delay to help the signing certificate’s NotBefore time has
+        // passed and avoid CertificateNotYetValidException.
+        Thread.sleep(5000);
 
         jarsigner("-conf js.conf a.jar a").shouldHaveExitValue(0);
         jarsigner("-conf js.conf -verify a.jar").shouldHaveExitValue(0)
