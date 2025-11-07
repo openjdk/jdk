@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -240,20 +241,20 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
-    // Release information stored in jdk.jlink module for this jlink
-    public static final String JLINK_RELEASE_RESOURCE = "jdk/tools/jlink/resources/release.txt";
     // Release information as in the java.base module for target image
     public static final String JDK_RELEASE_RESOURCE = "jdk/internal/jmod/resources/release.txt";
 
-    private String jlinkReleaseInfo;
-
-    private static String getReleaseInfo(InputStream in) throws IOException {
-        if (in == null) {
-            return "N/A";
+    /**
+     * Read the release.txt from the module.
+     */
+    private static Optional<String> getReleaseInfo(ModuleReference mref) throws IOException {
+        var in = mref.open().open(JDK_RELEASE_RESOURCE);
+        if (in.isEmpty()) {
+            return Optional.empty();
         }
 
-        try (var r = new BufferedReader(new InputStreamReader(in))) {
-            return r.readLine();
+        try (var r = new BufferedReader(new InputStreamReader(in.get()))) {
+            return Optional.of(r.readLine());
         }
     }
 
@@ -274,11 +275,6 @@ public class JlinkTask {
                         args = prependArgs.toArray(new String[prependArgs.size()]);
                     }
                 }
-            }
-
-            // Get jlink release.txt
-            try (InputStream jlinkRelease = m.getResourceAsStream(JLINK_RELEASE_RESOURCE)) {
-                jlinkReleaseInfo = getReleaseInfo(jlinkRelease);
             }
 
             List<String> remaining = optionsHelper.handleOptions(this, args);
@@ -593,23 +589,28 @@ public class JlinkTask {
      * version.
      */
     private void checkJavaBaseVersion(ModuleFinder finder) {
-        assert finder.find("java.base").isPresent();
-        String jdkReleaseInfo = "N/A";
-
-        try (var in = finder.find("java.base").get().open().open(JDK_RELEASE_RESOURCE).orElse(null)) {
-            jdkReleaseInfo = getReleaseInfo(in);
-            if (jdkReleaseInfo.equals(jlinkReleaseInfo)) {
-                return;
+        try {
+            ModuleReference current = ModuleLayer.boot()
+                    .configuration()
+                    .findModule("java.base")
+                    .get()
+                    .reference();
+            ModuleReference target = finder.find("java.base").get();
+            String currentRelease = getReleaseInfo(current).orElseThrow(() ->
+                new IllegalArgumentException("Cannot find release.txt"));
+            String targetRelease = getReleaseInfo(target).orElse("N/A");
+            if (! currentRelease.equals(targetRelease)) {
+                // jlink version and java.base version do not match.
+                // We do not (yet) support this mode.
+                throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
+                        currentRelease,
+                        targetRelease));
             }
+        } catch (NoSuchElementException e) {
+            assert false : "Should have found java.base module";
         } catch (IOException ioe) {
-            // ignore and resume as version not match
+            throw new UncheckedIOException(ioe);
         }
-
-        // jlink version and java.base version do not match.
-        // We do not (yet) support this mode.
-        throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                jlinkReleaseInfo,
-                jdkReleaseInfo));
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
