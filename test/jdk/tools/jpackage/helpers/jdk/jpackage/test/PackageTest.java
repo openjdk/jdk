@@ -60,6 +60,7 @@ import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.JPackageCommand.ActionRole;
 
 
 /**
@@ -230,6 +231,15 @@ public final class PackageTest extends RunnablePackageTest {
     public PackageTest addUninstallVerifier(ThrowingConsumer<JPackageCommand> v) {
         currentTypes.forEach(type -> handlers.get(type).addUninstallVerifier(
                 toConsumer(v)));
+        return this;
+    }
+
+    public PackageTest usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        addInitializer(cmd -> {
+            cmd.usePredefinedAppImage(appImageCmd.outputBundle());
+        });
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(this::addInstallVerifier);
         return this;
     }
 
@@ -784,7 +794,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, true);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, true);
                 }
             }
 
@@ -865,7 +875,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, false);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, false);
                 }
             }
 

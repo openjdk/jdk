@@ -561,7 +561,6 @@ void trace_method_handle_stub(const char* adaptername,
     for (int i = 0; i < saved_regs_count; i++) {
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
-#ifdef AMD64
       int num_regs = UseAPX ? 32 : 16;
       assert(Register::available_gp_registers() == num_regs, "sanity");
       if (r == rsp) {
@@ -570,9 +569,6 @@ void trace_method_handle_stub(const char* adaptername,
       } else {
         ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
-#else
-      ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
-#endif
       if ((i + 1) % 4 == 0) {
         ls.cr();
       } else {

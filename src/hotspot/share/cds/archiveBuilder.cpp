@@ -952,7 +952,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         }
       }
 
-      AOTMetaspace::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
+      AOTMetaspace::rewrite_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
