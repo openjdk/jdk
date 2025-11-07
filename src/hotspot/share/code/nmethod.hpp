@@ -229,7 +229,7 @@ class nmethod : public CodeBlob {
   int _exception_offset;
   // All deoptee's will resume execution at this location described by
   // this offset.
-  int _deopt_handler_entry_offset;
+  int _deopt_handler_offset;
   // Offset (from insts_end) of the unwind handler if it exists
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
@@ -617,7 +617,7 @@ public:
   address stub_begin            () const { return           header_begin() + _stub_offset             ; }
   address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
-  address deopt_handler_entry   () const { return           header_begin() + _deopt_handler_entry_offset    ; }
+  address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }

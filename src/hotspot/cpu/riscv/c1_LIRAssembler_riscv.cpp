@@ -377,18 +377,12 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  Label start;
-  __ bind(start);
-
-  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-
-  int entry_offset = __ offset();
-  __ j(start);
-
+  __ auipc(ra, 0);
+  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return entry_offset;
+  return offset;
 }
 
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {

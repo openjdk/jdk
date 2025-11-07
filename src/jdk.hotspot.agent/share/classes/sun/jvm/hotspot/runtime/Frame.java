@@ -87,7 +87,7 @@ public abstract class Frame implements Cloneable {
       CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
       if (cb != null && cb.isJavaMethod()) {
         NMethod nm = (NMethod) cb;
-        if (pc.equals(nm.deoptHandlerEntry())) {
+        if (pc.equals(nm.deoptHandlerBegin())) {
           if (Assert.ASSERTS_ENABLED) {
             Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
           }

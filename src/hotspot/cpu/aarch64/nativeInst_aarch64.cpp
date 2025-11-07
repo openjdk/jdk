@@ -394,6 +394,12 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
+#ifdef ASSERT
+static bool is_movk_to_zr(uint32_t insn) {
+  return ((insn & 0xffe0001f) == 0xf280001f);
+}
+#endif
+
 bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
     return false; // cannot encode

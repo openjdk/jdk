@@ -72,7 +72,7 @@ private:
     // See emit_exception_handler for detail
     _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(32), // or smaller
     // See emit_deopt_handler for detail
-    // far_call (2) + j (1)
+    // auipc (1) + far_jump (2)
     _deopt_handler_size = 1 * MacroAssembler::instruction_size +
                           2 * MacroAssembler::instruction_size
   };

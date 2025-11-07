@@ -1347,18 +1347,20 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
+  int exception_handler_req = HandlerImpl::size_exception_handler() + MAX_stubs_size; // add marginal slop for handler
   int deopt_handler_req     = HandlerImpl::size_deopt_handler()     + MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
 
   if (StressCodeBuffers)
-    code_req = const_req = stub_req = deopt_handler_req = 0x10;  // force expansion
+    code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
 
   int total_req =
           const_req +
           code_req +
           pad_req +
           stub_req +
+          exception_handler_req +
           deopt_handler_req;               // deopt handler
 
   CodeBuffer* cb = code_buffer();
@@ -1787,6 +1789,8 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   // Only java methods have exception handlers and deopt handlers
   // class HandlerImpl is platform-specific and defined in the *.ad files.
   if (C->method()) {
+    // Emit the exception handler code.
+    _code_offsets.set_value(CodeOffsets::Exceptions, HandlerImpl::emit_exception_handler(masm));
     if (C->failing()) {
       return; // CodeBuffer::expand failed
     }
