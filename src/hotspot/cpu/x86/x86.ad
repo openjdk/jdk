@@ -2771,7 +2771,7 @@ class HandlerImpl {
 
   static uint size_deopt_handler() {
     // one call and one jmp.
-    return 10;
+    return 7;
   }
 };
 

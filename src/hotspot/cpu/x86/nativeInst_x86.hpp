@@ -73,6 +73,7 @@ class NativeInstruction {
   s_char sbyte_at(int offset) const    { return *(s_char*) addr_at(offset); }
   u_char ubyte_at(int offset) const    { return *(u_char*) addr_at(offset); }
 
+  jshort short_at(int offset) const    { return *(jshort*) addr_at(offset); }
   jint int_at(int offset) const         { return *(jint*) addr_at(offset); }
 
   intptr_t ptr_at(int offset) const    { return *(intptr_t*) addr_at(offset); }
@@ -581,7 +582,7 @@ public:
     displacement_offset = 4
   };
 
-  bool check() const { return int_at(0) == 0x841f0f; }
+  bool check() const { return short_at(0) == 0x1f0f && short_at(2) == 0x0084; }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     int32_t data = int_at(displacement_offset);
     if (data == 0) {
