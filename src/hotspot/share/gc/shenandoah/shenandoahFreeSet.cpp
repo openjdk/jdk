@@ -3514,7 +3514,6 @@ public:
       if (r->free() < PLAB::min_size_bytes()) {
         assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
         AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
-        OrderAccess::fence();
         while (r->direct_alloc_mutators() > 0) {
           if (os::is_MP()) SpinPause();
           else os::naked_yield();
@@ -3569,7 +3568,6 @@ public:
       // Remove region from Mutator partition.
       size_t reserved_bytes = _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
       _free_set->increase_bytes_allocated(reserved_bytes);
-      OrderAccess::fence();
       AtomicAccess::store(&shared_region._address, r);
       if (!_new_region_allocated) {
         _new_region_allocated = true;
