@@ -1328,6 +1328,18 @@ void ZStoreBarrierStubC2Aarch64::emit_code(MacroAssembler& masm) {
 }
 
 #undef __
+#define __ masm->
+
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
+  __ ldr(obj, Address(obj, 0));
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
+  __ movzw(tmp, barrier_Relocation::unpatched);
+  __ tst(obj, tmp);
+  __ br(Assembler::NE, slow_path);
+  __ lsr(obj, obj, ZPointerLoadShift);
+}
+
+#undef __
 
 #endif // COMPILER2
 

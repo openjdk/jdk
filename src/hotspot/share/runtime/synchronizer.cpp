@@ -1194,13 +1194,10 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
     GrowableArray<ObjectMonitor*> delete_list((int)deflated_count);
     unlinked_count = _in_use_list.unlink_deflated(deflated_count, &delete_list, &safepointer);
 
-#ifdef ASSERT
+    GrowableArray<ObjectMonitorTable::Table*> table_delete_list;
     if (UseObjectMonitorTable) {
-      for (ObjectMonitor* monitor : delete_list) {
-        assert(!ObjectSynchronizer::contains_monitor(current, monitor), "Should have been removed");
-      }
+      ObjectMonitorTable::rebuild(&table_delete_list);
     }
-#endif
 
     log.before_handshake(unlinked_count);
 
@@ -1221,6 +1218,9 @@ size_t ObjectSynchronizer::deflate_idle_monitors() {
 
     // Delete the unlinked ObjectMonitors.
     deleted_count = delete_monitors(&delete_list, &safepointer);
+    if (UseObjectMonitorTable) {
+      ObjectMonitorTable::destroy(&table_delete_list);
+    }
     assert(unlinked_count == deleted_count, "must be");
   }
 
@@ -1472,288 +1472,405 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_
 
 // -----------------------------------------------------------------------------
 // ConcurrentHashTable storing links from objects to ObjectMonitors
-class ObjectMonitorTable : AllStatic {
-  struct Config {
-    using Value = ObjectMonitor*;
-    static uintx get_hash(Value const& value, bool* is_dead) {
-      return (uintx)value->hash();
+ObjectMonitorTable::Table* volatile ObjectMonitorTable::_curr;
+
+class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
+  friend class ObjectMonitorTable;
+
+  const size_t _capacity_mask;       // One less than its power-of-two capacity
+  Table* volatile _prev;             // Set while rehashing
+  ObjectMonitor* volatile* _buckets; // The payload
+
+  char _padding[DEFAULT_CACHE_LINE_SIZE];
+
+  volatile size_t _items_count;
+
+  static ObjectMonitor* tomb_stone() {
+    return (ObjectMonitor*)1;
+  }
+
+  static ObjectMonitor* removed_entry() {
+    return (ObjectMonitor*)2;
+  }
+
+  // Make sure we leave space for previous versions to relocate too
+  bool try_inc_items_count() {
+    for (;;) {
+      size_t population = AtomicAccess::load(&_items_count);
+      if (should_grow(population)) {
+        return false;
+      }
+      if (AtomicAccess::cmpxchg(&_items_count, population, population + 1, memory_order_relaxed) == population) {
+        return true;
+      }
     }
-    static void* allocate_node(void* context, size_t size, Value const& value) {
-      ObjectMonitorTable::inc_items_count();
-      return AllocateHeap(size, mtObjectMonitor);
-    };
-    static void free_node(void* context, void* memory, Value const& value) {
-      ObjectMonitorTable::dec_items_count();
-      FreeHeap(memory);
-    }
-  };
-  using ConcurrentTable = ConcurrentHashTable<Config, mtObjectMonitor>;
+  }
 
-  static ConcurrentTable* _table;
-  static volatile size_t _items_count;
-  static size_t _table_size;
-  static volatile bool _resize;
+  double get_load_factor(size_t count) {
+    return (double)count / (double)capacity();
+  }
 
-  class Lookup : public StackObj {
-    oop _obj;
-
-   public:
-    explicit Lookup(oop obj) : _obj(obj) {}
-
-    uintx get_hash() const {
-      uintx hash = _obj->mark().hash();
-      assert(hash != 0, "should have a hash");
-      return hash;
-    }
-
-    bool equals(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return (*value)->object_refers_to(_obj);
-    }
-
-    bool is_dead(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return false;
-    }
-  };
-
-  class LookupMonitor : public StackObj {
-    ObjectMonitor* _monitor;
-
-   public:
-    explicit LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
-
-    uintx get_hash() const {
-      return _monitor->hash();
-    }
-
-    bool equals(ObjectMonitor** value) {
-      return (*value) == _monitor;
-    }
-
-    bool is_dead(ObjectMonitor** value) {
-      assert(*value != nullptr, "must be");
-      return (*value)->object_is_dead();
-    }
-  };
-
-  static void inc_items_count() {
+  void inc_items_count() {
     AtomicAccess::inc(&_items_count, memory_order_relaxed);
   }
 
-  static void dec_items_count() {
+  void dec_items_count() {
     AtomicAccess::dec(&_items_count, memory_order_relaxed);
   }
 
-  static double get_load_factor() {
-    size_t count = AtomicAccess::load(&_items_count);
-    return (double)count / (double)_table_size;
-  }
-
-  static size_t table_size(Thread* current = Thread::current()) {
-    return ((size_t)1) << _table->get_size_log2(current);
-  }
-
-  static size_t max_log_size() {
-    // TODO[OMTable]: Evaluate the max size.
-    // TODO[OMTable]: Need to fix init order to use Universe::heap()->max_capacity();
-    //                Using MaxHeapSize directly this early may be wrong, and there
-    //                are definitely rounding errors (alignment).
-    const size_t max_capacity = MaxHeapSize;
-    const size_t min_object_size = CollectedHeap::min_dummy_object_size() * HeapWordSize;
-    const size_t max_objects = max_capacity / MAX2(MinObjAlignmentInBytes, checked_cast<int>(min_object_size));
-    const size_t log_max_objects = log2i_graceful(max_objects);
-
-    return MAX2(MIN2<size_t>(SIZE_BIG_LOG2, log_max_objects), min_log_size());
-  }
-
-  static size_t min_log_size() {
-    // ~= log(AvgMonitorsPerThreadEstimate default)
-    return 10;
-  }
-
-  template<typename V>
-  static size_t clamp_log_size(V log_size) {
-    return MAX2(MIN2(log_size, checked_cast<V>(max_log_size())), checked_cast<V>(min_log_size()));
-  }
-
-  static size_t initial_log_size() {
-    const size_t estimate = log2i(MAX2(os::processor_count(), 1)) + log2i(MAX2(AvgMonitorsPerThreadEstimate, size_t(1)));
-    return clamp_log_size(estimate);
-  }
-
-  static size_t grow_hint () {
-    return ConcurrentTable::DEFAULT_GROW_HINT;
-  }
-
- public:
-  static void create() {
-    _table = new ConcurrentTable(initial_log_size(), max_log_size(), grow_hint());
-    _items_count = 0;
-    _table_size = table_size();
-    _resize = false;
-  }
-
-  static void verify_monitor_get_result(oop obj, ObjectMonitor* monitor) {
-#ifdef ASSERT
-    if (SafepointSynchronize::is_at_safepoint()) {
-      bool has_monitor = obj->mark().has_monitor();
-      assert(has_monitor == (monitor != nullptr),
-          "Inconsistency between markWord and ObjectMonitorTable has_monitor: %s monitor: " PTR_FORMAT,
-          BOOL_TO_STR(has_monitor), p2i(monitor));
+public:
+  Table(size_t capacity, Table* prev)
+    : _capacity_mask(capacity - 1),
+      _prev(prev),
+      _buckets(NEW_C_HEAP_ARRAY(ObjectMonitor*, capacity, mtObjectMonitor)),
+      _items_count(0)
+  {
+    for (size_t i = 0; i < capacity; ++i) {
+      _buckets[i] = nullptr;
     }
-#endif
   }
 
-  static ObjectMonitor* monitor_get(Thread* current, oop obj) {
-    ObjectMonitor* result = nullptr;
-    Lookup lookup_f(obj);
-    auto found_f = [&](ObjectMonitor** found) {
-      assert((*found)->object_peek() == obj, "must be");
-      result = *found;
-    };
-    _table->get(current, lookup_f, found_f);
-    verify_monitor_get_result(obj, result);
-    return result;
+  ~Table() {
+    FREE_C_HEAP_ARRAY(ObjectMonitor*, _buckets);
   }
 
-  static void try_notify_grow() {
-    if (!_table->is_max_size_reached() && !AtomicAccess::load(&_resize)) {
-      AtomicAccess::store(&_resize, true);
-      if (Service_lock->try_lock()) {
-        Service_lock->notify();
-        Service_lock->unlock();
+  Table* prev() {
+    return AtomicAccess::load(&_prev);
+  }
+
+  size_t capacity() {
+    return _capacity_mask + 1;
+  }
+
+  bool should_grow(size_t population) {
+    return get_load_factor(population) > GROW_LOAD_FACTOR;
+  }
+
+  bool should_grow() {
+    return should_grow(AtomicAccess::load(&_items_count));
+  }
+
+  ObjectMonitor* get(oop obj, int hash) {
+    // Acquire tomb stones and relocations in case prev transitioned to null
+    Table* prev = AtomicAccess::load_acquire(&_prev);
+    if (prev != nullptr) {
+      ObjectMonitor* result = prev->get(obj, hash);
+      if (result != nullptr) {
+        return result;
       }
     }
+
+    const size_t start_index = size_t(hash) & _capacity_mask;
+    size_t index = start_index;
+
+    for (;;) {
+      ObjectMonitor* volatile* bucket = _buckets + index;
+      ObjectMonitor* monitor = AtomicAccess::load(bucket);
+
+      if (monitor == tomb_stone() || monitor == nullptr) {
+        // Not found
+        break;
+      }
+
+      if (monitor != removed_entry() && monitor->object_peek() == obj) {
+        // Found matching monitor
+        OrderAccess::acquire();
+        return monitor;
+      }
+
+      index = (index + 1) & _capacity_mask;
+      if (index == start_index) {
+        // Not found - wrap around
+        break;
+      }
+    }
+
+    // Rehashing could have stareted by now, but if a monitor has been inserted in a
+    // newer table, it was inserted after the get linearization point
+    return nullptr;
   }
 
-  static bool should_shrink() {
-    // Not implemented;
-    return false;
-  }
+  ObjectMonitor* get_set(oop obj, ObjectMonitor* new_monitor, int hash) {
+    // Acquire any tomb stones and relocations if prev transitioned to null
+    Table* prev = AtomicAccess::load_acquire(&_prev);
+    if (prev != nullptr) {
+      ObjectMonitor* result = prev->get_set(obj, new_monitor, hash);
+      if (result != nullptr) {
+        return result;
+      }
+    }
 
-  static constexpr double GROW_LOAD_FACTOR = 0.75;
+    const size_t start_index = size_t(hash) & _capacity_mask;
+    size_t index = start_index;
 
-  static bool should_grow() {
-    return get_load_factor() > GROW_LOAD_FACTOR && !_table->is_max_size_reached();
-  }
+    for (;;) {
+      ObjectMonitor* volatile* bucket = _buckets + index;
+      ObjectMonitor* monitor = AtomicAccess::load(bucket);
 
-  static bool should_resize() {
-    return should_grow() || should_shrink() || AtomicAccess::load(&_resize);
-  }
+      if (monitor == nullptr) {
+        // Empty slot to install the new monitor
+        if (try_inc_items_count()) {
+          // Succeeding in claiming an item
+          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
+          if (result == monitor) {
+            // Success - already incremented
+            return new_monitor;
+          }
 
-  template<typename Task, typename... Args>
-  static bool run_task(JavaThread* current, Task& task, const char* task_name, Args&... args) {
-    if (task.prepare(current)) {
-      log_trace(monitortable)("Started to %s", task_name);
-      TraceTime timer(task_name, TRACETIME_LOG(Debug, monitortable, perf));
-      while (task.do_task(current, args...)) {
-        task.pause(current);
-        {
-          ThreadBlockInVM tbivm(current);
+          // Someething else was installed in place
+          dec_items_count();
+          monitor = result;
+        } else {
+          // Out of allowance; leaving place for rehashing to succeed
+          // To avoid concurrent inserts succeeding, place a tomb stine here.
+          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tomb_stone());
+          if (result == monitor) {
+            // Success; nobody will try to insert here again, except reinsert from rehashing
+            return nullptr;
+          }
+          monitor = result;
         }
-        task.cont(current);
       }
-      task.done(current);
-      return true;
-    }
-    return false;
-  }
 
-  static bool grow(JavaThread* current) {
-    ConcurrentTable::GrowTask grow_task(_table);
-    if (run_task(current, grow_task, "Grow")) {
-      _table_size = table_size(current);
-      log_info(monitortable)("Grown to size: %zu", _table_size);
-      return true;
-    }
-    return false;
-  }
-
-  static bool clean(JavaThread* current) {
-    ConcurrentTable::BulkDeleteTask clean_task(_table);
-    auto is_dead = [&](ObjectMonitor** monitor) {
-      return (*monitor)->object_is_dead();
-    };
-    auto do_nothing = [&](ObjectMonitor** monitor) {};
-    NativeHeapTrimmer::SuspendMark sm("ObjectMonitorTable");
-    return run_task(current, clean_task, "Clean", is_dead, do_nothing);
-  }
-
-  static bool resize(JavaThread* current) {
-    LogTarget(Info, monitortable) lt;
-    bool success = false;
-
-    if (should_grow()) {
-      lt.print("Start growing with load factor %f", get_load_factor());
-      success = grow(current);
-    } else {
-      if (!_table->is_max_size_reached() && AtomicAccess::load(&_resize)) {
-        lt.print("WARNING: Getting resize hints with load factor %f", get_load_factor());
+      if (monitor == tomb_stone()) {
+        // Can't insert into this table
+        return nullptr;
       }
-      lt.print("Start cleaning with load factor %f", get_load_factor());
-      success = clean(current);
+
+      if (monitor != removed_entry() && monitor->object_peek() == obj) {
+        // Found matching monitor
+        return monitor;
+      }
+
+      index = (index + 1) & _capacity_mask;
+      if (index == start_index) {
+        // No slot to install in this table
+        return nullptr;
+      }
+    }
+  }
+
+  void remove(oop obj, ObjectMonitor* old_monitor, int hash) {
+    // Acquire any tomb stones and relocations if prev transitioned to null
+    Table* prev = AtomicAccess::load_acquire(&_prev);
+    if (prev != nullptr) {
+      prev->remove(obj, old_monitor, hash);
     }
 
-    AtomicAccess::store(&_resize, false);
+    const size_t start_index = size_t(hash) & _capacity_mask;
+    size_t index = start_index;
 
-    return success;
-  }
+    for (;;) {
+      ObjectMonitor* volatile* bucket = _buckets + index;
+      ObjectMonitor* monitor = AtomicAccess::load(bucket);
 
-  static ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
-    // Enter the monitor into the concurrent hashtable.
-    ObjectMonitor* result = monitor;
-    Lookup lookup_f(obj);
-    auto found_f = [&](ObjectMonitor** found) {
-      assert((*found)->object_peek() == obj, "must be");
-      result = *found;
-    };
-    bool grow;
-    _table->insert_get(current, lookup_f, monitor, found_f, &grow);
-    verify_monitor_get_result(obj, result);
-    if (grow) {
-      try_notify_grow();
+      if (monitor == nullptr) {
+        // Monitor does not exist in this table
+        return;
+      }
+
+      if (monitor == old_monitor) {
+        // Found matching entry; remove it
+        AtomicAccess::cmpxchg(bucket, monitor, removed_entry());
+        return;
+      }
+
+      index = (index + 1) & _capacity_mask;
+      if (index == start_index) {
+        // Not found
+        return;
+      }
     }
-    return result;
   }
 
-  static bool remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
-    LookupMonitor lookup_f(monitor);
-    return _table->remove(current, lookup_f);
-  }
+  void reinsert(oop obj, ObjectMonitor* new_monitor) {
+    int hash = obj->mark().hash();
 
-  static bool contains_monitor(Thread* current, ObjectMonitor* monitor) {
-    LookupMonitor lookup_f(monitor);
-    bool result = false;
-    auto found_f = [&](ObjectMonitor** found) {
-      result = true;
-    };
-    _table->get(current, lookup_f, found_f);
-    return result;
-  }
+    const size_t start_index = size_t(hash) & _capacity_mask;
+    size_t index = start_index;
 
-  static void print_on(outputStream* st) {
-    auto printer = [&] (ObjectMonitor** entry) {
-       ObjectMonitor* om = *entry;
-       oop obj = om->object_peek();
-       st->print("monitor=" PTR_FORMAT ", ", p2i(om));
-       st->print("object=" PTR_FORMAT, p2i(obj));
-       assert(obj->mark().hash() == om->hash(), "hash must match");
-       st->cr();
-       return true;
-    };
-    if (SafepointSynchronize::is_at_safepoint()) {
-      _table->do_safepoint_scan(printer);
-    } else {
-      _table->do_scan(Thread::current(), printer);
+    for (;;) {
+      ObjectMonitor* volatile* bucket = _buckets + index;
+      ObjectMonitor* monitor = AtomicAccess::load(bucket);
+
+      if (monitor == nullptr) {
+        // Empty slot to install the new monitor
+        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
+        if (result == monitor) {
+          // Success - unconditionally increment
+          inc_items_count();
+          return;
+        }
+
+        // Another monitor was installed
+        monitor = result;
+      }
+
+      if (monitor == tomb_stone()) {
+        // A concurrent inserter did not get enough allowance in the table
+        // But reinsert always succeeds - we will take the spot
+        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
+        if (result == monitor) {
+          // Success - unconditionally increment
+          inc_items_count();
+          return;
+        }
+
+        // Another monitor was installed
+        monitor = result;
+      }
+
+      assert(monitor != nullptr, "invariant");
+      assert(monitor != tomb_stone(), "invariant");
+      assert(monitor == removed_entry() || monitor->object_peek() != obj, "invariant");
+
+      index = (index + 1) & _capacity_mask;
+      assert(index != start_index, "should never be full");
     }
+  }
+
+  void rebuild() {
+    Table* prev = _prev;
+    if (prev == nullptr) {
+      // Base case for recursion - no previous version
+      return;
+    }
+
+    // Finish rebuilding up to prev as target so we can use prev as source
+    prev->rebuild();
+
+    JavaThread* current = JavaThread::current();
+
+    // Relocate entries from prev after
+    for (size_t index = 0; index <= prev->_capacity_mask; index++) {
+      if ((index & 128) == 0) {
+        // Poll for safepoints to improve time to safepoint
+        ThreadBlockInVM tbivm(current);
+      }
+
+      ObjectMonitor* volatile* bucket = prev->_buckets + index;
+      ObjectMonitor* monitor = AtomicAccess::load(bucket);
+
+      if (monitor == nullptr) {
+        // Empty slot; put a tomb stone there
+        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tomb_stone(), memory_order_relaxed);
+        if (result == nullptr) {
+          // Success; move to next entry
+          continue;
+        }
+
+        // Concurrent insert; relocate
+        monitor = result;
+      }
+
+      if (monitor != tomb_stone() && monitor != removed_entry()) {
+        // A monitor
+        oop obj = monitor->object_peek();
+        if (!monitor->is_being_async_deflated() && obj != nullptr) {
+          // Re-insert still live monitor
+          reinsert(obj, monitor);
+        }
+      }
+    }
+
+    // Unlink this table, releasing the tomb stones and relocations
+    AtomicAccess::release_store(&_prev, (Table*)nullptr);
   }
 };
 
-ObjectMonitorTable::ConcurrentTable* ObjectMonitorTable::_table = nullptr;
-volatile size_t ObjectMonitorTable::_items_count = 0;
-size_t ObjectMonitorTable::_table_size = 0;
-volatile bool ObjectMonitorTable::_resize = false;
+void ObjectMonitorTable::create() {
+  _curr = new Table(128, nullptr);
+}
+
+ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
+  const int hash = obj->mark().hash();
+
+  Table* curr = AtomicAccess::load_acquire(&_curr);
+  ObjectMonitor* monitor = curr->get(obj, hash);
+  OrderAccess::acquire();
+  return monitor;
+}
+
+ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
+  const int hash = obj->mark().hash();
+
+  for (;;) {
+    Table* curr = AtomicAccess::load_acquire(&_curr);
+    if (curr->should_grow()) {
+      Table* new_table = new Table(curr->capacity() << 1, curr);
+      if (AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_release) == curr) {
+        // Successfully started rehashing
+        log_info(monitorinflation)("Growing object monitor table");
+        ObjectSynchronizer::request_deflate_idle_monitors();
+      } else {
+        // Somebody else started rehashing; restart in new table
+        delete new_table;
+        continue;
+      }
+    }
+
+    // Curr is the latest table and is reasonably loaded
+    ObjectMonitor* result = curr->get_set(obj, monitor, hash);
+    if (result == nullptr) {
+      // Table rehashing started; try again in the new table
+      continue;
+    }
+
+    return result;
+  }
+}
+
+void ObjectMonitorTable::remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
+  oop obj = monitor->object_peek();
+  if (obj == nullptr) {
+    // Defer removal until subsequent rebuilding
+    return;
+  }
+  const int hash = obj->mark().hash();
+
+  Table* curr = AtomicAccess::load_acquire(&_curr);
+  curr->remove(obj, monitor, hash);
+}
+
+// Before handshake; rehash and unlink tables
+void ObjectMonitorTable::rebuild(GrowableArray<Table*>* delete_list) {
+  Table* new_table;
+  {
+    Table* curr = AtomicAccess::load_acquire(&_curr);
+    new_table = new Table(curr->capacity(), curr);
+    Table* result = AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_release);
+    if (result != curr) {
+      // Somebody else racingly started rehashing; try again
+      new_table = result;
+    }
+  }
+
+  for (Table* curr = new_table->prev(); curr != nullptr; curr = curr->prev()) {
+    delete_list->append(curr);
+  }
+
+  // Rebuild with the new table as target
+  new_table->rebuild();
+}
+
+// After handshake; destroy old tables
+void ObjectMonitorTable::destroy(GrowableArray<Table*>* delete_list) {
+  for (ObjectMonitorTable::Table* table: *delete_list) {
+    delete table;
+  }
+}
+
+address ObjectMonitorTable::current_table_address() {
+  return (address)(&_curr);
+}
+
+ByteSize ObjectMonitorTable::table_capacity_mask_offset() {
+  return byte_offset_of(Table, _capacity_mask);
+}
+
+ByteSize ObjectMonitorTable::table_buckets_offset() {
+  return byte_offset_of(Table, _buckets);
+}
 
 ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
   ObjectMonitor* monitor = get_monitor_from_table(current, object);
@@ -1833,11 +1950,11 @@ ObjectMonitor* ObjectSynchronizer::add_monitor(JavaThread* current, ObjectMonito
   return ObjectMonitorTable::monitor_put_get(current, monitor, obj);
 }
 
-bool ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+void ObjectSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
 
-  return ObjectMonitorTable::remove_monitor_entry(current, monitor);
+  ObjectMonitorTable::remove_monitor_entry(current, monitor);
 }
 
 void ObjectSynchronizer::deflate_mark_word(oop obj) {
@@ -1857,20 +1974,6 @@ void ObjectSynchronizer::create_om_table() {
     return;
   }
   ObjectMonitorTable::create();
-}
-
-bool ObjectSynchronizer::needs_resize() {
-  if (!UseObjectMonitorTable) {
-    return false;
-  }
-  return ObjectMonitorTable::should_resize();
-}
-
-bool ObjectSynchronizer::resize_table(JavaThread* current) {
-  if (!UseObjectMonitorTable) {
-    return true;
-  }
-  return ObjectMonitorTable::resize(current);
 }
 
 class ObjectSynchronizer::LockStackInflateContendedLocks : private OopClosure {
@@ -2580,21 +2683,13 @@ ObjectMonitor* ObjectSynchronizer::inflate_and_enter(oop object, BasicLock* lock
 void ObjectSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
   if (obj != nullptr) {
     deflate_mark_word(obj);
-  }
-  bool removed = remove_monitor(current, monitor, obj);
-  if (obj != nullptr) {
-    assert(removed, "Should have removed the entry if obj was alive");
+    remove_monitor(current, monitor, obj);
   }
 }
 
 ObjectMonitor* ObjectSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   return ObjectMonitorTable::monitor_get(current, obj);
-}
-
-bool ObjectSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  return ObjectMonitorTable::contains_monitor(current, monitor);
 }
 
 ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {

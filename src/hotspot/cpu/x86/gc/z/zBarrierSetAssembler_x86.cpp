@@ -1328,6 +1328,19 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   __ jmp(slow_continuation);
 }
 
+void ZBarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
+  // Load the oop from the weak handle
+  __ movptr(obj, Address(obj, 0));
+
+  // Check if oop is okay
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::mark_bad_mask_offset()));
+  __ jcc(Assembler::notZero, slowpath);
+
+  // Uncolor oop if okay
+  __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
+  __ shrq(obj, barrier_Relocation::unpatched);
+}
+
 #undef __
 #endif // COMPILER2
 

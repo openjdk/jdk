@@ -68,6 +68,30 @@ public:
   ObjectMonitor* next();
 };
 
+class ObjectMonitorTable : AllStatic {
+  static constexpr double GROW_LOAD_FACTOR = 0.125;
+
+public:
+  class Table;
+
+private:
+  static Table* volatile _curr;
+
+public:
+  static void create();
+  static ObjectMonitor* monitor_get(Thread* current, oop obj);
+  static ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj);
+  static void rebuild(GrowableArray<Table*>* delete_list);
+  static void destroy(GrowableArray<Table*>* delete_list);
+  static void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
+  static void monitor_reinsert(Table* from, ObjectMonitor* monitor, oop obj);
+
+  // Compiler support
+  static address current_table_address();
+  static ByteSize table_capacity_mask_offset();
+  static ByteSize table_buckets_offset();
+};
+
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
   friend class ObjectMonitorDeflationLogging;
@@ -213,7 +237,7 @@ public:
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
   static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
-  static bool remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
+  static void remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj);
 
   static void deflate_mark_word(oop object);
 
