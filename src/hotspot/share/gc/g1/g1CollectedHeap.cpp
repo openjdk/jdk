@@ -354,7 +354,7 @@ size_t G1CollectedHeap::allocation_used_bytes(size_t allocation_word_size) {
   if (is_humongous(allocation_word_size)) {
     return humongous_obj_size_in_regions(allocation_word_size) * G1HeapRegion::GrainBytes;
   } else {
-    return allocation_word_size;
+    return allocation_word_size * HeapWordSize;
   }
 }
 

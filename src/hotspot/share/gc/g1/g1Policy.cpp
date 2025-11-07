@@ -996,7 +996,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
     if (update_ihop_prediction(app_time_ms / 1000.0,
                                G1GCPauseTypeHelper::is_young_only_pause(this_pause))) {
-      _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->allocation_used_bytes(allocation_word_size));
+      _ihop_control->report_statistics(_g1h->gc_tracer_stw(), conc_mark_occupancy(allocation_word_size));
     }
   } else {
     // Any garbage collection triggered as periodic collection resets the time-to-mixed
