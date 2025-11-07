@@ -22,8 +22,12 @@
  */
 
 import java.io.IOException;
+import java.net.BindException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpOption;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -47,6 +51,7 @@ import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.testng.Assert.*;
 
@@ -67,6 +72,8 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
 
     private SSLContext sslContext;
     private HttpTestServer h3Server;
+    private ServerSocket tcpServerSocket = null;
+    private Thread tcpServerThread = null;
     private String requestURI;
     private static Logger clientLogger;
 
@@ -82,6 +89,32 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         h3Server.start();
         System.out.println("Server started at " + h3Server.getAddress());
         requestURI = "https://" + h3Server.serverAuthority() + "/hello";
+
+        // Attempts to bind a TCP server socket on the same port
+        // That server will just accept and immediately close
+        // any connection. This is to make sure that we won't target
+        // another server when falling back to TCP.
+        tcpServerSocket = new ServerSocket();
+        try {
+            tcpServerSocket.bind(h3Server.getAddress());
+            tcpServerThread = Thread.ofPlatform().daemon().start(() -> {
+                System.out.println("tcpServerThread started");
+                while (true) {
+                    try (var accepted = tcpServerSocket.accept()) {
+                        // close immediately
+                    } catch (IOException x) {
+                        System.out.println("tcpServerSocket: " + x);
+                        break;
+                    }
+                }
+                System.out.println("tcpServerThread stopped");
+            });
+        } catch (BindException x) {
+            tcpServerSocket.close();
+            // if tcpServerSocket is null we will use
+            // HTTP3_URI_ONLY for the request
+            tcpServerSocket = null;
+        }
     }
 
     @AfterClass
@@ -89,6 +122,10 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         if (h3Server != null) {
             System.out.println("Stopping server " + h3Server.getAddress());
             h3Server.stop();
+        }
+        if (tcpServerSocket != null) {
+            tcpServerSocket.close();
+            tcpServerThread.join();
         }
     }
 
@@ -125,6 +162,10 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         final URI reqURI = new URI(requestURI);
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(HTTP_3);
+        if (tcpServerSocket == null) {
+            // could not open ServerSocket on same port, only use HTTP/3
+            reqBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
         clientLogger = Logger.getLogger("jdk.httpclient.HttpClient");
 
         CopyOnWriteArrayList<LogRecord> records = new CopyOnWriteArrayList<>();
@@ -143,12 +184,11 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
             }
         };
         clientLogger.addHandler(handler);
-
         try {
             final HttpRequest req1 = reqBuilder.copy().GET().build();
             System.out.println("Issuing request: " + req1);
             final HttpResponse<Void> resp1 = client.send(req1, BodyHandlers.discarding());
-            Assert.assertEquals(resp1.statusCode(), 200, "unexpected response code for GET request");
+            fail("Unexpected response from server: " + resp1);
         } catch (IOException io) {
             System.out.println("Got expected exception: " + io);
         } finally {
