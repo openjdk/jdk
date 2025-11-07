@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8049834 8371383
+ * @bug 8049834
  * @summary Two security tools tests do not run with only JRE
  * @library /test/lib
  */
@@ -62,7 +62,10 @@ public class DefaultOptions {
         keytool("-genkeypair -dname CN=CA -alias ca -keyalg rsa -ext bc:c")
                 .shouldHaveExitValue(0);
         keytool("-alias a -certreq -file a.req");
-        keytool("-alias ca -gencert -infile a.req -outfile a.cert");
+
+        // The start date is set to -1M to prevent the certificate not yet
+        // valid during fast enough execution.
+        keytool("-alias ca -gencert -infile a.req -outfile a.cert -startdate -1M");
         keytool("-alias a -import -file a.cert").shouldHaveExitValue(0);
 
         Files.write(Path.of("js.conf"), List.of(
@@ -73,10 +76,6 @@ public class DefaultOptions {
 
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."),
                 Path.of("ks"), Path.of("js.conf"));
-
-        // Add delay to help the signing certificate’s NotBefore time has
-        // passed and avoid CertificateNotYetValidException.
-        Thread.sleep(5000);
 
         jarsigner("-conf js.conf a.jar a").shouldHaveExitValue(0);
         jarsigner("-conf js.conf -verify a.jar").shouldHaveExitValue(0)
