@@ -5143,6 +5143,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   if (stop_early) {
     assert(do_expensive_nodes || do_optimize_reachability_fences, "why are we here?");
+    // Use a change to optimize reachability fence nodes irrespective of
+    // whether loop optimizations are performed or not.
     if (do_optimize_reachability_fences && optimize_reachability_fences()) {
       recompute_dom_depth();
       DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );

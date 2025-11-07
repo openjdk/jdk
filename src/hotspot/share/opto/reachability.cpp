@@ -91,16 +91,19 @@ static bool is_redundant_rf_helper(ReachabilityFenceNode* rf, PhaseIdealLoop* ph
 
   Node* referent = rf->referent();
   const Type* t = gvn.type(referent);
-  if (!PreserveReachabilityFencesOnConstants && t->singleton()) {
-    return true; // no-op fence
-  }
   if (t == TypePtr::NULL_PTR) {
-    return true; // no-op fence
+    return true; // no-op fence: null referent
+  }
+  if (!OptimizeReachabilityFences) {
+    return false; // keep reachability fence nodes intact
+  }
+  if (!PreserveReachabilityFencesOnConstants && t->singleton()) {
+    return true; // no-op fence: constants are strongly reachable
   }
   if (referent->is_Proj() && referent->in(0)->is_CallJava()) {
     ciMethod* m = referent->in(0)->as_CallJava()->method();
     if (m != nullptr && m->is_boxing_method()) {
-      return true;
+      return true; // ignore fences on boxed primitives produced by valueOf methods
     }
   }
   for (Node* cur = referent;
@@ -115,12 +118,12 @@ static bool is_redundant_rf_helper(ReachabilityFenceNode* rf, PhaseIdealLoop* ph
         if (phase != nullptr) {
           Node* use_ctrl = (rf_only ? use : phase->ctrl_or_self(use));
           if (phase->is_dominator(rf, use_ctrl)) {
-            return true;
+            return true; // redundant fence: dominates another reachabilty fence with the same referent
           }
         } else {
           assert(use->is_ReachabilityFence(), "only RFs during GVN");
           if (gvn.is_dominator(rf, use)) {
-            return true;
+            return true; // redundant fence: dominates another reachabilty fence with the same referent
           }
         }
       }
@@ -220,7 +223,7 @@ void PhaseIdealLoop::replace_rf(Node* old_node, Node* new_node) {
   assert(lpt->_reachability_fences != nullptr, "missing");
   assert(lpt->_reachability_fences->contains(old_node), "missing");
   lpt->_reachability_fences->yank(old_node);
-  lazy_replace(old_node, new_node);
+  replace_node_and_forward_ctrl(old_node, new_node);
 }
 
 void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
@@ -228,7 +231,7 @@ void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
   if (igvn().type(referent) != TypePtr::NULL_PTR) {
     igvn().replace_input_of(rf, 1, makecon(TypePtr::NULL_PTR));
     if (referent->outcnt() == 0) {
-      remove_dead_node(referent);
+      remove_dead_data_node(referent);
     }
   }
   Node* rf_ctrl_in = rf->in(0);

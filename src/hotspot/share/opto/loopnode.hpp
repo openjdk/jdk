@@ -1190,8 +1190,9 @@ public:
     forward_ctrl(old_node, new_node);
   }
 
-  void remove_dead_node(Node* dead) {
-    assert(dead->outcnt() == 0 && !dead->is_top(), "node must be dead");
+  void remove_dead_data_node(Node* dead) {
+    assert(dead->outcnt() == 0 && !dead->is_top(), "must be dead");
+    assert(!dead->is_CFG(), "not a data node");
     Node* c = get_ctrl(dead);
     IdealLoopTree* lpt = get_loop(c);
     _loop_or_ctrl.map(dead->_idx, nullptr); // This node is useless
