@@ -126,6 +126,13 @@ bool java_lang_String::is_instance(oop obj) {
   return obj != nullptr && obj->klass() == vmClasses::String_klass();
 }
 
+// We need to be able to check if this is a string even when we are in an
+// erroneous state where the klass is corrupted/can't be read safely.
+// This happens when printing an oop during GC error reporting.
+bool java_lang_String::is_instance_without_asserts(oop obj) {
+  return obj != nullptr && obj->klass_without_asserts() == vmClasses::String_klass();
+}
+
 // Accessors
 
 oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {

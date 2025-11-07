@@ -83,7 +83,7 @@ char* oopDesc::print_value_string() {
 
 void oopDesc::print_value_on(outputStream* st) const {
   oop obj = const_cast<oopDesc*>(this);
-  if (java_lang_String::is_instance(obj)) {
+  if (java_lang_String::is_instance_without_asserts(obj)) {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {

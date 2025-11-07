@@ -213,6 +213,7 @@ class java_lang_String : AllStatic {
 
   // Tester
   static inline bool is_instance(oop obj);
+  static inline bool is_instance_without_asserts(oop obj);
 
   // Debugging
   static void print(oop java_string, outputStream* st, int max_length = MaxStringPrintSize);
