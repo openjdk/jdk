@@ -37,6 +37,7 @@
  *      -XX:-BackgroundCompilation
  *      -XX:PartialPeelNewPhiDelta=1
  *      -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+StressIGVN
  *      -XX:StressSeed=212574406
  *      compiler.loopopts.superword.TestLoopPhiApplyBadType
@@ -54,6 +55,7 @@
  *      -XX:-BackgroundCompilation
  *      -XX:PartialPeelNewPhiDelta=1
  *      -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+StressIGVN
  *      compiler.loopopts.superword.TestLoopPhiApplyBadType
  */
