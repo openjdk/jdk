@@ -38,6 +38,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
+import sun.security.ssl.SignatureScheme.SupportedSigSchemes;
 
 /**
  * SSL/(D)TLS configuration.
@@ -241,8 +242,12 @@ final class SSLConfiguration implements Cloneable {
         this.maximumPacketSize = 0;         // please reset it explicitly later
 
         this.signatureSchemes = isClientMode ?
-                CustomizedClientSignatureSchemes.signatureSchemes :
-                CustomizedServerSignatureSchemes.signatureSchemes;
+                CustomizedClientSignatureSchemes.signatureSchemes != null ?
+                        CustomizedClientSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT :
+                CustomizedServerSignatureSchemes.signatureSchemes != null ?
+                        CustomizedServerSignatureSchemes.signatureSchemes :
+                        SupportedSigSchemes.DEFAULT;
         this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
@@ -362,7 +367,9 @@ final class SSLConfiguration implements Cloneable {
             // Note if 'ss' is empty, then no signature schemes should be
             // specified over the connections.
             this.signatureSchemes = ss;
-        }   // Otherwise, use the default values
+        } else {    // Otherwise, use the default values.
+            this.signatureSchemes = SupportedSigSchemes.DEFAULT;
+        }
 
         String[] ngs = params.getNamedGroups();
         if (ngs != null) {
@@ -514,7 +521,8 @@ final class SSLConfiguration implements Cloneable {
     void toggleClientMode() {
         this.isClientMode ^= true;
 
-        // Reset the signature schemes, if it was configured with SSLParameters.
+        // Reset the signature schemes, if it was configured with a
+        // system property.
         if (Arrays.equals(signatureSchemes,
                 CustomizedClientSignatureSchemes.signatureSchemes) ||
             Arrays.equals(signatureSchemes,
