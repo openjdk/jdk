@@ -100,6 +100,7 @@ public class CubicTest {
 
     @Test
     public void testReduction() {
+        System.err.println("***** testReduction *****");
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
@@ -116,6 +117,7 @@ public class CubicTest {
 
     @Test
     public void testAppLimited() {
+        System.err.println("***** testAppLimited *****");
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
@@ -135,57 +137,43 @@ public class CubicTest {
 
     @Test
     public void testRenoFriendly() {
+        System.err.println("***** testRenoFriendly *****");
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
         assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
+        int startingWindow = (int) cc.congestionWindow();
+        // lose packet to exit slow start
         cc.packetSent(packetSize);
         long newCongestionWindow = (long) (QuicCubicCongestionController.BETA * cc.congestionWindow());
-        // lose packet to exit slow start
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
         assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
-        // enter cwnd-limited state to start increasing cwnd
+        // exit loss recovery to start increasing cwnd
         Deadline sentTime = timeSource.advanceMillis(1);
-        int numPackets = 0;
-        while (!cc.isCwndLimited()) {
-            cc.packetSent(packetSize);
-            numPackets++;
-        }
-        // test that the window increases roughly by ALPHA * maxDatagramSize every RTT
-        long startingCwnd = cc.congestionWindow();
-        for (int i = 0; i < numPackets; i++) {
-            cc.packetAcked(packetSize, sentTime);
-        }
-        long expectedCwnd = (long) (startingCwnd + ALPHA * packetSize);
-        long actualCwnd = cc.congestionWindow();
-        assertTrue(actualCwnd > expectedCwnd - numPackets && actualCwnd < expectedCwnd + numPackets,
-                "actual cwnd %s not within the expected range (%s, %s)".formatted(
-                        actualCwnd, expectedCwnd - numPackets, expectedCwnd + numPackets
-                ));
-        numPackets = 0;
         do {
-            while (!cc.isCwndLimited()) {
-                cc.packetSent(packetSize);
-                numPackets++;
-            }
-            cc.packetAcked(packetSize, sentTime);
-            numPackets--;
-        } while (cc.congestionWindow() < cc.initialWindow());
-        while (!cc.isCwndLimited()) {
-            cc.packetSent(packetSize);
-            numPackets++;
-        }
+            // test that the window increases roughly by ALPHA * maxDatagramSize every RTT
+            int startingCwnd = (int) cc.congestionWindow();
+            cc.packetSent(startingCwnd);
+            // we ack the entire window in one call; in practice the increase will be slower
+            // because cwnd increases (and increase rate reduces) after every call to packetAcked
+            cc.packetAcked(startingCwnd, sentTime);
+            long expectedCwnd = (long) (startingCwnd + ALPHA * packetSize);
+            long actualCwnd = cc.congestionWindow();
+            assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
+                    "actual cwnd %s not within the expected range (%s, %s)".formatted(
+                            actualCwnd, expectedCwnd - 1, expectedCwnd + 1
+                    ));
+        } while (cc.congestionWindow() < startingWindow);
         // test that the window increases roughly by maxDatagramSize every RTT after passing cwndPrior
-        startingCwnd = cc.congestionWindow();
-        for (int i = 0; i < numPackets; i++) {
-            cc.packetAcked(packetSize, sentTime);
-        }
-        expectedCwnd = startingCwnd + packetSize;
-        actualCwnd = cc.congestionWindow();
-        assertTrue(actualCwnd > expectedCwnd - numPackets && actualCwnd < expectedCwnd + numPackets,
+        int startingCwnd = (int) cc.congestionWindow();
+        cc.packetSent(startingCwnd);
+        cc.packetAcked(startingCwnd, sentTime);
+        int expectedCwnd = startingCwnd + packetSize;
+        long actualCwnd = cc.congestionWindow();
+        assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
                 "actual cwnd %s not within the expected range (%s, %s)".formatted(
-                        actualCwnd, expectedCwnd - numPackets, expectedCwnd + numPackets
+                        actualCwnd, expectedCwnd - 1, expectedCwnd + 1
                 ));
     }
 
@@ -199,6 +187,7 @@ public class CubicTest {
            send and acknowledge a whole cwnd of data
          - cwnd should be back to 36 packets, give or take a few bytes.
          */
+        System.err.println("***** testCubic *****");
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(4_000_000, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
@@ -218,6 +207,8 @@ public class CubicTest {
         // send and acknowledge a whole cwnd of data
         tmp = (int) cc.congestionWindow();
         cc.packetSent(tmp);
+        // we ack the entire window in one call; in practice the increase will be slower
+        // because cwnd increases (and increase rate reduces) after every call to packetAcked
         cc.packetAcked(tmp, sentTime);
         long expectedCwnd = 36 * packetSize;
         long actualCwnd = cc.congestionWindow();
