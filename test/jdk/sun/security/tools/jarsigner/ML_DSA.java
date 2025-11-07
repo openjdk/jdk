@@ -67,7 +67,7 @@ public class ML_DSA {
         } else {
             prepare();
             testAPI();
-            testTool(); // call this last, it modified a.jar.
+            testTool(); // call this last, as it modifies a.jar.
             testDisabled();
         }
     }
