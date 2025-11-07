@@ -72,7 +72,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -86,6 +86,9 @@
 #include "utilities/xmlstream.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.inline.hpp"
@@ -601,6 +604,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       // The deferred StackWatermarkSet::after_unwind check will be performed in
       // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
+#ifdef COMPILER2
+      if (nm->compiler_type() == compiler_c2) {
+        return OptoRuntime::exception_blob()->entry_point();
+      }
+#endif // COMPILER2
       return nm->exception_begin();
     }
   }
@@ -791,7 +799,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     if (t != nullptr) {
       return nm->code_begin() + t->pco();
     } else {
-      return Deoptimization::deoptimize_for_missing_exception_handler(nm);
+      bool make_not_entrant = true;
+      return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
     }
   }
 #endif // INCLUDE_JVMCI
@@ -847,6 +856,15 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
+
+  // If the compiler did not anticipate a recursive exception, resulting in an exception
+  // thrown from the catch bci, then the compiled exception handler might be missing.
+  // This is rare.  Just deoptimize and let the interpreter handle it.
+  if (t == nullptr && recursive_exception_occurred) {
+    bool make_not_entrant = false;
+    return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
+  }
+
   if (t == nullptr && (nm->is_compiled_by_c1() || handler_bci != -1)) {
     // Allow abbreviated catch tables.  The idea is to allow a method
     // to materialize its exceptions without committing to the exact
@@ -2011,7 +2029,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   ExceptionMark em(current);
 
   // Check if C2_MacroAssembler::fast_unlock() or
-  // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
+  // C2_MacroAssembler::fast_unlock() unlocked an inflated
   // monitor before going slow path.  Since there is no safepoint
   // polling when calling into the VM, we can be sure that the monitor
   // hasn't been deallocated.

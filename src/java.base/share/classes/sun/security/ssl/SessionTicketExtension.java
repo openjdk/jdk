@@ -72,6 +72,8 @@ final class SessionTicketExtension {
             new T12SHSessionTicketProducer();
     static final ExtensionConsumer shOnLoadConsumer =
             new T12SHSessionTicketConsumer();
+    static final HandshakeAbsence shOnLoadAbsence =
+            new T12SHSessionTicketOnLoadAbsence();
 
     static final SSLStringizer steStringizer = new SessionTicketStringizer();
     // No need to compress a ticket if it can fit in a single packet.
@@ -527,6 +529,29 @@ final class SessionTicketExtension {
 
             SessionTicketSpec spec = new SessionTicketSpec(chc, buffer);
             chc.statelessResumption = true;
+        }
+    }
+
+    /**
+     * The absence processing if a "session_ticket" extension is
+     * not present in the ServerHello handshake message.
+     */
+    private static final class T12SHSessionTicketOnLoadAbsence
+            implements HandshakeAbsence {
+
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) {
+            ClientHandshakeContext chc = (ClientHandshakeContext) context;
+
+            // Disable stateless resumption if server doesn't send the extension.
+            if (chc.statelessResumption) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.info(
+                            "Server doesn't support stateless resumption");
+                }
+                chc.statelessResumption = false;
+            }
         }
     }
 }

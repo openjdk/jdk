@@ -23,6 +23,7 @@
  */
 
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
@@ -141,6 +142,21 @@ static void test_corruption_on_realloc_growing()    { test_corruption_on_realloc
 DEFINE_TEST(test_corruption_on_realloc_growing, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
 static void test_corruption_on_realloc_shrinking()  { test_corruption_on_realloc(0x11, 0x10); }
 DEFINE_TEST(test_corruption_on_realloc_shrinking, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
+
+static void test_chunkpool_lock() {
+  if (!MemTracker::enabled()) {
+    tty->print_cr("Skipped");
+    return;
+  }
+  PrintNMTStatistics = true;
+  {
+    ChunkPoolLocker cpl;
+    char* mem = (char*)os::malloc(100, mtTest);
+    memset(mem - 16, 0, 100 + 16 + 2);
+    os::free(mem);
+  }
+}
+DEFINE_TEST(test_chunkpool_lock, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
 
 ///////
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -52,53 +52,19 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
-    int64_t           _value;
+
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _value(-1) {
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)) {
     }
-    virtual void enable_feature(int64_t value = 0) {
-      _value = value;
-    }
-    virtual void disable_feature() {
-      _value = -1;
-    }
+    virtual void enable_feature(int64_t value = 0) = 0;
+    virtual void disable_feature() = 0;
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    int64_t value()              { return _value; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
-
-   protected:
-    bool deps_all_enabled(RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = dep0;
-      bool enabled = true;
-      while (next != nullptr && enabled) {
-        enabled = next->enabled();
-        next = va_arg(va, RVFeatureValue*);
-      }
-      va_end(va);
-      return enabled;
-    }
-
-    void deps_string(stringStream& ss, RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = nullptr;
-      while ((next = va_arg(va, RVFeatureValue*)) != nullptr) {
-        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
-      }
-      va_end(va);
-    }
+    virtual void log_enabled() = 0;
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -117,8 +83,9 @@ class VM_Version : public Abstract_VM_Version {
   #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
   void update_flag() {                                                                                      \
       assert(enabled(), "Must be.");                                                                        \
+      DEBUG_ONLY(verify_deps(dep0, ##__VA_ARGS__));                                                         \
       if (FLAG_IS_DEFAULT(flag)) {                                                                          \
-        if (this->deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                  \
+        if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
@@ -149,40 +116,96 @@ class VM_Version : public Abstract_VM_Version {
 
   class RVExtFeatureValue : public RVFeatureValue {
     const uint32_t _cpu_feature_index;
+
    public:
     RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
       _cpu_feature_index(cpu_feature_index) {
     }
+    int cpu_feature_index() {
+      // Can be used to check, for example, v is declared before Zvfh in RV_EXT_FEATURE_FLAGS.
+      return _cpu_feature_index;
+    }
     bool enabled() {
       return RVExtFeatures::current()->support_feature(_cpu_feature_index);
     }
     void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
       RVExtFeatures::current()->set_feature(_cpu_feature_index);
     }
     void disable_feature() {
-      RVFeatureValue::disable_feature();
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
+    void log_enabled();
+
+   protected:
+    bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      bool enabled = true;
+      while (next != nullptr && enabled) {
+        enabled = next->enabled();
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+      return enabled;
+    }
+
+    void deps_string(stringStream& ss, RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = nullptr;
+      while ((next = va_arg(va, RVExtFeatureValue*)) != nullptr) {
+        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
+      }
+      va_end(va);
+    }
+
+#ifdef ASSERT
+    void verify_deps(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      assert(cpu_feature_index() >= 0, "must");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      while (next != nullptr) {
+        assert(next->cpu_feature_index() >= 0, "must");
+        // We only need to check depenency relationship for extension flags.
+        // The dependant ones must be declared before this, for example, v must be declared
+        // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
+        // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
+        // based on v.
+        assert(cpu_feature_index() > next->cpu_feature_index(), "Invalid");
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+    }
+#endif // ASSERT
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
-    bool _enabled;
+    static const int64_t DEFAULT_VALUE = -1;
+    int64_t _value;
+
    public:
     RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
-      _enabled(false) {
+      _value(DEFAULT_VALUE) {
     }
-    bool enabled()               { return _enabled; }
-    void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
-      _enabled = true;
+    bool enabled() { return _value != DEFAULT_VALUE; }
+    void enable_feature(int64_t value) {
+      assert(value != DEFAULT_VALUE, "Sanity");
+      _value = value;
     }
-    void disable_feature() {
-      RVFeatureValue::disable_feature();
-      _enabled = false;
-    }
+    void disable_feature() { _value = DEFAULT_VALUE; }
+    int64_t value() { return _value; }
+    void log_enabled();
   };
 
  public:
@@ -282,14 +305,14 @@ class VM_Version : public Abstract_VM_Version {
   decl(marchid           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* A unique encoding of the version of the processor implementation. */                      \
   decl(mimpid            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
+  /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
+  decl(mvendorid         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64 */                  \
   decl(satp_mode         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported) */ \
   decl(unaligned_scalar  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
   decl(unaligned_vector  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
-  /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
-  decl(mvendorid         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
 
   #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
@@ -475,7 +498,7 @@ private:
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
-  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+  constexpr static bool supports_recursive_fast_locking() { return true; }
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 

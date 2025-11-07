@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8205612
  * @run testng CallWithInterruptSet
- * @summary Test invoking Files methods with the interrupt status set
+ * @summary Test invoking Files methods with the interrupted status set
  */
 
 import java.io.InputStream;

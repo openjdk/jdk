@@ -863,7 +863,7 @@ Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr
 //                      \|/
 //                      Phi        # "Field" Phi
 //
-void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, GrowableArray<Node*> &alloc_worklist) {
   Node* ophi = curr_castpp->in(1);
   assert(ophi->is_Phi(), "Expected this to be a Phi node.");
 
@@ -1279,7 +1279,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   return true;
 }
 
-void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist) {
+void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist) {
   bool delay = _igvn->delay_transform();
   _igvn->set_delay_transform(true);
   _igvn->hash_delete(ophi);
@@ -1296,9 +1296,8 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
       castpps.push(use);
     } else if (use->is_AddP() || use->is_Cmp()) {
       others.push(use);
-    } else if (use->is_SafePoint()) {
-      // processed later
     } else {
+      // Safepoints to be processed later; other users aren't expected here
       assert(use->is_SafePoint(), "Unexpected user of reducible Phi %d -> %d:%s:%d", ophi->_idx, use->_idx, use->Name(), use->outcnt());
     }
   }
@@ -1307,7 +1306,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
-    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist);
+    reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist);
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -4153,6 +4152,11 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         // which contains this memory slice, otherwise skip over it.
         if (alloc == nullptr || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
+        } else if (C->get_alias_index(result->adr_type()) != alias_idx) {
+          assert(C->get_general_index(alias_idx) == C->get_alias_index(result->adr_type()), "should be projection for the same field/array element");
+          result = get_map(result->_idx);
+          assert(result != nullptr, "new projection should have been allocated");
+          break;
         }
       } else if (proj_in->is_MemBar()) {
         // Check if there is an array copy for a clone
@@ -4449,6 +4453,22 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       _compile->get_alias_index(tinst->add_offset(oopDesc::mark_offset_in_bytes()));
       _compile->get_alias_index(tinst->add_offset(oopDesc::klass_offset_in_bytes()));
       if (alloc->is_Allocate() && (t->isa_instptr() || t->isa_aryptr())) {
+        // Add a new NarrowMem projection for each existing NarrowMem projection with new adr type
+        InitializeNode* init = alloc->as_Allocate()->initialization();
+        assert(init != nullptr, "can't find Initialization node for this Allocate node");
+        auto process_narrow_proj = [&](NarrowMemProjNode* proj) {
+          const TypePtr* adr_type = proj->adr_type();
+          const TypePtr* new_adr_type = tinst->add_offset(adr_type->offset());
+          if (adr_type != new_adr_type && !init->already_has_narrow_mem_proj_with_adr_type(new_adr_type)) {
+            DEBUG_ONLY( uint alias_idx = _compile->get_alias_index(new_adr_type); )
+            assert(_compile->get_general_index(alias_idx) == _compile->get_alias_index(adr_type), "new adr type should be narrowed down from existing adr type");
+            NarrowMemProjNode* new_proj = new NarrowMemProjNode(init, new_adr_type);
+            igvn->set_type(new_proj, new_proj->bottom_type());
+            record_for_optimizer(new_proj);
+            set_map(proj, new_proj); // record it so ConnectionGraph::find_inst_mem() can find it
+          }
+        };
+        init->for_each_narrow_mem_proj_with_new_uses(process_narrow_proj);
 
         // First, put on the worklist all Field edges from Connection Graph
         // which is more accurate than putting immediate users from Ideal Graph.
@@ -4520,7 +4540,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // finishes. For now we just try to split out the SR inputs of the merge.
       Node* parent = n->in(1);
       if (reducible_merges.member(n)) {
-        reduce_phi(n->as_Phi(), alloc_worklist, memnode_worklist);
+        reduce_phi(n->as_Phi(), alloc_worklist);
 #ifdef ASSERT
         if (VerifyReduceAllocationMerges) {
           reduced_merges.push(n);
@@ -4712,11 +4732,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     }
     if (n->is_Phi() || n->is_ClearArray()) {
       // we don't need to do anything, but the users must be pushed
-    } else if (n->is_MemBar()) { // Initialize, MemBar nodes
-      // we don't need to do anything, but the users must be pushed
-      n = n->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
-      if (n == nullptr) {
-        continue;
+    } else if (n->is_MemBar()) { // MemBar nodes
+      if (!n->is_Initialize()) { // memory projections for Initialize pushed below (so we get to all their uses)
+        // we don't need to do anything, but the users must be pushed
+        n = n->as_MemBar()->proj_out_or_null(TypeFunc::Memory);
+        if (n == nullptr) {
+          continue;
+        }
       }
     } else if (n->is_CallLeaf()) {
       // Runtime calls with narrow memory input (no MergeMem node)
@@ -4733,6 +4755,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
       assert(n != nullptr && n->Opcode() == Op_SCMemProj, "memory projection required");
+    } else if (n->is_Proj()) {
+      assert(n->in(0)->is_Initialize(), "we only push memory projections for Initialize");
     } else {
 #ifdef ASSERT
       if (!n->is_Mem()) {
@@ -4774,6 +4798,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         memnode_worklist.append_if_missing(use);
       } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
+          memnode_worklist.append_if_missing(use);
+        }
+      } else if (use->is_Proj()) {
+        assert(n->is_Initialize(), "We only push projections of Initialize");
+        if (use->as_Proj()->_con == TypeFunc::Memory) { // Ignore precedent edge
           memnode_worklist.append_if_missing(use);
         }
 #ifdef ASSERT
@@ -4827,7 +4856,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       // First, update mergemem by moving memory nodes to corresponding slices
       // if their type became more precise since this mergemem was created.
       while (mem->is_Mem()) {
-        const Type *at = igvn->type(mem->in(MemNode::Address));
+        const Type* at = igvn->type(mem->in(MemNode::Address));
         if (at != Type::TOP) {
           assert (at->isa_ptr() != nullptr, "pointer type required.");
           uint idx = (uint)_compile->get_alias_index(at->is_ptr());
@@ -4947,7 +4976,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       record_for_optimizer(n);
     } else {
       assert(n->is_Allocate() || n->is_CheckCastPP() ||
-             n->is_AddP() || n->is_Phi(), "unknown node used for set_map()");
+             n->is_AddP() || n->is_Phi() || n->is_NarrowMemProj(), "unknown node used for set_map()");
     }
   }
 #if 0 // ifdef ASSERT

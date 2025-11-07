@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,14 @@ public interface GatheringByteChannel
      * the final position of each updated buffer, except the last updated
      * buffer, is guaranteed to be equal to that buffer's limit.
      *
-     * <p> Unless otherwise specified, a write operation will return only after
+     * <p> For many types of channels, a write operation will return only after
      * writing all of the <i>r</i> requested bytes.  Some types of channels,
      * depending upon their state, may write only some of the bytes or possibly
-     * none at all.  A socket channel in non-blocking mode, for example, cannot
-     * write any more bytes than are free in the socket's output buffer.
+     * none at all.  A socket channel in {@linkplain
+     * SelectableChannel#isBlocking non-blocking mode}, for example, cannot
+     * write any more bytes than are free in the socket's output buffer.  The
+     * write method may need to be invoked more than once to ensure that all
+     * {@linkplain ByteBuffer#hasRemaining remaining} bytes are written.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
@@ -120,7 +123,7 @@ public interface GatheringByteChannel
      *          If another thread interrupts the current thread
      *          while the write operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -158,7 +161,7 @@ public interface GatheringByteChannel
      *          If another thread interrupts the current thread
      *          while the write operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs

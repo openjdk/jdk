@@ -48,6 +48,12 @@
 // it calls the C++ code "xxx_C".  The generated nmethod is saved in the
 // CodeCache.  Exception handlers use the nmethod to get the callee-save
 // register OopMaps.
+//
+// Please ensure the return type of the runtime call matches its signature,
+// even if the return value is unused. This is crucial for correct handling
+// of runtime calls that return an oop and may trigger deoptimization
+// on return. See rematerialize_objects() in deoptimization.cpp.
+
 class CallInfo;
 
 //

@@ -1073,9 +1073,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
@@ -1541,9 +1539,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
