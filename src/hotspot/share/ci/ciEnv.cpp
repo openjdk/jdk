@@ -1057,9 +1057,7 @@ void ciEnv::register_method(ciMethod* target,
     }
 
     assert(offsets->value(CodeOffsets::Deopt) != -1, "must have deopt entry");
-
-    assert(compiler->type() == compiler_c2 ||
-           offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
+    assert(offsets->value(CodeOffsets::Exceptions) != -1, "must have exception entry");
 
     nm =  nmethod::new_nmethod(method,
                                compile_id(),
