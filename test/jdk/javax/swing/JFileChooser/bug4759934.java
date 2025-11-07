@@ -36,7 +36,6 @@ import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import javax.swing.JButton;
 import javax.swing.JDialog;
