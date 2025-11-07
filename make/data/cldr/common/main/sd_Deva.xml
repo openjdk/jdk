@@ -247,10 +247,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sun">आर्त</day>
 							<day type="mon">सू</day>
 							<day type="tue">मंग</day>
-							<day type="wed">बु॒ध</day>
+							<day type="wed">ॿुध</day>
 							<day type="thu">विस</day>
 							<day type="fri">जुम</day>
 							<day type="sat">छंछ</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">आ</day>
+							<day type="mon">सू</day>
+							<day type="tue">मं</day>
+							<day type="wed">ॿु</day>
+							<day type="thu">वि</day>
+							<day type="fri">जु</day>
+							<day type="sat">छं</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">आर्तवार</day>
@@ -434,15 +443,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>साल</displayName>
+				<relative type="-1">पोएं साल</relative>
+				<relative type="0">हिन साल</relative>
+				<relative type="1">ईंदड़ साल</relative>
 			</field>
 			<field type="quarter">
 				<displayName>टिमाही</displayName>
 			</field>
 			<field type="month">
 				<displayName>महिनो</displayName>
+				<relative type="-1">पोएं महिने</relative>
+				<relative type="0">हिन महिने</relative>
+				<relative type="1">ईंदड़ महिने</relative>
 			</field>
 			<field type="week">
 				<displayName>हफ्तो</displayName>
+				<relative type="-1">पोएं हफ़्ते</relative>
+				<relative type="0">हिन हफ़्ते</relative>
+				<relative type="1">ईंदड़ हफ़्ते</relative>
 			</field>
 			<field type="day">
 				<displayName>दीं॒हुं</displayName>
@@ -452,6 +470,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="weekday">
 				<displayName>हफ्ते जो दीं॒हुं</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">पोएं आर्तवार</relative>
+				<relative type="0">हिन आर्तवार</relative>
+				<relative type="1">ईंदड़ आर्तवार</relative>
 			</field>
 			<field type="dayperiod">
 				<displayName>दीं॒हुं/ रातु</displayName>
@@ -516,6 +539,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>अटलांटिक वक्त</generic>
 					<standard>अटलांटिक मअयारी वक्त</standard>
 					<daylight>अटलांटिक दीं॒ह जो वक्त</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>वक़्तु</generic>
+					<standard>एज़ोर्स मइयारी वक़्तु</standard>
+					<daylight>एज़ोर्स ऊनहारे जो वक़्तु</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
