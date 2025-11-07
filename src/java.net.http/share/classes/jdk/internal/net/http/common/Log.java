@@ -391,8 +391,7 @@ public abstract class Log implements System.Logger {
 
     public static void logError(Throwable t) {
         if (errors()) {
-            String s = Utils.stackTrace(t);
-            logger.log(Level.INFO, "ERROR: " + s);
+            logger.log(Level.INFO, "ERROR: " + t, t);
         }
     }
 
