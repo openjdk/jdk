@@ -275,7 +275,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins.
     // In eiher case, find the next marked object if any on this or a following card
     assert(!ctx->is_marked(left), "Was dealt with above");
-    HeapWord* right = MIN2(region->top(), tams);
+    HeapWord* right = MIN3(region->top(), tams, _rs->addr_for_card_index(last_relevant_card_index + 1));
     assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
     HeapWord* next = ctx->get_next_marked_addr(left, right);
 #ifdef ASSERT
