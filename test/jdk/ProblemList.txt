@@ -179,7 +179,7 @@ java/awt/Mixing/AWT_Mixing/JSliderInGlassPaneOverlapping.java 8158801 windows-al
 java/awt/Mixing/AWT_Mixing/JSliderOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JSpinnerOverlapping.java 8158801 windows-all
-java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801 windows-all
+java/awt/Mixing/AWT_Mixing/JTableInGlassPaneOverlapping.java 8158801,8357360 windows-all,linux-all
 java/awt/Mixing/AWT_Mixing/JTableOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaInGlassPaneOverlapping.java 8158801 windows-all
 java/awt/Mixing/AWT_Mixing/JTextAreaOverlapping.java 8158801 windows-all
