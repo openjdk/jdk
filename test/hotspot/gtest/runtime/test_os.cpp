@@ -1130,7 +1130,6 @@ TEST_VM(os, commit_memory_or_exit) {
 
   char* base = os::reserve_memory(size, mtTest, false);
   ASSERT_NOT_NULL(base);
-
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
   ASSERT_TRUE(os::uncommit_memory(base, size, false));
