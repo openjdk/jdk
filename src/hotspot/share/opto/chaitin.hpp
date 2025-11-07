@@ -143,7 +143,7 @@ public:
 
 private:
   // Number of registers this live range uses when it colors
-  uint16_t _num_regs;           // byte size of the value divided by 4
+  uint16_t _num_regs;           // byte size of the value divided by slot size which is 4
                                 // except _num_regs is kill count for fat_proj
 
   // For scalable register, num_regs may not be the actual physical register size.
