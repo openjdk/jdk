@@ -27,6 +27,14 @@
 #include "oops/resolvedFieldEntry.hpp"
 
 STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedFieldEntry> == true);
+
+// Detect inadvertently introduced trailing padding.
+class ResolvedFieldEntryWithExtra : public ResolvedFieldEntry {
+  u1 _extra_field;
+};
+STATIC_ASSERT(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
+
+// Detect added fields possibly inadvertently introducing internal padding.
 #ifdef _LP64
 STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 24);
 #else
