@@ -187,7 +187,7 @@ bool CgroupV1MemoryController::read_mem_swap(physical_memory_size_type& result) 
 bool CgroupV1MemoryController::read_hierarchical_mem_swap_val(physical_memory_size_type& result) {
   CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(reader(), "/memory.stat",
                                              "hierarchical_memsw_limit", "Hierarchical Memory and Swap Limit",
-                                             memswlimit);
+                                             result);
 }
 
 /* memory_and_swap_limit_in_bytes
@@ -211,7 +211,7 @@ bool CgroupV1MemoryController::memory_and_swap_limit_in_bytes(physical_memory_si
   if (memory_swap >= total_mem_swap) {
     physical_memory_size_type hiermswlimit = 0;
     if (uses_mem_hierarchy() && read_hierarchical_mem_swap_val(hiermswlimit) &&
-        hiermswlimit < upper_bound) {
+        hiermswlimit < total_mem_swap) {
       log_trace(os, container)("Using hierarchical memory swap limit " PHYS_MEM_TYPE_FORMAT, hiermswlimit);
       memory_swap = hiermswlimit;
     } else {

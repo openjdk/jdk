@@ -111,12 +111,13 @@
 #define CONTAINER_READ_NUMERICAL_KEY_VALUE_CHECKED(controller, filename, key, log_string, retval) \
 {                                                                                     \
   bool is_ok;                                                                         \
-  is_ok = controller->read_numerical_key_value(filename, key, &retval);               \
+  is_ok = controller->read_numerical_key_value(filename, key, retval);                \
   if (!is_ok) {                                                                       \
-    log_trace(os, container)(log_string " failed: %d", OSCONTAINER_ERROR);            \
-    return OSCONTAINER_ERROR;                                                         \
+    log_trace(os, container)(log_string " failed: -2");                               \
+    return false;                                                                     \
   }                                                                                   \
-  log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
+  log_trace(os, container)(log_string " is: " UINT64_FORMAT, retval);                 \
+  return true;                                                                        \
 }
 
 class CgroupController: public CHeapObj<mtInternal> {
