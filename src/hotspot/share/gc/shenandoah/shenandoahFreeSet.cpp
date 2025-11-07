@@ -408,19 +408,19 @@ void ShenandoahRegionPartitions::establish_old_collector_intervals(idx_t old_col
 void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
   assert (which_partition < NumPartitions, "Partition must be valid");
-  assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
   _used[int(which_partition)] += bytes;
   _available[int(which_partition)] -= bytes;
+  assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
+          "Must not use (%zu) more than capacity (%zu) after increase by %zu",
+          _used[int(which_partition)], _capacity[int(which_partition)], bytes);
 }
 
 void ShenandoahRegionPartitions::decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
   shenandoah_assert_heaplocked();
   assert (which_partition < NumPartitions, "Partition must be valid");
+  assert (_used[int(which_partition)] >= bytes, "Must not use less than zero after decrease");
   _used[int(which_partition)] -= bytes;
   _available[int(which_partition)] += bytes;
-  assert (_used[int(which_partition)] <= _capacity[int(which_partition)],
-          "Must not use (%zu) more than capacity (%zu) after decrease by %zu",
-          _used[int(which_partition)], _capacity[int(which_partition)], bytes);
 }
 
 void ShenandoahRegionPartitions::increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
@@ -1804,7 +1804,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
         return nullptr;
       }
       end = beg;
-      region = _heap->get_region(end);
     }
 
     if ((end - beg + 1) == num) {
