@@ -68,6 +68,7 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
     private SSLContext sslContext;
     private HttpTestServer h3Server;
     private String requestURI;
+    private static Logger clientLogger;
 
     @BeforeClass
     public void beforeClass() throws Exception {
@@ -115,7 +116,8 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         assertTrue(categories.contains("errors"),
                 "'errors' not found in " + categories);
 
-        // create a client that doesn't have the server's
+        // create a client without the test specific SSLContext
+        // so that the client doesn't have the server's
         // certificate
         final HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
@@ -123,12 +125,16 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         final URI reqURI = new URI(requestURI);
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(HTTP_3);
-        Logger serverLogger = Logger.getLogger("jdk.httpclient.HttpClient");
+        clientLogger = Logger.getLogger("jdk.httpclient.HttpClient");
 
         CopyOnWriteArrayList<LogRecord> records = new CopyOnWriteArrayList<>();
         Handler handler = new Handler() {
             @Override
             public void publish(LogRecord record) {
+                // forces the LogRecord to evaluate the caller
+                // while in the publish() method to make sure
+                // the source class name and source method name
+                // are correctly evaluated.
                 record.getSourceClassName();
                 records.add(record);
             }
@@ -136,7 +142,7 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
             @Override public void close() {
             }
         };
-        serverLogger.addHandler(handler);
+        clientLogger.addHandler(handler);
 
         try {
             final HttpRequest req1 = reqBuilder.copy().GET().build();

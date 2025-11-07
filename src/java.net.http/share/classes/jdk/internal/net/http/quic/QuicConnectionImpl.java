@@ -593,7 +593,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 sslHandshakeException = sslHandshakeException(cause);
                 if (Log.errors()) {
                     Log.logError("%s QUIC handshake failed: %s"
-                            .formatted(logTag(), message(cause)));
+                            .formatted(logTag(), cause));
                     Log.logError(cause);
                 }
                 handshakeCF.completeExceptionally(sslHandshakeException);
@@ -611,12 +611,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 return ssl;
             }
             return new SSLHandshakeException("QUIC connection establishment failed", cause);
-        }
-
-        private String message(Throwable cause) {
-            String message = cause.getMessage();
-            if (message != null && !message.isEmpty()) return message;
-            return cause.toString();
         }
 
         /**
