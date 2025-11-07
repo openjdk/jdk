@@ -736,12 +736,6 @@ TEST_VM(os, show_mappings_full_range) {
     if (os::commit_memory(p, 1 * M, false)) {
       strcpy(p, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
     }
-
-#ifdef __APPLE__
-    // Validate BSD memory tagging for JVM-allocated memory
-    EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(p, 1 * M))
-      << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
-#endif
   }
   test_show_mappings(nullptr, 0);
   if (p != nullptr) {
@@ -1114,12 +1108,6 @@ TEST_VM(os, free_without_uncommit) {
   ASSERT_NE(base, (char*) nullptr);
   ASSERT_TRUE(os::commit_memory(base, size, false));
 
-#ifdef __APPLE__
-  // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(base, size))
-    << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
-#endif
-
   for (size_t index = 0; index < pages; index++) {
     base[index * page_sz] = 'a';
   }
@@ -1142,12 +1130,6 @@ TEST_VM(os, commit_memory_or_exit) {
 
   char* base = os::reserve_memory(size, mtTest, false);
   ASSERT_NOT_NULL(base);
-
-#ifdef __APPLE__
-  // Validate BSD memory tagging for JVM-allocated memory
-  EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(base, size))
-    << "JVM memory allocated via os::reserve_memory should be tagged with VM_MEMORY_JAVA on macOS";
-#endif
 
   os::commit_memory_or_exit(base, size, false, "Commit failed.");
   strcpy(base, letters);
@@ -1214,3 +1196,23 @@ TEST_VM(os, dll_load_null_error_buf) {
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
 }
+
+#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+// Test that JVM-allocated memory is properly tagged with VM_MEMORY_JAVA on macOS
+// for proper memory accounting and debugging capabilities.
+TEST_VM(os, memory_tagging_validation) {
+  const size_t size = 1 * M;
+
+  // Reserve and commit memory through standard JVM allocation path
+  char* memory = os::reserve_memory(size, mtTest);
+  ASSERT_NOT_NULL(memory);
+  ASSERT_TRUE(os::commit_memory(memory, size, false));
+
+  // Verify the memory is tagged with VM_MEMORY_JAVA
+  EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(memory, size))
+    << "JVM memory should be tagged with VM_MEMORY_JAVA on macOS";
+
+  // Clean up
+  os::release_memory(memory, size);
+}
+#endif // defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)

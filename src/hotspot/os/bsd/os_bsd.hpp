@@ -35,7 +35,7 @@
 
 // Shared constant for mmap file descriptor used across BSD OS implementations
 static constexpr int bsd_mmap_fd =
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
   VM_MAKE_TAG(VM_MEMORY_JAVA);
 #else
   -1;

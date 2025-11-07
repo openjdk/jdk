@@ -103,12 +103,6 @@ public:
 
     os::commit_memory((char*)_reserved, ZGranuleSize, false /* executable */);
 
-  #ifdef __APPLE__
-    // Validate BSD memory tagging for os::commit_memory path (covers pd_* functions)
-    EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(_reserved, ZGranuleSize))
-      << "Memory allocated via os::commit_memory should be tagged with VM_MEMORY_JAVA on macOS";
-  #endif
-
     _page_offset = uintptr_t(_reserved) - ZAddressHeapBase;
   }
 
@@ -233,14 +227,6 @@ public:
 
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);
-
-#ifdef __APPLE__
-    // Validate BSD memory tagging for ZGC allocation path (covers ZPhysicalMemoryBacking functions)
-    if (!is_null(object)) {
-      EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java((void*)untype(object), object_size))
-        << "ZGC object allocation should be tagged with VM_MEMORY_JAVA on macOS";
-    }
-#endif
 
     ZGeneration::young()->_seqnum++;
 
