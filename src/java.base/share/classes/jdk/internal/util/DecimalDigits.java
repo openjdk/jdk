@@ -460,7 +460,7 @@ public final class DecimalDigits {
      */
     public static void appendPair(StringBuilder buf, int v) {
         int packed = DIGITS[v & 0x7f];
-        SharedSecrets.getJavaLangAccess()
-                     .appendLatin1(buf, (char) (packed & 0xFF), (char) (packed >> 8));
+        buf.append((char) (packed & 0xFF))
+            .append((char) (packed >> 8));
     }
 }

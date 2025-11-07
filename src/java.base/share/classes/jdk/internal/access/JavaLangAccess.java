@@ -384,17 +384,6 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Appends the two Latin-1 characters to the given {@code StringBuilder}.
-     * <p>
-     * This method is intended for internal use by {@code DecimalDigits.appendPair}.
-     *
-     * @param buf the {@code StringBuilder} to append to.
-     * @param c1 the first char to append.
-     * @param c2 the second char to append.
-     */
-    void appendLatin1(StringBuilder buf, char c1, char c2);
-
-    /**
      * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
