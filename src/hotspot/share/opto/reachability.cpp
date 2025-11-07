@@ -30,6 +30,7 @@
 #include "opto/reachability.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/runtime.hpp"
+#include "utilities/pair.hpp"
 
 /*
  * java.lang.ref.Reference::reachabilityFence support.
@@ -183,7 +184,7 @@ static bool is_interfering_sfpt_candidate(SafePointNode* sfpt) {
   } else if (sfpt->is_CallStaticJava() && sfpt->as_CallStaticJava()->is_uncommon_trap()) {
     return false; // uncommon traps are exit points
   }
-  return true;
+  return true; // a full-blown safepoint can interfere with a reachability fence and it's referent
 }
 
 void PhaseIdealLoop::insert_rf(Node* ctrl, Node* referent) {
@@ -379,18 +380,20 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
 //---------------------------- Phase 2 ---------------------------------
 
 // Linearly traverse CFG upwards starting at n until first merge point.
-// All encountered safepoints are recorded in safepoints list.
-static void linear_traversal(Node* n, Node_Stack& worklist, VectorSet& visited, Node_List& safepoints) {
-  for (Node* ctrl = n; ctrl != nullptr; ctrl = ctrl->in(0)) {
+// All encountered safepoints are recorded in safepoints list, except
+// the ones filtered out by is_interfering_sfpt_candidate().
+static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_Stack& stack, VectorSet& visited,
+                                                         Node_List& interfering_sfpts) {
+  for (Node* ctrl = ctrl_start; ctrl != nullptr; ctrl = ctrl->in(0)) {
     assert(ctrl->is_CFG(), "");
     if (visited.test_set(ctrl->_idx)) {
       return;
     } else {
       if (ctrl->is_Region()) {
-        worklist.push(ctrl, 1);
+        stack.push(ctrl, 1);
         return; // stop at merge points
       } else if (ctrl->is_SafePoint() && is_interfering_sfpt_candidate(ctrl->as_SafePoint())) {
-        safepoints.push(ctrl);
+        interfering_sfpts.push(ctrl);
       }
     }
   }
@@ -398,16 +401,18 @@ static void linear_traversal(Node* n, Node_Stack& worklist, VectorSet& visited, 
 
 // Enumerate all safepoints which are reachable from the RF to its referent through CFG.
 // Start at RF node and traverse CFG upwards until referent's control node is reached.
-static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoop* phase, Node_List& safepoints) {
+static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoop* phase,
+                                        Node_Stack& stack, VectorSet& visited,
+                                        Node_List& interfering_sfpts) {
+  assert(stack.is_empty(), "required");
+  assert(visited.is_empty(), "required");
+
   Node* referent = rf->referent();
   Node* referent_ctrl = phase->get_ctrl(referent);
   assert(phase->is_dominator(referent_ctrl, rf), "sanity");
 
-  VectorSet visited;
   visited.set(referent_ctrl->_idx); // end point
-
-  Node_Stack stack(0);
-  linear_traversal(rf, stack, visited, safepoints); // start point
+  enumerate_interfering_sfpts_linear_traversal(rf, stack, visited, interfering_sfpts); // starting point in CFG
   while (stack.is_nonempty()) {
     Node* cur = stack.node();
     uint  idx = stack.index();
@@ -419,11 +424,14 @@ static void enumerate_interfering_sfpts(ReachabilityFenceNode* rf, PhaseIdealLoo
 
     if (idx < cur->req()) {
       stack.set_index(idx + 1);
-      linear_traversal(cur->in(idx), stack, visited, safepoints);
+      enumerate_interfering_sfpts_linear_traversal(cur->in(idx), stack, visited, interfering_sfpts);
     } else {
       stack.pop();
     }
   }
+  // reset temporary structures to initial state
+  assert(stack.is_empty(), "required");
+  visited.clear();
 }
 
 // Start offset for reachability info on a safepoint node.
@@ -434,57 +442,67 @@ static uint rf_base_offset(SafePointNode* sfpt) {
 // Phase 2: migrate reachability info to safepoints.
 // All RFs are replaced with edges from corresponding referents to interfering safepoints.
 // Interfering safepoints are safepoint nodes which are reachable from the RF to its referent through CFG.
-bool PhaseIdealLoop::eliminate_reachability_fences() {
-  Compile::TracePhase tp(_t_reachability_eliminate);
+bool PhaseIdealLoop::expand_reachability_fences() {
+  Compile::TracePhase tp(_t_reachability_expand);
 
   assert(OptimizeReachabilityFences, "required");
   assert(C->post_loop_opts_phase(), "required");
   DEBUG_ONLY( int no_of_constant_rfs = 0; )
 
   ResourceMark rm;
-  Unique_Node_List redundant_rfs;
-  Node_List worklist;
-  for (int i = 0; i < C->reachability_fences_count(); i++) {
-    ReachabilityFenceNode* rf = C->reachability_fence(i);
-    assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
-    if (PreserveReachabilityFencesOnConstants) {
-      const Type* referent_t = igvn().type(rf->referent());
-      assert(referent_t != TypePtr::NULL_PTR, "redundant rf");
-      bool is_constant_rf = referent_t->singleton();
-      if (is_constant_rf) {
-        DEBUG_ONLY( no_of_constant_rfs += 1; )
-        continue; // don't eliminate constant rfs
-      }
-    }
-    if (!is_redundant_rf(rf, false /*rf_only*/)) {
-      Node_List safepoints;
-      enumerate_interfering_sfpts(rf, this, safepoints);
+  Unique_Node_List for_removal;
+  typedef Pair<SafePointNode*,Node*> ReachabilityEdge;
+  GrowableArray<ReachabilityEdge> reachability_edges;
+  {
+    // Reuse temporary structures to avoid allocating them for every single RF node.
+    Node_List sfpt_worklist;
+    Node_Stack stack(0);
+    VectorSet visited;
 
-      Node* referent = rf->referent();
-      while (safepoints.size() > 0) {
-        SafePointNode* sfpt = safepoints.pop()->as_SafePoint();
-        assert(is_dominator(get_ctrl(referent), sfpt), "");
-        assert(sfpt->req() == rf_base_offset(sfpt), "no extra edges allowed");
-        if (sfpt->find_edge(referent) == -1) {
-          worklist.push(sfpt);
-          worklist.push(referent);
+    for (int i = 0; i < C->reachability_fences_count(); i++) {
+      ReachabilityFenceNode* rf = C->reachability_fence(i);
+      assert(!is_redundant_rf(rf, true /*rf_only*/), "missed");
+      if (PreserveReachabilityFencesOnConstants) {
+        const Type* referent_t = igvn().type(rf->referent());
+        assert(referent_t != TypePtr::NULL_PTR, "redundant rf");
+        bool is_constant_rf = referent_t->singleton();
+        if (is_constant_rf) {
+          DEBUG_ONLY( no_of_constant_rfs += 1; )
+          continue; // leave RFs on constants intact
         }
       }
+      if (!is_redundant_rf(rf, false /*rf_only*/)) {
+        assert(sfpt_worklist.size() == 0, "not empty");
+        enumerate_interfering_sfpts(rf, this, stack, visited, sfpt_worklist);
+
+        Node* referent = rf->referent();
+        while (sfpt_worklist.size() > 0) {
+          SafePointNode* sfpt = sfpt_worklist.pop()->as_SafePoint();
+          assert(is_dominator(get_ctrl(referent), sfpt), "");
+          assert(sfpt->req() == rf_base_offset(sfpt), "no extra edges allowed");
+          if (sfpt->find_edge(referent) == -1) {
+            ReachabilityEdge p(sfpt, referent);
+            reachability_edges.push(p);
+          }
+        }
+      }
+      for_removal.push(rf);
     }
-    redundant_rfs.push(rf);
   }
-
-  while (worklist.size() > 0) {
-    Node* referent = worklist.pop();
-    Node* sfpt     = worklist.pop();
-    sfpt->add_req(referent);
-    igvn()._worklist.push(sfpt);
+  // Materialize reachability edges.
+  while (reachability_edges.length() > 0) {
+    ReachabilityEdge p = reachability_edges.pop();
+    SafePointNode* sfpt = p.first;
+    Node* referent = p.second;
+    if (sfpt->find_edge(referent) == -1) {
+      sfpt->add_req(referent);
+      igvn()._worklist.push(sfpt);
+    }
   }
-
-  // Eliminate redundant RFs.
-  bool progress = (redundant_rfs.size() > 0);
-  while (redundant_rfs.size() > 0) {
-    remove_rf(redundant_rfs.pop()->as_ReachabilityFence());
+  // Eliminate processed RFs. They become redundant once reachability edges are added.
+  bool progress = (for_removal.size() > 0);
+  while (for_removal.size() > 0) {
+    remove_rf(for_removal.pop()->as_ReachabilityFence());
   }
 
   assert(C->reachability_fences_count() == no_of_constant_rfs, "");

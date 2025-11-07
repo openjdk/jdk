@@ -2528,8 +2528,8 @@ void Compile::Optimize() {
   if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
     TracePhase tp1(_t_idealLoop);
     TracePhase tp2(_t_reachability);
-    PhaseIdealLoop::optimize(igvn, PostLoopOptsEliminateReachabilityFences);
-    print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
+    PhaseIdealLoop::optimize(igvn, PostLoopOptsExpandReachabilityFences);
+    print_method(PHASE_EXPAND_REACHABILITY_FENCES, 2);
     if (failing())  return;
     assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
   }

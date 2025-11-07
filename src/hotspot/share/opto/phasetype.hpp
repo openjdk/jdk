@@ -88,7 +88,7 @@
   flags(PHASEIDEALLOOP1,                "PhaseIdealLoop 1") \
   flags(PHASEIDEALLOOP2,                "PhaseIdealLoop 2") \
   flags(PHASEIDEALLOOP3,                "PhaseIdealLoop 3") \
-  flags(ELIMINATE_REACHABILITY_FENCES,  "Eliminate Reachability Fences") \
+  flags(EXPAND_REACHABILITY_FENCES,     "Expand Reachability Fences") \
   flags(AUTO_VECTORIZATION1_BEFORE_APPLY,                     "AutoVectorization 1, before Apply") \
   flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT,               "AutoVectorization 2, after Adjusting Pre-loop Limit") \
   flags(AUTO_VECTORIZATION4_AFTER_SPECULATIVE_RUNTIME_CHECKS, "AutoVectorization 3, after Adding Speculative Runtime Checks") \

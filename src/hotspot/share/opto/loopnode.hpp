@@ -1549,7 +1549,7 @@ public:
 #endif // ASSERT
  public:
   bool optimize_reachability_fences();
-  bool eliminate_reachability_fences();
+  bool expand_reachability_fences();
 
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,

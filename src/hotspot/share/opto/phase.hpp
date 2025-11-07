@@ -87,7 +87,7 @@ public:
     f(     _t_idealLoop,             "idealLoop")                \
     f(       _t_reachability,        "reachabilityFence")        \
     f(         _t_reachability_optimize,  "reachabilityFence_optimize") \
-    f(         _t_reachability_eliminate, "reachabilityFence_eliminate") \
+    f(         _t_reachability_expand, "reachabilityFence_expand") \
     f(       _t_autoVectorize,       "autoVectorize")            \
     f(     _t_idealLoopVerify,       "idealLoopVerify")          \
     f(     _t_ccp,                   "ccp")                      \

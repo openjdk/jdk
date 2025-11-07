@@ -4963,7 +4963,7 @@ void PhaseIdealLoop::build_and_optimize() {
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
-  bool do_eliminate_reachability_fences = (_mode == PostLoopOptsEliminateReachabilityFences);
+  bool do_expand_reachability_fences = (_mode == PostLoopOptsExpandReachabilityFences);
 
   bool old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -5031,7 +5031,7 @@ void PhaseIdealLoop::build_and_optimize() {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll &&
-                    !do_eliminate_reachability_fences && !_verify_me && !_verify_only &&
+                    !do_expand_reachability_fences && !_verify_me && !_verify_only &&
                     !bs->is_gc_specific_loop_opts_pass(_mode) ;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool do_optimize_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
@@ -5112,7 +5112,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_eliminate_reachability_fences) {
+  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_expand_reachability_fences) {
     _ltree_root->counted_loop( this );
   }
 
@@ -5143,7 +5143,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   if (stop_early) {
     assert(do_expensive_nodes || do_optimize_reachability_fences, "why are we here?");
-    // Use a change to optimize reachability fence nodes irrespective of
+    // Use the opportunity to optimize reachability fence nodes irrespective of
     // whether loop optimizations are performed or not.
     if (do_optimize_reachability_fences && optimize_reachability_fences()) {
       recompute_dom_depth();
@@ -5182,9 +5182,9 @@ void PhaseIdealLoop::build_and_optimize() {
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
 
-  if (do_eliminate_reachability_fences) {
+  if (do_expand_reachability_fences) {
     assert(C->post_loop_opts_phase(), "required");
-    if (eliminate_reachability_fences()) {
+    if (expand_reachability_fences()) {
       recompute_dom_depth();
       DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
     }

@@ -109,7 +109,7 @@ enum LoopOptsMode {
   LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
   LoopOptsVerify,
-  PostLoopOptsEliminateReachabilityFences
+  PostLoopOptsExpandReachabilityFences
 };
 
 // The type of all node counts and indexes.
