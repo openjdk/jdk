@@ -353,7 +353,7 @@
           "evacuation collection set (comprised of both young and old "     \
           "regions) is also bounded by this parameter.  In percents of "    \
           "total (young-generation) heap size.")                            \
-          range(1,100)                                                      \
+          range(0,100)                                                      \
                                                                             \
   product(double, ShenandoahEvacWaste, 1.2, EXPERIMENTAL,                   \
           "How much waste evacuations produce within the reserved space. "  \
