@@ -191,7 +191,7 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
-  // Exclude if young field 
+  //Exclude if young field
   if (_heap->is_in_young(field)) {
     return;
   }
