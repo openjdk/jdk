@@ -105,15 +105,6 @@ final class ApplicationBuilder {
         return Optional.ofNullable(externalApp);
     }
 
-    Optional<String> mainLauncherClassName() {
-        return launchers()
-                .map(ApplicationLaunchers::mainLauncher)
-                .flatMap(Launcher::startupInfo)
-                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
-                    return externalApplication().map(ExternalApplication::getMainClass);
-                });
-    }
-
     ApplicationBuilder appImageLayout(AppImageLayout v) {
         appImageLayout = v;
         return this;

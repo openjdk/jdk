@@ -23,6 +23,9 @@
 
 package jdk.jpackage.internal;
 
+import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_NAME;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LINUX_LAUNCHER_SHORTCUT;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_APP_STORE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_SIGNED;
@@ -49,12 +52,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.cli.OptionIdentifier;
+import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.cli.StandardAppImageFileOption.AppImageFileOptionScope;
+import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -64,7 +68,6 @@ import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.test.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -139,7 +142,7 @@ public class AppImageFileTest {
     public void testInavlidXml(List<String> xmlData) throws IOException {
         var ex = assertThrowsExactly(JPackageException.class, () -> createFromXml(xmlData, OperatingSystem.current(), tempFolder));
         Assertions.assertEquals(I18N.format("error.invalid-app-image-file", ".jpackage.xml", tempFolder), ex.getMessage());
-        assertNull(ex.getCause());
+        assertNotNull(ex.getCause());
     }
 
     @ParameterizedTest
@@ -156,8 +159,8 @@ public class AppImageFileTest {
             return this;
         }
 
-        AppBuilder launcherName(String v) {
-            launcherName = Objects.requireNonNull(v);
+        AppBuilder appName(String v) {
+            appName = Objects.requireNonNull(v);
             return this;
         }
 
@@ -180,20 +183,39 @@ public class AppImageFileTest {
             return new LauncherBuilder(name);
         }
 
-        ExternalApplication createExternalApplication() {
-            var mainLauncher = createMaunLauncher();
-            var appOptions = Options.concat(Options.of(Map.of(
-                    APP_VERSION, version,
-                    NAME, mainLauncher.name(),
-                    APPCLASS, mainLauncher.startupInfo().orElseThrow().qualifiedClassName())), extra.asObjectValues());
+        LauncherBuilder mainlauncher() {
+            return mainLauncherBuilder;
+        }
+
+        ExternalApplication createExternalApplication(OperatingSystem os) {
+            var mainLauncherInfo = mainLauncherBuilder.createLauncherInfo();
+
+            var appOptions = Options.concat(
+                    Options.of(Map.of(
+                            APP_VERSION, version,
+                            NAME, appName,
+                            APPCLASS, mainClass)
+                    ),
+                    extra.asObjectValues(),
+                    mainLauncherInfo.asOptions());
+
             return ExternalApplication.create(
                     appOptions,
                     addLauncherBuilders.stream()
                             .map(LauncherBuilder::createLauncherInfo)
-                            .map(LauncherInfo::asOptions).toList());
+                            .map(LauncherInfo::asOptions).toList(),
+                    os);
         }
 
-        Application createApplication() {
+        private Application createApplication() {
+            var mainLauncher = mainLauncherBuilder.createLauncher();
+
+            var fullExtra = extra.asStringValues();
+            if (OperatingSystem.isMacOS() && !fullExtra.containsKey(APPCLASS.getName())) {
+                fullExtra = new HashMap<>(fullExtra);
+                fullExtra.put(APPCLASS.getName(), mainClass);
+            }
+
             return new Application.Stub(
                     null,
                     null,
@@ -205,9 +227,9 @@ public class AppImageFileTest {
                     null,
                     Optional.empty(),
                     new ApplicationLaunchers(
-                            createMaunLauncher(),
+                            mainLauncher,
                             addLauncherBuilders.stream().map(LauncherBuilder::createLauncher).toList()).asList(),
-                    extra.asStringValues());
+                    fullExtra);
         }
 
         void createInDir(Path dir) {
@@ -218,19 +240,17 @@ public class AppImageFileTest {
                 return AppImageFile.load(layout);
             }).get();
 
-            assertEquals(createExternalApplication(), copy);
-        }
-
-        private Launcher createMaunLauncher() {
-            final var startupInfo = new LauncherStartupInfo.Stub(mainClass, List.of(), List.of(), List.of());
-            return new Launcher.Stub(launcherName, Optional.of(startupInfo),
-                    List.of(), false, null, Optional.empty(), null, Map.of());
+            assertEquals(createExternalApplication(OperatingSystem.current()), copy);
         }
 
 
         final class LauncherBuilder {
             private LauncherBuilder(String name) {
-                this.name = Objects.requireNonNull(name);
+                this.name = Optional.of(name);
+            }
+
+            private LauncherBuilder() {
+                this.name = Optional.empty();
             }
 
             LauncherBuilder service(boolean v) {
@@ -249,26 +269,60 @@ public class AppImageFileTest {
             }
 
             AppBuilder commit() {
-                addLauncherBuilders.add(this);
+                if (!isMainLauncher()) {
+                    addLauncherBuilders.add(this);
+                }
                 return AppBuilder.this;
             }
 
             private Launcher createLauncher() {
-                return new Launcher.Stub(name, Optional.empty(), List.of(), service,
-                        null, Optional.empty(), null, extra.asStringValues());
+                return new Launcher.Stub(
+                        name(),
+                        Optional.empty(),
+                        List.of(),
+                        service,
+                        null,
+                        Optional.empty(),
+                        null,
+                        extra.asStringValues());
+            }
+
+            private String name() {
+                if (isMainLauncher()) {
+                    return Objects.requireNonNull(appName);
+                } else {
+                    return name.orElseThrow();
+                }
+            }
+
+            private boolean isMainLauncher() {
+                return name.isEmpty();
             }
 
             private LauncherInfo createLauncherInfo() {
-                return new LauncherInfo(name, service, extra.asObjectValues());
+                var allProps = new ExtraPropertyBuilder(extra);
+                if (service) {
+                    allProps.add(LAUNCHER_AS_SERVICE, Boolean.valueOf(service));
+                }
+                allProps.add(LAUNCHER_NAME, name());
+                return LauncherInfo.create(allProps.asObjectValues());
             }
 
-            private final String name;
+            private final Optional<String> name;
             private boolean service;
             private final ExtraPropertyBuilder extra = new ExtraPropertyBuilder();
         }
 
 
         private static final class ExtraPropertyBuilder {
+
+            ExtraPropertyBuilder() {
+            }
+
+            ExtraPropertyBuilder(ExtraPropertyBuilder other) {
+                stringValues.putAll(other.stringValues);
+                objValues.putAll(other.objValues);
+            }
 
             ExtraPropertyBuilder add(Map<String, String> v) {
                 stringValues.putAll(v);
@@ -288,15 +342,16 @@ public class AppImageFileTest {
                 return Options.of(objValues);
             }
 
-            private Map<String, String> stringValues = new HashMap<>();
-            private Map<WithOptionIdentifier, Object> objValues = new HashMap<>();
+            private final Map<String, String> stringValues = new HashMap<>();
+            private final Map<WithOptionIdentifier, Object> objValues = new HashMap<>();
         }
 
 
         private String version = "1.0";
-        private String launcherName = "Foo";
+        private String appName = "Foo";
         private String mainClass = "Main";
         private final ExtraPropertyBuilder extra = new ExtraPropertyBuilder();
+        private final LauncherBuilder mainLauncherBuilder = new LauncherBuilder();
         private final List<LauncherBuilder> addLauncherBuilders = new ArrayList<>();
     }
 
@@ -321,7 +376,7 @@ public class AppImageFileTest {
         static final class Builder {
 
             Builder expect(AppBuilder builder) {
-                return expect(builder.createExternalApplication());
+                return expect(builder.createExternalApplication(os));
             }
 
             Builder expect(ExternalApplication v) {
@@ -330,7 +385,7 @@ public class AppImageFileTest {
             }
 
             Builder xml(String... xml) {
-                xmlData = createXml(xml);
+                xmlData = List.of(xml);
                 return this;
             }
 
@@ -340,7 +395,7 @@ public class AppImageFileTest {
             }
 
             ReadTestSpec create() {
-                return new ReadTestSpec(expected, xmlData, os);
+                return new ReadTestSpec(expected, createXml(os, xmlData.toArray(String[]::new)), os);
             }
 
             private ExternalApplication expected;
@@ -358,24 +413,52 @@ public class AppImageFileTest {
         return Stream.of(Map.of("a", "b"), Map.of("foo", ""));
     }
 
-    private static Stream<List<String>> testInavlidXml() {
-        return Stream.of(List.of("<foo/>"),
+    private static List<List<String>> testInavlidXml() {
+        List<List<String>> data = new ArrayList<>();
+
+        var os = OperatingSystem.current();
+
+        data.addAll(List.of
+                (List.of("<foo/>"),
                 createValidBodyWithHeader(null, null),
                 createValidBodyWithHeader("foo", "foo"),
                 createValidBodyWithHeader(null, "foo"),
                 createValidBodyWithHeader("foo", null),
-                createValidBodyWithHeader(AppImageFile.getPlatform(), null),
-                createValidBodyWithHeader(AppImageFile.getPlatform(), "foo"),
+                createValidBodyWithHeader(AppImageFile.getPlatform(os), null),
+                createValidBodyWithHeader(AppImageFile.getPlatform(os), "foo"),
                 createValidBodyWithHeader(null, AppImageFile.getVersion()),
                 createValidBodyWithHeader("foo", AppImageFile.getVersion()),
-                createXml("<main-launcher></main-launcher>"),
-                createXml("<main-launcher>Foo</main-launcher>", "<main-class></main-class>"),
-                createXml("<add-launcher>A</add-launcher>"),
-                createXml(createValidBodyWithHeader(AppImageFile.getPlatform(), AppImageFile.getVersion()).toArray(String[]::new))
-        );
+                createXml(os, "<main-launcher></main-launcher>"),
+                createXml(os, "<main-launcher>A</main-launcher>"),
+                createXml(os, "<add-launcher>A</add-launcher>"),
+                createXml(os, createValidBodyWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion()).toArray(String[]::new)),
+                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
+                    // Missing 'app-version' element.
+                    return List.of(
+                            "<main-launcher name='D'/>",
+                            "<main-class>Hello</main-class>"
+                    );
+                })
+        ));
+
+        if (OperatingSystem.isMacOS()) {
+            data.add(createXml(os, "<main-launcher name='Foo'/>", "<main-class></main-class>"));
+        }
+
+        return data;
     }
 
     private static List<String> createValidBodyWithHeader(String platform, String version) {
+        return createWithHeader(platform, version, () -> {
+            return List.of(
+                    "<main-launcher name='D'/>",
+                    "<app-version>100</app-version>",
+                    "<main-class>Hello</main-class>"
+            );
+        });
+    }
+
+    private static List<String> createWithHeader(String platform, String version, Supplier<List<String>> body) {
 
         var sb = new StringBuilder();
         sb.append("<jpackage-state");
@@ -387,13 +470,7 @@ public class AppImageFileTest {
         });
         sb.append(">");
 
-        return List.of(
-                sb.toString(),
-                "<main-launcher>D</main-launcher>",
-                "<app-version>100</app-version>",
-                "<main-class>Hello</main-class>",
-                "</jpackage-state>"
-        );
+        return Stream.of(List.of(sb.toString()), body.get(), List.of("</jpackage-state>")).flatMap(Collection::stream).toList();
     }
 
 
@@ -405,16 +482,17 @@ public class AppImageFileTest {
                 "<x>property-x</x>",
                 "<signed>true</signed>",
                 "<app-store>False</app-store>",
-                "<add-launcher name='add-launcher' service='true'>",
+                "<add-launcher name='add-launcher'>",
+                "  <service>true</service>",
                 "  <linux-shortcut>true</linux-shortcut>",
                 "  <win-shortcut>false</win-shortcut>",
                 "  <win-menu>app-dir</win-menu>",
                 "</add-launcher>",
-                "<main-launcher>Bar</main-launcher>"
+                "<main-launcher name='Bar'/>"
         );
 
         Supplier<AppBuilder.LauncherBuilder> appBuilder = () -> {
-            return build().mainClass("Foo").version("1.34").launcherName("Bar").addlauncher("add-launcher").service(true);
+            return build().mainClass("Foo").version("1.34").appName("Bar").addlauncher("add-launcher").service(true);
         };
 
         List<ReadTestSpec> testCases = new ArrayList<>();
@@ -435,15 +513,20 @@ public class AppImageFileTest {
     private static Stream<ReadTestSpec> testValidXml() {
         return Stream.concat(platformSpecificProperties().stream(), Stream.of(
                 ReadTestSpec.build().expect(
-                        build().version("72").launcherName("Y").mainClass("main.Class")
+                        build().version("72").appName("Y").mainClass("main.Class")
                 ).xml(
-                        "<main-launcher>Y</main-launcher>",
+                        "<main-launcher name='Y'/>",
                         "<app-version>72</app-version>",
                         "<main-class>main.Class</main-class>"
                 ),
                 ReadTestSpec.build().os(OperatingSystem.LINUX).expect(
-                        build().addlauncher("another-launcher").addExtra(LINUX_LAUNCHER_SHORTCUT, new LauncherShortcut(LauncherShortcutStartupDirectory.APP_DIR)).commit()
-                        .addlauncher("service-launcher").service(true).commit()
+                        build()
+                        .addlauncher("another-launcher")
+                                .addExtra(LINUX_LAUNCHER_SHORTCUT, new LauncherShortcut(LauncherShortcutStartupDirectory.APP_DIR))
+                                .commit()
+                        .addlauncher("service-launcher")
+                                .service(true)
+                                .commit()
                 ).xml(
                         "<app-version>1.2</app-version>",
                         "<app-version>1.0</app-version>",
@@ -458,8 +541,8 @@ public class AppImageFileTest {
                         "  <linux-shortcut>true</linux-shortcut>",
                         "  <linux-shortcut>app-<!-- This is a comment -->dir</linux-shortcut>",
                         "</add-launcher>",
-                        "<main-launcher>Bar</main-launcher>",
-                        "<main-launcher>Foo</main-launcher>"
+                        "<main-launcher name='Bar'/>",
+                        "<main-launcher name='Foo'/>"
                 )
         ).map(ReadTestSpec.Builder::create));
     }
@@ -471,8 +554,7 @@ public class AppImageFileTest {
         data.add("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
         data.addAll(xmlData);
 
-        Files.write(path, data, StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
+        Files.write(path, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
         ExternalApplication image = AppImageFile.load(DUMMY_LAYOUT.resolveAt(appImageDir), os);
         return image;
@@ -482,27 +564,56 @@ public class AppImageFileTest {
         Assertions.assertEquals(OM.map(expected), OM.map(actual));
     }
 
-    private static Map<String, Map<OptionIdentifier, Object>> additionaLaunchersAsMap(ExternalApplication file) {
-        return file.getAddLaunchers().stream().collect(Collectors.toMap(LauncherInfo::name, li -> {
-            return li.asOptions().toMap();
+    private static Map<String, Map<String, Object>> additionaLaunchersAsMap(ExternalApplication file) {
+        return file.addLaunchers().stream().collect(toMap(LauncherInfo::name, li -> {
+            return toPropertyMap(li.asOptions());
         }));
     }
 
-    private static final List<String> createXml(String ...xml) {
+    private static final List<String> createXml(OperatingSystem os, String ...xml) {
         final List<String> content = new ArrayList<>();
-        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(), AppImageFile.getVersion()));
+        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(os), AppImageFile.getVersion()));
         content.addAll(List.of(xml));
         content.add("</jpackage-state>");
         return content;
     }
 
+    private static Map<String, Object> toPropertyMap(Options options) {
+        return options.toMap().entrySet().stream().collect(toMap(e -> {
+            return Objects.requireNonNull(OPTIONS.get(e.getKey()));
+        }, Map.Entry::getValue));
+    }
+
     @TempDir
     private Path tempFolder;
 
-    private static final ObjectMapper OM = ObjectMapper.standard().subst(ExternalApplication.class, "getAddLaunchers", obj -> {
-        return additionaLaunchersAsMap(obj);
-    }).subst(ExternalApplication.class, "getExtra", obj -> {
-        return obj.getExtra().toMap();
-    }).exceptLeafClasses().add(NAME.id().getClass().getName()).apply().create();
+    private static final ObjectMapper OM;
+
     private static final ApplicationLayout DUMMY_LAYOUT = ApplicationLayout.build().setAll("").create();
+
+    private final static Map<OptionIdentifier, String> OPTIONS = Stream.of(AppImageFileOptionScope.values())
+            .flatMap(AppImageFileOptionScope::options)
+            .collect(toMap(OptionValue::id, OptionValue::getName));
+
+    static {
+        var app = build().addlauncher("foo").commit().createExternalApplication(OperatingSystem.current());
+
+        OM = ObjectMapper.standard()
+                .subst(ExternalApplication.class, "addLaunchers", obj -> {
+                    return additionaLaunchersAsMap(obj);
+                })
+                .subst(ExternalApplication.class, "extra", obj -> {
+                    return toPropertyMap(obj.extra());
+                })
+                .subst(LauncherInfo.class, "extra", obj -> {
+                    return toPropertyMap(obj.extra());
+                })
+                .subst(LauncherInfo.class, "asOptions", obj -> {
+                    return toPropertyMap(obj.asOptions());
+                })
+                .exceptLeafClasses().add(NAME.id().getClass().getName()).apply()
+                .exceptSomeMethods(app.getClass()).add("options").apply()
+                .exceptSomeMethods(app.mainLauncher().getClass()).add("options").apply()
+                .create();
+    }
 }

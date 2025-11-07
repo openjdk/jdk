@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib
 import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
+import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_CATEGORY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.cli.StandardOption.MAC_APP_STORE;
@@ -199,7 +200,8 @@ final class MacFromOptions {
             // AppImageFile assumes the main launcher start up info is available when
             // it is constructed from Application instance.
             // This happens when jpackage signs predefined app image.
-            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(superAppBuilder.mainLauncherClassName().orElseThrow());
+            final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
+            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(APPCLASS.getFrom(appImageFileOptions));
             final var launchers = superAppBuilder.launchers().orElseThrow();
             final var mainLauncher = ApplicationBuilder.overrideLauncherStartupInfo(launchers.mainLauncher(), mainLauncherStartupInfo);
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
@@ -223,7 +225,7 @@ final class MacFromOptions {
         final boolean appStore;
 
         if (PREDEFINED_APP_IMAGE.containsIn(options) && OptionUtils.bundlingOperation(options) != SIGN_MAC_APP_IMAGE) {
-            final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().getExtra();
+            final var appImageFileOptions = superAppBuilder.externalApplication().orElseThrow().extra();
             sign = MAC_SIGN.getFrom(appImageFileOptions);
             appStore = MAC_APP_STORE.getFrom(appImageFileOptions);
         } else {
@@ -275,7 +277,7 @@ final class MacFromOptions {
         final var builder = new MacPackageBuilder(createPackageBuilder(options, app.app(), type));
 
         app.externalApp()
-                .map(ExternalApplication::getExtra)
+                .map(ExternalApplication::extra)
                 .flatMap(MAC_SIGN::findIn)
                 .ifPresent(builder::predefinedAppImageSigned);
 

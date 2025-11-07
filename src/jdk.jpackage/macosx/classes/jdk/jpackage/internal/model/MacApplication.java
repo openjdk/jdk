@@ -25,12 +25,14 @@
 package jdk.jpackage.internal.model;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_APP_STORE;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_MAIN_CLASS;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_SIGNED;
 
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -79,7 +81,14 @@ public interface MacApplication extends Application, MacApplicationMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return Stream.of(ExtraAppImageFileField.values()).collect(toMap(ExtraAppImageFileField::fieldName, x -> x.asString(this)));
+        return Stream.of(ExtraAppImageFileField.values()).map(field -> {
+            return field.findStringValue(this).map(value -> {
+                return Map.entry(field.fieldName(), value);
+            });
+        })
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public static MacApplication create(Application app, MacApplicationMixin mixin) {
@@ -87,23 +96,31 @@ public interface MacApplication extends Application, MacApplicationMixin {
     }
 
     public enum ExtraAppImageFileField {
-        SIGNED(MAC_SIGNED, app -> Boolean.toString(app.sign())),
-        APP_STORE(MAC_APP_STORE, app -> Boolean.toString(app.appStore()));
+        SIGNED(MAC_SIGNED, app -> {
+            return Optional.of(Boolean.toString(app.sign()));
+        }),
+        APP_STORE(MAC_APP_STORE, app -> {
+            return Optional.of(Boolean.toString(app.appStore()));
+        }),
+        APP_CLASS(MAC_MAIN_CLASS, app -> {
+            return app.mainLauncher().flatMap(Launcher::startupInfo).map(LauncherStartupInfo::qualifiedClassName);
+        }),
+        ;
 
-        ExtraAppImageFileField(OptionValue<?> option, Function<MacApplication, String> getter) {
+        ExtraAppImageFileField(OptionValue<?> option, Function<MacApplication, Optional<String>> getter) {
             this.fieldName = option.getName();
             this.getter = getter;
         }
 
-        public String fieldName() {
+        String fieldName() {
             return fieldName;
         }
 
-        String asString(MacApplication app) {
+        Optional<String> findStringValue(MacApplication app) {
             return getter.apply(app);
         }
 
         private final String fieldName;
-        private final Function<MacApplication, String> getter;
+        private final Function<MacApplication, Optional<String>> getter;
     }
 }

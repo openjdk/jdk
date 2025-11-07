@@ -24,21 +24,29 @@
  */
 package jdk.jpackage.internal.model;
 
-import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
-import static jdk.jpackage.internal.cli.StandardOption.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.cli.StandardOption.NAME;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.cli.StandardAppImageFileOption.AppImageFileOptionScope;
+import jdk.jpackage.internal.cli.WithOptionIdentifier;
 
 
 /**
  * Description of an external application image.
  */
-public interface ExternalApplication {
+public sealed interface ExternalApplication {
+
+    /**
+     * Returns the main launcher configured for the application.
+     * @return the main launcher configured for the application
+     */
+    LauncherInfo mainLauncher();
 
     /**
      * Returns the list of additional launchers configured for the application.
@@ -46,120 +54,131 @@ public interface ExternalApplication {
      * Returns an empty list for an application without additional launchers.
      * @return the list of additional launchers configured for the application
      */
-    List<LauncherInfo> getAddLaunchers();
+    List<LauncherInfo> addLaunchers();
 
     /**
      * Returns application version.
      * @return the application version
      */
-    String getAppVersion();
+    String appVersion();
 
     /**
      * Returns application name.
      * @return the application name
      */
-    String getAppName();
-
-    /**
-     * Returns main launcher name.
-     * @return the main launcher name
-     */
-    String getLauncherName();
-
-    /**
-     * Returns main class name.
-     * @return the main class name
-     */
-    String getMainClass();
+    String appName();
 
     /**
      * Returns additional properties.
      * @return the additional properties
      */
-    Options getExtra();
+    Options extra();
 
     /**
-     * Additional launcher description.
-     *
-     * @param name    the name of the additional launcher, see
-     *                {@link Launcher#name()}
-     * @param service {@code true} if the additional launcher should be installed as
-     *                service, see {@link Launcher#isService()}
-     * @param extra   platform-specific properties of the additional launcher
+     * Launcher description.
      */
-    record LauncherInfo(String name, boolean service, Options extra) {
-        public LauncherInfo {
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(extra);
-            if (name.isBlank()) {
-                throw new IllegalArgumentException();
-            }
-        }
+    sealed interface LauncherInfo {
 
-        public LauncherInfo(String name, boolean service) {
-            this(name, service, Options.concat());
-        }
+        /**
+         * Gets the name of the launcher.
+         * @return the name of the launcher
+         */
+        String name();
 
-        public LauncherInfo(Options options) {
-            this(NAME.getFrom(options), LAUNCHER_AS_SERVICE.getFrom(options), options.copyWithout(NAME.id(), LAUNCHER_AS_SERVICE.id()));
-        }
+        /**
+         * Gets optional properties of the launcher.
+         * @return the optional properties of the launcher
+         */
+        Options extra();
 
         /**
          * Returns {@code Options} representation of this instance.
          * <p>
-         * Return value contains {@link #NAME} and {@link #LAUNCHER_AS_SERVICE}
-         * values merged with the {@code Options} instance returned by the
-         * {@link #extra()} method.
+         * Return value contains the value of {@link #NAME} property merged with the
+         * {@code Options} instance returned by the {@link #extra()} method.
          *
          * @return the {@code Options} representation of this instance
          */
-        public Options asOptions() {
-            return Options.concat(Options.of(Map.of(NAME, name, LAUNCHER_AS_SERVICE, service)), extra);
+        default Options asOptions() {
+            return Options.concat(Options.of(Map.of(NAME, name())), extra());
+        }
+
+        static LauncherInfo create(Options options) {
+            return new Internal.DefaultLauncherInfo(options);
         }
     }
 
-    static ExternalApplication create(Options appOptions, List<Options> addLauncherOptions) {
-        Objects.requireNonNull(appOptions);
-        Objects.requireNonNull(addLauncherOptions);
+    static ExternalApplication create(Options appOptions, List<Options> addLauncherOptions, OperatingSystem os) {
 
-        var addLaunchres = addLauncherOptions.stream().map(LauncherInfo::new).toList();
+        var launcherRecognizedOptions = AppImageFileOptionScope.LAUNCHER.options(os).map(WithOptionIdentifier::id).toList();
 
-        var appVersion = APP_VERSION.getFrom(appOptions);
-        var appName = NAME.getFrom(appOptions);
-        var mainClass = APPCLASS.getFrom(appOptions);
-        var extra = appOptions.copyWithout(APP_VERSION.id(), NAME.id(), APPCLASS.id());
+        var recognizedOptions = Stream.concat(
+                launcherRecognizedOptions.stream(),
+                AppImageFileOptionScope.APP.options(os).map(WithOptionIdentifier::id)
+        ).toList();
 
-        return new ExternalApplication() {
+        appOptions = appOptions.copyWith(recognizedOptions);
 
-            @Override
-            public List<LauncherInfo> getAddLaunchers() {
-                return addLaunchres;
+        var addLaunchres = addLauncherOptions.stream().map(options -> {
+            return options.copyWith(launcherRecognizedOptions);
+        }).map(Internal.DefaultLauncherInfo::new).map(LauncherInfo.class::cast).toList();
+
+        return new Internal.DefaultExternalApplication(appOptions, addLaunchres);
+    }
+
+
+    static final class Internal {
+
+        private Internal() {
+        }
+
+        private record DefaultExternalApplication(Options options, List<LauncherInfo> addLaunchers) implements ExternalApplication {
+
+            DefaultExternalApplication {
+                Objects.requireNonNull(options);
+                Objects.requireNonNull(addLaunchers);
             }
 
             @Override
-            public String getAppVersion() {
-                return appVersion;
+            public String appVersion() {
+                return APP_VERSION.getFrom(options);
             }
 
             @Override
-            public String getAppName() {
-                return appName;
+            public String appName() {
+                return NAME.getFrom(options);
             }
 
             @Override
-            public String getLauncherName() {
-                return appName;
+            public Options extra() {
+                return options
+                        .copyWithout(APP_VERSION.id(), NAME.id())
+                        .copyWithout(AppImageFileOptionScope.LAUNCHER.options().map(WithOptionIdentifier::id).toList());
             }
 
             @Override
-            public String getMainClass() {
-                return mainClass;
+            public LauncherInfo mainLauncher() {
+                return new DefaultLauncherInfo(options.copyWithout(extra().ids()));
+            }
+        }
+
+        private record DefaultLauncherInfo(Options options) implements LauncherInfo {
+
+            DefaultLauncherInfo {
+                Objects.requireNonNull(options);
             }
 
             @Override
-            public Options getExtra() {
-                return extra;
+            public String name() {
+                return NAME.getFrom(options);
             }
-        };
+
+            @Override
+            public Options extra() {
+                return options
+                        .copyWithout(NAME.id())
+                        .copyWithout(AppImageFileOptionScope.APP.options().map(WithOptionIdentifier::id).toList());
+            }
+        }
     }
 }

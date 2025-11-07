@@ -25,19 +25,17 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.cli.StandardOption.ADDITIONAL_LAUNCHERS;
-import static jdk.jpackage.internal.cli.StandardOption.ICON;
-import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
 import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.DESCRIPTION;
-import static jdk.jpackage.internal.cli.StandardOption.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.NAME;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_APP_IMAGE;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.cli.Options;
+import jdk.jpackage.internal.cli.WithOptionIdentifier;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.ExternalApplication;
 
@@ -55,13 +53,11 @@ record OptionsTransformer(Options mainOptions, Optional<ExternalApplication> ext
     Options appOptions() {
         return externalApp.map(ea -> {
             var overrideOptions = Map.<WithOptionIdentifier, Object>of(
-                    NAME, ea.getAppName(),
-                    APPCLASS, ea.getMainClass(),
-                    APP_VERSION, ea.getAppVersion(),
-                    ADDITIONAL_LAUNCHERS, ea.getAddLaunchers().stream().map(li -> {
+                    NAME, ea.appName(),
+                    APP_VERSION, ea.appVersion(),
+                    ADDITIONAL_LAUNCHERS, ea.addLaunchers().stream().map(li -> {
                         return Options.concat(li.extra(), Options.of(Map.of(
                                 NAME, li.name(),
-                                LAUNCHER_AS_SERVICE, li.service(),
                                 // This should prevent the code building the Launcher instance
                                 // from the Options object from trying to create a startup info object.
                                 PREDEFINED_APP_IMAGE, PREDEFINED_APP_IMAGE.getFrom(mainOptions),
@@ -74,13 +70,13 @@ record OptionsTransformer(Options mainOptions, Optional<ExternalApplication> ext
                                 // All launchers in the predefined app image will have the same description.
                                 // This is wrong and should be revised.
                                 //
-                                DESCRIPTION, DESCRIPTION.findIn(mainOptions).orElseGet(ea::getAppName)
+                                DESCRIPTION, DESCRIPTION.findIn(mainOptions).orElseGet(ea::appName)
                             )));
                     }).toList()
             );
             return Options.concat(
                     Options.of(overrideOptions),
-                    ea.getExtra(),
+                    ea.extra(),
                     // Remove icon if any from the application/launcher options.
                     // If the icon is specified in the main options, it for the installer.
                     mainOptions.copyWithout(ICON.id())
