@@ -103,4 +103,14 @@ class AsanPoisoningHelper {
   }
 };
 
+class outputStream;
+
+#ifdef ADDRESS_SANITIZER
+struct Asan : public AllStatic {
+  static void initialize();
+  static bool had_error();
+  static void report(outputStream* st);
+};
+#endif
+
 #endif // SHARE_SANITIZERS_ADDRESS_HPP

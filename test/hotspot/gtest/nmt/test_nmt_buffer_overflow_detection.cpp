@@ -182,31 +182,14 @@ TEST_VM(NMT, test_realloc) {
 
 #else // ASAN is enabled
 
-#define TEST_VM_FATAL_ASAN_MSG(category, name, msg)                \
-  static void test_  ## category ## _ ## name ## _();               \
-                                                                    \
-  static void child_ ## category ## _ ## name ## _() {              \
-    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
-    test_ ## category ## _ ## name ## _();                          \
-    gtest_exit_from_child_vm(0);                                    \
-  }                                                                 \
-                                                                    \
-  TEST(category, CONCAT(name, _vm_assert)) {                        \
-    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
-                ::testing::KilledBySignal(SIGABRT),                 \
-                msg);                                               \
-  }                                                                 \
-                                                                    \
-  void test_ ## category ## _ ## name ## _()
-
-#define DEFINE_ASAN_TEST(test_function)                            \
-  TEST_VM_FATAL_ASAN_MSG(NMT_ASAN, test_function, ".*AddressSanitizer.*") {     \
+#define DEFINE_ASAN_TEST(test_function)                                                   \
+  TEST_VM_FATAL_ERROR_MSG(NMT_ASAN, test_function, ".*AddressSanitizer.*") {              \
     if (MemTracker::tracking_level() > NMT_off) {                                         \
       test_function ();                                                                   \
     } else {                                                                              \
-      /* overflow detection requires NMT to be on. If off, fake assert. */                \
+      /* poisoning header/footer of memory requires NMT to be on. If off, fake assert. */ \
       guarantee(false,                                                                    \
-                "fake message ignore this - .*AddresssSanitizer.*");                      \
+                "fake message ignore this - AddressSanitizer");                           \
     }                                                                                     \
   }
 
