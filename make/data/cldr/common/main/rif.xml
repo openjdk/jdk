@@ -14,10 +14,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ar" draft="unconfirmed">taɛrabt</language>
 			<language type="ar_001" draft="unconfirmed">taɛrabt tamaynut</language>
+			<language type="as" draft="unconfirmed">asamis</language>
 			<language type="bn" draft="unconfirmed">tabanɣaliyt</language>
+			<language type="cs" draft="unconfirmed">ttcik</language>
 			<language type="de" draft="unconfirmed">talimant</language>
 			<language type="en" draft="unconfirmed">taglinzit</language>
-			<language type="en_GB" alt="short" draft="unconfirmed">taglinzit (UK)</language>
 			<language type="es" draft="unconfirmed">taseppanyut</language>
 			<language type="fr" draft="unconfirmed">tafransist</language>
 			<language type="hi_Latn" draft="unconfirmed">tahindawiyt</language>
@@ -29,7 +30,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl_BE" draft="unconfirmed">taflamant</language>
 			<language type="pl" draft="unconfirmed">tapulandiyt</language>
 			<language type="pt" draft="unconfirmed">tapurtuɣaliyt</language>
-			<language type="pt_BR" draft="unconfirmed">tapurtuɣaliyt (brazil)</language>
 			<language type="pt_PT" draft="unconfirmed">tapurtuɣaliyt (uruppa)</language>
 			<language type="rif">Tarifit</language>
 			<language type="ru" draft="unconfirmed">tarusiyt</language>
@@ -46,8 +46,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<scripts>
 			<script type="Arab" draft="unconfirmed">aɛrab</script>
 			<script type="Cyrl" draft="unconfirmed">asirilik</script>
-			<script type="Hans" draft="unconfirmed">yehwen</script>
-			<script type="Hans" alt="stand-alone" draft="unconfirmed">yehwen Han</script>
+			<script type="Hans" draft="unconfirmed">sampl</script>
+			<script type="Hans" alt="stand-alone" draft="unconfirmed">han sampl</script>
 			<script type="Hant" draft="unconfirmed">amensay</script>
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">amensay Han</script>
 			<script type="Jpan" draft="unconfirmed">ajappuni</script>
@@ -133,13 +133,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CF" draft="unconfirmed">rripublik n terfriqt n lwesṭ</territory>
 			<territory type="CG" draft="unconfirmed">kungu</territory>
 			<territory type="CH" draft="unconfirmed">sswis</territory>
-			<territory type="CI" draft="unconfirmed">kudivwar</territory>
+			<territory type="CI" draft="unconfirmed">kudibwar</territory>
 			<territory type="CK" draft="unconfirmed">tigzirin n kuk</territory>
 			<territory type="CL" draft="unconfirmed">tcili</territory>
 			<territory type="CM" draft="unconfirmed">kamirun</territory>
 			<territory type="CN" draft="unconfirmed">tcina</territory>
 			<territory type="CO" draft="unconfirmed">kulumbya</territory>
 			<territory type="CP" draft="unconfirmed">tigzirin n klipirṭun</territory>
+			<territory type="CQ" draft="unconfirmed">sark</territory>
 			<territory type="CR" draft="unconfirmed">kustarika</territory>
 			<territory type="CU" draft="unconfirmed">kuba</territory>
 			<territory type="CV" draft="unconfirmed">qabu yazegza</territory>
@@ -206,7 +207,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IO" draft="unconfirmed">timmura n uglanzi di lebḥer ahindawi</territory>
 			<territory type="IQ" draft="unconfirmed">lɛiraq</territory>
 			<territory type="IR" draft="unconfirmed">iran</territory>
-			<territory type="IS" draft="unconfirmed">ayeslanda</territory>
+			<territory type="IS" draft="unconfirmed">yeslanda</territory>
 			<territory type="IT" draft="unconfirmed">atayal</territory>
 			<territory type="JE" draft="unconfirmed">jirsi</territory>
 			<territory type="JM" draft="unconfirmed">jamayka</territory>
@@ -252,7 +253,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MS" draft="unconfirmed">munsirat</territory>
 			<territory type="MT" draft="unconfirmed">malṭa</territory>
 			<territory type="MU" draft="unconfirmed">muricyus</territory>
-			<territory type="MV" draft="unconfirmed">lmaldiv</territory>
+			<territory type="MV" draft="unconfirmed">lmaldib</territory>
 			<territory type="MW" draft="unconfirmed">malawi</territory>
 			<territory type="MX" draft="unconfirmed">miksiku</territory>
 			<territory type="MY" draft="unconfirmed">malizya</territory>
@@ -299,8 +300,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SE" draft="unconfirmed">sswid</territory>
 			<territory type="SG" draft="unconfirmed">sanɣafura</territory>
 			<territory type="SH" draft="unconfirmed">santḥilina</territory>
-			<territory type="SI" draft="unconfirmed">sluvinya</territory>
-			<territory type="SJ" draft="unconfirmed">svalbard d janmayen</territory>
+			<territory type="SI" draft="unconfirmed">slubinya</territory>
+			<territory type="SJ" draft="unconfirmed">sbalbard d janmayen</territory>
 			<territory type="SK" draft="unconfirmed">sluvakya</territory>
 			<territory type="SL" draft="unconfirmed">siraliyyun</territory>
 			<territory type="SM" draft="unconfirmed">sanmarinu</territory>
@@ -314,7 +315,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SY" draft="unconfirmed">surya</territory>
 			<territory type="SZ" draft="unconfirmed">iswatini</territory>
 			<territory type="TA" draft="unconfirmed">tristan dakuna</territory>
-			<territory type="TC" draft="unconfirmed">ṭṭurks d tegzirin n kaykus</territory>
+			<territory type="TC" draft="unconfirmed">tigzirin n ṭurks d kaykus</territory>
 			<territory type="TD" draft="unconfirmed">tcad</territory>
 			<territory type="TF" draft="unconfirmed">timmura tifransisin nwadday</territory>
 			<territory type="TG" draft="unconfirmed">ṭṭugu</territory>
@@ -329,10 +330,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TR" draft="unconfirmed">ṭurekya</territory>
 			<territory type="TR" alt="variant" draft="unconfirmed">ṭṭurk</territory>
 			<territory type="TT" draft="unconfirmed">trinidad d ṭubagu</territory>
-			<territory type="TV" draft="unconfirmed">ṭuvalu</territory>
+			<territory type="TV" draft="unconfirmed">ṭubalu</territory>
 			<territory type="TW" draft="unconfirmed">ṭṭaywan</territory>
 			<territory type="TZ" draft="unconfirmed">ṭanzanya</territory>
-			<territory type="UA" draft="unconfirmed">ukrayina</territory>
+			<territory type="UA" draft="unconfirmed">ukranya</territory>
 			<territory type="UG" draft="unconfirmed">uɣanda</territory>
 			<territory type="UM" draft="unconfirmed">tigzirin timirikanin i yegʷjen</territory>
 			<territory type="UN" draft="unconfirmed">tamunt n tmura</territory>
@@ -340,18 +341,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="US" alt="short" draft="unconfirmed">US</territory>
 			<territory type="UY" draft="unconfirmed">urugway</territory>
 			<territory type="UZ" draft="unconfirmed">uzbakistan</territory>
-			<territory type="VA" draft="unconfirmed">lvatikan</territory>
+			<territory type="VA" draft="unconfirmed">lbatikan</territory>
 			<territory type="VC" draft="unconfirmed">sanvinsit d grinadin</territory>
-			<territory type="VE" draft="unconfirmed">vanzwilla</territory>
+			<territory type="VE" draft="unconfirmed">banzwilla</territory>
 			<territory type="VG" draft="unconfirmed">tigzirin tiɛezriyyin tiglanziyyin</territory>
 			<territory type="VI" draft="unconfirmed">tigzirin tiɛezriyyin timarikanin</territory>
-			<territory type="VN" draft="unconfirmed">vitnam</territory>
-			<territory type="VU" draft="unconfirmed">vanwatu</territory>
+			<territory type="VN" draft="unconfirmed">bitnam</territory>
+			<territory type="VU" draft="unconfirmed">banwatu</territory>
 			<territory type="WF" draft="unconfirmed">walis d futuna</territory>
 			<territory type="WS" draft="unconfirmed">samwa</territory>
 			<territory type="XA" draft="unconfirmed">awal amsaqar</territory>
 			<territory type="XB" draft="unconfirmed">bidi tamsaqart</territory>
-			<territory type="XK" draft="unconfirmed">kusuvu</territory>
+			<territory type="XK" draft="unconfirmed">kusubu</territory>
 			<territory type="YE" draft="unconfirmed">lyaman</territory>
 			<territory type="YT" draft="unconfirmed">mayuṭ</territory>
 			<territory type="ZA" draft="unconfirmed">tafriqt n wadday</territory>
@@ -361,11 +362,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian" draft="unconfirmed">taklindart tagrikant</type>
+			<type key="calendar" type="gregorian" scope="core" draft="unconfirmed">agrikan</type>
 			<type key="calendar" type="islamic" draft="unconfirmed">taklindart tameslemt</type>
+			<type key="calendar" type="islamic" scope="core" draft="unconfirmed">ameslem</type>
 			<type key="calendar" type="islamic-civil" draft="unconfirmed">taklindart tameslemt (leḥsab)</type>
+			<type key="calendar" type="islamic-civil" scope="core" draft="unconfirmed">ameslem (leḥsab)</type>
 			<type key="calendar" type="islamic-tbla" draft="unconfirmed">taklindart tameslemt (ayur)</type>
+			<type key="calendar" type="islamic-tbla" scope="core" draft="unconfirmed">ameslem (ayur)</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">kalandar n ISO-8601</type>
 			<type key="collation" type="standard" draft="unconfirmed">asettef sṭandar</type>
+			<type key="collation" type="standard" scope="core" draft="unconfirmed">sṭandar</type>
 			<type key="numbers" type="latn" draft="unconfirmed">nnumrawat irumiyyen</type>
 		</types>
 		<measurementSystemNames>
@@ -418,12 +424,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -441,10 +453,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="d" draft="unconfirmed">dd</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E dd</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyM" draft="unconfirmed">MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="unconfirmed">dd/MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd" draft="unconfirmed">E dd/MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E dd MMM y G</dateFormatItem>
+						<dateFormatItem id="M" draft="unconfirmed">LL</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">dd MMM</dateFormatItem>
@@ -587,12 +602,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="4" draft="unconfirmed">yebril</month>
 							<month type="5" draft="unconfirmed">mayyu</month>
 							<month type="6" draft="unconfirmed">yunyu</month>
-							<month type="7" draft="unconfirmed">yulyuz</month>
-							<month type="8" draft="unconfirmed">ɣucct</month>
-							<month type="9" draft="unconfirmed">cutenber</month>
+							<month type="7" draft="unconfirmed">yulyu</month>
+							<month type="8" draft="unconfirmed">ɣuccet</month>
+							<month type="9" draft="unconfirmed">cutembir</month>
 							<month type="10" draft="unconfirmed">kṭuber</month>
-							<month type="11" draft="unconfirmed">nuwember</month>
-							<month type="12" draft="unconfirmed">dujember</month>
+							<month type="11" draft="unconfirmed">nuwembir</month>
+							<month type="12" draft="unconfirmed">dujembir</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -609,6 +624,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">k</month>
 							<month type="11" draft="unconfirmed">n</month>
 							<month type="12" draft="unconfirmed">d</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">yennayer</month>
+							<month type="2" draft="unconfirmed">febrayer</month>
+							<month type="3" draft="unconfirmed">mars</month>
+							<month type="4" draft="unconfirmed">yebril</month>
+							<month type="5" draft="unconfirmed">mayyu</month>
+							<month type="6" draft="unconfirmed">yunyu</month>
+							<month type="7" draft="unconfirmed">yulyu</month>
+							<month type="8" draft="unconfirmed">ɣuccet</month>
+							<month type="9" draft="unconfirmed">cutembir</month>
+							<month type="10" draft="unconfirmed">kṭuber</month>
+							<month type="11" draft="unconfirmed">nuwembir</month>
+							<month type="12" draft="unconfirmed">dujembir</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -744,12 +773,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern draft="unconfirmed">{1} 'ɣer' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -767,7 +802,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="d" draft="unconfirmed">dd</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E dd</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyM" draft="unconfirmed">MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="unconfirmed">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd" draft="unconfirmed">E dd/MM/y G</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E dd MMM y G</dateFormatItem>
@@ -830,7 +867,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">E dd MMM y – E dd MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
@@ -855,7 +891,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
@@ -1091,11 +1126,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">akud agraɣlan amezday</standard>
 				</long>
 			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="unconfirmed">wer yettemwassen</exemplarCity>
+			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity draft="unconfirmed">andura</exemplarCity>
 			</zone>
 			<zone type="Asia/Dubai">
 				<exemplarCity draft="unconfirmed">dubay</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity draft="unconfirmed">kabul</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
 				<exemplarCity draft="unconfirmed">antigwa</exemplarCity>
@@ -1111,6 +1152,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity draft="unconfirmed">lwanda</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity draft="unconfirmed">stasyun n rutira</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity draft="unconfirmed">palmer</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity draft="unconfirmed">stasyun n ṭrul</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity draft="unconfirmed">stasyun n suwa</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity draft="unconfirmed">stasyun n mawsun</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity draft="unconfirmed">deybis</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity draft="unconfirmed">stasyun n bustuk</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity draft="unconfirmed">stasyun n kasi</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity draft="unconfirmed">dimun durbil</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity draft="unconfirmed">stasyun n makmurdu</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
 				<exemplarCity draft="unconfirmed">riyugayyigus</exemplarCity>
@@ -1148,8 +1219,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Buenos_Aires">
 				<exemplarCity draft="unconfirmed">bwinusayris</exemplarCity>
 			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity draft="unconfirmed">pagupagu</exemplarCity>
+			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity draft="unconfirmed">byinna</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">pert</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity draft="unconfirmed">yukla</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity draft="unconfirmed">darwin</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">adelayd</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity draft="unconfirmed">brukenhil</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">milben</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity draft="unconfirmed">hubart</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity draft="unconfirmed">lindman</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">sidni</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity draft="unconfirmed">brizban</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity draft="unconfirmed">tayzirt n makkari</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity draft="unconfirmed">lurdhaw</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
 				<exemplarCity draft="unconfirmed">aruba</exemplarCity>
@@ -1165,6 +1275,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity draft="unconfirmed">barbadus</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity draft="unconfirmed">dhaka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity draft="unconfirmed">bruksil</exemplarCity>
@@ -1189,6 +1302,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity draft="unconfirmed">birmuda</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity draft="unconfirmed">brunay</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
 				<exemplarCity draft="unconfirmed">lappaz</exemplarCity>
@@ -1247,6 +1363,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nassau">
 				<exemplarCity draft="unconfirmed">nassaw</exemplarCity>
 			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity draft="unconfirmed">timpfu</exemplarCity>
+			</zone>
 			<zone type="Africa/Gaborone">
 				<exemplarCity draft="unconfirmed">gaburun</exemplarCity>
 			</zone>
@@ -1263,7 +1382,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">waythurs</exemplarCity>
 			</zone>
 			<zone type="America/Inuvik">
-				<exemplarCity draft="unconfirmed">inuvik</exemplarCity>
+				<exemplarCity draft="unconfirmed">inubik</exemplarCity>
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity draft="unconfirmed">fankufer</exemplarCity>
@@ -1325,6 +1444,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Johns">
 				<exemplarCity draft="unconfirmed">sanjuns</exemplarCity>
 			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="unconfirmed">tiyzirin n kukus</exemplarCity>
+			</zone>
 			<zone type="Africa/Kinshasa">
 				<exemplarCity draft="unconfirmed">kincasa</exemplarCity>
 			</zone>
@@ -1343,8 +1465,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Abidjan">
 				<exemplarCity draft="unconfirmed">abidjan</exemplarCity>
 			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity draft="unconfirmed">raruṭunga</exemplarCity>
+			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity draft="unconfirmed">ister</exemplarCity>
+			</zone>
+			<zone type="America/Coyhaique">
+				<exemplarCity draft="unconfirmed">kuyhayki</exemplarCity>
 			</zone>
 			<zone type="America/Punta_Arenas">
 				<exemplarCity draft="unconfirmed">puntarinas</exemplarCity>
@@ -1355,6 +1483,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Douala">
 				<exemplarCity draft="unconfirmed">diwala</exemplarCity>
 			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity draft="unconfirmed">urumutci</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity draft="unconfirmed">canhay</exemplarCity>
+			</zone>
 			<zone type="America/Bogota">
 				<exemplarCity draft="unconfirmed">buguṭa</exemplarCity>
 			</zone>
@@ -1362,13 +1496,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">kustarika</exemplarCity>
 			</zone>
 			<zone type="America/Havana">
-				<exemplarCity draft="unconfirmed">havana</exemplarCity>
+				<exemplarCity draft="unconfirmed">habana</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity draft="unconfirmed">qabubirdi</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
 				<exemplarCity draft="unconfirmed">kuracaw</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="unconfirmed">tayzirt n kristmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity draft="unconfirmed">nikuzya</exemplarCity>
@@ -1433,8 +1570,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Helsinki">
 				<exemplarCity draft="unconfirmed">hilsinki</exemplarCity>
 			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity draft="unconfirmed">fiji</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Stanley">
 				<exemplarCity draft="unconfirmed">sṭanli</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity draft="unconfirmed">tcuk</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity draft="unconfirmed">punpi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity draft="unconfirmed">kursay</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity draft="unconfirmed">faraw</exemplarCity>
@@ -1502,11 +1651,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guatemala">
 				<exemplarCity draft="unconfirmed">gwatimala</exemplarCity>
 			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity draft="unconfirmed">gwam</exemplarCity>
+			</zone>
 			<zone type="Africa/Bissau">
 				<exemplarCity draft="unconfirmed">bisaw</exemplarCity>
 			</zone>
 			<zone type="America/Guyana">
 				<exemplarCity draft="unconfirmed">guyana</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity draft="unconfirmed">hungkung</exemplarCity>
 			</zone>
 			<zone type="America/Tegucigalpa">
 				<exemplarCity draft="unconfirmed">tigicigalpa</exemplarCity>
@@ -1520,6 +1675,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Budapest">
 				<exemplarCity draft="unconfirmed">budabist</exemplarCity>
 			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity draft="unconfirmed">jakarṭa</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity draft="unconfirmed">puntyanak</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity draft="unconfirmed">makasar</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity draft="unconfirmed">jayapura</exemplarCity>
+			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight draft="unconfirmed">akud anaway ayirlandi</daylight>
@@ -1532,14 +1699,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity draft="unconfirmed">tagzirt n man</exemplarCity>
 			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity draft="unconfirmed">kulkaṭa</exemplarCity>
+			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity draft="unconfirmed">ttcagus</exemplarCity>
 			</zone>
 			<zone type="Asia/Baghdad">
 				<exemplarCity draft="unconfirmed">baɣdad</exemplarCity>
 			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity draft="unconfirmed">ṭahran</exemplarCity>
+			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity draft="unconfirmed">reykjavik</exemplarCity>
+				<exemplarCity draft="unconfirmed">reykjabik</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity draft="unconfirmed">ruma</exemplarCity>
@@ -1553,8 +1726,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Amman">
 				<exemplarCity draft="unconfirmed">ɛamman</exemplarCity>
 			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity draft="unconfirmed">ṭukyu</exemplarCity>
+			</zone>
 			<zone type="Africa/Nairobi">
 				<exemplarCity draft="unconfirmed">nayrubi</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity draft="unconfirmed">bickik</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity draft="unconfirmed">knumpayn</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity draft="unconfirmed">tagzirt n kanṭun</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity draft="unconfirmed">kiritimati</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity draft="unconfirmed">ṭarawa</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">kumuru</exemplarCity>
@@ -1562,11 +1753,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Kitts">
 				<exemplarCity draft="unconfirmed">sankits</exemplarCity>
 			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity draft="unconfirmed">pyungyang</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity draft="unconfirmed">syul</exemplarCity>
+			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity draft="unconfirmed">kuwit</exemplarCity>
 			</zone>
 			<zone type="America/Cayman">
 				<exemplarCity draft="unconfirmed">sayman</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity draft="unconfirmed">aqṭaw</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity draft="unconfirmed">ural</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="unconfirmed">aṭraw</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity draft="unconfirmed">aqtubi</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity draft="unconfirmed">qusṭanay</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity draft="unconfirmed">qazalurda</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity draft="unconfirmed">almaṭi</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">bintyan</exemplarCity>
 			</zone>
 			<zone type="Asia/Beirut">
 				<exemplarCity draft="unconfirmed">bayrut</exemplarCity>
@@ -1575,7 +1796,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">sanlucya</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
-				<exemplarCity draft="unconfirmed">vaduts</exemplarCity>
+				<exemplarCity draft="unconfirmed">faduts</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity draft="unconfirmed">kulumbu</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
 				<exemplarCity draft="unconfirmed">munrubya</exemplarCity>
@@ -1613,11 +1837,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Indian/Antananarivo">
 				<exemplarCity draft="unconfirmed">antananaribu</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity draft="unconfirmed">kwajilen</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity draft="unconfirmed">majuru</exemplarCity>
+			</zone>
 			<zone type="Europe/Skopje">
 				<exemplarCity draft="unconfirmed">skupya</exemplarCity>
 			</zone>
 			<zone type="Africa/Bamako">
 				<exemplarCity draft="unconfirmed">bamaku</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity draft="unconfirmed">yangun</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity draft="unconfirmed">xubd</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity draft="unconfirmed">ulanbaṭar</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity draft="unconfirmed">makkaw</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity draft="unconfirmed">saypan</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
 				<exemplarCity draft="unconfirmed">martinik</exemplarCity>
@@ -1629,10 +1874,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">muntsirat</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
-				<exemplarCity draft="unconfirmed">malta</exemplarCity>
+				<exemplarCity draft="unconfirmed">malṭa</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
 				<exemplarCity draft="unconfirmed">muriṭanya</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity draft="unconfirmed">lmaldib</exemplarCity>
 			</zone>
 			<zone type="Africa/Blantyre">
 				<exemplarCity draft="unconfirmed">blanṭayr</exemplarCity>
@@ -1673,14 +1921,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Cancun">
 				<exemplarCity draft="unconfirmed">kankun</exemplarCity>
 			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity draft="unconfirmed">kwalalampur</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity draft="unconfirmed">kutcin</exemplarCity>
+			</zone>
 			<zone type="Africa/Maputo">
 				<exemplarCity draft="unconfirmed">maputu</exemplarCity>
 			</zone>
 			<zone type="Africa/Windhoek">
 				<exemplarCity draft="unconfirmed">binhuwk</exemplarCity>
 			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity draft="unconfirmed">numya</exemplarCity>
+			</zone>
 			<zone type="Africa/Niamey">
 				<exemplarCity draft="unconfirmed">nyamiy</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity draft="unconfirmed">tayzirt n nurfuk</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
 				<exemplarCity draft="unconfirmed">lagus</exemplarCity>
@@ -1694,6 +1954,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Oslo">
 				<exemplarCity draft="unconfirmed">uslu</exemplarCity>
 			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity draft="unconfirmed">katmandu</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity draft="unconfirmed">nawru</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity draft="unconfirmed">nyu</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity draft="unconfirmed">tcatem</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity draft="unconfirmed">ukland</exemplarCity>
+			</zone>
 			<zone type="Asia/Muscat">
 				<exemplarCity draft="unconfirmed">masqaṭ</exemplarCity>
 			</zone>
@@ -1703,11 +1978,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Lima">
 				<exemplarCity draft="unconfirmed">lima</exemplarCity>
 			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity draft="unconfirmed">tahiti</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity draft="unconfirmed">markwisas</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity draft="unconfirmed">gambyi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity draft="unconfirmed">mursbay</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity draft="unconfirmed">bugenbil</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity draft="unconfirmed">manila</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity draft="unconfirmed">kratci</exemplarCity>
+			</zone>
 			<zone type="Europe/Warsaw">
 				<exemplarCity draft="unconfirmed">warsaw</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
 				<exemplarCity draft="unconfirmed">mikilon</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity draft="unconfirmed">pitkirn</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity draft="unconfirmed">ppurturiku</exemplarCity>
@@ -1726,6 +2025,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity draft="unconfirmed">licbuna</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity draft="unconfirmed">palaw</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
 				<exemplarCity draft="unconfirmed">asuntyun</exemplarCity>
@@ -1770,7 +2072,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">yekaterinburg</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
-				<exemplarCity draft="unconfirmed">omsek</exemplarCity>
+				<exemplarCity draft="unconfirmed">umsek</exemplarCity>
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity draft="unconfirmed">nubusibiresk</exemplarCity>
@@ -1826,6 +2128,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Riyadh">
 				<exemplarCity draft="unconfirmed">riyad</exemplarCity>
 			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity draft="unconfirmed">gwadelkanal</exemplarCity>
+			</zone>
 			<zone type="Indian/Mahe">
 				<exemplarCity draft="unconfirmed">mahi</exemplarCity>
 			</zone>
@@ -1834,6 +2139,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Stockholm">
 				<exemplarCity draft="unconfirmed">sṭukhulm</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity draft="unconfirmed">singappur</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
 				<exemplarCity draft="unconfirmed">santhilina</exemplarCity>
@@ -1892,14 +2200,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Lome">
 				<exemplarCity draft="unconfirmed">lumi</exemplarCity>
 			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity draft="unconfirmed">bangkuk</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity draft="unconfirmed">ducanba</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity draft="unconfirmed">fakawfu</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity draft="unconfirmed">dili</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity draft="unconfirmed">ɛicqabad</exemplarCity>
+			</zone>
 			<zone type="Africa/Tunis">
 				<exemplarCity draft="unconfirmed">tunes</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity draft="unconfirmed">ṭungaṭapu</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity draft="unconfirmed">sṭanbul</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
 				<exemplarCity draft="unconfirmed">ppurtufspin</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity draft="unconfirmed">funafuti</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity draft="unconfirmed">ṭaypay</exemplarCity>
 			</zone>
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity draft="unconfirmed">daressalam</exemplarCity>
@@ -1912,6 +2244,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity draft="unconfirmed">kampala</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity draft="unconfirmed">midway</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">tagzirt n wayk</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
 				<exemplarCity draft="unconfirmed">adak</exemplarCity>
@@ -1944,7 +2282,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">finiks</exemplarCity>
 			</zone>
 			<zone type="America/Denver">
-				<exemplarCity draft="unconfirmed">dinver</exemplarCity>
+				<exemplarCity draft="unconfirmed">dinbir</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity draft="unconfirmed">bulah, nurtdakuṭa</exemplarCity>
@@ -1962,7 +2300,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">minumini</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity draft="unconfirmed">vinsanz, indyana</exemplarCity>
+				<exemplarCity draft="unconfirmed">binsanz, indyana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
 				<exemplarCity draft="unconfirmed">pitersburg, indyana</exemplarCity>
@@ -1983,10 +2321,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">indyanapulis</exemplarCity>
 			</zone>
 			<zone type="America/Louisville">
-				<exemplarCity draft="unconfirmed">lwisvil</exemplarCity>
+				<exemplarCity draft="unconfirmed">lwisbil</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity draft="unconfirmed">vivi, indyana</exemplarCity>
+				<exemplarCity draft="unconfirmed">bibi, indyana</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
 				<exemplarCity draft="unconfirmed">muntitcilu, kinṭaki</exemplarCity>
@@ -2000,11 +2338,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Montevideo">
 				<exemplarCity draft="unconfirmed">muntibidyu</exemplarCity>
 			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity draft="unconfirmed">samarqand</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity draft="unconfirmed">tacqand</exemplarCity>
+			</zone>
 			<zone type="Europe/Vatican">
 				<exemplarCity draft="unconfirmed">lbatikan</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity draft="unconfirmed">sanvinsint</exemplarCity>
+				<exemplarCity draft="unconfirmed">sanbinsint</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity draft="unconfirmed">karakas</exemplarCity>
@@ -2014,6 +2358,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity draft="unconfirmed">sanṭumas</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity draft="unconfirmed">hutcimin</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity draft="unconfirmed">ifaṭi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">wilis d futuna</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity draft="unconfirmed">apya</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
 				<exemplarCity draft="unconfirmed">ɛadan</exemplarCity>
@@ -2030,6 +2386,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Harare">
 				<exemplarCity draft="unconfirmed">harari</exemplarCity>
 			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="unconfirmed">akud n afɣanistan</standard>
+				</long>
+			</metazone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard draft="unconfirmed">akud n tefriqt n lwesṭ</standard>
@@ -2047,9 +2408,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">akud n tefriqt n lɣerb</generic>
-					<standard draft="unconfirmed">akud anaway n tefriqt n lɣerb</standard>
-					<daylight draft="unconfirmed">akud n uzil n tefriqt n lɣerb</daylight>
+					<standard draft="unconfirmed">akud n tefriqt n lɣerb</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2094,6 +2453,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n pasifik</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic draft="unconfirmed">akud n samwa</generic>
+					<standard draft="unconfirmed">akud anaway n samwa</standard>
+					<daylight draft="unconfirmed">akud n uzil n samwa</daylight>
+				</long>
+			</metazone>
 			<metazone type="Arabian">
 				<long>
 					<generic draft="unconfirmed">akud n waɛrab</generic>
@@ -2129,6 +2495,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n atlantik</daylight>
 				</long>
 			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="unconfirmed">akud suntral n wustralya</generic>
+					<standard draft="unconfirmed">akud suntral anaway n wustralya</standard>
+					<daylight draft="unconfirmed">akud suntral n uzil n wustralya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="unconfirmed">akud suntral n lɣerb n wustralya</generic>
+					<standard draft="unconfirmed">akud suntral anaway n lɣerb n wustralya</standard>
+					<daylight draft="unconfirmed">akud suntral n uzil n lɣerb n wustralya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="unconfirmed">akud n ccerq n wustralya</generic>
+					<standard draft="unconfirmed">akud anaway n ccerq n wustralya</standard>
+					<daylight draft="unconfirmed">akud n uzil n ccerq n wustralya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="unconfirmed">akud n lɣerb n wustralya</generic>
+					<standard draft="unconfirmed">akud anaway n lɣerb n wustralya</standard>
+					<daylight draft="unconfirmed">akud n uzil n lɣerb n wustralya</daylight>
+				</long>
+			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
 					<generic draft="unconfirmed">akud n azrabidjan</generic>
@@ -2143,9 +2537,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n azures</daylight>
 				</long>
 			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic draft="unconfirmed">akud n bangladic</generic>
+					<standard draft="unconfirmed">akud anaway n bangladic</standard>
+					<daylight draft="unconfirmed">akud n uzil n bangladic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard draft="unconfirmed">akud n butan</standard>
+				</long>
+			</metazone>
 			<metazone type="Bolivia">
 				<long>
-					<standard draft="unconfirmed">akud n bulivya</standard>
+					<standard draft="unconfirmed">akud n bulibya</standard>
 				</long>
 			</metazone>
 			<metazone type="Brasilia">
@@ -2155,11 +2561,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n brazilya</daylight>
 				</long>
 			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard draft="unconfirmed">akud n brunay</standard>
+				</long>
+			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic draft="unconfirmed">akud n qabubirdi</generic>
 					<standard draft="unconfirmed">akud anaway n qabubirdi</standard>
 					<daylight draft="unconfirmed">akud n uzil n qabubirdi</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard draft="unconfirmed">akud anaway n tcamuru</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic draft="unconfirmed">akud n tcatem</generic>
+					<standard draft="unconfirmed">akud anaway n tcatem</standard>
+					<daylight draft="unconfirmed">akud n uzil n tcatem</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -2176,6 +2599,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n tcina</daylight>
 				</long>
 			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard draft="unconfirmed">akud n tayzirt n kristmas</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard draft="unconfirmed">akud n tiyzirin n kukus</standard>
+				</long>
+			</metazone>
 			<metazone type="Colombia">
 				<long>
 					<generic draft="unconfirmed">akud n kulumbya</generic>
@@ -2183,11 +2616,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n kulumbya</daylight>
 				</long>
 			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic draft="unconfirmed">akud n tigzirin n kuk</generic>
+					<standard draft="unconfirmed">akud anaway n tigzirin n kuk</standard>
+					<daylight draft="unconfirmed">akud n uzil n tigzirin n kuk</daylight>
+				</long>
+			</metazone>
 			<metazone type="Cuba">
 				<long>
 					<generic draft="unconfirmed">akud n kuba</generic>
 					<standard draft="unconfirmed">akud anaway n kuba</standard>
 					<daylight draft="unconfirmed">akud n uzil n kuba</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard draft="unconfirmed">akud n deybis</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard draft="unconfirmed">akud n dimun durbil</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="unconfirmed">akud n ṭimur licti</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
@@ -2235,6 +2690,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n falkland</daylight>
 				</long>
 			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic draft="unconfirmed">akud n fiji</generic>
+					<standard draft="unconfirmed">akud anaway n fiji</standard>
+					<daylight draft="unconfirmed">akud n uzil n fiji</daylight>
+				</long>
+			</metazone>
 			<metazone type="French_Guiana">
 				<long>
 					<standard draft="unconfirmed">akud n ɣana tafransist</standard>
@@ -2250,11 +2712,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">akud n galappagus</standard>
 				</long>
 			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="unconfirmed">akud n gambyi</standard>
+				</long>
+			</metazone>
 			<metazone type="Georgia">
 				<long>
 					<generic draft="unconfirmed">akud n jyurjya</generic>
 					<standard draft="unconfirmed">akud anaway n jyurjya</standard>
 					<daylight draft="unconfirmed">akud n uzil n jyurjya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="unconfirmed">akud n tigzirin n gilbert</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
@@ -2286,6 +2758,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">akud n guyana</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">akud anaway n haway-alucyan</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic draft="unconfirmed">akud n haway-alucyan</generic>
@@ -2302,14 +2779,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic draft="unconfirmed">akud n hubd</generic>
-					<standard draft="unconfirmed">akud anaway n hubd</standard>
-					<daylight draft="unconfirmed">akud n uzil n hubd</daylight>
+					<generic draft="unconfirmed">akud n xubd</generic>
+					<standard draft="unconfirmed">akud anaway n xubd</standard>
+					<daylight draft="unconfirmed">akud n uzil n xubd</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard draft="unconfirmed">akud anawy n lhend</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
 					<standard draft="unconfirmed">akud n lebḥer ahindi</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="unconfirmed">akud n indutcina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="unconfirmed">akud n yindunisya n lwesṭ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="unconfirmed">akud n ccerq n yindunisya</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="unconfirmed">akud n lɣerb n yindunisya</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic draft="unconfirmed">akud n iran</generic>
+					<standard draft="unconfirmed">akud anaway n iran</standard>
+					<daylight draft="unconfirmed">akud n uzil n iran</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="unconfirmed">akud n irkutsek</generic>
+					<standard draft="unconfirmed">akud anaway n irkutsek</standard>
+					<daylight draft="unconfirmed">akud n uzil n irkutsek</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
@@ -2319,11 +2835,101 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n yisrayil</daylight>
 				</long>
 			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic draft="unconfirmed">akud n jjapun</generic>
+					<standard draft="unconfirmed">akud anaway n jjapun</standard>
+					<daylight draft="unconfirmed">akud n uzil n jjapun</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard draft="unconfirmed">akud n kazaxistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="unconfirmed">akud n ccerq n kazaxistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="unconfirmed">akud n lɣerb n kazaxistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic draft="unconfirmed">akud n kurya</generic>
+					<standard draft="unconfirmed">akud anaway n kurya</standard>
+					<daylight draft="unconfirmed">akud n uzil n kurya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="unconfirmed">akud n kursay</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="unconfirmed">akud n krasnuyarsek</generic>
+					<standard draft="unconfirmed">akud anaway n krasnuyarsek</standard>
+					<daylight draft="unconfirmed">akud n uzil n krasnuyarsek</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard draft="unconfirmed">akud n krigistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="unconfirmed">akud n tigzirin n layn</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="unconfirmed">akud n lurdhaw</generic>
+					<standard draft="unconfirmed">akud anaway n lurdhaw</standard>
+					<daylight draft="unconfirmed">akud n uzil n lurdhaw</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="unconfirmed">akud n magadan</generic>
+					<standard draft="unconfirmed">akud anaway n magadan</standard>
+					<daylight draft="unconfirmed">akud n uzil n magadan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard draft="unconfirmed">akud n malizya</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard draft="unconfirmed">akud n lmaldib</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="unconfirmed">akud n markwisas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="unconfirmed">akud n tigzirin n marcal</standard>
+				</long>
+			</metazone>
 			<metazone type="Mauritius">
 				<long>
 					<generic draft="unconfirmed">akud n mawritus</generic>
 					<standard draft="unconfirmed">akud anaway n mawritus</standard>
 					<daylight draft="unconfirmed">akud n uzil n mawritus</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard draft="unconfirmed">akud n mawson</standard>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
@@ -2333,6 +2939,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n pasifik amiksikan</daylight>
 				</long>
 			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic draft="unconfirmed">akud n ulanbaṭar</generic>
+					<standard draft="unconfirmed">akud anaway n ulanbaṭar</standard>
+					<daylight draft="unconfirmed">akud n uzil n ulanbaṭar</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="unconfirmed">akud n musku</generic>
+					<standard draft="unconfirmed">akud anaway n musku</standard>
+					<daylight draft="unconfirmed">akud n uzil n musku</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard draft="unconfirmed">akud n myanmar</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="unconfirmed">akud n nawru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard draft="unconfirmed">akud n nnipal</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="unconfirmed">akud n nyewkalidunya</generic>
+					<standard draft="unconfirmed">akud anaway n nyewkalidunya</standard>
+					<daylight draft="unconfirmed">akud n uzil n nyewkalidunya</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic draft="unconfirmed">akud n nyuziland</generic>
+					<standard draft="unconfirmed">akud anaway n nyuziland</standard>
+					<daylight draft="unconfirmed">akud n uzil n nyuziland</daylight>
+				</long>
+			</metazone>
 			<metazone type="Newfoundland">
 				<long>
 					<generic draft="unconfirmed">akud n nyuw fawemd land</generic>
@@ -2340,11 +2989,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n nyuw fawemd land</daylight>
 				</long>
 			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="unconfirmed">akud n nyu</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic draft="unconfirmed">akud n tayzirt n nurfuk</generic>
+					<standard draft="unconfirmed">akud anaway n tayzirt n nurfuk</standard>
+					<daylight draft="unconfirmed">akud n uzil n tayzirt n nurfuk</daylight>
+				</long>
+			</metazone>
 			<metazone type="Noronha">
 				<long>
 					<generic draft="unconfirmed">akud n firnardu dinurunha</generic>
 					<standard draft="unconfirmed">akud anaway n firnardu dinurunha</standard>
 					<daylight draft="unconfirmed">akud n uzil n firnardu dinurunha</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="unconfirmed">akud n nubusibirsek</generic>
+					<standard draft="unconfirmed">akud anaway n nubusibirsek</standard>
+					<daylight draft="unconfirmed">akud n uzil n nubusibirsek</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="unconfirmed">akud n umsek</generic>
+					<standard draft="unconfirmed">akud anaway n umsek</standard>
+					<daylight draft="unconfirmed">akud n uzil n umsek</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic draft="unconfirmed">akud n pakistan</generic>
+					<standard draft="unconfirmed">akud anaway n pakistan</standard>
+					<daylight draft="unconfirmed">akud n uzil n pakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="unconfirmed">akud n palaw</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="unconfirmed">akud n papwa ɣinya tamaynut</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
@@ -2361,6 +3053,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n ppiru</daylight>
 				</long>
 			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic draft="unconfirmed">akud n filippin</generic>
+					<standard draft="unconfirmed">akud anaway n filippin</standard>
+					<daylight draft="unconfirmed">akud n uzil n filippin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="unconfirmed">akud n tigzirin n finiks</standard>
+				</long>
+			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic draft="unconfirmed">akud n sant-pyiɣ d mikilun</generic>
@@ -2368,14 +3072,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n sant-pyiɣ d mikilun</daylight>
 				</long>
 			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="unconfirmed">akud n pitkirn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="unconfirmed">akud n punpi</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">akud n kurya n sennej</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard draft="unconfirmed">akud n riyunyun</standard>
 				</long>
 			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard draft="unconfirmed">akud n rutira</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic draft="unconfirmed">akud n saxalin</generic>
+					<standard draft="unconfirmed">akud anaway n saxalin</standard>
+					<daylight draft="unconfirmed">akud n uzil n saxalin</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic draft="unconfirmed">akud n samwa tamarikant</generic>
+					<standard draft="unconfirmed">akud anaway n samwa tamarikant</standard>
+					<daylight draft="unconfirmed">akud n uzil n samwa tamarikant</daylight>
+				</long>
+			</metazone>
 			<metazone type="Seychelles">
 				<long>
 					<standard draft="unconfirmed">akud n saycal</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard draft="unconfirmed">akud anaway n singappur</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="unconfirmed">akud n tigzirin n sulumun</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
@@ -2388,6 +3136,57 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">akud n surinam</standard>
 				</long>
 			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard draft="unconfirmed">akud n syuwa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="unconfirmed">akud n tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic draft="unconfirmed">akud n ṭṭaywan</generic>
+					<standard draft="unconfirmed">akud anaway n ṭṭaywan</standard>
+					<daylight draft="unconfirmed">akud n uzil n ṭṭaywan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard draft="unconfirmed">akud n tajikistan</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="unconfirmed">akud n tuwkulaw</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="unconfirmed">akud n ṭunga</generic>
+					<standard draft="unconfirmed">akud anaway n ṭunga</standard>
+					<daylight draft="unconfirmed">akud n uzil n ṭunga</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="unconfirmed">akud n tcuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic draft="unconfirmed">akud n ṭurkmanistan</generic>
+					<standard draft="unconfirmed">akud anaway n ṭurkmanistan</standard>
+					<daylight draft="unconfirmed">akud n uzil n ṭurkmanistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="unconfirmed">akud n ṭubalu</standard>
+				</long>
+			</metazone>
 			<metazone type="Uruguay">
 				<long>
 					<generic draft="unconfirmed">akud n urugway</generic>
@@ -2395,9 +3194,66 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight draft="unconfirmed">akud n uzil n urugway</daylight>
 				</long>
 			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic draft="unconfirmed">akud n uẓbakistan</generic>
+					<standard draft="unconfirmed">akud n anaway n uẓbakistan</standard>
+					<daylight draft="unconfirmed">akud n uzil n uẓbakistan</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="unconfirmed">akud n banwatu</generic>
+					<standard draft="unconfirmed">akud anaway n banwatu</standard>
+					<daylight draft="unconfirmed">akud n uzil n banwatu</daylight>
+				</long>
+			</metazone>
 			<metazone type="Venezuela">
 				<long>
 					<standard draft="unconfirmed">akud n vinzwila</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="unconfirmed">akud n bladibustuk</generic>
+					<standard draft="unconfirmed">akud anaway n bladibustuk</standard>
+					<daylight draft="unconfirmed">akud n uzil n bladibustuk</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic draft="unconfirmed">akud n bulgugrad</generic>
+					<standard draft="unconfirmed">akud anaway n bulgugrad</standard>
+					<daylight draft="unconfirmed">akud n uzil n bulgugrad</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard draft="unconfirmed">akud n bustuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="unconfirmed">akud n tagzirt n wayk</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="unconfirmed">akud n walis d futuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="unconfirmed">akud n yakutsek</generic>
+					<standard draft="unconfirmed">akud anaway n yakutsek</standard>
+					<daylight draft="unconfirmed">akud n uzil n yakutsek</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="unconfirmed">akud n yakatirinburg</generic>
+					<standard draft="unconfirmed">akud anaway n yakatirinburg</standard>
+					<daylight draft="unconfirmed">akud n uzil n yakatirinburg</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
@@ -2441,13 +3297,125 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other">0K ¤</pattern>
+					<pattern type="10000" count="other">00K ¤</pattern>
+					<pattern type="100000" count="other">000K ¤</pattern>
+					<pattern type="1000000" count="other">0M ¤</pattern>
+					<pattern type="10000000" count="other">00M ¤</pattern>
+					<pattern type="100000000" count="other">000M ¤</pattern>
+					<pattern type="1000000000" count="other">0G ¤</pattern>
+					<pattern type="10000000000" count="other">00G ¤</pattern>
+					<pattern type="100000000000" count="other">000G ¤</pattern>
+					<pattern type="1000000000000" count="other">0T ¤</pattern>
+					<pattern type="10000000000000" count="other">00T ¤</pattern>
+					<pattern type="100000000000000" count="other">000T ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName draft="unconfirmed">dderhem n limarat</displayName>
+				<displayName count="other" draft="unconfirmed">dderhem n limarat</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName draft="unconfirmed">afɣani</displayName>
+				<displayName count="other" draft="unconfirmed">afɣani</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName draft="unconfirmed">lik n walbanya</displayName>
+				<displayName count="other" draft="unconfirmed">lik n walbanya</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName draft="unconfirmed">ddram n arminya</displayName>
+				<displayName count="other" draft="unconfirmed">ddram n arminya</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName draft="unconfirmed">xulden n wantil</displayName>
+				<displayName count="other" draft="unconfirmed">xulden n wantil</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">kwanza n angula</displayName>
+				<displayName count="other" draft="unconfirmed">kwanza n angula</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName draft="unconfirmed">pisus n arxantina</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n arxantina</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName draft="unconfirmed">ddular n wustralya</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n wustralya</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName draft="unconfirmed">flurin n aruba</displayName>
+				<displayName count="other" draft="unconfirmed">flurin n aruba</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName draft="unconfirmed">manat n azrabijan</displayName>
+				<displayName count="other" draft="unconfirmed">manat n azrabijan</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName draft="unconfirmed">mark n busniya</displayName>
+				<displayName count="other" draft="unconfirmed">mark n busniya</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName draft="unconfirmed">ddular n barbadyan</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n barbadyan</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName draft="unconfirmed">ṭaka n bangladic</displayName>
+				<displayName count="other" draft="unconfirmed">ṭaka n bangladic</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName draft="unconfirmed">liva n belgarya</displayName>
+				<displayName count="other" draft="unconfirmed">liva n belgarya</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName draft="unconfirmed">ddinar n lbeḥrin</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n lbeḥrin</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName draft="unconfirmed">frank n burundi</displayName>
+				<displayName count="other" draft="unconfirmed">frank n burundi</displayName>
+			</currency>
 			<currency type="BMD">
 				<displayName draft="unconfirmed">Bermudan Dollar</displayName>
 				<displayName count="other" draft="unconfirmed">ddular n birmudan</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName draft="unconfirmed">ddular n brunay</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n brunay</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName draft="unconfirmed">bulibyanu</displayName>
+				<displayName count="other" draft="unconfirmed">bulibyanu</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="unconfirmed">riyal n brazil</displayName>
+				<displayName count="other" draft="unconfirmed">riyal n brazil</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName draft="unconfirmed">ddular n bahamas</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n bahamas</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName draft="unconfirmed">ngultrum n buṭan</displayName>
+				<displayName count="other" draft="unconfirmed">ngultrum n buṭan</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName draft="unconfirmed">pula n buteswana</displayName>
+				<displayName count="other" draft="unconfirmed">pula n buteswana</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName draft="unconfirmed">rrubel n bilarus</displayName>
+				<displayName count="other" draft="unconfirmed">rrubel n bilarus</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">Belize Dollar</displayName>
@@ -2457,65 +3425,541 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">Canadian Dollar</displayName>
 				<displayName count="other" draft="unconfirmed">ddular n kanada</displayName>
 			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">frank n kungu</displayName>
+				<displayName count="other" draft="unconfirmed">frank n kungu</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName draft="unconfirmed">frank</displayName>
+				<displayName count="other" draft="unconfirmed">frank</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName draft="unconfirmed">pisus n tcili</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n tcili</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">ywan n cina</displayName>
+				<displayName count="other" draft="unconfirmed">ywan n cina</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="unconfirmed">ywan n tcina</displayName>
+				<displayName count="other" draft="unconfirmed">ywan n tcina</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName draft="unconfirmed">pisus n kulumbya</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n kulumbya</displayName>
+			</currency>
 			<currency type="CRC">
 				<displayName draft="unconfirmed">Costa Rican Colón</displayName>
 				<displayName count="other" draft="unconfirmed">kulun n kustarika</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName draft="unconfirmed">pisus n kuba</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n kuba</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName draft="unconfirmed">pisus n kuba</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n kuba</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName draft="unconfirmed">iskudu n qabu yazegza</displayName>
+				<displayName count="other" draft="unconfirmed">iskudu n qabu yazegza</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName draft="unconfirmed">kruna n ttcik</displayName>
+				<displayName count="other" draft="unconfirmed">kruna n ttcik</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName draft="unconfirmed">frank n djibuti</displayName>
+				<displayName count="other" draft="unconfirmed">frank n djibuti</displayName>
 			</currency>
 			<currency type="DKK">
 				<displayName draft="unconfirmed">Danish Krone</displayName>
 				<displayName count="other" draft="unconfirmed">kruna n ddanmark</displayName>
 			</currency>
+			<currency type="DOP">
+				<displayName draft="unconfirmed">pisus n dduminik</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n dduminik</displayName>
+			</currency>
 			<currency type="DZD">
 				<displayName draft="unconfirmed">Algerian Dinar</displayName>
 				<displayName count="other" draft="unconfirmed">ddinar n ddzayer</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName draft="unconfirmed">ljunih n masr</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n masr</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName draft="unconfirmed">nafka n iritirya</displayName>
+				<displayName count="other" draft="unconfirmed">nafka n iritirya</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName draft="unconfirmed">bir n yityupya</displayName>
+				<displayName count="other" draft="unconfirmed">bir n yityupya</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">Euro</displayName>
 				<displayName count="other" draft="unconfirmed">uru</displayName>
 			</currency>
+			<currency type="FJD">
+				<displayName draft="unconfirmed">ddular n fiji</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n fiji</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName draft="unconfirmed">ljunih n falkland</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n falkland</displayName>
+			</currency>
 			<currency type="GBP">
 				<displayName draft="unconfirmed">British Pound</displayName>
-				<displayName count="other" draft="unconfirmed">ppaʷndd</displayName>
+				<displayName count="other" draft="unconfirmed">jinuh</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName draft="unconfirmed">lari n gyurgya</displayName>
+				<displayName count="other" draft="unconfirmed">lari n gyurgya</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">sidiy n ɣana</displayName>
+				<displayName count="other" draft="unconfirmed">sidiy n ɣana</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName draft="unconfirmed">ljunih n jabalṭariq</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n jabalṭariq</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName draft="unconfirmed">dalasi n ɣambya</displayName>
+				<displayName count="other" draft="unconfirmed">dalasi n ɣambya</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName draft="unconfirmed">frank n ɣinya</displayName>
+				<displayName count="other" draft="unconfirmed">frank n ɣinya</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName draft="unconfirmed">Guatemalan Quetzal</displayName>
 				<displayName count="other" draft="unconfirmed">kwitzal n gwatimala</displayName>
 			</currency>
+			<currency type="GYD">
+				<displayName draft="unconfirmed">ddular n guyana</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n guyana</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="unconfirmed">ddular n hungkung</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n hungkung</displayName>
+			</currency>
 			<currency type="HNL">
 				<displayName draft="unconfirmed">Honduran Lempira</displayName>
 				<displayName count="other" draft="unconfirmed">lempiras n hondura</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName draft="unconfirmed">kuna n kerwatya</displayName>
+				<displayName count="other" draft="unconfirmed">kuna n kerwatya</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName draft="unconfirmed">ɣurda n hayṭi</displayName>
+				<displayName count="other" draft="unconfirmed">ɣurda n hayṭi</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName draft="unconfirmed">furint n hungatya</displayName>
+				<displayName count="other" draft="unconfirmed">furint n hungatya</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName draft="unconfirmed">rrupya n yindunisya</displayName>
+				<displayName count="other" draft="unconfirmed">rrupya n yindunisya</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName draft="unconfirmed">cikel</displayName>
+				<displayName count="other" draft="unconfirmed">cikel</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="unconfirmed">rrupya n lhend</displayName>
+				<displayName count="other" draft="unconfirmed">Indian rupees</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName draft="unconfirmed">ddinar n lɛiraq</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n lɛiraq</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="unconfirmed">rryal n iran</displayName>
+				<displayName count="other" draft="unconfirmed">Iranian rials</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName draft="unconfirmed">kruna n yeslanda</displayName>
+				<displayName count="other" draft="unconfirmed">kruna n yeslanda</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName draft="unconfirmed">ddular n jamayka</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n jamayka</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName draft="unconfirmed">ddinar n lurdun</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n lurdun</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="unconfirmed">lyan n jjapun</displayName>
+				<displayName count="other" draft="unconfirmed">lyan n jjapun</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName draft="unconfirmed">cilin n kinya</displayName>
+				<displayName count="other" draft="unconfirmed">cilin n kinya</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName draft="unconfirmed">sum n kirgistan</displayName>
+				<displayName count="other" draft="unconfirmed">sum n kirgistan</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName draft="unconfirmed">rryal n kambudya</displayName>
+				<displayName count="other" draft="unconfirmed">rryal n kambudya</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName draft="unconfirmed">frank n qumrus</displayName>
+				<displayName count="other" draft="unconfirmed">frank n qumrus</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName draft="unconfirmed">wun n kurya n sennej</displayName>
+				<displayName count="other" draft="unconfirmed">wun n kurya n sennej</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName draft="unconfirmed">wun n kurya n wadday</displayName>
+				<displayName count="other" draft="unconfirmed">wun n kurya n wadday</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName draft="unconfirmed">ddinar n lkuwit</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n lkuwit</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName draft="unconfirmed">ddular n sayman</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n sayman</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName draft="unconfirmed">tinga n kazaxistan</displayName>
+				<displayName count="other" draft="unconfirmed">tinga n kazaxistan</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName draft="unconfirmed">kip n lawes</displayName>
+				<displayName count="other" draft="unconfirmed">kip n lawes</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName draft="unconfirmed">ljunih n lubnan</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n lubnan</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName draft="unconfirmed">rrupya n Sri Lanka</displayName>
+				<displayName count="other" draft="unconfirmed">Sri Lankan rupees</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName draft="unconfirmed">ddular n libirya</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n libirya</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="unconfirmed">lluti n lisutu</displayName>
+				<displayName count="other" draft="unconfirmed">lluti n lisutu</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName draft="unconfirmed">Libyan Dinar</displayName>
 				<displayName count="other" draft="unconfirmed">ddinar n libya</displayName>
 			</currency>
 			<currency type="MAD">
-				<displayName draft="unconfirmed">Moroccan Dirham</displayName>
-				<displayName count="other" draft="unconfirmed">derhem</displayName>
+				<displayName draft="unconfirmed">dderhem ameɣrabi</displayName>
+				<displayName count="other" draft="unconfirmed">dderhem</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName draft="unconfirmed">liyu n muldub</displayName>
+				<displayName count="other" draft="unconfirmed">liyu n muldub</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName draft="unconfirmed">aryari n madaɣacqar</displayName>
+				<displayName count="other" draft="unconfirmed">aryari n madaɣacqar</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName draft="unconfirmed">ddinar n maqdunya</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n maqdunya</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName draft="unconfirmed">kyat n myanmar</displayName>
+				<displayName count="other" draft="unconfirmed">kyat n myanmar</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName draft="unconfirmed">tugrug n mangulya</displayName>
+				<displayName count="other" draft="unconfirmed">tugrug n mangulya</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="unconfirmed">patakaw n makkaw</displayName>
+				<displayName count="other" draft="unconfirmed">patakaw n makkaw</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName draft="unconfirmed">uqiya n muritanya</displayName>
+				<displayName count="other" draft="unconfirmed">uqiya n muritanya</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName draft="unconfirmed">rrupya n muriṭanya</displayName>
+				<displayName count="other" draft="unconfirmed">rrupya n muriṭanya</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName draft="unconfirmed">rrufiya n maldib</displayName>
+				<displayName count="other" draft="unconfirmed">Maldivian rufiyaas</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">kwaca n malawi</displayName>
+				<displayName count="other" draft="unconfirmed">kwaca n malawi</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName draft="unconfirmed">Mexican Peso</displayName>
 				<displayName count="other" draft="unconfirmed">pisus n miksiku</displayName>
 			</currency>
+			<currency type="MYR">
+				<displayName draft="unconfirmed">ringit n malizya</displayName>
+				<displayName count="other" draft="unconfirmed">ringit n malizya</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName draft="unconfirmed">metqal n muzembiq</displayName>
+				<displayName count="other" draft="unconfirmed">metqal n muzembiq</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName draft="unconfirmed">ddular n nambya</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n nambya</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">nira n nijirya</displayName>
+				<displayName count="other" draft="unconfirmed">nira n nijirya</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName draft="unconfirmed">kurduba n nikaragwa</displayName>
+				<displayName count="other" draft="unconfirmed">kurduba n nikaragwa</displayName>
+			</currency>
 			<currency type="NOK">
 				<displayName draft="unconfirmed">Norwegian Krone</displayName>
 				<displayName count="other" draft="unconfirmed">kruna n nnarwij</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName draft="unconfirmed">rrupya n nnipal</displayName>
+				<displayName count="other" draft="unconfirmed">rrupya n nnipal</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName draft="unconfirmed">ddular nyuziland</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n yuziland</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName draft="unconfirmed">rriyal n ɛumman</displayName>
+				<displayName count="other" draft="unconfirmed">rriyal n ɛumman</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName draft="unconfirmed">balbaw n panama</displayName>
+				<displayName count="other" draft="unconfirmed">balbaw n panama</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName draft="unconfirmed">ssul n piru</displayName>
+				<displayName count="other" draft="unconfirmed">ssul n piru</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName draft="unconfirmed">kina n papwa</displayName>
+				<displayName count="other" draft="unconfirmed">kina n papwa</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName draft="unconfirmed">pisus n filippin</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n filippin</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="unconfirmed">rrupya n pakistan</displayName>
+				<displayName count="other" draft="unconfirmed">rrupya n pakistan</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName draft="unconfirmed">zluṭi n pulanda</displayName>
+				<displayName count="other" draft="unconfirmed">zluṭi n pulanda</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName draft="unconfirmed">gwarani n paragway</displayName>
+				<displayName count="other" draft="unconfirmed">gwarani n paragway</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName draft="unconfirmed">rriyal n qatar</displayName>
+				<displayName count="other" draft="unconfirmed">rriyal n qatar</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName draft="unconfirmed">liyu n rumanya</displayName>
+				<displayName count="other" draft="unconfirmed">liyu n rumanya</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName draft="unconfirmed">ddinar n sirbya</displayName>
+				<displayName count="other" draft="unconfirmed">ddinar n sirbya</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="unconfirmed">rrubel</displayName>
+				<displayName count="other" draft="unconfirmed">rrubel</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName draft="unconfirmed">frank n ruwanda</displayName>
+				<displayName count="other" draft="unconfirmed">frank n ruwanda</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName draft="unconfirmed">rriyal n ssaɛud</displayName>
+				<displayName count="other" draft="unconfirmed">rriyal n ssaɛud</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName draft="unconfirmed">ddular n sulumun</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n sulumun</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName draft="unconfirmed">rrupya n sicel</displayName>
+				<displayName count="other" draft="unconfirmed">rrupya n sicel</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName draft="unconfirmed">ljunih n ssudan</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n ssudan</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName draft="unconfirmed">Swedish Krona</displayName>
 				<displayName count="other" draft="unconfirmed">kruna n sswid</displayName>
 			</currency>
+			<currency type="SGD">
+				<displayName draft="unconfirmed">ddular n sanɣafura</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n sanɣafura</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName draft="unconfirmed">ljunih n hilina</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n hilina</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">lyun n siraliyyun</displayName>
+				<displayName count="other" draft="unconfirmed">lyun n siraliyyun</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">lyun n siraliyyun</displayName>
+				<displayName count="other" draft="unconfirmed">lyun n siraliyyun</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName draft="unconfirmed">cilin n ssumal</displayName>
+				<displayName count="other" draft="unconfirmed">cilin n ssumal</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName draft="unconfirmed">ddular n surinam</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n surinam</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName draft="unconfirmed">ljunih n ssudan n wadday</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n ssudan n wadday</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName draft="unconfirmed">dubra n sawtumi</displayName>
+				<displayName count="other" draft="unconfirmed">dubra n sawtumi</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName draft="unconfirmed">ljunih n surya</displayName>
+				<displayName count="other" draft="unconfirmed">ljunih n surya</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName draft="unconfirmed">lilangini</displayName>
+				<displayName count="other" draft="unconfirmed">lilangini</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName draft="unconfirmed">baṭ n ṭṭayland</displayName>
+				<displayName count="other" draft="unconfirmed">baṭ n ṭṭayland</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">sumuni n tajikistan</displayName>
+				<displayName count="other" draft="unconfirmed">sumuni n tajikistan</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName draft="unconfirmed">manat n ṭurkmanistan</displayName>
+				<displayName count="other" draft="unconfirmed">manat n ṭurkmanistan</displayName>
+			</currency>
 			<currency type="TND">
 				<displayName draft="unconfirmed">Tunisian Dinar</displayName>
 				<displayName count="other" draft="unconfirmed">ddinar n tunes</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName draft="unconfirmed">panga n ṭunga</displayName>
+				<displayName count="other" draft="unconfirmed">panga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName draft="unconfirmed">llira</displayName>
+				<displayName count="other" draft="unconfirmed">llira</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName draft="unconfirmed">ddular n trinindad</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n trinindad</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="unconfirmed">ddular n ttaywan</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n ttaywan</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName draft="unconfirmed">cilin n tanzanya</displayName>
+				<displayName count="other" draft="unconfirmed">cilin n tanzanya</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName draft="unconfirmed">hribnya n wekranya</displayName>
+				<displayName count="other" draft="unconfirmed">hribnya n wekranya</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName draft="unconfirmed">cilin n uɣanda</displayName>
+				<displayName count="other" draft="unconfirmed">cilin n uɣanda</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName draft="unconfirmed">US Dollar</displayName>
 				<displayName count="other" draft="unconfirmed">ddular</displayName>
 			</currency>
+			<currency type="UYU">
+				<displayName draft="unconfirmed">pisus n urugway</displayName>
+				<displayName count="other" draft="unconfirmed">pisus n urugway</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName draft="unconfirmed">sum n uzbakistan</displayName>
+				<displayName count="other" draft="unconfirmed">sum n uzbakistan</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName draft="unconfirmed">bulibyar</displayName>
+				<displayName count="other" draft="unconfirmed">bulibyar</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName draft="unconfirmed">ddung n bitnam</displayName>
+				<displayName count="other" draft="unconfirmed">ddung n bitnam</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName draft="unconfirmed">batu n banwatu</displayName>
+				<displayName count="other" draft="unconfirmed">batu n banwatu</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName draft="unconfirmed">tala n samwa</displayName>
+				<displayName count="other" draft="unconfirmed">tala n samwa</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName draft="unconfirmed">frank n wafriqa</displayName>
+				<displayName count="other" draft="unconfirmed">frank n wafriqa</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName draft="unconfirmed">ddular n karibyan</displayName>
+				<displayName count="other" draft="unconfirmed">ddular n karibyan</displayName>
+			</currency>
+			<currency type="XCG">
+				<displayName draft="unconfirmed">xulden n karibyan</displayName>
+				<displayName count="other" draft="unconfirmed">xulden n karibyan</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName draft="unconfirmed">frank n wafriqa</displayName>
+				<displayName count="other" draft="unconfirmed">frank n wafriqa</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName draft="unconfirmed">frank n kalidunya</displayName>
+				<displayName count="other" draft="unconfirmed">frank n kalidunya</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName draft="unconfirmed">ttmenyat</displayName>
 				<displayName count="other" draft="unconfirmed">ttmneyat</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName draft="unconfirmed">rriyal n lyaman</displayName>
+				<displayName count="other" draft="unconfirmed">rriyal n lyaman</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName draft="unconfirmed">rrand n tafriqt n wadday</displayName>
+				<displayName count="other" draft="unconfirmed">rrand n tafriqt n wadday</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName draft="unconfirmed">kwaca n zambya</displayName>
+				<displayName count="other" draft="unconfirmed">kwaca n zambya</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName draft="unconfirmed">uru n zimbabwi</displayName>
+				<displayName count="other" draft="unconfirmed">uru n zimbabwi</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>

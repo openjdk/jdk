@@ -890,6 +890,9 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class AutoNodeBudget;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
+  //
+  // Exception: dead CFG nodes may instead have a ctrl/idom forwarding
+  //            installed. See: forward_ctrl
   Node_List _loop_or_ctrl;
 
   // Pre-computed def-use info
@@ -956,7 +959,13 @@ class PhaseIdealLoop : public PhaseTransform {
 
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
-  // Returns true if "n" is a data node, false if it's a control node.
+  // Returns true if "n" is a data node, false if it's a CFG node.
+  //
+  // Exception:
+  // control nodes that are dead because of "replace_node_and_forward_ctrl"
+  // or have otherwise modified their ctrl state by "forward_ctrl".
+  // They return "true", because they have a ctrl "forwarding" to the other ctrl node they
+  // were replaced with.
   bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
 
 private:
@@ -1070,17 +1079,18 @@ public:
     }
     set_ctrl(n, ctrl);
   }
-  // Control nodes can be replaced or subsumed.  During this pass they
-  // get their replacement Node in slot 1.  Instead of updating the block
-  // location of all Nodes in the subsumed block, we lazily do it.  As we
-  // pull such a subsumed block out of the array, we write back the final
-  // correct block.
+
+  // Retrieves the ctrl for a data node i.
   Node* get_ctrl(const Node* i) {
-    assert(has_node(i), "");
-    Node *n = get_ctrl_no_update(i);
+    assert(has_node(i) && has_ctrl(i), "must be data node with ctrl");
+    Node* n = get_ctrl_no_update(i);
+    // We store the found ctrl in the side-table again. In most cases,
+    // this is a no-op, since we just read from _loop_or_ctrl. But in cases
+    // where there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
+    // See: forward_ctrl
     _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
-    assert(has_node(i) && has_ctrl(i), "");
-    assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
+    assert(has_node(i) && has_ctrl(i), "must still be data node with ctrl");
+    assert(n == find_non_split_ctrl(n), "must return legal ctrl");
     return n;
   }
 
@@ -1097,24 +1107,34 @@ public:
     }
   }
 
+private:
   Node* get_ctrl_no_update_helper(const Node* i) const {
-    assert(has_ctrl(i), "should be control, not loop");
+    // We expect only data nodes (which must have a ctrl set), or
+    // dead ctrl nodes that have a ctrl "forwarding".
+    // See: forward_ctrl.
+    assert(has_ctrl(i), "only data nodes or ctrl nodes with ctrl forwarding expected");
     return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
+  // Compute the ctrl of node i, jumping over ctrl forwardings.
   Node* get_ctrl_no_update(const Node* i) const {
-    assert( has_ctrl(i), "" );
-    Node *n = get_ctrl_no_update_helper(i);
-    if (!n->in(0)) {
-      // Skip dead CFG nodes
+    assert(has_ctrl(i), "only data nodes expected");
+    Node* n = get_ctrl_no_update_helper(i);
+    if (n->in(0) == nullptr) {
+      // We encountered a dead CFG node.
+      // If everything went right, this dead CFG node should have had a ctrl
+      // forwarding installed, using "forward_ctrl". We now have to jump from
+      // the old (dead) ctrl node to the new (live) ctrl node, in possibly
+      // multiple ctrl forwarding steps.
       do {
         n = get_ctrl_no_update_helper(n);
-      } while (!n->in(0));
+      } while (n->in(0) == nullptr);
       n = find_non_split_ctrl(n);
     }
     return n;
   }
 
+public:
   // Check for loop being set
   // "n" must be a control node. Returns true if "n" is known to be in a loop.
   bool has_loop( Node *n ) const {
@@ -1125,19 +1145,43 @@ public:
   void set_loop( Node *n, IdealLoopTree *loop ) {
     _loop_or_ctrl.map(n->_idx, (Node*)loop);
   }
-  // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
-  // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
-  // from old_node to new_node to support the lazy update.  Reference
-  // replaces loop reference, since that is not needed for dead node.
-  void lazy_update(Node *old_node, Node *new_node) {
+
+  // Install a ctrl "forwarding" from an old (dead) control node.
+  // This is a "lazy" update of the "get_ctrl" and "idom" mechanism:
+  // - Install a forwarding from old_node (dead ctrl) to new_node.
+  // - When querying "get_ctrl": jump from data node over possibly
+  //   multiple dead ctrl nodes with ctrl forwarding to eventually
+  //   reach a live ctrl node. Shorten the path to avoid chasing the
+  //   forwarding in the future.
+  // - When querying "idom": from some node get its old idom, which
+  //   may be dead but has an idom forwarding to the new and live
+  //   idom. Shorten the path to avoid chasing the forwarding in the
+  //   future.
+  //   Note: while the "idom" information is stored in the "_idom"
+  //   side-table, the idom forwarding piggybacks on the ctrl
+  //   forwarding on "_loop_or_ctrl".
+  // Using "forward_ctrl" allows us to only edit the entry for the old
+  // dead node now, and we do not have to update all the nodes that had
+  // the old_node as their "get_ctrl" or "idom". We clean up the forwarding
+  // links when we query "get_ctrl" or "idom" for these nodes the next time.
+  void forward_ctrl(Node* old_node, Node* new_node) {
+    assert(!has_ctrl(old_node) && old_node->is_CFG() && old_node->in(0) == nullptr,
+           "must be dead ctrl (CFG) node");
+    assert(!has_ctrl(new_node) && new_node->is_CFG() && new_node->in(0) != nullptr,
+           "must be live ctrl (CFG) node");
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
     _loop_or_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
+    assert(has_ctrl(old_node), "must have installed ctrl forwarding");
   }
-  void lazy_replace(Node *old_node, Node *new_node) {
+
+  // Replace the old ctrl node with a new ctrl node.
+  // - Update the node inputs of all uses.
+  // - Lazily update the ctrl and idom info of all uses, via a ctrl/idom forwarding.
+  void replace_node_and_forward_ctrl(Node* old_node, Node* new_node) {
     _igvn.replace_node(old_node, new_node);
-    lazy_update(old_node, new_node);
+    forward_ctrl(old_node, new_node);
   }
 
 private:
@@ -1208,29 +1252,41 @@ private:
 
   Node* insert_convert_node_if_needed(BasicType target, Node* input);
 
-public:
   Node* idom_no_update(Node* d) const {
     return idom_no_update(d->_idx);
   }
 
-  Node* idom_no_update(uint didx) const {
-    assert(didx < _idom_size, "oob");
-    Node* n = _idom[didx];
+  Node* idom_no_update(uint node_idx) const {
+    assert(node_idx < _idom_size, "oob");
+    Node* n = _idom[node_idx];
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
+      // We encountered a dead CFG node.
+      // If everything went right, this dead CFG node should have had an idom
+      // forwarding installed, using "forward_ctrl". We now have to jump from
+      // the old (dead) idom node to the new (live) idom node, in possibly
+      // multiple idom forwarding steps.
+      // Note that we piggyback on "_loop_or_ctrl" to do the forwarding,
+      // since we forward both "get_ctrl" and "idom" from the dead to the
+      // new live ctrl/idom nodes.
       n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
     }
     return n;
   }
 
-  Node *idom(Node* d) const {
-    return idom(d->_idx);
+public:
+  Node* idom(Node* n) const {
+    return idom(n->_idx);
   }
 
-  Node *idom(uint didx) const {
-    Node *n = idom_no_update(didx);
-    _idom[didx] = n; // Lazily remove dead CFG nodes from table.
+  Node* idom(uint node_idx) const {
+    Node* n = idom_no_update(node_idx);
+    // We store the found idom in the side-table again. In most cases,
+    // this is a no-op, since we just read from _idom. But in cases where
+    // there was an idom forwarding via dead idom nodes, this shortens the path.
+    // See: forward_ctrl
+    _idom[node_idx] = n;
     return n;
   }
 
@@ -1685,6 +1741,9 @@ private:
              policy < 0;
     }
   };
+
+
+  void split_thru_phi_yank_old_nodes(Node* n, Node* region);
 
 public:
 
