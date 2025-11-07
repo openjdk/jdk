@@ -95,11 +95,7 @@ final class WinFromParams {
             });
         }
 
-        try {
-            UPGRADE_UUID.findIn(params).map(UUID::fromString).ifPresent(pkgBuilder::upgradeCode);
-        } catch (IllegalArgumentException ex) {
-            throw new ConfigException(ex);
-        }
+        UPGRADE_UUID.findIn(params).map(UUID::fromString).ifPresent(pkgBuilder::upgradeCode);
 
         return pkgBuilder.create();
     }

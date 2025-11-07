@@ -28,7 +28,7 @@ package jdk.jpackage.internal.model;
 import java.util.Objects;
 
 /**
- * Base class for exceptions explicitly emitted by jpackage.
+ * Generic jpackage exception with non-null message.
  */
 public class JPackageException extends RuntimeException {
 
