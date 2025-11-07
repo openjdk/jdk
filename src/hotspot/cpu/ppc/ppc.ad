@@ -1835,8 +1835,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         if (PowerArchitecturePPC64 >= 9) {
           st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STXV", Matcher::regName[src_lo], dst_offset);
         } else {
-          st->print("%-7s %s, R1_SP, %d \t// vector spill copy", "ADDI", Matcher::regName[src_lo], dst_offset);
-          st->print("%-7s %s, [R1_SP] \t// vector spill copy", "STXVD2X", Matcher::regName[src_lo]);
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", dst_offset, "STXVD2X", Matcher::regName[src_lo]);
         }
       }
 #endif // !PRODUCT
@@ -1861,8 +1861,8 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         if (PowerArchitecturePPC64 >= 9) {
           st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
         } else {
-          st->print("%-7s %s, R1_SP, %d \t// vector spill copy", "ADDI", Matcher::regName[src_lo], src_offset);
-          st->print("%-7s %s, [R1_SP] \t// vector spill copy", "LXVD2X", Matcher::regName[dst_lo]);
+          st->print("%-7s R0, R1_SP, %d \t// vector spill copy\n\t"
+                    "%-7s %s, [R0] \t// vector spill copy", "ADDI", src_offset, "LXVD2X", Matcher::regName[dst_lo]);
         }
       }
 #endif // !PRODUCT
