@@ -121,8 +121,8 @@ TARGETS += $(INTPOLY_GEN_DONE)
 
 ################################################################################
 
-RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/jmod/resources/release.txt.template
-RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/internal/jmod/resources/release.txt
+RELEASE_FILE_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/resources/release.txt.template
+RELEASE_FILE_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/jdk/internal/misc/resources/release.txt
 
 RELEASE_FILE_VARDEPS := $(COMPANY_NAME) $(VERSION_STRING) $(VERSION_DATE)
 RELEASE_FILE_VARDEPS_FILE := $(call DependOnVariable, RELEASE_FILE_VARDEPS, \

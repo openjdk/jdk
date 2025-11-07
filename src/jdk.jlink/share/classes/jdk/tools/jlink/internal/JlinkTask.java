@@ -58,7 +58,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -241,19 +240,20 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
-    // Release information as in the java.base module for target image
-    public static final String JDK_RELEASE_RESOURCE = "jdk/internal/jmod/resources/release.txt";
+    // Release information stored in the java.base module
+    private static final String JDK_RELEASE_RESOURCE = "jdk/internal/misc/resources/release.txt";
 
     /**
      * Read the release.txt from the module.
      */
     private static Optional<String> getReleaseInfo(ModuleReference mref) throws IOException {
-        var in = mref.open().open(JDK_RELEASE_RESOURCE);
-        if (in.isEmpty()) {
+        Optional<InputStream> release = mref.open().open(JDK_RELEASE_RESOURCE);
+
+        if (release.isEmpty()) {
             return Optional.empty();
         }
 
-        try (var r = new BufferedReader(new InputStreamReader(in.get()))) {
+        try (var r = new BufferedReader(new InputStreamReader(release.get()))) {
             return Optional.of(r.readLine());
         }
     }
@@ -581,12 +581,11 @@ public class JlinkTask {
     }
 
     /*
-     * Checks the version of the module descriptor of java.base for compatibility
-     * with the current runtime version.
+     * Checks the release information of the java.base used for target image
+     * for compatibility with the java.base used by jlink.
      *
-     * @throws IllegalArgumentException the descriptor of java.base has no
-     * version or the java.base version is not the same as the current runtime's
-     * version.
+     * @throws IllegalArgumentException This jlink cannot be used to create
+     * the target runtime image.
      */
     private void checkJavaBaseVersion(ModuleFinder finder) {
         try {
@@ -596,18 +595,17 @@ public class JlinkTask {
                     .get()
                     .reference();
             ModuleReference target = finder.find("java.base").get();
+            // This jlink runtime should always have the release.txt
             String currentRelease = getReleaseInfo(current).orElseThrow(() ->
-                new IllegalArgumentException("Cannot find release.txt"));
+                    new IllegalArgumentException("Cannot find release.txt"));
+            // Old runtime may not have the release.txt, result in a mismatch
             String targetRelease = getReleaseInfo(target).orElse("N/A");
             if (! currentRelease.equals(targetRelease)) {
-                // jlink version and java.base version do not match.
-                // We do not (yet) support this mode.
+                // Current runtime image and the target runtime image is not compatible release
                 throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
                         currentRelease,
                         targetRelease));
             }
-        } catch (NoSuchElementException e) {
-            assert false : "Should have found java.base module";
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
