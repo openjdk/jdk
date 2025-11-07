@@ -236,9 +236,6 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // Trust final fields in records
   if (holder->is_record())
     return true;
-  // Trust final fields in String
-  if (holder->name() == ciSymbols::java_lang_String())
-    return true;
   // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
   // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
   if (holder->name() == ciSymbols::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||
