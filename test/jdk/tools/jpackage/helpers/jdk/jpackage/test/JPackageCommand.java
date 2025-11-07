@@ -864,6 +864,14 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         };
     }
 
+    public static CannedFormattedString makeError(CannedFormattedString v) {
+        return v.addPrefix("message.error-header");
+    }
+
+    public static CannedFormattedString makeAdvice(CannedFormattedString v) {
+        return v.addPrefix("message.advice-header");
+    }
+
     public String getValue(CannedFormattedString str) {
         return new CannedFormattedString(str.formatter(), str.key(), Stream.of(str.args()).map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
