@@ -27,6 +27,8 @@ import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.test.JPackageCommand.makeAdvice;
+import static jdk.jpackage.test.JPackageCommand.makeError;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +41,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
@@ -200,7 +203,7 @@ public final class ErrorTest {
     }
 
     public record TestSpec(Optional<PackageTypeSpec> type, Optional<String> appDesc, List<String> addArgs,
-            List<String> removeArgs, List<CannedFormattedString> expectedErrors) {
+            List<String> removeArgs, List<CannedFormattedString> expectedMessages) {
 
         static final class Builder {
 
@@ -265,26 +268,30 @@ public final class ErrorTest {
                 return removeArgs(List.of(v));
             }
 
-            Builder setErrors(List<CannedFormattedString> v) {
-                expectedErrors = v;
+            Builder setMessages(List<CannedFormattedString> v) {
+                expectedMessages = v;
                 return this;
             }
 
-            Builder setErrors(CannedFormattedString... v) {
-                return setErrors(List.of(v));
+            Builder setMessages(CannedFormattedString... v) {
+                return setMessages(List.of(v));
             }
 
-            Builder errors(List<CannedFormattedString> v) {
-                expectedErrors.addAll(v);
+            Builder messages(List<CannedFormattedString> v) {
+                expectedMessages.addAll(v);
                 return this;
             }
 
-            Builder errors(CannedFormattedString... v) {
-                return errors(List.of(v));
+            Builder messages(CannedFormattedString... v) {
+                return messages(List.of(v));
             }
 
             Builder error(String key, Object ... args) {
-                return errors(JPackageStringBundle.MAIN.cannedFormattedString(key, args));
+                return messages(makeError(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
+            }
+
+            Builder advice(String key, Object ... args) {
+                return messages(makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(key, args)));
             }
 
             Builder invalidTypeArg(String arg, String... otherArgs) {
@@ -298,14 +305,14 @@ public final class ErrorTest {
 
             TestSpec create() {
                 return new TestSpec(Optional.ofNullable(type), Optional.ofNullable(appDesc),
-                        List.copyOf(addArgs), List.copyOf(removeArgs), List.copyOf(expectedErrors));
+                        List.copyOf(addArgs), List.copyOf(removeArgs), List.copyOf(expectedMessages));
             }
 
             private PackageTypeSpec type = new PackageTypeSpec(PackageType.IMAGE);
             private String appDesc = DEFAULT_APP_DESC;
             private List<String> addArgs = new ArrayList<>();
             private List<String> removeArgs = new ArrayList<>();
-            private List<CannedFormattedString> expectedErrors = new ArrayList<>();
+            private List<CannedFormattedString> expectedMessages = new ArrayList<>();
         }
 
         public TestSpec {
@@ -315,7 +322,7 @@ public final class ErrorTest {
             addArgs.forEach(Objects::requireNonNull);
             Objects.requireNonNull(removeArgs);
             removeArgs.forEach(Objects::requireNonNull);
-            if (expectedErrors.isEmpty()) {
+            if (expectedMessages.isEmpty()) {
                 throw new IllegalArgumentException("The list of expected errors must be non-empty");
             }
         }
@@ -353,7 +360,7 @@ public final class ErrorTest {
                 cmd.clearArguments().addArguments(newArgs);
             }
 
-            defaultInit(cmd, expectedErrors);
+            defaultInit(cmd, expectedMessages);
             cmd.execute(1);
         }
 
@@ -372,7 +379,7 @@ public final class ErrorTest {
             if (!removeArgs.isEmpty()) {
                 sb.append("args-del=").append(removeArgs).append("; ");
             }
-            sb.append("errors=").append(expectedErrors);
+            sb.append("errors=").append(expectedMessages);
             return sb.toString();
         }
 
@@ -395,7 +402,7 @@ public final class ErrorTest {
             // no main-class
             testSpec().removeArgs("--main-class")
                     .error("error.no-main-class-with-main-jar", "hello.jar")
-                    .error("error.no-main-class-with-main-jar.advice", "hello.jar"),
+                    .advice("error.no-main-class-with-main-jar.advice", "hello.jar"),
             // non-existent main jar
             testSpec().addArgs("--main-jar", "non-existent.jar")
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
@@ -577,24 +584,24 @@ public final class ErrorTest {
             return Stream.of(
                     testSpec().type(type).addArgs("--launcher-as-service")
                             .error("error.missing-service-installer")
-                            .error("error.missing-service-installer.advice"),
+                            .advice("error.missing-service-installer.advice"),
                     // The below version strings are invalid for msi and exe packaging.
                     // They are valid for app image packaging.
                     testSpec().type(type).addArgs("--app-version", "1234")
                             .error("error.msi-product-version-components", "1234")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.3.4.5")
                             .error("error.msi-product-version-components", "1.2.3.4.5")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
                             .error("error.msi-product-version-major-out-of-range", "256.1")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
                             .error("error.msi-product-version-minor-out-of-range", "1.256")
-                            .error("error.version-string-wrong-format.advice"),
+                            .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
                             .error("error.msi-product-version-build-out-of-range", "1.2.65536")
-                            .error("error.version-string-wrong-format.advice")
+                            .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
 
@@ -610,10 +617,10 @@ public final class ErrorTest {
         testCases.addAll(Stream.of(
                 testSpec().addArgs("--app-version", "0.2")
                         .error("message.version-string-first-number-not-zero")
-                        .error("error.invalid-cfbundle-version.advice"),
+                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().addArgs("--app-version", "1.2.3.4")
                         .error("message.version-string-too-many-components")
-                        .error("error.invalid-cfbundle-version.advice"),
+                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),
@@ -659,10 +666,10 @@ public final class ErrorTest {
         testCases.addAll(Stream.of(
                 testSpec().type(PackageType.LINUX_DEB).addArgs("--linux-package-name", "#")
                         .error("error.deb-invalid-value-for-package-name", "#")
-                        .error("error.deb-invalid-value-for-package-name.advice"),
+                        .advice("error.deb-invalid-value-for-package-name.advice"),
                 testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-package-name", "#")
                         .error("error.rpm-invalid-value-for-package-name", "#")
-                        .error("error.rpm-invalid-value-for-package-name.advice")
+                        .advice("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
         invalidShortcut(testCases::add, "--linux-shortcut");
@@ -683,12 +690,14 @@ public final class ErrorTest {
         final var signingId = "foo";
 
         final List<CannedFormattedString> errorMessages = new ArrayList<>();
-        errorMessages.add(JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.cert.not.found", "Developer ID Application: " + signingId, ""));
+        errorMessages.add(makeError(JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.cert.not.found", "Developer ID Application: " + signingId, "")));
         errorMessages.addAll(Stream.of(
-                "error.explicit-sign-no-cert",
-                "error.explicit-sign-no-cert.advice"
-        ).map(JPackageStringBundle.MAIN::cannedFormattedString).toList());
+                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert", JPackageCommand::makeError),
+                Map.<String, UnaryOperator<CannedFormattedString>>entry("error.explicit-sign-no-cert.advice", JPackageCommand::makeAdvice)
+        ).map(e -> {
+            return e.getValue().apply(JPackageStringBundle.MAIN.cannedFormattedString(e.getKey()));
+        }).toList());
 
         final var cmd = JPackageCommand.helloAppImage()
                 .ignoreDefaultVerbose(true)
@@ -730,16 +739,16 @@ public final class ErrorTest {
     }
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
-        var runtimeWithBinDirErr = JPackageStringBundle.MAIN.cannedFormattedString(
+        var runtimeWithBinDirErr = makeError(JPackageStringBundle.MAIN.cannedFormattedString(
                 "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.JAVA_HOME.token()));
-        var runtimeWithBinDirErrAdvice = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
+                }, Token.JAVA_HOME.token())));
+        var runtimeWithBinDirErrAdvice = makeAdvice(JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store"));
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
-                        .errors(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
+                        .messages(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
         ).map(TestSpec.Builder::create).forEach(accumulator);
 
         Stream.of(
@@ -771,14 +780,14 @@ public final class ErrorTest {
         }
 
         TestSpec.Builder applyTo(TestSpec.Builder builder) {
-            return builder.addArgs("--runtime-image", runtimeDir.token()).errors(expectedErrorMsg());
+            return builder.addArgs("--runtime-image", runtimeDir.token()).messages(expectedErrorMsg());
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return JPackageStringBundle.MAIN.cannedFormattedString(
+            return makeError(JPackageStringBundle.MAIN.cannedFormattedString(
                     "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                         return Path.of(cmd.getArgumentValue("--runtime-image"));
-                    }, runtimeDir.token()), missingFile);
+                    }, runtimeDir.token()), missingFile));
         }
     }
 
@@ -849,7 +858,7 @@ public final class ErrorTest {
         );
     }
 
-    private static void defaultInit(JPackageCommand cmd, List<CannedFormattedString> expectedErrors) {
+    private static void defaultInit(JPackageCommand cmd, List<CannedFormattedString> expectedMessages) {
 
         // Disable default logic adding `--verbose` option
         // to jpackage command line.
@@ -860,7 +869,7 @@ public final class ErrorTest {
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 
-        cmd.validateOutput(expectedErrors.toArray(CannedFormattedString[]::new));
+        cmd.validateOutput(expectedMessages.toArray(CannedFormattedString[]::new));
     }
 
     private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {
