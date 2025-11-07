@@ -383,12 +383,8 @@ class MultiExchange<T> implements Cancelable {
                 result.complete(setNewResponse(r.request(), r, nullBody, exch));
             }
         });
-        return result.whenComplete((response, throwable) -> {
-            // Ensure that the timer is cancelled
-            cancelTimer();
-            // Ensure that the connection is closed or returned to the pool
-            exch.nullBody(response, throwable);
-        });
+        // ensure that the connection is closed or returned to the pool.
+        return result.whenComplete(exch::nullBody);
     }
 
     // creates a new HttpResponseImpl object and assign it to this.response
@@ -407,6 +403,8 @@ class MultiExchange<T> implements Cancelable {
                         processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
+                            // No response body consumption is expected, we can cancel the timer right away
+                            cancelTimer();
                             if (bodyIsPresent(r)) {
                                 IOException ioe = new IOException(
                                     "unexpected content length header with 204 response");
