@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_JFR_HPP
 #define SHARE_JFR_JFR_HPP
 
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
@@ -78,6 +79,8 @@ class Jfr : AllStatic {
   static void initialize_main_thread(JavaThread* jt);
   static bool has_sample_request(JavaThread* jt);
   static void check_and_process_sample_request(JavaThread* jt);
+  static void on_restoration(const Klass* k, JavaThread* jt);
+  static void init_id(const InstanceKlass* ik, ClassFileParser& parser, JavaThread* jt);
 };
 
 #endif // SHARE_JFR_JFR_HPP

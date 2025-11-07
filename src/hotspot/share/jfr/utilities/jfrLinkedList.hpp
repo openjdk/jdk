@@ -43,6 +43,7 @@ class JfrLinkedList : public AllocPolicy {
   bool is_empty() const;
   bool is_nonempty() const;
   void add(NodePtr node);
+  bool try_add(NodePtr node);
   void add_list(NodePtr first);
   NodePtr remove();
   template <typename Callback>

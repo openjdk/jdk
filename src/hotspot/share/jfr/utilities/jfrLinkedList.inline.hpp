@@ -63,6 +63,14 @@ inline void JfrLinkedList<NodeType, AllocPolicy>::add(NodeType* node) {
 }
 
 template <typename NodeType, typename AllocPolicy>
+inline bool JfrLinkedList<NodeType, AllocPolicy>::try_add(NodeType* node) {
+  assert(node != nullptr, "invariant");
+  NodePtr next = head();
+  node->_next = next;
+  return AtomicAccess::cmpxchg(&_head, next, node) == next;
+}
+
+template <typename NodeType, typename AllocPolicy>
 inline NodeType* JfrLinkedList<NodeType, AllocPolicy>::remove() {
   NodePtr node;
   NodePtr next;
