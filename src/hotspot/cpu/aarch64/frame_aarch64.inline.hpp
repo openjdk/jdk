@@ -123,11 +123,7 @@ inline void frame::setup(address pc) {
     assert(_cb == nullptr || _cb->as_nmethod()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the compiled method (or must be immediately following it)");
   } else {
-    if (_cb == SharedRuntime::deopt_blob()) {
-      _deopt_state = is_deoptimized;
-    } else {
-      _deopt_state = not_deoptimized;
-    }
+    _deopt_state = not_deoptimized;
   }
   _sp_is_trusted = false;
 }
