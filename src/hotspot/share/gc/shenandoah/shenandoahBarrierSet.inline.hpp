@@ -191,8 +191,32 @@ inline void ShenandoahBarrierSet::keep_alive_if_weak(DecoratorSet decorators, oo
 template <DecoratorSet decorators, typename T>
 inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
-  *byte = CardTable::dirty_card_val();
+  
+  // Exclude if young field 
+  if (_heap->is_in_young(field)) {
+    return;
+  }
+  
+  // Exclude old-old
+  T heap_oop = RawAccess<>::oop_load(field);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    // Field is in old generation, If referenced object is also in old gen, skip card marking
+    if (!_heap->is_in_young(obj)) {
+        return;
+    }
+  }
+  
+  // Honor UseCondCardMark: check if card is already dirty before writing
+  if (UseCondCardMark) {
+    if (*byte != CardTable::dirty_card_val()) {
+      *byte = CardTable::dirty_card_val();
+    }
+  } else {
+    *byte = CardTable::dirty_card_val();
+  }
 }
 
 template <typename T>
