@@ -99,8 +99,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="chinese" draft="unconfirmed">calendari xinés</type>
 			<type key="calendar" type="japanese" draft="unconfirmed">calendari japonés</type>
-			<type key="collation" type="big5han" draft="unconfirmed">ordre del xinés tradicional - Big5</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">ordre del xinés simplificat - GB2312</type>
 		</types>
 	</localeDisplayNames>
 	<dates>

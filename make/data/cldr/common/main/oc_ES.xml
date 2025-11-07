@@ -27,7 +27,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_419" draft="unconfirmed">espanhòu latinoamerican</language>
 			<language type="es_ES" draft="unconfirmed">espanhòu d’Espanha</language>
 			<language type="es_MX" draft="unconfirmed">espanhòu de Mexic</language>
-			<language type="fi" draft="unconfirmed">finés</language>
 			<language type="fr_CA" draft="unconfirmed">francés canadienc</language>
 			<language type="fr_CH" draft="unconfirmed">francés suís</language>
 			<language type="hi_Latn" draft="unconfirmed">hindi (latin)</language>
@@ -41,7 +40,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="th" draft="unconfirmed">tailandés</language>
 			<language type="und" draft="unconfirmed">lengua desconeishuda</language>
 			<language type="zh" alt="menu" draft="unconfirmed">chinés mandarin</language>
-			<language type="zh_Hans" draft="unconfirmed">shinés simplificat</language>
 			<language type="zh_Hant" draft="unconfirmed">chinés tradicionau</language>
 			<language type="zh_Hant" alt="long" draft="unconfirmed">chinés mandarin tradicionau</language>
 		</languages>
@@ -50,7 +48,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone" draft="unconfirmed">han simplificat</script>
 			<script type="Hant" draft="unconfirmed">tradicionau</script>
 			<script type="Hant" alt="stand-alone" draft="unconfirmed">han tradicionau</script>
-			<script type="Latn" draft="unconfirmed">latino</script>
 			<script type="Zxxx" draft="unconfirmed">no escrit</script>
 			<script type="Zzzz" draft="unconfirmed">alfabet desconeishut</script>
 		</scripts>
@@ -68,7 +65,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="021" draft="unconfirmed">Nòrt America</territory>
 			<territory type="030" draft="unconfirmed">Asia orientau</territory>
 			<territory type="034" draft="unconfirmed">Asia meridionau</territory>
-			<territory type="035" draft="unconfirmed">Sudèst aisatic</territory>
+			<territory type="035" draft="unconfirmed">Sudèst asiatic</territory>
 			<territory type="039" draft="unconfirmed">Euròpa meridionau</territory>
 			<territory type="053" draft="unconfirmed">Australasia</territory>
 			<territory type="057" draft="unconfirmed">Region de Micronesia</territory>
@@ -241,7 +238,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-initial" draft="unconfirmed">… {0}</ellipsis>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="’" draft="unconfirmed">['＇’ ՚ ᾽᾿ ʼ ߴ]</parseLenient>
-			<parseLenient sample="£" draft="unconfirmed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="unconfirmed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -475,6 +471,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">G</month>
+							<month type="2" draft="unconfirmed">H</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">gèr</month>
 							<month type="2" draft="unconfirmed">hereuèr</month>
@@ -645,9 +655,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="Bh" draft="unconfirmed">h B</dateFormatItem>
 						<dateFormatItem id="Bhm" draft="unconfirmed">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms" draft="unconfirmed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="EBhm" draft="unconfirmed">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms" draft="unconfirmed">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm" draft="unconfirmed">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm" draft="unconfirmed">E, H:mm</dateFormatItem>
@@ -877,9 +885,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="unconfirmed">ciutat desconeishuda</exemplarCity>
 			</zone>
-			<zone type="Europe/Tirane">
-				<exemplarCity draft="unconfirmed">Tirana</exemplarCity>
-			</zone>
 			<zone type="Asia/Yerevan">
 				<exemplarCity draft="unconfirmed">Ereván</exemplarCity>
 			</zone>
@@ -965,7 +970,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="unconfirmed">Santiago de Chile</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
-				<exemplarCity draft="unconfirmed">Ürümqi</exemplarCity>
+				<exemplarCity draft="unconfirmed">Urumqui</exemplarCity>
 			</zone>
 			<zone type="America/Bogota">
 				<exemplarCity draft="unconfirmed">Bogotá</exemplarCity>
@@ -978,9 +983,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity draft="unconfirmed">Cabo Verde</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity draft="unconfirmed">Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity draft="unconfirmed">Nadau</exemplarCity>
@@ -1062,9 +1064,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Tokyo">
 				<exemplarCity draft="unconfirmed">Tokio</exemplarCity>
 			</zone>
-			<zone type="Indian/Comoro">
-				<exemplarCity draft="unconfirmed">Comores</exemplarCity>
-			</zone>
 			<zone type="America/St_Kitts">
 				<exemplarCity draft="unconfirmed">Sant Cristòbal</exemplarCity>
 			</zone>
@@ -1086,6 +1085,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity draft="unconfirmed">Kyzylorda</exemplarCity>
 			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity draft="unconfirmed">Vientian</exemplarCity>
+			</zone>
 			<zone type="America/St_Lucia">
 				<exemplarCity draft="unconfirmed">Santa Lucía</exemplarCity>
 			</zone>
@@ -1094,6 +1096,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Tripoli">
 				<exemplarCity draft="unconfirmed">Trípoli</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity draft="unconfirmed">Chisinau</exemplarCity>
 			</zone>
 			<zone type="Europe/Skopje">
 				<exemplarCity draft="unconfirmed">Skopie</exemplarCity>
@@ -1140,6 +1145,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Qatar">
 				<exemplarCity draft="unconfirmed">Catar</exemplarCity>
 			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity draft="unconfirmed">Reunion</exemplarCity>
+			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity draft="unconfirmed">Bucarest</exemplarCity>
 			</zone>
@@ -1173,9 +1181,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Riyadh">
 				<exemplarCity draft="unconfirmed">Riad</exemplarCity>
 			</zone>
-			<zone type="Indian/Mahe">
-				<exemplarCity draft="unconfirmed">Mahé</exemplarCity>
-			</zone>
 			<zone type="Africa/Khartoum">
 				<exemplarCity draft="unconfirmed">Jartum</exemplarCity>
 			</zone>
@@ -1206,9 +1211,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Ndjamena">
 				<exemplarCity draft="unconfirmed">Yamena</exemplarCity>
 			</zone>
-			<zone type="Africa/Lome">
-				<exemplarCity draft="unconfirmed">Lomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Dushanbe">
 				<exemplarCity draft="unconfirmed">Dusambé</exemplarCity>
 			</zone>
@@ -1229,6 +1231,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Simferòpol</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity draft="unconfirmed">Isla Wake</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity draft="unconfirmed">Beulah, Dakota deth Nòrd</exemplarCity>
@@ -1260,6 +1265,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Saigon">
 				<exemplarCity draft="unconfirmed">Ciutat Ho Chi Minh</exemplarCity>
 			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity draft="unconfirmed">Wallis e Furtuna</exemplarCity>
+			</zone>
 			<metazone type="Africa_Central">
 				<long>
 					<standard draft="unconfirmed">ora d’Africa central</standard>
@@ -1272,9 +1280,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic draft="unconfirmed">ora d’Africa occidentau</generic>
-					<standard draft="unconfirmed">ora esdandard d’Africa occidentau</standard>
-					<daylight draft="unconfirmed">ora d’estiu d’Africa occidentau</daylight>
+					<standard draft="unconfirmed">ora d’Africa occidentau</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -1558,6 +1564,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">ora de Guyana</standard>
 				</long>
 			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard draft="unconfirmed">ora estandard de Hawai-Aleutianes</standard>
+				</long>
+			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic draft="unconfirmed">ora de Hawai-Aleutianes</generic>
@@ -1630,6 +1641,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">ora de Japon</generic>
 					<standard draft="unconfirmed">ora estandard de Japon</standard>
 					<daylight draft="unconfirmed">ora d’estiu de Japon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard draft="unconfirmed">ora de Kazajistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2103,6 +2119,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2110,6 +2128,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2117,6 +2137,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2124,6 +2146,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2131,6 +2155,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2138,6 +2164,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2145,6 +2173,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2152,6 +2182,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2159,6 +2191,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2166,6 +2200,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2173,6 +2209,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2180,6 +2218,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2187,6 +2227,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2194,6 +2236,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2201,6 +2245,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2208,6 +2254,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2215,6 +2263,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2222,6 +2272,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2229,6 +2281,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2236,6 +2290,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2243,6 +2299,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2250,6 +2308,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2257,6 +2317,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2264,6 +2326,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2271,6 +2335,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2278,6 +2344,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2285,6 +2353,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2292,6 +2362,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2299,6 +2371,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2306,6 +2380,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2313,6 +2389,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2320,6 +2398,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2327,6 +2407,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2334,6 +2416,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2341,6 +2425,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2348,6 +2434,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2355,6 +2443,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2362,6 +2452,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2369,6 +2461,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2376,6 +2470,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2383,6 +2479,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2390,6 +2488,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2397,6 +2497,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2404,6 +2506,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2411,6 +2515,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

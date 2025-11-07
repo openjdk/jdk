@@ -128,10 +128,10 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="version">
     <xs:complexType>
       <xs:attribute name="number" use="required"/>
-      <xs:attribute default="47" name="cldrVersion">
+      <xs:attribute default="48" name="cldrVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="47"/>
+            <xs:enumeration value="48"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
@@ -182,6 +182,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
     <xs:complexType mixed="true">
       <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="menu" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">
         <xs:simpleType>
           <xs:restriction base="xs:token">
@@ -197,6 +198,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
+  
   
   
   
@@ -696,6 +698,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
     <xs:complexType mixed="true">
       <xs:attribute name="key" type="xs:NMTOKEN" use="required"/>
       <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="scope" type="xs:NMTOKEN"/>
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">
         <xs:simpleType>
@@ -712,6 +715,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="references"/>
     </xs:complexType>
   </xs:element>
+  
   
   
   
@@ -1196,12 +1200,15 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="type">
         <xs:simpleType>
           <xs:restriction base="xs:token">
-            <xs:enumeration value="auxiliary"/>
             <xs:enumeration value="standard"/>
-            <xs:enumeration value="punctuation"/>
-            <xs:enumeration value="currencySymbol"/>
-            <xs:enumeration value="index"/>
+            <xs:enumeration value="auxiliary"/>
             <xs:enumeration value="numbers"/>
+            <xs:enumeration value="numbers-auxiliary"/>
+            <xs:enumeration value="punctuation"/>
+            <xs:enumeration value="punctuation-auxiliary"/>
+            <xs:enumeration value="punctuation-person"/>
+            <xs:enumeration value="index"/>
+            <xs:enumeration value="currencySymbol"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
@@ -4512,6 +4519,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="hoursFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtZeroFormat"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="gmtUnknownFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="regionFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackFormat"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="fallbackRegionFormat"/>
@@ -4613,6 +4621,28 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   <xs:element name="gmtZeroFormat">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="gmtUnknownFormat">
     <xs:complexType mixed="true">
       <xs:attribute name="alt" type="xs:NMTOKENS"/>
       <xs:attribute name="draft">
@@ -5099,6 +5129,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="minimumGroupingDigits"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="symbols"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="decimalFormats"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="rationalFormats"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="scientificFormats"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="percentFormats"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="currencyFormats"/>
@@ -5828,6 +5859,72 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  
+  
+  <xs:element name="rationalFormats">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:sequence>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="rationalPattern"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="integerAndRationalPattern"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="rationalUsage"/>
+          <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
+        </xs:sequence>
+      </xs:choice>
+      <xs:attribute name="numberSystem" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="rationalPattern">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="integerAndRationalPattern">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="rationalUsage">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
   
   
   <xs:element name="scientificFormats">
@@ -8049,6 +8146,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:choice>
         <xs:element ref="alias"/>
         <xs:sequence>
+          <xs:element minOccurs="0" ref="rbnfRules"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="ruleset"/>
           <xs:element maxOccurs="unbounded" minOccurs="0" ref="special"/>
         </xs:sequence>
@@ -8068,6 +8166,27 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       </xs:attribute>
     </xs:complexType>
   </xs:element>
+  
+  
+  <xs:element name="rbnfRules">
+    <xs:complexType mixed="true">
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
   
   
   <xs:element name="ruleset">
