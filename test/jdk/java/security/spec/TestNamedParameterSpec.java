@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8345057 8314323
+ * @bug 8345057
  * @summary Test the existence of constants inside the
  *         java.security.spec.NamedParameterSpec class.
  * @run main TestNamedParameterSpec
@@ -41,7 +41,6 @@ public class TestNamedParameterSpec {
         "ED25519", "ED448", "X25519", "X448",
         "ML_DSA_44", "ML_DSA_65", "ML_DSA_87",
         "ML_KEM_512", "ML_KEM_768", "ML_KEM_1024",
-        "X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024",
     };
 
     public static void main(String[] args) throws Exception {
