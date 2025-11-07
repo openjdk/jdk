@@ -30,7 +30,7 @@ import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.runtime.x86.*;
+import sun.jvm.hotspot.runtime.amd64.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
@@ -67,7 +67,7 @@ public class AMD64CurrentFrameGuess {
 
   private boolean validateInterpreterFrame(Address sp, Address fp, Address pc) {
     VM vm = VM.getVM();
-    X86Frame f = new X86Frame(sp, fp, pc);
+    AMD64Frame f = new AMD64Frame(sp, fp, pc);
 
     // First validate that frame->method is really a Method*
     Method method = null;
@@ -263,7 +263,7 @@ public class AMD64CurrentFrameGuess {
              offset += vm.getAddressSize()) {
           try {
             Address curSP = sp.addOffsetTo(offset);
-            Frame frame = new X86Frame(curSP, null, pc);
+            Frame frame = new AMD64Frame(curSP, null, pc);
             RegisterMap map = thread.newRegisterMap(false);
             while (frame != null) {
               if (frame.isEntryFrame() && frame.entryFrameIsFirst()) {

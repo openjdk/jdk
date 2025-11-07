@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -90,9 +89,7 @@ public final class LinuxHelper {
 
     public static Path getDesktopFile(JPackageCommand cmd, String launcherName) {
         cmd.verifyIsOfType(PackageType.LINUX);
-        String desktopFileName = String.format("%s-%s.desktop", getPackageName(
-                cmd), Optional.ofNullable(launcherName).orElseGet(
-                        () -> cmd.name()).replaceAll("\\s+", "_"));
+        var desktopFileName = getLauncherDesktopFileName(cmd, launcherName);
         return cmd.appLayout().desktopIntegrationDirectory().resolve(
                 desktopFileName);
     }
@@ -102,7 +99,7 @@ public final class LinuxHelper {
         return cmd.pathToUnpackedPackageFile(
                 Path.of("/lib/systemd/system").resolve(getServiceUnitFileName(
                         getPackageName(cmd),
-                        Optional.ofNullable(launcherName).orElseGet(cmd::name))));
+                        Optional.ofNullable(launcherName).orElseGet(cmd::mainLauncherName))));
     }
 
     static String getBundleName(JPackageCommand cmd) {
@@ -202,6 +199,20 @@ public final class LinuxHelper {
             default:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    private static Path getFaIconFileName(JPackageCommand cmd, String mimeType) {
+        return Path.of(mimeType.replace('/', '-') + ".png");
+    }
+
+    static Path getLauncherDesktopFileName(JPackageCommand cmd, String launcherName) {
+        return Path.of(String.format("%s-%s.desktop", getPackageName(cmd),
+                Optional.ofNullable(launcherName).orElseGet(cmd::name).replaceAll("\\s+", "_")));
+    }
+
+    static Path getLauncherIconFileName(JPackageCommand cmd, String launcherName) {
+        return Path.of(String.format("%s.png",
+                Optional.ofNullable(launcherName).orElseGet(cmd::name).replaceAll("\\s+", "_")));
     }
 
     static PackageHandlers createDebPackageHandlers() {
@@ -358,12 +369,11 @@ public final class LinuxHelper {
         cmd.verifyIsOfType(PackageType.LINUX);
 
         final var desktopFiles = getDesktopFiles(cmd);
-        final var predefinedAppImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load);
 
         return desktopFiles.stream().map(desktopFile -> {
             var systemDesktopFile = getSystemDesktopFilesFolder().resolve(desktopFile.getFileName());
             return new InvokeShortcutSpec.Stub(
-                    launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile),
+                    launcherNameFromDesktopFile(cmd, desktopFile),
                     LauncherShortcut.LINUX_SHORTCUT,
                     new DesktopFile(systemDesktopFile, false).findQuotedValue("Path").map(Path::of),
                     List.of("gtk-launch", PathUtils.replaceSuffix(systemDesktopFile.getFileName(), "").toString()));
@@ -423,7 +433,14 @@ public final class LinuxHelper {
         });
     }
 
-    static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
+    static void verifyDesktopIntegrationFiles(JPackageCommand cmd, boolean installed) {
+        verifyDesktopFiles(cmd, installed);
+        if (installed) {
+            verifyAllIconsReferenced(cmd);
+        }
+    }
+
+    private static void verifyDesktopFiles(JPackageCommand cmd, boolean installed) {
         final var desktopFiles = getDesktopFiles(cmd);
         try {
             if (installed) {
@@ -479,16 +496,44 @@ public final class LinuxHelper {
         }).map(packageDir::relativize);
     }
 
-    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
+    private static void verifyAllIconsReferenced(JPackageCommand cmd) {
+
+        var installCmd = Optional.ofNullable(cmd.unpackedPackageDirectory()).map(_ -> {
+            return cmd.createMutableCopy().setUnpackedPackageLocation(null);
+        }).orElse(cmd);
+
+        var installedIconFiles = relativePackageFilesInSubdirectory(
+                installCmd,
+                ApplicationLayout::desktopIntegrationDirectory
+        ).filter(path -> {
+            return ".png".equals(PathUtils.getSuffix(path));
+        }).map(installCmd.appLayout().desktopIntegrationDirectory()::resolve).collect(toSet());
+
+        var referencedIcons = getDesktopFiles(cmd).stream().map(path -> {
+            return new DesktopFile(path, false);
+        }).<Path>mapMulti((desktopFile, sink) -> {
+            desktopFile.findQuotedValue("Icon").map(Path::of).ifPresent(sink);
+            desktopFile.find("MimeType").ifPresent(str -> {
+                Stream.of(str.split(";"))
+                        .map(mimeType -> {
+                            return getFaIconFileName(cmd, mimeType);
+                        })
+                        .map(installCmd.appLayout().desktopIntegrationDirectory()::resolve)
+                        .forEach(sink);
+            });
+        }).collect(toSet());
+
+        var unreferencedIconFiles = Comm.compare(installedIconFiles, referencedIcons).unique1().stream().sorted().toList();
+
+        // Verify that all package icon (.png) files are referenced from package .desktop files.
+        TKit.assertEquals(List.of(), unreferencedIconFiles, "Check there are no unreferenced icon files in the package");
+    }
+
+    private static String launcherNameFromDesktopFile(JPackageCommand cmd, Path desktopFile) {
         Objects.requireNonNull(cmd);
-        Objects.requireNonNull(predefinedAppImage);
         Objects.requireNonNull(desktopFile);
 
-        return predefinedAppImage.map(v -> {
-            return v.launchers().keySet().stream();
-        }).orElseGet(() -> {
-            return Stream.concat(Stream.of(cmd.name()), cmd.addLauncherNames().stream());
-        }).filter(name-> {
+        return Stream.concat(Stream.of(cmd.mainLauncherName()), cmd.addLauncherNames(true).stream()).filter(name-> {
             return getDesktopFile(cmd, name).equals(desktopFile);
         }).findAny().orElseThrow(() -> {
             TKit.assertUnexpected(String.format("Failed to find launcher corresponding to [%s] file", desktopFile));
@@ -504,7 +549,7 @@ public final class LinuxHelper {
 
         TKit.trace(String.format("Check [%s] file BEGIN", desktopFile));
 
-        var launcherName = launcherNameFromDesktopFile(cmd, predefinedAppImage, desktopFile);
+        var launcherName = launcherNameFromDesktopFile(cmd, desktopFile);
 
         var data = new DesktopFile(desktopFile, true);
 
@@ -514,14 +559,7 @@ public final class LinuxHelper {
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
                 "Check for missing %s keys in the file", mandatoryKeys));
 
-        final String launcherDescription;
-        if (cmd.name().equals(launcherName) || predefinedAppImage.isPresent()) {
-            launcherDescription = Optional.ofNullable(cmd.getArgumentValue("--description")).orElseGet(cmd::name);
-        } else {
-            launcherDescription = getAdditionalLauncherProperties(cmd, launcherName).findProperty("description").or(() -> {
-                return Optional.ofNullable(cmd.getArgumentValue("--description"));
-            }).orElseGet(cmd::name);
-        }
+        final var launcherDescription = LauncherVerifier.launcherDescription(cmd, launcherName);
 
         for (var e : List.of(
                 Map.entry("Type", "Application"),
@@ -661,16 +699,19 @@ public final class LinuxHelper {
         });
 
         test.addBundleVerifier(cmd -> {
-            final Path mimeTypeIconFileName = fa.getLinuxIconFileName();
-            if (mimeTypeIconFileName != null) {
-                // Verify there are xdg registration commands for mime icon file.
-                Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
-                        mimeTypeIconFileName);
+            Optional.of(fa).filter(FileAssociations::hasIcon)
+                    .map(FileAssociations::getMime)
+                    .map(mimeType -> {
+                        return getFaIconFileName(cmd, mimeType);
+                    }).ifPresent(mimeTypeIconFileName -> {
+                        // Verify there are xdg registration commands for mime icon file.
+                        Path mimeTypeIcon = cmd.appLayout().desktopIntegrationDirectory().resolve(
+                                mimeTypeIconFileName);
 
-                Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
-                scriptlets.entrySet().stream().forEach(e -> verifyIconInScriptlet(
-                        e.getKey(), e.getValue(), mimeTypeIcon));
-            }
+                        Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
+                        scriptlets.entrySet().stream().forEach(e -> verifyIconInScriptlet(
+                                e.getKey(), e.getValue(), mimeTypeIcon));
+                    });
         });
     }
 
@@ -831,8 +872,9 @@ public final class LinuxHelper {
         return arch;
     }
 
-    private static String getServiceUnitFileName(String packageName,
-            String launcherName) {
+    private static String getServiceUnitFileName(String packageName, String launcherName) {
+        Objects.requireNonNull(packageName);
+        Objects.requireNonNull(launcherName);
         try {
             return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
         } catch (InvocationTargetException | IllegalAccessException ex) {
