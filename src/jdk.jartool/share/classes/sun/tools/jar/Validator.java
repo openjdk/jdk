@@ -244,16 +244,13 @@ final class Validator {
                 warn(formatMsg("warn.validator.invalid.entry.name", entryName));
                 isValid = false;
             }
-            int entryCenOrder = entryInfo.cen().order();
             if ("META-INF/MANIFEST.MF".equals(entryName)) {
-                // Expect base manifest at index 0 or 1
-                if (entryCenOrder > 1) {
-                    String position = Integer.toString(entryCenOrder);
+                int index = entryInfo.cen().order();
+                if (index > 1) { // expect base manifest at index 0 or 1
+                    String position = Integer.toString(index);
                     errorAndInvalid(formatMsg("error.validator.wrong.position", entryName, position));
-                }
-                // If manifest is at index 1, ensure "META-INF/" is at index 0
-                if (entryCenOrder == 1) {
-                    var firstName = entries.sequencedKeySet().getFirst();
+                } else if (index == 1) { // ensure "META-INF/" preceeds manifest
+                    String firstName = entries.sequencedKeySet().getFirst();
                     if (!"META-INF/".equals(firstName)) {
                         errorAndInvalid(formatMsg("error.validator.wrong.position", firstName, "0"));
                     }
@@ -270,7 +267,7 @@ final class Validator {
             } else if (entryInfo.loc().isPlaceHolder()) {
                 warn(formatMsg("warn.validator.cen.only.entry", entryName));
                 isValid = false;
-            } else if (!outOfOrder && entryInfo.loc().order() != entryCenOrder) {
+            } else if (!outOfOrder && entryInfo.loc().order() != entryInfo.cen().order()) {
                 outOfOrder = true;
                 isValid = false;
                 warn(getMsg("warn.validator.order.mismatch"));
