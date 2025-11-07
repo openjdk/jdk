@@ -909,7 +909,7 @@ void StringTable::dump(outputStream* st, bool verbose) {
       st->print_cr("# Shared strings:");
       st->print_cr("#----------------");
       PrintSharedString pss(thr, st);
-      _shared_table.iterate(&pss);
+      _shared_table.iterate_all(&pss);
     }
 #endif
   }

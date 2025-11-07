@@ -3036,7 +3036,7 @@ void AdapterHandlerLibrary::link_aot_adapters() {
    * result in collision of adapter ids between AOT stored handlers and runtime generated handlers.
    * To avoid such situation, initialize the _id_counter with the largest adapter id among the AOT stored handlers.
    */
-  _aot_adapter_handler_table.iterate([&](AdapterHandlerEntry* entry) {
+  _aot_adapter_handler_table.iterate_all([&](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
     max_id = MAX2(max_id, entry->id());
@@ -3388,32 +3388,42 @@ JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
   FREE_C_HEAP_ARRAY(intptr_t, buf);
 JRT_END
 
-bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
-  bool found = false;
-#if INCLUDE_CDS
-  if (AOTCodeCache::is_using_adapter()) {
-    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
-      return (found = (b == CodeCache::find_blob(handler->get_i2c_entry())));
-    };
-    _aot_adapter_handler_table.iterate(findblob_archived_table);
-  }
-#endif // INCLUDE_CDS
-  if (!found) {
-    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
-      return (found = (b == CodeCache::find_blob(a->get_i2c_entry())));
-    };
-    assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-    _adapter_handler_table->iterate(findblob_runtime_table);
-  }
-  return found;
-}
-
 const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {
   return handler->fingerprint()->as_basic_args_string();
 }
 
 uint32_t AdapterHandlerLibrary::id(AdapterHandlerEntry* handler) {
   return handler->id();
+}
+
+bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
+  bool found = false;
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_using_adapter()) {
+    auto findblob_archived_table = [&] (AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+        found = true;
+        return false; // abort iteration
+      } else {
+        return true; // keep looking
+      }
+    };
+    _aot_adapter_handler_table.iterate(findblob_archived_table);
+  }
+#endif // INCLUDE_CDS
+  if (!found) {
+    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
+        found = true;
+        return false; // abort iteration
+      } else {
+        return true; // keep looking
+      }
+    };
+    assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
+    _adapter_handler_table->iterate(findblob_runtime_table);
+  }
+  return found;
 }
 
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
@@ -3425,23 +3435,23 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
         found = true;
         st->print("Adapter for signature: ");
         handler->print_adapter_on(st);
-        return true;
+        return false; // abort iteration
       } else {
-        return false; // keep looking
+        return true; // keep looking
       }
     };
     _aot_adapter_handler_table.iterate(findblob_archived_table);
   }
 #endif // INCLUDE_CDS
   if (!found) {
-    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
-      if (b == CodeCache::find_blob(a->get_i2c_entry())) {
+    auto findblob_runtime_table = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* handler) {
+      if (b == CodeCache::find_blob(handler->get_i2c_entry())) {
         found = true;
         st->print("Adapter for signature: ");
-        a->print_adapter_on(st);
-        return true;
+        handler->print_adapter_on(st);
+        return false; // abort iteration
       } else {
-        return false; // keep looking
+        return true; // keep looking
       }
     };
     assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
