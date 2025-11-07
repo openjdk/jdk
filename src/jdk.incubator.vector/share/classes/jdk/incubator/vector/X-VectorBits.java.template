@@ -674,7 +674,7 @@ final class $vectortype$ extends $abstractvectortype$ {
                                 this, i, (long){#if[FP16]?e:$Type$.$type$ToRaw$Bitstype$Bits(e)},
                                 (v, ix, bits) -> {
                                     $type$[] res = v.vec().clone();
-                                    res[ix] = {#if[FP16]?e:$Type$.$bitstype$BitsTo$Type$(($bitstype$)bits)};
+                                    res[ix] = {#if[FP16]?($bitstype$)bits:$Type$.$bitstype$BitsTo$Type$(($bitstype$)bits)};
                                     return v.vectorFactory(res);
                                 });
     }

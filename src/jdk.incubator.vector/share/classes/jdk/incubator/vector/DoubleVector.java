@@ -2704,6 +2704,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         }
     }
 
+
     private static final double MIN_OR_INF = Double.NEGATIVE_INFINITY;
     private static final double MAX_OR_INF = Double.POSITIVE_INFINITY;
 

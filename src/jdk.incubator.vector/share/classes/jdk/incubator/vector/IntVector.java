@@ -2875,6 +2875,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         }
     }
 
+
     private static final int MIN_OR_INF = Integer.MIN_VALUE;
     private static final int MAX_OR_INF = Integer.MAX_VALUE;
 

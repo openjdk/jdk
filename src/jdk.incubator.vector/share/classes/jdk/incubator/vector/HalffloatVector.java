@@ -42,6 +42,7 @@ import static jdk.incubator.vector.VectorIntrinsics.*;
 
 import static jdk.incubator.vector.VectorOperators.*;
 import jdk.incubator.vector.Float16;
+import static jdk.incubator.vector.Float16.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
 
@@ -495,7 +496,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
     /*package-private*/
     @ForceInline
     static short fromBits(long bits) {
-        return Float16.float16ToRawShortBits(Float16.shortBitsToFloat16((short)bits));
+        return (short)bits;
     }
 
     static HalffloatVector expandHelper(Vector<Float16> v, VectorMask<Float16> m) {
@@ -535,7 +536,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
         short[] vecPayload2 = ((HalffloatVector)src1).vec();
         short[] vecPayload3 = ((HalffloatVector)src2).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = Float16.shortBitsToFloat16(vecPayload1[i]).intValue();
+            int index = shortBitsToFloat16(vecPayload1[i]).intValue();
             int wrapped_index = VectorIntrinsics.wrapToRange(index, 2 * vlen);
             res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
         }
@@ -735,41 +736,41 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
     private static UnaryOperation<HalffloatVector, VectorMask<Float16>> unaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_NEG: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> (short) -a);
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(-(shortBitsToFloat16((short)a).floatValue()))));
             case VECTOR_OP_ABS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> (short) Math.abs(a));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.abs(shortBitsToFloat16((short)a))));
             case VECTOR_OP_SIN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.sin(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.sin(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_COS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.cos(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.cos(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_TAN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.tan(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.tan(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_ASIN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.asin(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.asin(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_ACOS: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.acos(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.acos(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_ATAN: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.atan(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.atan(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_EXP: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.exp(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.exp(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_LOG: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.log(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.log(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_LOG10: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.log10(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.log10(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_SQRT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.sqrt(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.sqrt(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_CBRT: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.cbrt(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.cbrt(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_SINH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.sinh(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.sinh(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_COSH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.cosh(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.cosh(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_TANH: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.tanh(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.tanh(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_EXPM1: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.expm1(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.expm1(shortBitsToFloat16(a).doubleValue()))));
             case VECTOR_OP_LOG1P: return (v0, m) ->
-                    v0.uOp(m, (i, a) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.log1p(Float16.shortBitsToFloat16(a).doubleValue()))));
+                    v0.uOp(m, (i, a) -> float16ToShortBits(Float16.valueOf(Math.log1p(shortBitsToFloat16(a).doubleValue()))));
             default: return null;
         }
     }
@@ -862,23 +863,23 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
     private static BinaryOperation<HalffloatVector, VectorMask<Float16>> binaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_ADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.add(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_SUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.subtract(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.subtract(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_MUL: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.multiply(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_DIV: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.divide(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.divide(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_MAX: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.max(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.max(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_MIN: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.min(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.min(shortBitsToFloat16(a), shortBitsToFloat16(b))));
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.atan2(Float16.shortBitsToFloat16(a).floatValue(), Float16.shortBitsToFloat16(b).floatValue()))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.valueOf(Math.atan2(shortBitsToFloat16(a).floatValue(), shortBitsToFloat16(b).floatValue()))));
             case VECTOR_OP_POW: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.pow(Float16.shortBitsToFloat16(a).floatValue(), Float16.shortBitsToFloat16(b).floatValue()))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.valueOf(Math.pow(shortBitsToFloat16(a).floatValue(), shortBitsToFloat16(b).floatValue()))));
             case VECTOR_OP_HYPOT: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> Float16.float16ToRawShortBits(Float16.valueOf(Math.hypot(Float16.shortBitsToFloat16(a).floatValue(), Float16.shortBitsToFloat16(b).floatValue()))));
+                    v0.bOp(v1, vm, (i, a, b) -> float16ToShortBits(Float16.valueOf(Math.hypot(shortBitsToFloat16(a).floatValue(), shortBitsToFloat16(b).floatValue()))));
             default: return null;
         }
     }
@@ -1070,7 +1071,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
     private static TernaryOperation<HalffloatVector, VectorMask<Float16>> ternaryOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_FMA: return (v0, v1_, v2_, m) -> v0.tOp(v1_, v2_, m, (i, a, b, c) ->
-                                        Float16.float16ToRawShortBits(Float16.fma(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b), Float16.shortBitsToFloat16(c))));
+                                        float16ToShortBits(Float16.fma(shortBitsToFloat16(a), shortBitsToFloat16(b), shortBitsToFloat16(c))));
             default: return null;
         }
     }
@@ -1847,7 +1848,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
                 // first kill the sign:
                 bits = bits.and(Short.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                short infbits = (short) toBits(Float16.float16ToRawShortBits(Float16.POSITIVE_INFINITY));
+                short infbits = (short) toBits(float16ToShortBits(Float16.POSITIVE_INFINITY));
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits);
@@ -1895,7 +1896,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
                 // first kill the sign:
                 bits = bits.and(Short.MAX_VALUE);
                 // next find the bit pattern for infinity:
-                short infbits = (short) toBits(Float16.float16ToRawShortBits(Float16.POSITIVE_INFINITY));
+                short infbits = (short) toBits(float16ToShortBits(Float16.POSITIVE_INFINITY));
                 // now compare:
                 if (op == IS_FINITE) {
                     m = bits.compare(LT, infbits, m);
@@ -2105,7 +2106,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
                 // and multiply.
                 HalffloatVector iota = s.iota();
                 short sc = (short) scale_;
-                return v.add(sc == 1 ? iota : iota.mul(Float16.float16ToRawShortBits(Float16.valueOf(sc))));
+                return v.add(sc == 1 ? iota : iota.mul(float16ToShortBits(Float16.valueOf(sc))));
             });
     }
 
@@ -2693,19 +2694,20 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
     private static ReductionOperation<HalffloatVector, VectorMask<Float16>> reductionOperations(int opc_) {
         switch (opc_) {
             case VECTOR_OP_ADD: return (v, m) ->
-                    toBits(v.rOp((short)0, m, (i, a, b) -> Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b)))));
+                    toBits(v.rOp((short)0, m, (i, a, b) -> float16ToShortBits(Float16.add(shortBitsToFloat16(a), shortBitsToFloat16(b)))));
             case VECTOR_OP_MUL: return (v, m) ->
-                    toBits(v.rOp((short)0, m, (i, a, b) -> Float16.float16ToRawShortBits(Float16.multiply(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b)))));
+                    toBits(v.rOp(float16ToShortBits(Float16.valueOf(1.0f)), m, (i, a, b) -> float16ToShortBits(Float16.multiply(shortBitsToFloat16(a), shortBitsToFloat16(b)))));
             case VECTOR_OP_MIN: return (v, m) ->
-                    toBits(v.rOp((short)0, m, (i, a, b) -> Float16.float16ToRawShortBits(Float16.min(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b)))));
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> float16ToShortBits(Float16.min(shortBitsToFloat16(a), shortBitsToFloat16(b)))));
             case VECTOR_OP_MAX: return (v, m) ->
-                    toBits(v.rOp((short)0, m, (i, a, b) -> Float16.float16ToRawShortBits(Float16.max(Float16.shortBitsToFloat16(a), Float16.shortBitsToFloat16(b)))));
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> float16ToShortBits(Float16.max(shortBitsToFloat16(a), shortBitsToFloat16(b)))));
             default: return null;
         }
     }
 
-    private static final short MIN_OR_INF = Float16.float16ToRawShortBits(Float16.NEGATIVE_INFINITY);
-    private static final short MAX_OR_INF = Float16.float16ToRawShortBits(Float16.POSITIVE_INFINITY);
+
+    private static final short MIN_OR_INF = float16ToShortBits(Float16.NEGATIVE_INFINITY);
+    private static final short MAX_OR_INF = float16ToShortBits(Float16.POSITIVE_INFINITY);
 
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op);
     public @Override abstract long reduceLanesToLong(VectorOperators.Associative op,
@@ -2791,7 +2793,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
         short[] a = toArray();
         long[] res = new long[a.length];
         for (int i = 0; i < a.length; i++) {
-            short e = Float16.shortBitsToFloat16(a[i]).shortValue();
+            short e = shortBitsToFloat16(a[i]).shortValue();
             res[i] = HalffloatSpecies.toIntegralChecked(e, false);
         }
         return res;
@@ -2809,7 +2811,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
         short[] a = toArray();
         double[] res = new double[a.length];
         for (int i = 0; i < a.length; i++) {
-            res[i] = (double) Float16.shortBitsToFloat16(a[i]).doubleValue();
+            res[i] = (double) shortBitsToFloat16(a[i]).doubleValue();
         }
         return res;
     }
@@ -4117,7 +4119,7 @@ public abstract class HalffloatVector extends AbstractVector<Float16> {
             short[] va = new short[laneCount()];
             for (int i = 0; i < va.length; i++) {
                 int lv = values[i];
-                short v = Float16.float16ToRawShortBits(Float16.valueOf(lv));
+                short v = float16ToShortBits(Float16.valueOf(lv));
                 va[i] = v;
                 if (Float16.valueOf(lv).intValue() != lv) {
                     throw badElementBits(lv, v);

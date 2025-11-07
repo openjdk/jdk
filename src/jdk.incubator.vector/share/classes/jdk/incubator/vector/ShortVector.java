@@ -2891,6 +2891,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         }
     }
 
+
     private static final short MIN_OR_INF = Short.MIN_VALUE;
     private static final short MAX_OR_INF = Short.MAX_VALUE;
 

@@ -2724,6 +2724,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         }
     }
 
+
     private static final float MIN_OR_INF = Float.NEGATIVE_INFINITY;
     private static final float MAX_OR_INF = Float.POSITIVE_INFINITY;
 

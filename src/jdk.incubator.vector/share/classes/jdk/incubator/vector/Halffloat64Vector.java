@@ -552,7 +552,7 @@ final class Halffloat64Vector extends HalffloatVector {
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     short[] res = v.vec().clone();
-                                    res[ix] = e;
+                                    res[ix] = (short)bits;
                                     return v.vectorFactory(res);
                                 });
     }

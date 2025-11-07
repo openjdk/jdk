@@ -2741,6 +2741,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         }
     }
 
+
     private static final long MIN_OR_INF = Long.MIN_VALUE;
     private static final long MAX_OR_INF = Long.MAX_VALUE;
 

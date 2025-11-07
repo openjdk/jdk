@@ -10,11 +10,11 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-#if[Halffloat]
-                Assert.assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
-#else[Halffloat]
-                Assert.assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
-#end[Halffloat]
+#if[FP16]
+                AssertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
+#else[FP16]
+                AssertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+#end[FP16]
             }
         }
     }
@@ -30,11 +30,11 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-#if[Halffloat]
-                Assert.assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
-#else[Halffloat]
-                Assert.assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
-#end[Halffloat]
+#if[FP16]
+                AssertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
+#else[FP16]
+                AssertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+#end[FP16]
             }
         }
     }
@@ -131,11 +131,11 @@
     static long ADDReduceLong($type$[] a, int idx) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-#if[Halffloat]
+#if[FP16]
             res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
-#else[Halffloat]
+#else[FP16]
             res += a[i];
-#end[Halffloat]
+#end[FP16]
         }
 
         return (long)res;
@@ -144,11 +144,11 @@
     static long ADDReduceAllLong($type$[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-#if[Halffloat]
+#if[FP16]
             res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLong(a, i)));
-#else[Halffloat]
+#else[FP16]
             res += ADDReduceLong(a, i);
-#end[Halffloat]
+#end[FP16]
         }
 
         return res;
@@ -167,11 +167,11 @@
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-#if[Halffloat]
+#if[FP16]
             ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
-#else[Halffloat]
+#else[FP16]
             ra += r[i];
-#end[Halffloat]
+#end[FP16]
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -182,11 +182,11 @@
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
             if(mask[i % SPECIES.length()])
-#if[Halffloat]
+#if[FP16]
                 res = Float.floatToFloat16(Float.float16ToFloat(res) + Float.float16ToFloat(a[i]));
-#else[Halffloat]
+#else[FP16]
                 res += a[i];
-#end[Halffloat]
+#end[FP16]
         }
 
         return (long)res;
@@ -195,11 +195,11 @@
     static long ADDReduceAllLongMasked($type$[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-#if[Halffloat]
+#if[FP16]
             res = Float.floatToFloat16(Float.float16ToFloat((short)res) + Float.float16ToFloat((short)ADDReduceLongMasked(a, i, mask)));
-#else[Halffloat]
+#else[FP16]
             res += ADDReduceLongMasked(a, i, mask);
-#end[Halffloat]
+#end[FP16]
         }
 
         return res;
@@ -220,11 +220,11 @@
 
         ra = 0;
         for (int i = 0; i < a.length; i++) {
-#if[Halffloat]
+#if[FP16]
             ra = (long)(Float16.float16ToRawShortBits(Float16.add(Float16.shortBitsToFloat16((short)ra), Float16.shortBitsToFloat16((short)r[i]))));
-#else[Halffloat]
+#else[FP16]
             ra += r[i];
-#end[Halffloat]
+#end[FP16]
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,
@@ -382,7 +382,7 @@
             int subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
-            Assert.assertEquals(length, SPECIES.length());
+            AssertEquals(length, SPECIES.length());
         }
     }
 
@@ -410,7 +410,7 @@
             var bv = VectorShuffle.fromArray(SPECIES, b, i);
             boolean eq = av.equals(bv);
             int to = i + SPECIES.length();
-            Assert.assertEquals(eq, Arrays.equals(a, i, to, b, i, to));
+            AssertEquals(eq, Arrays.equals(a, i, to, b, i, to));
         }
     }
 
@@ -424,7 +424,7 @@
             var bv = SPECIES.loadMask(b, i);
             boolean equals = av.equals(bv);
             int to = i + SPECIES.length();
-            Assert.assertEquals(equals, Arrays.equals(a, i, to, b, i, to));
+            AssertEquals(equals, Arrays.equals(a, i, to, b, i, to));
         }
     }
 
@@ -621,7 +621,7 @@
                 trueCount = vmask.trueCount();
                 var rmask = vmask.compress();
                 for (int j = 0; j < SPECIES.length(); j++)  {
-                    Assert.assertEquals(rmask.laneIsSet(j), j < trueCount);
+                    AssertEquals(rmask.laneIsSet(j), j < trueCount);
                 }
             }
         }
@@ -642,7 +642,7 @@
     static void maskFromToLong$vectorteststype$SmokeTest(long inputLong) {
         var vmask = VectorMask.fromLong(SPECIES, inputLong);
         long outputLong = vmask.toLong();
-        Assert.assertEquals(outputLong, (inputLong & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
+        AssertEquals(outputLong, (inputLong & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
     }
 #end[!MaxBit]
 
@@ -666,7 +666,7 @@
             assert(actualMask.equals(expectedMask));
             for (int j = 0; j < SPECIES.length(); j++)  {
                 int index = i + j + offset;
-                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+                AssertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
             }
         }
     }
@@ -680,7 +680,7 @@
             assert(actualMask.equals(expectedMask));
             for (int j = 0; j < SPECIES.length(); j++)  {
                 long index = i + j + offset;
-                Assert.assertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
+                AssertEquals(actualMask.laneIsSet(j), index >= 0 && index < limit);
             }
         }
     }
@@ -702,7 +702,7 @@
     static void loopBound$vectorteststype$SmokeTest(int length) {
         int actualLoopBound = SPECIES.loopBound(length);
         int expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
-        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+        AssertEquals(actualLoopBound, expectedLoopBound);
     }
 
     @Test(dataProvider = "lengthProvider")
@@ -710,14 +710,14 @@
         long length = _length;
         long actualLoopBound = SPECIES.loopBound(length);
         long expectedLoopBound = length - Math.floorMod(length, SPECIES.length());
-        Assert.assertEquals(actualLoopBound, expectedLoopBound);
+        AssertEquals(actualLoopBound, expectedLoopBound);
     }
 
     @Test
     static void ElementSize$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         int elsize = av.elementSize();
-        Assert.assertEquals(elsize, $Wideboxtype$.SIZE);
+        AssertEquals(elsize, $Wideboxtype$.SIZE);
     }
 
     @Test
@@ -731,14 +731,14 @@
     static void ShapeWithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         VectorShape vsh = av.shape();
-        VectorSpecies species = vsh.withLanes($ClassType$.class);
+        VectorSpecies species = vsh.withLanes({#if[FP16]?Float16.class:$type$.class});
         assert(species.equals(SPECIES));
     }
 
     @Test
-    static void ElementType$vectorteststype$SmokeTest() {
+    static void $Type$$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        assert(av.species().elementType() == $ClassType$.class);
+        assert(av.species().elementType() == {#if[FP16]?Float16.class:$type$.class});
     }
 
     @Test
@@ -756,7 +756,7 @@
     @Test
     static void WithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        VectorSpecies species = av.species().withLanes($ClassType$.class);
+        VectorSpecies species = av.species().withLanes({#if[FP16]?Float16.class:$type$.class});
         assert(species.equals(SPECIES));
     }
 
@@ -771,6 +771,6 @@
     @Test
     static void MaskAllTrue$vectorteststype$SmokeTest() {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
-          Assert.assertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
+          AssertEquals(SPECIES.maskAll(true).toLong(), -1L >>> (64 - SPECIES.length()));
         }
     }

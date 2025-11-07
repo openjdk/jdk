@@ -322,6 +322,10 @@ int VectorSupport::vop2ideal(jint id, BasicType bt, int operType) {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
+          if (operType == VECTOR_TYPE_FP16) {
+            return 0;
+          }
+          // fall-through
         case T_INT:    return Op_AbsI;
         case T_LONG:   return Op_AbsL;
         case T_FLOAT:  return Op_AbsF;
@@ -334,6 +338,10 @@ int VectorSupport::vop2ideal(jint id, BasicType bt, int operType) {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
+          if (operType == VECTOR_TYPE_FP16) {
+            return 0;
+          }
+          // fall-through
         case T_INT:    return Op_NegI;
         case T_LONG:   return Op_NegL;
         case T_FLOAT:  return Op_NegF;

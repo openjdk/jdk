@@ -2890,6 +2890,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         }
     }
 
+
     private static final byte MIN_OR_INF = Byte.MIN_VALUE;
     private static final byte MAX_OR_INF = Byte.MAX_VALUE;
 

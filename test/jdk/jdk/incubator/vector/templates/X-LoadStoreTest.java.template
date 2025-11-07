@@ -65,19 +65,19 @@ import java.util.function.*;
 public class $vectorteststype$ extends AbstractVectorLoadStoreTest {
 #if[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $ElementType$Vector.SPECIES_MAX;
+                $Type$Vector.SPECIES_MAX;
 #else[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $ElementType$Vector.SPECIES_$bits$;
+                $Type$Vector.SPECIES_$bits$;
 #end[MaxBit]
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-#if[Halffloat]
+#if[FP16]
     static final ValueLayout.OfShort ELEMENT_LAYOUT = ValueLayout.JAVA_SHORT.withByteAlignment(1);
-#else[Halffloat]
+#else[FP16]
     static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
-#end[Halffloat]
+#end[FP16]
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
