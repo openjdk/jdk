@@ -35,13 +35,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
-import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
-import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
@@ -50,26 +47,17 @@ import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class ApplicationBuilder {
 
-    Application create() throws ConfigException {
+    Application create() {
         Objects.requireNonNull(appImageLayout);
 
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
 
-        launchersAsList.stream().collect(Collectors.toMap(Launcher::name, x -> x, (a, b) -> {
-            throw new JPackageException(I18N.format("error.launcher-duplicate-name", a.name()));
-        }));
-
-        final String effectiveName;
-        if (name != null) {
-            effectiveName = name;
-        } else if (!launchersAsList.isEmpty()) {
-            effectiveName = launchers.mainLauncher().name();
-        } else {
-            throw buildConfigException("error.no.name").advice("error.no.name.advice").create();
-        }
-
-        Objects.requireNonNull(launchersAsList);
+        final String effectiveName = Optional.ofNullable(name).or(() -> {
+            return Optional.ofNullable(launchers).map(ApplicationLaunchers::mainLauncher).map(Launcher::name);
+        }).orElseThrow(() -> {
+            return buildConfigException("error.no.name").advice("error.no.name.advice").create();
+        });
 
         return new Application.Stub(
                 effectiveName,
@@ -79,7 +67,8 @@ final class ApplicationBuilder {
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
                 Optional.ofNullable(srcDir),
                 Optional.ofNullable(contentDirs).orElseGet(List::of),
-                appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
+                appImageLayout,
+                Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
