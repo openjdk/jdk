@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.*;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class B6341616 {
 
@@ -101,7 +102,7 @@ public class B6341616 {
             Headers rmap = t.getResponseHeaders();
             while (is.read () != -1) ;
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

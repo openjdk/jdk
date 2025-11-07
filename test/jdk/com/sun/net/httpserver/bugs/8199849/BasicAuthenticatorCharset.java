@@ -45,6 +45,7 @@ import java.nio.charset.Charset;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Test authentication
@@ -67,7 +68,7 @@ public class BasicAuthenticatorCharset {
             InputStream is = t.getRequestBody();
             while (is.read() != -1) ;
             is.close();
-            t.sendResponseHeaders(200, -1);
+            t.sendResponseHeaders(200, RSPBODY_EMPTY);
             t.close();
         }
     }

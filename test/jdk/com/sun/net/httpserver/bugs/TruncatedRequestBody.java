@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /*
  * Send two POST requests to the server which are both trucated
@@ -75,7 +76,7 @@ public class TruncatedRequestBody {
             latch.countDown();
             System.out.println("Read " + count + " bytes");
             is.close();
-            exch.sendResponseHeaders(200, -1);
+            exch.sendResponseHeaders(200, RSPBODY_EMPTY);
         }
 
     }

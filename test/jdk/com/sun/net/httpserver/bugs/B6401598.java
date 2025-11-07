@@ -44,6 +44,7 @@ import jdk.test.lib.net.URIBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6401598 {
 
@@ -66,7 +67,7 @@ public class B6401598 {
 
                                 DataOutputStream dos = new DataOutputStream(os);
 
-                                arg0.sendResponseHeaders(200, 0);
+                                arg0.sendResponseHeaders(200, RSPBODY_CHUNKED);
 
                                 dos.writeShort(input);
 

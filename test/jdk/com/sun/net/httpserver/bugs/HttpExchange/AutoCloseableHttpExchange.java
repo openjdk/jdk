@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.test.lib.net.URIBuilder;
 import sun.net.httpserver.HttpExchangeAccess;
-
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * @test
@@ -63,7 +63,7 @@ public class AutoCloseableHttpExchange {
             InputStream is = t.getRequestBody();
             try (HttpExchange e = t) {
                 while (is.read() != -1) ;
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
             }
             if (!HttpExchangeAccess.isClosed(t)) {
                 exchangeCloseFail.set(true);

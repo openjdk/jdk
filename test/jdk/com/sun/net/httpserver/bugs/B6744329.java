@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.*;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6744329 {
 
@@ -93,7 +94,7 @@ public class B6744329 {
             while (is.read () != -1) ;
             is.close();
             /* chunked response */
-            t.sendResponseHeaders (200, 0);
+            t.sendResponseHeaders (200, RSPBODY_CHUNKED);
             OutputStream os = t.getResponseBody();
             byte[] first = new byte [CHUNK_SIZE * 2];
             byte[] second = new byte [2];

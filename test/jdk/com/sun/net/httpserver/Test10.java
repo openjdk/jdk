@@ -35,6 +35,7 @@ import com.sun.net.httpserver.*;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /*
  * Test handling of empty Http headers
@@ -72,7 +73,7 @@ public class Test10 extends Test {
             InputStream is = t.getRequestBody();
             while (is.read() != -1);
             Headers map = t.getRequestHeaders();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

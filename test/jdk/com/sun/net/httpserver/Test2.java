@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.*;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Test authentication
@@ -120,7 +121,7 @@ public class Test2 extends Test {
             Headers rmap = t.getResponseHeaders();
             while (is.read () != -1) ;
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             HttpPrincipal p = t.getPrincipal ();
             if (!p.getUsername().equals("fred")) {
                 error = true;

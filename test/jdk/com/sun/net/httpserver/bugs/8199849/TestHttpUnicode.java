@@ -35,6 +35,7 @@ import jdk.test.lib.net.URIBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class TestHttpUnicode {
 
@@ -55,7 +56,7 @@ public class TestHttpUnicode {
 
             HttpPrincipal p = t.getPrincipal();
             if (p.getUsername().equals(TEST_USER)) {
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
             }
             t.close();
         }

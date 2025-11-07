@@ -54,6 +54,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class InputNotRead {
 
@@ -91,7 +92,8 @@ public class InputNotRead {
                     try {
                         msg.getRequestBody().read();
                         try {
-                            msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
+                            msg.sendResponseHeaders(msgCode, reply.length == 0
+                                                        ? RSPBODY_EMPTY : reply.length);
                         } catch(IOException ioe) {
                             ioe.printStackTrace();
                         }
@@ -132,7 +134,8 @@ public class InputNotRead {
                         BufferedReader r = new BufferedReader(new InputStreamReader(msg.getRequestBody()));
                         r.read();
                         try {
-                            msg.sendResponseHeaders(msgCode, reply.length == 0 ? -1 : reply.length);
+                            msg.sendResponseHeaders(msgCode, reply.length == 0
+                                                        ? RSPBODY_EMPTY : reply.length);
                             msg.getResponseBody().write(reply);
                             msg.getResponseBody().close();
                             Thread.sleep(50);

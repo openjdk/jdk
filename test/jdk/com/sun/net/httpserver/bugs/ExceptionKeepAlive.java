@@ -49,6 +49,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class ExceptionKeepAlive
 {
@@ -111,7 +112,7 @@ public class ExceptionKeepAlive
                 System.out.println("First connection on client port = " + port1);
 
                 // send response
-                t.sendResponseHeaders(200, -1);
+                t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 // response is completed now; throw exception
                 throw new NumberFormatException();
                 // the connection should still be reusable
@@ -120,9 +121,9 @@ public class ExceptionKeepAlive
                 System.out.println("Second connection on client port = " + port2);
 
                 if (port1 == port2) {
-                    t.sendResponseHeaders(200, -1);
+                    t.sendResponseHeaders(200, RSPBODY_EMPTY);
                 } else {
-                    t.sendResponseHeaders(500, -1);
+                    t.sendResponseHeaders(500, RSPBODY_EMPTY);
                 }
             }
             t.close();

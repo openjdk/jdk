@@ -34,6 +34,7 @@ import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_CHUNKED;
 
 public class B6529200 {
 
@@ -127,7 +128,7 @@ public class B6529200 {
                 is = t.getRequestBody();
                 while (is.read() != -1) ;
                 is.close();
-                t.sendResponseHeaders (200, 0);
+                t.sendResponseHeaders (200, RSPBODY_CHUNKED);
                 os = t.getResponseBody();
                 os.write ("hello world".getBytes());
                 os.close();

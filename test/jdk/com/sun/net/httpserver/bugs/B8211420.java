@@ -39,6 +39,7 @@ import java.io.*;
 import java.net.*;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 public class B8211420 {
 
@@ -105,12 +106,12 @@ public class B8211420 {
             is.close();
             if (invocation++ == 1) {
                 // send a 204 response with no body
-                t.sendResponseHeaders(204, -1);
+                t.sendResponseHeaders(204, RSPBODY_EMPTY);
                 t.close();
             } else {
                 // send a 304 response with no body but with content - length
                 rmap.add("Content-length", "99");
-                t.sendResponseHeaders(304, -1);
+                t.sendResponseHeaders(304, RSPBODY_EMPTY);
                 t.close();
             }
         }

@@ -36,6 +36,7 @@ import java.util.concurrent.*;
 import java.util.regex.*;
 import java.io.*;
 import java.net.*;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Test pipe-lining over http
@@ -94,7 +95,7 @@ public class Test3 extends Test {
                 checkBody (is, body4);
                 break;
             }
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

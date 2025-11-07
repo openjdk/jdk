@@ -37,6 +37,7 @@ import java.io.*;
 import java.net.*;
 
 import jdk.test.lib.net.URIBuilder;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Test POST large file via chunked encoding (unusually small chunks)
@@ -107,7 +108,7 @@ public class Test6 extends Test {
                 error = true;
             }
             is.close();
-            t.sendResponseHeaders (200, -1);
+            t.sendResponseHeaders (200, RSPBODY_EMPTY);
             t.close();
         }
     }

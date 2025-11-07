@@ -28,6 +28,7 @@ package com.sun.net.httpserver;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Predicate;
+import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
 /**
  * Implementations of {@link com.sun.net.httpserver.HttpHandler HttpHandler}
@@ -155,10 +156,10 @@ public final class HttpHandlers {
                 exchange.getResponseHeaders().putAll(headersCopy);
                 if (exchange.getRequestMethod().equals("HEAD")) {
                     exchange.getResponseHeaders().set("Content-Length", Integer.toString(bytes.length));
-                    exchange.sendResponseHeaders(statusCode, -1);
+                    exchange.sendResponseHeaders(statusCode, RSPBODY_EMPTY);
                 }
                 else if (bytes.length == 0) {
-                    exchange.sendResponseHeaders(statusCode, -1);
+                    exchange.sendResponseHeaders(statusCode, RSPBODY_EMPTY);
                 } else {
                     exchange.sendResponseHeaders(statusCode, bytes.length);
                     exchange.getResponseBody().write(bytes);
