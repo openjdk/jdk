@@ -74,6 +74,9 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
     bool read_memory_limit_val(physical_memory_size_type& result);
+    bool read_hierarchical_memory_limit_val(physical_memory_size_type& result);
+    bool read_hierarchical_mem_swap_val(physical_memory_size_type& result);
+    bool read_use_hierarchy_val(physical_memory_size_type& result);
     bool memory_usage_val(physical_memory_size_type& result);
     bool read_mem_swappiness(physical_memory_size_type& result);
     bool read_mem_swap(physical_memory_size_type& result);
@@ -82,6 +85,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     bool kernel_memory_usage_val(physical_memory_size_type& result);
     bool kernel_memory_limit_val(physical_memory_size_type& result);
     bool kernel_memory_max_usage_val(physical_memory_size_type& result);
+    bool uses_mem_hierarchy();
 
   public:
     void set_subsystem_path(const char *cgroup_path) override {
