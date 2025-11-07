@@ -29,17 +29,9 @@
 
 STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedMethodEntry> == true);
 #ifdef _LP64
-# ifdef ASSERT
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 32);
-# else
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 24);
-# endif
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == DEBUG_ONLY(32) NOT_DEBUG(24));
 #else
-# ifdef ASSERT
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 20);
-# else
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == 16);
-# endif
+STATIC_ASSERT(sizeof(ResolvedMethodEntry) == DEBUG_ONLY(20) NOT_DEBUG(16));
 #endif
 
 bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
