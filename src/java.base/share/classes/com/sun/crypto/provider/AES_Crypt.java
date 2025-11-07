@@ -980,8 +980,9 @@ final class AES_Crypt extends SymmetricCipher {
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-			int widx = i * WB;
-			int idx = kLen - widx;
+            int widx = i * WB;
+            int idx = kLen - widx;
+
             dw[idx] = TMI0[w[widx] >>> 24] ^ TMI1[(w[widx] >> 16) & 0xFF]
                     ^ TMI2[(w[widx] >> 8) & 0xFF] ^ TMI3[w[widx] & 0xFF];
             dw[idx+1] = TMI0[w[widx+1] >>> 24] ^ TMI1[(w[widx+1] >> 16) & 0xFF]
