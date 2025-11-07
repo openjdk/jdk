@@ -3477,8 +3477,6 @@ class DirectAllocatableRegionRefillClosure final : public ShenandoahHeapRegionIt
   PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
   // inclusive
   const uint _start_index;
-  // exclusive
-  const uint _probe_end_index;
   int _scanned_region;
   int _next_retire_eligible_region;
   ShenandoahFreeSet* const _free_set = ShenandoahHeap::heap()->free_set();
@@ -3494,7 +3492,6 @@ public:
   DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahDirectAllocationRegion>* direct_allocation_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _direct_allocation_regions(direct_allocation_regions),
       _start_index(start_index),
-      _probe_end_index((start_index + 3) % ShenandoahDirectlyAllocatableRegionCount),
       _scanned_region(0),
       _req(req),
       _obj(obj),
@@ -3504,12 +3501,8 @@ public:
     _next_retire_eligible_region = find_next_retire_eligible_region();
   }
 
-  bool is_probing_region(const uint index) const {
-    return !(index >= _probe_end_index && index < _start_index);
-  }
-
   int find_next_retire_eligible_region() {
-    while (_scanned_region < ShenandoahDirectlyAllocatableRegionCount) {
+    while (_scanned_region < (int) ShenandoahDirectlyAllocatableRegionCount) {
       const uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
       _scanned_region++;
       ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
