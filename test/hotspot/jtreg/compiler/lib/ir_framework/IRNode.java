@@ -1904,6 +1904,11 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
+    public static final String SAFEPOINT_SCALAROBJECT_OF = COMPOSITE_PREFIX + "SAFEPOINT_SCALAROBJECT_OF" + POSTFIX;
+    static {
+        safepointScalarobjectOfNodes(SAFEPOINT_SCALAROBJECT_OF, "SafePointScalarObject");
+    }
+
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
@@ -2840,6 +2845,36 @@ public class IRNode {
         vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
     }
 
+    public static final String COMPRESS_VB = VECTOR_PREFIX + "COMPRESS_VB" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VB, "CompressV", TYPE_BYTE);
+    }
+
+    public static final String COMPRESS_VS = VECTOR_PREFIX + "COMPRESS_VS" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VS, "CompressV", TYPE_SHORT);
+    }
+
+    public static final String COMPRESS_VI = VECTOR_PREFIX + "COMPRESS_VI" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VI, "CompressV", TYPE_INT);
+    }
+
+    public static final String COMPRESS_VL = VECTOR_PREFIX + "COMPRESS_VL" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VL, "CompressV", TYPE_LONG);
+    }
+
+    public static final String COMPRESS_VF = VECTOR_PREFIX + "COMPRESS_VF" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VF, "CompressV", TYPE_FLOAT);
+    }
+
+    public static final String COMPRESS_VD = VECTOR_PREFIX + "COMPRESS_VD" + POSTFIX;
+    static {
+        vectorNode(COMPRESS_VD, "CompressV", TYPE_DOUBLE);
+    }
+
     public static final String EXPAND_VB = VECTOR_PREFIX + "EXPAND_VB" + POSTFIX;
     static {
         vectorNode(EXPAND_VB, "ExpandV", TYPE_BYTE);
@@ -3181,6 +3216,11 @@ public class IRNode {
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+        beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void safepointScalarobjectOfNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + ".*" + IS_REPLACED + ".*" + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 

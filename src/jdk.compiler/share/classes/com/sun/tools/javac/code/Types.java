@@ -1346,7 +1346,7 @@ public class Types {
          * Type-equality relation - type variables are considered
          * equals if they share the same object identity.
          */
-        TypeRelation isSameTypeVisitor = new TypeRelation() {
+        abstract class TypeEqualityVisitor extends TypeRelation {
 
             public Boolean visitType(Type t, Type s) {
                 if (t.equalsIgnoreMetadata(s))
@@ -1385,9 +1385,11 @@ public class Types {
                 } else {
                     WildcardType t2 = (WildcardType)s;
                     return (t.kind == t2.kind || (t.isExtendsBound() && s.isExtendsBound())) &&
-                            isSameType(t.type, t2.type);
+                            sameTypeComparator(t.type, t2.type);
                 }
             }
+
+            abstract boolean sameTypeComparator(Type t, Type s);
 
             @Override
             public Boolean visitClassType(ClassType t, Type s) {
@@ -1419,8 +1421,10 @@ public class Types {
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())
-                    && containsTypeEquivalent(t.getTypeArguments(), s.getTypeArguments());
+                    && sameTypeArguments(t.getTypeArguments(), s.getTypeArguments());
             }
+
+            abstract boolean sameTypeArguments(List<Type> ts, List<Type> ss);
 
             @Override
             public Boolean visitArrayType(ArrayType t, Type s) {
@@ -1476,6 +1480,16 @@ public class Types {
             @Override
             public Boolean visitErrorType(ErrorType t, Type s) {
                 return true;
+            }
+        }
+
+        TypeEqualityVisitor isSameTypeVisitor = new TypeEqualityVisitor() {
+            boolean sameTypeComparator(Type t, Type s) {
+                return isSameType(t, s);
+            }
+
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                return containsTypeEquivalent(ts, ss);
             }
         };
 
@@ -3862,7 +3876,7 @@ public class Types {
     // where
         class TypePair {
             final Type t1;
-            final Type t2;;
+            final Type t2;
 
             TypePair(Type t1, Type t2) {
                 this.t1 = t1;
@@ -3875,10 +3889,28 @@ public class Types {
             @Override
             public boolean equals(Object obj) {
                 return (obj instanceof TypePair typePair)
-                        && isSameType(t1, typePair.t1)
-                        && isSameType(t2, typePair.t2);
+                        && exactTypeVisitor.visit(t1, typePair.t1)
+                        && exactTypeVisitor.visit(t2, typePair.t2);
             }
         }
+
+        TypeEqualityVisitor exactTypeVisitor = new TypeEqualityVisitor() {
+            @Override
+            boolean sameTypeArguments(List<Type> ts, List<Type> ss) {
+                while (ts.nonEmpty() && ss.nonEmpty()
+                        && sameTypeComparator(ts.head, ss.head)) {
+                    ts = ts.tail;
+                    ss = ss.tail;
+                }
+                return ts.isEmpty() && ss.isEmpty();
+            }
+
+            @Override
+            boolean sameTypeComparator(Type t, Type s) {
+                return exactTypeVisitor.visit(t, s);
+            }
+        };
+
         Set<TypePair> mergeCache = new HashSet<>();
         private Type merge(Type c1, Type c2) {
             ClassType class1 = (ClassType) c1;
@@ -4090,19 +4122,20 @@ public class Types {
             return lub(classes);
         }
     }
-    // where
-        List<Type> erasedSupertypes(Type t) {
-            ListBuffer<Type> buf = new ListBuffer<>();
-            for (Type sup : closure(t)) {
-                if (sup.hasTag(TYPEVAR)) {
-                    buf.append(sup);
-                } else {
-                    buf.append(erasure(sup));
-                }
-            }
-            return buf.toList();
-        }
 
+    public List<Type> erasedSupertypes(Type t) {
+        ListBuffer<Type> buf = new ListBuffer<>();
+        for (Type sup : closure(t)) {
+            if (sup.hasTag(TYPEVAR)) {
+                buf.append(sup);
+            } else {
+                buf.append(erasure(sup));
+            }
+        }
+        return buf.toList();
+    }
+
+    // where
         private Type arraySuperType;
         private Type arraySuperType() {
             // initialized lazily to avoid problems during compiler startup
