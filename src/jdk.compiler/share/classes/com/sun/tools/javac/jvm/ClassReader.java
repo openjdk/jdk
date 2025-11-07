@@ -3152,14 +3152,18 @@ public class ClassReader {
                 if (name == names.empty)
                     name = names.one;
                 ClassSymbol member = enterClass(name, outer);
-                if ((flags & STATIC) == 0) {
-                    ((ClassType)member.type).setEnclosingType(outer.type);
-                    if (member.erasure_field != null)
-                        ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
-                }
-                if (c == outer && member.owner == c) {
-                    member.flags_field = flags;
-                    enterMember(c, member);
+                if ((member.flags_field & FROM_SOURCE) == 0) {
+                    if ((flags & STATIC) == 0) {
+                        ((ClassType)member.type).setEnclosingType(outer.type);
+                        if (member.erasure_field != null)
+                            ((ClassType)member.erasure_field).setEnclosingType(types.erasure(outer.type));
+                    }
+                    if (c == outer && member.owner == c) {
+                        member.flags_field = flags;
+                        enterMember(c, member);
+                    }
+                } else if ((flags & STATIC) != (member.flags_field & STATIC)) {
+                    log.warning(LintWarnings.InconsistentInnerClasses(member, currentClassFile));
                 }
             }
         }
