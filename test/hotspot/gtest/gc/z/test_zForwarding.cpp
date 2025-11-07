@@ -30,7 +30,6 @@
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/os.hpp"
-#include "testutils.hpp"
 #include "unittest.hpp"
 
 using namespace testing;
