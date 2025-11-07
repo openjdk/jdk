@@ -175,17 +175,15 @@ void ReachabilityFenceNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra) con
 #endif
 
 // Detect safepoint nodes which are important for reachability tracking purposes.
-static bool is_significant_sfpt(Node* n) {
-  if (n->is_SafePoint()) {
-    SafePointNode* sfpt = n->as_SafePoint();
-    if (sfpt->jvms() == nullptr) {
-      return false; // not a real safepoint
-    } else if (sfpt->is_CallStaticJava() && sfpt->as_CallStaticJava()->is_uncommon_trap()) {
-      return false; // uncommon traps are exit points
-    }
-    return true;
+// Some SafePoint nodes can't affect referent's reachability in any noticeable way and
+// can be safely ignored during the analysis.
+static bool is_interfering_sfpt_candidate(SafePointNode* sfpt) {
+  if (sfpt->jvms() == nullptr) {
+    return false; // not a real safepoint
+  } else if (sfpt->is_CallStaticJava() && sfpt->as_CallStaticJava()->is_uncommon_trap()) {
+    return false; // uncommon traps are exit points
   }
-  return false;
+  return true;
 }
 
 void PhaseIdealLoop::insert_rf(Node* ctrl, Node* referent) {
@@ -391,7 +389,7 @@ static void linear_traversal(Node* n, Node_Stack& worklist, VectorSet& visited, 
       if (ctrl->is_Region()) {
         worklist.push(ctrl, 1);
         return; // stop at merge points
-      } else if (is_significant_sfpt(ctrl)) {
+      } else if (ctrl->is_SafePoint() && is_interfering_sfpt_candidate(ctrl->as_SafePoint())) {
         safepoints.push(ctrl);
       }
     }
@@ -523,7 +521,7 @@ void Compile::expand_reachability_fences(Unique_Node_List& safepoints) {
 
     uint rf_offset = rf_base_offset(sfpt);
     if (sfpt->jvms() != nullptr && sfpt->req() > rf_offset) {
-      assert(is_significant_sfpt(sfpt), "");
+      assert(is_interfering_sfpt_candidate(sfpt), "");
       Node* ctrl_out = sfpt_ctrl_out(sfpt);
       Node* ctrl_end = ctrl_out->unique_ctrl_out();
 
