@@ -2220,7 +2220,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
     return false;
   }
 
-  const Type* vmask_type = gvn().type(argument(7));
+  const Type* vmask_type = gvn().type(argument(8));
   bool is_masked_op = vmask_type != TypePtr::NULL_PTR;
   if (is_masked_op) {
     if (mask_klass == nullptr || mask_klass->const_oop() == nullptr) {
