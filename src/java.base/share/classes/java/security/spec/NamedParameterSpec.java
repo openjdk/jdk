@@ -117,30 +117,6 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
     public static final NamedParameterSpec ML_KEM_1024
             = new NamedParameterSpec("ML-KEM-1024");
 
-    /**
-     * The X25519MLKEM768 parameters
-     *
-     * @since 26
-     */
-    public static final NamedParameterSpec X25519MLKEM768
-            = new NamedParameterSpec("X25519MLKEM768");
-
-    /**
-     * The SecP256r1MLKEM768 parameters
-     *
-     * @since 26
-     */
-    public static final NamedParameterSpec SecP256r1MLKEM768
-            = new NamedParameterSpec("SecP256r1MLKEM768");
-
-    /**
-     * The SecP384r1MLKEM1024 parameters
-     *
-     * @since 26
-     */
-    public static final NamedParameterSpec SecP384r1MLKEM1024
-            = new NamedParameterSpec("SecP384r1MLKEM1024");
-
     private final String name;
 
     /**
