@@ -294,17 +294,16 @@ public:
     return nullptr;
   }
 
+  // Iterate through the values in the table, stopping when do_value() return false.
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
-
-  template <class ITER>
-  inline void iterate_all(ITER* iter) const { iterate_all([&](V v) { iter->do_value(v); }); }
 
   template<typename Function>
   inline void iterate(const Function& function) const { // lambda enabled API
     iterate(const_cast<Function&>(function));
   }
 
+  // Iterate through the values in the table, stopping when the lambda return false.
   template<typename Function>
   inline void iterate(Function& function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
@@ -329,7 +328,11 @@ public:
     }
   }
 
-  // same as above, but unconditionally iterate all entries
+  // Unconditionally iterate through all the values in the table
+  template <class ITER>
+  inline void iterate_all(ITER* iter) const { iterate_all([&](V v) { iter->do_value(v); }); }
+
+  // Unconditionally iterate through all the values in the table using lambda
   template<typename Function>
   void iterate_all(Function function) const { // lambda enabled API
     auto wrapper = [&] (V v) {
