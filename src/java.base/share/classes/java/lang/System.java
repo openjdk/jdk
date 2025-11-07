@@ -2153,10 +2153,6 @@ public final class System {
                 return String.getBytesUTF8OrThrow(s);
             }
 
-            public void appendLatin1(StringBuilder buf, char c1, char c2) {
-                buf.appendLatin1(c1, c2);
-            }
-
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }

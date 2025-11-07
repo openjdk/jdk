@@ -450,17 +450,18 @@ public final class DecimalDigits {
      * argument to the given {@code StringBuilder}.
      * <p>
      * The integer {@code v} is formatted as two decimal digits.
-     * If the value is between 0 and 9, it is formatted with a leading zero
-     * (e.g., 5 becomes "05"). If the value is outside the range 0-99,
-     * the behavior is unspecified.
+     * Values from 0 to 9 are formatted with a leading zero (e.g., 5 becomes "05"),
+     * and values from 10 to 99 are formatted as regular two-digit numbers.
+     * If the value is outside the range 0-99, the behavior is unspecified.
      *
      * @param buf the {@code StringBuilder} to append to.
      * @param v the {@code int} value (should be between 0 and 99 inclusive).
-     * @see jdk.internal.access.JavaLangAccess#append(StringBuilder, char c1, char c2)
      */
     public static void appendPair(StringBuilder buf, int v) {
         int packed = DIGITS[v & 0x7f];
-        SharedSecrets.getJavaLangAccess()
-                     .appendLatin1(buf, (char) (packed & 0xFF), (char) (packed >> 8));
+        buf.append(
+                SharedSecrets.getJavaLangAccess()
+                        .uncheckedNewStringWithLatin1Bytes(
+                                new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8)}));
     }
 }
