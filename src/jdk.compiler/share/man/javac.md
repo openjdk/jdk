@@ -1311,6 +1311,12 @@ although some module-related path options allow a package hierarchy to be
 specified on a per-module basis. All other path options are used to specify
 package hierarchies.
 
+When a JAR file in the user class path has a `Class-Path` manifest attribute,
+and the specified JAR file(s) exist, they are automatically inserted into the
+user class path after the JAR file. This rule also applies recursively to any
+new JAR files found. Consult the [JAR File Specification](../jar/jar.html#class-path-attribute)
+for details.
+
 ### Package Hierarchy
 
 In a package hierarchy, directories and subdirectories are used
