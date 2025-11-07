@@ -22,7 +22,7 @@
  */
 
 import jdk.internal.net.http.common.Deadline;
-import jdk.internal.net.http.common.TimeSource;
+import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.*;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
@@ -30,6 +30,7 @@ import jdk.internal.net.http.quic.packets.QuicPacket;
 import org.testng.annotations.Test;
 
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 
 import static jdk.internal.net.http.quic.QuicCubicCongestionController.ALPHA;
@@ -41,7 +42,22 @@ import static org.testng.Assert.assertTrue;
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=trace,quic:cc CubicTest
  */
 public class CubicTest {
-    private TimeSource timeSource = TimeSource.source();
+    static class TimeSource implements TimeLine {
+        final Deadline first = jdk.internal.net.http.common.TimeSource.now();
+        volatile Deadline current = first;
+        public synchronized Deadline advance(long duration, TemporalUnit unit) {
+            return current = current.plus(duration, unit);
+        }
+        public Deadline advanceMillis(long millis) {
+            return advance(millis, ChronoUnit.MILLIS);
+        }
+        @Override
+        public Deadline instant() {
+            return current;
+        }
+    }
+
+    private final TimeSource timeSource = new TimeSource();
 
     private class TestQuicPacket implements QuicPacket {
         private final int size;
@@ -86,7 +102,7 @@ public class CubicTest {
     public void testReduction() {
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
-        QuicCongestionController cc = new QuicCubicCongestionController("TEST", rtt);
+        QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
         assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
         do {
@@ -102,7 +118,7 @@ public class CubicTest {
     public void testAppLimited() {
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
-        QuicCongestionController cc = new QuicCubicCongestionController("TEST", rtt);
+        QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
         assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
         cc.packetSent(packetSize);
@@ -121,7 +137,7 @@ public class CubicTest {
     public void testRenoFriendly() {
         QuicRttEstimator rtt = new QuicRttEstimator();
         rtt.consumeRttSample(1, 0, Deadline.MIN);
-        QuicCongestionController cc = new QuicCubicCongestionController("TEST", rtt);
+        QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
         assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
         cc.packetSent(packetSize);
@@ -130,7 +146,7 @@ public class CubicTest {
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
         assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
         // enter cwnd-limited state to start increasing cwnd
-        Deadline sentTime = timeSource.instant().plus(1, ChronoUnit.NANOS);
+        Deadline sentTime = timeSource.advanceMillis(1);
         int numPackets = 0;
         while (!cc.isCwndLimited()) {
             cc.packetSent(packetSize);

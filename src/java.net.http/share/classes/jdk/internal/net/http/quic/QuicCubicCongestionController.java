@@ -27,6 +27,7 @@ package jdk.internal.net.http.quic;
 
 import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Log;
+import jdk.internal.net.http.common.TimeLine;
 
 import java.util.concurrent.TimeUnit;
 
@@ -58,6 +59,12 @@ public class QuicCubicCongestionController extends QuicBaseCongestionController 
 
     public QuicCubicCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         super(dbgTag, rttEstimator);
+        this.rttEstimator = rttEstimator;
+    }
+
+    // for testing
+    public QuicCubicCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
+        super(source, rttEstimator);
         this.rttEstimator = rttEstimator;
     }
 

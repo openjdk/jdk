@@ -70,9 +70,16 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
 
     private final QuicPacer pacer;
 
-    public QuicBaseCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
+    protected QuicBaseCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         this.dbgTag = dbgTag;
         this.timeSource = TimeSource.source();
+        this.pacer = new QuicPacer(rttEstimator, this);
+    }
+
+    // for testing
+    protected QuicBaseCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
+        this.dbgTag = "TEST";
+        this.timeSource = source;
         this.pacer = new QuicPacer(rttEstimator, this);
     }
 
