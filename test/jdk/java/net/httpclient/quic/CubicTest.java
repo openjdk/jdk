@@ -188,4 +188,42 @@ public class CubicTest {
                         actualCwnd, expectedCwnd - numPackets, expectedCwnd + numPackets
                 ));
     }
+
+    @Test
+    public void testCubic() {
+        /*
+         Manually created test vector:
+         - ramp up the congestion window to 36 packets
+         - trigger congestion; window will be reduced to 25.2 packets, K=3 seconds
+         - to make things easier, set RTT = 3+ seconds, advance "t" to 3 seconds,
+           send and acknowledge a whole cwnd of data
+         - cwnd should be back to 36 packets, give or take a few bytes.
+         */
+        QuicRttEstimator rtt = new QuicRttEstimator();
+        rtt.consumeRttSample(4_000_000, 0, Deadline.MIN);
+        QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
+        int packetSize = (int) cc.maxDatagramSize();
+        long cwnd = cc.congestionWindow();
+        // ramp up the congestion window to 36 packets
+        int tmp = (int) (36 * packetSize - cwnd);
+        cc.packetSent(tmp + packetSize);
+        cc.packetAcked(tmp, timeSource.instant());
+        assertEquals(cc.congestionWindow(), 36*packetSize, "Unexpected congestion window");
+        long newCongestionWindow = (long) (QuicCubicCongestionController.BETA * cc.congestionWindow());
+        // trigger congestion; window will be reduced to 25.2 packets, K=3 seconds
+        cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
+        assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
+        // advance "t" to 3 seconds,
+        Deadline sentTime = timeSource.advanceMillis(3000);
+        // send and acknowledge a whole cwnd of data
+        tmp = (int) cc.congestionWindow();
+        cc.packetSent(tmp);
+        cc.packetAcked(tmp, sentTime);
+        long expectedCwnd = 36 * packetSize;
+        long actualCwnd = cc.congestionWindow();
+        assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
+                "actual cwnd %s not within the expected range (%s, %s)".formatted(
+                        actualCwnd, expectedCwnd - 1, expectedCwnd + 1
+                ));
+    }
 }
