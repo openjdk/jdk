@@ -104,7 +104,8 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2}
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageEntry exports, int exportFlags,
                                List<ModuleEntry> exportsTo) {
@@ -119,7 +120,9 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     *         number of modules exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageEntry exports, Collection<AccessFlag> exportFlags,
                                List<ModuleEntry> exportsTo) {
@@ -134,7 +137,8 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2}
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageEntry exports,
                                int exportFlags,
@@ -150,7 +154,9 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     *         number of modules exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageEntry exports,
                                Collection<AccessFlag> exportFlags,
@@ -166,7 +172,8 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2}
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports, int exportFlags,
                                List<ModuleDesc> exportsTo) {
@@ -183,7 +190,9 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     *         number of modules exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports, Collection<AccessFlag> exportFlags,
                                List<ModuleDesc> exportsTo) {
@@ -198,7 +207,8 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if {@code exportFlags} is not {@link
-     *         java.lang.classfile##u2 u2}
+     *         java.lang.classfile##u2 u2} or if the number of modules exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports,
                                int exportFlags,
@@ -214,7 +224,9 @@ public sealed interface ModuleExportInfo
      * @param exportsTo the modules to which this package is exported, or empty
      *        if this is an unqualified export
      * @throws IllegalArgumentException if any flag cannot be applied to the
-     *         {@link AccessFlag.Location#MODULE_EXPORTS} location
+     *         {@link AccessFlag.Location#MODULE_EXPORTS} location, or if the
+     *         number of modules exceeds the limit of {@link
+     *         java.lang.classfile##u2 u2}
      */
     static ModuleExportInfo of(PackageDesc exports,
                                Collection<AccessFlag> exportFlags,

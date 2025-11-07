@@ -2335,9 +2335,10 @@ public class DecimalFormat extends NumberFormat {
             // (bug 4162852).
             if (multiplier != 1 && gotDouble) {
                 longResult = (long)doubleResult;
-                gotDouble = ((doubleResult != (double)longResult) ||
-                            (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
-                            !isParseIntegerOnly();
+                gotDouble = ((doubleResult >= Long.MAX_VALUE || doubleResult <= Long.MIN_VALUE) ||
+                        (doubleResult != (double)longResult) ||
+                        (doubleResult == 0.0 && 1/doubleResult < 0.0)) &&
+                        !isParseIntegerOnly();
             }
 
             // cast inside of ?: because of binary numeric promotion, JLS 15.25
@@ -3517,12 +3518,13 @@ public class DecimalFormat extends NumberFormat {
         var alen = affix.length();
         var tlen = text.length();
 
+        // Verify position can fit length wise before checking char by char
+        if (position + alen > tlen || position < 0) {
+            return false;
+        }
         if (alen == 0) {
             // always match with an empty affix, as affix is optional
             return true;
-        }
-        if (position >= tlen) {
-            return false;
         }
         if (parseStrict) {
             return text.regionMatches(position, affix, 0, alen);

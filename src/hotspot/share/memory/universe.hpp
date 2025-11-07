@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class Universe: AllStatic {
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
-  friend class MetaspaceShared;
+  friend class AOTMetaspace;
   friend class vmClasses;
 
   friend jint  universe_init();
@@ -127,6 +127,9 @@ class Universe: AllStatic {
   static bool _bootstrapping;                         // true during genesis
   static bool _module_initialized;                    // true after call_initPhase2 called
   static bool _fully_initialized;                     // true after universe_init and initialize_vtables called
+
+  // Shutdown
+  static volatile bool _is_shutting_down;
 
   // the array of preallocated errors with backtraces
   static objArrayOop  preallocated_out_of_memory_errors();
@@ -312,7 +315,7 @@ class Universe: AllStatic {
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size = 0);
 
   // Global OopStorages
   static OopStorage* vm_weak();
@@ -323,6 +326,8 @@ class Universe: AllStatic {
   static bool is_bootstrapping()                      { return _bootstrapping; }
   static bool is_module_initialized()                 { return _module_initialized; }
   static bool is_fully_initialized()                  { return _fully_initialized; }
+
+  static bool is_shutting_down()                  { return  AtomicAccess::load_acquire(&_is_shutting_down); }
 
   static bool        on_page_boundary(void* addr);
   static bool        should_fill_in_stack_trace(Handle throwable);

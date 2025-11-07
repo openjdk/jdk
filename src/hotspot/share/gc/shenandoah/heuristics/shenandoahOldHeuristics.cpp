@@ -412,7 +412,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t defrag_count = 0;
   size_t total_uncollected_old_regions = _last_old_region - _last_old_collection_candidate;
 
-  if (cand_idx > _last_old_collection_candidate) {
+  if ((ShenandoahGenerationalHumongousReserve > 0) && (cand_idx > _last_old_collection_candidate)) {
     // Above, we have added into the set of mixed-evacuation candidates all old-gen regions for which the live memory
     // that they contain is below a particular old-garbage threshold.  Regions that were not selected for the collection
     // set hold enough live memory that it is not considered efficient (by "garbage-first standards") to compact these

@@ -27,7 +27,7 @@
 
 #include "interpreter/bytecodes.hpp"
 #include "oops/instanceKlass.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/sizes.hpp"
 
@@ -130,8 +130,8 @@ public:
   u2 field_index()              const { return _field_index;  }
   u2 constant_pool_index()      const { return _cpool_index;  }
   u1 tos_state()                const { return _tos_state;    }
-  u1 get_code()                 const { return Atomic::load_acquire(&_get_code);      }
-  u1 put_code()                 const { return Atomic::load_acquire(&_put_code);      }
+  u1 get_code()                 const { return AtomicAccess::load_acquire(&_get_code);      }
+  u1 put_code()                 const { return AtomicAccess::load_acquire(&_put_code);      }
   bool is_final()               const { return (_flags & (1 << is_final_shift))    != 0; }
   bool is_volatile ()           const { return (_flags & (1 << is_volatile_shift)) != 0; }
   bool is_resolved(Bytecodes::Code code) const {
@@ -164,7 +164,7 @@ public:
     volatile Bytecodes::Code c = (Bytecodes::Code)*code;
     assert(c == 0 || c == new_code || new_code == 0, "update must be consistent");
   #endif
-    Atomic::release_store(code, new_code);
+    AtomicAccess::release_store(code, new_code);
   }
 
   // Populate the strucutre with resolution information

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230 8338678
+ * @bug 8301580 8322159 8333107 8332230 8338678 8351260
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -322,4 +322,22 @@ public class AttrRecovery extends TestRunner {
         }
     }
 
+    @Test //JDK-8351260
+    public void testVeryBrokenAnnotation() throws Exception {
+        String code = """
+                      class ListUtilsTest {
+                          void test(List<@AlphaChars <@StringLength(int value = 5)String> s){
+                          }
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        //should not fail with an exception:
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "-XDshould-stop.at=FLOW")
+            .sources(code)
+            .outdir(curPath)
+            .run(Expect.FAIL)
+            .writeAll();
+    }
 }

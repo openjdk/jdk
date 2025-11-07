@@ -23,6 +23,7 @@
  */
 
 #include "cds/aotLogging.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
 #include "cds/archiveUtils.hpp"
@@ -33,7 +34,6 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
@@ -117,7 +117,7 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
   if (ptr_base() <= ptr_loc && ptr_loc < ptr_end()) {
     address value = *ptr_loc;
     // We don't want any pointer that points to very bottom of the archive, otherwise when
-    // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
+    // AOTMetaspace::default_base_address()==0, we can't distinguish between a pointer
     // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
     // of the archive.
     assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
@@ -209,7 +209,7 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
       aot_log_error(aot)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
   }
 
@@ -236,11 +236,11 @@ void DumpRegion::commit_to(char* newtop) {
   if (!_vs->expand_by(commit, false)) {
     aot_log_error(aot)("Failed to expand shared space to %zu bytes",
                     need_committed_size);
-    MetaspaceShared::unrecoverable_writing_error();
+    AOTMetaspace::unrecoverable_writing_error();
   }
 
   const char* which;
-  if (_rs->base() == (char*)MetaspaceShared::symbol_rs_base()) {
+  if (_rs->base() == (char*)AOTMetaspace::symbol_rs_base()) {
     which = "symbol";
   } else {
     which = "shared";
@@ -298,10 +298,10 @@ void DumpRegion::init(ReservedSpace* rs, VirtualSpace* vs) {
 
 void DumpRegion::pack(DumpRegion* next) {
   if (!is_packed()) {
-    _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
+    _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
     _is_packed = true;
   }
-  _end = (char*)align_up(_top, MetaspaceShared::core_region_alignment());
+  _end = (char*)align_up(_top, AOTMetaspace::core_region_alignment());
   _is_packed = true;
   if (next != nullptr) {
     next->_rs = _rs;
@@ -418,7 +418,7 @@ ArchiveWorkers::ArchiveWorkers() :
         _task(nullptr) {}
 
 ArchiveWorkers::~ArchiveWorkers() {
-  assert(Atomic::load(&_state) != WORKING, "Should not be working");
+  assert(AtomicAccess::load(&_state) != WORKING, "Should not be working");
 }
 
 int ArchiveWorkers::max_workers() {
@@ -435,11 +435,11 @@ bool ArchiveWorkers::is_parallel() {
 
 void ArchiveWorkers::start_worker_if_needed() {
   while (true) {
-    int cur = Atomic::load(&_started_workers);
+    int cur = AtomicAccess::load(&_started_workers);
     if (cur >= _num_workers) {
       return;
     }
-    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
+    if (AtomicAccess::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
       new ArchiveWorkerThread(this);
       return;
     }
@@ -447,9 +447,9 @@ void ArchiveWorkers::start_worker_if_needed() {
 }
 
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
-  assert(Atomic::load(&_state) == UNUSED, "Should be unused yet");
-  assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
-  Atomic::store(&_state, WORKING);
+  assert(AtomicAccess::load(&_state) == UNUSED, "Should be unused yet");
+  assert(AtomicAccess::load(&_task) == nullptr, "Should not have running tasks");
+  AtomicAccess::store(&_state, WORKING);
 
   if (is_parallel()) {
     run_task_multi(task);
@@ -457,8 +457,8 @@ void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
     run_task_single(task);
   }
 
-  assert(Atomic::load(&_state) == WORKING, "Should be working");
-  Atomic::store(&_state, SHUTDOWN);
+  assert(AtomicAccess::load(&_state) == WORKING, "Should be working");
+  AtomicAccess::store(&_state, SHUTDOWN);
 }
 
 void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
@@ -475,8 +475,8 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
 
   // Set up the run and publish the task. Issue one additional finish token
   // to cover the semaphore shutdown path, see below.
-  Atomic::store(&_finish_tokens, _num_workers + 1);
-  Atomic::release_store(&_task, task);
+  AtomicAccess::store(&_finish_tokens, _num_workers + 1);
+  AtomicAccess::release_store(&_task, task);
 
   // Kick off pool startup by starting a single worker, and proceed
   // immediately to executing the task locally.
@@ -494,19 +494,19 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // on semaphore first, and then spin-wait for all workers to terminate.
   _end_semaphore.wait();
   SpinYield spin;
-  while (Atomic::load(&_finish_tokens) != 0) {
+  while (AtomicAccess::load(&_finish_tokens) != 0) {
     spin.wait();
   }
 
   OrderAccess::fence();
 
-  assert(Atomic::load(&_finish_tokens) == 0, "All tokens are consumed");
+  assert(AtomicAccess::load(&_finish_tokens) == 0, "All tokens are consumed");
 }
 
 void ArchiveWorkers::run_as_worker() {
   assert(is_parallel(), "Should be in parallel mode");
 
-  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  ArchiveWorkerTask* task = AtomicAccess::load_acquire(&_task);
   task->run();
 
   // All work done in threads should be visible to caller.
@@ -514,22 +514,22 @@ void ArchiveWorkers::run_as_worker() {
 
   // Signal the pool the work is complete, and we are exiting.
   // Worker cannot do anything else with the pool after this.
-  if (Atomic::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
+  if (AtomicAccess::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
     // Last worker leaving. Notify the pool it can unblock to spin-wait.
     // Then consume the last token and leave.
     _end_semaphore.signal();
-    int last = Atomic::sub(&_finish_tokens, 1, memory_order_relaxed);
+    int last = AtomicAccess::sub(&_finish_tokens, 1, memory_order_relaxed);
     assert(last == 0, "Should be");
   }
 }
 
 void ArchiveWorkerTask::run() {
   while (true) {
-    int chunk = Atomic::load(&_chunk);
+    int chunk = AtomicAccess::load(&_chunk);
     if (chunk >= _max_chunks) {
       return;
     }
-    if (Atomic::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+    if (AtomicAccess::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
       assert(0 <= chunk && chunk < _max_chunks, "Sanity");
       work(chunk, _max_chunks);
     }

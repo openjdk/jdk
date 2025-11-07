@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class MetadataFactory : AllStatic {
   static void free_array(ClassLoaderData* loader_data, Array<T>* data) {
     if (data != nullptr) {
       assert(loader_data != nullptr, "shouldn't pass null");
-      assert(!data->is_shared(), "cannot deallocate array in shared spaces");
+      assert(!data->in_aot_cache(), "cannot deallocate array in aot metaspace spaces");
       int size = data->size();
       loader_data->metaspace_non_null()->deallocate((MetaWord*)data, size);
     }
@@ -73,7 +73,7 @@ class MetadataFactory : AllStatic {
       int size = md->size();
       // Call metadata's deallocate function which will deallocate fields and release_C_heap_structures
       assert(!md->on_stack(), "can't deallocate things on stack");
-      assert(!md->is_shared(), "cannot deallocate if in shared spaces");
+      assert(!md->in_aot_cache(), "cannot deallocate if in aot metaspace spaces");
       md->deallocate_contents(loader_data);
       // Call the destructor. This is currently used for MethodData which has a member
       // that needs to be destructed to release resources. Most Metadata derived classes have noop

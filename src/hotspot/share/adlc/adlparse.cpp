@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1389,13 +1389,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "branch_has_delay_slot")) {
-          skipws();
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
-          pipeline->_branchHasDelaySlot = true;
-          continue;
+          parse_err(SYNERR, "Using obsolete token, branch_has_delay_slot");
+          break;
         }
 
         if (!strcmp(ident, "max_instructions_per_bundle")) {
@@ -1507,36 +1502,8 @@ void ADLParser::pipe_parse(void) {
         }
 
         if (!strcmp(ident, "nops")) {
+          parse_err(WARN, "Using obsolete token, nops");
           skipws();
-          if (_curchar != '(') {
-            parse_err(SYNERR, "expected `(`, found '%c'\n", _curchar);
-            break;
-            }
-
-          next_char(); skipws();
-
-          while (_curchar != ')') {
-            ident = get_ident();
-            if (ident == nullptr) {
-              parse_err(SYNERR, "expected identifier for nop instruction, found '%c'\n", _curchar);
-              break;
-            }
-
-            pipeline->_noplist.addName(ident);
-            pipeline->_nopcnt++;
-            skipws();
-
-            if (_curchar == ',') {
-              next_char(); skipws();
-            }
-          }
-
-          next_char(); skipws();
-
-          if (_curchar == ';') {
-            next_char(); skipws();
-          }
-
           continue;
         }
 
@@ -1790,16 +1757,8 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
 
     if (!strcmp(ident, "one_instruction_with_delay_slot") ||
         !strcmp(ident, "single_instruction_with_delay_slot")) {
-      skipws();
-      if (_curchar != ';') {
-        parse_err(SYNERR, "missing \";\" in latency definition\n");
-        return;
-      }
-
-      pipe_class->setInstructionCount(1);
-      pipe_class->setBranchDelay(true);
-      next_char(); skipws();
-      continue;
+      parse_err(SYNERR, "Using obsolete token, %s", ident);
+      return;
     }
 
     if (!strcmp(ident, "one_instruction") ||
@@ -1859,15 +1818,8 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
     }
 
     if (!strcmp(ident, "has_delay_slot")) {
-      skipws();
-      if (_curchar != ';') {
-        parse_err(SYNERR, "missing \";\" after \"has_delay_slot\"\n");
-        return;
-      }
-
-      pipe_class->setBranchDelay(true);
-      next_char(); skipws();
-      continue;
+      parse_err(SYNERR, "Using obsolete token, %s", ident);
+      return;
     }
 
     if (!strcmp(ident, "force_serialization")) {

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "nmt/memTag.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
@@ -340,7 +340,7 @@ T* ParallelClaimableQueueSet<T, MT>::claim_next() {
     return nullptr;
   }
 
-  jint index = Atomic::add(&_claimed_index, 1, memory_order_relaxed);
+  jint index = AtomicAccess::add(&_claimed_index, 1, memory_order_relaxed);
 
   if (index <= size) {
     return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);

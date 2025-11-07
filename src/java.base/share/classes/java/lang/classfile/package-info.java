@@ -255,7 +255,7 @@
  * or method of any Class-File API class or interface will cause a {@link
  * NullPointerException} to be thrown. Additionally,
  * invoking a method with an array or collection containing a {@code null} element
- * will cause a {@code NullPointerException}, unless otherwise specified. </p>
+ * will cause a {@code NullPointerException}, unless otherwise specified.
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the

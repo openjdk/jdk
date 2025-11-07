@@ -146,6 +146,33 @@ public final class Util {
                 : ClassDesc.ofInternalName(classInternalNameOrArrayDesc);
     }
 
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U1, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU1List(List<T> input) {
+        var copy = List.copyOf(input);
+        checkU1(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input list to make it immutable, and verify its size can
+    /// be represented with U2, throwing IAE otherwise.
+    public static <T> List<T> sanitizeU2List(Collection<T> input) {
+        var copy = List.copyOf(input);
+        checkU2(copy.size(), "list size");
+        return copy;
+    }
+
+    /// Sanitizes an input nested list of parameter annotations.
+    public static List<List<Annotation>> sanitizeParameterAnnotations(List<List<Annotation>> input) {
+        var array = input.toArray().clone();
+        checkU1(array.length, "parameter count");
+        for (int i = 0; i < array.length; i++) {
+            array[i] = sanitizeU2List((List<?>) array[i]);
+        }
+
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
+    }
+
     public static<T, U> List<U> mappedList(List<? extends T> list, Function<T, U> mapper) {
         return new AbstractList<>() {
             @Override
@@ -203,7 +230,7 @@ public final class Util {
 
     public static IllegalArgumentException outOfRangeException(int value, String fieldName, String typeName) {
         return new IllegalArgumentException(
-                String.format("%s out of range of %d: %d", fieldName, typeName, value));
+                String.format("%s out of range of %s: %d", fieldName, typeName, value));
     }
 
     /// Ensures the given mask won't be truncated when written as an access flag
@@ -259,6 +286,7 @@ public final class Util {
     @ForceInline
     public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
         int size = list.size();
+        Util.checkU2(size, "attributes count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             writeAttribute(buf, list.get(i));
@@ -267,6 +295,7 @@ public final class Util {
 
     @ForceInline
     static void writeList(BufWriterImpl buf, Writable[] array, int size) {
+        Util.checkU2(size, "member count");
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
             array[i].writeTo(buf);
