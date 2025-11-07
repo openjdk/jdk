@@ -195,14 +195,14 @@ inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   if (_heap->is_in_young(field)) {
     return;
   }
-  // Exclude old-old
   T heap_oop = RawAccess<>::oop_load(field);
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    // Field is in old generation, If referenced object is also in old gen, skip card marking
-    if (!_heap->is_in_young(obj)) {
-        return;
-    }
+  if (CompressedOops::is_null(heap_oop)) {
+    return;
+  }
+  oop obj = CompressedOops::decode_not_null(heap_oop);
+  // Field is in old generation, If referenced object is also in old gen, skip card marking
+  if (!_heap->is_in_young(obj)) {
+    return;
   }
   // Honor UseCondCardMark: check if card is already dirty before writing
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
