@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514 8368520 8314323
+ * @bug 8029661 8325164 8368073 8368514 8368520
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
