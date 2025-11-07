@@ -2693,8 +2693,9 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         if (head->is_strip_mined() && mode != IgnoreStripMined) {
           CountedLoopNode* cl = head->as_CountedLoop();
           CountedLoopEndNode* cle = cl->loopexit();
-          Node* cle_out = cle->proj_out_or_null(false);
-          if (use == cle_out) {
+          // is use the projection that exits the loop from the CountedLoopEndNode?
+          if (use->in(0) == cle) {
+            IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
             use = le->proj_out(false);
             use_loop = get_loop(use);
