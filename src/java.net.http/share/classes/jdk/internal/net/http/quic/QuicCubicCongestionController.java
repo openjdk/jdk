@@ -73,6 +73,21 @@ public class QuicCubicCongestionController extends QuicBaseCongestionController 
                 } else {
                     long timePassedNanos = Deadline.between(lastFullWindow, now).toNanos();
                     if (timePassedNanos > 0) {
+                        /* "The elapsed time MUST NOT include periods during which cwnd
+                           has not been updated due to application-limited behavior"
+                           "A flow is application limited if it is currently sending less
+                            than what is allowed by the congestion window."
+
+                           We are sending asynchronously; one thread is sending data,
+                           a separate thread is processing the acknowledgements.
+                           We can't rely on cwnd being fully utilized when we process an ack, because
+                           most of the time it won't be.
+
+                           Instead, we assume that if we filled the cwnd, we were not application-limited
+                           in the last RTT (which is a pretty good approximation because of pacing),
+                           and acknowledgements for all packets sent prior to filling the cwnd
+                           count towards cwnd increase.
+                         */
                         long rttNanos = TimeUnit.MICROSECONDS.toNanos(rttEstimator.state().smoothedRttMicros());
                         timeNanos += Math.min(timePassedNanos, rttNanos);
                         lastFullWindow = now;

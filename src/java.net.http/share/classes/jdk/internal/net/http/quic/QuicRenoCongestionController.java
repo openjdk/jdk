@@ -28,6 +28,15 @@ package jdk.internal.net.http.quic;
 import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Log;
 
+/**
+ * Implementation of QUIC congestion controller based on RFC 9002.
+ * This is a QUIC variant of New Reno algorithm.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc9000
+ *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport
+ * @spec https://www.rfc-editor.org/info/rfc9002
+ *      RFC 9002: QUIC Loss Detection and Congestion Control
+ */
 class QuicRenoCongestionController extends QuicBaseCongestionController {
     public QuicRenoCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         super(dbgTag, rttEstimator);

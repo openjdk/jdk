@@ -38,11 +38,15 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Implementation of QUIC congestion controller based on RFC 9002.
- * This is a QUIC variant of New Reno algorithm.
+ * Implementation of the common parts of a QUIC congestion controller based on RFC 9002.
  *
- * @spec https://www.rfc-editor.org/info/rfc9000
- *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport
+ * This class implements the common parts of a congestion controller:
+ * - slow start
+ * - loss recovery
+ * - cooperation with pacer
+ *
+ * Subclasses implement congestion window growth in congestion avoidance phase.
+ *
  * @spec https://www.rfc-editor.org/info/rfc9002
  *      RFC 9002: QUIC Loss Detection and Congestion Control
  */
