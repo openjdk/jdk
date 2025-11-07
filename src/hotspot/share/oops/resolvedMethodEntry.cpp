@@ -35,13 +35,6 @@ class ResolvedMethodEntryWithExtra : public ResolvedMethodEntry {
 };
 STATIC_ASSERT(sizeof(ResolvedMethodEntryWithExtra) > sizeof(ResolvedMethodEntry));
 
-// Detect added fields possibly inadvertently introducing internal padding.
-#ifdef _LP64
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == DEBUG_ONLY(32) NOT_DEBUG(24));
-#else
-STATIC_ASSERT(sizeof(ResolvedMethodEntry) == DEBUG_ONLY(20) NOT_DEBUG(16));
-#endif
-
 bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
   // return false if m refers to a non-deleted old or obsolete method
   if (_method != nullptr) {

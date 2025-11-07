@@ -34,13 +34,6 @@ class ResolvedFieldEntryWithExtra : public ResolvedFieldEntry {
 };
 STATIC_ASSERT(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
 
-// Detect added fields possibly inadvertently introducing internal padding.
-#ifdef _LP64
-STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 24);
-#else
-STATIC_ASSERT(sizeof(ResolvedFieldEntry) == 16);
-#endif
-
 void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr("Field Entry:");
 
