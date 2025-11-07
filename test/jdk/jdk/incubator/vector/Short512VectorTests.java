@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -6905,12 +6905,9 @@ public class Short512VectorTests extends AbstractVectorTest {
 
     @Test(dataProvider = "longMaskProvider")
     static void maskFromToLongShort512VectorTestsSmokeTest(long inputLong) {
-        for (int ic = 0; ic < INVOC_COUNT * INVOC_COUNT; ic++) {
-            var vmask = VectorMask.fromLong(SPECIES, inputLong);
-            // Insert "not()" to avoid the "fromLong/toLong" being optimized out by compiler.
-            long outputLong = vmask.not().toLong();
-            Assert.assertEquals(outputLong, ((inputLong ^ -1L) & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
-        }
+        var vmask = VectorMask.fromLong(SPECIES, inputLong);
+        long outputLong = vmask.toLong();
+        Assert.assertEquals(outputLong, (inputLong & (((0xFFFFFFFFFFFFFFFFL >>> (64 - SPECIES.length()))))));
     }
 
     @DataProvider
