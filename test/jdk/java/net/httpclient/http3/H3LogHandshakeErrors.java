@@ -114,7 +114,7 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
         var categories = Arrays.asList(logging.split(","));
         assertTrue(categories.contains("errors"),
                 "'errors' not found in " + categories);
-        
+
         // create a client that doesn't have the server's
         // certificate
         final HttpClient client = newClientBuilderForH3()
