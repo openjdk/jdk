@@ -142,8 +142,12 @@ public class QuicCubicCongestionController extends QuicBaseCongestionController 
         if (inCongestionRecovery(sentTime)) {
             return;
         }
-        // TODO implement fast convergence (RFC 9438 section 4.7)
-        wMaxBytes = congestionWindow;
+        if (congestionWindow < wMaxBytes) {
+            // fast convergence
+            wMaxBytes = (long) ((1 + BETA) * congestionWindow / 2);
+        } else {
+            wMaxBytes = congestionWindow;
+        }
         cwndPriorBytes = congestionWindow;
         congestionRecoveryStartTime = timeSource.instant();
         ssThresh = (long)(congestionWindow * BETA);
