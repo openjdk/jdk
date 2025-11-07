@@ -99,6 +99,14 @@ public final class StandardAppImageFileOption {
             .inScope(AppImageFileOptionScope.LAUNCHER)
             .toOptionValueBuilder().id(StandardOption.LAUNCHER_AS_SERVICE.id()).create();
 
+    /**
+     * The description of a launcher.
+     */
+    public static final OptionValue<String> DESCRIPTION = stringOption("description")
+            .inScope(AppImageFileOptionScope.LAUNCHER)
+            .inScope(MandatoryOption.VALUE)
+            .toOptionValueBuilder().id(StandardOption.DESCRIPTION.id()).create();
+
 
     //
     // Linux-specific
