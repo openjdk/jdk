@@ -313,7 +313,8 @@ tier3_gc_gcold = \
 tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithG1.java \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
-  gc/stress/gcbasher/TestGCBasherWithParallel.java
+  gc/stress/gcbasher/TestGCBasherWithParallel.java \
+  gc/stress/gcbasher/TestGCBasherWithZ.java
 
 tier1_gc_shenandoah = \
   gc/shenandoah/options/ \

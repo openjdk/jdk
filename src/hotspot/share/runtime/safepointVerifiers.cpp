@@ -30,13 +30,19 @@
 
 #ifdef ASSERT
 
-NoSafepointVerifier::NoSafepointVerifier() : _thread(Thread::current()) {
+NoSafepointVerifier::NoSafepointVerifier(bool active) : _thread(Thread::current()), _active(active) {
+  if (!_active) {
+    return;
+  }
   if (_thread->is_Java_thread()) {
     JavaThread::cast(_thread)->inc_no_safepoint_count();
   }
 }
 
 NoSafepointVerifier::~NoSafepointVerifier() {
+  if (!_active) {
+    return;
+  }
   if (_thread->is_Java_thread()) {
     JavaThread::cast(_thread)->dec_no_safepoint_count();
   }

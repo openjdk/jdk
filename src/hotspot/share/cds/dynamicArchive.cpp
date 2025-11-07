@@ -28,11 +28,11 @@
 #include "cds/aotLogging.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -353,8 +353,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocatio
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_as_output();
-  ArchiveHeapInfo no_heap_for_dynamic_dump;
-  ArchiveBuilder::write_archive(dynamic_info, &no_heap_for_dynamic_dump);
+  ArchiveBuilder::write_archive(dynamic_info, nullptr, nullptr);
 
   address base = _requested_dynamic_archive_bottom;
   address top  = _requested_dynamic_archive_top;

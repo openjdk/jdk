@@ -22,22 +22,27 @@
  *
  */
 
-#ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
-#define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
+#ifndef SHARE_CDS_AOTMAPPEDHEAPLOADER_HPP
+#define SHARE_CDS_AOTMAPPEDHEAPLOADER_HPP
 
+#include "cds/aotMapLogger.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/bitMap.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;
 struct LoadedArchiveHeapRegion;
 
-class ArchiveHeapLoader : AllStatic {
+class AOTMappedHeapLoader : AllStatic {
+  friend class AOTMapLogger;
+
 public:
   // At runtime, the heap region in the CDS archive can be used in two different ways,
   // depending on the GC type:
@@ -55,7 +60,6 @@ public:
 
   // Can this VM load the objects from archived heap region into the heap at start-up?
   static bool can_load()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void finish_initialization() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_loaded() {
     CDS_JAVA_HEAP_ONLY(return _is_loaded;)
     NOT_CDS_JAVA_HEAP(return false;)
@@ -80,6 +84,8 @@ public:
     CDS_JAVA_HEAP_ONLY(return _is_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
+
+  static void finish_initialization(FileMapInfo* info) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_region_impl.
@@ -127,6 +133,13 @@ private:
   static ptrdiff_t _mapped_heap_delta;
   static bool      _mapped_heap_relocation_initialized;
 
+  // Heap roots
+  static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
+  static int _root_segment_max_size_elems;
+
+  static MemRegion _mapped_heap_memregion;
+  static bool _heap_pointers_need_patching;
+
   static void init_narrow_oop_decoding(address base, int shift);
   static bool init_loaded_region(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_region,
                                  MemRegion& archive_space);
@@ -141,20 +154,40 @@ private:
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
+  static objArrayOop root_segment(int segment_idx);
+  static void get_segment_indexes(int idx, int& seg_idx, int& int_idx);
+  static void add_root_segment(objArrayOop segment_oop);
+  static void init_root_segment_sizes(int max_size_elems);
+
   template<bool IS_MAPPED>
   inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
   class PatchLoadedRegionPointers;
   class PatchUncompressedLoadedRegionPointers;
 
+  static address heap_region_dumptime_address(FileMapInfo* info);
+  static address heap_region_requested_address(FileMapInfo* info);
+  static bool map_heap_region_impl(FileMapInfo* info);
+  static narrowOop encoded_heap_region_dumptime_address(FileMapInfo* info);
+  static void patch_heap_embedded_pointers(FileMapInfo* info);
+  static void fixup_mapped_heap_region(FileMapInfo* info);
+  static void dealloc_heap_region(FileMapInfo* info);
+
 public:
 
+  static bool map_heap_region(FileMapInfo* info);
   static bool load_heap_region(FileMapInfo* mapinfo);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");
   }
+
+  static oop get_root(int index);
+  static void clear_root(int index);
+
+  static AOTMapLogger::OopDataIterator* oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end);
+
 #endif // INCLUDE_CDS_JAVA_HEAP
 
 };
 
-#endif // SHARE_CDS_ARCHIVEHEAPLOADER_HPP
+#endif // SHARE_CDS_AOTMAPPEDHEAPLOADER_HPP

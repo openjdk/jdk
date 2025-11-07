@@ -100,8 +100,12 @@ public class IncompatibleOptions {
 
         // Uncompressed OOPs
         testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
+        testExec(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
+
+        // Try with ZGC
         if (GC.Z.isSupported()) {
-            testDump(1, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
+            testDump(2, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
+            testExec(2, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
         }
 
         // Dump heap objects with Parallel, Serial, Shenandoah GC
@@ -112,39 +116,62 @@ public class IncompatibleOptions {
         }
 
         // Explicitly archive with compressed oops, run without.
-        testDump(5, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
-        testExec(5, "-XX:+UseG1GC", "-XX:-UseCompressedOops",
-                 COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        testDump(3, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
+        testExec(3, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COMPRESSED_OOPS_NOT_CONSISTENT, true);
 
         // NOTE: No warning is displayed, by design
         // Still run, to ensure no crash or exception
-        testExec(6, "-XX:+UseParallelGC", "", "", false);
-        testExec(7, "-XX:+UseSerialGC", "", "", false);
+        testExec(3, "-XX:+UseParallelGC", "", "", false);
+        testExec(3, "-XX:+UseSerialGC", "", "", false);
+
+        // Explicitly archive with object streaming with one GC, run with other GCs.
+        testDump(4, "-XX:+UseG1GC", "-XX:+AOTStreamableObjects", null, false);
+        testExec(4, "-XX:+UseParallelGC", "", "", false);
+        testExec(4, "-XX:+UseSerialGC", "", "", false);
+
+        if (GC.Z.isSupported()) {
+            testExec(4, "-XX:+UseZGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        }
+
+        // Explicitly archive with object streaming and COOPs with one GC, run with other GCs.
+        testDump(4, "-XX:-UseCompressedOops", "-XX:+AOTStreamableObjects", null, false);
+        testExec(4, "-XX:+UseG1GC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        testExec(4, "-XX:+UseParallelGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+        testExec(4, "-XX:+UseSerialGC", "", COMPRESSED_OOPS_NOT_CONSISTENT, true);
+
+        testExec(4, "-XX:+UseParallelGC", "-XX:-UseCompressedOops", "", false);
+        testExec(4, "-XX:+UseSerialGC", "-XX:-UseCompressedOops", "", false);
+        testExec(4, "-XX:+UseG1GC", "-XX:-UseCompressedOops", "", false);
 
         // Test various oops encodings, by varying ObjectAlignmentInBytes and heap sizes
-        testDump(9, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=8", null, false);
-        testExec(9, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=16",
-                 OBJ_ALIGNMENT_MISMATCH, true);
+        testDump(5, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=8", null, false);
+        testExec(5, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=16", OBJ_ALIGNMENT_MISMATCH, true);
+
+        testDump(6, "-XX:+AOTStreamableObjects", "-XX:ObjectAlignmentInBytes=8", null, false);
+        testExec(6, "-XX:+AOTStreamableObjects", "-XX:ObjectAlignmentInBytes=16", OBJ_ALIGNMENT_MISMATCH, true);
 
         // Implicitly archive with compressed oops, run without.
         // Max heap size for compressed oops is around 31G.
         // UseCompressedOops is turned on by default when heap
         // size is under 31G, but will be turned off when heap
         // size is greater than that.
-        testDump(10, "-XX:+UseG1GC", "-Xmx1g", null, false);
-        testExec(10, "-XX:+UseG1GC", "-Xmx32g", null, true);
+        testDump(7, "-XX:+UseG1GC", "-Xmx1g", null, false);
+        testExec(7, "-XX:+UseG1GC", "-Xmx32g", null, true);
         // Explicitly archive without compressed oops and run with.
-        testDump(11, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
-        testExec(11, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, true);
+        testDump(8, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
+        testExec(8, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, true);
         // Implicitly archive without compressed oops and run with.
-        testDump(12, "-XX:+UseG1GC", "-Xmx32G", null, false);
-        testExec(12, "-XX:+UseG1GC", "-Xmx1G", null, true);
+        testDump(9, "-XX:+UseG1GC", "-Xmx32G", null, false);
+        testExec(9, "-XX:+UseG1GC", "-Xmx1G", null, true);
         // CompactStrings must match between dump time and run time
-        testDump(13, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
-        testExec(13, "-XX:+UseG1GC", "-XX:+CompactStrings",
+        testDump(10, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
+        testExec(10, "-XX:+UseG1GC", "-XX:+CompactStrings",
                  COMPACT_STRING_MISMATCH, true);
-        testDump(14, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
-        testExec(14, "-XX:+UseG1GC", "-XX:-CompactStrings",
+        testDump(11, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
+        testExec(11, "-XX:+UseG1GC", "-XX:-CompactStrings",
+                 COMPACT_STRING_MISMATCH, true);
+        testDump(11, "-XX:+AOTStreamableObjects", "-XX:+CompactStrings", null, false);
+        testExec(11, "-XX:+AOTStreamableObjects", "-XX:-CompactStrings",
                  COMPACT_STRING_MISMATCH, true);
     }
 
@@ -154,6 +181,7 @@ public class IncompatibleOptions {
         System.out.println("Testcase: " + testCaseNr);
         OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
             TestCommon.concat(vmOptionsPrefix,
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseCompressedOops",
                 collectorOption,
                 "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("SharedStringsBasic.txt"),
@@ -181,11 +209,13 @@ public class IncompatibleOptions {
         if (!extraOption.isEmpty()) {
             output = TestCommon.exec(appJar,
                 TestCommon.concat(vmOptionsPrefix,
+                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", extraOption, "HelloString"));
         } else {
             output = TestCommon.exec(appJar,
                 TestCommon.concat(vmOptionsPrefix,
+                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", "HelloString"));
         }

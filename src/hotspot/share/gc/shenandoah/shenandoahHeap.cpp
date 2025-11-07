@@ -25,7 +25,7 @@
  */
 
 
-#include "cds/archiveHeapWriter.hpp"
+#include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -2770,7 +2770,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   //
   // CDS would guarantee no objects straddle multiple regions, as long as regions are as large
   // as MIN_GC_REGION_ALIGNMENT.
-  guarantee(ShenandoahHeapRegion::region_size_bytes() >= ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
+  guarantee(ShenandoahHeapRegion::region_size_bytes() >= AOTMappedHeapWriter::MIN_GC_REGION_ALIGNMENT, "Must be");
 
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_cds(size);
   return allocate_memory(req);

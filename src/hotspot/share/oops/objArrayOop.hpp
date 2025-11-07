@@ -35,7 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class ArchiveHeapWriter;
+  friend class AOTMappedHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;

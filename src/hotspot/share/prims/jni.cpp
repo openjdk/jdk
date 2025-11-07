@@ -3491,6 +3491,10 @@ enum VM_Creation_State {
 
 volatile VM_Creation_State vm_created = NOT_CREATED;
 
+bool is_vm_created() {
+  return AtomicAccess::load(&vm_created) == COMPLETE;
+}
+
 // Indicate whether it is safe to recreate VM. Recreation is only
 // possible after a failed initial creation attempt in some cases.
 volatile int safe_to_recreate_vm = 1;

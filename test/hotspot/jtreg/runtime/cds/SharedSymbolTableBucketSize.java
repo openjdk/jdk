@@ -43,8 +43,9 @@ public class SharedSymbolTableBucketSize {
                                                + Integer.valueOf(bucket_size));
         CDSTestUtils.checkMappingFailure(output);
 
-        String s = output.firstMatch("Average bucket size     : .*");
-        Float f = Float.parseFloat(s.substring(25));
+        String regex = "Average bucket size     :     ([0-9]+\\.[0-9]+).*";
+        String s = output.firstMatch(regex, 1);
+        Float f = Float.parseFloat(s);
         int size = Math.round(f);
         if (size != bucket_size) {
             throw new Exception("FAILED: incorrect bucket size " + size +

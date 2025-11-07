@@ -500,6 +500,7 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.
