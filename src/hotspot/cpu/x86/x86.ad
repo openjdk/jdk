@@ -25030,7 +25030,6 @@ instruct reinterpretHF2S(rRegI dst, regF src)
   format %{ "vmovw $dst, $src" %}
   ins_encode %{
     __ vmovw($dst$$Register, $src$$XMMRegister);
-    __ movswl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
