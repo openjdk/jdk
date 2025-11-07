@@ -39,61 +39,49 @@ import javax.swing.JTextPane;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import javax.swing.SwingUtilities;
 
 public class TestGlyphBGHeight {
 
-    static final int WIDTH = 100;
-    static final int HEIGHT = 100;
-    static final int FONTSIZE = 32;
-
-    static int getEmptyPixel() {
-        return 0xFFFFFFFF;
-    }
+    private static final int WIDTH = 100;
+    private static final int HEIGHT = 100;
+    private static final int FONTSIZE = 32;
+    private static final Color EMPTY_PIXEL = new Color(0xFFFFFFFF);
 
     static BufferedImage createImage() throws Exception {
         final BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    Graphics g = img.getGraphics();
-                    g.setColor(new Color(getEmptyPixel()));
-                    g.fillRect(0, 0, WIDTH, HEIGHT);
-                }
-            });
+        Graphics g = img.getGraphics();
+        g.setColor(EMPTY_PIXEL);
+        g.fillRect(0, 0, WIDTH, HEIGHT);
         return img;
     }
 
     public static void main(String[] args) throws Exception {
 
         final BufferedImage img = createImage();
-        SwingUtilities.invokeAndWait(() -> {
-            final JTextPane comp = new JTextPane();
-            final StyledDocument doc = comp.getStyledDocument();
+        final JTextPane textPane = new JTextPane();
+        final StyledDocument doc = textPane.getStyledDocument();
 
-            Style style = comp.addStyle("superscript", null);
-            StyleConstants.setSuperscript(style, true);
-            StyleConstants.setFontSize(style, FONTSIZE);
-            StyleConstants.setBackground(style, Color.YELLOW);
-            try {
-                doc.insertString(doc.getLength(), "hello", style);
-            } catch (Exception e) {}
+        Style style = textPane.addStyle("superscript", null);
+        StyleConstants.setSuperscript(style, true);
+        StyleConstants.setFontSize(style, FONTSIZE);
+        StyleConstants.setBackground(style, Color.YELLOW);
+        try {
+            doc.insertString(doc.getLength(), "hello", style);
+        } catch (Exception e) {}
 
-            comp.setSize(WIDTH, HEIGHT);
-            comp.setDocument(doc);
-            comp.setBackground(Color.RED);
+        textPane.setSize(WIDTH, HEIGHT);
+        textPane.setBackground(Color.RED);
 
-            comp.paint(img.getGraphics());
-        });
+        textPane.paint(img.getGraphics());
 
         ImageIO.write(img, "png", new File("AppTest.png"));
 
         BufferedImage bimg = img.getSubimage(0, FONTSIZE + 20, WIDTH, 1);
         ImageIO.write(bimg, "png", new File("AppTest1.png"));
-        for (int x = 10; x < WIDTH/ 2; x++) {
-            Color col = new Color(bimg.getRGB(x, 0));
-            System.out.println(Integer.toHexString(bimg.getRGB(x, 0)));
-            if (col.equals(Color.YELLOW)) {
+        for (int x = 10; x < WIDTH / 2; x++) {
+            int col = bimg.getRGB(x, 0);
+            System.out.println(Integer.toHexString(col));
+            if (col == Color.YELLOW.getRGB()) {
                 throw new RuntimeException(" Background is painted taller than needed for styled text");
             }
         }
