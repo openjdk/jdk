@@ -47,14 +47,10 @@ bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
 void ResolvedMethodEntry::reset_entry() {
   if (has_resolved_references_index()) {
     u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
-    u2 saved_cpool_index = _cpool_index;
-    memset((void *) this, 0, sizeof(*this));
+    *this = ResolvedMethodEntry(_cpool_index);
     set_resolved_references_index(saved_resolved_references_index);
-    _cpool_index = saved_cpool_index;
   } else {
-    u2 saved_cpool_index = _cpool_index;
-    memset((void *) this, 0, sizeof(*this));
-    _cpool_index = saved_cpool_index;
+    *this = ResolvedMethodEntry(_cpool_index);
   }
 }
 
