@@ -237,7 +237,7 @@ public class FileSizeCheck {
 
     private static JTable findTable(final Container container) {
         Component result = Util.findComponent(container,
-                                         c -> c instanceof JTable);
+                                              c -> c instanceof JTable);
         return (JTable) result;
     }
 }
