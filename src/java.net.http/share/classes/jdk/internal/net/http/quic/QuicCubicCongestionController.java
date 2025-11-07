@@ -113,16 +113,16 @@ public class QuicCubicCongestionController extends QuicBaseCongestionController 
         if (!isAppLimited) {
             // C * (t-K [seconds])^3 + Wmax (segments)
             if (wEstBytes < cwndPriorBytes) {
-                wEstBytes += Math.max((long) (ALPHA * maxDatagramSize * packetBytes / maxBytesInFlight), 1);
+                wEstBytes += Math.max((long) (ALPHA * maxDatagramSize * packetBytes / congestionWindow), 1);
             } else {
-                wEstBytes += Math.max((long)maxDatagramSize * packetBytes / maxBytesInFlight, 1);
+                wEstBytes += Math.max((long)maxDatagramSize * packetBytes / congestionWindow, 1);
             }
             long targetBytes = (long)(C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
             if (targetBytes > 1.5 * congestionWindow) {
                 targetBytes = (long) (1.5 * congestionWindow);
             }
             if (targetBytes > congestionWindow) {
-                congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / maxBytesInFlight, 1L);
+                congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / congestionWindow, 1L);
             }
             if (wEstBytes > congestionWindow) {
                 congestionWindow = wEstBytes;

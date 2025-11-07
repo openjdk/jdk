@@ -46,7 +46,7 @@ class QuicRenoCongestionController extends QuicBaseCongestionController {
         boolean isAppLimited;
         isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
         if (!isAppLimited) {
-            congestionWindow += Math.max((long) maxDatagramSize * packetBytes / maxBytesInFlight, 1L);
+            congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
         }
         return isAppLimited;
     }
