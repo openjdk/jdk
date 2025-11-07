@@ -255,7 +255,7 @@ void CDSHeapVerifier::add_shared_secret_accessors() {
 
 CDSHeapVerifier::~CDSHeapVerifier() {
   if (_problems > 0) {
-    log_error(aot, heap)("Scanned %d objects. Found %d case(s) where "
+    log_error(aot, heap)("Scanned %zu objects. Found %d case(s) where "
                          "an object points to a static field that "
                          "may hold a different value at runtime.", _archived_objs, _problems);
     log_error(aot, heap)("Please see cdsHeapVerifier.cpp and aotClassInitializer.cpp for details");

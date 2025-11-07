@@ -76,11 +76,13 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -521,21 +523,102 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   soc->do_tag(666);
 }
 
-static void rewrite_nofast_bytecode(const methodHandle& method) {
+// In AOTCache workflow, when dumping preimage, the constant pool entries are stored in unresolved state.
+// So the fast version of getfield/putfield needs to be converted to nofast version.
+// When dumping the final image in the assembly phase, these nofast versions are converted back to fast versions
+// if the constant pool entry refered by these bytecodes is stored in resolved state.
+// Same principle applies to static and dynamic archives. If the constant pool entry is in resolved state, then
+// the fast version of the bytecodes can be preserved, else use the nofast version.
+//
+// The fast versions of aload_0 (i.e. _fast_Xaccess_0) merges the bytecode pair (aload_0, fast_Xgetfield).
+// If the fast version of aload_0 is preserved in AOTCache, then the JVMTI notifications for field access and
+// breakpoint events will be skipped for the second bytecode (fast_Xgetfield) in the pair.
+// Same holds for fast versions of iload_0. So for these bytecodes, nofast version is used.
+static void rewrite_bytecodes(const methodHandle& method) {
+  ConstantPool* cp = method->constants();
   BytecodeStream bcs(method);
+  Bytecodes::Code new_code;
+
+  LogStreamHandle(Trace, aot, resolve) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Rewriting bytecodes for ");
+    method()->print_external_name(&lsh);
+    lsh.print("\n");
+  }
+
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
-    switch (opcode) {
-    case Bytecodes::_getfield:      *bcs.bcp() = Bytecodes::_nofast_getfield;      break;
-    case Bytecodes::_putfield:      *bcs.bcp() = Bytecodes::_nofast_putfield;      break;
-    case Bytecodes::_aload_0:       *bcs.bcp() = Bytecodes::_nofast_aload_0;       break;
-    case Bytecodes::_iload: {
-      if (!bcs.is_wide()) {
-        *bcs.bcp() = Bytecodes::_nofast_iload;
+    // Use current opcode as the default value of new_code
+    new_code = opcode;
+    switch(opcode) {
+    case Bytecodes::_getfield: {
+      uint rfe_index = bcs.get_index_u2();
+      bool is_resolved = cp->is_resolved(rfe_index, opcode);
+      if (is_resolved) {
+        assert(!CDSConfig::is_dumping_preimage_static_archive(), "preimage should not have resolved field references");
+        ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
+        switch(rfe->tos_state()) {
+        case btos:
+          // fallthrough
+        case ztos: new_code = Bytecodes::_fast_bgetfield; break;
+        case atos: new_code = Bytecodes::_fast_agetfield; break;
+        case itos: new_code = Bytecodes::_fast_igetfield; break;
+        case ctos: new_code = Bytecodes::_fast_cgetfield; break;
+        case stos: new_code = Bytecodes::_fast_sgetfield; break;
+        case ltos: new_code = Bytecodes::_fast_lgetfield; break;
+        case ftos: new_code = Bytecodes::_fast_fgetfield; break;
+        case dtos: new_code = Bytecodes::_fast_dgetfield; break;
+        default:
+          ShouldNotReachHere();
+          break;
+        }
+      } else {
+        new_code = Bytecodes::_nofast_getfield;
       }
       break;
     }
-    default: break;
+    case Bytecodes::_putfield: {
+      uint rfe_index = bcs.get_index_u2();
+      bool is_resolved = cp->is_resolved(rfe_index, opcode);
+      if (is_resolved) {
+        assert(!CDSConfig::is_dumping_preimage_static_archive(), "preimage should not have resolved field references");
+        ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
+        switch(rfe->tos_state()) {
+        case btos: new_code = Bytecodes::_fast_bputfield; break;
+        case ztos: new_code = Bytecodes::_fast_zputfield; break;
+        case atos: new_code = Bytecodes::_fast_aputfield; break;
+        case itos: new_code = Bytecodes::_fast_iputfield; break;
+        case ctos: new_code = Bytecodes::_fast_cputfield; break;
+        case stos: new_code = Bytecodes::_fast_sputfield; break;
+        case ltos: new_code = Bytecodes::_fast_lputfield; break;
+        case ftos: new_code = Bytecodes::_fast_fputfield; break;
+        case dtos: new_code = Bytecodes::_fast_dputfield; break;
+        default:
+          ShouldNotReachHere();
+          break;
+        }
+      } else {
+        new_code = Bytecodes::_nofast_putfield;
+      }
+      break;
+    }
+    case Bytecodes::_aload_0:
+      // Revert _fast_Xaccess_0 or _aload_0 to _nofast_aload_0
+      new_code = Bytecodes::_nofast_aload_0;
+      break;
+    case Bytecodes::_iload:
+      if (!bcs.is_wide()) {
+        new_code = Bytecodes::_nofast_iload;
+      }
+      break;
+    default:
+      break;
+    }
+    if (opcode != new_code) {
+      *bcs.bcp() = new_code;
+      if (lsh.is_enabled()) {
+        lsh.print_cr("%d:%s -> %s", bcs.bci(), Bytecodes::name(opcode), Bytecodes::name(new_code));
+      }
     }
   }
 }
@@ -543,11 +626,11 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 // [1] Rewrite all bytecodes as needed, so that the ConstMethod* will not be modified
 //     at run time by RewriteBytecodes/RewriteFrequentPairs
 // [2] Assign a fingerprint, so one doesn't need to be assigned at run-time.
-void AOTMetaspace::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
+void AOTMetaspace::rewrite_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
     if (ik->can_be_verified_at_dumptime() && ik->is_linked()) {
-      rewrite_nofast_bytecode(m);
+      rewrite_bytecodes(m);
     }
     Fingerprinter fp(m);
     // The side effect of this call sets method's fingerprint field.
@@ -2002,13 +2085,13 @@ void AOTMetaspace::unmap_archive(FileMapInfo* mapinfo) {
 // For -XX:PrintSharedArchiveAndExit
 class CountSharedSymbols : public SymbolClosure {
  private:
-   int _count;
+   size_t _count;
  public:
    CountSharedSymbols() : _count(0) {}
   void do_symbol(Symbol** sym) {
     _count++;
   }
-  int total() { return _count; }
+  size_t total() { return _count; }
 
 };
 
@@ -2082,7 +2165,7 @@ void AOTMetaspace::initialize_shared_spaces() {
     // collect shared symbols and strings
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
-    tty->print_cr("Number of shared symbols: %d", cl.total());
+    tty->print_cr("Number of shared symbols: %zu", cl.total());
     if (HeapShared::is_loading_mapping_mode()) {
       tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     }

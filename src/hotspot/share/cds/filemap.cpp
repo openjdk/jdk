@@ -314,7 +314,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("    - base_offset:                          0x%zx", _mapped_heap_header.root_segments().base_offset());
   st->print_cr("    - count:                                %zu", _mapped_heap_header.root_segments().count());
   st->print_cr("    - max_size_elems:                       %d", _mapped_heap_header.root_segments().max_size_in_elems());
-  st->print_cr("    - max_size_bytes:                       %d", _mapped_heap_header.root_segments().max_size_in_bytes());
+  st->print_cr("    - max_size_bytes:                       %zu", _mapped_heap_header.root_segments().max_size_in_bytes());
   st->print_cr("  - oopmap_start_pos:                       %zu", _mapped_heap_header.oopmap_start_pos());
   st->print_cr("  - oopmap_ptrmap_pos:                      %zu", _mapped_heap_header.ptrmap_start_pos());
   st->print_cr("- streamed_heap_header");
@@ -323,9 +323,12 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("  - num_roots:                              %zu", _streamed_heap_header.num_roots());
   st->print_cr("  - root_highest_object_index_table_offset: %zu", _streamed_heap_header.root_highest_object_index_table_offset());
   st->print_cr("  - num_archived_objects:                   %zu", _streamed_heap_header.num_archived_objects());
-  st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
-  st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
-  st->print_cr("- has_aot_linked_classes          %d", _has_aot_linked_classes);
+
+  st->print_cr("- _rw_ptrmap_start_pos:                     %zu", _rw_ptrmap_start_pos);
+  st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
+  st->print_cr("- use_optimized_module_handling:            %d", _use_optimized_module_handling);
+  st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
+  st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
 }
 
 bool FileMapInfo::validate_class_location() {

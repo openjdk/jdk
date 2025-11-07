@@ -22,7 +22,7 @@
  *
  */
 
-package sun.jvm.hotspot.runtime.x86;
+package sun.jvm.hotspot.runtime.amd64;
 
 import java.util.*;
 import sun.jvm.hotspot.code.*;
@@ -36,12 +36,12 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 /** Specialization of and implementation of abstract methods of the
-    Frame class for the x86 family of CPUs. */
+    Frame class for the x86_64 family of CPUs. */
 
-public class X86Frame extends Frame {
+public class AMD64Frame extends Frame {
   private static final boolean DEBUG;
   static {
-    DEBUG = System.getProperty("sun.jvm.hotspot.runtime.x86.X86Frame.DEBUG") != null;
+    DEBUG = System.getProperty("sun.jvm.hotspot.runtime.amd64.AMD64Frame.DEBUG") != null;
   }
 
   // All frames
@@ -99,7 +99,7 @@ public class X86Frame extends Frame {
   private Address raw_unextendedSP;
   private Address live_bcp;
 
-  private X86Frame() {
+  private AMD64Frame() {
   }
 
   private void initFrame(Address raw_sp, Address raw_fp, Address pc, Address raw_unextendedSp, Address live_bcp) {
@@ -122,44 +122,44 @@ public class X86Frame extends Frame {
   }
 
 
-  public X86Frame(Address raw_sp, Address raw_fp, Address pc) {
+  public AMD64Frame(Address raw_sp, Address raw_fp, Address pc) {
     initFrame(raw_sp, raw_fp, pc, null, null);
 
     if (DEBUG) {
-      System.out.println("X86Frame(sp, fp, pc): " + this);
+      System.out.println("AMD64Frame(sp, fp, pc): " + this);
       dumpStack();
     }
   }
 
-  public X86Frame(Address raw_sp, Address raw_fp) {
+  public AMD64Frame(Address raw_sp, Address raw_fp) {
     initFrame(raw_sp, raw_fp, null, null, null);
 
     if (DEBUG) {
-      System.out.println("X86Frame(sp, fp): " + this);
+      System.out.println("AMD64Frame(sp, fp): " + this);
       dumpStack();
     }
   }
 
-  public X86Frame(Address raw_sp, Address raw_unextendedSp, Address raw_fp, Address pc) {
+  public AMD64Frame(Address raw_sp, Address raw_unextendedSp, Address raw_fp, Address pc) {
     initFrame(raw_sp, raw_fp, pc, raw_unextendedSp, null);
 
     if (DEBUG) {
-      System.out.println("X86Frame(sp, unextendedSP, fp, pc): " + this);
+      System.out.println("AMD64Frame(sp, unextendedSP, fp, pc): " + this);
       dumpStack();
     }
   }
 
-  public X86Frame(Address raw_sp, Address raw_fp, Address pc, Address raw_unextendedSp, Address live_bcp) {
+  public AMD64Frame(Address raw_sp, Address raw_fp, Address pc, Address raw_unextendedSp, Address live_bcp) {
     initFrame(raw_sp, raw_fp, pc, raw_unextendedSp, live_bcp);
 
     if (DEBUG) {
-      System.out.println("X86Frame(sp, fp, pc, unextendedSP, live_bcp): " + this);
+      System.out.println("AMD64Frame(sp, fp, pc, unextendedSP, live_bcp): " + this);
       dumpStack();
     }
   }
 
   public Object clone() {
-    X86Frame frame = new X86Frame();
+    AMD64Frame frame = new AMD64Frame();
     frame.raw_sp = raw_sp;
     frame.raw_unextendedSP = raw_unextendedSP;
     frame.raw_fp = raw_fp;
@@ -174,11 +174,11 @@ public class X86Frame extends Frame {
       return false;
     }
 
-    if (!(arg instanceof X86Frame)) {
+    if (!(arg instanceof AMD64Frame)) {
       return false;
     }
 
-    X86Frame other = (X86Frame) arg;
+    AMD64Frame other = (AMD64Frame) arg;
 
     return (AddressOps.equal(getSP(), other.getSP()) &&
             AddressOps.equal(getUnextendedSP(), other.getUnextendedSP()) &&
@@ -206,7 +206,7 @@ public class X86Frame extends Frame {
   public Address getSP() { return raw_sp; }
   public Address getID() { return raw_sp; }
 
-  // FIXME: not implemented yet (should be done for Solaris/X86)
+  // FIXME: not implemented yet (should be done for Solaris)
   public boolean isSignalHandlerFrameDbg() { return false; }
   public int     getSignalNumberDbg()      { return 0;     }
   public String  getSignalNameDbg()        { return null;  }
@@ -248,7 +248,7 @@ public class X86Frame extends Frame {
   //  void    patch_pc(Thread* thread, address pc);
 
   public Frame sender(RegisterMap regMap, CodeBlob cb) {
-    X86RegisterMap map = (X86RegisterMap) regMap;
+    AMD64RegisterMap map = (AMD64RegisterMap) regMap;
 
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "map must be set");
@@ -281,10 +281,10 @@ public class X86Frame extends Frame {
 
     // Must be native-compiled frame, i.e. the marshaling code for native
     // methods that exists in the core system.
-    return new X86Frame(getSenderSP(), getLink(), getSenderPC());
+    return new AMD64Frame(getSenderSP(), getLink(), getSenderPC());
   }
 
-  private Frame senderForEntryFrame(X86RegisterMap map) {
+  private Frame senderForEntryFrame(AMD64RegisterMap map) {
     if (DEBUG) {
       System.out.println("senderForEntryFrame");
     }
@@ -293,16 +293,16 @@ public class X86Frame extends Frame {
     }
     // Java frame called from C; skip all C frames and return top C
     // frame of that chunk as the sender
-    X86JavaCallWrapper jcw = (X86JavaCallWrapper) getEntryFrameCallWrapper();
+    AMD64JavaCallWrapper jcw = (AMD64JavaCallWrapper) getEntryFrameCallWrapper();
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(!entryFrameIsFirst(), "next Java fp must be non zero");
       Assert.that(jcw.getLastJavaSP().greaterThan(getSP()), "must be above this frame on stack");
     }
-    X86Frame fr;
+    AMD64Frame fr;
     if (jcw.getLastJavaPC() != null) {
-      fr = new X86Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP(), jcw.getLastJavaPC());
+      fr = new AMD64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP(), jcw.getLastJavaPC());
     } else {
-      fr = new X86Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP());
+      fr = new AMD64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP());
     }
     map.clear();
     if (Assert.ASSERTS_ENABLED) {
@@ -311,7 +311,7 @@ public class X86Frame extends Frame {
     return fr;
   }
 
-  private Frame senderForUpcallStub(X86RegisterMap map, UpcallStub stub) {
+  private Frame senderForUpcallStub(AMD64RegisterMap map, UpcallStub stub) {
     if (DEBUG) {
       System.out.println("senderForUpcallStub");
     }
@@ -326,11 +326,11 @@ public class X86Frame extends Frame {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
     }
-    X86Frame fr;
+    AMD64Frame fr;
     if (lastJavaPC != null) {
-      fr = new X86Frame(lastJavaSP, lastJavaFP, lastJavaPC);
+      fr = new AMD64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
     } else {
-      fr = new X86Frame(lastJavaSP, lastJavaFP);
+      fr = new AMD64Frame(lastJavaSP, lastJavaFP);
     }
     map.clear();
     if (Assert.ASSERTS_ENABLED) {
@@ -339,7 +339,7 @@ public class X86Frame extends Frame {
     return fr;
   }
 
-  private Frame senderForInterpreterFrame(X86RegisterMap map) {
+  private Frame senderForInterpreterFrame(AMD64RegisterMap map) {
     if (DEBUG) {
       System.out.println("senderForInterpreterFrame");
     }
@@ -355,31 +355,27 @@ public class X86Frame extends Frame {
     if (map.getUpdateMap())
       updateMapWithSavedLink(map, addressOfStackSlot(LINK_OFFSET));
 
-    return new X86Frame(sp, unextendedSP, getLink(), getSenderPC());
+    return new AMD64Frame(sp, unextendedSP, getLink(), getSenderPC());
   }
 
   private void updateMapWithSavedLink(RegisterMap map, Address savedFPAddr) {
     map.setLocation(rbp, savedFPAddr);
   }
 
-  private Frame senderForContinuationStub(X86RegisterMap map, CodeBlob cb) {
+  private Frame senderForContinuationStub(AMD64RegisterMap map, CodeBlob cb) {
     var contEntry = map.getThread().getContEntry();
 
     Address senderSP = contEntry.getEntrySP();
     Address senderPC = contEntry.getEntryPC();
     Address senderFP = contEntry.getEntryFP();
 
-    return new X86Frame(senderSP, senderFP, senderPC);
+    return new AMD64Frame(senderSP, senderFP, senderPC);
   }
 
-  private Frame senderForCompiledFrame(X86RegisterMap map, CodeBlob cb) {
+  private Frame senderForCompiledFrame(AMD64RegisterMap map, CodeBlob cb) {
     if (DEBUG) {
       System.out.println("senderForCompiledFrame");
     }
-
-    //
-    // NOTE: some of this code is (unfortunately) duplicated in X86CurrentFrameGuess
-    //
 
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(map != null, "map must be set");
@@ -414,7 +410,7 @@ public class X86Frame extends Frame {
       updateMapWithSavedLink(map, savedFPAddr);
     }
 
-    return new X86Frame(senderSP, savedFPAddr.getAddressAt(0), senderPC);
+    return new AMD64Frame(senderSP, savedFPAddr.getAddressAt(0), senderPC);
   }
 
   protected boolean hasSenderPD() {
@@ -545,7 +541,7 @@ public class X86Frame extends Frame {
 
   // Entry frames
   public JavaCallWrapper getEntryFrameCallWrapper() {
-    return new X86JavaCallWrapper(addressOfStackSlot(ENTRY_FRAME_CALL_WRAPPER_OFFSET).getAddressAt(0));
+    return new AMD64JavaCallWrapper(addressOfStackSlot(ENTRY_FRAME_CALL_WRAPPER_OFFSET).getAddressAt(0));
   }
 
   protected Address addressOfSavedOopResult() {

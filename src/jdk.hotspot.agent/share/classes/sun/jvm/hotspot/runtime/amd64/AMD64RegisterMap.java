@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,30 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.linux.x86;
+package sun.jvm.hotspot.runtime.amd64;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.linux.*;
+import sun.jvm.hotspot.runtime.*;
 
-public class LinuxX86ThreadContext extends X86ThreadContext {
-  private LinuxDebugger debugger;
+public class AMD64RegisterMap extends RegisterMap {
 
-  public LinuxX86ThreadContext(LinuxDebugger debugger) {
-    super();
-    this.debugger = debugger;
+  /** This is the only public constructor */
+  public AMD64RegisterMap(JavaThread thread, boolean updateMap) {
+    super(thread, updateMap);
   }
 
-  public void setRegisterAsAddress(int index, Address value) {
-    setRegister(index, debugger.getAddressValue(value));
+  protected AMD64RegisterMap(RegisterMap map) {
+    super(map);
   }
 
-  public Address getRegisterAsAddress(int index) {
-    return debugger.newAddress(getRegister(index));
+  public Object clone() {
+    AMD64RegisterMap retval = new AMD64RegisterMap(this);
+    return retval;
   }
+
+  // no PD state to clear or copy:
+  protected void clearPD() {}
+  protected void initializePD() {}
+  protected void initializeFromPD(RegisterMap map) {}
+  protected Address getLocationPD(VMReg reg) { return null; }
 }

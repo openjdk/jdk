@@ -143,11 +143,6 @@ public class IncompatibleOptions {
         testExec(4, "-XX:+UseSerialGC", "-XX:-UseCompressedOops", "", false);
         testExec(4, "-XX:+UseG1GC", "-XX:-UseCompressedOops", "", false);
 
-        if (GC.Z.isSupported()) {
-            testExec(4, "-XX:+UseZGC", "-XX:+ZGenerational", "", false);
-            testExec(4, "-XX:+UseZGC", "-XX:-ZGenerational", "", false);
-        }
-
         // Test various oops encodings, by varying ObjectAlignmentInBytes and heap sizes
         testDump(5, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=8", null, false);
         testExec(5, "-XX:+UseG1GC", "-XX:ObjectAlignmentInBytes=16", OBJ_ALIGNMENT_MISMATCH, true);

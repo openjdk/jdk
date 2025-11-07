@@ -1409,7 +1409,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
     entry = entry->parent();
   }
 
-  // Due to lightweight locking
+  // Due to fast locking
   lock_stack().oops_do(f);
 }
 

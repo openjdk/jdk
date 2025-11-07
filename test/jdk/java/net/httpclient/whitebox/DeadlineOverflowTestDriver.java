@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.runtime.x86;
-
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-
-public class X86RegisterMap extends RegisterMap {
-
-  /** This is the only public constructor */
-  public X86RegisterMap(JavaThread thread, boolean updateMap) {
-    super(thread, updateMap);
-  }
-
-  protected X86RegisterMap(RegisterMap map) {
-    super(map);
-  }
-
-  public Object clone() {
-    X86RegisterMap retval = new X86RegisterMap(this);
-    return retval;
-  }
-
-  // no PD state to clear or copy:
-  protected void clearPD() {}
-  protected void initializePD() {}
-  protected void initializeFromPD(RegisterMap map) {}
-  protected Address getLocationPD(VMReg reg) { return null; }
-}
+/*
+ * @test
+ * @bug 8368528
+ * @summary Verifies that `Deadline` returns extremums on numeric overflows
+ * @modules java.net.http/jdk.internal.net.http.common:+open
+ * @run junit java.net.http/jdk.internal.net.http.common.DeadlineOverflowTest
+ */
