@@ -29,7 +29,7 @@
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
- * @requires os.maxMemory > 3G
+ * @requires os.maxMemory > 4G
  * @library /test/lib
  *
  * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
@@ -44,7 +44,7 @@
  * @key randomness
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"
- * @requires os.maxMemory > 3G
+ * @requires os.maxMemory > 4G
  * @library /test/lib
  *
  * @run main/othervm -Xmx3g -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
