@@ -99,8 +99,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void write_region(MemRegion mr);
-  void write_region(JavaThread* thread, MemRegion mr);
+  virtual void write_region(MemRegion mr);
 
   template <DecoratorSet decorators = DECORATORS_NONE, typename T>
   void write_ref_field_post(T* field);
@@ -118,8 +117,8 @@ class G1BarrierSet: public CardTableBarrierSet {
 
   // Callbacks for runtime accesses.
   template <DecoratorSet decorators, typename BarrierSetT = G1BarrierSet>
-  class AccessBarrier: public ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> {
-    typedef ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT> ModRef;
+  class AccessBarrier: public CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> {
+    typedef CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT> CardTableBS;
     typedef BarrierSet::AccessBarrier<decorators, BarrierSetT> Raw;
 
   public:

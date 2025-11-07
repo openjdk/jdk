@@ -33,7 +33,8 @@
 #include "utilities/macros.hpp"
 
 class ArchiveBuilder;
-class ArchiveHeapInfo;
+class ArchiveMappedHeapInfo;
+class ArchiveStreamedHeapInfo;
 class FileMapInfo;
 class Method;
 class outputStream;
@@ -144,7 +145,7 @@ public:
   // (Heap region alignments are decided by GC).
   static size_t core_region_alignment();
   static size_t protection_zone_size();
-  static void rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
+  static void rewrite_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik);
   // print loaded classes names to file.
   static void dump_loaded_classes(const char* file_name, TRAPS);
 #endif
@@ -184,7 +185,10 @@ public:
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static void fork_and_dump_final_static_archive(TRAPS);
-  static bool write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info);
+  static bool write_static_archive(ArchiveBuilder* builder,
+                                   FileMapInfo* map_info,
+                                   ArchiveMappedHeapInfo* mapped_heap_info,
+                                   ArchiveStreamedHeapInfo* streamed_heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the
