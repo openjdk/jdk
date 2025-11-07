@@ -325,6 +325,10 @@ void ShenandoahHeapRegion::make_empty() {
   reset_age();
   CENSUS_NOISE(clear_youth();)
   switch (state()) {
+    case _regular:
+      if (free() != region_size_bytes()) {
+        report_illegal_transition("emptying");
+      }
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();

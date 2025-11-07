@@ -3647,17 +3647,22 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
       assert(r->reserved_for_direct_allocation(), "Must be");
       AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       r->release_from_direct_allocation();
-      if (r->free() >= PLAB::min_size_bytes()) {
+      size_t const free_bytes = r->free();
+      if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
+        r->make_empty();
+        r->set_affiliation(FREE);
+      }
+      if (free_bytes >= PLAB::min_size_bytes()) {
         _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, r->free());
         partitions()->unretire_to_partition(r, ShenandoahFreeSetPartitionId::Mutator);
       }
-
     }
   }
 }
 
 void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
   assert_at_safepoint();
+  assert(region->free() != ShenandoahHeapRegion::region_size_bytes(), "Must not");
   shenandoah_assert_heaplocked();
   for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
     ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[i];
