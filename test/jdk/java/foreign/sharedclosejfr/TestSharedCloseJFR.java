@@ -35,6 +35,7 @@
  * @run main jdk.test.lib.FileInstaller sharedCloseJfr.jfc sharedCloseJfr.jfc
  * @run main/othervm
  *   -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *   -XX:CompileCommand=exclude,*TestSharedCloseJFR.main
  *   -XX:StartFlightRecording:filename=recording.jfr,dumponexit=true,settings=sharedCloseJfr.jfc
  *   TestSharedCloseJFR
  */
