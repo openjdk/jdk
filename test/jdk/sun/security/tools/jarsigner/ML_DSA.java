@@ -32,6 +32,7 @@
 import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
+import jdk.test.lib.process.Proc;
 import jdk.test.lib.security.DerUtils;
 import jdk.test.lib.util.JarUtils;
 import sun.security.util.KnownOIDs;
@@ -39,6 +40,7 @@ import sun.security.util.KnownOIDs;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -49,9 +51,25 @@ public class ML_DSA {
     static List<String> SIGNERS = List.of("44", "65", "87");
 
     public static void main(String[] args) throws Exception {
-        prepare();
-        testAPI();
-        testTool(); // call this last, it modified a.jar.
+        if (args.length > 0) {
+            // Launched by testDisabled() in a sub-process to count signers
+            var expectedCount = Integer.parseInt(args[0]);
+            try (var jf = new JarFile("a.jar")) {
+                var je = jf.getJarEntry("a");
+                jf.getInputStream(je).readAllBytes();
+                var signers = je.getCodeSigners();
+                var count = signers == null ? 0 : signers.length;
+                if (expectedCount != count) {
+                    throw new RuntimeException("Expected: " + expectedCount
+                            + ", actual " + count);
+                }
+            }
+        } else {
+            prepare();
+            testAPI();
+            testTool(); // call this last, it modified a.jar.
+            testDisabled();
+        }
     }
 
     private static void prepare() throws Exception {
@@ -77,7 +95,7 @@ public class ML_DSA {
             try (var jf = new JarFile(signer + ".jar")) {
                 var je = jf.getJarEntry("a");
                 jf.getInputStream(je).readAllBytes();
-                Asserts.assertEquals(1, je.getCertificates().length);
+                Asserts.assertEquals(1, je.getCodeSigners().length);
                 checkDigestAlgorithm(jf, signer, KnownOIDs.SHA_512);
             }
         }
@@ -95,11 +113,54 @@ public class ML_DSA {
         try (var jf = new JarFile("a.jar")) {
             var je = jf.getJarEntry("a");
             jf.getInputStream(je).readAllBytes();
-            Asserts.assertEquals(3, je.getCertificates().length);
+            Asserts.assertEquals(3, je.getCodeSigners().length);
             for (var signer : SIGNERS) {
                 checkDigestAlgorithm(jf, signer, KnownOIDs.SHA_512);
             }
         }
+    }
+
+    static void testDisabled() throws Exception {
+
+        // All disabled
+        Files.writeString(Paths.get("my.security"),
+                "jdk.jar.disabledAlgorithms=ML-DSA");
+        SecurityTools.jarsigner("-J-Djava.security.properties=my.security" +
+                        " -keystore ks -storepass changeit" +
+                        " -verify a.jar -verbose -certs -strict")
+                .shouldHaveExitValue(16)
+                .shouldContain("ML-DSA-44 key (disabled)")
+                .shouldContain("ML-DSA-65 key (disabled)")
+                .shouldContain("ML-DSA-87 key (disabled)")
+                .shouldContain("The jar will be treated as unsigned");
+        // Need to launch in a new process because security property is
+        // read at the beginning
+        Proc.create("ML_DSA")
+                .secprop("jdk.jar.disabledAlgorithms", "ML-DSA")
+                .args("0")
+                .start()
+                .waitFor(0);
+
+        // One disabled, one made weak
+        Files.writeString(Paths.get("my.security"), """
+                        jdk.jar.disabledAlgorithms=ML-DSA-44
+                        jdk.security.legacyAlgorithms=ML-DSA-65
+                        """);
+        SecurityTools.jarsigner("-J-Djava.security.properties=my.security" +
+                        " -keystore ks -storepass changeit" +
+                        " -verify a.jar -verbose -certs -strict")
+                .shouldHaveExitValue(0)
+                .shouldContain("ML-DSA-44 key (disabled)")
+                .shouldContain("ML-DSA-65 key (weak)")
+                .shouldContain("ML-DSA-87 key")
+                .shouldNotContain("ML-DSA-87 key (disabled)")
+                .shouldContain("jar verified.");
+        Proc.create("ML_DSA")
+                .secprop("jdk.jar.disabledAlgorithms", "ML-DSA-44")
+                .secprop("jdk.security.legacyAlgorithms", "ML-DSA-65")
+                .args("2") // weak still considered signer, disabled not
+                .start()
+                .waitFor(0);
     }
 
     static void checkDigestAlgorithm(JarFile jf, String alias, KnownOIDs digAlg)

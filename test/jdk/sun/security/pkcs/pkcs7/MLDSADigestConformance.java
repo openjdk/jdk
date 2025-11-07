@@ -44,7 +44,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
-public class DigestConformance {
+public class MLDSADigestConformance {
 
     static String[] ALL_KEY_ALGS = {"ML-DSA-44", "ML-DSA-65", "ML-DSA-87"};
     static String[] ALL_DIGEST_ALGS = {

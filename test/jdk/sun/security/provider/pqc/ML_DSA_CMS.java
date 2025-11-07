@@ -45,7 +45,11 @@ import static jdk.test.lib.security.RepositoryFileReader.*;
 
 public class ML_DSA_CMS {
     public static void main(String[] args) throws Exception {
-        // See https://datatracker.ietf.org/doc/html/rfc9882#name-examples
+        // See RFC 9882, Section "Examples": https://datatracker.ietf.org/doc/html/rfc9882#name-examples
+        // The test vectors originate from the following GitHub releases:
+        //   https://github.com/lamps-wg/cms-ml-dsa/releases/tag/draft-ietf-lamps-cms-ml-dsa-07
+        //   https://github.com/lamps-wg/dilithium-certificates/releases/tag/draft-ietf-lamps-dilithium-certificates-13
+        // Although the release tags include "draft", these values are the same as those in the final RFC 9882.
         try (var cmsReader = RepositoryFileReader.of(CMS_ML_DSA.class,
                     "cms-ml-dsa-draft-ietf-lamps-cms-ml-dsa-07/");
             var dsaReader = RepositoryFileReader.of(DILITHIUM_CERTIFICATES.class,
