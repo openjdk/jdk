@@ -935,6 +935,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       return;
     }
     bool printed_header = false;
+    stringStream ss;
     for (int i = 0; i < OptEvent_Count; i++) {
       int count = _optimization_counters[i];
         if (!printed_header) {
@@ -957,12 +958,16 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
             current_entry_bci = InvocationEntryBci;
           }
           const char* compilation_kind = is_osr_compilation() ? "OSR" : "non-OSR";
-          tty->print_cr("OPTS_START");
-          tty->print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
+          ss.print_cr("OPTS_START");
+          ss.print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
         }
-        tty->print_cr("%s=%d", optimization_event_names[i], count);
+        ss.print_cr("%s=%d", optimization_event_names[i], count);
     }
-    tty->print_cr("OPTS_END");
+    if (printed_header) {
+      ss.print_cr("OPTS_END");
+      ttyLocker ttyl;
+      tty->print_raw(ss.base());
+    }
   }
 #endif
 }
@@ -1096,6 +1101,7 @@ Compile::Compile(ciEnv* ci_env,
       return;
     }
     bool printed_header = false;
+    stringStream ss;
     for (int i = 0; i < OptEvent_Count; i++) {
       int count = _optimization_counters[i];
         if (!printed_header) {
@@ -1118,12 +1124,16 @@ Compile::Compile(ciEnv* ci_env,
             current_entry_bci = InvocationEntryBci;
           }
           const char* compilation_kind = is_osr_compilation() ? "OSR" : "non-OSR";
-          tty->print_cr("OPTS_START");
-          tty->print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
+          ss.print_cr("OPTS_START");
+          ss.print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
         }
-        tty->print_cr("%s=%d", optimization_event_names[i], count);
+        ss.print_cr("%s=%d", optimization_event_names[i], count);
     }
-    tty->print_cr("OPTS_END");
+    if (printed_header) {
+      ss.print_cr("OPTS_END");
+      ttyLocker ttyl;
+      tty->print_raw(ss.base());
+    }
   }
 #endif
 
