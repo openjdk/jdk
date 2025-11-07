@@ -59,6 +59,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/spinCriticalSection.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrFlush.hpp"
 #endif
@@ -312,17 +313,21 @@ oop ObjectMonitor::object() const {
   return _object.resolve();
 }
 
+ObjectMonitor::SetObjectStrongFunctor::SetObjectStrongFunctor(OopHandle* object_strong, WeakHandle const* object) : _object_strong(object_strong), _object(object){}
+
+void ObjectMonitor::SetObjectStrongFunctor::operator()() {
+  if (_object_strong->is_empty()) {
+    assert(_object->resolve() != nullptr, "");
+    *_object_strong = OopHandle(JavaThread::thread_oop_storage(), _object->resolve());
+  }
+}
+
 // Keep object protected during ObjectLocker preemption.
 void ObjectMonitor::set_object_strong() {
   check_object_context();
   if (_object_strong.is_empty()) {
-    if (AtomicAccess::cmpxchg(&_object_strong_lock, 0, 1) == 0) {
-      if (_object_strong.is_empty()) {
-        assert(_object.resolve() != nullptr, "");
-        _object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
-      }
-      AtomicAccess::release_store(&_object_strong_lock, 0);
-    }
+    SetObjectStrongFunctor F(&_object_strong, &_object);
+    SpinSingleSection sss(&_object_strong_lock, F);
   }
 }
 
@@ -1863,9 +1868,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_wait_set_lock);
-  add_waiter(&node);
-  Thread::SpinRelease(&_wait_set_lock);
+  {
+    SpinCriticalSection scs(&_wait_set_lock);
+    add_waiter(&node);
+  }
 
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
@@ -1922,12 +1928,11 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // That is, we fail toward safety.
 
     if (node.TState == ObjectWaiter::TS_WAIT) {
-      Thread::SpinAcquire(&_wait_set_lock);
+      SpinCriticalSection scs(&_wait_set_lock);
       if (node.TState == ObjectWaiter::TS_WAIT) {
         dequeue_specific_waiter(&node);       // unlink from wait_set
         node.TState = ObjectWaiter::TS_RUN;
       }
-      Thread::SpinRelease(&_wait_set_lock);
     }
 
     // The thread is now either on off-list (TS_RUN),
@@ -2036,66 +2041,67 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
 bool ObjectMonitor::notify_internal(JavaThread* current) {
   bool did_notify = false;
-  Thread::SpinAcquire(&_wait_set_lock);
-  ObjectWaiter* iterator = dequeue_waiter();
-  if (iterator != nullptr) {
-    guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
+  {
+    SpinCriticalSection scs(&_wait_set_lock);
+    ObjectWaiter* iterator = dequeue_waiter();
+    if (iterator != nullptr) {
+      guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
 
-    if (iterator->is_vthread()) {
-      oop vthread = iterator->vthread();
-      java_lang_VirtualThread::set_notified(vthread, true);
-      int old_state = java_lang_VirtualThread::state(vthread);
-      // If state is not WAIT/TIMED_WAIT then target could still be on
-      // unmount transition, or wait could have already timed-out or target
-      // could have been interrupted. In the first case, the target itself
-      // will set the state to BLOCKED at the end of the unmount transition.
-      // In the other cases the target would have been already unblocked so
-      // there is nothing to do.
-      if (old_state == java_lang_VirtualThread::WAIT ||
+      if (iterator->is_vthread()) {
+        oop vthread = iterator->vthread();
+        java_lang_VirtualThread::set_notified(vthread, true);
+        int old_state = java_lang_VirtualThread::state(vthread);
+        // If state is not WAIT/TIMED_WAIT then target could still be on
+        // unmount transition, or wait could have already timed-out or target
+        // could have been interrupted. In the first case, the target itself
+        // will set the state to BLOCKED at the end of the unmount transition.
+        // In the other cases the target would have been already unblocked so
+        // there is nothing to do.
+        if (old_state == java_lang_VirtualThread::WAIT ||
           old_state == java_lang_VirtualThread::TIMED_WAIT) {
-        java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
+          java_lang_VirtualThread::cmpxchg_state(vthread, old_state, java_lang_VirtualThread::BLOCKED);
+        }
+        // Increment counter *before* adding the vthread to the _entry_list.
+        // Adding to _entry_list uses Atomic::cmpxchg() which already provides
+        // a fence that prevents reordering of the stores.
+        inc_unmounted_vthreads();
       }
-      // Increment counter *before* adding the vthread to the _entry_list.
-      // Adding to _entry_list uses Atomic::cmpxchg() which already provides
-      // a fence that prevents reordering of the stores.
-      inc_unmounted_vthreads();
-    }
 
-    iterator->_notifier_tid = JFR_THREAD_ID(current);
-    did_notify = true;
-    add_to_entry_list(current, iterator);
+      iterator->_notifier_tid = JFR_THREAD_ID(current);
+      did_notify = true;
+      add_to_entry_list(current, iterator);
 
-    // _wait_set_lock protects the wait queue, not the entry_list.  We could
-    // move the add-to-entry_list operation, above, outside the critical section
-    // protected by _wait_set_lock.  In practice that's not useful.  With the
-    // exception of  wait() timeouts and interrupts the monitor owner
-    // is the only thread that grabs _wait_set_lock.  There's almost no contention
-    // on _wait_set_lock so it's not profitable to reduce the length of the
-    // critical section.
+      // _wait_set_lock protects the wait queue, not the entry_list.  We could
+      // move the add-to-entry_list operation, above, outside the critical section
+      // protected by _wait_set_lock.  In practice that's not useful.  With the
+      // exception of  wait() timeouts and interrupts the monitor owner
+      // is the only thread that grabs _wait_set_lock.  There's almost no contention
+      // on _wait_set_lock so it's not profitable to reduce the length of the
+      // critical section.
 
-    if (!iterator->is_vthread()) {
-      iterator->wait_reenter_begin(this);
+      if (!iterator->is_vthread()) {
+        iterator->wait_reenter_begin(this);
 
-      // Read counter *after* adding the thread to the _entry_list.
-      // Adding to _entry_list uses Atomic::cmpxchg() which already provides
-      // a fence that prevents this load from floating up previous store.
-      if (has_unmounted_vthreads()) {
-        // Wake up the thread to alleviate some deadlock cases where the successor
-        // that will be picked up when this thread releases the monitor is an unmounted
-        // virtual thread that cannot run due to having run out of carriers. Upon waking
-        // up, the thread will call reenter_internal() which will use timed-park in case
-        // there is contention and there are still vthreads in the _entry_list.
-        // If the target was interrupted or the wait timed-out at the same time, it could
-        // have reached reenter_internal and read a false value of has_unmounted_vthreads()
-        // before we added it to the _entry_list above. To deal with that case, we set _do_timed_park
-        // which will be read by the target on the next loop iteration in reenter_internal.
-        iterator->_do_timed_park = true;
-        JavaThread* t = iterator->thread();
-        t->_ParkEvent->unpark();
+        // Read counter *after* adding the thread to the _entry_list.
+        // Adding to _entry_list uses Atomic::cmpxchg() which already provides
+        // a fence that prevents this load from floating up previous store.
+        if (has_unmounted_vthreads()) {
+          // Wake up the thread to alleviate some deadlock cases where the successor
+          // that will be picked up when this thread releases the monitor is an unmounted
+          // virtual thread that cannot run due to having run out of carriers. Upon waking
+          // up, the thread will call reenter_internal() which will use timed-park in case
+          // there is contention and there are still vthreads in the _entry_list.
+          // If the target was interrupted or the wait timed-out at the same time, it could
+          // have reached reenter_internal and read a false value of has_unmounted_vthreads()
+          // before we added it to the _entry_list above. To deal with that case, we set _do_timed_park
+          // which will be read by the target on the next loop iteration in reenter_internal.
+          iterator->_do_timed_park = true;
+          JavaThread* t = iterator->thread();
+          t->_ParkEvent->unpark();
+        }
       }
     }
   }
-  Thread::SpinRelease(&_wait_set_lock);
   return did_notify;
 }
 
@@ -2198,9 +2204,10 @@ void ObjectMonitor::vthread_wait(JavaThread* current, jlong millis, bool interru
   // returns because of a timeout or interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
-  Thread::SpinAcquire(&_wait_set_lock);
-  add_waiter(node);
-  Thread::SpinRelease(&_wait_set_lock);
+  {
+    SpinCriticalSection scs(&_wait_set_lock);
+    add_waiter(node);
+  }
 
   node->_recursions = _recursions;   // record the old recursion count
   _recursions = 0;                   // set the recursion level to be 0
@@ -2221,12 +2228,11 @@ bool ObjectMonitor::vthread_wait_reenter(JavaThread* current, ObjectWaiter* node
   // need to check if we were interrupted or the wait timed-out, and
   // in that case remove ourselves from the _wait_set queue.
   if (node->TState == ObjectWaiter::TS_WAIT) {
-    Thread::SpinAcquire(&_wait_set_lock);
+    SpinCriticalSection scs(&_wait_set_lock);
     if (node->TState == ObjectWaiter::TS_WAIT) {
       dequeue_specific_waiter(node);       // unlink from wait_set
       node->TState = ObjectWaiter::TS_RUN;
     }
-    Thread::SpinRelease(&_wait_set_lock);
   }
 
   // If this was an interrupted case, set the _interrupted boolean so that

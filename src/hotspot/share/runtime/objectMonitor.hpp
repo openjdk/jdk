@@ -33,6 +33,7 @@
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinCriticalSection.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
@@ -368,6 +369,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
    public:
     ClearSuccOnSuspend(ObjectMonitor* om) : _om(om)  {}
     void operator()(JavaThread* current);
+  };
+  class SetObjectStrongFunctor : public SpinSingleSection::Functor {
+    OopHandle* _object_strong;
+    WeakHandle const* _object;
+  public:
+    SetObjectStrongFunctor(OopHandle* object_strong, WeakHandle const* object);
+    void operator()();
   };
 
   bool      enter_is_async_deflating();
