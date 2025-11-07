@@ -111,15 +111,22 @@ public class QuicCubicCongestionController extends QuicBaseCongestionController 
         boolean isAppLimited;
         isAppLimited = sentTime.isAfter(lastFullWindow);
         if (!isAppLimited) {
-            // C * (t-K [seconds])^3 + Wmax (segments)
             if (wEstBytes < cwndPriorBytes) {
                 wEstBytes += Math.max((long) (ALPHA * maxDatagramSize * packetBytes / congestionWindow), 1);
             } else {
                 wEstBytes += Math.max((long)maxDatagramSize * packetBytes / congestionWindow, 1);
             }
-            long targetBytes = (long)(C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
-            if (targetBytes > 1.5 * congestionWindow) {
+            // Wcubic(t) = C * (t-K [seconds])^3 + Wmax (segments)
+            // target = Wcubic(t)
+            // this is less aggressive than RFC 9438, which uses target=Wcubic(t+RTT),
+            // but seems to work well enough
+            double dblTargetBytes = (C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
+            long targetBytes;
+            // not sure if dblTarget can overflow a long, but 1.5 congestionWindow can not.
+            if (dblTargetBytes > 1.5 * congestionWindow) {
                 targetBytes = (long) (1.5 * congestionWindow);
+            } else {
+                targetBytes = (long)dblTargetBytes;
             }
             if (targetBytes > congestionWindow) {
                 congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / congestionWindow, 1L);
