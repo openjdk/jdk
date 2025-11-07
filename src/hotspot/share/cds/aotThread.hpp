@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,31 @@
  *
  */
 
-#include "memory/universe.hpp"
-#include "oops/oopsHierarchy.hpp"
+#ifndef SHARE_CDS_AOTTHREAD_HPP
+#define SHARE_CDS_AOTTHREAD_HPP
+
 #include "runtime/javaThread.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
-#ifdef CHECK_UNHANDLED_OOPS
+// A hidden from external view JavaThread for materializing archived objects
 
-CheckOopFunctionPointer check_oop_function = nullptr;
+class AOTThread : public JavaThread {
+private:
+  static bool _started;
+  static AOTThread* _aot_thread;
+  static void aot_thread_entry(JavaThread* thread, TRAPS);
+  AOTThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
 
-void oop::register_oop() {
-  assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  // This gets expensive, which is why checking unhandled oops is on a switch.
-  Thread* t = Thread::current_or_null();
-  if (t != nullptr && t->is_Java_thread()) {
-     t->unhandled_oops()->register_unhandled_oop(this);
-  }
-}
+public:
+  static void initialize();
 
-void oop::unregister_oop() {
-  assert (CheckUnhandledOops, "should only call when CheckUnhandledOops");
-  // This gets expensive, which is why checking unhandled oops is on a switch.
-  Thread* t = Thread::current_or_null();
-  if (t != nullptr && t->is_Java_thread()) {
-    t->unhandled_oops()->unregister_unhandled_oop(this);
-  }
-}
+  // Hide this thread from external view.
+  virtual bool is_hidden_from_external_view() const { return true; }
 
-#endif // CHECK_UNHANDLED_OOPS
+  static void materialize_thread_object();
+
+  static bool aot_thread_initialized() { return _started; };
+  bool is_aot_thread() const { return true; };
+};
+
+#endif // SHARE_CDS_AOTTHREAD_HPP
