@@ -366,6 +366,7 @@ class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure
 private:
   size_t _used, _committed, _garbage, _regions, _humongous_waste, _trashed_regions, _trashed_used;
   size_t _region_size_bytes, _min_free_size;
+  ShenandoahMarkingContext* _context;
 public:
   ShenandoahCalculateRegionStatsClosure() :
      _used(0), _committed(0), _garbage(0), _regions(0), _humongous_waste(0), _trashed_regions(0), _trashed_used(0)
@@ -373,28 +374,16 @@ public:
     _region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
     // Retired regions are not necessarily filled, thouugh their remnant memory is considered used.
     _min_free_size = PLAB::min_size() * HeapWordSize;
+    _context = ShenandoahHeap::heap()->marking_context();
   };
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    _used += r->used();
-    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
-    _garbage += r->garbage(context, r->index());
-    _committed += r->is_committed() ? ShenandoahHeapRegion::region_size_bytes() : 0;
-    if (r->is_humongous()) {
-      _humongous_waste += r->free();
-    }
-    if (r->is_trash()) {
-      _trashed_regions++;
-    }
-#ifdef KELVIN_DEPRECATED_MASTER_CODE
-    // The code above replaces this ifdef block of code from MASTER
-    // I'm commenting this out for now, hopeful that is the "right thing to do"
-    // But if I see verification errors, I might have to sort them out.
+    size_t index = r->index();
     if (r->is_cset() || r->is_trash()) {
       // Count the entire cset or trashed (formerly cset) region as used
       // Note: Immediate garbage trash regions were never in the cset.
       _used += _region_size_bytes;
-      _garbage += _region_size_bytes - r->get_live_data_bytes();
+      _garbage += _region_size_bytes - r->get_live_data_bytes(_context, index);
       if (r->is_trash()) {
         _trashed_regions++;
         _trashed_used += _region_size_bytes;
@@ -402,7 +391,7 @@ public:
     } else {
       if (r->is_humongous()) {
         _used += _region_size_bytes;
-        _garbage += _region_size_bytes - r->get_live_data_bytes();
+        _garbage += _region_size_bytes - r->get_live_data_bytes(_context, index);
         _humongous_waste += r->free();
       } else {
         size_t alloc_capacity = r->free();
@@ -411,13 +400,12 @@ public:
           alloc_capacity = 0;
         }
         size_t bytes_used_in_region = _region_size_bytes - alloc_capacity;
-        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes();
+        size_t bytes_garbage_in_region = bytes_used_in_region - r->get_live_data_bytes(_context, index);
         size_t waste_bytes = r->free();
         _used += bytes_used_in_region;
         _garbage += bytes_garbage_in_region;
       }
     }
-#endif
     _committed += r->is_committed() ? _region_size_bytes : 0;
     _regions++;
     log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
