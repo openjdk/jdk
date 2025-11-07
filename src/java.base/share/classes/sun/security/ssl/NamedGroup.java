@@ -40,6 +40,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.ssl.ECDHKeyExchange.ECDHEPossession;
 import sun.security.util.CurveDB;
+import sun.security.util.Hybrid;
 
 /**
  * An enum containing all known named groups for use in TLS.
@@ -233,19 +234,19 @@ enum NamedGroup {
     X25519MLKEM768(0x11ec, "X25519MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            NamedParameterSpec.X25519MLKEM768,
+            Hybrid.X25519_MLKEM768,
             "DH"),
 
     SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            NamedParameterSpec.SecP256r1MLKEM768,
+            Hybrid.SECP256R1_MLKEM768,
             "DH"),
 
     SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
-            NamedParameterSpec.SecP384r1MLKEM1024,
+            Hybrid.SECP384R1_MLKEM1024,
             "DH"),
 
     // Elliptic Curves (RFC 4492)
