@@ -137,7 +137,10 @@ public class HPKE extends CipherSpi {
         if (!(key instanceof AsymmetricKey ak)) {
             throw new InvalidKeyException("Not an asymmetric key");
         }
-        if (params instanceof HPKEParameterSpec hps) {
+        if (params == null) {
+            throw new InvalidAlgorithmParameterException(
+                    "HPKEParameterSpec must be provided");
+        } else if (params instanceof HPKEParameterSpec hps) {
             impl.init(ak, hps, random);
         } else {
             throw new InvalidAlgorithmParameterException(

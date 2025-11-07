@@ -170,6 +170,12 @@ public class Compliance {
         Asserts.assertThrows(UnsupportedOperationException.class,
                 () -> c1.init(Cipher.UNWRAP_MODE, kp.getPublic(), spec));
 
+        // Nulls
+        Asserts.assertThrows(InvalidKeyException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, null, spec));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(), (HPKEParameterSpec) null));
+
         // Cannot init sender with private key
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPrivate(), spec));
