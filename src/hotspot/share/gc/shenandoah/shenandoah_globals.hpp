@@ -555,11 +555,6 @@
          "direct allocation with CAS, the values should less than "         \
          "number of CPU cores. Ideally it should be a prime number.")       \
          range(1, 128)                                                      \
-                                                                            \
-  product(uintx, ShenandoahDirectAllocationMaxProbes, 3, EXPERIMENTAL,      \
-         "Max number of region to probe for direct allocation without "     \
-         "stealing space from other directly allocatable regions.    ")     \
-         range(1, 128)                                                      \
   // end of GC_SHENANDOAH_FLAGS
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP

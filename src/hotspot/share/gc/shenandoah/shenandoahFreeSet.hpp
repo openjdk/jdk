@@ -682,13 +682,22 @@ private:
 
   template<bool IS_TLAB>
   HeapWord* cas_allocate_single_for_mutator(
-    uint probe_start, uint probe_count, ShenandoahAllocRequest &req, bool &in_new_region);
+    uint start_index, ShenandoahAllocRequest &req, bool &in_new_region);
 
   template<bool IS_TLAB>
   HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
 
+  // Try to allocate and refresh directly allocatable regions with heap lock held.
+  // It may allocate the object in the region before checking the free bytes of the region, so it may end up
+  // allocating the object in region which has sufficient space for the alloc reqeust, but won't reserve the region for
+  // CAS alloc because there is not more enough space left.
+  // return true if any region is reserved for CAS alloc, which also implies the obj should have been allocated.
+  // return false if no new region is reserved for CAS alloc, in this case there some specific scenarios we need to consider:
+  //  1. the obj may have been allocated in a region with only sufficient space for the alloc req.
+  //  2. there is no regions can be reserved for CAS alloc, but there is existing directly allocatable region with enough space, this happens
+  //     when there is other mutator thread contending the lock to refresh the regions.
+  //     In this scenario, the new_start_index will be set the index of the directly allocatable region.
   bool try_allocate_directly_allocatable_regions(uint start_index,
-                                                 bool replace_all_eligible_regions,
                                                  ShenandoahAllocRequest &req,
                                                  HeapWord* &obj,
                                                  bool &in_new_region,
