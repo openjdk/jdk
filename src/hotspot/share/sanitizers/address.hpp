@@ -26,7 +26,6 @@
 #define SHARE_SANITIZERS_ADDRESS_HPP
 
 #ifdef ADDRESS_SANITIZER
-#define __SANITIZE_ADDRESS__
 #include <sanitizer/asan_interface.h>
 #endif
 

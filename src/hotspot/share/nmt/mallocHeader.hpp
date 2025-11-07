@@ -87,8 +87,6 @@ class outputStream;
  * - The footer canary consists of two bytes. Since the footer location may be unaligned to 16 bits,
  *   the bytes are stored individually.
  */
-
-
 class MallocHeader {
   NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
@@ -139,18 +137,29 @@ class MallocHeader {
       NOT_LP64(AsanPoisoningHelper<uint32_t>::unpoison_memory(&_alt_canary));
   }
 
-public:
   #ifndef _LP64
   inline uint32_t alt_canary() const {
     AsanPoisoningHelper aph(&_alt_canary);
     return _alt_canary;
   }
+
   inline void set_alt_canary(uint32_t value) {
     AsanPoisoningHelper aph(&_alt_canary);
       _alt_canary = value;
   }
   #endif
 
+  inline void set_header_canary(uint16_t value) {
+    AsanPoisoningHelper aph(&_canary);
+    _canary = value;
+  }
+
+  inline uint16_t canary() const {
+    AsanPoisoningHelper aph(&_canary);
+    return _canary;
+  }
+
+public:
   uint8_t* footer_address() const { return ((address)this) + sizeof(MallocHeader) + size(); }
 
   // Contains all of the necessary data to to deaccount block with NMT.
@@ -167,6 +176,7 @@ public:
     AsanPoisoningHelper aph(&_size);
     return _size;
   }
+
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
 
@@ -177,16 +187,6 @@ public:
   inline void mark_block_as_dead();
   inline void revive();
 
-
-  inline void set_header_canary(uint16_t value) {
-    AsanPoisoningHelper aph(&_canary);
-    _canary = value;
-  }
-
-  inline uint16_t canary() const {
-    AsanPoisoningHelper aph(&_canary);
-    return _canary;
-  }
   bool is_dead() const { return canary() == _header_canary_dead_mark; }
   bool is_live() const { return canary() == _header_canary_live_mark; }
 
