@@ -974,27 +974,25 @@ final class AES_Crypt extends SymmetricCipher {
      */
     private static int[] genInvRoundKeys(int[] w, int rounds) {
         int kLen = w.length;;
-        int[] temp = new int[WB];
         int[] dw = new int[kLen];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-            System.arraycopy(w, i * WB, temp, 0, WB);
-            temp[0] = TMI0[temp[0] >>> 24] ^ TMI1[(temp[0] >> 16) & 0xFF]
-                    ^ TMI2[(temp[0] >> 8) & 0xFF] ^ TMI3[temp[0] & 0xFF];
-            temp[1] = TMI0[temp[1] >>> 24] ^ TMI1[(temp[1] >> 16) & 0xFF]
-                    ^ TMI2[(temp[1] >> 8) & 0xFF] ^ TMI3[temp[1] & 0xFF];
-            temp[2] = TMI0[temp[2] >>> 24] ^ TMI1[(temp[2] >> 16) & 0xFF]
-                    ^ TMI2[(temp[2] >> 8) & 0xFF] ^ TMI3[temp[2] & 0xFF];
-            temp[3] = TMI0[temp[3] >>> 24] ^ TMI1[(temp[3] >> 16) & 0xFF]
-                    ^ TMI2[(temp[3] >> 8) & 0xFF] ^ TMI3[temp[3] & 0xFF];
-            System.arraycopy(temp, 0, dw, kLen - (i * WB), WB);
+			int widx = i * WB;
+			int idx = kLen - widx;
+            dw[idx] = TMI0[w[widx] >>> 24] ^ TMI1[(w[widx] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx] >> 8) & 0xFF] ^ TMI3[w[widx] & 0xFF];
+            dw[idx+1] = TMI0[w[widx+1] >>> 24] ^ TMI1[(w[widx+1] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx+1] >> 8) & 0xFF] ^ TMI3[w[widx+1] & 0xFF];
+            dw[idx+2] = TMI0[w[widx+2] >>> 24] ^ TMI1[(w[widx+2] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx+2] >> 8) & 0xFF] ^ TMI3[w[widx+2] & 0xFF];
+            dw[idx+3] = TMI0[w[widx+3] >>> 24] ^ TMI1[(w[widx+3] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx+3] >> 8) & 0xFF] ^ TMI3[w[widx+3] & 0xFF];
         }
         System.arraycopy(w, kLen - WB, dw, WB, WB);
         System.arraycopy(w, 0, dw, 0, WB);
-        Arrays.fill(temp, 0);
 
         return dw;
     }
@@ -1008,15 +1006,14 @@ final class AES_Crypt extends SymmetricCipher {
      * @return the substituted word.
      */
     private static int subWord(int word) {
-        byte b0 = (byte) (word >>> 24);
-        byte b1 = (byte) ((word >> 16) & 0xFF);
-        byte b2 = (byte) ((word >> 8) & 0xFF);
-        byte b3 = (byte) (word & 0xFF);
+        byte b0 = (byte) (word >> 24);
+        byte b1 = (byte) (word >> 16);
+        byte b2 = (byte) (word >> 8);
 
         return ((SBOX[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
                 | ((SBOX[(b1 & 0xF0) >> 4][b1 & 0x0F] & 0xFF) << 16)
                 | ((SBOX[(b2 & 0xF0) >> 4][b2 & 0x0F] & 0xFF) << 8)
-                | (SBOX[(b3 & 0xF0) >> 4][b3 & 0x0F] & 0xFF);
+                | (SBOX[(word & 0xF0) >> 4][word & 0x0F] & 0xFF);
     }
 
     /**
