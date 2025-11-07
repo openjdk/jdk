@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
@@ -46,12 +46,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
-import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static java.net.http.HttpOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 /*
@@ -106,12 +102,19 @@ public class H3LogHandshakeErrors implements HttpServerAdapters {
                 thrown);
     }
 
-
     /**
-     * Issues various HTTP3 requests and verifies the responses are received
+     * Issues a GET HTTP3 requests and verifies that the
+     * expected exception is logged.
      */
     @Test
     public void testErrorLogging() throws Exception {
+        // jdk.httpclient.HttpClient.log=errors must be enabled
+        // for this test
+        String logging = System.getProperty("jdk.httpclient.HttpClient.log", "");
+        var categories = Arrays.asList(logging.split(","));
+        assertTrue(categories.contains("errors"),
+                "'errors' not found in " + categories);
+        
         // create a client that doesn't have the server's
         // certificate
         final HttpClient client = newClientBuilderForH3()
