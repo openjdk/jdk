@@ -1315,21 +1315,25 @@ bool IdealLoopTree::policy_peel_only(PhaseIdealLoop *phase) const {
 }
 
 //------------------------------clone_up_backedge_goo--------------------------
+// Return the appropriate node to use on the new loop's data-flow path derived from 'n'.
+// If no suitable existing node can be reused, create a private clone controlled by
+// the 'preheader_ctrl'.
+//
 // If 'back_ctrl' is not null:
 //   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
 //   - Otherwise, return 'n' unchanged.
 //
-// If 'back_ctrl' is null: (Specially for pre-loop exit in get_vectorized_drain_input())
+// If 'back_ctrl' is null: (Specially for pre-loop exit in resolve_input_for_drain_or_post())
 //   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
 //   - Otherwise, return 'n'.
 Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones) {
   bool is_from_preloop_exit = (back_ctrl == nullptr);
   bool requires_clone_from_preloop_exit = !is_dominator(get_ctrl(n), preheader_ctrl);
   if (is_from_preloop_exit) {
-    // Specially for pre-loop exit in get_vectorized_drain_input()
-    if (!requires_clone_from_preloop_exit) return n;
+    // Specially for pre-loop exit in resolve_input_for_drain_or_post()
+    if (!requires_clone_from_preloop_exit) { return n; }
   } else {
-    if (get_ctrl(n) != back_ctrl) return n;
+    if (get_ctrl(n) != back_ctrl) { return n; }
   }
 
   // Only visit once
@@ -1387,57 +1391,71 @@ void PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNo
   _igvn.replace_input_of(phi, LoopNode::EntryControl, castii);
 }
 
-//------------------------------get_vectorized_drain_input--------------------------
-// After inserting zero trip guard for the vectorized drain loop,
-// now we need to make the fall-in values to the vectorized drain
-// loop come from phis merging exit values from the pre loop and
-// the main loop.
-// (new edges are marked with "*/*" or "*\*".)
-//
-//      pre loop exit  'pre_incr'
-//            |         /
-//      main zero-trip guard
-//          /          \
-//     IfFalse        IfTrue
-//        /               \
-//       |     |------>   main loop head   'pre_incr'
-//       |     |              |         \   /
-//       |    IfTrue          |    |---> PhiNode('main_phi')
-//       |     |              |    |       |
-//       |     -------loop end     ---- addI('main_incr')
-//        \              |                 |
-//         \          IfFalse              |
-//          \          /        'pre_incr' |
-//  RegionNode('main_merge_region')   |    |
-//                \              \    |    |
-//                  \            PhiNode('drain_input')
-//                    \          /                  *\*
-//                 drain zero-trip guard             *\*
-//                    /  \                            *\*
-//               IfFalse IfTrue                        *\*
-//  ('drain_bypass')/       \('drain_entry')            *|*
-//                 /         \                          *|*
-//                 |  |----> vectorized drain loop head *|*
-//                 |  |          |                   \  *|*
-//                 | IfTrue      |          |---> PhiNode('drain_phi')
-//                 |  |          |          |        |
-//                 |  ----- loop end        ----- addI('drain_incr')
-//                  \        |                      |
-//                   \    IfFalse 'drain_input'    /
-//                    \    /                |     /
-//      RegionNode('drain_merge_region')    |    /
-//                        \             \   |   /
-//                         \             PhiNode
-//                          \           /
-//                    post zero-trip guard
-//                           ...
-//
-// We look for an existing Phi node 'drain_input' among the uses of 'main_incr'.
-// If no valid Phi is found, we create a new Phi that merges output data edges
-// from both the pre-loop and main loop.
-Node* PhaseIdealLoop::get_vectorized_drain_input(Node* main_backedge_ctrl, VectorSet& visited,
-                                                 Node_Stack& clones,Node* main_merge_region,
-                                                 Node* main_phi) {
+//------------------------------resolve_input_for_drain_or_post--------------------------
+// Determine and obtain the correct fall-in values for either the drain loop or the post loop.
+Node* PhaseIdealLoop::resolve_input_for_drain_or_post(Node* post_head_ctrl, VectorSet& visited,
+                                                      Node_Stack& clones, Node* main_merge_region,
+                                                      Node* main_phi, CloneLoopMode mode) {
+  CountedLoopNode* main_head = main_phi->in(0)->as_CountedLoop();
+  Node* main_backedge_ctrl = main_head->back_control();
+  // For the post loop, we call clone_up_backedge_goo() to obtain the fall-out values
+  // from the main loop, which serve as the fall-in values for the post loop.
+  if (mode == ControlAroundStripMined) {
+    return clone_up_backedge_goo(main_backedge_ctrl,
+                                 post_head_ctrl,
+                                 main_phi->in(LoopNode::LoopBackControl),
+                                 visited, clones);
+  }
+
+  // For drain loop, after inserting zero trip guard for the vectorized drain loop,
+  // we now need to make the fall-in values to the vectorized drain
+  // loop come from phis merging exit values from the pre loop and
+  // the main loop.
+  // (new edges are marked with "*/*" or "*\*".)
+  //
+  //      pre loop exit  'pre_incr'
+  //            |         /
+  //      main zero-trip guard
+  //          /          \
+  //     IfFalse        IfTrue
+  //        /               \
+  //       |     ------->   main loop head   'pre_incr'
+  //       |     |              |         \   /
+  //       |    IfTrue          |    ----> PhiNode('main_phi')
+  //       |     |              v    |       |
+  //       |     -------loop end     ---- addI('main_incr')
+  //        \              |                 |
+  //         \          IfFalse              |
+  //          \          /        'pre_incr' |
+  //  RegionNode('main_merge_region')   |    |
+  //                \              \    |    |
+  //                  \            PhiNode('drain_input')
+  //                    \          /                  *\*
+  //                 drain zero-trip guard             *\*
+  //                    /  \                            *\*
+  //               IfFalse IfTrue                        *\*
+  //  ('drain_bypass')/       \('drain_entry')            *|*
+  //                 /         \                          *|*
+  //                 |  -----> vectorized drain loop head *|*
+  //                 |  |          |                   \  *|*
+  //                 | IfTrue      |          ----> PhiNode('drain_phi')
+  //                 |  |          v          |        |
+  //                 |  ----- loop end        ----- addI('drain_incr')
+  //                  \        |                      |
+  //                   \    IfFalse 'drain_input'    /
+  //                    \    /                |     /
+  //      RegionNode('drain_merge_region')    |    /
+  //                        \             \   |   /
+  //                         \             PhiNode
+  //                          \           /
+  //                    post zero-trip guard
+  //                           ...
+  //
+  // We look for an existing Phi node 'drain_input' among the uses of 'main_incr'.
+  //
+  // If no valid Phi is found, we create a new Phi that merges output data edges
+  // from both the pre-loop and main loop. The example here is test5() added in
+  // TestVectorizedDrainLoop.java.
   Node* drain_input = nullptr;
   Node* main_incr = main_phi->in(LoopNode::LoopBackControl);
   if (get_ctrl(main_incr) != main_backedge_ctrl) {
@@ -1539,8 +1557,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // Add the post loop
   CountedLoopNode *post_head = nullptr;
   Node* post_incr = incr;
-  Node* main_exit = insert_post_loop(loop, old_new, main_head, main_end, post_incr,
-                                     limit, post_head, ControlAroundStripMined);
+  Node* main_exit = insert_post_or_drain_loop(loop, old_new, main_head, main_end, post_incr,
+                                              limit, post_head, ControlAroundStripMined);
   C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
 
   //------------------------------
@@ -1758,11 +1776,9 @@ void PhaseIdealLoop::insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List
   Node *limit = main_end->limit();
 
   // In this case we throw away the result as we are not using it to connect anything else.
-  C->print_method(PHASE_BEFORE_POST_LOOP, 4, main_head);
   CountedLoopNode *post_head = nullptr;
-  insert_post_loop(loop, old_new, main_head, main_end, incr, limit,
-                   post_head, InsertVectorizedDrain);
-  C->print_method(PHASE_AFTER_POST_LOOP, 4, post_head);
+  insert_post_or_drain_loop(loop, old_new, main_head, main_end, incr, limit,
+                            post_head, InsertVectorizedDrain);
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1800,7 +1816,31 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
   return last;
 }
 
-//------------------------------insert_post_loop-------------------------------
+// Rewire the control inputs of nodes created for the drain loop
+// so that they point to the correct control nodes at the new loop entry.
+void PhaseIdealLoop::rewire_ctrl_for_drain_loop_nodes(CountedLoopNode* main_head, CountedLoopNode* post_head,
+                                                      uint new_counter) {
+  Node* start = main_head->skip_strip_mined()->in(LoopNode::EntryControl);
+  Node* new_start = post_head->in(LoopNode::EntryControl);
+  while (AssertionPredicate::is_predicate(start) ||
+         start == main_head->skip_assertion_predicates_with_halt()) {
+    assert(AssertionPredicate::is_predicate(new_start) ||
+           new_start == post_head->skip_assertion_predicates_with_halt(), "Must be");
+    for (uint i = 0; i < start->outcnt(); i++) {
+      Node* loop_node = start->raw_out(i);
+      if (loop_node->in(0) == start && loop_node->_idx >= new_counter) {
+        _igvn.replace_input_of(loop_node, 0, new_start);
+        --i;
+      }
+    }
+    start = start->in(0)->in(0);
+    if (start == main_head->skip_assertion_predicates_with_halt()) {
+      new_start = post_head->skip_assertion_predicates_with_halt();
+    }
+  }
+}
+
+//------------------------------insert_post_or_drain_loop-------------------------------
 // Insert a post loop with the specified mode for the given loop.
 //
 // Here is how the loop structure is changed as we insert post loops with
@@ -1869,10 +1909,11 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
 //                /        /
 //               /        /
 //              after loop
-Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
-                                       CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                                       Node* main_incr, Node* limit, CountedLoopNode*& post_head,
-                                       CloneLoopMode mode) {
+Node* PhaseIdealLoop::insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& old_new,
+                                                CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                                                Node* main_incr, Node* limit, CountedLoopNode*& post_head,
+                                                CloneLoopMode mode) {
+  assert(mode == ControlAroundStripMined || mode == InsertVectorizedDrain, "Unsupported mode");
   IfNode* outer_main_end = main_end;
   IdealLoopTree* outer_loop = loop;
   if (main_head->is_strip_mined()) {
@@ -1886,7 +1927,7 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   assert(main_exit->Opcode() == Op_IfFalse, "");
   int dd_main_exit = dom_depth(main_exit);
 
-  // Step 1: Clone the loop body of main loop. The clone becomes the new loop.
+  // Step 1: Clone the loop body of main loop. The clone becomes the new loop (post or drain).
   const uint first_node_index_in_cloned_loop_body = C->unique();
   clone_loop(loop, old_new, dd_main_exit, mode);
   assert(old_new[main_end->_idx]->Opcode() == Op_CountedLoopEnd, "");
@@ -1908,17 +1949,17 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     // For vectorized drain loop, 'zero_ctrl' should be the node merges exits
     // from the main loop and the pre loop.
     zero_ctrl = main_exit->unique_ctrl_out_or_null();
-    assert(zero_ctrl, "if zero_ctrl doesn't exist, pre-main-post model fails.");
+    assert(zero_ctrl != nullptr && zero_ctrl->is_Region(),
+           "In the pre-main-post model, zero_ctrl must exist.");
 
     DEBUG_ONLY (
       // We can look up the target 'zero_ctrl' either by exit of the pre loop or
       // by exit of the main loop.
       Node* min_taken = main_head->skip_assertion_predicates_with_halt();
       IfNode* min_iff = min_taken->in(0)->as_If();
-      assert(min_iff, "Zero trip guard of main loop does exist.");
-      assert(zero_ctrl->is_Region() &&
-             (zero_ctrl->in(1) == min_iff->proj_out(false) ||
-              zero_ctrl->in(1) == min_iff->proj_out(true)), "");
+      assert(min_iff != nullptr, "Zero trip guard of main loop does exist.");
+      assert(zero_ctrl->in(1) == min_iff->proj_out(false) ||
+             zero_ctrl->in(1) == min_iff->proj_out(true), "");
     )
   } else {
     assert(mode == ControlAroundStripMined, "");
@@ -1929,40 +1970,38 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     set_loop(zero_ctrl, outer_loop->_parent);
   }
 
-  // Step 2.2: Find 'exit_point', which is taken when zero trip guard fails.
-  Node* exit_point = nullptr;
-  uint replace_idx = 0;
+  // Step 2.2: Find 'exit_ctrl', which is taken when zero trip guard fails.
+  Node* exit_ctrl = nullptr;
+  uint exit_ctrl_idx = 0;
   if (mode == InsertVectorizedDrain) {
-    // For vectorized drain loop, 'exit_point' should merge exit from the vectorized drain
+    // For vectorized drain loop, 'exit_ctrl' should merge exit from the vectorized drain
     // loop and 'zero_ctrl' merging exits from the pre loop and the main loop.
     for (uint i = 0; i < zero_ctrl->outcnt(); i++) {
       Node* outn = zero_ctrl->raw_out(i);
       if (outn != zero_ctrl && outn->is_CFG()) {
-        assert(exit_point == nullptr,
-               "We definitely find only one valid exit_point");
-        exit_point = outn;
+        assert(exit_ctrl == nullptr,
+               "We definitely find only one valid exit_ctrl");
+        exit_ctrl = outn;
       }
     }
 
-    replace_idx = 2;
-    DEBUG_ONLY (
-      assert(exit_point->in(replace_idx) == zero_ctrl,
-             "The zero_ctrl should be the second input");
-    )
+    exit_ctrl_idx = 2;
+    assert(exit_ctrl->is_Region() && exit_ctrl->in(exit_ctrl_idx) == zero_ctrl,
+           "exit_ctrl should be a Region node and zero_ctrl should be its second input");
   } else {
     // For post loop, when zero trip guard fails, we should use the exit path from the main loop.
-    exit_point = main_exit;
+    exit_ctrl = main_exit;
   }
 
-  // Step 3: Find a 'new_phi' which is the input trip count of the zero trip guard.
-  Node* new_incr = nullptr;
+  // Step 3: Find a 'new_trip_cnt' which is the input trip count of the zero trip guard.
+  Node* new_trip_cnt = nullptr;
   if (mode == InsertVectorizedDrain) {
-    // For vectorized drain loop, 'new_phi' should merge 'main_incr' from the main loop and 'pre_incr'
-    // from the pre loop.
+    // For vectorized drain loop, 'new_phi' should merge 'main_incr' from the main loop
+    // and 'pre_incr' from the pre loop.
     for (uint i = 0; i < main_incr->outcnt(); i++) {
       Node* outn = main_incr->raw_out(i);
       if (outn->in(0) == zero_ctrl) {
-        new_incr = outn;
+        new_trip_cnt = outn;
         break;
       }
     }
@@ -1972,12 +2011,13 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       Node* main_guard_opaq = main_head->is_canonical_loop_entry();
       Node* cmp  = main_guard_opaq->unique_out();
       Node* pre_incr = cmp->in(1);
-      assert(new_incr && new_incr->in(1) == pre_incr && new_incr->in(2) == main_incr, "");
+      assert(new_trip_cnt != nullptr && new_trip_cnt->is_Phi() &&
+             new_trip_cnt->in(1) == pre_incr && new_trip_cnt->in(2) == main_incr, "");
     )
   } else {
     assert(mode == ControlAroundStripMined, "");
     // For post loop, use the loop incr from the main loop directly.
-    new_incr = main_incr;
+    new_trip_cnt = main_incr;
   }
 
   // Step 4: Build a zero-trip guard for the new inserted loop. Whether leaving the
@@ -1985,15 +2025,15 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // the incr (the previous loop trip-counter exit value) because we will be changing
   // the exit value (via additional unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  // For example, when we're inserting vectorized drain loop, after several steps above,
-  // the loop structure is showed in the comments for handle_data_uses_for_vectorized_drain().
+  // For example, when we're inserting vectorized drain loop, after step 1 - 3 above,
+  // the loop structure is showed in the comments for fix_data_uses_for_vectorized_drain().
   // After inserting the zero trip guard, it becomes:
   // (new edges are marked with "*/*" or "*\*".)
 
-  //          |----> pre loop head ...
+  //          -----> pre loop head ...
   //          |      |          \  /
-  //         IfTrue  |   |---->  PhiNode
-  //          |      |   |         |
+  //         IfTrue  |   ----->  PhiNode
+  //          |      v   |         |
   //         loop end    ------ addI('pre_incr')
   //               |           /
   //           IfFalse       /
@@ -2004,32 +2044,32 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   //        IfFalse  IfTrue
   //           /       \
   //          /         \               'pre_incr'
-  //          |  |----> main loop head    /
+  //          |  -----> main loop head    /
   //          |  |     |              \  /
-  //          | IfTrue |      |--->  PhiNode
-  //          |  |     |      |          |
+  //          | IfTrue |      ---->  PhiNode
+  //          |  |     v      |          |
   //          |   loop end    -------- addI('main_incr')
-  //           \       |                   |
+  //           \       v                   |
   //            \     IfFalse   'pre_incr' |
   //             \     /              |    |
   //       RegionNode('zero_ctrl')    |    |
   //                  *\*         \   |    |
-  //                    *\*       PhiNode('new_incr')
+  //                    *\*       PhiNode('new_trip_cnt')
   //                      *\*       */*
   //                  drain zero-trip guard ('zer_opaq')
   //                      */* *\*
   //  ('drain_bypass')IfFalse  IfTrue ('zer_taken')
   //                    */*      *\*
   //                   */*        *\*                          'pre_incr'
-  //                  */*   |----> vectorized drain loop head   /
+  //                  */*   -----> vectorized drain loop head   /
   //                 *|*    |         |                    \   /
-  //                 *|*   IfTrue     |         |-----> PhiNode('drain_phi')
-  //                 *|*    |         |         |         |
+  //                 *|*   IfTrue     |         ------> PhiNode('drain_phi')
+  //                 *|*    |         v         |         |
   //                  *\*   ------loop end      ------- addI('drain_incr')
-  //                    *\*         |                  /
-  //                     *\*    IfFalse  'new_incr'  /
-  //                       *\*   /         |       /
-  //             RegionNode('exit_point')  |     /
+  //                    *\*         |                    /
+  //                     *\*    IfFalse 'new_trip_cnt' /
+  //                       *\*   /         |         /
+  //             RegionNode('exit_ctrl')   |      /
   //                        |          \   |   /
   //                        |           PhiNode
   //                        |            /   \
@@ -2037,15 +2077,15 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   //                   /      \                \
   //               IfFalse   IfTrue            |
   //                  |        |               |
-  //                  |  |---> post loop head  |
+  //                  |  ----> post loop head  |
   //                ...  |     |           \   |
-  //                   IfTrue  |      |---> PhiNode
-  //                     |     |      |       |
+  //                   IfTrue  |      ----> PhiNode
+  //                     |     v      |       |
   //                     loop end     ----- addI
   //                           |
   //                          ...
 
-  Node* zer_opaq = new OpaqueZeroTripGuardNode(C, new_incr, main_end->test_trip());
+  Node* zer_opaq = new OpaqueZeroTripGuardNode(C, new_trip_cnt, main_end->test_trip());
   Node* zer_cmp = new CmpINode(zer_opaq, limit);
   Node* zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
   register_new_node(zer_opaq, zero_ctrl);
@@ -2065,12 +2105,12 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     _igvn.register_new_node_with_optimizer(drain_bypass);
     set_idom(drain_bypass, zer_iff, dd_zero_ctrl);
     set_loop(drain_bypass, outer_loop->_parent);
-    _igvn.replace_input_of(exit_point, replace_idx, drain_bypass);
-    set_idom(exit_point, drain_bypass, dd_zero_ctrl);
+    _igvn.replace_input_of(exit_ctrl, exit_ctrl_idx, drain_bypass);
+    set_idom(exit_ctrl, drain_bypass, dd_zero_ctrl);
   } else {
-    _igvn.replace_input_of(exit_point, replace_idx, zer_iff);
-    set_idom(exit_point, zer_iff, dd_zero_ctrl);
-    set_idom(exit_point->unique_out(), zer_iff, dd_zero_ctrl);
+    _igvn.replace_input_of(exit_ctrl, exit_ctrl_idx, zer_iff);
+    set_idom(exit_ctrl, zer_iff, dd_zero_ctrl);
+    set_idom(exit_ctrl->unique_out(), zer_iff, dd_zero_ctrl);
   }
 
   // Plug in the true path, taken if we enter this new loop.
@@ -2085,52 +2125,37 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // Step 5: Correct the fall-in values to the new loop.
   VectorSet visited;
   Node_Stack clones(main_head->back_control()->outcnt());
-  if (mode == InsertVectorizedDrain) {
-    // Make the fall-in values to the vectorized drain loop come
-    // from phis merging exit values from the pre loop and the main loop.
-    for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
-      Node* main_phi = main_head->out(i);
-      if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-        Node* drain_phi = old_new[main_phi->_idx];
-        Node* drain_input = get_vectorized_drain_input(main_head->back_control(),
-                                                       visited, clones, zero_ctrl, main_phi);
-        _igvn.hash_delete(drain_phi);
-        drain_phi->set_req(LoopNode::EntryControl, drain_input);
-      }
-    }
-  } else {
-    // Make the fall-in values to the post loop come from the
-    // fall-out values of the main loop.
-    for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
-      Node* main_phi = main_head->out(i);
-      if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
-        Node* post_phi = old_new[main_phi->_idx];
-        Node* fallnew = clone_up_backedge_goo(main_head->back_control(),
-                                              post_head->init_control(),
-                                              main_phi->in(LoopNode::LoopBackControl),
-                                              visited, clones);
-        _igvn.hash_delete(post_phi);
-        post_phi->set_req(LoopNode::EntryControl, fallnew);
-      }
+  for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
+    Node* main_phi = main_head->out(i);
+    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
+      Node* new_phi = old_new[main_phi->_idx];
+      Node* new_input = resolve_input_for_drain_or_post(post_head->init_control(),
+                                                        visited, clones, zero_ctrl,
+                                                        main_phi, mode);
+      _igvn.hash_delete(new_phi);
+      new_phi->set_req(LoopNode::EntryControl, new_input);
     }
   }
-  // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
-  // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
-  // right after the execution of the inner CountedLoop.
-  // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
-  // The moved store node is always attached right after the inner loop exit, and just before the safepoint
-  const Node* if_false = main_end->proj_out(false);
-  for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
-    Node* store = if_false->out(j);
-    if (store->is_Store()) {
-      // We only make changes if the memory input of the store is outside the outer loop body,
-      // as this is when we would normally expect a Phi as input. If the memory input
-      // is in the loop body as well, then we can safely assume it is still correct as the entire
-      // body was cloned as a unit
-      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
-        Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
-        Node* store_new = old_new[store->_idx];
-        store_new->set_req(MemNode::Memory, mem_out);
+
+  if (mode == ControlAroundStripMined) {
+    // Store nodes that were moved to the outer loop by PhaseIdealLoop::try_move_store_after_loop
+    // do not have an associated Phi node. Such nodes are attached to the false projection of the CountedLoopEnd node,
+    // right after the execution of the inner CountedLoop.
+    // We have to make sure that such stores in the post loop have the right memory inputs from the main loop
+    // The moved store node is always attached right after the inner loop exit, and just before the safepoint
+    const Node* if_false = main_end->proj_out(false);
+    for (DUIterator j = if_false->outs(); if_false->has_out(j); j++) {
+      Node* store = if_false->out(j);
+      if (store->is_Store()) {
+        // We only make changes if the memory input of the store is outside the outer loop body,
+        // as this is when we would normally expect a Phi as input. If the memory input
+        // is in the loop body as well, then we can safely assume it is still correct as the entire
+        // body was cloned as a unit
+        if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+          Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
+          Node* store_new = old_new[store->_idx];
+          store_new->set_req(MemNode::Memory, mem_out);
+        }
       }
     }
   }
@@ -2139,17 +2164,8 @@ Node* PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   initialize_assertion_predicates_for_post_loop(main_head, post_head, first_node_index_in_cloned_loop_body);
 
   if (mode == InsertVectorizedDrain) {
-    // 'loop_node' is a data node and part of the vectorized drain loop.
-    // Rewire the control to the projection of the zero-trip guard.
-    Node* main_entry_ctrl = main_head->skip_assertion_predicates_with_halt();
-    Node* post_entry_ctrl = zer_taken;
-    for (uint i = 0; i < main_entry_ctrl->outcnt(); i++) {
-      Node* loop_node = main_entry_ctrl->raw_out(i);
-      if (loop_node->_idx >= first_node_index_in_cloned_loop_body) {
-        _igvn.replace_input_of(loop_node, 0, post_entry_ctrl);
-        --i;
-      }
-    }
+    // Rewire the control of node created for vectorized drain loop.
+    rewire_ctrl_for_drain_loop_nodes(main_head, post_head, first_node_index_in_cloned_loop_body);
   }
   cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
   return zero_ctrl;

@@ -68,6 +68,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
                   // Both of loops are vectorized, and have vectorized drain post loops on platforms (<= 32 bytes).
                   // On platforms (> 32 bytes), the second loop is vectorized, and has a vectorized post loop
                   "post .* multiversion_fast", "<= 4",
+                  "post .* multiversion_fast", ">= 3",
                   "multiversion_delayed_slow", "= 1", // As a consequence of the first main loop being removed, we constant fold the multiversion_if
                   "multiversion",              ">= 7", // nothing unexpected
                   "multiversion",              "<= 8", // nothing unexpected
@@ -81,6 +82,7 @@ public class TestMultiversionRemoveUselessSlowLoop {
                   // After loop-opts, we also constant fold the vectorized drain post loop of the first loop, as it is unreachable on platforms (!= 32bytes).
                   // But on platforms (== 32bytes), after loop-opts, the vectorized drain post loop of the first loop is reachable.
                   "post .* multiversion_fast", "<= 4",
+                  "post .* multiversion_fast", ">= 3",
                   "multiversion_delayed_slow", "= 0", // The second loop's multiversion_if was also not used, so it is constant folded after loop opts.
                   "multiversion",              ">= 5", // nothing unexpected
                   "multiversion",              "<= 7", // nothing unexpected

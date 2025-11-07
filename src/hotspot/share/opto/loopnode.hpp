@@ -1407,12 +1407,16 @@ public:
   // (one or more) Phis that merge their new-loop equivalents.
   //
   // For InsertVectorizedDrain mode:
-  // all control uses of exits from old-loop now should use new RegionNodes
-  // that merges RegionNode which merges exits from pre-loop and main-loop
-  // and exits from the new-loop (vectorized drain loop).All data uses of values
-  // from old-loop now should use new Phis that merges Phis which merges
-  // values from pre-loop and main-loop and values from the new-loop
-  // (vectorized drain loop) equivalents.
+  // Before:
+  // region_old = Region(pre_loop_exit, main_loop_exit)
+  // phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+  // After:
+  // region_old = Region(pre_loop_exit, main_loop_exit)
+  // phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+  // region_new = Region(region_old, drain_loop_exit)
+  // phi_new = Phi(phi_old, drain_loop_outputs)
+  // All control uses of exits from old-loop now should use 'region_new'.
+  // All data uses of outputs from old-loop now should use 'phi_new'.
   //
   // Parameter side_by_side_idom:
   //   When side_by_size_idom is null, the dominator tree is constructed for
@@ -1439,11 +1443,17 @@ public:
                                    Node_List*& split_if_set, Node_List*& split_bool_set,
                                    Node_List*& split_cex_set, Node_List& worklist,
                                    uint new_counter, CloneLoopMode mode);
-  void handle_data_uses_for_vectorized_drain(Node* main_old, Node_List& old_new,
-                                             IdealLoopTree* loop, IdealLoopTree* outer_loop,
-                                             Node_List& worklist, uint new_counter);
+  void replace_input_with_new_clone(Node* use, Node* old_in, Node* new_in,
+                                    uint& count, uint new_counter);
+  void fix_data_uses_for_vectorized_drain(Node* main_old, Node_List& old_new,
+                                          IdealLoopTree* loop, IdealLoopTree* outer_loop,
+                                          Node_List& worklist, uint new_counter);
   void clone_outer_nodes_helper(Node* root, uint new_counter, Node_List& old_new,
                                 LoopNode* head, Node_List& extra_data_nodes, CloneLoopMode mode);
+  // Determines whether 'n' lies on the control path leading into loop 'cl'.
+  // Such a node would either be a projection of an assertion predicate
+  // or the taken branch of the zero-trip guard.
+  bool is_loop_entry_ctrl(Node* n, CountedLoopNode* cl);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                         Node_List& extra_data_nodes);
@@ -1465,32 +1475,35 @@ public:
   // Find the last store in the body of an OuterStripMinedLoop when following memory uses
   Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
 
+  void rewire_ctrl_for_drain_loop_nodes(CountedLoopNode* main_head, CountedLoopNode* post_head,
+                                        uint new_counter);
+
   // Add post loop after the given loop.
-  Node* insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
-                         CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node* main_incr, Node* limit, CountedLoopNode*& post_head,
-                         CloneLoopMode mode);
+  Node* insert_post_or_drain_loop(IdealLoopTree* loop, Node_List& old_new,
+                                  CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                                  Node* main_incr, Node* limit, CountedLoopNode*& post_head,
+                                  CloneLoopMode mode);
 
   // Add a vectorized drain loop between the main loop and the current post loop.
   void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
 
-// If 'back_ctrl' is not null:
-//   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
-//   - Otherwise, return 'n' unchanged.
-//
-// If 'back_ctrl' is null: (Specially for pre-loop exit in get_vectorized_drain_input())
-//   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
-//   - Otherwise, return 'n'.
+  // Return the appropriate node to use on the new loop's data-flow path derived from 'n'.
+  // If no suitable existing node can be reused, create a private clone controlled by the
+  // 'preheader_ctrl'.
+  //
+  // If 'back_ctrl' is not null:
+  //   - Clone a private version of node 'n' in 'preheader_ctrl' if it resides in the 'back_ctrl' block.
+  //   - Otherwise, return 'n' unchanged.
+  //
+  // If 'back_ctrl' is null: (Specially for pre-loop exit in resolve_input_for_drain_or_post())
+  //   - Clone 'n' into 'preheader_ctrl' if its block does not strictly dominate 'preheader_ctrl'.
+  //   - Otherwise, return 'n'.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
 
-  // If Node 'main_incr' lives in the 'main_backedge_ctrl' block, we clone
-  // a private version of 'main_incr' in 'drain_entry' block and return that,
-  // otherwise return a phi node 'main_merge_phi' merging exit values from
-  // the main loop and the pre loop.
-  // When 'main_incr' is dead, return nullptr.
-  Node* get_vectorized_drain_input(Node* main_backedge_ctrl, VectorSet& visited,
-                                   Node_Stack& clones, Node* main_merge_region,
-                                   Node* main_phi);
+  // Determine and obtain the correct fall-in values for either the drain loop or the post loop.
+  Node* resolve_input_for_drain_or_post(Node* post_head_ctrl, VectorSet& visited,
+                                        Node_Stack& clones, Node* main_merge_region,
+                                        Node* main_phi, CloneLoopMode mode);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms

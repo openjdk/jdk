@@ -2345,15 +2345,36 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
+// For the 'use' node, replace all input occurrences of 'old_in' with 'new_in'.
+// After all replacements, attempt to replace 'use' with an existing 'hit' to
+// avoid redundant value computation.
+void PhaseIdealLoop::replace_input_with_new_clone(Node* use, Node* old_in,
+                                                  Node* new_in, uint& count,
+                                                  uint new_counter) {
+  bool make_change = false;
+  for (uint k = 1; k < use->req(); k++) {
+    if (use->in(k) == old_in) {
+      _igvn.replace_input_of(use, k, new_in);
+      count--;
+      make_change = true;
+    }
+  }
+  if (make_change && use->_idx >= new_counter) {
+    Node* hit = _igvn.hash_find_insert(use);
+    if (hit)
+      _igvn.replace_node(use, hit);
+  }
+}
+
 // This function is going to fix all data uses of the new loop body.
-
-// Take the loop increment "i" as an example.
-// Now the data uses about "i" are like:
-
-//   |----> pre loop head ...
+//
+// Let us look at the data path of the trip counter, as an example
+// to understand the data uses:
+//
+//   -----> pre loop head ...
 //   |      |          \  /
-//  IfTrue  |  |---->  PhiNode
-//   |      |  |         |
+//  IfTrue  |  ----->  PhiNode
+//   |      v  |         |
 //  loop end   ------ addI('pre_incr')
 //        |           /
 //    IfFalse       /
@@ -2364,12 +2385,12 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 // IfFalse  IfTrue
 //   /       |  \_____________________________
 //  /        |                                \
-//  |   |--> main loop head             |---> vectorized drain loop head
+//  |   ---> main loop head             ----> vectorized drain loop head
 //  |   |    |           \  'pre_incr'  |     |          \   'pre_incr'
 //  |   |    |            \   /         |     |           \   /
-//  | IfTrue |       |----> PhiNode   IfTrue  |    |----> PhiNode
-//  |   |    |       |       |          |     |    |        |
-//  |   loop end     ------ addI        loop end   ----- addI('drain_new')
+//  | IfTrue |       -----> PhiNode   IfTrue  |    -----> PhiNode
+//  |   |    v       |       |          |     v    |        |
+//  |   loop end     ------ addI        loop end   ----- addI('drain_incr')
 //  |        |                |              |
 //   \      IfFalse           |            IfFalse
 //    \      |                |             /
@@ -2386,18 +2407,18 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 //              /        \
 //          IfFalse      IfTrue
 //             |           |
-//             |   |---> post loop head  'main_merge_phi'
+//             |   ----> post loop head  'main_merge_phi'
 //           ...   |      |            \  /
-//                IfTrue  |      |---> PhiNode
-//                 |      |      |       |
+//                IfTrue  |      ----> PhiNode
+//                 |      v      |       |
 //                  loop end     ----- addI
 //                     |
 //                    ...
-
-// The equivalent loop increment 'i' in the new loop body is 'drain_new',
-// which is dangling. We create a new 'drain_merge_phi' node which will
-// merge 'drain_new' and 'main_merge_phi' and take the RegionNode,
-// 'new_prev', as the control input which was created in
+//
+// The increment feeding the trip-counter phi in the new loop body
+// is 'drain_incr', which is dangling. We create a new 'drain_merge_phi'
+// node which will merge 'drain_incr' and 'main_merge_phi' and take
+// the RegionNode, 'new_prev', as the control input which was created in
 // fix_ctrl_uses_for_vectorized_drain(). This new node 'drain_merge_phi'
 // will replace all other uses of 'main_merge_phi'.
 // The data uses will become:
@@ -2410,12 +2431,12 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 //  IfFalse IfTrue
 //   /       |   \______________________________
 //  /        |                                  \
-//  |   |--> main loop head                |---> vectorized drain loop head
+//  |   ---> main loop head                ----> vectorized drain loop head
 //  |   |    |         \  'pre_incr'       |     |              \   'pre_incr'
 //  |   |    |          \   /              |     |               \   /
-//  | IfTrue |     |---> PhiNode         IfTrue  |      |----->  PhiNode
-//  |   |    |     |        |              |     |      |           |
-//  |   loop end   ------ addI('main_old') loop end     -------- addI('drain_new')
+//  | IfTrue |     ----> PhiNode         IfTrue  |      ------>  PhiNode
+//  |   |    v     |        |              |     v      |           |
+//  |   loop end   ------ addI('main_old') loop end     -------- addI('drain_incr')
 //  |        |               |                   |                */*
 //   \     IfFalse           |          IfFalse('drain_exit')   */*
 //    \      |               |                                */*
@@ -2434,47 +2455,35 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 //              /        \               *|*
 //          IfFalse      IfTrue          *|*
 //             |           |             *|*
-//            ...  |---> post loop head  *|*
+//            ...  ----> post loop head  *|*
 //                 |      |            \ *|*
-//                IfTrue  |     |---> PhiNode
-//                 |      |     |        |
+//                IfTrue  |     ----> PhiNode
+//                 |      v     |        |
 //                  loop end    ------ addI
 //                        |
 //                       ...
-void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_List &old_new,
-                                                           IdealLoopTree* loop, IdealLoopTree* outer_loop,
-                                                           Node_List& worklist, uint new_counter) {
+void PhaseIdealLoop::fix_data_uses_for_vectorized_drain(Node* main_old, Node_List &old_new,
+                                                        IdealLoopTree* loop, IdealLoopTree* outer_loop,
+                                                        Node_List& worklist, uint new_counter) {
 
-  // For the node 'use', if it uses 'old_in' as an input, replace it with the new cloned input 'new_in'.
-  auto replace_input_with_new_clone = [&](Node* use, Node* old_in, Node* new_in, uint& count) {
-    bool make_change = false;
-    for (uint k = 1; k < use->req(); k++) {
-      if (use->in(k) == old_in) {
-        _igvn.replace_input_of(use, k, new_in);
-        count--;
-        make_change = true;
-      }
-    }
-    if (make_change && use->_idx >= new_counter) {
-      Node* hit = _igvn.hash_find_insert(use);
-      if (hit)
-        _igvn.replace_node(use, hit);
-    }
-  };
-
-  for (DUIterator_Fast jmax, j = main_old->fast_outs(jmax); j < jmax; j++)
+  for (DUIterator_Fast jmax, j = main_old->fast_outs(jmax); j < jmax; j++) {
     worklist.push(main_old->fast_out(j));
+  }
 
-  while (worklist.size()) {
+  Node_List visit_list;
+  Node_List phi_list;
+
+  while (worklist.size() != 0) {
     Node* use = worklist.pop();
     if (!has_node(use)) continue; // Ignore dead nodes
     if (use->in(0) == C->top()) continue;
-    IdealLoopTree* use_loop = get_loop(has_ctrl(use) ? get_ctrl(use) : use);
-    if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!main_old->is_CFG() || !use->is_CFG())) {
+    IdealLoopTree* ctrl_or_self = get_loop(has_ctrl(use) ? get_ctrl(use) : use);
+    if (!loop->is_member(ctrl_or_self) && !outer_loop->is_member(ctrl_or_self) &&
+        (!main_old->is_CFG() || !use->is_CFG())) {
 
       // Find the phi node merging the data from pre-loop and vector main-loop.
-      Node_List visit_list;
-      Node_List phi_list;
+      visit_list.clear();
+      phi_list.clear();
       if (use->is_Phi()) {
         phi_list.push(use);
       } else {
@@ -2483,15 +2492,13 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
 
       // Use BFS to clone all necessary nodes starting from the 'use' node, which exits the main loop,
       // until reaching a merge point with a path from the pre-loop.
-      while (visit_list.size()) {
+      while (visit_list.size() != 0) {
         Node* curr = visit_list.at(0);
         visit_list.remove(0);
         Node* newcurr = old_new[curr->_idx];
-        if (newcurr) {
-          continue;
-        }
+        if (newcurr != nullptr) { continue; }
         newcurr = curr->clone();
-        if (curr->in(0)) {
+        if (curr->in(0) != nullptr) {
           Node* merged_ctrl = old_new[curr->in(0)->_idx];
           assert(merged_ctrl->is_Region() && merged_ctrl->in(2)->is_Region(),
                  "Must be a merge point of pre, main, and vectorized drain loops");
@@ -2511,7 +2518,7 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
           if (outn->is_CFG()) continue;
           Node* newoutn = outn->_idx > new_counter? outn : old_new[outn->_idx];
           if (newoutn) {
-            replace_input_with_new_clone(newoutn, curr, newcurr, j);
+            replace_input_with_new_clone(newoutn, curr, newcurr, j, new_counter);
             // The node "outn" has been already visited.
             continue;
           }
@@ -2526,8 +2533,16 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
         }
       }
 
+      // The increment feeding the trip-counter phi in the new loop body
+      // is 'drain_incr', which is dangling. We create a new 'drain_merge_phi'
+      // node which will merge 'drain_incr' and 'main_merge_phi' and take
+      // the RegionNode, 'new_prev', as the control input which was created in
+      // fix_ctrl_uses_for_vectorized_drain(). This new node 'drain_merge_phi'
+      // will replace all other uses of 'main_merge_phi'.
+      //
       // 'use' may have more than one valid "Phi" uses.
-      while (phi_list.size()) {
+      // The example here is test6() added in TestVectorizedDrainLoop.java.
+      while (phi_list.size() != 0) {
         Node* main_merge_phi = phi_list.pop();
         const uint idx = 2;
         Node* last_in = main_merge_phi->in(idx);
@@ -2535,7 +2550,7 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
               "The data from main loop should be the second data input of the phi node");
         Node* main_merge_region = get_ctrl(main_merge_phi);
         assert(!loop->is_member(get_loop(main_merge_region)) &&
-              !outer_loop->is_member(get_loop(main_merge_region)), "" );
+               !outer_loop->is_member(get_loop(main_merge_region)), "" );
         Node* cfg = main_merge_region->in(idx); // NOT in block of Phi itself
         if (cfg->is_top()) {
           // "use" is dead?
@@ -2552,10 +2567,10 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
         // Now we do need a new Phi here which merges "main_merge_phi" and data from
         // vectorized drain loop.
         Node* drain_merge_region = old_new[main_merge_region->_idx];
-        assert(drain_merge_region, "just made this in step 3");
+        assert(drain_merge_region != nullptr, "just made this in step 3");
         // Make a new Phi merging data values properly
-        Node* drain_new = old_new[last_in->_idx];
-        Node* drain_merge_phi = PhiNode::make(drain_merge_region, drain_new);
+        Node* drain_incr = old_new[last_in->_idx];
+        Node* drain_merge_phi = PhiNode::make(drain_merge_region, drain_incr);
         drain_merge_phi->set_req(2, main_merge_phi);
         // If inserting a new Phi, check for prior hits
         Node* hit = _igvn.hash_find_insert(drain_merge_phi);
@@ -2574,7 +2589,8 @@ void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* main_old, Node_
         // use new "drain_merge_phi" instead.
         for (uint i = 0; i < main_merge_phi->outcnt(); i++) {
           if (main_merge_phi->raw_out(i) != drain_merge_phi) {
-            replace_input_with_new_clone(main_merge_phi->raw_out(i), main_merge_phi, drain_merge_phi, i);
+            replace_input_with_new_clone(main_merge_phi->raw_out(i), main_merge_phi,
+                                         drain_merge_phi, i, new_counter);
           }
         }
 
@@ -2654,8 +2670,8 @@ void PhaseIdealLoop::clone_outer_nodes_helper(Node* root, uint new_counter, Node
             (old_new[n->in(i)->_idx] != nullptr && old_new[n->in(i)->_idx]->_idx >= new_counter))) {
         break;
       }
-      if (mode == InsertVectorizedDrain && n->in(i) != nullptr && has_ctrl(n->in(i)) &&
-          get_ctrl(n->in(i)) == cl->skip_assertion_predicates_with_halt() &&
+      if (mode == InsertVectorizedDrain && n->in(i) != nullptr &&
+          is_loop_entry_ctrl(n->in(i), cl) &&
           old_new[n->in(i)->_idx] == nullptr) {
         // In InsertVectorizedDrain, nodes located between the outer loop entry and the zero-trip
         // guard entry of the main loop must be cloned separately for the vectorized drain loop
@@ -2677,7 +2693,7 @@ void PhaseIdealLoop::clone_outer_nodes_helper(Node* root, uint new_counter, Node
             m->set_req(i, old_new[m->in(i)->_idx]);
           } else if (m->in(i) != nullptr && mode == InsertVectorizedDrain) {
             Node* old_in = m->in(i);
-            if (has_ctrl(old_in) && get_ctrl(old_in) == l->in(LoopNode::EntryControl)) {
+            if (is_loop_entry_ctrl(old_in, cl)) {
               // In InsertVectorizedDrain, these inputs may affect memory and vary across loop
               // iterations, and therefore need to be updated.
               Node* new_in = find_merge_phi_for_vectorized_drain(old_in, main_pre_exit_region);
@@ -2702,6 +2718,19 @@ void PhaseIdealLoop::clone_outer_nodes_helper(Node* root, uint new_counter, Node
       stack.pop();
     }
   }
+}
+
+// Determines whether 'n' lies on the control path leading into loop 'cl'.
+// Such a node would either be a projection of an assertion predicate
+// or the taken branch of the zero-trip guard.
+bool PhaseIdealLoop::is_loop_entry_ctrl(Node* n, CountedLoopNode* cl) {
+  if (!has_ctrl(n)) {
+    return false;
+  }
+  Node* ctrl = get_ctrl(n);
+  Node* dom_ctrl = cl->skip_assertion_predicates_with_halt();
+  if (ctrl == dom_ctrl) { return true; }
+  return (is_dominator(dom_ctrl, ctrl) && AssertionPredicate::is_predicate(ctrl));
 }
 
 void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
@@ -2781,7 +2810,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
         Node* drain_n = old_new[old->_idx];
         for (uint j = 1; j < old->req(); j++) {
           if (old->in(j) != nullptr && drain_n->in(j) == old->in(j) &&
-              has_ctrl(old->in(j)) && get_ctrl(old->in(j)) == cl->skip_assertion_predicates_with_halt()) {
+              is_loop_entry_ctrl(old->in(j), cl)) {
             if (old_new[old->in(j)->_idx] == nullptr) {
               clone_outer_nodes_helper(old->in(j), new_counter, old_new, head, extra_data_nodes, InsertVectorizedDrain);
               assert(old_new[old->in(j)->_idx], "We must clone a new node for vectorized drain loop");
@@ -2847,12 +2876,16 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
 // (one or more) Phis that merge their new-loop equivalents.
 //
 // For InsertVectorizedDrain mode:
-// all control uses of exits from old-loop now should use new RegionNodes
-// that merges RegionNode which merges exits from pre-loop and main-loop
-// and exits from the new-loop (vectorized drain loop).All data uses of values
-// from old-loop now should use new Phis that merges Phis which merges
-// values from pre-loop and main-loop and values from the new-loop
-// (vectorized drain loop) equivalents.
+// Before:
+// region_old = Region(pre_loop_exit, main_loop_exit)
+// phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+// After:
+// region_old = Region(pre_loop_exit, main_loop_exit)
+// phi_old = Phi(pre_loop_outputs, main_loop_outputs)
+// region_new = Region(region_old, drain_loop_exit)
+// phi_new = Phi(phi_old, drain_loop_outputs)
+// All control uses of exits from old-loop now should use region_new.
+// All data uses of outputs from old-loop now should use phi_new.
 //
 // This operation leaves the graph in an illegal state: there are two valid
 // control edges coming from the loop pre-header to both loop bodies.  I'll
@@ -2926,8 +2959,8 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
     case InsertVectorizedDrain:
       for (uint i = 0; i < extra_data_nodes.size(); i++) {
         Node* old = extra_data_nodes.at(i);
-        handle_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop,
-                                              worklist, new_counter);
+        fix_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop,
+                                           worklist, new_counter);
       }
       break;
 
@@ -2994,7 +3027,7 @@ void PhaseIdealLoop::fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLo
     case InsertVectorizedDrain:
       for (uint i = 0; i < body.size(); i++) {
         Node* old = body.at(i);
-        handle_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop, worklist, new_counter);
+        fix_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop, worklist, new_counter);
       }
       break;
 
@@ -3082,26 +3115,6 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
             assert(false, "should not reach here");
             break;
         }
-
-        assert(use->is_Proj(), "loop exit should be projection");
-        // replace_node_and_forward_ctrl() below moves all nodes that are:
-        // - control dependent on the loop exit or
-        // - have control set to the loop exit
-        // below the post-loop merge point.
-        // replace_node_and_forward_ctrl() takes a dead control as first input.
-        // To make it possible to use it, the loop exit projection is cloned and becomes the
-        // new exit projection. The initial one becomes dead and is "replaced" by the region.
-        Node* use_clone = use->clone();
-        register_control(use_clone, use_loop, idom(use), dom_depth(use));
-        // Now finish up 'r'
-        r->set_req(1, newuse);
-        r->set_req(2, use_clone);
-        _igvn.register_new_node_with_optimizer(r);
-        set_loop(r, use_loop);
-        set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
-        replace_node_and_forward_ctrl(use, r);
-        // Map the (cloned) old use to the new merge point
-        old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
     }
   }
@@ -3148,13 +3161,13 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
   }
 
   assert(use->is_Proj(), "loop exit should be projection");
-  // lazy_replace() below moves all nodes that are:
-  //  - control dependent on the loop exit or
-  //  - have control set to the loop exit
-  // below the post-loop merge point. lazy_replace() takes a dead control
-  // as first input. To make it possible to use it, the loop exit projection
-  // is cloned and becomes the new exit projection. The initial one becomes
-  // dead and is "replaced" by the region.
+  // replace_node_and_forward_ctrl() below moves all nodes that are:
+  // - control dependent on the loop exit or
+  // - have control set to the loop exit
+  // below the post-loop merge point.
+  // replace_node_and_forward_ctrl() takes a dead control as first input.
+  // To make it possible to use it, the loop exit projection is cloned and becomes the
+  // new exit projection. The initial one becomes dead and is "replaced" by the region.
   Node* use_clone = use->clone();
   register_control(use_clone, use_loop, idom(use), dom_depth(use));
   // Now finish up 'r'
@@ -3163,7 +3176,7 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
   _igvn.register_new_node_with_optimizer(r);
   set_loop(r, use_loop);
   set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
-  lazy_replace(use, r);
+  replace_node_and_forward_ctrl(use, r);
   // Map the (cloned) old use to the new merge point
   old_new.map(use_clone->_idx, r);
 }
@@ -3179,10 +3192,10 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
 //  IfFalse    IfTrue
 //    /        |   \____________________
 //   |         |                        \
-//   |   |---> main loop head   |----> vectorized drain loop head
+//   |   ----> main loop head   -----> vectorized drain loop head
 //   |   |           |          |              |
 //   |  IfTrue       |        IfTrue           |
-//   |   |           |          |              |
+//   |   |           v          |              v
 //   |   ---- main loop end     ------ vectorized drain loop end
 //   |         |
 //    \      IfFalse('main_use')
@@ -3210,10 +3223,10 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
 //  IfFalse    IfTrue
 //    /        |   \____________________
 //   |         |                        \
-//   |   |---> main loop head   |----> vectorized drain loop head
+//   |   ----> main loop head   -----> vectorized drain loop head
 //   |   |           |          |              |
 //   |  IfTrue       |        IfTrue           |
-//   |   |           |          |              |
+//   |   |           v          |              v
 //   |   ---- main loop end     ------ vectorized drain loop end
 //   |         |                              *|*
 //    \      IfFalse('main_use')           IfFalse('drain_use')

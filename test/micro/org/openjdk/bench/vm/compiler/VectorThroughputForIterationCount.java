@@ -77,6 +77,8 @@ public abstract class VectorThroughputForIterationCount {
 
     // Add enough slack so we can play with offsets / alignment.
     public static int CONTAINER_SIZE = 20_000;
+    public static int WARMUP_LEN = 2048;
+    public static int START_IDX = 0;
 
     private byte[] aB;
     private byte[] bB;
@@ -189,6 +191,38 @@ public abstract class VectorThroughputForIterationCount {
                 offsets[i] = FIXED_OFFSET;
             }
         }
+
+        for (int i = 0; i < 10_000; i++) {
+            byteadd(aB, bB, rB, START_IDX, WARMUP_LEN);
+            shortadd(aS, bS, rS, START_IDX, WARMUP_LEN);
+            intadd(aI, bI, rI, START_IDX, WARMUP_LEN);
+            longadd(aL, bL, rL, START_IDX, WARMUP_LEN);
+        }
+
+    }
+
+    public void byteadd(byte[] ba, byte[] bb, byte[] bc, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            bc[i] = (byte) (ba[i] + bb[i]);
+        }
+    }
+
+    public void shortadd(short[] sa, short[] sb, short[] sc, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            sc[i] = (short) (sa[i] + sb[i]);
+        }
+    }
+
+    public void intadd(int[] a, int[] b, int[] c, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            c[i] = a[i] + b[i];
+        }
+    }
+
+    public void longadd(long[] a, long[] b, long[] c, int startIndex, int length) {
+        for (int i = startIndex; i < startIndex + length; i++) {
+            c[i] = a[i] + b[i];
+        }
     }
 
     @Benchmark
@@ -225,6 +259,18 @@ public abstract class VectorThroughputForIterationCount {
         }
     }
 
+    @Benchmark
+    public void bench031B_drain_memoryBound() {
+        byteadd(aB, bB, rB, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench031B_drain_dynamic() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            byteadd(aB, bB, rB, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
 //    @Benchmark
 //    public void bench002S_aligned_computeBound() {
 //        for (int r = 0; r < REPETITIONS; r++) {
@@ -258,6 +304,19 @@ public abstract class VectorThroughputForIterationCount {
 //            }
 //        }
 //    }
+
+    @Benchmark
+    public void bench032S_drain_memoryBound() {
+        shortadd(aS, bS, rS, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench032S_drain_dynamic() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            shortadd(aS, bS, rS, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
 //
 //    @Benchmark
 //    public void bench003C_aligned_computeBound() {
@@ -328,6 +387,18 @@ public abstract class VectorThroughputForIterationCount {
     }
 
     @Benchmark
+    public void bench034I_drain_memoryBound() {
+        intadd(aI, bI, rI, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench034I_drain_dynamic() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            intadd(aI, bI, rI, START_IDX, offsets[r]+ITERATION_COUNT);
+        }
+    }
+
+    @Benchmark
     public void bench005L_aligned_computeBound() {
         for (int r = 0; r < REPETITIONS; r++) {
             int init = offsets[r];
@@ -358,6 +429,18 @@ public abstract class VectorThroughputForIterationCount {
             for (int i = init; i < limit; i++) {
                 rL[i] = (long)(aL[i+1] + bL[i+2]);
             }
+        }
+    }
+
+    @Benchmark
+    public void bench035L_drain_memoryBound() {
+        longadd(aL, bL, rL, START_IDX, ITERATION_COUNT);
+    }
+
+    @Benchmark
+    public void bench035L_drain_dynamic() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            longadd(aL, bL, rL, START_IDX, offsets[r]+ITERATION_COUNT);
         }
     }
 
