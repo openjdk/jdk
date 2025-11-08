@@ -1539,14 +1539,9 @@ public:
 
   // Reachability Fence (RF) support.
  private:
-  bool is_redundant_rf(ReachabilityFenceNode* rf, bool rf_only);
-  bool find_redundant_rfs(Unique_Node_List& redundant_rfs);
   void insert_rf(Node* ctrl, Node* referent);
   void replace_rf(Node* old_node, Node* new_node);
   void remove_rf(ReachabilityFenceNode* rf);
-#ifdef ASSERT
-  bool has_redundant_rfs(Unique_Node_List& ignored_rfs, bool rf_only);
-#endif // ASSERT
  public:
   bool optimize_reachability_fences();
   bool expand_reachability_fences();

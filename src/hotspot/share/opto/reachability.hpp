@@ -71,6 +71,7 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
 
   Node* referent() const { return in(1); }
+  bool is_redundant(PhaseGVN& gvn);
   bool clear_referent(PhaseIterGVN& phase);
 
 #ifndef PRODUCT

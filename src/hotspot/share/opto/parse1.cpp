@@ -1219,6 +1219,14 @@ SafePointNode* Parse::create_entry_map() {
   return entry_map;
 }
 
+//-----------------------is_auto_boxed_primitive------------------------------
+// Helper method to detect auto-boxed primitives (result of valueOf() call).
+static bool is_auto_boxed_primitive(Node* n) {
+  return (n->is_Proj() && n->as_Proj()->_con == TypeFunc::Parms &&
+          n->in(0)->is_CallJava() &&
+          n->in(0)->as_CallJava()->method()->is_boxing_method());
+}
+
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.
 // The main thing to do is lock the receiver of a synchronized method.
@@ -1238,7 +1246,8 @@ void Parse::do_method_entry() {
     int max_locals = jvms()->loc_size();
     for (int idx = 0; idx < max_locals; idx++) {
       Node* loc = local(idx);
-      if (loc->bottom_type()->isa_oopptr() != nullptr) {
+      if (loc->bottom_type()->isa_oopptr() != nullptr &&
+          !is_auto_boxed_primitive(loc)) { // ignore auto-boxed primitives
         _stress_rf_hook->add_req(loc);
       }
     }
