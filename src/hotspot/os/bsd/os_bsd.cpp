@@ -104,7 +104,6 @@
 #ifdef __APPLE__
   #include <mach/task_info.h>
   #include <mach-o/dyld.h>
-  #include <mach/vm_statistics.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
