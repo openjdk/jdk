@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -520,8 +520,11 @@ public final class AquaMenuPainter {
             checkIconR.y = Math.abs(viewR.y + (labelR.height / 2) - (checkIconR.height / 2));
             checkIconR.x = 5;
 
-            textR.width += 8;
-
+            if (AquaUtils.isLeftToRight(menuItem)) {
+                textR.width += 8;
+            } else {
+                arrowIconR.x -= 8;
+            }
         }
 
         /*System.out.println("Layout: " +horizontalAlignment+ " v=" +viewR+"  c="+checkIconR+" i="+
@@ -531,13 +534,26 @@ public final class AquaMenuPainter {
             // Flip the rectangles so that instead of [check][icon][text][accel/arrow] it's [accel/arrow][text][icon][check]
             final int w = viewR.width;
             checkIconR.x = w - (checkIconR.x + checkIconR.width);
+            if (menuItem.getHorizontalTextPosition() != SwingConstants.CENTER) {
+                int d = textR.x - iconR.x;
+                if (d > 0) {
+                    textR.x = iconR.x;
+                    iconR.x = iconR.x + d + textR.width - iconR.width;
+                } else {
+                    iconR.x = textR.x;
+                    textR.x = iconR.x - d + iconR.width - textR.width;
+                }
+            }
             iconR.x = w - (iconR.x + iconR.width);
             textR.x = w - (textR.x + textR.width);
             acceleratorR.x = w - (acceleratorR.x + acceleratorR.width);
             arrowIconR.x = w - (arrowIconR.x + arrowIconR.width);
+            textR.x -= menuItemGap;
+            iconR.x -= menuItemGap;
+        } else {
+            textR.x += menuItemGap;
+            iconR.x += menuItemGap;
         }
-        textR.x += menuItemGap;
-        iconR.x += menuItemGap;
 
         return text;
     }
