@@ -360,12 +360,13 @@ final class MacPackagingPipeline {
 
         final var app = env.app();
 
-        // We should use full runtime info plist for standalone runtime and for
-        // embedded runtime if it contains "bin" folder, so embedded runtime
-        // can act as standalone runtime.
-        final var useRuntimeInfoPlist =
-                Files.isDirectory(env.resolvedLayout().runtimeDirectory().resolve("bin")) ||
-                app.isRuntime();
+        // If the embedded runtime contains executable(s) in the "bin"
+        // subdirectory, we should use the standalone runtime info plist
+        // template. Otherwise, the user may be unable to run the "java"
+        // or other executables in the "bin" subdirectory of the embedded
+        // runtime.
+        final var useRuntimeInfoPlist = app.isRuntime() ||
+                app.runtimeBuilder().orElseThrow().withNativeCommands();
 
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());

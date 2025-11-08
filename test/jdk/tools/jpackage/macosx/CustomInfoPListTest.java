@@ -93,7 +93,7 @@ public class CustomInfoPListTest {
     public void testNativePackage(TestConfig cfg) {
         List<ThrowingConsumer<JPackageCommand>> verifier = new ArrayList<>();
         new PackageTest().configureHelloApp().addInitializer(cmd -> {
-            cfg.init(cmd.setFakeRuntime(cfg.customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN)));
+            cfg.init(cmd.setFakeRuntime());
         }).addRunOnceInitializer(() -> {
             verifier.add(cfg.createPListFilesVerifier(JPackageCommand.helloAppImage().executePrerequisiteActions()));
         }).addInstallVerifier(cmd -> {
@@ -124,7 +124,6 @@ public class CustomInfoPListTest {
                 Set.of(CustomPListType.APP),
                 Set.of(CustomPListType.APP_WITH_FA),
                 Set.of(CustomPListType.EMBEDDED_RUNTIME),
-                Set.of(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN),
                 Set.of(CustomPListType.APP, CustomPListType.EMBEDDED_RUNTIME)
         ).map(TestConfig::new).map(cfg -> {
             return new Object[] { cfg };
@@ -186,8 +185,7 @@ public class CustomInfoPListTest {
             if (defaultPListFiles.isEmpty()) {
                 return defaultVerifier;
             } else {
-                boolean includeBin = customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN);
-                var vanillaCmd = new JPackageCommand().setFakeRuntime(includeBin)
+                var vanillaCmd = new JPackageCommand().setFakeRuntime()
                         .addArguments(cmd.getAllArguments())
                         .setPackageType(PackageType.IMAGE)
                         .removeArgumentWithValue("--resource-dir")
@@ -245,11 +243,6 @@ public class CustomInfoPListTest {
                 CustomPListFactory.PLIST_OUTPUT::writeEmbeddedRuntimePlist,
                 "Runtime-Info.plist"),
 
-        EMBEDDED_RUNTIME_WITH_BIN(
-                CustomPListFactory.PLIST_INPUT::writeEmbeddedRuntimePlist,
-                CustomPListFactory.PLIST_OUTPUT::writeEmbeddedRuntimePlist,
-                "Runtime-Info.plist"),
-
         RUNTIME(
                 CustomPListFactory.PLIST_INPUT::writeRuntimePlist,
                 CustomPListFactory.PLIST_OUTPUT::writeRuntimePlist,
@@ -292,7 +285,7 @@ public class CustomInfoPListTest {
         }
 
         PListRole role() {
-            if (this == EMBEDDED_RUNTIME || this == EMBEDDED_RUNTIME_WITH_BIN) {
+            if (this == EMBEDDED_RUNTIME) {
                 return PListRole.EMBEDDED_RUNTIME;
             } else {
                 return PListRole.MAIN;

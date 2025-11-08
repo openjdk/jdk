@@ -289,10 +289,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand setFakeRuntime() {
-        return setFakeRuntime(false);
-    }
-
-    public JPackageCommand setFakeRuntime(boolean includeBin) {
         verifyMutable();
 
         ThrowingConsumer<Path> createBulkFile = path -> {
@@ -310,22 +306,13 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             TKit.trace(String.format("Init fake runtime in [%s] directory",
                     fakeRuntimeDir));
 
-            Files.createDirectories(fakeRuntimeDir);
-
-            if (TKit.isLinux() || includeBin) {
-                // Need to make the code in rpm spec happy as it assumes there is
-                // always something in application image.
-                fakeRuntimeDir.resolve("bin").toFile().mkdir();
-                createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("bin", "bulk")));
-            }
-
             if (TKit.isOSX()) {
                 // Make MacAppImageBuilder happy
                 createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
                         "lib/jli/libjli.dylib")));
             }
 
-            // Mak sure fake runtime takes some disk space.
+            // Make sure fake runtime takes some disk space.
             // Package bundles with 0KB size are unexpected and considered
             // an error by PackageTest.
             createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
