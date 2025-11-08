@@ -68,7 +68,7 @@ import java.util.stream.StreamSupport;
  * {@link MappedMemorySegmentImpl}.
  */
 public abstract sealed class AbstractMemorySegmentImpl
-        implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
+        implements MemorySegment, SegmentAllocator
         permits HeapMemorySegmentImpl, NativeMemorySegmentImpl {
 
     static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
@@ -100,19 +100,19 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public AbstractMemorySegmentImpl asSlice(long offset, long newSize) {
-        checkBounds(offset, newSize);
+        checkSliceBounds(offset, newSize);
         return asSliceNoCheck(offset, newSize);
     }
 
     @Override
     public AbstractMemorySegmentImpl asSlice(long offset) {
-        checkBounds(offset, 0);
+        checkSliceBounds(offset, 0);
         return asSliceNoCheck(offset, length - offset);
     }
 
     @Override
     public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
-        checkBounds(offset, newSize);
+        checkSliceBounds(offset, newSize);
         Utils.checkAlign(byteAlignment);
 
         if (!isAlignedForElement(offset, byteAlignment)) {
@@ -354,7 +354,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
         checkReadOnly(readOnly);
-        checkBounds(offset, length);
+        checkAccessBounds(offset, length);
     }
 
     @ForceInline
@@ -398,20 +398,27 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    void checkBounds(long offset, long length) {
+    private void checkBounds(long offset, long length, BoundPolicy policy) {
         if (length > 0) {
-            Preconditions.checkIndex(offset, this.length - length + 1, this);
-        } else if (length < 0 || offset < 0 ||
-                offset > this.length - length) {
-            throw outOfBoundException(offset, length);
+            Preconditions.checkIndex(offset, this.length - length + 1, (s, nums) -> {
+                        long off = nums.get(0).longValue();
+                        long len = this.byteSize() - nums.get(1).longValue() + 1;
+                        return policy.makeException(this, off, len);
+                    }
+            );
+        } else if (!policy.isValid(offset, length, this.length)) {
+            throw policy.makeException(this, offset, length);
         }
     }
 
-    @Override
-    public RuntimeException apply(String s, List<Number> numbers) {
-        long offset = numbers.get(0).longValue();
-        long length = byteSize() - numbers.get(1).longValue() + 1;
-        return outOfBoundException(offset, length);
+    @ForceInline
+    void checkSliceBounds(long offset, long length) {
+        checkBounds(offset, length, SLICE_POLICY);
+    }
+
+    @ForceInline
+    void checkAccessBounds(long offset, long length) {
+        checkBounds(offset, length, ACCESS_POLICY);
     }
 
     @Override
@@ -427,13 +434,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     public final MemorySessionImpl sessionImpl() {
         return scope;
-    }
-
-    private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; " +
-                        "attempting to access an element of length %d at offset %d " +
-                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
-                        this, length, offset, byteSize()));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
@@ -509,6 +509,46 @@ public abstract sealed class AbstractMemorySegmentImpl
             return NONNULL | SUBSIZED | SIZED | IMMUTABLE | ORDERED;
         }
     }
+
+    private interface BoundPolicy {
+        boolean isValid(long offset, long length, long totalLength);
+
+        String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length);
+
+        default IndexOutOfBoundsException makeException(AbstractMemorySegmentImpl segment, long offset, long length) {
+            return new IndexOutOfBoundsException(formatExceptionMessage(segment, offset, length));
+        }
+    }
+
+    private static final BoundPolicy ACCESS_POLICY = new BoundPolicy() {
+        @Override
+        public boolean isValid(long offset, long length, long totalLength) {
+            return length > 0 && offset >= 0 && offset <= totalLength - length;
+        }
+
+        @Override
+        public String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length) {
+            return String.format("Out of bound access on segment %s; " +
+                            "attempting to access an element of length %d at offset %d " +
+                            "which is outside the valid range 0 < offset+length < byteSize (=%d)",
+                    segment, length, offset, segment.byteSize());
+        }
+    };
+
+    private final static BoundPolicy SLICE_POLICY = new BoundPolicy() {
+        @Override
+        public boolean isValid(long offset, long length, long totalLength) {
+            return length >= 0 && offset >= 0 && offset <= totalLength - length;
+        }
+
+        @Override
+        public String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length) {
+            return String.format("Out of bound access on segment %s; " +
+                            "attempting to get slice of length %d at offset %d " +
+                            "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                    segment, length, offset, segment.byteSize());
+        }
+    };
 
     // Object methods
 
