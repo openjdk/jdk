@@ -97,6 +97,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/histograms.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -1283,6 +1284,7 @@ void ShenandoahHeap::concurrent_final_roots(HandshakeClosure* handshake_closure)
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
+  HISTOGRAM_TIME_BLOCK;
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
   if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
     // This thread went through the OOM during evac protocol. It is safe to return
@@ -1303,6 +1305,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
                                                ShenandoahAffiliation target_gen) {
   assert(target_gen == YOUNG_GENERATION, "Only expect evacuations to young in this mode");
   assert(from_region->is_young(), "Only expect evacuations from young in this mode");
+  HISTOGRAM_TIME_BLOCK;
   bool alloc_from_lab = true;
   HeapWord* copy = nullptr;
   size_t size = ShenandoahForwarding::size(p);
@@ -1318,6 +1321,7 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     }
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
+      HISTOGRAM_TIME_DESCRIBED_BLOCK("allocate_memory_shared");
       ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
       copy = allocate_memory(req);
       alloc_from_lab = false;
@@ -1339,7 +1343,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   }
 
   // Copy the object:
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+  {
+    HISTOGRAM_TIME_DESCRIBED_BLOCK("copy_object");
+    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+  }
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);

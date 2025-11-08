@@ -188,6 +188,7 @@ void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* 
 }
 
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
+  HISTOGRAM_TIME_BLOCK
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
   if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
     // This thread went through the OOM during evac protocol and it is safe to return
@@ -233,6 +234,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
 // to OLD_GENERATION.
 template<ShenandoahAffiliation FROM_GENERATION, ShenandoahAffiliation TO_GENERATION>
 oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint from_region_age) {
+  HISTOGRAM_TIME_BLOCK;
   bool alloc_from_lab = true;
   bool has_plab = false;
   HeapWord* copy = nullptr;
@@ -402,6 +404,7 @@ template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, O
 template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
 inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, size_t size, bool is_promotion) {
+  HISTOGRAM_TIME_BLOCK;
   assert(UseTLAB, "TLABs should be enabled");
 
   PLAB* plab = ShenandoahThreadLocalData::plab(thread);
