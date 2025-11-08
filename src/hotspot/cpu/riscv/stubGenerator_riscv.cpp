@@ -2656,37 +2656,56 @@ class StubGenerator: public StubCodeGenerator {
     const Register used_ptr            = c_rarg6;
 
     const Register keylen              = x28;
-    const Register used                = x29;
-    const Register len                 = x30;
-    const Register block_size          = x31;
-    const Register tmp1                = t1;
-    const Register tmp2                = t2;
-
-    const int BLOCK_SIZE = 16;
-
-    VectorRegister working_vregs[] = {
-      v1, v2, v3, v4, v5, v6, v7, v8,
-      v9, v10, v11, v12, v13, v14, v15
-    };
 
     const address start = __ pc();
     __ enter();
 
+    Label L_EXIT;
+    __ beqz(input_len, L_EXIT);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ mv(t0, 52);
+    __ blt(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
+
+    __ bind(L_EXIT);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void counterMode_AESCrypt(int round, Register in, Register out, Register key, Register counter,
+                            Register input_len,  Register saved_encrypted_ctr, Register used_ptr) {
     // Algorithm:
     //
-    // if (len == 0) {
-    //   goto L_exit;
-    // } else {
     //   generate_aes_loadkeys();
     //
     //   L_encrypt_next:
     //     while (used < BLOCK_SIZE) {
     //       if (len == 0) goto L_exit;
-    //       out[outOff++] = (byte)(in[inOff++] ^ saved_encrypted_ctr[used++]);
-    //       len--;
+    //       out = in ^ saved_encrypted_ctr[used]);
+    //       out++; in++; used++; len--;
     //     }
     //
-    //   L_main:
+    //   L_main_loop:
+    //     if (len == 0) goto L_exit;
     //     saved_encrypted_ctr = aes_encrypt(counter);
     //     increase_counter(counter);
     //     if (len < BLOCK_SIZE) {
@@ -2700,50 +2719,44 @@ class StubGenerator: public StubCodeGenerator {
     //     out += BLOCK_SIZE;
     //     in += BLOCK_SIZE;
     //     len -= BLOCK_SIZE;
-    //     goto L_main;
+    //     used = BLOCK_SIZE;
+    //     goto L_main_loop;
     // }
     //
     // L_exit:
     //   return result;
 
-    Label L_exit;
+    const Register used                = x29;
+    const Register len                 = x30;
+    const Register block_size          = x31;
+    const Register tmp1                = t1;
+    const Register tmp2                = t2;
+
+    const int BLOCK_SIZE = 16;
+
+    VectorRegister working_vregs[] = {
+      v1, v2, v3, v4, v5, v6, v7, v8,
+      v9, v10, v11, v12, v13, v14, v15
+    };
+
     __ lw(used, Address(used_ptr));
-    __ beqz(input_len, L_exit);
     __ mv(len, input_len);
     __ mv(block_size, BLOCK_SIZE);
 
-    Label L_aes128_loadkeys, L_aes192_loadkeys, L_exit_loadkeys;
-    // Compute #rounds for AES based on the length of the key array
-    __ lw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
-    __ mv(t0, 52);
-    __ blt(keylen, t0, L_aes128_loadkeys);
-    __ beq(keylen, t0, L_aes192_loadkeys);
+    // load keys to working_vregs according to round
+    generate_aes_loadkeys(key, working_vregs, round);
 
-    // Load aes keys into working_vregs according to the keylen
-    generate_aes_loadkeys(key, working_vregs, 15);
-    __ j(L_exit_loadkeys);
-
-    __ bind(L_aes192_loadkeys);
-    generate_aes_loadkeys(key, working_vregs, 13);
-    __ j(L_exit_loadkeys);
-
-    __ bind(L_aes128_loadkeys);
-    generate_aes_loadkeys(key, working_vregs, 11);
-    __ bind(L_exit_loadkeys);
-
-    Label L_next, L_encrypt_next, L_main;
-
+    Label L_next, L_encrypt_next, L_main_loop, L_exit;
     // Encrypt bytes left with last encryptedCounter
     __ bind(L_next);
-    __ bge(used, block_size, L_main);
+    __ bge(used, block_size, L_main_loop);
 
     __ bind(L_encrypt_next);
     __ add(tmp1, saved_encrypted_ctr, used);
-    __ lbu(t0, Address(tmp1));
+    __ lbu(tmp2, Address(tmp1));
     __ lbu(tmp1, Address(in));
-    __ xorr(t0, t0, tmp1);
-    __ sb(t0, Address(out));
+    __ xorr(tmp2, tmp2, tmp1);
+    __ sb(tmp2, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
     __ addi(used, used, 1);
@@ -2751,30 +2764,17 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(len, L_exit);
     __ j(L_next);
 
-    __ bind(L_main);
+    __ bind(L_main_loop);
     __ beqz(len, L_exit);
     __ vle32_v(v16, counter);
 
-    Label L_aes128_loop_next, L_aes192_loop_next, L_exit_aes_loop_next;
-    __ mv(t0, 52);
-    __ blt(keylen, t0, L_aes128_loop_next);
-    __ beq(keylen, t0, L_aes192_loop_next);
-
-    generate_aes_encrypt(v16, working_vregs, 15);
-    __ j(L_exit_aes_loop_next);
-
-    __ bind(L_aes192_loop_next);
-    generate_aes_encrypt(v16, working_vregs, 13);
-    __ j(L_exit_aes_loop_next);
-
-    __ bind(L_aes128_loop_next);
-    generate_aes_encrypt(v16, working_vregs, 11);
-    __ bind(L_exit_aes_loop_next);
+    // encrypt counter according to round
+    generate_aes_encrypt(v16, working_vregs, round);
 
     __ vse32_v(v16, saved_encrypted_ctr);
     __ mv(used, 0);
 
-    // Increase counter
+    // big-endian Increase counter 128
     be_inc_counter_128(counter, tmp1, tmp2);
 
     __ blt(len, block_size, L_encrypt_next);
@@ -2786,16 +2786,14 @@ class StubGenerator: public StubCodeGenerator {
     __ add(in, in, block_size);
     __ sub(len, len, block_size);
     __ mv(used, block_size);
-    __ j(L_main);
+    __ j(L_main_loop);
 
     __ bind(L_exit);
     __ sw(used, Address(used_ptr));
     __ mv(x10, input_len);
     __ leave();
     __ ret();
-
-    return start;
-  }
+  };
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
