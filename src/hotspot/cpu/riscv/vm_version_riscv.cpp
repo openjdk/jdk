@@ -440,8 +440,8 @@ void VM_Version::c2_initialize() {
     }
 
     if (UseAESCTRIntrinsics) {
-      if (!(UseZvbb && UseZbb)) {
-        warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvbb and UseZbb support.");
+      if (!UseZbb) {
+        warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       }
     }

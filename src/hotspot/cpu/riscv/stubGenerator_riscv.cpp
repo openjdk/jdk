@@ -2640,7 +2640,6 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_counterMode_AESCrypt() {
     assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
-    assert(UseZvbb, "need vector bit manipulation (Zvbb extension) support");
     assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
 
     __ align(CodeEntryAlignment);

@@ -2647,14 +2647,6 @@ enum Nf {
   INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
   INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
 
-  INSN(vaesem_vs,   0b1110111, 0b010, 0b00010, 0b101001);
-  INSN(vaesef_vs,   0b1110111, 0b010, 0b00011, 0b101001);
-
-  INSN(vaesdm_vs,   0b1110111, 0b010, 0b00000, 0b101001);
-  INSN(vaesdf_vs,   0b1110111, 0b010, 0b00001, 0b101001);
-
-  INSN(vaesz_vs,    0b1110111, 0b010, 0b00111, 0b101001);
-
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
