@@ -50,7 +50,7 @@
 // degenerated execution, leading to dangling references.
 template <typename ClosureType>
 void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
-                                                               ClosureType* cl, bool use_write_table, uint worker_id) {
+                                                ClosureType* cl, bool use_write_table, uint worker_id) {
 
   assert(ShenandoahHeap::heap()->old_generation()->is_parsable(), "Old generation regions must be parsable for remembered set scan");
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
@@ -67,10 +67,22 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
   // clip at end_of_range (exclusive)
   HeapWord* end_addr = MIN2(end_of_range, (HeapWord*)start_addr + (count * ShenandoahCardCluster::CardsPerCluster
                                                                    * CardTable::card_size_in_words()));
+#undef KELVIN_SCRUTINY
+#ifdef KELVIN_SCRUTINY
+  log_info(gc)("end_addr (%zx) is MIN2(%zx, %zx)", p2i(end_addr), p2i(end_of_range),
+               p2i((HeapWord*)start_addr + (count * ShenandoahCardCluster::CardsPerCluster * CardTable::card_size_in_words())));
+#endif
   assert(start_addr < end_addr, "Empty region?");
 
   const size_t whole_cards = (end_addr - start_addr + CardTable::card_size_in_words() - 1)/CardTable::card_size_in_words();
+#ifdef KELVIN_SCRUTINY
+  log_info(gc)("whole_cards: %zu span %zu words out of needed span %zu words",
+               whole_cards, whole_cards * CardTable::card_size_in_words(), end_addr - start_addr);
+#endif
   const size_t end_card_index = start_card_index + whole_cards - 1;
+#ifdef KELVIN_SCRUTINY
+  log_info(gc)("end_card_index: %zu, next_card_addr: %zx", end_card_index, p2i(_rs->addr_for_card_index(end_card_index + 1)));
+#endif
   log_debug(gc, remset)("Worker %u: cluster = %zu count = %zu eor = " INTPTR_FORMAT
                         " start_addr = " INTPTR_FORMAT " end_addr = " INTPTR_FORMAT " cards = %zu",
                         worker_id, first_cluster, count, p2i(end_of_range), p2i(start_addr), p2i(end_addr), whole_cards);
@@ -174,8 +186,10 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // This is always the case for large object arrays, which are typically more
       // common.
       assert(ctx != nullptr || heap->old_generation()->is_parsable(), "Error");
-      HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, dirty_r);
-      assert((p == nullptr) || (p < right), "No first object found is denoted by nullptr");
+      HeapWord* p = _scc->first_object_start(dirty_l, ctx, tams, right);
+      assert((p == nullptr) || (p < right), "No first object found is denoted by nullptr, p: "
+             PTR_FORMAT ", right: " PTR_FORMAT ", end_addr: " PTR_FORMAT ", next card addr: " PTR_FORMAT,
+             p2i(p), p2i(right), p2i(end_addr), p2i(_rs->addr_for_card_index(dirty_r + 1)));
       if (p == nullptr) {
         // There are no live objects to be scanned in this dirty range.  cur_index identifies first card in this
         // uninteresting dirty range.  At top of next loop iteration, we will either end the looop

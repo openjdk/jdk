@@ -234,7 +234,7 @@ size_t ShenandoahCardCluster::get_last_start(size_t card_index) const {
 }
 
 HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, const ShenandoahMarkingContext* const ctx,
-                                                    HeapWord* tams, const size_t last_relevant_card_index) const {
+                                                    HeapWord* tams, HeapWord* end_range_of_interest) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
   ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
@@ -246,6 +246,15 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   // start region.
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
+
+  HeapWord* right = MIN2(region->top(), end_range_of_interest);
+  HeapWord* end_of_search_next = MIN2(right, tams);
+  size_t last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest);
+  if (_rs->addr_for_card_index(last_relevant_card_index) == end_range_of_interest) {
+    last_relevant_card_index--;
+  }
+  assert(card_index <= last_relevant_card_index, "sanity: card_index: %zu, last_relevant: %zu, left: " PTR_FORMAT
+         ", end_of_range: " PTR_FORMAT, card_index, last_relevant_card_index, p2i(left), p2i(end_range_of_interest));
 
   // if marking context is valid and we are below tams, we use the marking bit map to find the first marked object that
   // intersects with this card.  If no such object exists, we return the first marked object that follows the start
@@ -262,8 +271,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       // In the case that this region was most recently marked as young, the fact that this region has been promoted in place
       // denotes that final mark (Young) has completed.  In the case that this region was most recently marked as old, the
       // fact that (ctx != nullptr) denotes that old marking has completed.  Otherwise, ctx would equal null.
-      HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left);
-      if (prev <= left) {
+      HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left - 1);
+      if (prev < left) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
         HeapWord* obj_end = prev + obj->size();
@@ -275,10 +284,9 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins.
     // In eiher case, find the next marked object if any on this or a following card
     assert(!ctx->is_marked(left), "Was dealt with above");
-    HeapWord* right = MIN3(region->top(), tams, _rs->addr_for_card_index(last_relevant_card_index + 1));
     assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
-    HeapWord* next = ctx->get_next_marked_addr(left, right);
-#ifdef ASSERT
+    HeapWord* next = ctx->get_next_marked_addr(left, end_of_search_next);
+    // If end_of_search_next < right, we may return tams here, which is "marked" by default
     if (next < right) {
       oop obj = cast_to_oop(next);
       assert(oopDesc::is_oop(obj), "Should be an object");
@@ -286,7 +294,6 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     } else {
       return nullptr;
     }
-#endif
   }
 
   assert((ctx == nullptr) || (left >= tams), "Should have returned above");
@@ -322,11 +329,13 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       assert(oopDesc::is_oop(obj), "Should be an object");
       assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
       assert(p + obj->size() > left, "This object should span start of card");
+      assert(p < right, "Result must precede right");
       return p;
     } else {
       // Object that spans start of card is dead, so should not be scanned
       assert((ctx == nullptr) || (left + get_first_start(card_index) >= tams), "Should have handled this case above");
       if (starts_object(card_index)) {
+        assert(left + get_first_start(card_index) < right, "Result must precede right");
         return left + get_first_start(card_index);
       } else {
         // Spanning object is dead and this card does not start an object, so the start object is in some card that follows
@@ -337,6 +346,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
             return nullptr;
           }
         } while (!starts_object(following_card_index));
+        assert(_rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index),
+               "Result must precede right");
         return _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
       }
     }
@@ -377,8 +388,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     guarantee(false, "Should never need forward walk in block start");
   }
 #undef WALK_FORWARD_IN_BLOCK_START
-  guarantee(p <= left, "p should start at or before left end of card");
-  guarantee(p + obj->size() > left, "obj should end after left end of card");
+  assert(p <= left, "p should start at or before left end of card");
+  assert(p + obj->size() > left, "obj should end after left end of card");
   return p;
 }
 

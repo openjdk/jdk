@@ -172,8 +172,7 @@ public:
 
   bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
 
-  // Return the first marked address in the range [addr, limit), or limit
-  // if none found.
+  // Return the first marked address in the range [addr, limit), or limit if none found.
   HeapWord* get_next_marked_addr(const HeapWord* addr,
                                  const HeapWord* limit) const;
 

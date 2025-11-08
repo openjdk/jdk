@@ -664,10 +664,9 @@ public:
   // we use crossing maps to find where object's start, and use object sizes to walk individual objects.
   // The region must be parsable if ctx is null.
   //
-  // The last_relevant_card_index represents an upper bound on how far we look in the forward direction
-  // for the first object in the heap that intersects or follows this card.  If there are no live objects
-  // found within the range of cards identified by [card_index, last_relevant_card_index], this function
-  // returns nullptr.
+  // The end_range_of_interest pointer argument represents an upper bound on how far we look in the forward direction
+  // for the first object in the heap that intersects or follows this card.  If there are no live objects found at
+  // an address less than end_range_of_interest returns nullptr.
   //
   // Expects to be called for a card in a region affiliated with the old generation of the
   // generational heap, otherwise behavior is undefined.
@@ -677,7 +676,7 @@ public:
   // Note that crossing maps may be invalid following class unloading and before dead
   // or unloaded objects have been coalesced and filled.  Coalesce and fill updates the crossing maps.
   HeapWord* first_object_start(size_t card_index, const ShenandoahMarkingContext* const ctx,
-                               HeapWord* tams, const size_t last_relevant_card_index) const;
+                               HeapWord* tams, HeapWord* end_range_of_interest) const;
 };
 
 // ShenandoahScanRemembered is a concrete class representing the
