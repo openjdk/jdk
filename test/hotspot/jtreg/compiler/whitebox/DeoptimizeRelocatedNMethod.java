@@ -23,67 +23,14 @@
  */
 
 /*
- * @test id=Serial
+ * @test
  * @bug 8316694
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Serial
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseSerialGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=Parallel
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Parallel
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseParallelGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=G1
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.G1
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseG1GC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=Shenandoah
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Shenandoah
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseShenandoahGC
- * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
- */
-
-/*
- * @test id=ZGC
- * @bug 8316694
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc java.management
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Z
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache -XX:+UseZGC
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
  * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
  */
 
@@ -118,7 +65,7 @@ public class DeoptimizeRelocatedNMethod {
         NMethod origNmethod = NMethod.get(method, false);
 
         // Relocate nmethod and mark old for cleanup
-        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodNonProfiled.id);
 
         // Trigger GC to clean up old nmethod
         WHITE_BOX.fullGC();

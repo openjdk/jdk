@@ -55,10 +55,10 @@ class TenuredGeneration;
 //                                              +-- generation boundary (fixed after startup)
 //                                              |
 // |<-    young gen (reserved MaxNewSize)     ->|<- old gen (reserved MaxOldSize) ->|
-// +-----------------+--------+--------+--------+---------------+-------------------+
-// |       eden      |  from  |   to   |        |      old      |                   |
-// |                 |  (to)  | (from) |        |               |                   |
-// +-----------------+--------+--------+--------+---------------+-------------------+
+// +--------+--------+-----------------+--------+---------------+-------------------+
+// |  from  |   to   |       eden      |        |      old      |                   |
+// |  (to)  | (from) |                 |        |               |                   |
+// +--------+--------+-----------------+--------+---------------+-------------------+
 // |<-          committed            ->|        |<- committed ->|
 //
 class SerialHeap : public CollectedHeap {
@@ -189,9 +189,9 @@ public:
   bool block_is_obj(const HeapWord* addr) const;
 
   // Section on TLAB's.
-  size_t tlab_capacity(Thread* thr) const override;
-  size_t tlab_used(Thread* thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;

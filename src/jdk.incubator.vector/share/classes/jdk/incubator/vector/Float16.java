@@ -295,10 +295,12 @@ public final class Float16
             // replace subnormal double exponent with subnormal Float16
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
-                                                     /* -1022+14 */
-                                                     Double.MIN_EXPONENT-
+                                                     // -1022 + 14
+                                                     Double.MIN_EXPONENT -
                                                      MIN_EXPONENT));
-            return s.replaceFirst("p-1022$", "p-14");
+            // The char sequence "-1022" can only appear in the
+            // representation of the exponent, not in the (hex) significand.
+            return s.replace("-1022", "-14");
         } else {// double string will be the same as Float16 string
             return Double.toHexString(f);
         }

@@ -1961,22 +1961,22 @@ bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
 }
 
 // Register for DIVI projection of divmodI
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   return _Z_RARG4_INT_REG_mask;
 }
 
 // Register for MODI projection of divmodI
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   return _Z_RARG3_INT_REG_mask;
 }
 
 // Register for DIVL projection of divmodL
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   return _Z_RARG4_LONG_REG_mask;
 }
 
 // Register for MODL projection of divmodL
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
 }
 
@@ -10157,14 +10157,14 @@ instruct partialSubtypeCheckConstSuper(rarg2RegP sub, rarg1RegP super, immP supe
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
   match(Set pcc (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
-    __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
     // If locking was successful, cc should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where cc is 'NE'.
@@ -10172,14 +10172,14 @@ instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iReg
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct cmpFastUnlockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
   match(Set pcc (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
-    __ fast_unlock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_unlock($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
     // If unlocking was successful, cc should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where cc is 'NE'.

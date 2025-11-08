@@ -51,17 +51,20 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
-  size_t _alignment;
+  size_t _page_size;
   HeapWord* _bottom;
   HeapWord* volatile _top;
   HeapWord* _end;
 
-  void numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space);
+  void numa_setup_pages(MemRegion mr, bool clear_space);
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
- public:
+protected:
+  size_t page_size() const                 { return _page_size;         }
+
+public:
   virtual ~MutableSpace() = default;
   MutableSpace(size_t page_size);
 
@@ -76,8 +79,6 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   HeapWord* volatile* top_addr()           { return &_top; }
   HeapWord** end_addr()                    { return &_end; }
-
-  size_t alignment()                       { return _alignment; }
 
   MemRegion region() const { return MemRegion(bottom(), end()); }
 
@@ -116,11 +117,11 @@ class MutableSpace: public CHeapObj<mtGC> {
   size_t free_in_bytes() const                { return free_in_words() * HeapWordSize; }
 
   // Size computations.  Sizes are in heapwords.
-  virtual size_t used_in_words() const                    { return pointer_delta(top(), bottom()); }
-  virtual size_t free_in_words() const                    { return pointer_delta(end(),    top()); }
-  virtual size_t tlab_capacity(Thread* thr) const         { return capacity_in_bytes();            }
-  virtual size_t tlab_used(Thread* thr) const             { return used_in_bytes();                }
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
+  virtual size_t used_in_words() const         { return pointer_delta(top(), bottom()); }
+  virtual size_t free_in_words() const         { return pointer_delta(end(),    top()); }
+  virtual size_t tlab_capacity() const         { return capacity_in_bytes();            }
+  virtual size_t tlab_used() const             { return used_in_bytes();                }
+  virtual size_t unsafe_max_tlab_alloc() const { return free_in_bytes();                }
 
   // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
