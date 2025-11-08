@@ -2495,7 +2495,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(res, from);
 
     __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
@@ -2574,7 +2574,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(res, from);
 
     __ mv(t2, 52);
-    __ blt(keylen, t2, L_aes128);
+    __ bltu(keylen, t2, L_aes128);
     __ beq(keylen, t2, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
@@ -2607,20 +2607,29 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Big-endian 128-bit + 64-bit -> 128-bit addition.
-  void be_inc_counter_128(Register counter, Register tmp1, Register tmp2) {
-    assert_different_registers(counter, tmp1, tmp2, t0);
-    __ ld(tmp1, Address(counter, 8)); // Load 128-bits from counter
-    __ ld(tmp2, Address(counter));
-    __ rev8(tmp1, tmp1);              // Convert big-endian to little-endian
-    __ rev8(tmp2, tmp2);
-    __ addi(tmp1, tmp1, 1);
-    __ seqz(t0, tmp1);                // Check for result overflow
-    __ add(tmp2, tmp2, t0);           // Add 1 if overflow otherwise 0
-    __ rev8(tmp1, tmp1);              // Convert little-endian to big-endian
-    __ rev8(tmp2, tmp2);
-    __ sd(tmp1, Address(counter, 8)); // Store 128-bits to counter
-    __ sd(tmp2, Address(counter));
+  // Load big-endian 128-bit from memory.
+  void be_load_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    __ ld(counter_lo, Address(counter, 8)); // Load 128-bits from counter
+    __ ld(counter_hi, Address(counter));
+    __ rev8(counter_lo, counter_lo);        // Convert big-endian to little-endian
+    __ rev8(counter_hi, counter_hi);
+  }
+
+  // Little-endian 128-bit + 64-bit -> 128-bit addition.
+  void add_counter_128(Register counter_hi, Register counter_lo) {
+    assert_different_registers(counter_hi, counter_lo, t0);
+    __ addi(counter_lo, counter_lo, 1);
+    __ seqz(t0, counter_lo);                // Check for result overflow
+    __ add(counter_hi, counter_hi, t0);     // Add 1 if overflow otherwise 0
+  }
+
+  // Store big-endian 128-bit to memory.
+  void be_store_counter_128(Register counter_hi, Register counter_lo, Register counter) {
+    assert_different_registers(counter_hi, counter_lo, t0, t1);
+    __ rev8(t0, counter_lo);                // Convert little-endian to big-endian
+    __ rev8(t1, counter_hi);
+    __ sd(t0, Address(counter, 8));         // Store 128-bits to counter
+    __ sd(t1, Address(counter));
   }
 
   // CTR AES crypt.
@@ -2654,7 +2663,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register saved_encrypted_ctr = c_rarg5;
     const Register used_ptr            = c_rarg6;
 
-    const Register keylen              = x28;
+    const Register keylen              = c_rarg7; // temporary register
 
     const address start = __ pc();
     __ enter();
@@ -2664,10 +2673,9 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_aes128, L_aes192;
     // Compute #rounds for AES based on the length of the key array
-    __ lw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
     __ mv(t0, 52);
-    __ blt(keylen, t0, L_aes128);
+    __ bltu(keylen, t0, L_aes128);
     __ beq(keylen, t0, L_aes192);
     // Else we fallthrough to the biggest case (256-bit key size)
 
@@ -2705,8 +2713,8 @@ class StubGenerator: public StubCodeGenerator {
     //
     //   L_main_loop:
     //     if (len == 0) goto L_exit;
-    //     saved_encrypted_ctr = aes_encrypt(counter);
-    //     increase_counter(counter);
+    //     saved_encrypted_ctr = generate_aes_encrypt();
+    //     be_inc_counter_128(counter);
     //     if (len < BLOCK_SIZE) {
     //       used = 0;
     //       goto L_encrypt_next;
@@ -2725,11 +2733,11 @@ class StubGenerator: public StubCodeGenerator {
     // L_exit:
     //   return result;
 
-    const Register used                = x29;
-    const Register len                 = x30;
-    const Register block_size          = x31;
-    const Register tmp1                = t1;
-    const Register tmp2                = t2;
+    const Register used                = x28;
+    const Register len                 = x29;
+    const Register counter_hi          = x30;
+    const Register counter_lo          = x31;
+    const Register block_size          = t2;
 
     const int BLOCK_SIZE = 16;
 
@@ -2738,6 +2746,8 @@ class StubGenerator: public StubCodeGenerator {
       v9, v10, v11, v12, v13, v14, v15
     };
 
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+
     __ lw(used, Address(used_ptr));
     __ mv(len, input_len);
     __ mv(block_size, BLOCK_SIZE);
@@ -2745,17 +2755,20 @@ class StubGenerator: public StubCodeGenerator {
     // load keys to working_vregs according to round
     generate_aes_loadkeys(key, working_vregs, round);
 
+    // 128-bit big-endian load
+    be_load_counter_128(counter_hi, counter_lo, counter);
+
     Label L_next, L_encrypt_next, L_main_loop, L_exit;
     // Encrypt bytes left with last encryptedCounter
     __ bind(L_next);
     __ bge(used, block_size, L_main_loop);
 
     __ bind(L_encrypt_next);
-    __ add(tmp1, saved_encrypted_ctr, used);
-    __ lbu(tmp2, Address(tmp1));
-    __ lbu(tmp1, Address(in));
-    __ xorr(tmp2, tmp2, tmp1);
-    __ sb(tmp2, Address(out));
+    __ add(t0, saved_encrypted_ctr, used);
+    __ lbu(t1, Address(t0));
+    __ lbu(t0, Address(in));
+    __ xorr(t1, t1, t0);
+    __ sb(t1, Address(out));
     __ addi(in, in, 1);
     __ addi(out, out, 1);
     __ addi(used, used, 1);
@@ -2773,8 +2786,10 @@ class StubGenerator: public StubCodeGenerator {
     __ vse32_v(v16, saved_encrypted_ctr);
     __ mv(used, 0);
 
-    // big-endian Increase counter 128
-    be_inc_counter_128(counter, tmp1, tmp2);
+    // 128-bit little-endian increment
+    add_counter_128(counter_hi, counter_lo);
+    // 128-bit big-endian store
+    be_store_counter_128(counter_hi, counter_lo, counter);
 
     __ blt(len, block_size, L_encrypt_next);
 
