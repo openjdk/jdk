@@ -54,6 +54,17 @@
  * @run main/manual RightLeftOrientation windows
  */
 
+/*
+ * @test id=aqua
+ * @bug 8022522
+ * @requires (os.family == "mac")
+ * @summary Verifies that menu items lay out correctly
+ *     in Aqua look and feel
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual RightLeftOrientation aqua
+ */
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -96,6 +107,7 @@ public class RightLeftOrientation {
             case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
             case "motif" -> lafClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
             case "windows" -> lafClassName = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+            case "aqua" -> lafClassName = "com.apple.laf.AquaLookAndFeel";
             default -> throw new IllegalArgumentException(
                            "Unsupported Look-and-Feel keyword for this test: " + args[0]);
         }
