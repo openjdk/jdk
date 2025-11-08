@@ -56,7 +56,7 @@
 
 /*
  * @test id=aqua
- * @bug 8022522
+ * @bug 8371508
  * @requires (os.family == "mac")
  * @summary Verifies that menu items lay out correctly
  *     in Aqua look and feel
