@@ -941,6 +941,7 @@ final class AES_Crypt extends SymmetricCipher {
      * Generate the cipher's round keys as outlined in section 5.2 of the spec.
      *
      * @param key [in] the symmetric key byte array.
+     * @param round [in] the number rounds for generating the round keys.
      *
      * @return w the cipher round keys.
      */
@@ -970,29 +971,37 @@ final class AES_Crypt extends SymmetricCipher {
     /**
      * Generate the inverse cipher round keys.
      *
-     * @return w1 the inverse cipher round keys.
+     * @param w [in] the targeted word for substituion.
+     * @param round [in] the number rounds for generating the round keys.
+     *
+     * @return dw the inverse cipher round keys.
      */
     private static int[] genInvRoundKeys(int[] w, int rounds) {
-        int kLen = w.length;;
-        int[] dw = new int[kLen];
+        int[] dw = new int[w.length];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
             int widx = i * WB;
-            int idx = kLen - widx;
+            int idx = w.length - widx;
 
             dw[idx] = TMI0[w[widx] >>> 24] ^ TMI1[(w[widx] >> 16) & 0xFF]
                     ^ TMI2[(w[widx] >> 8) & 0xFF] ^ TMI3[w[widx] & 0xFF];
-            dw[idx+1] = TMI0[w[widx+1] >>> 24] ^ TMI1[(w[widx+1] >> 16) & 0xFF]
-                    ^ TMI2[(w[widx+1] >> 8) & 0xFF] ^ TMI3[w[widx+1] & 0xFF];
-            dw[idx+2] = TMI0[w[widx+2] >>> 24] ^ TMI1[(w[widx+2] >> 16) & 0xFF]
-                    ^ TMI2[(w[widx+2] >> 8) & 0xFF] ^ TMI3[w[widx+2] & 0xFF];
-            dw[idx+3] = TMI0[w[widx+3] >>> 24] ^ TMI1[(w[widx+3] >> 16) & 0xFF]
-                    ^ TMI2[(w[widx+3] >> 8) & 0xFF] ^ TMI3[w[widx+3] & 0xFF];
+            dw[idx + 1] = TMI0[w[widx + 1] >>> 24]
+                    ^ TMI1[(w[widx + 1] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 1] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 1] & 0xFF];
+            dw[idx + 2] = TMI0[w[widx + 2] >>> 24]
+                    ^ TMI1[(w[widx + 2] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 2] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 2] & 0xFF];
+            dw[idx + 3] = TMI0[w[widx + 3] >>> 24]
+                    ^ TMI1[(w[widx + 3] >> 16) & 0xFF]
+                    ^ TMI2[(w[widx + 3] >> 8) & 0xFF]
+                    ^ TMI3[w[widx + 3] & 0xFF];
         }
-        System.arraycopy(w, kLen - WB, dw, WB, WB);
+        System.arraycopy(w, w.length - WB, dw, WB, WB);
         System.arraycopy(w, 0, dw, 0, WB);
 
         return dw;
@@ -1001,8 +1010,7 @@ final class AES_Crypt extends SymmetricCipher {
     /**
      * Subtitute the word as a step of key expansion.
      *
-     * @param state [in] the targeted word for substituion.
-     * @param sub [in] the substitute table for cipher and inverse cipher.
+     * @param word [in] the targeted word for substituion.
      *
      * @return the substituted word.
      */
