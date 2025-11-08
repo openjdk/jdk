@@ -46,7 +46,6 @@ public class BridgeMethodsTest {
         String call(); // throws no exception
     }
 
-    // Does not duplicate with Object::clone so it is not proxied
     @Test
     void testExceptionTypes() throws Throwable {
         class MyException extends Exception {}
