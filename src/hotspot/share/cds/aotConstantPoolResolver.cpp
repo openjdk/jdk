@@ -224,6 +224,13 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       bcs.next();
       Bytecodes::Code raw_bc = bcs.raw_code();
       switch (raw_bc) {
+      case Bytecodes::_getstatic:
+      case Bytecodes::_putstatic:
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
       case Bytecodes::_getfield:
       // no-fast bytecode
       case Bytecodes::_nofast_getfield:
@@ -266,6 +273,7 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokeinterface:
+      case Bytecodes::_invokestatic:
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore
@@ -302,11 +310,29 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
   }
 
   Klass* resolved_klass = cp->klass_ref_at(raw_index, bc, CHECK);
+  const char* is_static = "";
 
   switch (bc) {
+  case Bytecodes::_getstatic:
+  case Bytecodes::_putstatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    is_static = " *** static";
+    break;
+
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, ClassInitMode::dont_init, CHECK);
+    break;
+
+  case Bytecodes::_invokestatic:
+    if (!VM_Version::supports_fast_class_init_checks()) {
+      return; // Do not resolve since interpreter lacks fast clinit barriers support
+    }
+    InterpreterRuntime::cds_resolve_invoke(bc, raw_index, cp, CHECK);
+    is_static = " *** static";
     break;
 
   case Bytecodes::_invokevirtual:
@@ -328,11 +354,11 @@ void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m
     bool resolved = cp->is_resolved(raw_index, bc);
     Symbol* name = cp->name_ref_at(raw_index, bc);
     Symbol* signature = cp->signature_ref_at(raw_index, bc);
-    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s",
+    log_trace(aot, resolve)("%s %s [%3d] %s -> %s.%s:%s%s",
                             (resolved ? "Resolved" : "Failed to resolve"),
                             Bytecodes::name(bc), cp_index, ik->external_name(),
                             resolved_klass->external_name(),
-                            name->as_C_string(), signature->as_C_string());
+                            name->as_C_string(), signature->as_C_string(), is_static);
   }
 }
 
