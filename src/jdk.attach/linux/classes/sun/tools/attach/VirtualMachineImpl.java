@@ -36,7 +36,6 @@ import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.GroupPrincipal;
@@ -137,7 +136,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                           "or HotSpot VM not loaded", socket_path, pid, time_spent));
                 }
             } finally {
-                Files.delete(f);
+                Files.deleteIfExists(f);
             }
         }
 
@@ -241,7 +240,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         try {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             Files.createFile(path);
-        } catch (FileAlreadyExistsException _) {
+        } catch (IOException _) {
             path = findTargetProcessTmpDirectory(pid, ns_pid).resolve(fn);
             Files.createFile(path);
         }
@@ -265,7 +264,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
          * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
          * as that of the intended target (in its * pid ns).
          *
-         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
+         * so in that case we should perhaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
          *
          * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
          * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
