@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.c2.gvn;
+package compiler.igvn;
 
 import compiler.lib.generators.*;
 import compiler.lib.ir_framework.*;
@@ -32,7 +32,7 @@ import jdk.test.lib.Asserts;
  * @summary Test value method of DivINode and DivLNode
  * @key randomness
  * @library /test/lib /
- * @run driver compiler.c2.gvn.IntegerDivValueTests
+ * @run driver compiler.igvn.IntegerDivValueTests
  */
 public class IntegerDivValueTests {
     private static final RestrictableGenerator<Integer> INTS = Generators.G.ints();
