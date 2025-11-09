@@ -419,17 +419,6 @@ GetJavaProperties(JNIEnv* env)
          *  Operating system            dwMajorVersion  dwMinorVersion
          * ==================           ==============  ==============
          *
-         * Windows 95                   4               0
-         * Windows 98                   4               10
-         * Windows ME                   4               90
-         * Windows 3.51                 3               51
-         * Windows NT 4.0               4               0
-         * Windows 2000                 5               0
-         * Windows XP 32 bit            5               1
-         * Windows Server 2003 family   5               2
-         * Windows XP 64 bit            5               2
-         *       where ((&ver.wServicePackMinor) + 2) = 1
-         *       and  si.wProcessorArchitecture = 9
          * Windows Vista family         6               0  (VER_NT_WORKSTATION)
          * Windows Server 2008          6               0  (!VER_NT_WORKSTATION)
          * Windows 7                    6               1  (VER_NT_WORKSTATION)
@@ -452,61 +441,19 @@ GetJavaProperties(JNIEnv* env)
          * versions are released.
          */
         switch (platformId) {
-        case VER_PLATFORM_WIN32_WINDOWS:
-           if (majorVersion == 4) {
-                switch (minorVersion) {
-                case  0: sprops.os_name = "Windows 95";           break;
-                case 10: sprops.os_name = "Windows 98";           break;
-                case 90: sprops.os_name = "Windows Me";           break;
-                default: sprops.os_name = "Windows 9X (unknown)"; break;
-                }
-            } else {
-                sprops.os_name = "Windows 9X (unknown)";
-            }
-            break;
         case VER_PLATFORM_WIN32_NT:
-            if (majorVersion <= 4) {
-                sprops.os_name = "Windows NT";
-            } else if (majorVersion == 5) {
-                switch (minorVersion) {
-                case  0: sprops.os_name = "Windows 2000";         break;
-                case  1: sprops.os_name = "Windows XP";           break;
-                case  2:
-                   /*
-                    * From MSDN OSVERSIONINFOEX and SYSTEM_INFO documentation:
-                    *
-                    * "Because the version numbers for Windows Server 2003
-                    * and Windows XP 6u4 bit are identical, you must also test
-                    * whether the wProductType member is VER_NT_WORKSTATION.
-                    * and si.wProcessorArchitecture is
-                    * PROCESSOR_ARCHITECTURE_AMD64 (which is 9)
-                    * If it is, the operating system is Windows XP 64 bit;
-                    * otherwise, it is Windows Server 2003."
-                    */
-                    if (is_workstation && is_64bit) {
-                        sprops.os_name = "Windows XP"; /* 64 bit */
-                    } else {
-                        sprops.os_name = "Windows 2003";
-                    }
-                    break;
-                default: sprops.os_name = "Windows NT (unknown)"; break;
-                }
-            } else if (majorVersion == 6) {
+            if (majorVersion == 6) {
                 /*
                  * See table in MSDN OSVERSIONINFOEX documentation.
                  */
                 if (is_workstation) {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows Vista";        break;
-                    case  1: sprops.os_name = "Windows 7";            break;
                     case  2: sprops.os_name = "Windows 8";            break;
                     case  3: sprops.os_name = "Windows 8.1";          break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 } else {
                     switch (minorVersion) {
-                    case  0: sprops.os_name = "Windows Server 2008";    break;
-                    case  1: sprops.os_name = "Windows Server 2008 R2"; break;
                     case  2: sprops.os_name = "Windows Server 2012";    break;
                     case  3: sprops.os_name = "Windows Server 2012 R2"; break;
                     default: sprops.os_name = "Windows NT (unknown)";

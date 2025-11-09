@@ -29,7 +29,7 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -40,8 +40,8 @@
 #include "runtime/task.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
-#include "utilities/formatBuffer.hpp"
 #include "utilities/filterQueue.inline.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
@@ -74,12 +74,12 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   void prepare(JavaThread* current_target, Thread* executing_thread);
   void do_handshake(JavaThread* thread);
   bool is_completed() {
-    int32_t val = Atomic::load(&_pending_threads);
+    int32_t val = AtomicAccess::load(&_pending_threads);
     assert(val >= 0, "_pending_threads=%d cannot be negative", val);
     return val == 0;
   }
-  void add_target_count(int count) { Atomic::add(&_pending_threads, count); }
-  int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
+  void add_target_count(int count) { AtomicAccess::add(&_pending_threads, count); }
+  int32_t pending_threads()        { return AtomicAccess::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
@@ -348,7 +348,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // here to make sure memory operations executed in the handshake
   // closure are visible to the VMThread/Handshaker after it reads
   // that the operation has completed.
-  Atomic::dec(&_pending_threads);
+  AtomicAccess::dec(&_pending_threads);
   // Trailing fence, used to make sure removal of the operation strictly
   // happened after we completed the operation.
 
@@ -722,6 +722,8 @@ void HandshakeState::handle_unsafe_access_error() {
   MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   // We may be at method entry which requires we save the do-not-unlock flag.
   UnlockFlagSaver fs(_handshakee);
+  // Tell code inspecting handshakee's stack what we are doing
+  ThrowingUnsafeAccessError tuae(_handshakee);
   Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
   if (h_exception()->is_a(vmClasses::InternalError_klass())) {
     java_lang_InternalError::set_during_unsafe_access(h_exception());

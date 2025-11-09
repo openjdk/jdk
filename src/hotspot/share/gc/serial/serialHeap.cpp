@@ -56,7 +56,6 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -67,8 +66,8 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threads.hpp"
@@ -146,18 +145,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   return memory_pools;
 }
 
-void SerialHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void SerialHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
-
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
   return old_gen()->allocate(word_size);
@@ -196,7 +183,6 @@ jint SerialHeap::initialize() {
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
-  bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
   _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
@@ -283,43 +269,64 @@ size_t SerialHeap::max_capacity() const {
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  HeapWord* result = nullptr;
-  if (_old_gen->should_allocate(size, is_tlab)) {
+  assert(Heap_lock->is_locked(), "precondition");
+
+  HeapWord* result = _young_gen->expand_and_allocate(size);
+
+  if (result == nullptr && !is_tlab) {
     result = _old_gen->expand_and_allocate(size);
   }
-  if (result == nullptr) {
-    if (_young_gen->should_allocate(size, is_tlab)) {
-      // Young-gen is not expanded.
-      result = _young_gen->allocate(size);
-    }
-  }
+
   assert(result == nullptr || is_in_reserved(result), "result not in heap");
   return result;
+}
+
+HeapWord* SerialHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
+  HeapWord* result = _young_gen->par_allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
+  // Try old-gen allocation for non-TLAB.
+  if (!is_tlab) {
+    // If it's too large for young-gen or heap is too full.
+    if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
+      result = _old_gen->par_allocate(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    if (_young_gen->should_allocate(size, is_tlab)) {
-      result = _young_gen->par_allocate(size);
-      if (result != nullptr) {
-        break;
-      }
-    }
-    // Try old-gen allocation for non-TLAB.
-    if (!is_tlab) {
-      // If it's too large for young-gen or heap is too full.
-      if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
-        result = _old_gen->par_allocate(size);
-        if (result != nullptr) {
-          break;
-        }
-      }
+    result = mem_allocate_cas_noexpand(size, is_tlab);
+    if (result != nullptr) {
+      break;
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
+
+      // Re-try after acquiring the lock, because a GC might have occurred
+      // while waiting for this lock.
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        break;
+      }
+
+      if (!is_init_completed()) {
+        // Can't do GC; try heap expansion to satisfy the request.
+        result = expand_heap_and_allocate(size, is_tlab);
+        if (result != nullptr) {
+          return result;
+        }
+      }
+
       gc_count_before = total_collections();
     }
 
@@ -328,6 +335,11 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     if (op.gc_succeeded()) {
       result = op.result();
       break;
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -342,34 +354,9 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   return result;
 }
 
-HeapWord* SerialHeap::attempt_allocation(size_t size,
-                                         bool is_tlab,
-                                         bool first_only) {
-  HeapWord* res = nullptr;
-
-  if (_young_gen->should_allocate(size, is_tlab)) {
-    res = _young_gen->allocate(size);
-    if (res != nullptr || first_only) {
-      return res;
-    }
-  }
-
-  if (_old_gen->should_allocate(size, is_tlab)) {
-    res = _old_gen->allocate(size);
-  }
-
-  return res;
-}
-
-HeapWord* SerialHeap::mem_allocate(size_t size,
-                                   bool* gc_overhead_limit_was_exceeded) {
+HeapWord* SerialHeap::mem_allocate(size_t size) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
-}
-
-bool SerialHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
-         _gc_cause == GCCause::_wb_full_gc;
 }
 
 bool SerialHeap::is_young_gc_safe() const {
@@ -411,13 +398,12 @@ bool SerialHeap::do_young_collection(bool clear_soft_refs) {
   // Only update stats for successful young-gc
   if (result) {
     _old_gen->update_promote_stats();
+    _young_gen->resize_after_young_gc();
   }
 
   if (should_verify && VerifyAfterGC) {
     Universe::verify("After GC");
   }
-
-  _young_gen->compute_new_size();
 
   print_heap_change(pre_gc_values);
 
@@ -459,15 +445,10 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   // If young-gen can handle this allocation, attempt young-gc firstly.
-  bool should_run_young_gc = _young_gen->should_allocate(size, is_tlab);
+  bool should_run_young_gc = is_tlab || size <= _young_gen->eden()->capacity();
   collect_at_safepoint(!should_run_young_gc);
 
-  result = attempt_allocation(size, is_tlab, false /*first_only*/);
-  if (result != nullptr) {
-    return result;
-  }
-
-  // OK, collection failed, try expansion.
+  // Just finished a GC, try to satisfy this allocation, using expansion if needed.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {
     return result;
@@ -484,10 +465,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
     do_full_collection(clear_all_soft_refs);
   }
 
-  result = attempt_allocation(size, is_tlab, false /* first_only */);
-  if (result != nullptr) {
-    return result;
-  }
   // The previous full-gc can shrink the heap, so re-expand it.
   result = expand_heap_and_allocate(size, is_tlab);
   if (result != nullptr) {
@@ -533,7 +510,7 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
 
 void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = must_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = do_young_collection(clear_soft_refs);
@@ -613,7 +590,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 
   // Adjust generation sizes.
   _old_gen->compute_new_size();
-  _young_gen->compute_new_size();
+  _young_gen->resize_after_full_gc();
 
   _old_gen->update_promote_stats();
 
@@ -683,16 +660,16 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   return addr < _old_gen->space()->top();
 }
 
-size_t SerialHeap::tlab_capacity(Thread* thr) const {
+size_t SerialHeap::tlab_capacity() const {
   // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
-size_t SerialHeap::tlab_used(Thread* thr) const {
+size_t SerialHeap::tlab_used() const {
   return _young_gen->tlab_used();
 }
 
-size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t SerialHeap::unsafe_max_tlab_alloc() const {
   return _young_gen->unsafe_max_tlab_alloc();
 }
 
@@ -798,7 +775,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {

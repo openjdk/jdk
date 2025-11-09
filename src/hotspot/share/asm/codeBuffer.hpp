@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizableHashTable.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename T>
 static inline void put_native(address p, T x) {
@@ -57,7 +57,6 @@ public:
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
-                 DeoptMH,        // Offset where MethodHandle deopt handler lives
                  UnwindHandler,  // Offset to default unwind handler
                  max_Entries };
 
@@ -77,7 +76,6 @@ public:
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
     _values[Deopt         ] = -1;
-    _values[DeoptMH       ] = -1;
     _values[UnwindHandler ] = -1;
   }
 
