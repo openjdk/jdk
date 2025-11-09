@@ -941,9 +941,9 @@ final class AES_Crypt extends SymmetricCipher {
      * Generate the cipher's round keys as outlined in section 5.2 of the spec.
      *
      * @param key [in] the symmetric key byte array.
-     * @param round [in] the number rounds for generating the round keys.
+     * @param rounds [in] the number rounds for generating the round keys.
      *
-     * @return w the cipher round keys.
+     * @return the cipher round keys.
      */
     private static int[] genRoundKeys(byte[] key, int rounds) {
         int wLen = WB * (rounds + 1);
@@ -972,9 +972,9 @@ final class AES_Crypt extends SymmetricCipher {
      * Generate the inverse cipher round keys.
      *
      * @param w [in] the targeted word for substituion.
-     * @param round [in] the number rounds for generating the round keys.
+     * @param rounds [in] the number rounds for generating the round keys.
      *
-     * @return dw the inverse cipher round keys.
+     * @return the inverse cipher round keys.
      */
     private static int[] genInvRoundKeys(int[] w, int rounds) {
         int[] dw = new int[w.length];
