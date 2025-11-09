@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -59,11 +59,11 @@ public final class LinuxRISCV64CFrame extends BasicCFrame {
 
    @Override
    public CFrame sender(ThreadProxy thread) {
-      return sender(thread, null, null);
+      return sender(thread, null, null, null);
    }
 
    @Override
-   public CFrame sender(ThreadProxy thread, Address nextFP, Address nextPC) {
+   public CFrame sender(ThreadProxy thread, Address senderSP, Address nextFP, Address nextPC) {
       // Check fp
       // Skip if both nextFP and nextPC are given - do not need to load from fp.
       if (nextFP == null && nextPC == null) {
