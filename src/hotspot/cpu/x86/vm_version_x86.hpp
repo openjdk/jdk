@@ -995,7 +995,7 @@ public:
     return true;
   }
 
-  constexpr static bool supports_recursive_lightweight_locking() {
+  constexpr static bool supports_recursive_fast_locking() {
     return true;
   }
 
@@ -1093,7 +1093,6 @@ public:
 
   static bool supports_tscinv_ext(void);
 
-  static void initialize_tsc();
   static void initialize_cpu_information(void);
 };
 
