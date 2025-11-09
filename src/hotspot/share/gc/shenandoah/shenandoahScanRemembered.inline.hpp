@@ -174,6 +174,10 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // [left, right) is a maximal right-open interval of dirty cards
       HeapWord* left = _rs->addr_for_card_index(dirty_l);        // inclusive
       HeapWord* right = _rs->addr_for_card_index(dirty_r + 1);   // exclusive
+      if (end_addr <= left) {
+        // The range of addresses to be scanned is empty
+        continue;
+      }
       // Clip right to end_addr established above (still exclusive)
       right = MIN2(right, end_addr);
       assert(right <= region->top() && end_addr <= region->top(), "Busted bounds");

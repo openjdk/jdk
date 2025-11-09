@@ -353,6 +353,7 @@ class ShenandoahCardCluster: public CHeapObj<mtGC> {
 
 private:
   ShenandoahDirectCardMarkRememberedSet* _rs;
+  const HeapWord* _end_of_heap;
 
 public:
   static const size_t CardsPerCluster = 64;
@@ -406,6 +407,7 @@ public:
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
+    _end_of_heap = ShenandoahHeap::heap()->end();
     _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards() + 1, mtGC); // the +1 is to account for card table guarding entry
     for (size_t i = 0; i < rs->total_cards(); i++) {
       _object_starts[i].short_word = 0;

@@ -237,6 +237,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
                                                     HeapWord* tams, HeapWord* end_range_of_interest) const {
 
   HeapWord* left = _rs->addr_for_card_index(card_index);
+  assert(left < end_range_of_interest, "No meaningful work to do");
   ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
 
 #ifdef ASSERT
@@ -249,9 +250,14 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 
   HeapWord* right = MIN2(region->top(), end_range_of_interest);
   HeapWord* end_of_search_next = MIN2(right, tams);
-  size_t last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest);
-  if (_rs->addr_for_card_index(last_relevant_card_index) == end_range_of_interest) {
-    last_relevant_card_index--;
+  size_t last_relevant_card_index;
+  if (end_range_of_interest == _end_of_heap) {
+    last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest - 1);
+  } else {
+    last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest);
+    if (_rs->addr_for_card_index(last_relevant_card_index) == end_range_of_interest) {
+      last_relevant_card_index--;
+    }
   }
   assert(card_index <= last_relevant_card_index, "sanity: card_index: %zu, last_relevant: %zu, left: " PTR_FORMAT
          ", end_of_range: " PTR_FORMAT, card_index, last_relevant_card_index, p2i(left), p2i(end_range_of_interest));
