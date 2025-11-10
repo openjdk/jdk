@@ -375,7 +375,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
 /* pids_max
  *
  * Calculate the maximum number of tasks available to the process. Set the
- * value in the passed in 'value' reference. The value might be -1 when
+ * value in the passed in 'value' reference. The value might be 'value_unlimited' when
  * there is no limit.
  *
  * return:

@@ -2606,7 +2606,7 @@ bool os::Linux::print_container_info(outputStream* st) {
 
   supported = OSContainer::pids_max(j);
   st->print("maximum number of tasks: ");
-  if (supported && j > 0) {
+  if (supported && j != value_unlimited) {
     st->print_cr(UINT64_FORMAT, j);
   } else {
     st->print_cr("%s", !supported ? "not supported" : "unlimited");
