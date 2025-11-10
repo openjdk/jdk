@@ -270,11 +270,12 @@
                                                                             \
   product(uint64_t, MaxRAM, 0,                                              \
           "(Deprecated) Real memory size (in bytes) used to set maximum "   \
-          "heap size")                                                     \
+          "heap size")                                                      \
           range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
   product(bool, AggressiveHeap, false,                                      \
-          "Optimize heap options for long-running memory intensive apps")   \
+          "(Deprecated) Optimize heap options for long-running memory "     \
+          "intensive apps")                                                 \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
