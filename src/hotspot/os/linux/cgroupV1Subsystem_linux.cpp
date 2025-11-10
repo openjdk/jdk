@@ -545,8 +545,10 @@ bool CgroupV1CpuController::cpu_shares(int& result) {
     return false;
   }
   int shares_int = static_cast<int>(shares);
-  // Convert 1024 to no shares setup
-  if (shares_int == 1024) return false;
+  // Convert 1024 to no shares setup (-1)
+  if (shares_int == 1024) {
+    shares_int = -1;
+  }
 
   result = shares_int;
   return true;
