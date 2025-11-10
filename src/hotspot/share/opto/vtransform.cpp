@@ -26,6 +26,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
+#include "vtransform.hpp"
 #include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
@@ -62,7 +63,7 @@ void VTransformGraph::optimize(VTransform& vtransform) {
           // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
           // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
           // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
-          !(vtn->isa_LoopPhi() != nullptr ||
+          !(vtn->isa_PhiScalar() != nullptr ||
             vtn->is_load_or_store_in_loop() ||
             (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
         vtn->mark_dead();
@@ -123,8 +124,13 @@ bool VTransformGraph::schedule() {
         // Skip dead nodes
         if (!use->is_alive()) { continue; }
 
-        // Skip LoopPhi backedge.
-        if ((use->isa_LoopPhi() != nullptr || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) { continue; }
+        // Skip backedges.
+        if ((use->isa_PhiScalar() != nullptr ||
+             use->isa_PhiVector() != nullptr ||
+             use->isa_CountedLoop() != nullptr
+            ) && use->in_req(2) == vtn) {
+          continue;
+        }
 
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
@@ -848,7 +854,7 @@ VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& appl
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformPhiScalarNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   Node* in0 = apply_state.transformed_node(in_req(0));
   Node* in1 = apply_state.transformed_node(in_req(1));
@@ -862,7 +868,7 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
 // Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
 // we only have the transformed backedges after the phis are already transformed.
 // We hook the backedges into the phis now, during cleanup.
-void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) const {
+void VTransformPhiScalarNode::apply_backedge(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   if (_node->is_memory_phi()) {
     // Memory phi/backedge
@@ -1078,7 +1084,7 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 //       are performed inside the loop.
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform) {
   // We have a phi with a single use.
-  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  VTransformPhiScalarNode* phi = in_req(1)->isa_PhiScalar();
   if (phi == nullptr) {
     return false;
   }
@@ -1143,7 +1149,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       // All uses must be outside loop body, except for the phi.
       for (uint i = 0; i < current_red->out_strong_edges(); i++) {
         VTransformNode* use = current_red->out_strong_edge(i);
-        if (use->isa_LoopPhi() == nullptr &&
+        // TODO: this is not right
+        if (use->isa_PhiScalar() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
           assert(false, "reduction has use inside loop");
@@ -1198,16 +1205,27 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
   vtn_identity_vector->init_req(1, vtn_identity);
 
-  // Turn the scalar phi into a vector phi.
-  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
-  VTransformNode* init = phi->in_req(1);
-  phi->set_req(1, vtn_identity_vector);
+  // Look at old scalar phsai
+  VTransformPhiScalarNode* phi_scalar = in_req(1)->isa_PhiScalar();
+  PhiNode* old_phi = phi_scalar->node();
+  VTransformNode* init = phi_scalar->in_req(1);
+
+  TRACE_OPTIMIZE(
+    tty->print("  phi_scalar ");
+    phi_scalar->print();
+  )
+
+  // Create new vector phi
+  const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_for_phi_vector(old_phi, vlen, bt);
+  VTransformPhiVectorNode* phi_vector = new (vtransform.arena()) VTransformPhiVectorNode(vtransform, 3, properties);
+  phi_vector->init_req(0, phi_scalar->in_req(0));
+  phi_vector->init_req(1, vtn_identity_vector);
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
   VTransformReductionVectorNode* first_red   = this;
-  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* last_red    = phi_scalar->in_req(2)->isa_ReductionVector();
   VTransformReductionVectorNode* current_red = first_red;
-  VTransformNode* current_vector_accumulator = phi;
+  VTransformNode* current_vector_accumulator = phi_vector;
   while (true) {
     VTransformNode* vector_input = current_red->in_req(2);
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
@@ -1225,15 +1243,15 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   }
 
   // Feed vector accumulator into the backedge.
-  phi->set_req(2, current_vector_accumulator);
+  phi_vector->set_req(2, current_vector_accumulator);
 
   // Create post-loop reduction. last_red keeps all uses outside the loop.
   last_red->set_req(1, init);
   last_red->set_req(2, current_vector_accumulator);
 
   TRACE_OPTIMIZE(
-    tty->print("  phi        ");
-    phi->print();
+    tty->print("  phi_scalar ");
+    phi_scalar->print();
     tty->print("  after loop ");
     last_red->print();
   )
@@ -1248,6 +1266,39 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
 }
+
+VTransformApplyResult VTransformPhiVectorNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* in0 = apply_state.transformed_node(in_req(0));
+  Node* in1 = apply_state.transformed_node(in_req(1));
+
+  // We create a new phi node, because the type is different to the scalar phi.
+  PhiNode* old_phi = approximate_origin()->as_Phi();
+  PhiNode* new_phi = old_phi->clone()->as_Phi();
+
+  phase->igvn().replace_input_of(new_phi, 0, in0);
+  phase->igvn().replace_input_of(new_phi, 1, in1);
+  // Note: the backedge is hooked up later.
+
+  // Give the new phi node the correct vector type.
+  const TypeVect* vt = TypeVect::make(element_basic_type(), vector_length());
+  new_phi->as_Type()->set_type(vt);
+  phase->igvn().set_type(new_phi, vt);
+
+  return VTransformApplyResult::make_vector(new_phi, vt);
+}
+
+// Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
+// we only have the transformed backedges after the phis are already transformed.
+// We hook the backedges into the phis now, during cleanup.
+void VTransformPhiVectorNode::apply_backedge(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+
+  //// Data phi/backedge
+  //Node* in2 = apply_state.transformed_node(in_req(2));
+  //phase->igvn().replace_input_of(_node, 2, in2);
+}
+
 
 VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
   int sopc     = scalar_opcode();
@@ -1374,7 +1425,7 @@ void VTransformDataScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
-void VTransformLoopPhiNode::print_spec() const {
+void VTransformPhiScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 

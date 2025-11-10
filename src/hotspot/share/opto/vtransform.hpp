@@ -75,7 +75,7 @@ class VTransform;
 class VTransformNode;
 class VTransformMemopScalarNode;
 class VTransformDataScalarNode;
-class VTransformLoopPhiNode;
+class VTransformPhiScalarNode;
 class VTransformCFGNode;
 class VTransformCountedLoopNode;
 class VTransformOuterNode;
@@ -84,6 +84,7 @@ class VTransformElementWiseVectorNode;
 class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
+class VTransformPhiVectorNode;
 class VTransformMemVectorNode;
 class VTransformLoadVectorNode;
 class VTransformStoreVectorNode;
@@ -531,7 +532,7 @@ public:
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
-  virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
+  virtual VTransformPhiScalarNode* isa_PhiScalar() { return nullptr; }
   virtual VTransformCountedLoopNode* isa_CountedLoop() { return nullptr; }
   virtual VTransformOuterNode* isa_Outer() { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
@@ -539,6 +540,7 @@ public:
   virtual VTransformCmpVectorNode* isa_CmpVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
+  virtual VTransformPhiVectorNode* isa_PhiVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
   virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
   virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
@@ -601,20 +603,22 @@ public:
 };
 
 // Identity transform for loop head phi nodes.
-class VTransformLoopPhiNode : public VTransformNode {
+class VTransformPhiScalarNode : public VTransformNode {
 private:
   PhiNode* _node;
 public:
-  VTransformLoopPhiNode(VTransform& vtransform, PhiNode* n) :
+  VTransformPhiScalarNode(VTransform& vtransform, PhiNode* n) :
     VTransformNode(vtransform, n->req()), _node(n)
   {
     assert(_node->in(0)->is_Loop(), "phi ctrl must be Loop: %s", _node->in(0)->Name());
   }
 
-  virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
+  PhiNode* node() const { return _node; }
+
+  virtual VTransformPhiScalarNode* isa_PhiScalar() override { return this; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   virtual void apply_backedge(VTransformApplyState& apply_state) const override;
-  NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
+  NOT_PRODUCT(virtual const char* name() const override { return "PhiScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
@@ -735,6 +739,10 @@ public:
     return VTransformVectorNodeProperties(first, opc, vlen, bt);
   }
 
+  static VTransformVectorNodeProperties make_for_phi_vector(PhiNode* phi, int vlen, BasicType bt) {
+    return VTransformVectorNodeProperties(phi, phi->Opcode(), vlen, bt);
+  }
+
   Node* approximate_origin()     const { return _approximate_origin; }
   int scalar_opcode()            const { return _scalar_opcode; }
   uint vector_length()           const { return _vector_length; }
@@ -843,6 +851,16 @@ private:
   bool requires_strict_order() const;
   bool optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform);
   bool optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform);
+};
+
+class VTransformPhiVectorNode : public VTransformVectorNode {
+public:
+  VTransformPhiVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties) :
+    VTransformVectorNode(vtransform, req, properties) {}
+  virtual VTransformPhiVectorNode* isa_PhiVector() override { return this; }
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  virtual void apply_backedge(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "PhiVector"; };)
 };
 
 class VTransformMemVectorNode : public VTransformVectorNode {
