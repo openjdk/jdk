@@ -214,10 +214,8 @@ static bool suppress_primordial_thread_resolution = false;
 // utility functions
 
 bool os::available_memory(physical_memory_size_type& value) {
-  physical_memory_size_type avail_mem = 0;
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(avail_mem)) {
-    log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, avail_mem);
-    value = avail_mem;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+    log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
