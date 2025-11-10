@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id=all-flags
+ * @test id=all-flags-1
  * @bug 8371065
  * @summary A bug in VTransformLoopPhiNode::apply led us to copy the type of phi->in(1)
  *          which we did not expect to ever be a constant, but always the full type range.
@@ -30,7 +30,7 @@
  *          fold, and lead to wrong results.
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test
+ *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test*
  *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
  *      -XX:-TieredCompilation
  *      -XX:-UseOnStackReplacement
@@ -44,11 +44,11 @@
  */
 
 /*
- * @test id=fewer-flags
+ * @test id=fewer-flags-1
  * @bug 8371065
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test
+ *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test*
  *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
  *      -XX:-TieredCompilation
  *      -XX:-UseOnStackReplacement
@@ -61,11 +61,38 @@
  */
 
 /*
+ * @test id=all-flags-2
+ * @bug 8371065 8371472
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test*
+ *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
+ *      -XX:-TieredCompilation
+ *      -Xbatch
+ *      -XX:+StressIGVN
+ *      -XX:StressSeed=3497198372
+ *      compiler.loopopts.superword.TestLoopPhiApplyBadType
+ */
+
+/*
+ * @test id=fewer-flags-2
+ * @bug 8371065 8371472
+ * @run main/othervm
+ *      -XX:+IgnoreUnrecognizedVMOptions
+ *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test*
+ *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
+ *      -XX:-TieredCompilation
+ *      -Xbatch
+ *      -XX:+StressIGVN
+ *      compiler.loopopts.superword.TestLoopPhiApplyBadType
+ */
+
+/*
  * @test id=minimal-flags
  * @bug 8371065
  * @run main/othervm
  *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test
+ *      -XX:CompileCommand=compileonly,*TestLoopPhiApplyBadType::test*
  *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
  *      compiler.loopopts.superword.TestLoopPhiApplyBadType
  */
@@ -81,7 +108,7 @@ package compiler.loopopts.superword;
 public class TestLoopPhiApplyBadType {
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
-            int[] array = test();
+            int[] array = test1();
             int j;
             boolean abort = false;
             for (j = 0; j < array.length-2; j++) {
@@ -100,9 +127,17 @@ public class TestLoopPhiApplyBadType {
                 throw new RuntimeException("Failure");
             }
         }
+
+        int gold2 = test2();
+        for (int i = 0; i < 10; i++) {
+            int res = test2();
+            if (gold2 != res) {
+                throw new RuntimeException("Wrong value: " + res + " vs " + gold2);
+            }
+        }
     }
 
-    private static int[] test() {
+    private static int[] test1() {
         int limit = 2;
         for (; limit < 4; limit *= 2);
         int k = limit / 4;
@@ -131,6 +166,17 @@ public class TestLoopPhiApplyBadType {
             array[ii] = v | 1;
         }
         return array;
+    }
+
+    static int test2() {
+        int arr[] = new int[400];
+        int x = 34;
+        for (int i = 1; i < 50; i++) {
+            for (int k = 3; 201 > k; ++k) {
+                x += Math.min(k, arr[k - 1]);
+            }
+        }
+        return x;
     }
 
     private static void notInlined(int[] array) {
