@@ -518,7 +518,7 @@ void LambdaProxyClassDictionary::print_on(const char* prefix,
   if (!dictionary->empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, start_index);
-    dictionary->iterate(&ldp);
+    dictionary->iterate_all(&ldp);
   }
 }
 
