@@ -132,7 +132,7 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_fill_int_loop() {
+    public void segment_fill_int_long_loop() {
         for (int i = 0 ; i < segment.byteSize() ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, i, (byte)42);
         }
@@ -140,7 +140,15 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_fill_long_loop() {
+    public void segment_fill_int_int_loop() {
+        for (int i = 0 ; i < (int)segment.byteSize() ; i++) {
+            segment.set(ValueLayout.JAVA_BYTE, i, (byte)42);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_fill_long_long_loop() {
         for (long i = 0 ; i < segment.byteSize() ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, i, (byte)42);
         }
@@ -166,16 +174,27 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_copy_static_int_loop() {
-        for (int i = 0 ; i < ints.length ; i++) {
+    public void segment_copy_static_int_long_loop() {
+        long limit = bytesSegment.byteSize() / JAVA_INT_UNALIGNED.byteSize();
+        for (int i = 0 ; i < limit ; i++) {
             segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
         }
     }
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_copy_static_long_loop() {
-        for (long i = 0 ; i < ints.length ; i++) {
+    public void segment_copy_static_int_int_loop() {
+        long limit = bytesSegment.byteSize() / JAVA_INT_UNALIGNED.byteSize();
+        for (int i = 0 ; i < (int)limit ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_long_long_loop() {
+        long limit = bytesSegment.byteSize() / JAVA_INT_UNALIGNED.byteSize();
+        for (long i = 0 ; i < limit ; i++) {
             segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[(int)i]);
         }
     }
@@ -188,7 +207,15 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_copy_static_small_int_loop() {
+    public void segment_copy_static_small_int_long_loop() {
+        for (int i = 0 ; i < 10L ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_small_int_int_loop() {
         for (int i = 0 ; i < 10 ; i++) {
             segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
         }
@@ -196,7 +223,7 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void segment_copy_static_small_long_loop() {
+    public void segment_copy_static_small_long_long_loop() {
         for (long i = 0 ; i < 10 ; i++) {
             segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[(int)i]);
         }
@@ -242,7 +269,7 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public long mismatch_large_segment_int_loop() {
+    public long mismatch_large_segment_int_long_loop() {
         for (int i = 0 ; i < mismatchSegmentLarge1.byteSize() ; i++) {
             if (mismatchSegmentLarge1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentLarge2.get(ValueLayout.JAVA_BYTE, i)) {
                 return i;
@@ -253,7 +280,18 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public long mismatch_large_segment_long_loop() {
+    public long mismatch_large_segment_int_int_loop() {
+        for (int i = 0 ; i < (int)mismatchSegmentLarge1.byteSize() ; i++) {
+            if (mismatchSegmentLarge1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentLarge2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_large_segment_long_long_loop() {
         for (long i = 0 ; i < mismatchSegmentLarge1.byteSize() ; i++) {
             if (mismatchSegmentLarge1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentLarge2.get(ValueLayout.JAVA_BYTE, i)) {
                 return i;
@@ -276,7 +314,7 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public long mismatch_small_segment_int_loop() {
+    public long mismatch_small_segment_int_long_loop() {
         for (int i = 0 ; i < mismatchSegmentSmall1.byteSize() ; i++) {
             if (mismatchSegmentSmall1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentSmall2.get(ValueLayout.JAVA_BYTE, i)) {
                 return i;
@@ -287,7 +325,18 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public long mismatch_small_segment_long_loop() {
+    public long mismatch_small_segment_int_int_loop() {
+        for (int i = 0 ; i < (int)mismatchSegmentSmall1.byteSize() ; i++) {
+            if (mismatchSegmentSmall1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentSmall2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_small_segment_long_long_loop() {
         for (long i = 0 ; i < mismatchSegmentSmall1.byteSize() ; i++) {
             if (mismatchSegmentSmall1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentSmall2.get(ValueLayout.JAVA_BYTE, i)) {
                 return i;
