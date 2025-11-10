@@ -61,6 +61,10 @@ public enum HtmlTag {
 
     ADDRESS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+    
+    AREA(BlockType.INLINE, EndKind.NONE,
+    		attrs(AttrKind.OK, ALT, COORDS, HREF,
+    				REL, SHAPE, TARGET, TYPE)),
 
     ARTICLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
@@ -204,7 +208,7 @@ public enum HtmlTag {
     IFRAME(BlockType.OTHER, EndKind.REQUIRED),
 
     IMG(BlockType.INLINE, EndKind.NONE,
-            attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
+            attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN, USEMAP),
             attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
     INPUT(BlockType.INLINE, EndKind.NONE,
@@ -228,6 +232,14 @@ public enum HtmlTag {
             attrs(AttrKind.OK, REL)),
 
     MAIN(BlockType.OTHER, EndKind.REQUIRED),
+    
+    MAP(BlockType.BLOCK, EndKind.REQUIRED,
+    		attrs(AttrKind.OK, NAME)) {
+    	@Override
+    	public boolean accepts(HtmlTag t) {
+    		return (t == AREA);
+    	}
+    },
 
     MARK(BlockType.INLINE, EndKind.REQUIRED),
 

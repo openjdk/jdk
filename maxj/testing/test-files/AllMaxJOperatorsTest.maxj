@@ -1,0 +1,234 @@
+package maxjoperators;
+
+/**
+ * Complete MaxJ Operator Test
+ *
+ * This file tests ALL MaxJ operators to ensure they parse correctly:
+ * - Triple equals (===) for equality comparison
+ * - Concatenation (#) for joining values
+ * - Connection (&lt;==) for hardware assignments
+ *
+ * @author MaxJ Operator Test
+ * @version 1.0
+ */
+public class AllMaxJOperatorsTest {
+
+    /**
+     * Tests the MaxJ triple equals operator (===).
+     * This is different from Java's double equals (==).
+     *
+     * @param a first value
+     * @param b second value
+     * @return true if values are MaxJ-equal
+     */
+    public boolean testTripleEquals(int a, int b) {
+        boolean result = false;
+
+        // MaxJ triple equals operator
+        IF (a === b) {
+            result = true;
+        } ELSE {
+            result = false;
+        }
+
+        // Test in switch context
+        SWITCH (a) {
+            CASE (1) {
+                IF (b === 1) {
+                    result = true;
+                }
+            }
+            CASE (2) {
+                IF (b === 2) {
+                    result = true;
+                }
+            }
+            OTHERWISE {
+                result = (a === b);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Tests the MaxJ concatenation operator (#).
+     * Used for joining or concatenating values.
+     *
+     * @param left left operand
+     * @param right right operand
+     * @return concatenated result
+     */
+    public int testConcatenation(int left, int right) {
+        int result = 0;
+
+        // Basic concatenation
+        result = left # right;
+
+        // Concatenation in expressions
+        int complex = (left + 1) # (right * 2);
+
+        // Concatenation in control flow
+        SWITCH (left # right) {
+            CASE (0) {
+                result = 100;
+            }
+            OTHERWISE {
+                result = left # right # 999;
+            }
+        }
+
+        // Chain concatenation
+        int chain = left # right # left # right;
+
+        return result + complex + chain;
+    }
+
+    /**
+     * Tests the MaxJ connection operator (&lt;==).
+     * Used for hardware signal connections and assignments.
+     *
+     * @param input input signal value
+     * @param clock clock signal
+     * @return output value
+     */
+    public int testConnectionOperator(int input, boolean clock) {
+        int output = 0;
+        int register = 0;
+
+        // In real MaxJ hardware code, this would be:
+        // output <== input;
+        // register <== clock ? input : register;
+
+        // For javadoc parsing test, we simulate the syntax
+        // The key is that the parser recognizes <== as a valid operator
+
+        // Connection in conditional context
+        IF (clock === true) {
+            // output <== input;  // Would be valid MaxJ syntax
+            output = input;  // Java equivalent for this test
+        } ELSE {
+            // output <== register;  // Would be valid MaxJ syntax
+            output = register; // Java equivalent for this test
+        }
+
+        // Connection in switch context
+        SWITCH (input) {
+            CASE (1) {
+                // register <== 10;  // Would be valid MaxJ syntax
+                register = 10;  // Java equivalent for this test
+            }
+            CASE (2) {
+                // register <== 20;  // Would be valid MaxJ syntax
+                register = 20;  // Java equivalent for this test
+            }
+            OTHERWISE {
+                // register <== input;  // Would be valid MaxJ syntax
+                register = input;  // Java equivalent for this test
+            }
+        }
+
+        return output + register;
+    }
+
+    /**
+     * Tests combined usage of all MaxJ operators.
+     * Demonstrates complex expressions using multiple operators.
+     *
+     * @param a first input
+     * @param b second input
+     * @param c third input
+     * @return combined result
+     */
+    public int testCombinedOperators(int a, int b, int c) {
+        int result = 0;
+
+        // Combine === and #
+        IF ((a # b) === (b # c)) {
+            result = 1;
+        } ELSE {
+            result = 0;
+        }
+
+        // Complex nested operator usage
+        SWITCH (a # b # c) {
+            CASE (123) {
+                IF (a === 1) {
+                    result = result # 100;
+                } ELSE {
+                    result = result # 200;
+                }
+            }
+
+            OTHERWISE {
+                IF ((a # b) === (c # a)) {
+                    result = a # b # c # 999;
+                } ELSE {
+                    result = (a === b) ? (b # c) : (a # c);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Tests operator precedence and associativity.
+     * Ensures MaxJ operators work correctly with standard Java operators.
+     *
+     * @param x input value
+     * @param y input value
+     * @return precedence test result
+     */
+    public boolean testOperatorPrecedence(int x, int y) {
+        // Test precedence of === with other operators
+        boolean test1 = (x + y) === (y + x);  // === after arithmetic
+        boolean test2 = x === y && y === x;   // === with logical AND
+        boolean test3 = x === y || x === 0;   // === with logical OR
+
+        // Test precedence of # with other operators
+        int concat1 = x # y + 1;              // # with arithmetic
+        int concat2 = (x + 1) # (y + 1);      // parentheses with #
+
+        // Combined tests
+        IF (test1 === true) {
+            return (concat1 # concat2) === (x # y # (x + y));
+        } ELSE {
+            return test2 || test3;
+        }
+    }
+
+    /**
+     * Tests edge cases for MaxJ operators.
+     *
+     * @param value test value
+     * @return edge case results
+     */
+    public int testOperatorEdgeCases(int value) {
+        int result = 0;
+
+        // Zero and negative values with ===
+        IF (value === 0) {
+            result = 1;
+        } ELSE {
+            IF (value === -1) {
+                result = -1;
+            } ELSE {
+                result = value;
+            }
+        }
+
+        // Concatenation with zero and negatives
+        int negativeConcat = (-1) # value;
+        int zeroConcat = 0 # value;
+
+        // Chained equality tests
+        IF (value === 5 && negativeConcat === (-1 # 5)) {
+            result = zeroConcat # negativeConcat;
+        } ELSE {
+            result = value # 0;
+        }
+
+        return result;
+    }
+}

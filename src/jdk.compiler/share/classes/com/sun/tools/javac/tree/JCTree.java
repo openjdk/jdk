@@ -151,11 +151,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         /** Switch statements, of type Switch.
          */
-        SWITCH,
+        _SWITCH,
 
         /** Case parts in switch statements/expressions, of type Case.
          */
-        CASE,
+        _CASE,
 
         /** Switch expression statements, of type Switch.
          */
@@ -179,7 +179,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         /** Conditional statements, of type If.
          */
-        IF,
+        _IF,
 
         /** Expression statements, of type Exec.
          */
@@ -347,8 +347,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         BITOR,                           // |
         BITXOR,                          // ^
         BITAND,                          // &
+        CONCAT,                          // #
         EQ,                              // ==
+        EQ_EQ,                            // ===
         NE,                              // !=
+        NE_EQ,                           // !==
         LT,                              // <
         GT,                              // >
         LE,                              // <=
@@ -376,6 +379,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         MUL_ASG(MUL),                    // *=
         DIV_ASG(DIV),                    // /=
         MOD_ASG(MOD),                    // %=
+        LE_ASG(LE),                      // <==
 
         MODULEDEF,
         EXPORTS,
@@ -1352,7 +1356,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void accept(Visitor v) { v.visitSwitch(this); }
 
         @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() { return Kind.SWITCH; }
+        public Kind getKind() { return Kind._SWITCH; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return selector; }
         @DefinedBy(Api.COMPILER_TREE)
@@ -1363,7 +1367,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return SWITCH;
+            return _SWITCH;
         }
     }
 
@@ -1396,7 +1400,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void accept(Visitor v) { v.visitCase(this); }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() { return Kind.CASE; }
+        public Kind getKind() { return Kind._CASE; }
         @Override @Deprecated @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return getExpressions().head; }
 
@@ -1428,7 +1432,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return CASE;
+            return _CASE;
         }
     }
 
@@ -1625,7 +1629,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void accept(Visitor v) { v.visitIf(this); }
 
         @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() { return Kind.IF; }
+        public Kind getKind() { return Kind._IF; }
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getCondition() { return cond; }
         @DefinedBy(Api.COMPILER_TREE)
@@ -1638,7 +1642,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return IF;
+            return _IF;
         }
     }
 

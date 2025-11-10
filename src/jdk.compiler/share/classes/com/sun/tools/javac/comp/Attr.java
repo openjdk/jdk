@@ -1898,7 +1898,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSwitchCaseStructure(cases);
                 chk.checkSwitchCaseLabelDominated(unconditionalCaseLabel, cases);
             }
-            if (switchTree.hasTag(SWITCH)) {
+            if (switchTree.hasTag(_SWITCH)) {
                 ((JCSwitch) switchTree).hasUnconditionalPattern =
                         hasDefault || hasUnconditionalPattern || lastPatternErroneous;
                 ((JCSwitch) switchTree).patternSwitch = patternSwitch;
@@ -2461,7 +2461,7 @@ public class Attr extends JCTree.Visitor {
                     case FOREACHLOOP:
                         if (label == null) return Pair.of(env1.tree, pendingError);
                         break;
-                    case SWITCH:
+                    case _SWITCH:
                         if (label == null && tag == BREAK) return Pair.of(env1.tree, null);
                         break;
                     case SWITCH_EXPRESSION:

@@ -415,7 +415,7 @@ public class TreeInfo {
             case ASSIGN:
             case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
             case SL_ASG: case SR_ASG: case USR_ASG:
-            case PLUS_ASG: case MINUS_ASG:
+            case PLUS_ASG: case MINUS_ASG: case LE_ASG:
             case MUL_ASG: case DIV_ASG: case MOD_ASG:
             case APPLY: case NEWCLASS:
             case ERRONEOUS:
@@ -520,7 +520,7 @@ public class TreeInfo {
             JCTry t = (JCTry) tree;
             return endPos((t.finalizer != null) ? t.finalizer
                           : (t.catchers.nonEmpty() ? t.catchers.last().body : t.body));
-        } else if (tree.hasTag(SWITCH) &&
+        } else if (tree.hasTag(_SWITCH) &&
                    ((JCSwitch) tree).bracePos != Position.NOPOS) {
             return ((JCSwitch) tree).bracePos;
         } else if (tree.hasTag(SWITCH_EXPRESSION) &&
@@ -558,10 +558,10 @@ public class TreeInfo {
             case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
             case SL_ASG: case SR_ASG: case USR_ASG:
             case PLUS_ASG: case MINUS_ASG: case MUL_ASG:
-            case DIV_ASG: case MOD_ASG:
+            case DIV_ASG: case MOD_ASG: case LE_ASG:
             case OR: case AND: case BITOR:
-            case BITXOR: case BITAND: case EQ:
-            case NE: case LT: case GT:
+            case BITXOR: case BITAND: case EQ: case EQ_EQ:
+            case NE: case LT: case GT: case NE_EQ:
             case LE: case GE: case SL:
             case SR: case USR: case PLUS:
             case MINUS: case MUL: case DIV:
@@ -659,10 +659,10 @@ public class TreeInfo {
             case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
             case SL_ASG: case SR_ASG: case USR_ASG:
             case PLUS_ASG: case MINUS_ASG: case MUL_ASG:
-            case DIV_ASG: case MOD_ASG:
+            case DIV_ASG: case MOD_ASG: case LE_ASG:
             case OR: case AND: case BITOR:
-            case BITXOR: case BITAND: case EQ:
-            case NE: case LT: case GT:
+            case BITXOR: case BITAND: case EQ: case EQ_EQ:
+            case NE: case LT: case GT: case NE_EQ:
             case LE: case GE: case SL:
             case SR: case USR: case PLUS:
             case MINUS: case MUL: case DIV:
@@ -674,7 +674,7 @@ public class TreeInfo {
             case PREINC:
             case PREDEC:
                 return getEndPos(((JCOperatorExpression) tree).getOperand(RIGHT), endPosTable);
-            case CASE:
+            case _CASE:
                 return getEndPos(((JCCase) tree).stats.last(), endPosTable);
             case CATCH:
                 return getEndPos(((JCCatch) tree).body, endPosTable);
@@ -684,7 +684,7 @@ public class TreeInfo {
                 return getEndPos(((JCForLoop) tree).body, endPosTable);
             case FOREACHLOOP:
                 return getEndPos(((JCEnhancedForLoop) tree).body, endPosTable);
-            case IF: {
+            case _IF: {
                 JCIf node = (JCIf)tree;
                 if (node.elsepart == null) {
                     return getEndPos(node.thenpart, endPosTable);
@@ -898,7 +898,7 @@ public class TreeInfo {
         do t = ((JCLabeledStatement) t).body;
         while (t.hasTag(LABELLED));
         switch (t.getTag()) {
-        case DOLOOP: case WHILELOOP: case FORLOOP: case FOREACHLOOP: case SWITCH:
+        case DOLOOP: case WHILELOOP: case FORLOOP: case FOREACHLOOP: case _SWITCH:
             return t;
         default:
             return tree;
@@ -1169,10 +1169,13 @@ public class TreeInfo {
         case MINUS_ASG:
         case MUL_ASG:
         case DIV_ASG:
+        case LE_ASG:
         case MOD_ASG: return assignopPrec;
         case OR: return orPrec;
         case AND: return andPrec;
         case EQ:
+        case EQ_EQ:
+        case NE_EQ:
         case NE: return eqPrec;
         case LT:
         case GT:
@@ -1183,6 +1186,7 @@ public class TreeInfo {
         case BITAND: return bitandPrec;
         case SL:
         case SR:
+        case CONCAT:
         case USR: return shiftPrec;
         case PLUS:
         case MINUS: return addPrec;
@@ -1253,7 +1257,11 @@ public class TreeInfo {
         // Equality operators
         case EQ:                // ==
             return Tree.Kind.EQUAL_TO;
+        case EQ_EQ:             // ===
+            return Tree.Kind.EQUAL_TO;
         case NE:                // !=
+            return Tree.Kind.NOT_EQUAL_TO;
+        case NE_EQ:             // !==
             return Tree.Kind.NOT_EQUAL_TO;
 
         // Bitwise and logical operators
@@ -1263,6 +1271,8 @@ public class TreeInfo {
             return Tree.Kind.XOR;
         case BITOR:             // |
             return Tree.Kind.OR;
+        case CONCAT:               // #
+            return Tree.Kind.CAT;
 
         // Conditional operators
         case AND:               // &&
@@ -1275,6 +1285,8 @@ public class TreeInfo {
             return Tree.Kind.MULTIPLY_ASSIGNMENT;
         case DIV_ASG:           // /=
             return Tree.Kind.DIVIDE_ASSIGNMENT;
+        case LE_ASG:            // <=
+            return Tree.Kind.LE_ASSIGNMENT;
         case MOD_ASG:           // %=
             return Tree.Kind.REMAINDER_ASSIGNMENT;
         case PLUS_ASG:          // +=

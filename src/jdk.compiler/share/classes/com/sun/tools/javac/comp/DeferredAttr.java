@@ -1161,8 +1161,8 @@ public class DeferredAttr extends JCTree.Visitor {
     static class LambdaReturnScanner extends FilterScanner {
 
         LambdaReturnScanner() {
-            super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
-                    FORLOOP, IF, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
+            super(EnumSet.of(BLOCK, _CASE, CATCH, DOLOOP, FOREACHLOOP,
+                    FORLOOP, _IF, RETURN, SYNCHRONIZED, _SWITCH, TRY, WHILELOOP));
         }
     }
 
@@ -1173,8 +1173,8 @@ public class DeferredAttr extends JCTree.Visitor {
     static class SwitchExpressionScanner extends FilterScanner {
 
         SwitchExpressionScanner() {
-            super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
-                    FORLOOP, IF, SYNCHRONIZED, SWITCH, TRY, WHILELOOP, YIELD));
+            super(EnumSet.of(BLOCK, _CASE, CATCH, DOLOOP, FOREACHLOOP,
+                    FORLOOP, _IF, SYNCHRONIZED, _SWITCH, TRY, WHILELOOP, YIELD));
         }
     }
 

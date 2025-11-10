@@ -55,6 +55,7 @@ import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.ASSERT;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CASE;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.MAXJCASE;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.CATCH;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
@@ -423,18 +424,23 @@ public class JavacParser implements Parser {
                         return;
                     break;
                 case CASE:
+                case MAXJCASE:
                 case DEFAULT:
+                case MAXJDEFAULT:
                 case IF:
+                case MAXJIF:
                 case FOR:
                 case WHILE:
                 case DO:
                 case TRY:
                 case SWITCH:
+                case MAXJSWITCH:
                 case RETURN:
                 case THROW:
                 case BREAK:
                 case CONTINUE:
                 case ELSE:
+                case MAXJELSE:
                 case FINALLY:
                 case CATCH:
                 case THIS:
@@ -1154,6 +1160,7 @@ public class JavacParser implements Parser {
             JCExpression t1 = term();
             return toP(F.at(pos).Assign(t, t1));
         }
+        case CONNECT:
         case PLUSEQ:
         case SUBEQ:
         case STAREQ:
@@ -1608,6 +1615,16 @@ public class JavacParser implements Parser {
                                 if (!annos.isEmpty()) t = illegal(annos.head.pos);
                                 t = to(F.at(pos).Indexed(t, t1));
                             }
+                            // MAXJ : the following changes add the option for array slicing [:]
+                            if (token.kind == COLON) {
+                                accept(COLON);
+                                if (isMode(EXPR)) {
+                                    selectExprMode();
+                                    JCExpression t1 = term();
+                                    if (!annos.isEmpty()) t = illegal(annos.head.pos);
+                                    t = to(F.at(pos).Indexed(t, t1));
+                                }
+                            }
                             accept(RBRACKET);
                         }
                         break loop;
@@ -1864,6 +1881,15 @@ public class JavacParser implements Parser {
                     selectExprMode();
                     JCExpression t1 = term();
                     t = to(F.at(pos1).Indexed(t, t1));
+                }
+                // MAXJ : this
+                if (token.kind == COLON) {
+                    accept(COLON);
+                    if (isMode(EXPR)) {
+                        selectExprMode();
+                        JCExpression t1 = term();
+                        t = to(F.at(pos1).Indexed(t, t1));
+                    }
                 }
                 accept(RBRACKET);
             } else if (token.kind == DOT) {
@@ -2928,11 +2954,11 @@ public class JavacParser implements Parser {
         Comment dc;
         int pos = token.pos;
         switch (token.kind) {
-        case RBRACE: case CASE: case DEFAULT: case EOF:
+        case RBRACE: case CASE: case DEFAULT: case MAXJCASE: case MAXJDEFAULT: case EOF:
             return List.nil();
-        case LBRACE: case IF: case FOR: case WHILE: case DO: case TRY:
-        case SWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
-        case CONTINUE: case SEMI: case ELSE: case FINALLY: case CATCH:
+        case LBRACE: case IF: case MAXJIF: case FOR: case WHILE: case DO: case TRY:
+        case SWITCH: case MAXJSWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
+        case CONTINUE: case SEMI: case ELSE: case MAXJELSE: case FINALLY: case CATCH:
         case ASSERT:
             return List.of(parseSimpleStatement());
         case MONKEYS_AT:
@@ -3102,6 +3128,17 @@ public class JavacParser implements Parser {
             }
             return F.at(pos).If(cond, thenpart, elsepart);
         }
+        case MAXJIF: {
+            nextToken();
+            JCExpression cond = parExpression();
+            JCStatement thenpart = parseStatementAsBlock();
+            JCStatement elsepart = null;
+            if (token.kind == MAXJELSE) {
+                nextToken();
+                elsepart = parseStatementAsBlock();
+            }
+            return F.at(pos).If(cond, thenpart, elsepart);
+        }
         case FOR: {
             nextToken();
             accept(LPAREN);
@@ -3175,6 +3212,16 @@ public class JavacParser implements Parser {
             accept(RBRACE);
             return t;
         }
+        case MAXJSWITCH: {
+            nextToken();
+            JCExpression selector = parExpression();
+            accept(LBRACE);
+            List<JCCase> cases = maxjSwitchBlockStatementGroups();
+            JCSwitch t = to(F.at(pos).Switch(selector, cases));
+            t.bracePos = token.endPos;
+            accept(RBRACE);
+            return t;
+        }
         case SYNCHRONIZED: {
             nextToken();
             JCExpression lock = parExpression();
@@ -3216,6 +3263,10 @@ public class JavacParser implements Parser {
             int elsePos = token.pos;
             nextToken();
             return doRecover(elsePos, BasicErrorRecoveryAction.BLOCK_STMT, Errors.ElseWithoutIf);
+        case MAXJELSE:
+            int maxjElsePos = token.pos;
+            nextToken();
+            return doRecover(maxjElsePos, BasicErrorRecoveryAction.BLOCK_STMT, Errors.ElseWithoutIf);
         case FINALLY:
             int finallyPos = token.pos;
             nextToken();
@@ -3371,6 +3422,52 @@ public class JavacParser implements Parser {
                 storeEnd(c, S.prevToken().endPos);
             return cases.append(c).toList();
         }
+        }
+        throw new AssertionError("should not reach here");
+    }
+
+    List<JCCase> maxjSwitchBlockStatementGroups() {
+        ListBuffer<JCCase> cases = new ListBuffer<>();
+        while (true) {
+            int pos = token.pos;
+            switch (token.kind) {
+            case MAXJCASE:
+            case MAXJDEFAULT:
+                cases.append(maxjSwitchBlockStatementGroup());
+                break;
+            case RBRACE: case EOF:
+                return cases.toList();
+            default:
+                nextToken(); // to ensure progress
+                syntaxError(pos, Errors.Expected3(MAXJCASE, MAXJDEFAULT, RBRACE));
+            }
+        }
+    }
+
+    protected JCCase maxjSwitchBlockStatementGroup() {
+        int pos = token.pos;
+        List<JCStatement> stats;
+        JCCase c;
+        switch (token.kind) {
+        case MAXJCASE:
+            nextToken();
+            JCExpression pat = parseExpression();
+            accept(LBRACE);
+            stats = blockStatements();
+            c = F.at(pos).Case(JCCase.STATEMENT, List.of(F.at(pat.pos).ConstantCaseLabel(pat)), null, stats, null);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            accept(RBRACE);
+            return c;
+        case MAXJDEFAULT:
+            nextToken();
+            accept(LBRACE);
+            stats = blockStatements();
+            c = F.at(pos).Case(JCCase.STATEMENT, List.of(F.at(pos).DefaultCaseLabel()), null, stats, null);
+            if (stats.isEmpty())
+                storeEnd(c, S.prevToken().endPos);
+            accept(RBRACE);
+            return c;
         }
         throw new AssertionError("should not reach here");
     }
@@ -5517,14 +5614,20 @@ public class JavacParser implements Parser {
             return BITAND_ASG;
         case EQEQ:
             return JCTree.Tag.EQ;
+        case EQEQEQ:
+            return JCTree.Tag.EQ_EQ;
         case BANGEQ:
             return NE;
+        case BANGEQEQ:
+            return JCTree.Tag.NE_EQ;
         case LT:
             return JCTree.Tag.LT;
         case GT:
             return JCTree.Tag.GT;
         case LTEQ:
             return LE;
+        case CONNECT:
+            return JCTree.Tag.LE_ASG;
         case GTEQ:
             return GE;
         case LTLT:
@@ -5549,6 +5652,8 @@ public class JavacParser implements Parser {
             return MINUS_ASG;
         case STAR:
             return MUL;
+        case CAT:
+            return JCTree.Tag.CONCAT;
         case STAREQ:
             return MUL_ASG;
         case SLASH:

@@ -657,7 +657,7 @@ public class TransPatterns extends TreeTranslator {
                         c.completesNormally;
             }
 
-            if (tree.hasTag(Tag.SWITCH)) {
+            if (tree.hasTag(Tag._SWITCH)) {
                 ((JCSwitch) tree).selector = selector;
                 ((JCSwitch) tree).cases = cases;
                 ((JCSwitch) tree).wasEnumSelector = enumSelector;
@@ -675,7 +675,7 @@ public class TransPatterns extends TreeTranslator {
             }
             return ;
         }
-        if (tree.hasTag(Tag.SWITCH)) {
+        if (tree.hasTag(Tag._SWITCH)) {
             super.visitSwitch((JCSwitch) tree);
         } else {
             super.visitSwitchExpression((JCSwitchExpression) tree);

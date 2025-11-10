@@ -784,7 +784,7 @@ public enum Option {
     SOURCEFILE("sourcefile", null, HIDDEN, INFO) {
         @Override
         public boolean matches(String s) {
-            if (s.endsWith(".java"))  // Java source file
+            if (s.endsWith(".java") || s.endsWith(".maxj"))  // Java source file or MaxJ source file
                 return true;
             int sep = s.indexOf('/');
             if (sep != -1) {
@@ -796,7 +796,7 @@ public enum Option {
         }
         @Override
         public void process(OptionHelper helper, String option) throws InvalidValueException {
-            if (option.endsWith(".java") ) {
+            if (option.endsWith(".java") || option.endsWith(".maxj")) { // Java source file or MaxJ source file
                 try {
                     Path p = Paths.get(option);
                     if (!Files.exists(p)) {

@@ -1,0 +1,18 @@
+suite: Maxjdoc
+tests:
+- name: build
+  tags:
+    - daily
+  commands:
+    - bash configure
+    - make jdk.javadoc
+    - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/
+    - cp -vR build/linux-x86_64-server-release ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  sharedEnvironment:
+      MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  localEnvironment:
+      JAVA_HOME: /network-raid/opt/java/jdk-25.0.1
+  clusterParameters:
+    cpus: 1.0
+    mem: 1024.0
+    rocky9: 1.0

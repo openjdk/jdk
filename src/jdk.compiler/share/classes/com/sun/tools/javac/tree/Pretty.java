@@ -1310,14 +1310,18 @@ public class Pretty extends JCTree.Visitor {
             case OR:      return "||";
             case AND:     return "&&";
             case EQ:      return "==";
+            case EQ_EQ:  return "===";
             case NE:      return "!=";
+            case NE_EQ:   return "!==";
             case LT:      return "<";
             case GT:      return ">";
             case LE:      return "<=";
+            case LE_ASG:  return "<==";
             case GE:      return ">=";
             case BITOR:   return "|";
             case BITXOR:  return "^";
             case BITAND:  return "&";
+            case CONCAT:  return "#";
             case SL:      return "<<";
             case SR:      return ">>";
             case USR:     return ">>>";
