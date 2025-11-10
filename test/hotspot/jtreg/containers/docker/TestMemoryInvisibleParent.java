@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025, IBM
+ * Copyright (C) 2025, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class TestMemoryInvisibleParent {
         }
         opts.addDockerOpts("--cgroup-parent=/" + cgroupParent);
         Common.run(opts)
-            .shouldContain("Hierarchical Memory Limit is: " + expectedValue);
+              .shouldContain("Hierarchical Memory Limit is: " + expectedValue);
         } finally {
             // Reset the parent memory limit to unlimited (-1)
             setParentWithLimit(UNLIMITED);
