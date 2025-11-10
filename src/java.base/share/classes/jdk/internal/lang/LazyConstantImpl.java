@@ -26,6 +26,7 @@
 package jdk.internal.lang;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -39,6 +40,7 @@ import java.util.function.Supplier;
  * @implNote This implementation can be used early in the boot sequence as it does not
  * rely on reflection, MethodHandles, Streams etc.
  */
+@AOTSafeClassInitializer
 public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     // Unsafe allows `LazyConstant` instances to be used early in the boot sequence

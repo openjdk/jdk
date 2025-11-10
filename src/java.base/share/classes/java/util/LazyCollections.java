@@ -27,6 +27,7 @@ package java.util;
 
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -42,6 +43,7 @@ import java.util.function.Supplier;
 /**
  * Container class for lazy collections implementations. Not part of the public API.
  */
+@AOTSafeClassInitializer
 final class LazyCollections {
 
     /**
@@ -614,6 +616,7 @@ final class LazyCollections {
      *
      * @param <U> the underlying function type
      */
+    @AOTSafeClassInitializer
     static final class FunctionHolder<U> {
 
         private static final long COUNTER_OFFSET = UNSAFE.objectFieldOffset(FunctionHolder.class, "counter");
