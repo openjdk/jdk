@@ -242,6 +242,28 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_large_segment_int_loop() {
+        for (int i = 0 ; i < mismatchSegmentLarge1.byteSize() ; i++) {
+            if (mismatchSegmentLarge1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentLarge2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_large_segment_long_loop() {
+        for (long i = 0 ; i < mismatchSegmentLarge1.byteSize() ; i++) {
+            if (mismatchSegmentLarge1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentLarge2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int mismatch_large_bytebuffer() {
         return mismatchBufferLarge1.mismatch(mismatchBufferLarge2);
     }
@@ -250,6 +272,28 @@ public class BulkOps {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public long mismatch_small_segment() {
         return mismatchSegmentSmall1.mismatch(mismatchSegmentSmall2);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_small_segment_int_loop() {
+        for (int i = 0 ; i < mismatchSegmentSmall1.byteSize() ; i++) {
+            if (mismatchSegmentSmall1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentSmall2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long mismatch_small_segment_long_loop() {
+        for (long i = 0 ; i < mismatchSegmentSmall1.byteSize() ; i++) {
+            if (mismatchSegmentSmall1.get(ValueLayout.JAVA_BYTE, i) != mismatchSegmentSmall2.get(ValueLayout.JAVA_BYTE, i)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Benchmark
