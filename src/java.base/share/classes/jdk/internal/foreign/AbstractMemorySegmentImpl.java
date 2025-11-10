@@ -406,8 +406,8 @@ public abstract sealed class AbstractMemorySegmentImpl
                         return policy.makeException(this, off, len);
                     }
             );
-        } else if (!policy.isValid(offset, length, this.length)) {
-            throw policy.makeException(this, offset, length);
+        } else {
+            policy.validate(this, offset, length);
         }
     }
 
@@ -511,7 +511,15 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private interface BoundPolicy {
-        boolean isValid(long offset, long length, long totalLength);
+        default void validate(AbstractMemorySegmentImpl segment, long offset, long length) {
+            if (!isValid(offset, length, segment.length)) {
+                throw makeException(segment, offset, length);
+            }
+        }
+
+        default boolean isValid(long offset, long length, long totalLength) {
+            return length >= 0 && offset >= 0 && offset <= totalLength - length;
+        }
 
         String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length);
 
@@ -522,11 +530,6 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     private static final BoundPolicy ACCESS_POLICY = new BoundPolicy() {
         @Override
-        public boolean isValid(long offset, long length, long totalLength) {
-            return length > 0 && offset >= 0 && offset <= totalLength - length;
-        }
-
-        @Override
         public String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length) {
             return String.format("Out of bound access on segment %s; " +
                             "attempting to access an element of length %d at offset %d " +
@@ -536,11 +539,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     };
 
     private final static BoundPolicy SLICE_POLICY = new BoundPolicy() {
-        @Override
-        public boolean isValid(long offset, long length, long totalLength) {
-            return length >= 0 && offset >= 0 && offset <= totalLength - length;
-        }
-
         @Override
         public String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length) {
             return String.format("Out of bound access on segment %s; " +
