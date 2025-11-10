@@ -971,8 +971,8 @@ final class AES_Crypt extends SymmetricCipher {
     /**
      * Generate the inverse cipher round keys.
      *
-     * @param w [in] the targeted word for substituion.
-     * @param rounds [in] the number rounds for generating the round keys.
+     * @param w [in] the targeted word for substitution.
+     * @param rounds [in] the number of rounds for generating the round keys.
      *
      * @return the inverse cipher round keys.
      */
@@ -1008,9 +1008,9 @@ final class AES_Crypt extends SymmetricCipher {
     }
 
     /**
-     * Subtitute the word as a step of key expansion.
+     * Substitute the word as a step of key expansion.
      *
-     * @param word [in] the targeted word for substituion.
+     * @param word [in] the targeted word for substitution.
      *
      * @return the substituted word.
      */
