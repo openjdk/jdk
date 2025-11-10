@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -246,15 +247,19 @@ public class JlinkTask {
     /**
      * Read the release.txt from the module.
      */
-    private static Optional<String> getReleaseInfo(ModuleReference mref) throws IOException {
-        Optional<InputStream> release = mref.open().open(JDK_RELEASE_RESOURCE);
+    private static Optional<String> getReleaseInfo(ModuleReference mref) {
+        try {
+            Optional<InputStream> release = mref.open().open(JDK_RELEASE_RESOURCE);
 
-        if (release.isEmpty()) {
-            return Optional.empty();
-        }
+            if (release.isEmpty()) {
+                return Optional.empty();
+            }
 
-        try (var r = new BufferedReader(new InputStreamReader(release.get()))) {
-            return Optional.of(r.readLine());
+            try (var r = new BufferedReader(new InputStreamReader(release.get()))) {
+                return Optional.of(r.readLine());
+            }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
         }
     }
 
@@ -429,7 +434,8 @@ public class JlinkTask {
 
         // Sanity check version if we use JMODs
         if (!isLinkFromRuntime) {
-            checkJavaBaseVersion(finder);
+            assert(finder.find("java.base").isPresent());
+            checkJavaBaseVersion(finder.find("java.base").get());
         }
 
         // Determine the roots set
@@ -580,6 +586,16 @@ public class JlinkTask {
         return finder;
     }
 
+    private static String getJlinkRuntimeVersion() {
+        ModuleReference current = ModuleLayer.boot()
+                .configuration()
+                .findModule("java.base")
+                .get()
+                .reference();
+        // This jlink runtime should always have the release.txt
+        return getReleaseInfo(current).get();
+    }
+
     /*
      * Checks the release information of the java.base used for target image
      * for compatibility with the java.base used by jlink.
@@ -587,28 +603,26 @@ public class JlinkTask {
      * @throws IllegalArgumentException This jlink cannot be used to create
      * the target runtime image.
      */
-    private void checkJavaBaseVersion(ModuleFinder finder) {
+    private static void checkJavaBaseVersion(ModuleReference target) {
+        String currentRelease = getJlinkRuntimeVersion();
+        String targetRelease;
+
         try {
-            ModuleReference current = ModuleLayer.boot()
-                    .configuration()
-                    .findModule("java.base")
-                    .get()
-                    .reference();
-            ModuleReference target = finder.find("java.base").get();
-            // This jlink runtime should always have the release.txt
-            String currentRelease = getReleaseInfo(current).orElseThrow(() ->
-                    new IllegalArgumentException("Cannot find release.txt"));
-            // Old runtime may not have the release.txt, result in a mismatch
-            String targetRelease = getReleaseInfo(target).orElse("N/A");
-            if (! currentRelease.equals(targetRelease)) {
-                // Current runtime image and the target runtime image is not compatible release
-                throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                        currentRelease,
-                        targetRelease));
+            targetRelease = getReleaseInfo(target).get();
+            if (currentRelease.equals(targetRelease)) {
+                return;
             }
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
+        } catch (NoSuchElementException nsee) {
+            // target release has no release.txt
+            // the java.base module must be older than the jlink runtime
+            // silently ignore and fall through to version mismatch
+            targetRelease = "missing";
         }
+
+        // Current runtime image and the target runtime image are not compatible build
+        throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
+                currentRelease,
+                targetRelease));
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
