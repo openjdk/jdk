@@ -294,7 +294,7 @@ public:
     return nullptr;
   }
 
-  // Iterate through the values in the table, stopping when do_value() return false.
+  // Iterate through the values in the table, stopping when do_value() returns false.
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
 
@@ -303,7 +303,7 @@ public:
     iterate(const_cast<Function&>(function));
   }
 
-  // Iterate through the values in the table, stopping when the lambda return false.
+  // Iterate through the values in the table, stopping when the lambda returns false.
   template<typename Function>
   inline void iterate(Function& function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
