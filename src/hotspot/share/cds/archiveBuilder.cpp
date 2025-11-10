@@ -28,7 +28,6 @@
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
@@ -952,7 +951,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         }
       }
 
-      AOTMetaspace::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
+      AOTMetaspace::rewrite_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
@@ -1175,10 +1174,12 @@ void ArchiveBuilder::print_stats() {
   _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
 }
 
-void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info) {
+void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveMappedHeapInfo* mapped_heap_info, ArchiveStreamedHeapInfo* streamed_heap_info) {
   // Make sure NUM_CDS_REGIONS (exported in cds.h) agrees with
   // AOTMetaspace::n_regions (internal to hotspot).
   assert(NUM_CDS_REGIONS == AOTMetaspace::n_regions, "sanity");
+
+  ResourceMark rm;
 
   write_region(mapinfo, AOTMetaspace::rw, &_rw_region, /*read_only=*/false,/*allow_exec=*/false);
   write_region(mapinfo, AOTMetaspace::ro, &_ro_region, /*read_only=*/true, /*allow_exec=*/false);
@@ -1188,14 +1189,19 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   ArchivePtrMarker::initialize_rw_ro_maps(&_rw_ptrmap, &_ro_ptrmap);
 
   size_t bitmap_size_in_bytes;
-  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(), ArchivePtrMarker::ro_ptrmap(), heap_info,
+  char* bitmap = mapinfo->write_bitmap_region(ArchivePtrMarker::rw_ptrmap(),
+                                              ArchivePtrMarker::ro_ptrmap(),
+                                              mapped_heap_info,
+                                              streamed_heap_info,
                                               bitmap_size_in_bytes);
 
-  if (heap_info->is_used()) {
-    _total_heap_region_size = mapinfo->write_heap_region(heap_info);
+  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
+    _total_heap_region_size = mapinfo->write_mapped_heap_region(mapped_heap_info);
+  } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
+    _total_heap_region_size = mapinfo->write_streamed_heap_region(streamed_heap_info);
   }
 
-  print_region_stats(mapinfo, heap_info);
+  print_region_stats(mapinfo, mapped_heap_info, streamed_heap_info);
 
   mapinfo->set_requested_base((char*)AOTMetaspace::requested_base_address());
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
@@ -1210,7 +1216,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_i
   }
 
   if (log_is_enabled(Info, aot, map)) {
-    AOTMapLogger::dumptime_log(this, mapinfo, heap_info, bitmap, bitmap_size_in_bytes);
+    AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(char, bitmap);
@@ -1226,7 +1232,9 @@ void ArchiveBuilder::count_relocated_pointer(bool tagged, bool nulled) {
   _relocated_ptr_info._num_nulled_ptrs += nulled ? 1 : 0;
 }
 
-void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* heap_info) {
+void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo,
+                                        ArchiveMappedHeapInfo* mapped_heap_info,
+                                        ArchiveStreamedHeapInfo* streamed_heap_info) {
   // Print statistics of all the regions
   const size_t bitmap_used = mapinfo->region_at(AOTMetaspace::bm)->used();
   const size_t bitmap_reserved = mapinfo->region_at(AOTMetaspace::bm)->used_aligned();
@@ -1244,22 +1252,22 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
 
   print_bitmap_region_stats(bitmap_used, total_reserved);
 
-  if (heap_info->is_used()) {
-    print_heap_region_stats(heap_info, total_reserved);
+  if (mapped_heap_info != nullptr && mapped_heap_info->is_used()) {
+    print_heap_region_stats(mapped_heap_info->buffer_start(), mapped_heap_info->buffer_byte_size(), total_reserved);
+  } else if (streamed_heap_info != nullptr && streamed_heap_info->is_used()) {
+    print_heap_region_stats(streamed_heap_info->buffer_start(), streamed_heap_info->buffer_byte_size(), total_reserved);
   }
 
   aot_log_debug(aot)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
-                 total_bytes, total_reserved, total_u_perc);
+                     total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
   aot_log_debug(aot)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
-                 size, size/double(total_size)*100.0, size);
+                     size, size/double(total_size)*100.0, size);
 }
 
-void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total_size) {
-  char* start = info->buffer_start();
-  size_t size = info->buffer_byte_size();
+void ArchiveBuilder::print_heap_region_stats(char* start, size_t size, size_t total_size) {
   char* top = start + size;
   aot_log_debug(aot)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));
