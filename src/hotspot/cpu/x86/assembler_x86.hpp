@@ -2326,10 +2326,14 @@ private:
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
   void ucomisd(XMMRegister dst, XMMRegister src);
+  void ucomxsd(XMMRegister dst, Address src);
+  void ucomxsd(XMMRegister dst, XMMRegister src);
 
   // Unordered Compare Scalar Single-Precision Floating-Point Values and set EFLAGS
   void ucomiss(XMMRegister dst, Address src);
   void ucomiss(XMMRegister dst, XMMRegister src);
+  void ucomxss(XMMRegister dst, Address src);
+  void ucomxss(XMMRegister dst, XMMRegister src);
 
   void xabort(int8_t imm8);
 

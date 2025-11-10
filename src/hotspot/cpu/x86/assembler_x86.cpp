@@ -7281,6 +7281,25 @@ void Assembler::ucomisd(XMMRegister dst, XMMRegister src) {
   emit_int16(0x2E, (0xC0 | encode));
 }
 
+void Assembler::ucomxsd(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx10_2(), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T1S, /* input_size_in_bits */ EVEX_64bit);
+  attributes.set_is_evex_instruction();
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x2E);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::ucomxsd(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_avx10_2(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x2E, (0xC0 | encode));
+}
+
 void Assembler::ucomiss(XMMRegister dst, Address src) {
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -7293,6 +7312,25 @@ void Assembler::ucomiss(XMMRegister dst, Address src) {
 void Assembler::ucomiss(XMMRegister dst, XMMRegister src) {
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x2E, (0xC0 | encode));
+}
+
+void Assembler::ucomxss(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_avx10_2(), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T1S, /* input_size_in_bits */ EVEX_32bit);
+  attributes.set_is_evex_instruction();
+  vex_prefix(src, 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x2E);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::ucomxss(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_avx10_2(), "");
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F, &attributes);
   emit_int16(0x2E, (0xC0 | encode));
 }
 

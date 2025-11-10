@@ -2056,19 +2056,35 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     XMMRegister reg1 = opr1->as_xmm_float_reg();
     if (opr2->is_single_xmm()) {
       // xmm register - xmm register
-      __ ucomiss(reg1, opr2->as_xmm_float_reg());
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxss(reg1, opr2->as_xmm_float_reg());
+      } else {
+        __ ucomiss(reg1, opr2->as_xmm_float_reg());
+      }
     } else if (opr2->is_stack()) {
       // xmm register - stack
-      __ ucomiss(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxss(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
+      } else {
+        __ ucomiss(reg1, frame_map()->address_for_slot(opr2->single_stack_ix()));
+      }
     } else if (opr2->is_constant()) {
       // xmm register - constant
-      __ ucomiss(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxss(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
+      } else {
+        __ ucomiss(reg1, InternalAddress(float_constant(opr2->as_jfloat())));
+      }
     } else if (opr2->is_address()) {
       // xmm register - address
       if (op->info() != nullptr) {
         add_debug_info_for_null_check_here(op->info());
       }
-      __ ucomiss(reg1, as_Address(opr2->as_address_ptr()));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxss(reg1, as_Address(opr2->as_address_ptr()));
+      } else {
+        __ ucomiss(reg1, as_Address(opr2->as_address_ptr()));
+      }
     } else {
       ShouldNotReachHere();
     }
@@ -2077,19 +2093,35 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
     XMMRegister reg1 = opr1->as_xmm_double_reg();
     if (opr2->is_double_xmm()) {
       // xmm register - xmm register
-      __ ucomisd(reg1, opr2->as_xmm_double_reg());
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxsd(reg1, opr2->as_xmm_double_reg());
+      } else {
+        __ ucomisd(reg1, opr2->as_xmm_double_reg());
+      }
     } else if (opr2->is_stack()) {
       // xmm register - stack
-      __ ucomisd(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxsd(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
+      } else {
+        __ ucomisd(reg1, frame_map()->address_for_slot(opr2->double_stack_ix()));
+      }
     } else if (opr2->is_constant()) {
       // xmm register - constant
-      __ ucomisd(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxsd(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
+      } else {
+        __ ucomisd(reg1, InternalAddress(double_constant(opr2->as_jdouble())));
+      }
     } else if (opr2->is_address()) {
       // xmm register - address
       if (op->info() != nullptr) {
         add_debug_info_for_null_check_here(op->info());
       }
-      __ ucomisd(reg1, as_Address(opr2->pointer()->as_address()));
+      if (VM_Version::supports_avx10_2()) {
+        __ ucomxsd(reg1, as_Address(opr2->pointer()->as_address()));
+      } else {
+        __ ucomisd(reg1, as_Address(opr2->pointer()->as_address()));
+      }
     } else {
       ShouldNotReachHere();
     }
