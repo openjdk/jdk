@@ -102,13 +102,17 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
  *   System.out.println(response.body());  }
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
- *    HttpRequest request = HttpRequest.newBuilder()
+ *   HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
