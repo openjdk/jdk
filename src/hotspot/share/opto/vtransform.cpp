@@ -1140,8 +1140,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       // All uses must be outside loop body, except for the phi.
       for (uint i = 0; i < current_red->out_strong_edges(); i++) {
         VTransformNode* use = current_red->out_strong_edge(i);
-        // TODO: this is not right
         if (use->isa_PhiScalar() == nullptr &&
+            use->isa_PhiVector() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
           assert(false, "reduction has use inside loop");
