@@ -56,6 +56,7 @@ class ZVirtualMemoryManagerTest : public ZTest {
 private:
   static constexpr size_t ReservationSize = 32 * M;
 
+  ZAddressReserver        _zaddress_reserver;
   ZVirtualMemoryReserver* _reserver;
   ZVirtualMemoryRegistry* _registry;
 
@@ -66,9 +67,14 @@ public:
       GTEST_SKIP() << "OS not supported";
     }
 
-    _reserver = (ZVirtualMemoryReserver*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
-    _reserver = ::new (_reserver) ZVirtualMemoryReserver(ReservationSize);
-    _registry = &_reserver->_registry;
+    _zaddress_reserver.SetUp(ReservationSize);
+    _reserver = _zaddress_reserver.reserver();
+    _registry = _zaddress_reserver.registry();
+
+    if (_reserver->reserved() < ReservationSize || !_registry->is_contiguous()) {
+      GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
+          << (_reserver->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
+    }
   }
 
   virtual void TearDown() {
@@ -77,10 +83,9 @@ public:
       return;
     }
 
-    // Best-effort cleanup
-    _reserver->unreserve_all();
-    _reserver->~ZVirtualMemoryReserver();
-    os::free(_reserver);
+    _registry = nullptr;
+    _reserver = nullptr;
+    _zaddress_reserver.TearDown();
   }
 
   void test_reserve_discontiguous_and_coalesce() {
@@ -111,11 +116,6 @@ public:
     // from the manager, the callbacks would try to split off the placeholder
     // to separate the fetched memory from the memory left in the manager. This
     // used to fail because the memory was already split into two placeholders.
-
-    if (_reserver->reserved() < 4 * ZGranuleSize || !_registry->is_contiguous()) {
-      GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
-          << (_reserver->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
-    }
 
     // Start at the offset we reserved.
     const zoffset base_offset = _registry->peek_low_address();

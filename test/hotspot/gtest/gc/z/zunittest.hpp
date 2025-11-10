@@ -30,6 +30,7 @@
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zRangeRegistry.hpp"
 #include "gc/z/zVirtualMemory.inline.hpp"
+#include "gc/z/zVirtualMemoryManager.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -60,6 +61,50 @@ public:
 };
 
 class ZTest : public testing::Test {
+public:
+  class ZAddressReserver {
+    ZVirtualMemoryReserver* _reserver;
+    bool _active;
+
+    public:
+      ZAddressReserver()
+        : _reserver(nullptr),
+          _active(false) {}
+
+      ~ZAddressReserver() {
+        GTEST_EXPECT_FALSE(_active) << "ZAddressReserver deconstructed without calling TearDown";
+      }
+
+      void SetUp(size_t reservation_size) {
+        GTEST_EXPECT_TRUE(ZArguments::is_os_supported()) << "Should not use SetUp on unsupported systems";
+        GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
+        _active = true;
+
+        _reserver = (ZVirtualMemoryReserver*)os::malloc(sizeof(ZVirtualMemoryManager), mtTest);
+        _reserver = ::new (_reserver) ZVirtualMemoryReserver(reservation_size);
+      }
+
+      void TearDown() {
+        GTEST_EXPECT_TRUE(_active) << "TearDown called without a preceding SetUp";
+        _active = false;
+
+        // Best-effort cleanup
+        _reserver->unreserve_all();
+        _reserver->~ZVirtualMemoryReserver();
+        os::free(_reserver);
+      }
+
+      ZVirtualMemoryReserver* reserver() {
+        GTEST_EXPECT_TRUE(_active) << "Should only use HeapReserver while active";
+        return _reserver;
+      }
+
+      ZVirtualMemoryRegistry* registry() {
+        GTEST_EXPECT_TRUE(_active) << "Should only use HeapReserver while active";
+        return &_reserver->_registry;
+      }
+  };
+
 private:
   ZAddressOffsetMaxSetter _zaddress_offset_max_setter;
   unsigned int _rand_seed;
