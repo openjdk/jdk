@@ -1,12 +1,12 @@
 {
 	"folders": [
 		{
-			"name": "Source root",
+			"name": "Source root ({{TOPDIR_BASE}})",
 			"path": "{{TOPDIR}}"
 		},
 		// {{EXTRA_WORKSPACE_ROOT}}
 		{
-			"name": "Build artifacts",
+			"name": "Build artifacts ({{OUTPUT_BASE}})",
 			"path": "{{OUTPUTDIR}}"
 		}
 	],
