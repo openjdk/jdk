@@ -1239,7 +1239,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
 
     __ leave();
     __ mv(x10, zr); // return 0
@@ -1401,7 +1401,7 @@ class StubGenerator: public StubCodeGenerator {
         verify_oop_array(size, d, count, t2);
       }
     }
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0, RegSet());
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, d, count, t0);
     __ leave();
     __ mv(x10, zr); // return 0
     __ ret();
@@ -1467,7 +1467,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register ckval       = c_rarg4;   // super_klass
 
     RegSet wb_pre_saved_regs   = RegSet::range(c_rarg0, c_rarg4);
-    RegSet wb_post_saved_regs  = RegSet::of(count);
 
     // Registers used as temps (x7, x9, x18 are save-on-entry)
     const Register count_save  = x19;       // orig elementscount
@@ -1588,7 +1587,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(count, L_done_pop);
 
     __ BIND(L_do_card_marks);
-    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0, wb_post_saved_regs);
+    bs->arraycopy_epilogue(_masm, decorators, is_oop, start_to, count_save, t0);
 
     __ bind(L_done_pop);
     __ pop_reg(RegSet::of(x7, x9, x18, x19), sp);
