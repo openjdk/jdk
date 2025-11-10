@@ -34,7 +34,6 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
-#include "utilities/ostream.hpp"
 
 class Matcher;
 class PhaseCFG;

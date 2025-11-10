@@ -43,7 +43,6 @@
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -2629,9 +2628,9 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   C->_in_dump_cnt--;
 }
 
-// call from debugger: dump node to tty with newline
+// call from debugger: dump node to st with newline
 void Node::dump(outputStream* st) const {
-  dump("\n", false, st);
+  dump("\n", /* mark (use '>') */ false, st);
 }
 
 //------------------------------dump_req--------------------------------------

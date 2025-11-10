@@ -32,7 +32,6 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/ostream.hpp"
 
 class CmpNode;
 class BaseCountedLoopEndNode;

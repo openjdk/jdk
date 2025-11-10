@@ -27,7 +27,6 @@
 #include "opto/compile.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/regmask.hpp"
-#include "utilities/ostream.hpp"
 
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and

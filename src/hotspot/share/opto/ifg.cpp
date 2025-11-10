@@ -35,7 +35,6 @@
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
-#include "utilities/ostream.hpp"
 
 #include <fenv.h>
 

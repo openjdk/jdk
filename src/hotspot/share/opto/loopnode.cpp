@@ -49,7 +49,6 @@
 #include "opto/vectorization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================

@@ -41,7 +41,6 @@
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/align.hpp"
-#include "utilities/ostream.hpp"
 
 #ifndef PRODUCT
 void LRG::dump() const {
@@ -98,9 +97,9 @@ void LRG::dump_on(outputStream* out) const {
   if (_was_lo)          out->print("Lo ");
   if (_has_copy)        out->print("Copy ");
   if (_at_risk)         out->print("Risk ");
-  if( _must_spill )     out->print("Must_spill ");
-  if( _is_bound )       out->print("Bound ");
-  if( _msize_valid ) {
+  if (_must_spill)      out->print("Must_spill ");
+  if (_is_bound)        out->print("Bound ");
+  if (_msize_valid) {
     if (_degree_valid && lo_degree()) {
       out->print("Trivial ");
     }

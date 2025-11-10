@@ -28,7 +28,6 @@
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Optimization - Graph Style

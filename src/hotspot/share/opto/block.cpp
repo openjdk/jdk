@@ -35,7 +35,6 @@
 #include "opto/opcodes.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow(uint i) {

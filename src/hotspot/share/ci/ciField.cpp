@@ -35,7 +35,6 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/reflection.hpp"
-#include "utilities/ostream.hpp"
 
 // ciField
 //
@@ -435,13 +434,7 @@ bool ciField::is_autobox_cache() {
 
 // ------------------------------------------------------------------
 // ciField::print
-void ciField::print() {
-  print_on(tty);
-}
-
-// ------------------------------------------------------------------
-// ciField::print
-void ciField::print_on(outputStream* out) {
+void ciField::print(outputStream* out) {
   out->print("<ciField name=");
   _holder->print_name_on(out);
   out->print(".");

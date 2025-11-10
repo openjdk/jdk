@@ -30,7 +30,6 @@
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/ostream.hpp"
 
 // Portions of code courtesy of Clifford Click
 
