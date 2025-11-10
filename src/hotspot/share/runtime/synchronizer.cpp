@@ -1784,11 +1784,9 @@ void ObjectMonitorTable::create() {
 
 ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
   const int hash = obj->mark().hash();
-
   Table* curr = AtomicAccess::load_acquire(&_curr);
-  ObjectMonitor* monitor = curr->get(obj, hash);
-  OrderAccess::acquire();
-  return monitor;
+
+  return curr->get(obj, hash);
 }
 
 // Returns a new table to try inserting into
