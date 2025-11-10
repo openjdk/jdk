@@ -743,27 +743,20 @@ bool G1Policy::about_to_start_mixed_phase() const {
   return _g1h->concurrent_mark()->cm_thread()->in_progress() || collector_state()->in_young_gc_before_mixed();
 }
 
-size_t G1Policy::conc_mark_occupancy(size_t allocation_word_size) const {
-  size_t cur_used_bytes = _g1h->non_young_capacity_bytes();
-  // For humongous allocations, we need to consider that we actually use full regions
-  // for allocations. So the value to compare the threshold to needs to consider that.
-  return cur_used_bytes + _g1h->allocation_used_bytes(allocation_word_size);
-}
-
 bool G1Policy::need_to_start_conc_mark(const char* source, size_t allocation_word_size) {
   if (about_to_start_mixed_phase()) {
     return false;
   }
 
   size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
-  size_t marking_request_bytes = conc_mark_occupancy(allocation_word_size);
+  size_t occupancy_after_allocation = _g1h->non_young_occupancy_after_allocation(allocation_word_size);
 
   bool result = false;
-  if (marking_request_bytes > marking_initiating_used_threshold) {
+  if (occupancy_after_allocation > marking_initiating_used_threshold) {
     result = collector_state()->in_young_only_phase();
     log_debug(gc, ergo, ihop)("%s occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
-                              marking_request_bytes, allocation_word_size * HeapWordSize, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
+                              occupancy_after_allocation, allocation_word_size * HeapWordSize, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
   }
   return result;
 }
@@ -996,7 +989,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _old_gen_alloc_tracker.reset_after_gc(_g1h->humongous_regions_count() * G1HeapRegion::GrainBytes);
     if (update_ihop_prediction(app_time_ms / 1000.0,
                                G1GCPauseTypeHelper::is_young_only_pause(this_pause))) {
-      _ihop_control->report_statistics(_g1h->gc_tracer_stw(), conc_mark_occupancy(allocation_word_size));
+      _ihop_control->report_statistics(_g1h->gc_tracer_stw(), _g1h->non_young_occupancy_after_allocation(allocation_word_size));
     }
   } else {
     // Any garbage collection triggered as periodic collection resets the time-to-mixed

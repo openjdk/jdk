@@ -1032,9 +1032,7 @@ public:
   inline void old_set_add(G1HeapRegion* hr);
   inline void old_set_remove(G1HeapRegion* hr);
 
-  size_t non_young_capacity_bytes() {
-    return (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
-  }
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.

@@ -60,7 +60,7 @@ class G1Policy: public CHeapObj<mtGC> {
 
   static G1IHOPControl* create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                             const G1Predictions* predictor);
-  // Update the IHOP control with necessary statistics. Returns true if there
+  // Update the IHOP control with the necessary statistics. Returns true if there
   // has been a significant update to the prediction.
   bool update_ihop_prediction(double mutator_time_s,
                               bool this_gc_was_young_only);
@@ -307,11 +307,6 @@ public:
   void record_young_gc_pause_start();
   void record_young_gc_pause_end(bool evacuation_failed);
 
-private:
-  // The current occupancy relevant to concurrent marking, that is compared to
-  // the threshold.
-  size_t conc_mark_occupancy(size_t allocation_word_size) const;
-public:
   bool need_to_start_conc_mark(const char* source, size_t allocation_word_size);
 
   bool concurrent_operation_is_full_mark(const char* msg, size_t allocation_word_size);
