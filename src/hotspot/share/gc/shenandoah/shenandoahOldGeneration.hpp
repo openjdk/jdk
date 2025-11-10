@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class LogStream;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
@@ -65,15 +66,20 @@ private:
   // remaining in a PLAB when it is retired.
   size_t _promoted_expended;
 
-  // Represents the quantity of live bytes we expect to promote in place during the next
-  // evacuation cycle. This value is used by the young heuristic to trigger mixed collections.
+  // Represents the quantity of live bytes we expect to promote during the next evacuation
+  // cycle. This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
 
   // When a region is selected to be promoted in place, the remaining free memory is filled
   // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects. This field records the total amount of padding used for such regions.
+  // objects). This field records the total amount of padding used for such regions.
   size_t _pad_for_promote_in_place;
+
+  // Keep track of the number and size of promotions that failed. Perhaps we should use this to increase
+  // the size of the old generation for the next collection cycle.
+  size_t _promotion_failure_count;
+  size_t _promotion_failure_words;
 
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
@@ -88,7 +94,7 @@ private:
   bool coalesce_and_fill();
 
 public:
-  ShenandoahOldGeneration(uint max_queues, size_t max_capacity);
+  ShenandoahOldGeneration(uint max_queues);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
@@ -119,6 +125,10 @@ public:
   // This is used on the allocation path to gate promotions that would exceed the reserve
   size_t get_promoted_expended() const;
 
+  // Return the count and size (in words) of failed promotions since the last reset
+  size_t get_promotion_failed_count() const { return AtomicAccess::load(&_promotion_failure_count); }
+  size_t get_promotion_failed_words() const { return AtomicAccess::load(&_promotion_failure_words); }
+
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {
     size_t promotion_avail = get_promoted_reserve();
@@ -135,11 +145,14 @@ public:
   void configure_plab_for_current_thread(const ShenandoahAllocRequest &req);
 
   // See description in field declaration
-  void set_region_balance(ssize_t balance) { _region_balance = balance; }
+  void set_region_balance(ssize_t balance) {
+    _region_balance = balance;
+  }
   ssize_t get_region_balance() const { return _region_balance; }
+
   // See description in field declaration
-  void set_promotion_potential(size_t val) { _promotion_potential = val; };
-  size_t get_promotion_potential() const { return _promotion_potential; };
+  void set_promotion_potential(size_t val) { _promotion_potential = val; }
+  size_t get_promotion_potential() const { return _promotion_potential; }
 
   // See description in field declaration
   void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
@@ -161,8 +174,9 @@ public:
   // This will signal the control thread to run a full GC instead of a futile degenerated gc
   void handle_failed_evacuation();
 
-  // This logs that an evacuation to the old generation has failed
+  // Increment promotion failure counters, optionally log a more detailed message
   void handle_failed_promotion(Thread* thread, size_t size);
+  void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
   void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
@@ -214,26 +228,27 @@ public:
   // Cancels old gc and transitions to the idle state
   void cancel_gc();
 
-  // We leave the SATB barrier on for the entirety of the old generation
-  // marking phase. In some cases, this can cause a write to a perfectly
-  // reachable oop to enqueue a pointer that later becomes garbage (because
-  // it points at an object that is later chosen for the collection set). There are
-  // also cases where the referent of a weak reference ends up in the SATB
-  // and is later collected. In these cases the oop in the SATB buffer becomes
-  // invalid and the _next_ cycle will crash during its marking phase. To
-  // avoid this problem, we "purge" the SATB buffers during the final update
-  // references phase if (and only if) an old generation mark is in progress.
-  // At this stage we can safely determine if any of the oops in the SATB
-  // buffer belong to trashed regions (before they are recycled). As it
-  // happens, flushing a SATB queue also filters out oops which have already
-  // been marked - which is the case for anything that is being evacuated
-  // from the collection set.
+  // The SATB barrier will be "enabled" until old marking completes. This means it is
+  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
+  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
+  // the young collection set:
   //
-  // Alternatively, we could inspect the state of the heap and the age of the
-  // object at the barrier, but we reject this approach because it is likely
-  // the performance impact would be too severe.
+  //      +--Young, CSet------+     +--Young, Regular----+
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      |       A <--------------------+ B             |
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      +-------------------+     +--------------------+
+  //
+  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
+  // object A. However, this object will be trashed when the young cycle completes. We must,
+  // therefore, filter this object from the SATB buffer before any old mark threads see it.
+  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
+  //
+  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
+  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
   void transfer_pointers_from_satb() const;
-  void concurrent_transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
@@ -319,6 +334,14 @@ public:
 
   static const char* state_name(State state);
 
+  size_t bytes_allocated_since_gc_start() const override;
+  size_t used() const override;
+  size_t used_regions() const override;
+  size_t used_regions_size() const override;
+  size_t get_humongous_waste() const override;
+  size_t free_unaffiliated_regions() const override;
+  size_t get_affiliated_region_count() const override;
+  size_t max_capacity() const override;
 };
 
 

@@ -92,14 +92,16 @@ final class MacFromParams {
         final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
+        }), (MacLauncher _, Launcher launcher) -> {
+            return MacLauncher.create(launcher);
+        }, APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
 
         if (hasPredefinedAppImage(params)) {
             // Set the main launcher start up info.
             // AppImageFile assumes the main launcher start up info is available when
             // it is constructed from Application instance.
             // This happens when jpackage signs predefined app image.
-            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params).getMainClass());
+            final var mainLauncherStartupInfo = new MainLauncherStartupInfo(superAppBuilder.mainLauncherClassName().orElseThrow());
             final var launchers = superAppBuilder.launchers().orElseThrow();
             final var mainLauncher = ApplicationBuilder.overrideLauncherStartupInfo(launchers.mainLauncher(), mainLauncherStartupInfo);
             superAppBuilder.launchers(new ApplicationLaunchers(MacLauncher.create(mainLauncher), launchers.additionalLaunchers()));
@@ -122,7 +124,7 @@ final class MacFromParams {
         final boolean appStore;
 
         if (hasPredefinedAppImage(params) && PACKAGE_TYPE.findIn(params).filter(Predicate.isEqual("app-image")).isEmpty()) {
-            final var appImageFileExtras = new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params));
+            final var appImageFileExtras = new MacAppImageFileExtras(superAppBuilder.externalApplication().orElseThrow());
             sign = appImageFileExtras.signed();
             appStore = appImageFileExtras.appStore();
         } else {

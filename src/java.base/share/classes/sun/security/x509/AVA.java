@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,13 @@ package sun.security.x509;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.text.Normalizer;
 import java.util.*;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
 
 import sun.security.util.*;
 import sun.security.pkcs.PKCS9Attribute;
@@ -589,6 +592,10 @@ public class AVA implements DerEncoder {
             throw new IOException("AVA, extra bytes = "
                 + derval.data.available());
         }
+
+        if (value.tag == DerValue.tag_BMPString) {
+            value.validateBMPString();
+        }
     }
 
     AVA(DerInputStream in) throws IOException {
@@ -713,7 +720,8 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr = new String(value.getDataBytes(), UTF_8);
+            String valStr =
+                new String(value.getDataBytes(), getCharset(value, false));
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the
@@ -832,7 +840,8 @@ public class AVA implements DerEncoder {
              * NOTE: this implementation only emits DirectoryStrings of the
              * types returned by isDerString().
              */
-            String valStr = new String(value.getDataBytes(), UTF_8);
+            String valStr =
+                new String(value.getDataBytes(), getCharset(value, true));
 
             /*
              * 2.4 (cont): If the UTF-8 string does not have any of the
@@ -925,6 +934,39 @@ public class AVA implements DerEncoder {
                     return false;
             }
         }
+    }
+
+    /*
+     * Returns the charset that should be used to decode each DN string type.
+     *
+     * This method ensures that multi-byte (UTF8String and BMPString) types
+     * are decoded using the correct charset and the String forms represent
+     * the correct characters. For 8-bit ASCII-based types (PrintableString
+     * and IA5String), we return ISO_8859_1 rather than ASCII, so that the
+     * complete range of characters can be represented, as many certificates
+     * do not comply with the Internationalized Domain Name ACE format.
+     *
+     * NOTE: this method only supports DirectoryStrings of the types returned
+     * by isDerString().
+     */
+    private static Charset getCharset(DerValue value, boolean canonical) {
+        if (canonical) {
+            return switch (value.tag) {
+                case DerValue.tag_PrintableString -> ISO_8859_1;
+                case DerValue.tag_UTF8String -> UTF_8;
+                default -> throw new Error("unexpected tag: " + value.tag);
+            };
+        }
+
+        return switch (value.tag) {
+            case DerValue.tag_PrintableString,
+                 DerValue.tag_T61String,
+                 DerValue.tag_IA5String,
+                 DerValue.tag_GeneralString -> ISO_8859_1;
+            case DerValue.tag_BMPString -> UTF_16BE;
+            case DerValue.tag_UTF8String -> UTF_8;
+            default -> throw new Error("unexpected tag: " + value.tag);
+        };
     }
 
     boolean hasRFC2253Keyword() {
