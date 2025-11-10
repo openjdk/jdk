@@ -147,8 +147,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   return pc();
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
-                                              Register t2, Register t3) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
+                                  Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -173,7 +173,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   const Register t1_mark = t1;
   const Register t3_t = t3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
     Label push;
@@ -303,8 +303,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
-                                                Register t2, Register t3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
+                                    Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
@@ -318,7 +318,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   const Register t2_top = t2;
   const Register t3_t = t3;
 
-  { // Lightweight unlock
+  { // Fast unlock
 
     Label push_and_slow_path;
 

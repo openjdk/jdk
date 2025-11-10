@@ -1200,16 +1200,6 @@ public:
 
   void cmpoop(Register obj1, Register obj2);
 
-  // Various forms of CAS
-
-  void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                          Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &succeed, Label *fail);
-
-  void cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &succeed, Label *fail);
-
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addal(Register prev, RegisterOrConstant incr, Register addr);
@@ -1731,8 +1721,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
-  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.
