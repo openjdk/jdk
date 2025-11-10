@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -1337,21 +1338,19 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
 }
 
 
-void JvmtiExport::expose_single_stepping(JavaThread *thread) {
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-  if (state != nullptr) {
-    state->clear_hide_single_stepping();
-  }
+void JvmtiExport::expose_single_stepping(JvmtiThreadState* state) {
+  assert(state != nullptr, "must be non-null");
+  state->clear_hide_single_stepping();
 }
 
 
-bool JvmtiExport::hide_single_stepping(JavaThread *thread) {
+JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state != nullptr && state->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     state->set_hide_single_stepping();
-    return true;
+    return state;
   } else {
-    return false;
+    return nullptr;
   }
 }
 
@@ -1486,6 +1485,13 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
     return;
   }
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
+
+  if (thread->is_aot_thread()) {
+    // The AOT thread is hidden from view but has no thread oop when it starts due
+    // to bootstrapping complexity, so we check for it before checking for bound
+    // virtual threads. When exiting it is filtered out due to being hidden.
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_THREAD_START, ("[%s] Trg Thread Start event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
@@ -1776,7 +1782,7 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
   JvmtiThreadEventMark jem(javaThread);
-  JvmtiJavaThreadEventTransition jet(javaThread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(javaThread)
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != nullptr) {
     for (int index = 0; index < objects->length(); index++) {

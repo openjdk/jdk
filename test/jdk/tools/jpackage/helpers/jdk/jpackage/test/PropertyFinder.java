@@ -26,7 +26,9 @@ import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperti
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 
@@ -39,6 +41,12 @@ final class PropertyFinder {
         default Finder<T> defaultValue(String v) {
             return target -> {
                 return Optional.of(find(target).orElse(v));
+            };
+        }
+
+        default Finder<T> defaultValue(Supplier<String> v) {
+            return target -> {
+                return Optional.of(find(target).orElseGet(v));
             };
         }
 
@@ -134,7 +142,27 @@ final class PropertyFinder {
             Finder<PropertyFile> addLauncherPropertyFileFinder,
             Finder<AppImageFile> appImageFileFinder) {
 
+        return findLauncherProperty(
+                cmd,
+                launcherName,
+                (theCmd, theLauncherName) -> {
+                    return getAdditionalLauncherProperties(theCmd, theLauncherName);
+                },
+                cmdlineFinder,
+                addLauncherPropertyFileFinder,
+                appImageFileFinder);
+    }
+
+    static Optional<String> findLauncherProperty(
+            JPackageCommand cmd,
+            String launcherName,
+            BiFunction<JPackageCommand, String, PropertyFile> addLauncherPropertyFileGetter,
+            Finder<JPackageCommand> cmdlineFinder,
+            Finder<PropertyFile> addLauncherPropertyFileFinder,
+            Finder<AppImageFile> appImageFileFinder) {
+
         Objects.requireNonNull(cmd);
+        Objects.requireNonNull(addLauncherPropertyFileGetter);
         Objects.requireNonNull(cmdlineFinder);
         Objects.requireNonNull(addLauncherPropertyFileFinder);
         Objects.requireNonNull(appImageFileFinder);
@@ -148,7 +176,7 @@ final class PropertyFinder {
         if (mainLauncher) {
             reply = cmdlineFinder.find(cmd);
         } else if (appImageFilePath.isEmpty()) {
-            var props = getAdditionalLauncherProperties(cmd, launcherName);
+            var props = addLauncherPropertyFileGetter.apply(cmd, launcherName);
             reply = addLauncherPropertyFileFinder.find(props);
         } else {
             reply = Optional.empty();
