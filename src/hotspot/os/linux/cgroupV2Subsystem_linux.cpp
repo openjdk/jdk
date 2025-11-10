@@ -107,7 +107,7 @@ bool CgroupV2CpuController::cpu_shares(int& result) {
 /* cpu_quota
  *
  * Return the number of microseconds per period
- * process is guaranteed to run.
+ * process is guaranteed to run in the passed in 'result' reference.
  *
  * return:
  *    true if the result reference has been set
