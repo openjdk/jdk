@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_STUBCODEGENERATOR_HPP
 
 #include "asm/assembler.hpp"
+#include "code/aotCodeCache.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/stubInfo.hpp"
 
@@ -48,6 +49,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   address              _begin;    // points to the first byte of the stub code    (included)
   address              _end;      // points to the first byte after the stub code (excluded)
   uint                 _disp;     // Displacement relative base address in buffer.
+  bool                 _loaded_from_cache;
 
   friend class StubCodeMark;
   friend class StubCodeGenerator;
@@ -65,6 +67,8 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 
   void set_disp(uint disp) { _disp = disp; }
 
+  void set_loaded_from_cache() { _loaded_from_cache = true; }
+
  public:
   static StubCodeDesc* first() { return _list; }
   static StubCodeDesc* next(StubCodeDesc* desc)  { return desc->_next; }
@@ -81,6 +85,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _end            = end;
     _disp           = 0;
     _list           = this;
+    _loaded_from_cache = false;
   };
 
   static void freeze();
@@ -93,11 +98,10 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   uint        disp() const                       { return _disp; }
   int         size_in_bytes() const              { return pointer_delta_as_int(_end, _begin); }
   bool        contains(address pc) const         { return _begin <= pc && pc < _end; }
+  bool        loaded_from_cache() const          { return _loaded_from_cache; }
   void        print_on(outputStream* st) const;
   void        print() const;
 };
-
-// forward declare blob and stub id enums
 
 // The base class for all stub-generating code generators.
 // Provides utility functions.
@@ -108,10 +112,13 @@ class StubCodeGenerator: public StackObj {
   BlobId _blob_id;
  protected:
   MacroAssembler*  _masm;
+  AOTStubData* _stub_data;
+
+  void setup_code_desc(const char* name, address start, address end, bool loaded_from_cache);
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
-  StubCodeGenerator(CodeBuffer* code, BlobId blob_id, bool print_code = false);
+  StubCodeGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data = nullptr, bool print_code = false);
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }
@@ -120,9 +127,16 @@ class StubCodeGenerator: public StackObj {
   virtual void stub_prolog(StubCodeDesc* cdesc); // called by StubCodeMark constructor
   virtual void stub_epilog(StubCodeDesc* cdesc); // called by StubCodeMark destructor
 
+  void print_stub_code_desc(StubCodeDesc* cdesc);
+
+  static void print_statistics_on(outputStream* st);
+  bool find_archive_data(StubId stub_id);
+  void load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address> *entries = nullptr, GrowableArray<address>* extras = nullptr);
+  void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address> *entries = nullptr, GrowableArray<address>* extras = nullptr);
 #ifdef ASSERT
   void verify_stub(StubId stub_id);
 #endif
+
 };
 
 // Stack-allocated helper class used to associate a stub code with a name.

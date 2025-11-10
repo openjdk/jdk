@@ -130,6 +130,7 @@ class UnsafeMemoryAccess : public CHeapObj<mtCode> {
   static UnsafeMemoryAccess* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
     guarantee(_table_length < _table_max_length, "Incorrect UnsafeMemoryAccess::_table_max_length");
     UnsafeMemoryAccess* entry = &_table[_table_length];
+    assert(start_pc != nullptr, "invalid start address");
     entry->set_start_pc(start_pc);
     entry->set_end_pc(end_pc);
     entry->set_error_exit_pc(error_exit_pc);
@@ -282,6 +283,9 @@ public:
 #ifdef ASSERT
   static BlobId stub_to_blob(StubId id);
 #endif
+
+  // Initalization
+  static void    init_AOTAddressTable();
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }

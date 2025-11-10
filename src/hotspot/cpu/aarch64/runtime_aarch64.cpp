@@ -292,7 +292,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
   const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)BlobId::c2_exception_id, name);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   if (blob != nullptr) {
     return blob->as_exception_blob();
   }

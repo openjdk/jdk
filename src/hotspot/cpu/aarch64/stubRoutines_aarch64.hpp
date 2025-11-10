@@ -110,6 +110,8 @@ private:
     _completed = true;
   }
 
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
+
 private:
   static uint16_t  _kyberConsts[];
   static uint32_t _dilithiumConsts[];

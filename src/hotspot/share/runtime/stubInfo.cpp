@@ -1096,6 +1096,15 @@ int StubInfo::stubgen_offset(StubId id) {
   return local_offset(StubGroup::STUBGEN, id);
 }
 
+int StubInfo::stubgen_offset_in_blob(BlobId blob_id, StubId id) {
+  assert(blob(id) == blob_id, "sanity!");
+  StubGroup group = StubGroup::STUBGEN;
+  assert(stubgroup(blob_id) == group, "sanity");
+  StubId base_id = stub_base(blob_id);
+  assert(base_id != StubId::NO_STUBID, "sanity");
+  return local_offset(group, id) - local_offset(group, base_id);
+}
+
 // initialization function called to populate blob. stub and entry
 // tables. this must be called before any stubs are generated
 void initialize_stub_info() {

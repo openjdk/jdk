@@ -975,9 +975,15 @@
   do_entry_init(final, arrayof_jlong_arraycopy,                         \
                 arrayof_jlong_arraycopy, arrayof_jlong_arraycopy,       \
                 StubRoutines::arrayof_jlong_copy)                       \
+  do_entry(final, arrayof_jlong_arraycopy,                             \
+            arrayof_jlong_arraycopy_nopush,                             \
+            arrayof_jlong_arraycopy_nopush)                             \
   do_stub(final, arrayof_oop_arraycopy)                                 \
   do_entry_init(final, arrayof_oop_arraycopy, arrayof_oop_arraycopy,    \
                 arrayof_oop_arraycopy, StubRoutines::arrayof_oop_copy)  \
+  do_entry(final, arrayof_oop_arraycopy,                                \
+           arrayof_oop_arraycopy_nopush,                                \
+           arrayof_oop_arraycopy_nopush)                                \
   do_stub(final, arrayof_oop_arraycopy_uninit)                          \
   do_entry_init(final, arrayof_oop_arraycopy_uninit,                    \
                 arrayof_oop_arraycopy_uninit,                           \

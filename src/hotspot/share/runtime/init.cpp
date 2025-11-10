@@ -70,6 +70,8 @@ void VM_Version_init();
 void icache_init2();
 void initialize_stub_info();    // must precede all blob/stub generation
 void preuniverse_stubs_init();
+
+void stubs_AOTAddressTable_init();
 void initial_stubs_init();
 
 jint universe_init();           // depends on codeCache_init and preuniverse_stubs_init
@@ -149,13 +151,17 @@ jint init_globals() {
   AOTCodeCache::init2();     // depends on universe_init, must be before initial_stubs_init
   AsyncLogWriter::initialize();
 
+  stubs_AOTAddressTable_init(); // publish external addresses used by stubs
+                                // depends on AOTCodeCache::init2
   initial_stubs_init();      // stubgen initial stub routines
   // stack overflow exception blob is referenced by the interpreter
-  AOTCodeCache::init_early_stubs_table();  // need this after stubgen initial stubs and before shared runtime initial stubs
   SharedRuntime::generate_initial_stubs();
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
-  continuation_stubs_init(); // depends on continuations_init
+  AOTCodeCache::init3();     // depends on stubs_AOTAddressTable_init
+                             // and continuations_init and must
+                             // precede continuation stub generation
+  continuation_stubs_init(); // depends on continuations_init and AOTCodeCache::init3
 #if INCLUDE_JFR
   SharedRuntime::generate_jfr_stubs();
 #endif
@@ -164,7 +170,6 @@ jint init_globals() {
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
-  AOTCodeCache::init_shared_blobs_table();  // need this after generate_stubs
   SharedRuntime::init_adapter_library(); // do this after AOTCodeCache::init_shared_blobs_table
   return JNI_OK;
 }

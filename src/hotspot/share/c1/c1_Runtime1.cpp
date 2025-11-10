@@ -278,10 +278,6 @@ bool Runtime1::initialize(BufferBlob* blob) {
     if (!generate_blob_for(blob, id)) {
       return false;
     }
-    if (id == StubId::c1_forward_exception_id) {
-      // publish early c1 stubs at this point so later stubs can refer to them
-      AOTCodeCache::init_early_c1_table();
-    }
   }
   // printing
 #ifndef PRODUCT

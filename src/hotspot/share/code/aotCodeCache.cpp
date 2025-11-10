@@ -32,9 +32,12 @@
 #include "classfile/javaAssertions.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
@@ -153,9 +156,12 @@ static uint32_t encode_id(AOTCodeEntry::Kind kind, int id) {
   } else if (kind == AOTCodeEntry::C1Blob) {
     assert(StubInfo::is_c1(static_cast<BlobId>(id)), "not a c1 blob id %d", id);
     return id;
-  } else {
-    // kind must be AOTCodeEntry::C2Blob
+  } else if (kind == AOTCodeEntry::C2Blob) {
     assert(StubInfo::is_c2(static_cast<BlobId>(id)), "not a c2 blob id %d", id);
+    return id;
+  } else {
+    // kind must be AOTCodeEntry::StubGenBlob
+    assert(StubInfo::is_stubgen(static_cast<BlobId>(id)), "not a stubgen blob id %d", id);
     return id;
   }
 }
@@ -182,7 +188,7 @@ void AOTCodeCache::initialize() {
   }
 
   // Disable stubs caching until JDK-8357398 is fixed.
-  FLAG_SET_ERGO(AOTStubCaching, false);
+  // FLAG_SET_ERGO(AOTStubCaching, false);
 
   if (VerifyOops) {
     // Disable AOT stubs caching when VerifyOops flag is on.
@@ -278,6 +284,19 @@ bool AOTCodeCache::open_cache(bool is_dumping, bool is_using) {
   return true;
 }
 
+// Called after continuations_init() when continuation stub callouts
+// have been initialized
+void AOTCodeCache::init3() {
+  if (opened_cache == nullptr) {
+    return;
+  }
+  // initialize external routines for continuations so we can save
+  // generated continuation blob that references them
+  AOTCodeAddressTable* table = opened_cache->_table;
+  assert(table != nullptr, "should be initialized already");
+  table->init_extrs2();
+}
+
 void AOTCodeCache::close() {
   if (is_on()) {
     delete _cache; // Free memory
@@ -354,24 +373,59 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
   _table = new AOTCodeAddressTable();
 }
 
-void AOTCodeCache::init_early_stubs_table() {
-  AOTCodeAddressTable* table = addr_table();
-  if (table != nullptr) {
-    table->init_early_stubs();
+void AOTCodeCache::add_stub_entries(StubId stub_id, address start, GrowableArray<address> *entries, int begin_idx) {
+  EntryId entry_id = StubInfo::entry_base(stub_id);
+  add_stub_entry(entry_id, start);
+  // skip past first entry
+  entry_id = StubInfo::next_in_stub(stub_id, entry_id);
+  // now check for any more entries
+  int count = StubInfo::entry_count(stub_id) - 1;
+  assert(start != nullptr, "invalid start address for stub %s", StubInfo::name(stub_id));
+  assert(entries == nullptr || begin_idx + count <= entries->length(), "sanity");
+  // write any extra entries
+  for (int i = 0; i < count; i++) {
+    assert(entry_id != EntryId::NO_ENTRYID, "not enough entries for stub %s", StubInfo::name(stub_id));
+    address a = entries->at(begin_idx + i);
+    add_stub_entry(entry_id, a);
+    entry_id = StubInfo::next_in_stub(stub_id, entry_id);
+  }
+  assert(entry_id == EntryId::NO_ENTRYID, "too many entries for stub %s", StubInfo::name(stub_id));
+}
+
+void AOTCodeCache::add_stub_entry(EntryId entry_id, address a) {
+  if (a != nullptr) {
+    if (_table != nullptr) {
+      log_trace(aot, codecache, stubs)("Publishing stub entry %s at address " INTPTR_FORMAT, StubInfo::name(entry_id), p2i(a));
+      return _table->add_stub_entry(entry_id, a);
+    }
   }
 }
 
-void AOTCodeCache::init_shared_blobs_table() {
+void AOTCodeCache::set_shared_stubs_complete() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
-    table->init_shared_blobs();
+    table->set_shared_stubs_complete();
   }
 }
 
-void AOTCodeCache::init_early_c1_table() {
+void AOTCodeCache::set_c1_stubs_complete() {
   AOTCodeAddressTable* table = addr_table();
   if (table != nullptr) {
-    table->init_early_c1();
+    table->set_c1_stubs_complete();
+  }
+}
+
+void AOTCodeCache::set_c2_stubs_complete() {
+  AOTCodeAddressTable* table = addr_table();
+  if (table != nullptr) {
+    table->set_c2_stubs_complete();
+  }
+}
+
+void AOTCodeCache::set_stubgen_stubs_complete() {
+  AOTCodeAddressTable* table = addr_table();
+  if (table != nullptr) {
+    table->set_stubgen_stubs_complete();
   }
 }
 
@@ -799,13 +853,42 @@ bool AOTCodeCache::finish_write() {
 
 //------------------Store/Load AOT code ----------------------
 
-bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name, AOTStubData* stub_data, CodeBuffer* code_buffer) {
+  assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
+
+  // we only expect stub data and a code buffer for a multi stub blob
+  assert(AOTCodeEntry::is_multi_stub_blob(entry_kind) == (stub_data != nullptr),
+         "entry_kind %d does not match stub_data pointer %p",
+         entry_kind, stub_data);
+
+  assert((stub_data == nullptr) == (code_buffer == nullptr),
+         "stub data and code buffer must both be null or both non null");
+
+  // If this is a stub and the cache is on for either load or dump we
+  // need to insert the stub entries into the AOTCacheAddressTable so
+  // that relocs which refer to entries defined by this blob get
+  // translated correctly.
+  //
+  // Entry insertion needs to be be done up front before writing the
+  // blob because some blobs rely on internal daisy-chain references
+  // from one entry to another.
+  //
+  // Entry insertion also needs to be done even if the cache is open
+  // for use but not for dump. This may be needed when an archived
+  // blob omits some entries -- either because of a config change or a
+  // load failure -- with the result that the entries end up being
+  // generated. These generated entry addresses may be needed to
+  // resolve references from subsequently loaded blobs (for either
+  // stubs or nmethods).
+
+  if (is_on() && AOTCodeEntry::is_blob(entry_kind)) {
+    publish_stub_addresses(blob, (BlobId)id, stub_data);
+  }
+
   AOTCodeCache* cache = open_for_dump();
   if (cache == nullptr) {
     return false;
   }
-  assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
-
   if (AOTCodeEntry::is_adapter(entry_kind) && !is_dumping_adapter()) {
     return false;
   }
@@ -851,8 +934,44 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
   CodeBlob::archive_blob(&blob, archive_buffer);
 
-  uint reloc_data_size = blob.relocation_size();
-  n = cache->write_bytes((address)blob.relocation_begin(), reloc_data_size);
+  // For a relocatable code blob its relocations are linked from the
+  // blob. However, for a non-relocatable (stubgen) blob we only have
+  // transient relocations attached to the code buffer that are added
+  // in order to support AOT-load time patching. in either case, we
+  // need to explicitly save these relocs when storing the blob to the
+  // archive so we can then reload them and reattach them to either
+  // the blob or to a code buffer when we reload the blob into a
+  // production JVM.
+  //
+  // Either way we are then in a position to iterate over the relocs
+  // and AOT patch the ones that refer to code that may move between
+  // assembly and production time. We also need to save and restore
+  // AOT address table indexes for the target addresses of affected
+  // relocs. That happens below.
+
+  int reloc_count;
+  address reloc_data;
+  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+    CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
+    reloc_count = (cs->has_locs() ? cs->locs_count() : 0);
+    reloc_data = (reloc_count > 0 ? (address)cs->locs_start() : nullptr);
+  } else {
+    reloc_count = blob.relocation_size() / sizeof(relocInfo);
+    reloc_data = (address)blob.relocation_begin();
+  }
+  n = cache->write_bytes(&reloc_count, sizeof(int));
+  if (n != sizeof(int)) {
+    return false;
+  }
+  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+    // align to heap word size before writing the relocs so we can
+    // install them into a code buffer when they get restored
+    if (!cache->align_write()) {
+      return false;
+    }
+  }
+  uint reloc_data_size = (uint)(reloc_count * sizeof(relocInfo));
+  n = cache->write_bytes(reloc_data, reloc_data_size);
   if (n != reloc_data_size) {
     return false;
   }
@@ -875,7 +994,29 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
 #endif /* PRODUCT */
 
-  if (!cache->write_relocations(blob)) {
+  // In the case of a multi-stub blob we need to write start, end,
+  // secondary entries and extras. For any other blob entry addresses
+  // beyond the blob start will be stored in the blob as offsets.
+  if (stub_data != nullptr) {
+    if (!cache->write_stub_data(blob, stub_data)) {
+      return false;
+    }
+  }
+
+  // now we have added all the other data we can write the AOT
+  // relocations
+
+  bool write_ok;
+  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+    CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
+    RelocIterator iter(cs);
+    write_ok = cache->write_relocations(blob, iter);
+  } else {
+    RelocIterator iter(&blob);
+    write_ok = cache->write_relocations(blob, iter);
+  }
+
+  if (!write_ok) {
     if (!cache->failed()) {
       // We may miss an address in AOT table - skip this code blob.
       cache->set_write_position(entry_position);
@@ -884,6 +1025,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
 
   uint entry_size = cache->_write_position - entry_position;
+
   AOTCodeEntry* entry = new(cache) AOTCodeEntry(entry_kind, encode_id(entry_kind, id),
                                                 entry_position, entry_size, name_offset, name_size,
                                                 blob_offset, has_oop_maps, blob.content_begin());
@@ -891,18 +1033,129 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   return true;
 }
 
-bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, BlobId id) {
-  assert(AOTCodeEntry::is_blob(entry_kind),
-         "wrong entry kind for blob id %s", StubInfo::name(id));
-  return store_code_blob(blob, entry_kind, (uint)id, StubInfo::name(id));
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
+  assert(!AOTCodeEntry::is_blob(entry_kind),
+         "wrong entry kind for numeric id %d", id);
+  return store_code_blob(blob, entry_kind, (uint)id, name, nullptr, nullptr);
 }
 
-CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, BlobId id) {
+  assert(AOTCodeEntry::is_single_stub_blob(entry_kind),
+         "wrong entry kind for blob id %s", StubInfo::name(id));
+  return store_code_blob(blob, entry_kind, (uint)id, StubInfo::name(id), nullptr, nullptr);
+}
+
+bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind, BlobId id, AOTStubData* stub_data, CodeBuffer* code_buffer) {
+  assert(AOTCodeEntry::is_multi_stub_blob(entry_kind),
+         "wrong entry kind for multi stub blob id %s", StubInfo::name(id));
+  return store_code_blob(blob, entry_kind, (uint)id, StubInfo::name(id), stub_data, code_buffer);
+}
+
+bool AOTCodeCache::write_stub_data(CodeBlob &blob, AOTStubData *stub_data) {
+  BlobId blob_id = stub_data->blob_id();
+  StubId stub_id = StubInfo::stub_base(blob_id);
+  address blob_base = blob.code_begin();
+  int stub_cnt = StubInfo::stub_count(blob_id);
+  int n;
+
+  LogStreamHandle(Trace, aot, codecache, stubs) log;
+
+  if (log.is_enabled()) {
+    log.print_cr("======== Stub data starts at offset %d", _write_position);
+  }
+
+  for (int i = 0; i < stub_cnt; i++, stub_id = StubInfo::next_in_blob(blob_id, stub_id)) {
+    // for each stub we find in the ranges list we write an int
+    // sequence <stubid,start,end,N,offset1, ... offsetN> where
+    //
+    // - start_pos is the stub start address encoded as a code section offset
+    //
+    // - end is the stub end address encoded as an offset from start
+    //
+    // - N counts the number of stub-local entries/extras
+    //
+    // - offseti is a stub-local entry/extra address encoded as len for
+    // a null address otherwise as an offset in range [1,len-1]
+
+    StubAddrRange& range = stub_data->get_range(i);
+    GrowableArray<address>& addresses = stub_data->address_array();
+    int base = range.start_index();
+    if (base >= 0) {
+      n = write_bytes(&stub_id, sizeof(StubId));
+      if (n != sizeof(StubId)) {
+        return false;
+      }
+      address start = addresses.at(base);
+      assert (blob_base <= start, "sanity");
+      uint offset = (uint)(start - blob_base);
+      n = write_bytes(&offset, sizeof(uint));
+      if (n != sizeof(int)) {
+        return false;
+      }
+      address end = addresses.at(base + 1);
+      assert (start < end, "sanity");
+      offset = (uint)(end - start);
+      n = write_bytes(&offset, sizeof(uint));
+      if (n != sizeof(int)) {
+        return false;
+      }
+      // write number of secondary and extra entries
+      int count =  range.count() - 2;
+      n = write_bytes(&count, sizeof(int));
+      if (n != sizeof(int)) {
+        return false;
+      }
+      for (int j = 0; j < count; j++) {
+        address next = addresses.at(base + 2 + j);
+        if (next != nullptr) {
+          // n.b. This maps next == end to the stub length which
+          // means we will reconstitute the address as nullptr. That
+          // happens when we have a handler range covers the end of
+          // a stub and needs to be handled specially by the client
+          // that restores the extras.
+          assert(start <= next && next <= end, "sanity");
+          offset = (uint)(next - start);
+        } else {
+          // this can happen when a stub is not generated or an
+          // extra is the common handler target
+          offset = (uint)(end - start);
+        }
+        n = write_bytes(&offset, sizeof(uint));
+        if (n != sizeof(int)) {
+          return false;
+        }
+      }
+      if (log.is_enabled()) {
+        log.print_cr("======== wrote stub %s and %d addresses up to offset %d",
+                     StubInfo::name(stub_id), range.count(), _write_position);
+      }
+    }
+  }
+  // we should have exhausted all stub ids in the blob
+  assert(stub_id == StubId::NO_STUBID, "sanity");
+  // write NO_STUBID as an end marker
+  n = write_bytes(&stub_id, sizeof(StubId));
+  if (n != sizeof(StubId)) {
+    return false;
+  }
+
+  if (log.is_enabled()) {
+    log.print_cr("======== Stub data ends at offset %d", _write_position);
+  }
+
+  return true;
+}
+
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name, AOTStubData* stub_data) {
   AOTCodeCache* cache = open_for_use();
   if (cache == nullptr) {
     return nullptr;
   }
   assert(AOTCodeEntry::is_valid_entry_kind(entry_kind), "invalid entry_kind %d", entry_kind);
+
+  assert(AOTCodeEntry::is_multi_stub_blob(entry_kind) == (stub_data != nullptr),
+         "entry_kind %d does not match stub_data pointer %p",
+         entry_kind, stub_data);
 
   if (AOTCodeEntry::is_adapter(entry_kind) && !is_using_adapter()) {
     return nullptr;
@@ -917,20 +1170,32 @@ CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, c
     return nullptr;
   }
   AOTCodeReader reader(cache, entry);
-  CodeBlob* blob = reader.compile_code_blob(name);
+  CodeBlob* blob = reader.compile_code_blob(name, entry_kind, id, stub_data);
 
   log_debug(aot, codecache, stubs)("%sRead blob '%s' (id=%u, kind=%s) from AOT Code Cache",
                                    (blob == nullptr? "Failed to " : ""), name, id, aot_code_entry_kind_name[entry_kind]);
   return blob;
 }
 
-CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, BlobId id) {
-  assert(AOTCodeEntry::is_blob(entry_kind),
-         "wrong entry kind for blob id %s", StubInfo::name(id));
-  return load_code_blob(entry_kind, (uint)id, StubInfo::name(id));
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, uint id, const char* name) {
+  assert(!AOTCodeEntry::is_blob(entry_kind),
+         "wrong entry kind for numeric id %d", id);
+  return load_code_blob(entry_kind, (uint)id, name, nullptr);
 }
 
-CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, BlobId id) {
+  assert(AOTCodeEntry::is_single_stub_blob(entry_kind),
+         "wrong entry kind for blob id %s", StubInfo::name(id));
+  return load_code_blob(entry_kind, (uint)id, StubInfo::name(id), nullptr);
+}
+
+CodeBlob* AOTCodeCache::load_code_blob(AOTCodeEntry::Kind entry_kind, BlobId id, AOTStubData* stub_data) {
+  assert(AOTCodeEntry::is_multi_stub_blob(entry_kind),
+         "wrong entry kind for blob id %s", StubInfo::name(id));
+  return load_code_blob(entry_kind, (uint)id, StubInfo::name(id), stub_data);
+}
+
+CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data) {
   uint entry_position = _entry->offset();
 
   // Read name
@@ -945,13 +1210,19 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
     return nullptr;
   }
 
-  // Read archived code blob
+  // Read archived code blob and related info
   uint offset = entry_position + _entry->blob_offset();
   CodeBlob* archived_blob = (CodeBlob*)addr(offset);
   offset += archived_blob->size();
 
+  int reloc_count = *(int*)addr(offset); offset += sizeof(int);
+  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+    // position of relocs will have been aligned to heap word size so
+    // we can install them into a code buffer
+    offset = align_up(offset, DATA_ALIGNMENT);
+  }
   address reloc_data = (address)addr(offset);
-  offset += archived_blob->relocation_size();
+  offset += reloc_count * sizeof(relocInfo);
   set_read_position(offset);
 
   ImmutableOopMapSet* oop_maps = nullptr;
@@ -959,11 +1230,13 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
     oop_maps = read_oop_map_set();
   }
 
+  // Note that for a non-relocatable blob reloc_data will not be
+  // restored into the blob. We fix that later.
+
   CodeBlob* code_blob = CodeBlob::create(archived_blob,
                                          stored_name,
                                          reloc_data,
-                                         oop_maps
-                                        );
+                                         oop_maps);
   if (code_blob == nullptr) { // no space left in CodeCache
     return nullptr;
   }
@@ -975,7 +1248,49 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   read_dbg_strings(code_blob->dbg_strings());
 #endif // PRODUCT
 
-  fix_relocations(code_blob);
+  if (AOTCodeEntry::is_blob(entry_kind)) {
+    BlobId blob_id = static_cast<BlobId>(id);
+    if (StubInfo::is_stubgen(blob_id)) {
+      assert(stub_data != nullptr, "sanity");
+      read_stub_data(code_blob, stub_data);
+    }
+    // publish entries found either in stub_data or as offsets in blob
+    AOTCodeCache::publish_stub_addresses(*code_blob, blob_id, stub_data);
+  }
+
+  // Now that all the entry points are in the address table we can
+  // read all the extra reloc info and fix up any addresses that need
+  // patching to adjust for a new location in a new JVM. We can be
+  // sure to correctly update all runtime references, including
+  // cross-linked stubs that are internally daisy-chained. If
+  // relocation fails and we have to re-generate any of the stubs then
+  // the entry points for newly generated stubs will get updated,
+  // ensuring that any other stubs or nmethods we need to relocate
+  // will use the correct address.
+
+  // if we have a relocatable code blob then the relocs are already
+  // attached to the blob and we can iterate over it to find the ones
+  // we need to patch. With a non-relocatable code blob we need to
+  // wrap it with a CodeBuffer and then reattach the relocs to the
+  // code buffer.
+
+  if (AOTCodeEntry::is_multi_stub_blob(entry_kind)) {
+    // the blob doesn't have any proper runtime relocs but we can
+    // reinstate the AOT-load time relocs we saved from the code
+    // buffer that generated this blob in a new code buffer and use
+    // the latter to iterate over them
+    CodeBuffer code_buffer(code_blob);
+    relocInfo* locs = (relocInfo*)reloc_data;
+    code_buffer.insts()->initialize_shared_locs(locs, reloc_count);
+    code_buffer.insts()->set_locs_end(locs + reloc_count);
+    CodeSection *cs = code_buffer.code_section(CodeBuffer::SECT_INSTS);
+    RelocIterator reloc_iter(cs);
+    fix_relocations(code_blob, reloc_iter);
+  } else {
+    // the AOT-load time relocs will be in the blob's restored relocs
+    RelocIterator reloc_iter(code_blob);
+    fix_relocations(code_blob, reloc_iter);
+  }
 
 #ifdef ASSERT
   LogStreamHandle(Trace, aot, codecache, stubs) log;
@@ -987,15 +1302,146 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name) {
   return code_blob;
 }
 
-// ------------ process code and data --------------
+void AOTCodeReader::read_stub_data(CodeBlob* code_blob, AOTStubData* stub_data) {
+  GrowableArray<address>& addresses = stub_data->address_array();
+  // Read the list of stub ids and associated start, end, secondary
+  // and extra addresses and install them in the stub data.
+  //
+  // Also insert all start and secondary addresses into the AOTCache
+  // address table so we correctly relocate this blob and any followng
+  // blobs/nmethods.
+  //
+  // n.b. if an error occurs and we need to regenerate any of these
+  // stubs the address table will be updated as a side-effect of
+  // regeneration.
+
+  address blob_base = code_blob->code_begin();
+  uint blob_size = (uint)(code_blob->code_end() - blob_base);
+  int offset = read_position();
+  LogStreamHandle(Trace, aot, codecache, stubs) log;
+  if (log.is_enabled()) {
+    log.print_cr("======== Stub data starts at offset %d", offset);
+  }
+  // read stub and entries until we see NO_STUBID
+  StubId stub_id = *(StubId*)addr(offset); offset += sizeof(StubId);
+  // we ought to have at least one saved stub in the blob
+  assert(stub_id != StubId::NO_STUBID, "blob %s contains no stubs!", StubInfo::name(stub_data->blob_id()));
+  while (stub_id != StubId::NO_STUBID) {
+    assert(StubInfo::blob(stub_id) == stub_data->blob_id(), "sanity");
+    int idx = StubInfo::stubgen_offset_in_blob(stub_data->blob_id(), stub_id);
+    StubAddrRange& range = stub_data->get_range(idx);
+    // we should only see a stub once
+    assert(range.start_index() < 0, "repeated entry for stub %s", StubInfo::name(stub_id));
+    int address_base = addresses.length();
+    // start is an offset from the blob base
+    uint start = *(uint*)addr(offset); offset += sizeof(uint);
+    assert(start < blob_size, "stub %s start offset %d exceeds buffer length %d", StubInfo::name(stub_id), start, blob_size);
+    address stub_start = blob_base + start;
+    addresses.append(stub_start);
+    // end is an offset from the stub start
+    uint end = *(uint*)addr(offset); offset += sizeof(uint);
+    assert(start + end <= blob_size, "stub %s end offset %d exceeds remaining buffer length %d", StubInfo::name(stub_id), end, blob_size - start);
+    addresses.append(stub_start + end);
+    // read count of secondary entries plus extras
+    int entries_count = *(int*)addr(offset); offset += sizeof(int);
+    assert(entries_count >= (StubInfo::entry_count(stub_id) - 1), "not enough entries for %s", StubInfo::name(stub_id));
+    for (int i = 0; i < entries_count; i++) {
+      // entry offset is an offset from the stub start less than or
+      // equal to end
+      uint entry = *(uint*)addr(offset); offset += sizeof(uint);
+      assert(entry <= end, "stub %s entry offset %d lies beyond stub end %d", StubInfo::name(stub_id), entry, end);
+      if (entry < end) {
+        addresses.append(stub_start + entry);
+      } else {
+        // entry offset == end encodes a nullptr
+        addresses.append(nullptr);
+      }
+    }
+    if (log.is_enabled()) {
+      log.print_cr("======== read stub %s and %d addresses up to offset %d",
+                   StubInfo::name(stub_id),  2 + entries_count, offset);
+    }
+    range.init_entry(address_base, 2 + entries_count);
+    // move on to next stub or NO_STUBID
+    stub_id = *(StubId*)addr(offset); offset += sizeof(StubId);
+  }
+  if (log.is_enabled()) {
+    log.print_cr("======== Stub data ends at offset %d", offset);
+  }
+
+  set_read_position(offset);
+}
+
+void AOTCodeCache::publish_external_addresses(GrowableArray<address>& addresses) {
+  DEBUG_ONLY( _passed_init2 = true; )
+  if (opened_cache == nullptr) {
+    return;
+  }
+
+  cache()->_table->add_external_addresses(addresses);
+}
+
+void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, AOTStubData *stub_data) {
+  if (stub_data != nullptr) {
+    // register all entries in stub
+    assert(StubInfo::stub_count(blob_id) > 1,
+           "multiple stub data provided for single stub blob %s",
+           StubInfo::name(blob_id));
+    assert(blob_id == stub_data->blob_id(),
+           "blob id %s does not match id in stub data %s",
+           StubInfo::name(blob_id),
+           StubInfo::name(stub_data->blob_id()));
+    // iterate over all stubs in the blob
+    StubId stub_id = StubInfo::stub_base(blob_id);
+    int stub_cnt = StubInfo::stub_count(blob_id);
+    GrowableArray<address>& addresses = stub_data->address_array();
+    for (int i = 0; i < stub_cnt; i++) {
+      assert(stub_id != StubId::NO_STUBID, "sanity");
+      StubAddrRange& range = stub_data->get_range(i);
+      int base = range.start_index();
+      if (base >= 0) {
+        cache()->add_stub_entries(stub_id, addresses.at(base), &addresses, base + 2);
+      }
+      stub_id = StubInfo::next_in_blob(blob_id, stub_id);
+    }
+    // we should have exhausted all stub ids in the blob
+    assert(stub_id == StubId::NO_STUBID, "sanity");
+  } else {
+    // register entry or entries for a single stub blob
+    StubId stub_id = StubInfo::stub_base(blob_id);
+    assert(StubInfo::stub_count(blob_id) == 1,
+           "multiple stub blob %s provided without stub data",
+           StubInfo::name(blob_id));
+    address start = code_blob.code_begin();
+    if (StubInfo::entry_count(stub_id) == 1) {
+      assert(!code_blob.is_deoptimization_stub(), "expecting multiple entries for stub %s", StubInfo::name(stub_id));
+      // register the blob base address as the only entry
+      cache()->add_stub_entries(stub_id, start);
+    } else {
+      assert(code_blob.is_deoptimization_stub(), "only expecting one entry for stub %s", StubInfo::name(stub_id));
+      DeoptimizationBlob *deopt_blob = code_blob.as_deoptimization_blob();
+      assert(deopt_blob->unpack() == start, "unexpected offset 0x%lx for deopt stub entry", deopt_blob->unpack() - start);
+      GrowableArray<address> addresses;
+      addresses.append(deopt_blob->unpack_with_exception());
+      addresses.append(deopt_blob->unpack_with_reexecution());
+      addresses.append(deopt_blob->unpack_with_exception_in_tls());
+#if INCLUDE_JVMCI
+      addresses.append(deopt_blob->uncommon_trap());
+      addresses.append(deopt_blob->implicit_exception_uncommon_trap());
+#endif // INCLUDE_JVMCI
+      cache()->add_stub_entries(stub_id, start, &addresses, 0);
+    }
+  }
+}
+
+  // ------------ process code and data --------------
 
 // Can't use -1. It is valid value for jump to iteself destination
 // used by static call stub: see NativeJump::jump_destination().
 #define BAD_ADDRESS_ID -2
 
-bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
+bool AOTCodeCache::write_relocations(CodeBlob& code_blob, RelocIterator& iter) {
   GrowableArray<uint> reloc_data;
-  RelocIterator iter(&code_blob);
   LogStreamHandle(Trace, aot, codecache, reloc) log;
   while (iter.next()) {
     int idx = reloc_data.append(0); // default value
@@ -1049,6 +1495,11 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
   // Write the count first
   int count = reloc_data.length();
   write_bytes(&count, sizeof(int));
+  if (log.is_enabled()) {
+    log.print_cr("======== extra relocations count=%d", count);
+    log.print(   "  {");
+  }
+  bool first = true;
   for (GrowableArrayIterator<uint> iter = reloc_data.begin();
        iter != reloc_data.end(); ++iter) {
     uint value = *iter;
@@ -1056,23 +1507,43 @@ bool AOTCodeCache::write_relocations(CodeBlob& code_blob) {
     if (n != sizeof(uint)) {
       return false;
     }
+    if (log.is_enabled()) {
+      if (first) {
+        first = false;
+        log.print("%d", value);
+      } else {
+        log.print(", %d", value);
+      }
+    }
   }
+  log.print_cr("}");
   return true;
 }
 
-void AOTCodeReader::fix_relocations(CodeBlob* code_blob) {
-  LogStreamHandle(Trace, aot, reloc) log;
+void AOTCodeReader::fix_relocations(CodeBlob *code_blob, RelocIterator& iter) {
   uint offset = read_position();
-  int count = *(int*)addr(offset);
+  int reloc_count = *(int*)addr(offset);
   offset += sizeof(int);
-  if (log.is_enabled()) {
-    log.print_cr("======== extra relocations count=%d", count);
-  }
   uint* reloc_data = (uint*)addr(offset);
-  offset += (count * sizeof(uint));
+  offset += (reloc_count * sizeof(uint));
   set_read_position(offset);
 
-  RelocIterator iter(code_blob);
+  LogStreamHandle(Trace, aot, codecache, reloc) log;
+  if (log.is_enabled()) {
+    log.print_cr("======== extra relocations count=%d", reloc_count);
+  }
+  if (log.is_enabled()) {
+    log.print("  {");
+    for(int i = 0; i < reloc_count; i++) {
+      if (i == 0) {
+        log.print("%d", reloc_data[i]);
+      } else {
+        log.print(", %d", reloc_data[i]);
+      }
+    }
+    log.print_cr("}");
+  }
+
   int j = 0;
   while (iter.next()) {
     switch (iter.type()) {
@@ -1121,7 +1592,7 @@ void AOTCodeReader::fix_relocations(CodeBlob* code_blob) {
     }
     j++;
   }
-  assert(j == count, "sanity");
+  assert(j == reloc_count, "sanity");
 }
 
 bool AOTCodeCache::write_oop_map_set(CodeBlob& cb) {
@@ -1231,27 +1702,23 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 
 //======================= AOTCodeAddressTable ===============
 
-// address table ids for generated routines, external addresses and C
-// string addresses are partitioned into positive integer ranges
-// defined by the following positive base and max values
-// i.e. [_extrs_base, _extrs_base + _extrs_max -1],
-//      [_blobs_base, _blobs_base + _blobs_max -1],
-//      ...
-//      [_c_str_base, _c_str_base + _c_str_max -1],
+// address table ids for generated routine entry adresses, external
+// addresses and C string addresses are partitioned into positive
+// integer ranges defined by the following positive base and max
+// values i.e. [_extrs_base, _extrs_base + _extrs_max -1],
+// [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
+// _c_str_base + _c_str_max -1],
 
-#define _extrs_max 100
-#define _stubs_max 3
-
-#define _shared_blobs_max 20
-#define _C1_blobs_max 10
-#define _blobs_max (_shared_blobs_max+_C1_blobs_max)
-#define _all_max (_extrs_max+_stubs_max+_blobs_max)
+#define _extrs_max 200
+#define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
 #define _stubs_base (_extrs_base + _extrs_max)
-#define _shared_blobs_base (_stubs_base + _stubs_max)
-#define _C1_blobs_base (_shared_blobs_base + _shared_blobs_max)
-#define _blobs_end  (_shared_blobs_base + _blobs_max)
+#define _all_max    (_stubs_base + _stubs_max)
+
+// setter for external addresses and string addresses inserts new
+// addresses in the order they are encountered them which must remain
+// th esame across an assembly run and subsequent production run
 
 #define SET_ADDRESS(type, addr)                           \
   {                                                       \
@@ -1259,17 +1726,40 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
     assert(type##_length <= type##_max, "increase size"); \
   }
 
+// setter for stub entry addresses inserts them using the stub entry
+// id as an index
+
+#define SET_ENTRY_ADDRESS(type, addr, entry_id)           \
+  {                                                       \
+    int idx = static_cast<int>(entry);                    \
+    _stub_addr[idx] = (address) (addr);                   \
+  }
+
 static bool initializing_extrs = false;
 
 void AOTCodeAddressTable::init_extrs() {
   if (_extrs_complete || initializing_extrs) return; // Done already
 
-  assert(_blobs_end <= _all_max, "AOTCodeAddress table ranges need adjusting");
-
   initializing_extrs = true;
   _extrs_addr = NEW_C_HEAP_ARRAY(address, _extrs_max, mtCode);
 
   _extrs_length = 0;
+
+  {
+    // Required by initial stubs
+    SET_ADDRESS(_extrs, SharedRuntime::exception_handler_for_return_address); // used by forward_exception
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+    SET_ADDRESS(_extrs, MacroAssembler::debug64);  // used by many eg forward_exception, call_stub
+#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+#if defined(AMD64)
+    SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_std()); // used by call_stub
+    SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_rz()); // used by libmFmod
+#endif
+    SET_ADDRESS(_extrs, CompressedOops::base_addr()); // used by call_stub
+    SET_ADDRESS(_extrs, Thread::current); // used by call_stub
+    SET_ADDRESS(_extrs, SharedRuntime::throw_StackOverflowError);
+    SET_ADDRESS(_extrs, SharedRuntime::throw_delayed_StackOverflowError);
+  }
 
   // Record addresses of VM runtime methods
   SET_ADDRESS(_extrs, SharedRuntime::fixup_callers_callsite);
@@ -1279,6 +1769,93 @@ void AOTCodeAddressTable::init_extrs() {
 #if defined(AARCH64) && !defined(ZERO)
   SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
 #endif
+
+#ifndef PRODUCT
+  SET_ADDRESS(_extrs, &SharedRuntime::_jbyte_array_copy_ctr); // used by arraycopy stub on arm32 and x86_64
+  SET_ADDRESS(_extrs, &SharedRuntime::_jshort_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_jint_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_jlong_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_oop_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_checkcast_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_unsafe_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_generic_array_copy_ctr); // used by arraycopy stub
+  SET_ADDRESS(_extrs, &SharedRuntime::_unsafe_set_memory_ctr); // used by arraycopy stub
+#endif /* PRODUCT */
+
+  SET_ADDRESS(_extrs, SharedRuntime::enable_stack_reserved_zone);
+
+#ifdef AMD64
+  SET_ADDRESS(_extrs, SharedRuntime::montgomery_multiply);
+  SET_ADDRESS(_extrs, SharedRuntime::montgomery_square);
+#endif // AMD64
+
+  SET_ADDRESS(_extrs, SharedRuntime::d2f);
+  SET_ADDRESS(_extrs, SharedRuntime::d2i);
+  SET_ADDRESS(_extrs, SharedRuntime::d2l);
+  SET_ADDRESS(_extrs, SharedRuntime::dcos);
+  SET_ADDRESS(_extrs, SharedRuntime::dexp);
+  SET_ADDRESS(_extrs, SharedRuntime::dlog);
+  SET_ADDRESS(_extrs, SharedRuntime::dlog10);
+  SET_ADDRESS(_extrs, SharedRuntime::dpow);
+  SET_ADDRESS(_extrs, SharedRuntime::drem);
+  SET_ADDRESS(_extrs, SharedRuntime::dsin);
+  SET_ADDRESS(_extrs, SharedRuntime::dtan);
+  SET_ADDRESS(_extrs, SharedRuntime::f2i);
+  SET_ADDRESS(_extrs, SharedRuntime::f2l);
+  SET_ADDRESS(_extrs, SharedRuntime::frem);
+  SET_ADDRESS(_extrs, SharedRuntime::l2d);
+  SET_ADDRESS(_extrs, SharedRuntime::l2f);
+  SET_ADDRESS(_extrs, SharedRuntime::ldiv);
+  SET_ADDRESS(_extrs, SharedRuntime::lmul);
+  SET_ADDRESS(_extrs, SharedRuntime::lrem);
+
+#if INCLUDE_JVMTI
+  SET_ADDRESS(_extrs, &JvmtiExport::_should_notify_object_alloc);
+#endif /* INCLUDE_JVMTI */
+
+  SET_ADDRESS(_extrs, SafepointSynchronize::handle_polling_page_exception);
+
+  SET_ADDRESS(_extrs, ThreadIdentifier::unsafe_offset());
+  SET_ADDRESS(_extrs, Thread::current);
+
+  SET_ADDRESS(_extrs, os::javaTimeMillis);
+  SET_ADDRESS(_extrs, os::javaTimeNanos);
+#ifndef PRODUCT
+  SET_ADDRESS(_extrs, os::breakpoint);
+#endif
+
+#if INCLUDE_JVMTI
+  SET_ADDRESS(_extrs, &JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events);
+#endif /* INCLUDE_JVMTI */
+  SET_ADDRESS(_extrs, StubRoutines::crc_table_addr());
+#if defined(AARCH64)
+  SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
+#endif
+#ifndef PRODUCT
+  SET_ADDRESS(_extrs, &SharedRuntime::_partial_subtype_ctr);
+  SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
+#endif
+
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
+  SET_ADDRESS(_extrs, MacroAssembler::debug64);
+#endif
+#if defined(AMD64)
+  SET_ADDRESS(_extrs, StubRoutines::x86::arrays_hashcode_powers_of_31());
+#endif
+
+#ifdef X86
+  SET_ADDRESS(_extrs, LIR_Assembler::float_signmask_pool);
+  SET_ADDRESS(_extrs, LIR_Assembler::double_signmask_pool);
+  SET_ADDRESS(_extrs, LIR_Assembler::float_signflip_pool);
+  SET_ADDRESS(_extrs, LIR_Assembler::double_signflip_pool);
+#endif
+
+  SET_ADDRESS(_extrs, JfrIntrinsicSupport::write_checkpoint);
+  SET_ADDRESS(_extrs, JfrIntrinsicSupport::return_lease);
+
+
+  SET_ADDRESS(_extrs, UpcallLinker::handle_uncaught_exception); // used by upcall_stub_exception_handler
+
   {
     // Required by Shared blobs
     SET_ADDRESS(_extrs, Deoptimization::fetch_unroll_info);
@@ -1366,6 +1943,11 @@ void AOTCodeAddressTable::init_extrs() {
 
 #if INCLUDE_G1GC
   SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_field_pre_entry);
+  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry); // used by arraycopy stubs
+  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_pre_oop_entry); // used by arraycopy stubs
+  SET_ADDRESS(_extrs, G1BarrierSetRuntime::write_ref_array_post_entry); // used by arraycopy stubs
+  SET_ADDRESS(_extrs, BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
+
 #endif
 #if INCLUDE_SHENANDOAHGC
   SET_ADDRESS(_extrs, ShenandoahRuntime::write_barrier_pre);
@@ -1384,91 +1966,70 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 #endif // ZERO
 
+  log_debug(aot, codecache, init)("External addresses opened and recorded");
+  // allocate storage for stub entries
+  _stubs_addr = NEW_C_HEAP_ARRAY(address, _stubs_max, mtCode);
+  log_debug(aot, codecache, init)("Stub addresses opened");
+}
+
+void AOTCodeAddressTable::init_extrs2() {
+  assert(initializing_extrs && !_extrs_complete,
+         "invalid sequence for init_extrs2");
+
+  {
+  SET_ADDRESS(_extrs, Continuation::prepare_thaw); // used by cont_thaw
+  SET_ADDRESS(_extrs, Continuation::thaw_entry()); // used by cont_thaw
+  SET_ADDRESS(_extrs, ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
+  }
   _extrs_complete = true;
+  initializing_extrs = false;
+  log_debug(aot, codecache, init)("External addresses recorded and closed");
+}
+
+void AOTCodeAddressTable::add_external_addresses(GrowableArray<address>& addresses) {
+  assert(initializing_extrs && !_extrs_complete,
+         "invalid sequence for add_external_addresses");
+  for (int i = 0; i < addresses.length(); i++) {
+    SET_ADDRESS(_extrs, addresses.at(i));
+  }
   log_debug(aot, codecache, init)("External addresses recorded");
 }
 
-static bool initializing_early_stubs = false;
-
-void AOTCodeAddressTable::init_early_stubs() {
-  if (_complete || initializing_early_stubs) return; // Done already
-  initializing_early_stubs = true;
-  _stubs_addr = NEW_C_HEAP_ARRAY(address, _stubs_max, mtCode);
-  _stubs_length = 0;
-  SET_ADDRESS(_stubs, StubRoutines::forward_exception_entry());
-
-  {
-    // Required by C1 blobs
-#if defined(AMD64) && !defined(ZERO)
-    SET_ADDRESS(_stubs, StubRoutines::x86::double_sign_flip());
-    SET_ADDRESS(_stubs, StubRoutines::x86::d2l_fixup());
-#endif // AMD64
-  }
-
-  _early_stubs_complete = true;
-  log_info(aot, codecache, init)("Early stubs recorded");
+void AOTCodeAddressTable::add_stub_entry(EntryId entry_id, address a) {
+  assert(_extrs_complete || initializing_extrs,
+         "recording stub entry address before external addresses complete");
+  assert(!(StubInfo::is_shared(StubInfo::stub(entry_id)) && _shared_stubs_complete), "too late to add shared entry");
+  assert(!(StubInfo::is_stubgen(StubInfo::stub(entry_id)) && _stubgen_stubs_complete), "too late to add stubgen entry");
+  assert(!(StubInfo::is_c1(StubInfo::stub(entry_id)) && _c1_stubs_complete), "too late to add c1 entry");
+  assert(!(StubInfo::is_c2(StubInfo::stub(entry_id)) && _c2_stubs_complete), "too late to add c2 entry");
+  log_debug(aot, stubs)("Recording address 0x%p for %s entry %s", a, StubInfo::name(StubInfo::stubgroup(entry_id)), StubInfo::name(entry_id));
+  int idx = static_cast<int>(entry_id);
+  _stubs_addr[idx] = a;
 }
 
-static bool initializing_shared_blobs = false;
-
-void AOTCodeAddressTable::init_shared_blobs() {
-  if (_complete || initializing_shared_blobs) return; // Done already
-  initializing_shared_blobs = true;
-  address* blobs_addr = NEW_C_HEAP_ARRAY(address, _blobs_max, mtCode);
-
-  // Divide _shared_blobs_addr array to chunks because they could be initialized in parrallel
-  _shared_blobs_addr = blobs_addr;
-  _C1_blobs_addr = _shared_blobs_addr + _shared_blobs_max;
-
-  _shared_blobs_length = 0;
-  _C1_blobs_length = 0;
-
-  // clear the address table
-  memset(blobs_addr, 0, sizeof(address)* _blobs_max);
-
-  // Record addresses of generated code blobs
-  SET_ADDRESS(_shared_blobs, SharedRuntime::get_handle_wrong_method_stub());
-  SET_ADDRESS(_shared_blobs, SharedRuntime::get_ic_miss_stub());
-  SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->unpack());
-  SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->unpack_with_exception());
-  SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->unpack_with_reexecution());
-  SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->unpack_with_exception_in_tls());
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->uncommon_trap());
-    SET_ADDRESS(_shared_blobs, SharedRuntime::deopt_blob()->implicit_exception_uncommon_trap());
-  }
-#endif
-
-  _shared_blobs_complete = true;
-  log_debug(aot, codecache, init)("Early shared blobs recorded");
-  _complete = true;
+void AOTCodeAddressTable::set_shared_stubs_complete() {
+  assert(!_shared_stubs_complete, "repeated close for shared stubs!");
+  _shared_stubs_complete = true;
+  log_debug(aot, codecache, init)("Shared stubs closed");
 }
 
-void AOTCodeAddressTable::init_early_c1() {
-#ifdef COMPILER1
-  // Runtime1 Blobs
-  StubId id = StubInfo::stub_base(StubGroup::C1);
-  // include forward_exception in range we publish
-  StubId limit = StubInfo::next(StubId::c1_forward_exception_id);
-  for (; id != limit; id = StubInfo::next(id)) {
-    if (Runtime1::blob_for(id) == nullptr) {
-      log_info(aot, codecache, init)("C1 blob %s is missing", Runtime1::name_for(id));
-      continue;
-    }
-    if (Runtime1::entry_for(id) == nullptr) {
-      log_info(aot, codecache, init)("C1 blob %s is missing entry", Runtime1::name_for(id));
-      continue;
-    }
-    address entry = Runtime1::entry_for(id);
-    SET_ADDRESS(_C1_blobs, entry);
-  }
-#endif // COMPILER1
-  assert(_C1_blobs_length <= _C1_blobs_max, "increase _C1_blobs_max to %d", _C1_blobs_length);
-  _early_c1_complete = true;
+void AOTCodeAddressTable::set_c1_stubs_complete() {
+  assert(!_c1_stubs_complete, "repeated close for c1 stubs!");
+  _c2_stubs_complete = true;
+  log_debug(aot, codecache, init)("C1 stubs closed");
 }
 
-#undef SET_ADDRESS
+void AOTCodeAddressTable::set_c2_stubs_complete() {
+  assert(!_c2_stubs_complete, "repeated close for c2 stubs!");
+  _c2_stubs_complete = true;
+  log_debug(aot, codecache, init)("C2 stubs closed");
+}
+
+void AOTCodeAddressTable::set_stubgen_stubs_complete() {
+  assert(!_stubgen_stubs_complete, "repeated close for stubgen stubs!");
+  _stubgen_stubs_complete = true;
+  log_debug(aot, codecache, init)("Stubgen stubs closed");
+}
 
 AOTCodeAddressTable::~AOTCodeAddressTable() {
   if (_extrs_addr != nullptr) {
@@ -1476,9 +2037,6 @@ AOTCodeAddressTable::~AOTCodeAddressTable() {
   }
   if (_stubs_addr != nullptr) {
     FREE_C_HEAP_ARRAY(address, _stubs_addr);
-  }
-  if (_shared_blobs_addr != nullptr) {
-    FREE_C_HEAP_ARRAY(address, _shared_blobs_addr);
   }
 }
 
@@ -1564,7 +2122,7 @@ const char* AOTCodeCache::add_C_string(const char* str) {
 }
 
 const char* AOTCodeAddressTable::add_C_string(const char* str) {
-  if (_extrs_complete) {
+  if (_extrs_complete || initializing_extrs) {
     // Check previous strings address
     for (int i = 0; i < _C_strings_count; i++) {
       if (_C_strings_in[i] == str) {
@@ -1627,7 +2185,7 @@ static int search_address(address addr, address* table, uint length) {
 }
 
 address AOTCodeAddressTable::address_for_id(int idx) {
-  assert(_extrs_complete, "AOT Code Cache VM runtime addresses table is not complete");
+  assert(_extrs_complete || initializing_extrs, "AOT Code Cache VM runtime addresses table is not complete");
   if (idx == -1) {
     return (address)-1;
   }
@@ -1644,14 +2202,8 @@ address AOTCodeAddressTable::address_for_id(int idx) {
   if (/* id >= _extrs_base && */ id < _extrs_length) {
     return _extrs_addr[id - _extrs_base];
   }
-  if (id >= _stubs_base && id < _stubs_base + _stubs_length) {
+  if (id >= _stubs_base && id < _c_str_base) {
     return _stubs_addr[id - _stubs_base];
-  }
-  if (id >= _shared_blobs_base && id < _shared_blobs_base + _shared_blobs_length) {
-    return _shared_blobs_addr[id - _shared_blobs_base];
-  }
-  if (id >= _C1_blobs_base && id < _C1_blobs_base + _C1_blobs_length) {
-    return _C1_blobs_addr[id - _C1_blobs_base];
   }
   if (id >= _c_str_base && id < (_c_str_base + (uint)_C_strings_count)) {
     return address_for_C_string(id - _c_str_base);
@@ -1661,7 +2213,7 @@ address AOTCodeAddressTable::address_for_id(int idx) {
 }
 
 int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeBlob* code_blob) {
-  assert(_extrs_complete, "AOT Code Cache VM runtime addresses table is not complete");
+  assert(_extrs_complete || initializing_extrs, "AOT Code Cache VM runtime addresses table is not complete");
   int id = -1;
   if (addr == (address)-1) { // Static call stub has jump to itself
     return id;
@@ -1671,9 +2223,9 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
   if (id >= 0) {
     return id + _c_str_base;
   }
-  if (StubRoutines::contains(addr)) {
-    // Search in stubs
-    id = search_address(addr, _stubs_addr, _stubs_length);
+  if (StubRoutines::contains(addr) || CodeCache::find_blob(addr) != nullptr) {
+    // Search for a matching stub entry
+    id = search_address(addr, _stubs_addr, _stubs_max);
     if (id < 0) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
       if (desc == nullptr) {
@@ -1685,51 +2237,39 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
       return id + _stubs_base;
     }
   } else {
-    CodeBlob* cb = CodeCache::find_blob(addr);
-    if (cb != nullptr) {
-      // Search in code blobs
-      int id_base = _shared_blobs_base;
-      id = search_address(addr, _shared_blobs_addr, _blobs_max);
-      if (id < 0) {
-        assert(false, "Address " INTPTR_FORMAT " for Blob:%s is missing in AOT Code Cache addresses table", p2i(addr), cb->name());
+    // Search in runtime functions
+    id = search_address(addr, _extrs_addr, _extrs_length);
+    if (id < 0) {
+      ResourceMark rm;
+      const int buflen = 1024;
+      char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
+      int offset = 0;
+      if (os::dll_address_to_function_name(addr, func_name, buflen, &offset)) {
+        if (offset > 0) {
+          // Could be address of C string
+          uint dist = (uint)pointer_delta(addr, (address)os::init, 1);
+          log_debug(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
+                                    p2i(addr), dist, (const char*)addr);
+          assert(dist > (uint)(_all_max + MAX_STR_COUNT), "change encoding of distance");
+          return dist;
+        }
+#ifdef ASSERT
+        reloc.print_current_on(tty);
+        code_blob->print_on(tty);
+        code_blob->print_code_on(tty);
+        assert(false, "Address " INTPTR_FORMAT " for runtime target '%s+%d' is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
+#endif
       } else {
-        return id_base + id;
+#ifdef ASSERT
+        reloc.print_current_on(tty);
+        code_blob->print_on(tty);
+        code_blob->print_code_on(tty);
+        os::find(addr, tty);
+        assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
+#endif
       }
     } else {
-      // Search in runtime functions
-      id = search_address(addr, _extrs_addr, _extrs_length);
-      if (id < 0) {
-        ResourceMark rm;
-        const int buflen = 1024;
-        char* func_name = NEW_RESOURCE_ARRAY(char, buflen);
-        int offset = 0;
-        if (os::dll_address_to_function_name(addr, func_name, buflen, &offset)) {
-          if (offset > 0) {
-            // Could be address of C string
-            uint dist = (uint)pointer_delta(addr, (address)os::init, 1);
-            log_debug(aot, codecache)("Address " INTPTR_FORMAT " (offset %d) for runtime target '%s' is missing in AOT Code Cache addresses table",
-                                      p2i(addr), dist, (const char*)addr);
-            assert(dist > (uint)(_all_max + MAX_STR_COUNT), "change encoding of distance");
-            return dist;
-          }
-#ifdef ASSERT
-          reloc.print_current_on(tty);
-          code_blob->print_on(tty);
-          code_blob->print_code_on(tty);
-          assert(false, "Address " INTPTR_FORMAT " for runtime target '%s+%d' is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
-#endif
-        } else {
-#ifdef ASSERT
-          reloc.print_current_on(tty);
-          code_blob->print_on(tty);
-          code_blob->print_code_on(tty);
-          os::find(addr, tty);
-          assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
-#endif
-        }
-      } else {
-        return _extrs_base + id;
-      }
+      return _extrs_base + id;
     }
   }
   return id;
@@ -1757,4 +2297,177 @@ void AOTCodeCache::print_on(outputStream* st) {
                    i, aot_code_entry_kind_name[entry->kind()], index, entry->id(), entry->size(), saved_name);
     }
   }
+}
+
+// methods for managing entries in multi-stub blobs
+
+
+AOTStubData::AOTStubData(BlobId blob_id) :
+  _blob_id(blob_id),
+  _cached_blob(nullptr),
+  _stub_cnt(0),
+  _ranges(nullptr),
+  _current(StubId::NO_STUBID),
+  _current_idx(-1),
+  _flags(0) {
+  assert(StubInfo::is_stubgen(blob_id),
+         "AOTStubData expects a multi-stub blob not %s",
+         StubInfo::name(blob_id));
+
+  // we cannot save or restore preuniversestubs because the cache
+  // cannot be accessed before initialising the universe
+  if (blob_id == BlobId::stubgen_preuniverse_id) {
+    // invalidate any attempt to use this
+    _flags |= INVALID;
+    return;
+  }
+  if (AOTCodeCache::is_on()) {
+    // allow update of stub entry addresses
+    _flags |= OPEN;
+    if (AOTCodeCache::is_using_stub()) {
+      // allow stub loading
+      _flags |= USING;
+    }
+    if (AOTCodeCache::is_dumping_stub()) {
+      // allow stub saving
+      _flags |= DUMPING;
+    }
+    // we need to track all the blob's entries
+    _stub_cnt = StubInfo::stub_count(_blob_id);
+    _ranges = NEW_C_HEAP_ARRAY(StubAddrRange, _stub_cnt, mtCode);
+    for (int i = 0; i < _stub_cnt; i++) {
+      _ranges[i].default_init();
+    }
+  }
+}
+
+bool AOTStubData::load_code_blob() {
+  assert(is_using(), "should not call");
+  assert(!is_invalid() && _cached_blob == nullptr, "repeated init");
+  _cached_blob = AOTCodeCache::load_code_blob(AOTCodeEntry::StubGenBlob,
+                                              _blob_id,
+                                              this);
+  if (_cached_blob == nullptr) {
+    set_invalid();
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool AOTStubData::store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) {
+  assert(is_dumping(), "should not call");
+  assert(_cached_blob == nullptr, "should not be loading and storing!");
+  if (!AOTCodeCache::store_code_blob(new_blob,
+                                     AOTCodeEntry::StubGenBlob,
+                                     _blob_id, this, code_buffer)) {
+    set_invalid();
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool AOTStubData::find_archive_data(StubId stub_id) {
+  assert(StubInfo::blob(stub_id) == _blob_id, "sanity check");
+  if (is_invalid()) {
+    return false;
+  }
+  int idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
+  assert(idx >= 0 && idx < _stub_cnt, "invalid index %d for stub count %d", idx, _stub_cnt);
+  // ensure we have a valid associated range
+  StubAddrRange range = _ranges[idx];
+  int start_index = range.start_index();
+  if (start_index < 0) {
+    _current = StubId::NO_STUBID;
+#ifdef DEBUG
+    // reset index so we can idenitfy which ones we failed to find
+    range.init_entry(-2, 0);
+#endif
+    return false;
+  }
+  _current = stub_id;
+  _current_idx = idx;
+  return true;
+}
+
+void AOTStubData::load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address>* entries, GrowableArray<address>* extras) {
+  assert(StubInfo::blob(stub_id) == _blob_id, "sanity check");
+  assert(_current == stub_id && stub_id != StubId::NO_STUBID, "sanity check");
+  assert(!is_invalid(), "should not load stubs when archive data is invalid");
+  assert(_current_idx >= 0, "sanity");
+  StubAddrRange& range = _ranges[_current_idx];
+  int base = range.start_index();
+  int count = range.count();
+  assert(base >= 0, "sanity");
+  assert(count >= 2, "sanity");
+  // first two saved addresses are start and end
+  start = _address_array.at(base);
+  end = _address_array.at(base + 1);
+  assert(start != nullptr, "failed to load start address of stub %s", StubInfo::name(stub_id));
+  assert(end != nullptr, "failed to load end address of stub %s", StubInfo::name(stub_id));
+  assert(start < end, "start address %p should be less than end %p address for stub %s", start, end, StubInfo::name(stub_id));
+
+  int entry_count = StubInfo::entry_count(stub_id);
+  // the address count must at least include the stub start, end
+  // and secondary addresses
+  assert(count >= entry_count + 1, "stub %s requires %d saved addresses but only has %d", StubInfo::name(stub_id), entry_count + 1, count);
+
+  // caller must retrieve secondary entries if and only if they exist
+  assert((entry_count == 1) == (entries == nullptr), "trying to retrieve wrong number of entries for stub %s", StubInfo::name(stub_id));
+  int index = 2;
+  if (entries != nullptr) {
+    assert(entries->length() == 0, "non-empty array when retrieving entries for stub %s!", StubInfo::name(stub_id));
+    while (index < entry_count + 1) {
+      address entry = _address_array.at(base + index++);
+      assert(entry == nullptr || (start < entry && entry < end), "entry address %p not in range (%p, %p) for stub %s", entry, start, end, StubInfo::name(stub_id));
+      entries->append(entry);
+    }
+  }
+  // caller must retrieve extras if and only if they exist
+  assert((index < count) == (extras != nullptr), "trying to retrieve wrong number of extras for stub %s", StubInfo::name(stub_id));
+  if (extras != nullptr) {
+    assert(extras->length() == 0, "non-empty array when retrieving extras for stub %s!", StubInfo::name(stub_id));
+    while (index < count) {
+      address extra = _address_array.at(base + index++);
+      assert(extra == nullptr || (start <= extra && extra < end), "extra address %p not in range (%p, %p) for stub %s", extra, start, end, StubInfo::name(stub_id));
+      extras->append(extra);
+    }
+  }
+}
+
+void AOTStubData::store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries, GrowableArray<address>* extras) {
+  assert(StubInfo::blob(stub_id) == _blob_id, "sanity check");
+  assert(start != nullptr, "start address cannot be null");
+  assert(end != nullptr, "end address cannot be null");
+  assert(start < end, "start address %p should be less than end %p address for stub %s", start, end, StubInfo::name(stub_id));
+  _current = stub_id;
+  _current_idx = StubInfo::stubgen_offset_in_blob(_blob_id, stub_id);
+  StubAddrRange& range = _ranges[_current_idx];
+  assert(range.start_index() == -1, "sanity");
+  int base = _address_array.length();
+  assert(base >= 0, "sanity");
+  // first two saved addresses are start and end
+  _address_array.append(start);
+  _address_array.append(end);
+  // caller must save secondary entries if and only if they exist
+  assert((StubInfo::entry_count(stub_id) == 1) == (entries == nullptr), "trying to save wrong number of entries for stub %s", StubInfo::name(stub_id));
+  if (entries != nullptr) {
+    assert(entries->length() == StubInfo::entry_count(stub_id) - 1, "incorrect entry count %d when saving entries for stub %s!", entries->length(), StubInfo::name(stub_id));
+    for (int i = 0; i < entries->length(); i++) {
+      address entry = entries->at(i);
+      assert(entry == nullptr || (start < entry && entry < end), "entry address %p not in range (%p, %p) for stub %s", entry, start, end, StubInfo::name(stub_id));
+      _address_array.append(entry);
+    }
+  }
+  // caller may wish to save extra addresses
+  if (extras != nullptr) {
+    for (int i = 0; i < extras->length(); i++) {
+      address extra = extras->at(i);
+      // handler range end may be end -- it gets restored as nullptr
+      assert(extra == nullptr || (start <= extra && extra <= end), "extra address %p not in range (%p, %p) for stub %s", extra, start, end, StubInfo::name(stub_id));
+      _address_array.append(extra);
+    }
+  }
+  range.init_entry(base, _address_array.length() - base);
 }

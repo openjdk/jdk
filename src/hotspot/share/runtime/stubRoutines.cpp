@@ -102,7 +102,10 @@ BlobId StubRoutines::stub_to_blob(StubId id) {
 
 // Initialization
 
-extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data); // only interface to generators
+#if (defined(X86) && defined(_LP64)) || defined(AARCH64)
+extern void StubGenerator_AOTAddressTable_init();
+#endif
 
 void UnsafeMemoryAccess::create_table(int max_size) {
   UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
@@ -169,6 +172,33 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   assert(StubInfo::is_stubgen(blob_id), "not a stubgen blob %s", StubInfo::name(blob_id));
   ResourceMark rm;
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  // If we are loading stubs we need to check if we can retrieve a
+  // blob and/or an associated archived stub descriptor from the
+  // AOTCodeCache. If we are storing stubs we need to create a blob
+  // but we still need a stub data descriptor to fill in during
+  // generation.
+  AOTStubData stub_data(blob_id);
+  AOTStubData* stub_data_p = nullptr;
+  LogTarget(Info, stubs) lt;
+
+  if (code_size > 0 && stub_data.is_using()) {
+    // AOTCodeEntry tracks and logs status of any cached blob
+    bool loaded = stub_data.load_code_blob();
+    if (loaded) {
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print_cr("Found blob %s in AOT cache", StubInfo::name(blob_id));
+      }
+      stub_data_p = &stub_data;
+    }
+  } else if (stub_data.is_dumping()) {
+    stub_data_p = &stub_data;
+  }
+
+  // Even if we managed to load a blob from the AOT cache we still
+  // need to allocate a code blob and associated buffer. The AOT blob
+  // may not include all the stubs we need for this runtime.
+
   // Add extra space for large CodeEntryAlignment
   int size = code_size + CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
@@ -178,6 +208,10 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     // In that case we can tolerate an allocation failure because the
     // compiler will have been shut down and we have no need of the
     // blob.
+    // TODO: Ideally we would still like to try to use any AOT cached
+    // blob here but we don't have a fallback if we find that it is
+    // missing stubs we need so for now we exit. This should only
+    // happen in cases where we have a very small code cache.
     if (Thread::current()->is_Compiler_thread()) {
       assert(blob_id == BlobId::stubgen_compiler_id, "sanity");
       assert(DelayCompilerStubsGeneration, "sanity");
@@ -187,7 +221,10 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
   }
   CodeBuffer buffer(stubs_code);
-  StubGenerator_generate(&buffer, blob_id);
+  short buffer_locs[20];
+  buffer.insts()->initialize_shared_locs((relocInfo*)buffer_locs,
+                                         sizeof(buffer_locs)/sizeof(relocInfo));
+  StubGenerator_generate(&buffer, blob_id, stub_data_p);
   if (code_size == 0) {
     assert(buffer.insts_size() == 0, "should not write into buffer when bob size declared as 0");
     LogTarget(Info, stubs) lt;
@@ -203,7 +240,25 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
          "increase %s, code_size: %d, used: %d, free: %d",
          assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
-  LogTarget(Info, stubs) lt;
+  if (AOTCodeCache::is_dumping_stub()) {
+    if (stub_data.store_code_blob(*stubs_code, &buffer)) {
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print_cr("Stored blob '%s' to Startup Code Cache", buffer_name);
+      }
+    } else {
+      if (lt.is_enabled()) {
+        LogStream ls(lt);
+        ls.print_cr("Failed to store blob '%s' to Startup Code Cache", buffer_name);
+      } 
+    }
+  }
+
+  // close off recording of any further stubgen generation
+  if (blob_id == BlobId::stubgen_final_id) {
+    AOTCodeCache::set_stubgen_stubs_complete();
+  }
+
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("%s\t [" INTPTR_FORMAT ", " INTPTR_FORMAT "] used: %d, free: %d",
@@ -213,6 +268,8 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
 
   return stubs_code;
 }
+
+// per blob initializer methods StubRoutines::initialize_xxx_stubs()
 
 #define DEFINE_BLOB_INIT_METHOD(blob_name)                              \
   void StubRoutines::initialize_ ## blob_name ## _stubs() {             \
@@ -234,6 +291,7 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_METHOD)
 
 #undef DEFINE_BLOB_INIT_METHOD
 
+// external driver API functions for per blob init: xxx_stubs_init()
 
 #define DEFINE_BLOB_INIT_FUNCTION(blob_name)            \
   void blob_name ## _stubs_init()  {                    \
@@ -244,11 +302,24 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_INIT_FUNCTION)
 
 #undef DEFINE_BLOB_INIT_FUNCTION
 
+
+// Non-generated init method
+
+void StubRoutines::init_AOTAddressTable() {
+#if (defined(X86) && defined(_LP64)) || defined(AARCH64)
+  StubGenerator_AOTAddressTable_init();
+#endif
+}
+
+// non-generated external API init driver function
+
+void stubs_AOTAddressTable_init() { StubRoutines::init_AOTAddressTable(); }
+
 /*
- * we generate the underlying driver method but this wrapper is needed
- * to perform special handling depending on where the compiler init
- * gets called from. it ought to be possible to remove this at some
- * point and have a determinate ordered init.
+ * we generate the underlying driver function compiler_stubs_init()
+ * but this wrapper is needed to perform special handling depending on
+ * where the compiler init gets called from. it ought to be possible
+ * to remove this at some point and have a determinate ordered init.
  */
 
 void compiler_stubs_init(bool in_compiler_thread) {
