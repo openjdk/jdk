@@ -1791,32 +1791,42 @@ ObjectMonitor* ObjectMonitorTable::monitor_get(Thread* current, oop obj) {
   return monitor;
 }
 
+// Returns a new table to try inserting into
+ObjectMonitorTable::Table *ObjectMonitorTable::grow_table(Table *curr) {
+  Table *new_table = AtomicAccess::load(&_curr);
+  if (new_table != curr) {
+    // Table changed; no need to try further
+    return new_table;
+  }
+
+  new_table = new Table(curr->capacity() << 1, curr);
+  Table *result =
+      AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_acq_rel);
+  if (result == curr) {
+    // Successfully started rehashing
+    log_info(monitorinflation)("Growing object monitor table");
+    ObjectSynchronizer::request_deflate_idle_monitors();
+    return new_table;
+  }
+
+  // Somebody else started rehashing; restart in new table
+  delete new_table;
+
+  return result;
+}
+
 ObjectMonitor* ObjectMonitorTable::monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
   const int hash = obj->mark().hash();
+  Table* curr = AtomicAccess::load_acquire(&_curr);
 
   for (;;) {
-    Table* curr = AtomicAccess::load_acquire(&_curr);
-    if (curr->should_grow()) {
-      Table* new_table = new Table(curr->capacity() << 1, curr);
-      if (AtomicAccess::cmpxchg(&_curr, curr, new_table, memory_order_release) == curr) {
-        // Successfully started rehashing
-        log_info(monitorinflation)("Growing object monitor table");
-        ObjectSynchronizer::request_deflate_idle_monitors();
-      } else {
-        // Somebody else started rehashing; restart in new table
-        delete new_table;
-        continue;
-      }
-    }
-
     // Curr is the latest table and is reasonably loaded
     ObjectMonitor* result = curr->get_set(obj, monitor, hash);
-    if (result == nullptr) {
+    if (result != nullptr) {
+      return result;
       // Table rehashing started; try again in the new table
-      continue;
     }
-
-    return result;
+    curr = grow_table(curr);
   }
 }
 

@@ -76,6 +76,7 @@ public:
 
 private:
   static Table* volatile _curr;
+  static Table* grow_table(Table* curr);
 
 public:
   static void create();
