@@ -101,8 +101,7 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   }
 }
 
-// Starts or continues parsing. Returns true on success,
-// false on EOF or on error.
+// Starts or continues parsing. Returns true iff a mapping was parsed.
 bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
 
   // Information about a single mapping reaches across several lines.
@@ -117,15 +116,13 @@ bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
   assert(is_header_line(), "Not a header line: \"%s\".", _line);
   scan_header_line(out);
 
-  // Now read until we encounter the next header line or EOF or an error.
-  bool ok = false, stop = false;
-  do {
-    ok = read_line();
-    stop = !ok || is_header_line();
-    if (!stop) {
-      scan_additional_line(out);
+  while (true) {
+    bool ok = read_line();
+    if (!ok || is_header_line()) {
+      break;  // EOF or next header
     }
-  } while (!stop);
+    scan_additional_line(out);
+  }
 
-  return ok;
+  return true;  // always return true if a mapping was parsed
 }
