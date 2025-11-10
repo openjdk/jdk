@@ -39,19 +39,26 @@
 // It is used very early in the vm initialization, in allocation
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
-static PlatformMutex* GlobalChunkPoolMutex = nullptr;
+static DeferredStatic<PlatformMutex> GlobalChunkPoolMutex;
 
 void Arena::initialize_chunk_pool() {
-  GlobalChunkPoolMutex = new PlatformMutex();
+  GlobalChunkPoolMutex.initialize();
 }
 
-ChunkPoolLocker::ChunkPoolLocker() {
-  assert(GlobalChunkPoolMutex != nullptr, "must be initialized");
-  GlobalChunkPoolMutex->lock();
+ChunkPoolLocker::ChunkPoolLocker(LockStrategy ls) {
+  if (ls == LockStrategy::Lock) {
+    GlobalChunkPoolMutex->lock();
+    _locked = true;
+  } else {
+    assert(ls == LockStrategy::Try, "must be");
+    _locked = GlobalChunkPoolMutex->try_lock();
+  }
 };
 
 ChunkPoolLocker::~ChunkPoolLocker() {
-  GlobalChunkPoolMutex->unlock();
+  if (_locked) {
+    GlobalChunkPoolMutex->unlock();
+  }
 };
 
 // Pre-defined default chunk sizes must be arena-aligned, see Chunk::operator new()

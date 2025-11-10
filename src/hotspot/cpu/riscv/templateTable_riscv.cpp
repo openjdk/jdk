@@ -133,6 +133,7 @@ Address TemplateTable::at_bcp(int offset) {
 void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
                                    Register temp_reg, bool load_bc_into_bc_reg /*=true*/,
                                    int byte_no) {
+  assert_different_registers(bc_reg, temp_reg);
   if (!RewriteBytecodes) { return; }
   Label L_patch_done;
 
@@ -196,7 +197,11 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   __ bind(L_okay);
 #endif
 
-  // patch bytecode
+  // Patch bytecode with release store to coordinate with ResolvedFieldEntry loads
+  // in fast bytecode codelets. load_field_entry has a memory barrier that gains
+  // the needed ordering, together with control dependency on entering the fast codelet
+  // itself.
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sb(bc_reg, at_bcp(0));
   __ bind(L_patch_done);
 }
@@ -2201,7 +2206,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_method_entry(Rcache, index);
@@ -2254,7 +2259,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(temp, (int) code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
@@ -3028,6 +3033,7 @@ void TemplateTable::fast_storefield(TosState state) {
 
   // X11: field offset, X12: field holder, X13: flags
   load_resolved_field_entry(x12, x12, noreg, x11, x13);
+  __ verify_field_offset(x11);
 
   {
     Label notVolatile;
@@ -3115,6 +3121,8 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ load_field_entry(x12, x11);
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(x11);
+
   __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // x10: object
@@ -3170,7 +3178,9 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ ld(x10, aaddress(0));
   // access constant pool cache
   __ load_field_entry(x12, x13, 2);
+
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(x11);
 
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)
@@ -3602,7 +3612,7 @@ void TemplateTable::_new() {
   __ bind(slow_case);
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
-  call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
+  __ call_VM_preemptable(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
   __ verify_oop(x10);
 
   // continue

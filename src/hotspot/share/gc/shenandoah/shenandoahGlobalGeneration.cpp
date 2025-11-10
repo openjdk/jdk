@@ -37,17 +37,38 @@ const char* ShenandoahGlobalGeneration::name() const {
 }
 
 size_t ShenandoahGlobalGeneration::max_capacity() const {
-  return ShenandoahHeap::heap()->max_capacity();
+  size_t total_regions = _free_set->total_global_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+size_t ShenandoahGlobalGeneration::free_unaffiliated_regions() const {
+  return _free_set->global_unaffiliated_regions();
+}
+
+size_t ShenandoahGlobalGeneration::used() const {
+  return _free_set->global_used();
+}
+
+size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
+  return _free_set->get_bytes_allocated_since_gc_start();
+}
+
+size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
+  return _free_set->global_affiliated_regions();
+}
+
+size_t ShenandoahGlobalGeneration::get_humongous_waste() const {
+  return _free_set->total_humongous_waste();
+}
+
+
 size_t ShenandoahGlobalGeneration::used_regions() const {
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-  assert(heap->mode()->is_generational(), "Region usage accounting is only for generational mode");
-  return heap->old_generation()->used_regions() + heap->young_generation()->used_regions();
+  return _free_set->global_affiliated_regions();
 }
 
 size_t ShenandoahGlobalGeneration::used_regions_size() const {
-  return ShenandoahHeap::heap()->capacity();
+  size_t used_regions = _free_set->global_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGlobalGeneration::available() const {

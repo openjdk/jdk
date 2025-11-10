@@ -1363,54 +1363,61 @@ void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, volatile uint*
 
 class PSAdjustTask final : public WorkerTask {
   ThreadsClaimTokenScope                     _threads_claim_token_scope;
-  SubTasksDone                               _sub_tasks;
   WeakProcessor::Task                        _weak_proc_task;
   OopStorageSetStrongParState<false, false>  _oop_storage_iter;
   uint                                       _nworkers;
+  volatile bool                              _code_cache_claimed;
   volatile uint _claim_counters[PSParallelCompact::last_space_id] = {};
 
-  enum PSAdjustSubTask {
-    PSAdjustSubTask_code_cache,
-
-    PSAdjustSubTask_num_elements
-  };
+  bool try_claim_code_cache_task() {
+    return AtomicAccess::load(&_code_cache_claimed) == false
+        && AtomicAccess::cmpxchg(&_code_cache_claimed, false, true) == false;
+  }
 
 public:
   PSAdjustTask(uint nworkers) :
     WorkerTask("PSAdjust task"),
     _threads_claim_token_scope(),
-    _sub_tasks(PSAdjustSubTask_num_elements),
     _weak_proc_task(nworkers),
-    _nworkers(nworkers) {
+    _oop_storage_iter(),
+    _nworkers(nworkers),
+    _code_cache_claimed(false) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
   }
 
   void work(uint worker_id) {
-    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    cm->preserved_marks()->adjust_during_full_gc();
     {
-      // adjust pointers in all spaces
+      // Pointers in heap.
+      ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+      cm->preserved_marks()->adjust_during_full_gc();
+
       PSParallelCompact::adjust_pointers_in_spaces(worker_id, _claim_counters);
     }
+
     {
-      ResourceMark rm;
-      Threads::possibly_parallel_oops_do(_nworkers > 1, &pc_adjust_pointer_closure, nullptr);
-    }
-    _oop_storage_iter.oops_do(&pc_adjust_pointer_closure);
-    {
+      // All (strong and weak) CLDs.
       CLDToOopClosure cld_closure(&pc_adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
       ClassLoaderDataGraph::cld_do(&cld_closure);
     }
+
     {
+      // Threads stack frames. No need to visit on-stack nmethods, because all
+      // nmethods are visited in one go via CodeCache::nmethods_do.
+      ResourceMark rm;
+      Threads::possibly_parallel_oops_do(_nworkers > 1, &pc_adjust_pointer_closure, nullptr);
+      if (try_claim_code_cache_task()) {
+        NMethodToOopClosure adjust_code(&pc_adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
+        CodeCache::nmethods_do(&adjust_code);
+      }
+    }
+
+    {
+      // VM internal strong and weak roots.
+      _oop_storage_iter.oops_do(&pc_adjust_pointer_closure);
       AlwaysTrueClosure always_alive;
       _weak_proc_task.work(worker_id, &always_alive, &pc_adjust_pointer_closure);
     }
-    if (_sub_tasks.try_claim_task(PSAdjustSubTask_code_cache)) {
-      NMethodToOopClosure adjust_code(&pc_adjust_pointer_closure, NMethodToOopClosure::FixRelocations);
-      CodeCache::nmethods_do(&adjust_code);
-    }
-    _sub_tasks.all_tasks_claimed();
   }
 };
 
