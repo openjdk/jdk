@@ -37,7 +37,6 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
-  _paced_time(0),
   _plab(nullptr),
   _plab_desired_size(0),
   _plab_actual_size(0),

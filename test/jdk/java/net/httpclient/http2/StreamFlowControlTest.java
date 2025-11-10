@@ -145,7 +145,7 @@ public class StreamFlowControlTest {
                     // we have to pull to get the exception, but slow enough
                     // so that DataFrames are buffered up to the point that
                     // the window is exceeded...
-                    long wait = uri.startsWith("https://") ? 800 : 350;
+                    long wait = uri.startsWith("https://") ? 800 : 500;
                     try (InputStream is = response.body()) {
                         sleep(wait);
                         is.readAllBytes();

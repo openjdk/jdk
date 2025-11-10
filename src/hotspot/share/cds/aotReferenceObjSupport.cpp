@@ -35,7 +35,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 // Handling of java.lang.ref.Reference objects in the AOT cache
 // ============================================================
@@ -92,7 +92,7 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
-class KeepAliveObjectsTable : public ResourceHashtable<oop, bool,
+class KeepAliveObjectsTable : public HashTable<oop, bool,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared,
@@ -153,6 +153,9 @@ void AOTReferenceObjSupport::stabilize_cached_reference_objects(TRAPS) {
 
       _keep_alive_objs_array = OopHandle(Universe::vm_global(), result.get_oop());
     }
+
+    // Trigger a GC to prune eligible referents that were not kept alive
+    Universe::heap()->collect(GCCause::_java_lang_system_gc);
   }
 }
 
@@ -209,7 +212,7 @@ bool AOTReferenceObjSupport::check_if_ref_obj(oop obj) {
       log_error(aot, heap)("%s", (referent == nullptr) ?
                            "referent cannot be null" : "referent is not registered with CDS.keepAlive()");
       HeapShared::debug_trace();
-      MetaspaceShared::unrecoverable_writing_error();
+      AOTMetaspace::unrecoverable_writing_error();
     }
 
     if (log_is_enabled(Info, aot, ref)) {

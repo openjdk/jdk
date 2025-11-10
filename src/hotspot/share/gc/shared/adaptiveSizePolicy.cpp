@@ -31,16 +31,7 @@
 elapsedTimer AdaptiveSizePolicy::_minor_timer;
 elapsedTimer AdaptiveSizePolicy::_major_timer;
 
-// The throughput goal is implemented as
-//      _throughput_goal = 1 - ( 1 / (1 + gc_cost_ratio))
-// gc_cost_ratio is the ratio
-//      application cost / gc cost
-// For example a gc_cost_ratio of 4 translates into a
-// throughput goal of .80
-
-AdaptiveSizePolicy::AdaptiveSizePolicy(double gc_pause_goal_sec,
-                                       uint gc_cost_ratio) :
-  _throughput_goal(1.0 - double(1.0 / (1.0 + (double) gc_cost_ratio))),
+AdaptiveSizePolicy::AdaptiveSizePolicy(double gc_pause_goal_sec) :
   _gc_distance_timer(),
   _gc_distance_seconds_seq(seq_default_alpha_value),
   _trimmed_minor_gc_time_seconds(NumOfGCSample, seq_default_alpha_value),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build Compiler UITesting
  * @build ToolTabSnippetTest
- * @run testng/timeout=300 ToolTabSnippetTest
+ * @run junit/timeout=300 ToolTabSnippetTest
  */
 
 import java.io.IOException;
@@ -48,15 +48,15 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import jdk.internal.jshell.tool.ConsoleIOContextTestSupport;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ToolTabSnippetTest extends UITesting {
 
     public ToolTabSnippetTest() {
         super(true);
     }
 
+    @Test
     public void testExpression() throws Exception {
         Path classes = prepareZip();
         doRunTest((inputSink, out) -> {
@@ -208,6 +208,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
+    @Test
     public void testCleaningCompletionTODO() throws Exception {
         doRunTest((inputSink, out) -> {
             CountDownLatch testCompleteComputationStarted = new CountDownLatch(1);
@@ -241,6 +242,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
+    @Test
     public void testNoRepeat() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("String xyzAA;\n");
@@ -266,6 +268,7 @@ public class ToolTabSnippetTest extends UITesting {
         });
     }
 
+    @Test
     public void testCrash8221759() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("java.io.File.path" + TAB);
@@ -331,6 +334,7 @@ public class ToolTabSnippetTest extends UITesting {
     //where:
         private final Compiler compiler = new Compiler();
 
+    @Test
     public void testDocumentationAfterInsert() throws Exception {
         doRunTest((inputSink, out) -> {
             inputSink.write("import java.time.*\n");
@@ -338,6 +342,26 @@ public class ToolTabSnippetTest extends UITesting {
 
             inputSink.write("new Instant" + TAB);
             waitOutput(out, PROMPT + "new InstantiationE");
+        });
+    }
+
+    @Test
+    public void testAnnotation() throws Exception {
+        doRunTest((inputSink, out) -> {
+            inputSink.write("@interface Ann1 { public java.lang.annotation.Retention[] value(); }\n");
+            waitOutput(out, "\n\\u001B\\[\\?2004h" + PROMPT);
+
+            //-> <tab>
+            inputSink.write("@Ann1(" + TAB);
+            waitOutput(out, ".*@java.lang.annotation.Retention\\(.*value =.*" +
+                            REDRAW_PROMPT + "@Ann1\\(");
+            inputSink.write("@" + TAB);
+            waitOutput(out, "^@java.lang.annotation.Retention\\(");
+            inputSink.write(TAB);
+            waitOutput(out, ".*java.lang.annotation.RetentionPolicy.*java.lang.annotation.RetentionPolicy.CLASS.*" +
+                            REDRAW_PROMPT + "@Ann1\\(@java.lang.annotation.Retention\\(");
+            inputSink.write("CL" + TAB);
+            waitOutput(out, "CL\\u001B\\[2Djava.lang.annotation.RetentionPolicy.CLASS \\u0008");
         });
     }
 }

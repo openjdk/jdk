@@ -97,7 +97,7 @@ public final class EventControl {
         }
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
-            eventType.setThrottler(new Throttler(eventType));
+            eventType.setThrottler(new Throttler());
         }
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
