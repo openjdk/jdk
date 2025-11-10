@@ -2007,6 +2007,18 @@ bool PhaseIterGVN::verify_Identity_for(Node* n) {
     // Not investigated yet.
     case Op_AbsI:
       return false;
+
+    // Fuzzer failures reported in JDK-8371523, and possible variants,
+    // related to JDK-8369646.
+    // All of them have a coment like this:
+    //   Remove ConvX2Y->ConvY2X->ConvX2Y sequences.
+    // It could make sense to expand the reproducers for other similar
+    // cases, just to ensure better coverage.
+    case Op_ConvD2L:
+    case Op_ConvF2I:
+    case Op_ConvF2L:
+    case Op_ConvI2F:
+      return false;
   }
 
   if (n->is_Load()) {
