@@ -2739,7 +2739,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register counter_lo    = x31;
     const Register block_size    = t2;
 
-    const int BLOCK_SIZE = 16;
+    const unsigned int BLOCK_SIZE = 16;
 
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
@@ -2748,7 +2748,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
 
-    __ lw(used, Address(used_ptr));
+    __ lwu(used, Address(used_ptr));
     __ mv(len, input_len);
     __ mv(block_size, BLOCK_SIZE);
 
@@ -2761,7 +2761,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L_next, L_encrypt_next, L_main_loop, L_exit;
     // Encrypt bytes left with last encryptedCounter
     __ bind(L_next);
-    __ bge(used, block_size, L_main_loop);
+    __ bgeu(used, block_size, L_main_loop);
 
     __ bind(L_encrypt_next);
     __ add(t0, saved_encrypted_ctr, used);
@@ -2791,7 +2791,7 @@ class StubGenerator: public StubCodeGenerator {
     // 128-bit big-endian store
     be_store_counter_128(counter_hi, counter_lo, counter);
 
-    __ blt(len, block_size, L_encrypt_next);
+    __ bltu(len, block_size, L_encrypt_next);
 
     __ vle32_v(v17, in);
     __ vxor_vv(v16, v16, v17);
