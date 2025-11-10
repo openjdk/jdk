@@ -68,7 +68,7 @@ bool CgroupV2CpuController::cpu_shares(int& result) {
   int shares_int = static_cast<int>(shares);
   // Convert default value of 100 to no shares setup
   if (shares_int == 100) {
-    log_debug(os, container)("CPU Shares is: -1");
+    log_debug(os, container)("CPU Shares is: unlimited");
     result = -1;
     return true;
   }
