@@ -315,7 +315,7 @@ static void test_poison_local() {
 
 DEFINE_ASAN_TEST(test_poison_local);
 
-TEST_VM(NMT_ASAN, poison_no_death) {
+TEST_VM(NMT_ASAN, test_unpoison_temporarily_no_death) {
   uint16_t a;
   ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
   {
@@ -324,5 +324,18 @@ TEST_VM(NMT_ASAN, poison_no_death) {
     EXPECT_EQ(a, 2);
   }
 }
+
+static void test_unpoison_temporarily() {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  {
+    AsanPoisoningHelper<uint16_t> aph(&a);
+    a = 2;
+    EXPECT_EQ(a, 2);
+  }
+  a = 3;
+}
+
+DEFINE_ASAN_TEST(test_unpoison_temporarily);
 
 #endif // !INCLUDE_ASAN

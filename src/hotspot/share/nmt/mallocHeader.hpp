@@ -117,7 +117,8 @@ class MallocHeader {
 
   void set_footer(uint16_t v) {
     AsanPoisoningHelper aph(reinterpret_cast<uint16_t*>(footer_address()));
-    footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v;
+    footer_address()[0] = (uint8_t)(v >> 8);
+    footer_address()[1] = (uint8_t)v;
   }
 
   template<typename InTypeParam, typename OutTypeParam>
@@ -150,6 +151,7 @@ class MallocHeader {
   #endif
 
   inline void set_header_canary(uint16_t value) {
+    // _canary is unpoisoned until aph dtor is called
     AsanPoisoningHelper aph(&_canary);
     _canary = value;
   }
