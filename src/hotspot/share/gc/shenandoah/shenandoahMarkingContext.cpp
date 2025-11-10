@@ -25,7 +25,6 @@
  */
 
 #include "gc/shared/markBitMap.inline.hpp"
-#include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 
