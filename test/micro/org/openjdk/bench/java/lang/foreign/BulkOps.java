@@ -39,6 +39,7 @@ import jdk.internal.misc.Unsafe;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.TimeUnit;
@@ -131,6 +132,22 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_fill_int_loop() {
+        for (int i = 0 ; i < segment.byteSize() ; i++) {
+            segment.set(ValueLayout.JAVA_BYTE, i, (byte)42);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_fill_long_loop() {
+        for (long i = 0 ; i < segment.byteSize() ; i++) {
+            segment.set(ValueLayout.JAVA_BYTE, i, (byte)42);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void unsafe_copy() {
         unsafe.copyMemory(ints, UNSAFE_INT_OFFSET, null, unsafe_addr, ALLOC_SIZE);
     }
@@ -149,8 +166,40 @@ public class BulkOps {
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_int_loop() {
+        for (int i = 0 ; i < ints.length ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_long_loop() {
+        for (long i = 0 ; i < ints.length ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[(int)i]);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void segment_copy_static_small() {
         MemorySegment.copy(ints, 0, segment, JAVA_INT_UNALIGNED, 0, 10);
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_small_int_loop() {
+        for (int i = 0 ; i < 10 ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[i]);
+        }
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void segment_copy_static_small_long_loop() {
+        for (long i = 0 ; i < 10 ; i++) {
+            segment.setAtIndex(JAVA_INT_UNALIGNED, i, ints[(int)i]);
+        }
     }
 
     @Benchmark
