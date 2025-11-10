@@ -856,16 +856,6 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   phase->igvn().replace_input_of(_node, 1, in1);
   // Note: the backedge is hooked up later.
 
-  // The Phi's inputs may have been modified from scalar to vector,
-  // and we need to update the type of the phi.
-  const Type* t = in1->bottom_type();
-  if (t->isa_vect() != nullptr &&
-      _node->bottom_type()->isa_vect() == nullptr) {
-    assert(!t->singleton(), "sanity");
-    _node->as_Type()->set_type(t);
-    phase->igvn().set_type(_node, t);
-  }
-
   return VTransformApplyResult::make_scalar(_node);
 }
 
@@ -883,6 +873,16 @@ void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) co
     // Data phi/backedge
     Node* in2 = apply_state.transformed_node(in_req(2));
     phase->igvn().replace_input_of(_node, 2, in2);
+
+    // The type of the phi may have been modified, for example by moving
+    // from scalar to vector phi.
+    Node* in1 = _node->in(1);
+    const Type* t1 = phase->igvn().type(in1);
+    const Type* t2 = phase->igvn().type(in2);
+    const Type* t = t1->meet_speculative(t2);
+    assert(!t->singleton(), "sanity");
+    _node->as_Type()->set_type(t);
+    phase->igvn().set_type(_node, t);
   }
 }
 
