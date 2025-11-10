@@ -1498,6 +1498,25 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   //   - OOP table
   memcpy(consts_begin(), nm.consts_begin(), nm.data_end() - nm.consts_begin());
 
+  // Fix relocation
+  RelocIterator iter(this);
+  CodeBuffer src(&nm);
+  CodeBuffer dst(this);
+  while (iter.next()) {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+    // Direct calls may no longer be in range and the use of a trampoline may now be required.
+    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
+    if (iter.reloc()->is_call()) {
+      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), this);
+      if (trampoline != nullptr) {
+        continue;
+      }
+    }
+#endif
+
+    iter.reloc()->fix_relocation_after_move(&src, &dst);
+  }
+
   post_init();
 }
 
@@ -1519,25 +1538,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
 
   if (nm_copy == nullptr) {
     return nullptr;
-  }
-
-  // Fix relocation
-  RelocIterator iter(nm_copy);
-  CodeBuffer src(this);
-  CodeBuffer dst(nm_copy);
-  while (iter.next()) {
-#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
-    // Direct calls may no longer be in range and the use of a trampoline may now be required.
-    // Instead, allow trampoline relocations to update their owners and perform the necessary checks.
-    if (iter.reloc()->is_call()) {
-      address trampoline = trampoline_stub_Relocation::get_trampoline_for(iter.reloc()->addr(), nm_copy);
-      if (trampoline != nullptr) {
-        continue;
-      }
-    }
-#endif
-
-    iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
   // To make dependency checking during class loading fast, record
