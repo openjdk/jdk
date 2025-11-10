@@ -869,6 +869,7 @@ VTransformApplyResult VTransformPhiScalarNode::apply(VTransformApplyState& apply
 // we only have the transformed backedges after the phis are already transformed.
 // We hook the backedges into the phis now, during cleanup.
 void VTransformPhiScalarNode::apply_backedge(VTransformApplyState& apply_state) const {
+  assert(_node == apply_state.transformed_node(this), "sanity");
   PhaseIdealLoop* phase = apply_state.phase();
   if (_node->is_memory_phi()) {
     // Memory phi/backedge
@@ -879,16 +880,6 @@ void VTransformPhiScalarNode::apply_backedge(VTransformApplyState& apply_state) 
     // Data phi/backedge
     Node* in2 = apply_state.transformed_node(in_req(2));
     phase->igvn().replace_input_of(_node, 2, in2);
-
-    // The type of the phi may have been modified, for example by moving
-    // from scalar to vector phi.
-    Node* in1 = _node->in(1);
-    const Type* t1 = phase->igvn().type(in1);
-    const Type* t2 = phase->igvn().type(in2);
-    const Type* t = t1->meet_speculative(t2);
-    assert(!t->singleton(), "sanity");
-    _node->as_Type()->set_type(t);
-    phase->igvn().set_type(_node, t);
   }
 }
 
@@ -1293,10 +1284,9 @@ VTransformApplyResult VTransformPhiVectorNode::apply(VTransformApplyState& apply
 // We hook the backedges into the phis now, during cleanup.
 void VTransformPhiVectorNode::apply_backedge(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
-
-  //// Data phi/backedge
-  //Node* in2 = apply_state.transformed_node(in_req(2));
-  //phase->igvn().replace_input_of(_node, 2, in2);
+  PhiNode* new_phi = apply_state.transformed_node(this)->as_Phi();
+  Node* in2 = apply_state.transformed_node(in_req(2));
+  phase->igvn().replace_input_of(new_phi, 2, in2);
 }
 
 
