@@ -387,13 +387,11 @@ template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
 void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
   // Young cycles are allowed to run when old marking is in progress. When old marking is in progress,
   // this barrier will be called with ENQUEUE=true and HAS_FWD=false, even though the young generation
-  // may have forwarded objects. In this case, the `arraycopy_work` is first called with HAS_FWD=true and
-  // ENQUEUE=false.
-  assert(HAS_FWD == _heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(),
-         "Forwarded object status is sane");
+  // may have forwarded objects.
+  assert(HAS_FWD == _heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded object status is sane");
   // This function cannot be called to handle marking and evacuation at the same time (they operate on
   // different sides of the copy).
-  assert((HAS_FWD || EVAC) != ENQUEUE, "Cannot evacuate and mark both sides of copy.");
+  static_assert((HAS_FWD || EVAC) != ENQUEUE, "Cannot evacuate and mark both sides of copy.");
 
   Thread* thread = Thread::current();
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
@@ -427,17 +425,24 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   }
 
   const char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
+  if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+    // If marking old or young, we must evaluate the SATB barrier. This will be the only
+    // action if we are not marking old. If we are marking old, we must still evaluate the
+    // load reference barrier for a young collection.
+    arraycopy_marking(dst, count);
+  }
+
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+    assert((gc_state & ShenandoahHeap::YOUNG_MARKING) == 0, "Cannot be marking young during evacuation");
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
+    assert((gc_state & ShenandoahHeap::YOUNG_MARKING) == 0, "Cannot be marking young during update-refs");
     arraycopy_update(src, count);
-  } else if ((gc_state & ShenandoahHeap::MARKING) != 0) {
-    arraycopy_marking(src, dst, count);
   }
 }
 
 template <class T>
-void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count) {
+void ShenandoahBarrierSet::arraycopy_marking(T* dst, size_t count) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
   if (ShenandoahSATBBarrier) {
     if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
