@@ -192,12 +192,12 @@ bool CgroupV1MemoryController::read_hierarchical_mem_swap_val(physical_memory_si
 
 /* memory_and_swap_limit_in_bytes
  *
- * Determine the memory and swap limit metric. Returns a positive limit value or
- * value_unlimited (for unlimited).
+ * Determine the memory and swap limit metric. Sets the 'result' reference to a positive limit value or
+ * 'value_unlimited' (for unlimited).
  *
  * returns:
- *    * false if an error occurred
- *    * true if the limit value has been set in the result reference
+ *    * false if an error occurred. 'result' reference remains unchanged.
+ *    * true if the limit value has been set in the 'result' reference
  */
 bool CgroupV1MemoryController::memory_and_swap_limit_in_bytes(physical_memory_size_type upper_mem_bound,
                                                               physical_memory_size_type upper_swap_bound,
