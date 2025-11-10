@@ -61,8 +61,6 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
-// Verify no compiler paddings are present, check STATIC_ASSERTs in the .cpp file.
-
 class InstanceKlass;
 class ResolvedMethodEntry {
   friend class VMStructs;
