@@ -4734,10 +4734,12 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  int active_cpus = os::Linux::active_processor_count();
+  int active_cpus = -1;
   if (OSContainer::is_containerized() && OSContainer::active_processor_count(active_cpus)) {
     log_trace(os)("active_processor_count: determined by OSContainer: %d",
                    active_cpus);
+  } else {
+    active_cpus = os::Linux::active_processor_count();
   }
 
   return active_cpus;
