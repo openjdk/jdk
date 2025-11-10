@@ -457,7 +457,7 @@ void ciField::print_on(outputStream* out) {
   out->print(" is_constant=%s", bool_to_str(_is_constant));
   if (_is_constant && is_static()) {
     out->print(" constant_value=");
-    _constant_value.print_on(out);
+    _constant_value.print(out);
   }
   out->print(">");
 }
