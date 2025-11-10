@@ -612,7 +612,6 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  *
  * cpu affinity
  * cgroup cpu quota & cpu period
- * cgroup cpu shares
  *
  * Algorithm:
  *
@@ -623,12 +622,11 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  *
  * All results of division are rounded up to the next whole number.
  *
- * If quotas have not been specified, return the
- * number of active processors in the system.
+ * If quotas have not been specified, sets the result reference to
+ * the number of active processors in the system.
  *
- * If quotas have been specified, the resulting number
- * set in the result reference will never exceed the number
- * of active processors.
+ * If quotas have been specified, the number set in the result
+ * reference will never exceed the number of active processors.
  *
  * return:
  *    true if there were no errors. false otherwise.
@@ -664,7 +662,7 @@ bool CgroupSubsystem::active_processor_count(int& value) {
  *
  * Return the limit of available memory for this process in the provided
  * physical_memory_size_type reference. If there was no limit value set in the underlying
- * interface files value_unlimited is returned.
+ * interface files 'value_unlimited' is returned.
  *
  * return:
  *    false if retrieving the value failed
