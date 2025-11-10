@@ -887,6 +887,40 @@ public class MOAT {
         catch (Throwable t) { unexpected(t); }
     }
 
+    private static void testAddAll(Collection<Integer> c) {
+        if (! supportsAdd(c)) return;
+        
+        clear(c);
+        
+        // Test empty ArrayList source
+        ArrayList<Integer> emptySource = new ArrayList<>();
+        check(! c.addAll(emptySource));
+        
+        // Test non-empty ArrayList source
+        ArrayList<Integer> arraySource = new ArrayList<>();
+        arraySource.add(42);
+        arraySource.add(99);
+        check(c.addAll(arraySource));
+        equal(new ArrayList<Integer>(c), arraySource);
+        
+        clear(c);
+        
+        // Test non-ArrayList source
+        List<Integer> linkedSource = new LinkedList<>();
+        linkedSource.add(77);
+        check(c.addAll(linkedSource));
+        equal(new ArrayList<Integer>(c), linkedSource);
+        
+        // Test non-empty destination
+        clear(c);
+        c.add(10);
+        c.add(20);
+        int sizeBefore = c.size();
+        check(c.addAll(arraySource));
+        equal(c.size(), sizeBefore + arraySource.size());
+        check(c.containsAll(arraySource));
+    }
+
     private static void testConcurrentCollection(Collection<Integer> c) {
         try {
             c.add(1);
@@ -1293,6 +1327,8 @@ public class MOAT {
 
         clear(c);      testStringElement(c);
         oneElement(c); testStringElement(c);
+
+        testAddAll(c);
 
         if (c.getClass().getName().matches(".*concurrent.*"))
             testConcurrentCollection(c);
