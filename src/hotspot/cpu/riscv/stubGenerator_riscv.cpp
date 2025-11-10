@@ -2713,12 +2713,12 @@ class StubGenerator: public StubCodeGenerator {
     //
     //   L_main_loop:
     //     if (len == 0) goto L_exit;
-    //     saved_encrypted_ctr = generate_aes_encrypt();
-    //     be_inc_counter_128(counter);
+    //     saved_encrypted_ctr = generate_aes_encrypt(counter);
     //     if (len < BLOCK_SIZE) {
     //       used = 0;
     //       goto L_encrypt_next;
     //     }
+    //     increase(counter);
     //     v_in = load_16Byte(in);
     //     v_out = load_16Byte(out);
     //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
@@ -2733,11 +2733,11 @@ class StubGenerator: public StubCodeGenerator {
     // L_exit:
     //   return result;
 
-    const Register used                = x28;
-    const Register len                 = x29;
-    const Register counter_hi          = x30;
-    const Register counter_lo          = x31;
-    const Register block_size          = t2;
+    const Register used          = x28;
+    const Register len           = x29;
+    const Register counter_hi    = x30;
+    const Register counter_lo    = x31;
+    const Register block_size    = t2;
 
     const int BLOCK_SIZE = 16;
 
