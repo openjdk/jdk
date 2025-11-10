@@ -34,6 +34,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
@@ -296,6 +297,10 @@ void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
   // is too late for ZGC.
 
   ZNMethod::purge_nmethod(nm);
+}
+
+size_t ZCollectedHeap::bootstrap_max_memory() const {
+  return MaxHeapSize - ZHeuristics::significant_young_overhead();
 }
 
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {
