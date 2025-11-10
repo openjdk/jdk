@@ -163,7 +163,7 @@ char* CgroupV2Subsystem::cpu_cpuset_memory_nodes() {
 bool CgroupV2CpuController::cpu_period(int& result) {
   uint64_t cpu_period = 0;
   if (!reader()->read_numerical_tuple_value("/cpu.max", false /* use_first */, cpu_period)) {
-    log_trace(os, container)("CPU Period failed: -2");
+    log_trace(os, container)("CPU Period failed");
     return false;
   }
   int period_int = static_cast<int>(cpu_period);
@@ -175,7 +175,7 @@ bool CgroupV2CpuController::cpu_period(int& result) {
 bool CgroupV2CpuController::cpu_usage_in_micros(uint64_t& value) {
   bool is_ok = reader()->read_numerical_key_value("/cpu.stat", "usage_usec", value);
   if (!is_ok) {
-    log_trace(os, container)("CPU Usage failed: -2");
+    log_trace(os, container)("CPU Usage failed");
     return false;
   }
   log_trace(os, container)("CPU Usage is: " UINT64_FORMAT, value);
@@ -234,7 +234,7 @@ bool CgroupV2MemoryController::memory_and_swap_limit_in_bytes(physical_memory_si
   physical_memory_size_type swap_limit_val = 0;
   if (!reader()->read_number_handle_max("/memory.swap.max", swap_limit_val)) {
     // Some container tests rely on this trace logging to happen.
-    log_trace(os, container)("Swap Limit failed: -2");
+    log_trace(os, container)("Swap Limit failed");
     // swap disabled at kernel level, treat it as no swap
     physical_memory_size_type mem_limit = value_unlimited;
     if (!read_memory_limit_in_bytes(upper_mem_bound, mem_limit)) {

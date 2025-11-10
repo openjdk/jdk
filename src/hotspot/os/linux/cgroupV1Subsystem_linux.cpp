@@ -501,7 +501,7 @@ bool CgroupV1CpuController::cpu_quota(int& result) {
   // intentionally not using the macro so as to not log a
   // negative value as a large unsiged int
   if (!reader()->read_number("/cpu.cfs_quota_us", quota)) {
-    log_trace(os, container)("CPU Quota failed: -2");
+    log_trace(os, container)("CPU Quota failed");
     return false;
   }
   // cast to int since the read value might be negative

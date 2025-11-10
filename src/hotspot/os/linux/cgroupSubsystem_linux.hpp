@@ -74,7 +74,7 @@
   bool is_ok;                                                                         \
   is_ok = controller->read_number(filename, retval);                                  \
   if (!is_ok) {                                                                       \
-    log_trace(os, container)(log_string " failed: -2");                               \
+    log_trace(os, container)(log_string " failed");                                   \
     return false;                                                                     \
   }                                                                                   \
   log_trace(os, container)(log_string " is: " UINT64_FORMAT, retval);                 \
@@ -86,11 +86,11 @@
   bool is_ok;                                                                         \
   is_ok = controller->read_number_handle_max(filename, retval);                       \
   if (!is_ok) {                                                                       \
-    log_trace(os, container)(log_string " failed: -2");                               \
+    log_trace(os, container)(log_string " failed");                                   \
     return false;                                                                     \
   }                                                                                   \
   if (retval == value_unlimited) {                                                    \
-    log_trace(os, container)(log_string " is: -1");                                   \
+    log_trace(os, container)(log_string " is: unlimited");                            \
   } else {                                                                            \
     log_trace(os, container)(log_string " is: " UINT64_FORMAT, retval);               \
   }                                                                                   \
@@ -102,7 +102,7 @@
   bool is_ok;                                                                             \
   is_ok = controller->read_string(filename, retval, buf_size);                            \
   if (!is_ok) {                                                                           \
-    log_trace(os, container)(log_string " failed: -2");                                   \
+    log_trace(os, container)(log_string " failed");                                       \
     return nullptr;                                                                       \
   }                                                                                       \
   log_trace(os, container)(log_string " is: %s", retval);                                 \
@@ -113,7 +113,7 @@
   bool is_ok;                                                                         \
   is_ok = controller->read_numerical_key_value(filename, key, retval);                \
   if (!is_ok) {                                                                       \
-    log_trace(os, container)(log_string " failed: -2");                               \
+    log_trace(os, container)(log_string " failed");                                   \
     return false;                                                                     \
   }                                                                                   \
   log_trace(os, container)(log_string " is: " UINT64_FORMAT, retval);                 \
