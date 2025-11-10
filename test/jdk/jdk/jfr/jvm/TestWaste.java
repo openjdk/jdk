@@ -69,7 +69,7 @@ public class TestWaste {
              .withoutStackTrace();
             // Unused threads should not create unreasonable amount of waste
             r.disable("jdk.ThreadStart");
-            r.disable("jdk.ThreadStop");
+            r.disable("jdk.ThreadEnd");
             // jdk.GCPhaseParallel can often, but not always, take up a very
             // large part of the recording. Disable to make test more stable
             r.disable("jdk.GCPhaseParallel");
