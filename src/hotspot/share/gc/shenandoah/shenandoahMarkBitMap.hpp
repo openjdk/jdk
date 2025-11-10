@@ -126,11 +126,13 @@ private:
   template<bm_word_t flip, bool aligned_left>
   inline idx_t get_prev_bit_impl(idx_t l_index, idx_t r_index) const;
 
+  // Search for the first marked address in the range [l_index, r_index), or r_index if none found.
   inline idx_t get_next_one_offset(idx_t l_index, idx_t r_index) const;
 
   // Search for last one in the range [l_index, r_index).  Return r_index if not found.
   inline idx_t get_prev_one_offset(idx_t l_index, idx_t r_index) const;
 
+  // Clear the strong and weak mark bits for all index positions >= l_index and < r_index.
   void clear_large_range(idx_t beg, idx_t end);
 
   // Verify bit is less than size().
