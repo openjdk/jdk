@@ -26,7 +26,6 @@ import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.jpackage.test.TKit.assertFalse;
 import static jdk.jpackage.test.TKit.assertTrue;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -34,9 +33,7 @@ import java.util.function.Predicate;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.LinuxHelper;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
@@ -89,7 +86,7 @@ public class RuntimePackageTest {
 
     @Test(ifOS = MACOS)
     public static void testFromBundle() {
-        init(RuntimePackageTest::createInputRuntimeBundle).run();
+        init(MacHelper::createRuntimeBundle).run();
     }
 
     @Test(ifOS = LINUX)
@@ -114,7 +111,7 @@ public class RuntimePackageTest {
     }
 
     private static PackageTest init() {
-        return init(RuntimePackageTest::createInputRuntimeImage);
+        return init(JPackageCommand::createInputRuntimeImage);
     }
 
     private static PackageTest init(ThrowingSupplier<Path> createRuntime) {
@@ -167,59 +164,5 @@ public class RuntimePackageTest {
             }
         }
         return path;
-    }
-
-    private static Path createInputRuntimeImage() throws IOException {
-
-        final Path runtimeImageDir;
-
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
-            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-        } else {
-            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
-
-            new Executor().setToolProvider(JavaTool.JLINK)
-                    .dumpOutput()
-                    .addArguments(
-                            "--output", runtimeImageDir.toString(),
-                            "--add-modules", "java.desktop",
-                            "--strip-debug",
-                            "--no-header-files",
-                            "--no-man-pages")
-                    .execute();
-        }
-
-        return runtimeImageDir;
-    }
-
-    private static Path createInputRuntimeBundle() throws IOException {
-
-        final var runtimeImage = createInputRuntimeImage();
-
-        final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
-
-        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
-
-        var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .ignoreDefaultRuntime(true)
-                .dumpOutput(true)
-                .setPackageType(PackageType.MAC_DMG)
-                .setArgumentValue("--name", "foo")
-                .addArguments("--runtime-image", runtimeImage)
-                .addArguments("--dest", runtimeBundleWorkDir);
-
-        cmd.execute();
-
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
-                Executor.of("cp", "-R")
-                        .addArgument(dmgImage)
-                        .addArgument(unpackadeRuntimeBundleDir)
-                        .execute(0);
-            }
-        });
-
-        return unpackadeRuntimeBundleDir;
     }
 }
