@@ -253,10 +253,8 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  physical_memory_size_type free_mem = 0;
-  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(free_mem)) {
-    log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, free_mem);
-    value = free_mem;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_bytes(value)) {
+    log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
