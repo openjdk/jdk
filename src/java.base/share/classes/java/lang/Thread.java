@@ -181,12 +181,15 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * the method, usually by throwing an exception.
  *
  * <p> If a thread executing {@link #sleep(long) Thread.sleep} or {@link Object#wait()
- * Object.wait} is interrupted then it causes the method to return early and throw
- * {@link InterruptedException}. Methods that throw {@code InterruptedException} do so after
- * first clearing the interrupted status. Code that catches {@code InterruptedException}
- * should rethrow the exception, or restore the current thread's interrupted status, with
- * {@link #currentThread() Thread.currentThread()}.{@link #interrupt()}, before continuing
- * normally or handling it by throwing another type of exception.
+ * Object.wait} is interrupted then it causes the method to exit and throw
+ * {@link InterruptedException}. Methods that throw {@code InterruptedException} do
+ * so after first clearing the interrupted status. Code that catches {@code
+ * InterruptedException} should rethrow the exception, or restore the current thread's
+ * interrupted status, with {@link #currentThread() Thread.currentThread()}.{@link #interrupt()},
+ * before continuing normally or handling it by throwing another type of exception.
+ * Code that throws a different type of exception with the {@code InterruptedException}
+ * as {@linkplain Throwable#getCause() cause} should also restore the interrupted
+ * status before throwing the exception.
  *
  * <p> If a thread executing a blocking I/O operation on an {@link
  * java.nio.channels.InterruptibleChannel} is interrupted then it causes the channel to be
@@ -1628,6 +1631,16 @@ public class Thread implements Runnable {
      * second call would return false (unless the current thread were
      * interrupted again, after the first call had cleared its interrupted
      * status and before the second call had examined it).
+     *
+     * @apiNote It should be rare to use this method directly. It is intended
+     * for cases that detect {@linkplain ##thread-interruption thread interruption}
+     * and clear the interrupted status before throwing {@link InterruptedException}.
+     * It is also intended for cases that implement an <em>uninterruptible</em>
+     * method that makes use of an <em>interruptible</em> method such as
+     * {@link LockSupport#park()}. The {@code interrupted()} method can be used
+     * to test if interrupted and clear the interrupted status to allow the code
+     * retry the <em>interruptible</em> method. The <em>uninterruptible</em> method
+     * should restore the interrupted status before it completes.
      *
      * @return  {@code true} if the current thread has been interrupted;
      *          {@code false} otherwise.
