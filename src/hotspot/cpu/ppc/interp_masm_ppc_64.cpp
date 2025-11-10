@@ -108,6 +108,8 @@ void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
 // own dispatch. The dispatch address in R24_dispatch_addr is used for the
 // dispatch.
 void InterpreterMacroAssembler::dispatch_epilog(TosState state, int bcp_incr) {
+  assert(nonvolatile_accross_vthread_preemtion(R24_dispatch_addr),
+         "Requirement of field accesses (e.g. putstatic)");
   if (bcp_incr) { addi(R14_bcp, R14_bcp, bcp_incr); }
   mtctr(R24_dispatch_addr);
   bcctr(bcondAlways, 0, bhintbhBCCTRisNotPredictable);
@@ -468,33 +470,33 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   add(cache, cache, index);
 }
 
-void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+void InterpreterMacroAssembler::load_field_or_method_entry(bool is_method, Register cache, Register index, int bcp_offset, bool for_fast_bytecode) {
+  const int entry_size     = is_method ? sizeof(ResolvedMethodEntry) : sizeof(ResolvedFieldEntry),
+            base_offset    = is_method ? Array<ResolvedMethodEntry>::base_offset_in_bytes() : Array<ResolvedFieldEntry>::base_offset_in_bytes(),
+            entries_offset = is_method ? in_bytes(ConstantPoolCache::method_entries_offset()) : in_bytes(ConstantPoolCache::field_entries_offset());
+
   // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
   // Take shortcut if the size is a power of 2
-  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+  if (is_power_of_2(entry_size)) {
     // Scale index by power of 2
-    sldi(index, index, log2i_exact(sizeof(ResolvedFieldEntry)));
+    sldi(index, index, log2i_exact(entry_size));
   } else {
     // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
-    mulli(index, index, sizeof(ResolvedFieldEntry));
+    mulli(index, index, entry_size);
   }
   // Get address of field entries array
-  ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
+  ld_ptr(cache, entries_offset, R27_constPoolCache);
+  addi(cache, cache, base_offset);
   add(cache, cache, index);
-}
 
-void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
-  // Get index out of bytecode pointer
-  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
-  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
-  mulli(index, index, sizeof(ResolvedMethodEntry));
-
-  // Get address of field entries array
-  ld_ptr(cache, ConstantPoolCache::method_entries_offset(), R27_constPoolCache);
-  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
-  add(cache, cache, index); // method_entries + base_offset + scaled index
+  if (for_fast_bytecode) {
+    // Prevent speculative loading from ResolvedFieldEntry/ResolvedMethodEntry as it can miss the info written by another thread.
+    // TemplateTable::patch_bytecode uses release-store.
+    // We reached here via control dependency (Bytecode dispatch has used the rewritten Bytecode).
+    // So, we can use control-isync based ordering.
+    isync();
+  }
 }
 
 // Load object from cpool->resolved_references(index).
@@ -862,6 +864,9 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
                                                   bool install_monitor_exception) {
   BLOCK_COMMENT("remove_activation {");
 
+  asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread,
+                          "remove_activation: should not have alternate return address set");
+
   unlock_if_synchronized_method(state, throw_monitor_exception, install_monitor_exception);
 
   // The below poll is for the stack watermark barrier. It allows fixing up frames lazily,
@@ -946,121 +951,20 @@ void InterpreterMacroAssembler::leave_jfr_critical_section() {
 //   object  - Address of the object to be locked.
 //
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
-  if (LockingMode == LM_MONITOR) {
-    call_VM_preemptable(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-  } else {
-    // template code (for LM_LEGACY):
-    //
-    // markWord displaced_header = obj->mark().set_unlocked();
-    // monitor->lock()->set_displaced_header(displaced_header);
-    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-    //   // We stored the monitor address into the object's mark word.
-    // } else if (THREAD->is_lock_owned((address)displaced_header))
-    //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(nullptr);
-    // } else {
-    //   // Slow path.
-    //   InterpreterRuntime::monitorenter(THREAD, monitor);
-    // }
+  const Register header           = R7_ARG5;
+  const Register tmp              = R8_ARG6;
 
-    const Register header           = R7_ARG5;
-    const Register object_mark_addr = R8_ARG6;
-    const Register current_header   = R9_ARG7;
-    const Register tmp              = R10_ARG8;
+  Label done, slow_case;
 
-    Label count_locking, done, slow_case, cas_failed;
+  assert_different_registers(header, tmp);
 
-    assert_different_registers(header, object_mark_addr, current_header, tmp);
+  fast_lock(monitor, object, header, tmp, slow_case);
+  b(done);
 
-    // markWord displaced_header = obj->mark().set_unlocked();
+  bind(slow_case);
+  call_VM_preemptable(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
 
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(monitor, object, header, tmp, slow_case);
-      b(done);
-    } else if (LockingMode == LM_LEGACY) {
-
-      if (DiagnoseSyncOnValueBasedClasses != 0) {
-        load_klass(tmp, object);
-        lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
-        testbitdi(CR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
-        bne(CR0, slow_case);
-      }
-
-      // Load markWord from object into header.
-      ld(header, oopDesc::mark_offset_in_bytes(), object);
-
-      // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
-      ori(header, header, markWord::unlocked_value);
-
-      // monitor->lock()->set_displaced_header(displaced_header);
-      const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-      const int mark_offset = lock_offset +
-                              BasicLock::displaced_header_offset_in_bytes();
-
-      // Initialize the box (Must happen before we update the object mark!).
-      std(header, mark_offset, monitor);
-
-      // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-
-      // Store stack address of the BasicObjectLock (this is monitor) into object.
-      addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
-
-      // Must fence, otherwise, preceding store(s) may float below cmpxchg.
-      // CmpxchgX sets CR0 to cmpX(current, displaced).
-      cmpxchgd(/*flag=*/CR0,
-               /*current_value=*/current_header,
-               /*compare_value=*/header, /*exchange_value=*/monitor,
-               /*where=*/object_mark_addr,
-               MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-               MacroAssembler::cmpxchgx_hint_acquire_lock(),
-               noreg,
-               &cas_failed,
-               /*check without membar and ldarx first*/true);
-
-      // If the compare-and-exchange succeeded, then we found an unlocked
-      // object and we have now locked it.
-      b(count_locking);
-      bind(cas_failed);
-
-      // } else if (THREAD->is_lock_owned((address)displaced_header))
-      //   // Simple recursive case.
-      //   monitor->lock()->set_displaced_header(nullptr);
-
-      // We did not see an unlocked object so try the fast recursive case.
-
-      // Check if owner is self by comparing the value in the markWord of object
-      // (current_header) with the stack pointer.
-      sub(current_header, current_header, R1_SP);
-
-      assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-      load_const_optimized(tmp, ~(os::vm_page_size()-1) | markWord::lock_mask_in_place);
-
-      and_(R0/*==0?*/, current_header, tmp);
-      // If condition is true we are done and hence we can store 0 in the displaced
-      // header indicating it is a recursive lock.
-      bne(CR0, slow_case);
-      std(R0/*==0!*/, mark_offset, monitor);
-      b(count_locking);
-    }
-
-    // } else {
-    //   // Slow path.
-    //   InterpreterRuntime::monitorenter(THREAD, monitor);
-
-    // None of the above fast optimizations worked so we have to get into the
-    // slow case of monitor enter.
-    bind(slow_case);
-    call_VM_preemptable(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-    // }
-
-    if (LockingMode == LM_LEGACY) {
-      b(done);
-      align(32, 12);
-      bind(count_locking);
-      inc_held_monitor_count(current_header /*tmp*/);
-    }
-    bind(done);
-  }
+  bind(done);
 }
 
 // Unlocks an object. Used in monitorexit bytecode and remove_activation.
@@ -1071,95 +975,34 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor) {
-  if (LockingMode == LM_MONITOR) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-  } else {
+  const Register object           = R7_ARG5;
+  const Register header           = R8_ARG6;
+  const Register current_header   = R10_ARG8;
 
-    // template code (for LM_LEGACY):
-    //
-    // if ((displaced_header = monitor->displaced_header()) == nullptr) {
-    //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-    //   monitor->set_obj(nullptr);
-    // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-    //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(nullptr);
-    // } else {
-    //   // Slow path.
-    //   InterpreterRuntime::monitorexit(monitor);
-    // }
+  Label free_slot;
+  Label slow_case;
 
-    const Register object           = R7_ARG5;
-    const Register header           = R8_ARG6;
-    const Register object_mark_addr = R9_ARG7;
-    const Register current_header   = R10_ARG8;
+  assert_different_registers(object, header, current_header);
 
-    Label free_slot;
-    Label slow_case;
+  // The object address from the monitor is in object.
+  ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
 
-    assert_different_registers(object, header, object_mark_addr, current_header);
+  fast_unlock(object, header, slow_case);
 
-    if (LockingMode != LM_LIGHTWEIGHT) {
-      // Test first if we are in the fast recursive case.
-      ld(header, in_bytes(BasicObjectLock::lock_offset()) +
-                 BasicLock::displaced_header_offset_in_bytes(), monitor);
+  b(free_slot);
 
-      // If the displaced header is zero, we have a recursive unlock.
-      cmpdi(CR0, header, 0);
-      beq(CR0, free_slot); // recursive unlock
-    }
+  bind(slow_case);
+  call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
 
-    // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-    //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-    //   monitor->set_obj(nullptr);
+  Label done;
+  b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
 
-    // If we still have a lightweight lock, unlock the object and be done.
-
-    // The object address from the monitor is in object.
-    ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
-
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_unlock(object, header, slow_case);
-    } else {
-      addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
-
-      // We have the displaced header in displaced_header. If the lock is still
-      // lightweight, it will contain the monitor address and we'll store the
-      // displaced header back into the object's mark word.
-      // CmpxchgX sets CR0 to cmpX(current, monitor).
-      cmpxchgd(/*flag=*/CR0,
-               /*current_value=*/current_header,
-               /*compare_value=*/monitor, /*exchange_value=*/header,
-               /*where=*/object_mark_addr,
-               MacroAssembler::MemBarRel,
-               MacroAssembler::cmpxchgx_hint_release_lock(),
-               noreg,
-               &slow_case);
-    }
-    b(free_slot);
-
-    // } else {
-    //   // Slow path.
-    //   InterpreterRuntime::monitorexit(monitor);
-
-    // The lock has been converted into a heavy lock and hence
-    // we need to get into the slow case.
-    bind(slow_case);
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-    // }
-
-    Label done;
-    b(done); // Monitor register may be overwritten! Runtime has already freed the slot.
-
-    // Exchange worked, do monitor->set_obj(nullptr);
-    align(32, 12);
-    bind(free_slot);
-    li(R0, 0);
-    std(R0, in_bytes(BasicObjectLock::obj_offset()), monitor);
-    if (LockingMode == LM_LEGACY) {
-      dec_held_monitor_count(current_header /*tmp*/);
-    }
-    bind(done);
-  }
+  // Do monitor->set_obj(nullptr);
+  align(32, 12);
+  bind(free_slot);
+  li(R0, 0);
+  std(R0, in_bytes(BasicObjectLock::obj_offset()), monitor);
+  bind(done);
 }
 
 // Load compiled (i2c) or interpreter entry when calling from interpreted and
@@ -2176,35 +2019,67 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
 }
 
 void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
-                                        Register arg_1, bool check_exceptions) {
+                                                    Register arg_1,
+                                                    bool check_exceptions) {
   if (!Continuations::enabled()) {
     call_VM(oop_result, entry_point, arg_1, check_exceptions);
     return;
   }
+  call_VM_preemptable(oop_result, entry_point, arg_1, noreg /* arg_2 */, check_exceptions);
+}
+
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address entry_point,
+                                                    Register arg_1, Register arg_2,
+                                                    bool check_exceptions) {
+  if (!Continuations::enabled()) {
+    call_VM(oop_result, entry_point, arg_1, arg_2, check_exceptions);
+    return;
+  }
 
   Label resume_pc, not_preempted;
+  Register tmp = R11_scratch1;
+  assert_different_registers(arg_1, tmp);
+  assert_different_registers(arg_2, tmp);
 
-  DEBUG_ONLY(ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread));
-  DEBUG_ONLY(cmpdi(CR0, R0, 0));
-  asm_assert_eq("Should not have alternate return address set");
+#ifdef ASSERT
+  asm_assert_mem8_is_zero(in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread,
+                          "Should not have alternate return address set");
+  // We check this counter in patch_return_pc_with_preempt_stub() during freeze.
+  lwa(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  addi(tmp, tmp, 1);
+  cmpwi(CR0, tmp, 0);
+  stw(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  asm_assert(gt, "call_VM_preemptable: should be > 0");
+#endif // ASSERT
 
   // Preserve 2 registers
-  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R22), "");
+  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R24), "");
   ld(R3_ARG1, _abi0(callers_sp), R1_SP); // load FP
   std(R31, _ijava_state_neg(lresult), R3_ARG1);
-  std(R22, _ijava_state_neg(fresult), R3_ARG1);
+  std(R24, _ijava_state_neg(fresult), R3_ARG1);
 
   // We set resume_pc as last java pc. It will be saved if the vthread gets preempted.
   // Later execution will continue right there.
   mr_if_needed(R4_ARG2, arg_1);
+  assert(arg_2 != R4_ARG2, "smashed argument");
+  mr_if_needed(R5_ARG3, arg_2, true /* allow_noreg */);
   push_cont_fastpath();
-  call_VM(oop_result, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
+  call_VM(noreg /* oop_result */, entry_point, false /*check_exceptions*/, &resume_pc /* last_java_pc */);
   pop_cont_fastpath();
+
+#ifdef ASSERT
+  lwa(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  addi(tmp, tmp, -1);
+  cmpwi(CR0, tmp, 0);
+  stw(tmp, in_bytes(JavaThread::interp_at_preemptable_vmcall_cnt_offset()), R16_thread);
+  asm_assert(ge, "call_VM_preemptable: should be >= 0");
+#endif // ASSERT
 
   // Jump to handler if the call was preempted
   ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
   cmpdi(CR0, R0, 0);
   beq(CR0, not_preempted);
+  // Preempted. Frames are already frozen on heap.
   mtlr(R0);
   li(R0, 0);
   std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
@@ -2212,21 +2087,21 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result, address
 
   bind(resume_pc); // Location to resume execution
   restore_after_resume(noreg /* fp */);
+
   bind(not_preempted);
+  if (check_exceptions) {
+    check_and_forward_exception(R11_scratch1, R12_scratch2);
+  }
+  if (oop_result->is_valid()) {
+    get_vm_result_oop(oop_result);
+  }
 }
 
 void InterpreterMacroAssembler::restore_after_resume(Register fp) {
-  if (!Continuations::enabled()) return;
-
   const address resume_adapter = TemplateInterpreter::cont_resume_interpreter_adapter();
   add_const_optimized(R31, R29_TOC, MacroAssembler::offset_to_global_toc(resume_adapter));
   mtctr(R31);
   bctrl();
-  // Restore registers that are preserved across vthread preemption
-  assert(nonvolatile_accross_vthread_preemtion(R31) && nonvolatile_accross_vthread_preemtion(R22), "");
-  ld(R3_ARG1, _abi0(callers_sp), R1_SP); // load FP
-  ld(R31, _ijava_state_neg(lresult), R3_ARG1);
-  ld(R22, _ijava_state_neg(fresult), R3_ARG1);
 #ifdef ASSERT
   // Assert FP is in R11_scratch1 (see generate_cont_resume_interpreter_adapter())
   {

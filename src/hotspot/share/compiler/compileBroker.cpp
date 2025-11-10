@@ -53,7 +53,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -218,11 +218,16 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
@@ -480,6 +485,7 @@ void CompileQueue::purge_stale_tasks() {
       MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != nullptr; ) {
         CompileTask* next_task = task->next();
+        task->set_next(nullptr);
         CompileTaskWrapper ctw(task); // Frees the task
         task->set_failure_reason("stale task");
         task = next_task;
@@ -1058,7 +1064,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  julong free_memory = os::free_memory();
+  physical_memory_size_type free_memory = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),
          available_cc_p  = CodeCache::unallocated_capacity(CodeBlobType::MethodProfiled);
@@ -1582,14 +1590,14 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
+    return AtomicAccess::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
-    id = Atomic::add(&_osr_compilation_id, 1);
+    id = AtomicAccess::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = Atomic::add(&_compilation_id, 1);
+    id = AtomicAccess::add(&_compilation_id, 1);
     if (CIStart <= id && id < CIStop) {
       return id;
     }
@@ -1601,7 +1609,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #else
   // CICountOSR is a develop flag and set to 'false' by default. In a product built,
   // only _compilation_id is incremented.
-  return Atomic::add(&_compilation_id, 1);
+  return AtomicAccess::add(&_compilation_id, 1);
 #endif
 }
 
@@ -1923,6 +1931,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
@@ -2337,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }

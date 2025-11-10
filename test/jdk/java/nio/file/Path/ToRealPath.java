@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,18 +151,18 @@ public class ToRealPath {
     public void noCollapseDots1() throws IOException {
         Path subPath = DIR.resolve(Path.of("dir", "subdir"));
         Path sub = Files.createDirectories(subPath);
-        System.out.println("sub: " + sub);
+        System.err.println("sub: " + sub);
         Files.createSymbolicLink(LINK, sub);
-        System.out.println("LINK: " + LINK + " -> " + sub);
+        System.err.println("LINK: " + LINK + " -> " + sub);
         Path p = Path.of("..", "..", FILE.getFileName().toString());
-        System.out.println("p: " + p);
+        System.err.println("p: " + p);
         Path path = LINK.resolve(p);
-        System.out.println("path:      " + path);
+        System.err.println("path:      " + path);
         if (Platform.isWindows() && Files.notExists(path)) {
             Files.createFile(path);
             extraDeletions.add(path);
         }
-        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        System.err.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
         if (Platform.isWindows())
             assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
         else
@@ -181,23 +181,23 @@ public class ToRealPath {
         Path out = Files.createFile(DIR.resolve(Path.of("out.txt")));
         Path aaa = DIR.resolve(Path.of("aaa"));
         Files.createSymbolicLink(aaa, sub);
-        System.out.println("aaa: " + aaa + " -> " + sub);
+        System.err.println("aaa: " + aaa + " -> " + sub);
         Path bbb = DIR.resolve(Path.of("bbb"));
         Files.createSymbolicLink(bbb, sub);
-        System.out.println("bbb: " + bbb + " -> " + sub);
+        System.err.println("bbb: " + bbb + " -> " + sub);
         Path p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
         Path path = DIR.resolve(p);
-        System.out.println("path:      " + path);
+        System.err.println("path:      " + path);
         if (Platform.isWindows() && Files.notExists(path)) {
             Files.createFile(path);
             extraDeletions.add(path);
         }
-        System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+        System.err.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
         if (Platform.isWindows())
             assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
         else
             assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
-        System.out.println(path.toRealPath());
+        System.err.println(path.toRealPath());
 
         Files.delete(sub);
         Files.delete(sub.getParent());

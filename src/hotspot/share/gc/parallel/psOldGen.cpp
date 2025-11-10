@@ -96,7 +96,7 @@ void PSOldGen::initialize_work() {
   // ObjectSpace stuff
   //
 
-  _object_space = new MutableSpace(virtual_space()->alignment());
+  _object_space = new MutableSpace(virtual_space()->page_size());
   object_space()->initialize(committed_mr,
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle,
@@ -118,8 +118,8 @@ void PSOldGen::initialize_performance_counters() {
 }
 
 HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  assert(Thread::current()->is_VM_thread(), "precondition");
+  assert(Heap_lock->is_locked(), "precondition");
+
   if (object_space()->needs_expand(word_size)) {
     expand(word_size*HeapWordSize);
   }

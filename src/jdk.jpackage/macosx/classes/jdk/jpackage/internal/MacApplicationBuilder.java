@@ -26,7 +26,10 @@ package jdk.jpackage.internal;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.model.Application;
@@ -34,6 +37,7 @@ import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 
 final class MacApplicationBuilder {
@@ -94,11 +98,28 @@ final class MacApplicationBuilder {
         }
 
         validateAppVersion(app);
+        validateAppContentDirs(app);
 
-        final var mixin = new MacApplicationMixin.Stub(validatedIcon(), validatedBundleName(),
-                validatedBundleIdentifier(), validatedCategory(), appStore, createSigningConfig());
+        final var mixin = new MacApplicationMixin.Stub(
+                validatedIcon(),
+                validatedBundleName(),
+                validatedBundleIdentifier(),
+                validatedCategory(),
+                appStore,
+                createSigningConfig());
 
         return MacApplication.create(app, mixin);
+    }
+
+    static MacApplication overrideAppImageLayout(MacApplication app, AppImageLayout appImageLayout) {
+        final var mixin = new MacApplicationMixin.Stub(
+                app.icon(),
+                app.bundleName(),
+                app.bundleIdentifier(),
+                app.category(),
+                app.appStore(),
+                app.signingConfig());
+        return MacApplication.create(ApplicationBuilder.overrideAppImageLayout(app, appImageLayout), mixin);
     }
 
     static boolean isValidBundleIdentifier(String id) {
@@ -120,6 +141,18 @@ final class MacApplicationBuilder {
             CFBundleVersion.of(app.version());
         } catch (IllegalArgumentException ex) {
             throw I18N.buildConfigException(ex).advice("error.invalid-cfbundle-version.advice").create();
+        }
+    }
+
+    private static void validateAppContentDirs(Application app) {
+        for (var contentDir : app.contentDirs()) {
+            if (!Files.isDirectory(contentDir)) {
+                Log.info(I18N.format("warning.app.content.is.not.dir",
+                        contentDir));
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName().toString())) {
+                Log.info(I18N.format("warning.non.standard.contents.sub.dir",
+                        contentDir));
+            }
         }
     }
 
@@ -233,4 +266,8 @@ final class MacApplicationBuilder {
     private static final Defaults DEFAULTS = new Defaults("utilities");
 
     private static final int MAX_BUNDLE_NAME_LENGTH = 16;
+
+    // List of standard subdirectories of the "Contents" directory
+    private static final Set<String> CONTENTS_SUB_DIRS = Set.of("MacOS",
+            "Resources", "Frameworks", "PlugIns", "SharedSupport");
 }

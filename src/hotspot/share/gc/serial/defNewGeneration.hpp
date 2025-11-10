@@ -55,8 +55,6 @@ class DefNewGeneration: public Generation {
 
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
-  // Size of object to pretenure in words; command line provides bytes
-  size_t      _pretenure_size_threshold_words;
 
   // ("Weak") Reference processing support
   SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -133,6 +131,13 @@ class DefNewGeneration: public Generation {
     return n > alignment ? align_down(n, alignment) : alignment;
   }
 
+  size_t calculate_desired_young_gen_bytes() const;
+
+  void expand_eden_by(size_t delta_bytes);
+
+  void resize_inner();
+  void post_resize();
+
  public:
   DefNewGeneration(ReservedSpace rs,
                    size_t initial_byte_size,
@@ -185,29 +190,10 @@ class DefNewGeneration: public Generation {
 
   HeapWord* block_start(const void* p) const;
 
-  // Allocation support
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    assert(UseTLAB || !is_tlab, "Should not allocate tlab");
-    assert(word_size != 0, "precondition");
-
-    size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-
-    const bool overflows     = word_size >= overflow_limit;
-    const bool check_too_big = _pretenure_size_threshold_words > 0;
-    const bool not_too_big   = word_size < _pretenure_size_threshold_words;
-    const bool size_ok       = is_tlab || !check_too_big || not_too_big;
-
-    bool result = !overflows &&
-                  size_ok;
-
-    return result;
-  }
-
-  // Allocate requested size or return null; single-threaded and lock-free versions.
-  HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(size_t word_size);
 
-  void gc_epilogue(bool full);
+  void gc_epilogue();
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
@@ -216,8 +202,8 @@ class DefNewGeneration: public Generation {
   // Reset for contribution of "to-space".
   void reset_scratch();
 
-  // GC support
-  void compute_new_size();
+  void resize_after_young_gc();
+  void resize_after_full_gc();
 
   bool collect(bool clear_all_soft_refs);
 
@@ -240,13 +226,9 @@ class DefNewGeneration: public Generation {
 
   DefNewTracer* gc_tracer() const { return _gc_tracer; }
 
- protected:
-  // If clear_space is true, clear the survivor spaces.  Eden is
-  // cleared if the minimum size of eden is 0.  If mangle_space
-  // is true, also mangle the space in debug mode.
-  void compute_space_boundaries(uintx minimum_eden_size,
-                                bool clear_space,
-                                bool mangle_space);
+ private:
+  // Initialize eden/from/to spaces.
+  void init_spaces();
 
   // Return adjusted new size for NewSizeThreadIncrease.
   // If any overflow happens, revert to previous new size.

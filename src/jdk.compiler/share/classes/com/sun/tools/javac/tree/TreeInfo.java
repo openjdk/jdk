@@ -437,6 +437,19 @@ public class TreeInfo {
      * Return true if the AST corresponds to a static select of the kind A.B
      */
     public static boolean isStaticSelector(JCTree base, Names names) {
+        return isTypeSelector(base, names, TreeInfo::isStaticSym);
+    }
+    //where
+        private static boolean isStaticSym(JCTree tree) {
+            Symbol sym = symbol(tree);
+            return (sym.kind == TYP || sym.kind == PCK);
+        }
+
+    public static boolean isType(JCTree base, Names names) {
+        return isTypeSelector(base, names, _ -> true);
+    }
+
+    private static boolean isTypeSelector(JCTree base, Names names, Predicate<JCTree> checkStaticSym) {
         if (base == null)
             return false;
         switch (base.getTag()) {
@@ -444,9 +457,9 @@ public class TreeInfo {
                 JCIdent id = (JCIdent)base;
                 return id.name != names._this &&
                         id.name != names._super &&
-                        isStaticSym(base);
+                        checkStaticSym.test(base);
             case SELECT:
-                return isStaticSym(base) &&
+                return checkStaticSym.test(base) &&
                     isStaticSelector(((JCFieldAccess)base).selected, names);
             case TYPEAPPLY:
             case TYPEARRAY:
@@ -457,11 +470,6 @@ public class TreeInfo {
                 return false;
         }
     }
-    //where
-        private static boolean isStaticSym(JCTree tree) {
-            Symbol sym = symbol(tree);
-            return (sym.kind == TYP || sym.kind == PCK);
-        }
 
     /** Return true if a tree represents the null literal. */
     public static boolean isNull(JCTree tree) {
@@ -610,17 +618,14 @@ public class TreeInfo {
             }
             case VARDEF: {
                 JCVariableDecl node = (JCVariableDecl)tree;
-                if (node.startPos != Position.NOPOS) {
-                    return node.startPos;
-                } else if (node.mods.pos != Position.NOPOS) {
+                if (node.mods.pos != Position.NOPOS) {
                     return node.mods.pos;
-                } else if (node.vartype == null || node.vartype.pos == Position.NOPOS) {
-                    //if there's no type (partially typed lambda parameter)
-                    //simply return node position
-                    return node.pos;
-                } else {
+                } else if (node.vartype != null) {
                     return getStartPos(node.vartype);
+                } else if (node.typePos != Position.NOPOS) {
+                    return node.typePos;
                 }
+                break;
             }
             case BINDINGPATTERN: {
                 JCBindingPattern node = (JCBindingPattern)tree;

@@ -204,6 +204,7 @@ public enum HtmlAttr {
     public enum InputType {
 
         CHECKBOX,
+        RADIO,
         RESET,
         TEXT;
 

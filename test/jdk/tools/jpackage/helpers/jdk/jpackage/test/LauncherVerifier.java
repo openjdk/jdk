@@ -24,6 +24,7 @@ package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.test.AdditionalLauncher.NO_ICON;
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static jdk.jpackage.test.LauncherShortcut.LINUX_SHORTCUT;
 
 import java.io.IOException;
@@ -34,12 +35,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.xml.parsers.ParserConfigurationException;
+import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
+import org.xml.sax.SAXException;
 
 public final class LauncherVerifier {
 
@@ -67,6 +74,12 @@ public final class LauncherVerifier {
         new LauncherVerifier(cmd).verify(cmd, Action.EXECUTE_LAUNCHER);
     }
 
+    static String launcherDescription(JPackageCommand cmd, String launcherName) {
+        return launcherDescription(cmd, launcherName, (theCmd, theLauncherName) -> {
+            return getAdditionalLauncherProperties(theCmd, theLauncherName);
+        });
+    }
+
 
     public enum Action {
         VERIFY_ICON(LauncherVerifier::verifyIcon),
@@ -80,6 +93,11 @@ public final class LauncherVerifier {
         VERIFY_APP_IMAGE_FILE((verifier, cmd) -> {
             if (cmd.isImagePackageType()) {
                 verifier.verifyInAppImageFile(cmd);
+            }
+        }),
+        VERIFY_MAC_ENTITLEMENTS((verifier, cmd) -> {
+            if (TKit.isOSX() && MacHelper.appImageSigned(cmd)) {
+                verifier.verifyMacEntitlements(cmd);
             }
         }),
         EXECUTE_LAUNCHER(LauncherVerifier::executeLauncher),
@@ -96,7 +114,7 @@ public final class LauncherVerifier {
         private final BiConsumer<LauncherVerifier, JPackageCommand> action;
 
         static final List<Action> VERIFY_APP_IMAGE = List.of(
-                VERIFY_ICON, VERIFY_DESCRIPTION, VERIFY_INSTALLED, VERIFY_APP_IMAGE_FILE
+                VERIFY_ICON, VERIFY_DESCRIPTION, VERIFY_INSTALLED, VERIFY_APP_IMAGE_FILE, VERIFY_MAC_ENTITLEMENTS
         );
 
         static final List<Action> VERIFY_DEFAULTS = Stream.concat(
@@ -127,8 +145,8 @@ public final class LauncherVerifier {
     }
 
     private String getDescription(JPackageCommand cmd) {
-        return findProperty("description").orElseGet(() -> {
-            return cmd.getArgumentValue("--description", cmd::name);
+        return launcherDescription(cmd, name, (theCmd, theLauncherName) -> {
+            return properties.orElseThrow();
         });
     }
 
@@ -194,12 +212,35 @@ public final class LauncherVerifier {
                     verifier.setExpectedIcon(icon);
                 }
             }, () -> {
-                // No "icon" property in the property file
+                // No "icon" property in the property file.
                 iconInResourceDir(cmd, name).ifPresentOrElse(verifier::setExpectedIcon, () -> {
                     // No icon for this additional launcher in the resource directory.
                     mainLauncherIcon.ifPresentOrElse(verifier::setExpectedIcon, verifier::setExpectedDefaultIcon);
                 });
             });
+        }
+
+        if (TKit.isLinux()) {
+            // On Linux, a launcher may have an icon only if it has a corresponding .desktop file.
+            // In case of "app-image" packaging there are no .desktop files, but jpackage will add icon files
+            // in the app image anyways so that in two-step packaging jpackage can pick the icons for .desktop files.
+            // jpackage should not add the default icon to the app image in case of "app-image" packaging.
+            if (cmd.isImagePackageType()) {
+                // This is "app-image" packaging. Let's see if, in two-step packaging,
+                // jpackage creates a .desktop file for this launcher.
+                if (!withLinuxDesktopFile(cmd.createMutableCopy().setPackageType(PackageType.LINUX_RPM))) {
+                    // No .desktop file in the "future" package for this launcher,
+                    // then don't expect an icon in the app image produced by the `cmd`.
+                    verifier.setExpectedNoIcon();
+                } else if (verifier.expectDefaultIcon()) {
+                    // A .desktop file in the "future" package for this launcher,
+                    // but it will use the default icon.
+                    // Don't expect an icon in the app image produced by the `cmd`.
+                    verifier.setExpectedNoIcon();
+                }
+            } else if (!withLinuxDesktopFile(cmd)) {
+                verifier.setExpectedNoIcon();
+            }
         }
 
         return verifier;
@@ -239,7 +280,11 @@ public final class LauncherVerifier {
     }
 
     private void verifyDescription(JPackageCommand cmd) throws IOException {
-        if (TKit.isWindows()) {
+        if (TKit.isWindows() && !cmd.hasArgument("--app-image")) {
+            // On Windows, check the description if the predefined app image is not configured.
+            // The description and the icon are encoded in the launcher executable, which should be
+            // copied verbatim from the predefined app image into the output bundle.
+            // This check is done in the JPackageCommand class, so there is no need to duplicate it here.
             String expectedDescription = getDescription(cmd);
             Path launcherPath = cmd.appLauncherPath(name);
             String actualDescription =
@@ -323,6 +368,35 @@ public final class LauncherVerifier {
         }
     }
 
+    private void verifyMacEntitlements(JPackageCommand cmd) throws ParserConfigurationException, SAXException, IOException {
+        Path launcherPath = cmd.appLauncherPath(name);
+        var entitlements = MacSignVerify.findEntitlements(launcherPath);
+
+        TKit.assertTrue(entitlements.isPresent(), String.format("Check [%s] launcher is signed with entitlements", name));
+
+        var customFile = Optional.ofNullable(cmd.getArgumentValue("--mac-entitlements")).map(Path::of);
+        if (customFile.isEmpty()) {
+            // Try from the resource dir.
+            var resourceDirFile = Optional.ofNullable(cmd.getArgumentValue("--resource-dir")).map(Path::of).map(resourceDir -> {
+                return resourceDir.resolve(cmd.name() + ".entitlements");
+            }).filter(Files::exists);
+            if (resourceDirFile.isPresent()) {
+                customFile = resourceDirFile;
+            }
+        }
+
+        Map<String, Object> expected;
+        if (customFile.isPresent()) {
+            expected = new PListReader(Files.readAllBytes(customFile.orElseThrow())).toMap(true);
+        } else if (cmd.hasArgument("--mac-app-store")) {
+            expected = DefaultEntitlements.APP_STORE;
+        } else {
+            expected = DefaultEntitlements.STANDARD;
+        }
+
+        TKit.assertEquals(expected, entitlements.orElseThrow().toMap(true), String.format("Check [%s] launcher is signed with expected entitlements", name));
+    }
+
     private void executeLauncher(JPackageCommand cmd) throws IOException {
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -361,6 +435,38 @@ public final class LauncherVerifier {
             }
         });
     }
+
+    private static String launcherDescription(
+            JPackageCommand cmd,
+            String launcherName,
+            BiFunction<JPackageCommand, String, PropertyFile> addLauncherPropertyFileGetter) {
+
+        return PropertyFinder.findLauncherProperty(cmd, launcherName,
+                PropertyFinder.cmdlineOptionWithValue("--description"),
+                PropertyFinder.launcherPropertyFile("description"),
+                PropertyFinder.nop()
+        ).orElseGet(() -> {
+            if (cmd.isMainLauncher(launcherName)) {
+                return cmd.mainLauncherName();
+            } else {
+                return launcherDescription(cmd, null, addLauncherPropertyFileGetter);
+            }
+        });
+    }
+
+
+    private static final class DefaultEntitlements {
+        private static Map<String, Object> loadFromResources(String resourceName) {
+            return ThrowingSupplier.toSupplier(() -> {
+                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
+                return new PListReader(bytes).toMap(true);
+            }).get();
+        }
+
+        static final Map<String, Object> STANDARD = loadFromResources("entitlements.plist");
+        static final Map<String, Object> APP_STORE = loadFromResources("sandbox.plist");
+    }
+
 
     private final String name;
     private final Optional<List<String>> javaOptions;
