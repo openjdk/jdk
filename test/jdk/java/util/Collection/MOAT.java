@@ -888,29 +888,30 @@ public class MOAT {
     }
 
     private static void testAddAll(Collection<Integer> c) {
-        if (! supportsAdd(c)) return;
-        
+        if (!supportsAdd(c))
+            return;
+
         clear(c);
-        
+
         // Test empty ArrayList source
         ArrayList<Integer> emptySource = new ArrayList<>();
-        check(! c.addAll(emptySource));
-        
+        check(!c.addAll(emptySource));
+
         // Test non-empty ArrayList source
         ArrayList<Integer> arraySource = new ArrayList<>();
         arraySource.add(42);
         arraySource.add(99);
         check(c.addAll(arraySource));
         equal(new ArrayList<Integer>(c), arraySource);
-        
+
         clear(c);
-        
+
         // Test non-ArrayList source
         List<Integer> linkedSource = new LinkedList<>();
         linkedSource.add(77);
         check(c.addAll(linkedSource));
         equal(new ArrayList<Integer>(c), linkedSource);
-        
+
         // Test non-empty destination
         clear(c);
         c.add(10);
