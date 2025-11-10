@@ -416,29 +416,6 @@ public:
   void assert_bounds(bool validate_totals) NOT_DEBUG_RETURN;
 };
 
-#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_AFFINITY ((Thread*)-1)
-#define DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF     ((Thread*)-2)
-// When mutator threads allocate from directly allocatable regions, ideally the allocation should be evenly
-// distributed to all the directly allocatable regions, random is the best portable option for this, but with random
-// distribution it may worsen memory locality, e.g. two consecutive allocation from same thread are randomly
-// distributed to different allocatable regions. ShenandoahDirectlyAllocatableRegionAffinity solves/mitigates
-// the memory locality issue.
-// The idea and code is borrowed from ZGC's CPU affinity, but with random number instead of CPU id.
-class ShenandoahDirectlyAllocatableRegionAffinity : public AllStatic {
-  struct Affinity {
-    Thread* _thread;
-  };
-
-  static PaddedEnd<Affinity>* _affinity;
-  static THREAD_LOCAL Thread* _self;
-  static THREAD_LOCAL uint    _index;
-  static uint index_slow();
-public:
-  static void initialize();
-  static uint index();
-  static void set_index(uint index);
-};
-
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
 // and available() methods represent this public notion of memory that is under control of the mutator.  Separately,
 // ShenandoahFreeSet also represents memory available to garbage collection activities for compaction purposes.
@@ -481,6 +458,7 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
   PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
+  static THREAD_LOCAL uint _alloc_region_index;
 
   size_t _total_humongous_waste;
 
@@ -702,6 +680,13 @@ private:
 
   template<typename Iter>
   uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionIterationClosure* cl);
+
+  static uint alloc_region_index() {
+    if (_alloc_region_index == UINT_MAX) {
+      _alloc_region_index = abs(os::random()) % ShenandoahDirectlyAllocatableRegionCount;
+    }
+    return _alloc_region_index;
+  }
 
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;

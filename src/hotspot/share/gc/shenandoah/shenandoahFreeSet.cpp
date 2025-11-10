@@ -1190,48 +1190,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
 }
 #endif
 
-PaddedEnd<ShenandoahDirectlyAllocatableRegionAffinity::Affinity>* ShenandoahDirectlyAllocatableRegionAffinity::_affinity = nullptr;
-THREAD_LOCAL Thread* ShenandoahDirectlyAllocatableRegionAffinity::_self = DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF;
-THREAD_LOCAL uint ShenandoahDirectlyAllocatableRegionAffinity::_index = 0;
-
-uint ShenandoahDirectlyAllocatableRegionAffinity::index_slow() {
-  // Set current thread
-  if (_self == DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_SELF) {
-    _self = Thread::current();
-  }
-
-  // Create a new random index where the thread will start allocation
-  _index = static_cast<uint>(os::random()) % ShenandoahDirectlyAllocatableRegionCount;
-
-  // Update affinity table
-  _affinity[_index]._thread = _self;
-
-  return _index;
-}
-
-void ShenandoahDirectlyAllocatableRegionAffinity::initialize() {
-  assert(_affinity == nullptr, "Already initialized");
-  _affinity = PaddedArray<Affinity, mtGC>::create_unfreeable(ShenandoahDirectlyAllocatableRegionCount);
-  for (uint32_t i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    _affinity[i]._thread = DIRECTLY_ALLOCATABLE_REGION_UNKNOWN_AFFINITY;
-  }
-}
-
-uint ShenandoahDirectlyAllocatableRegionAffinity::index() {
-  assert(_affinity != nullptr, "Not initialized");
-  // Fast path
-  if (_affinity[_index]._thread == _self) {
-    return _index;
-  }
-
-  // Slow path
-  return index_slow();
-}
-
-void ShenandoahDirectlyAllocatableRegionAffinity::set_index(uint index) {
-  _index = index;
-  _affinity[_index]._thread = _self;
-}
+THREAD_LOCAL uint ShenandoahFreeSet::_alloc_region_index = UINT_MAX;
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
@@ -1255,7 +1214,6 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
     _direct_allocation_regions[i]._address = nullptr;
   }
-  ShenandoahDirectlyAllocatableRegionAffinity::initialize();
 }
 
 // was pip_pad_bytes
@@ -3396,7 +3354,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
          req.type() == ShenandoahAllocRequest::_alloc_shared ||
          req.type() == ShenandoahAllocRequest::_alloc_cds,  "Must be");
 
-  uint start_idx = ShenandoahDirectlyAllocatableRegionAffinity::index();
+  uint start_idx = alloc_region_index();
   for (;;) {
     HeapWord* obj = nullptr;
     obj = cas_allocate_single_for_mutator<IS_TLAB>(start_idx, req, in_new_region);
