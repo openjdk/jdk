@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,11 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
         final int[] selectedIndices = getTarget().getSelectedIndexes();
         synchronized (getDelegateLock()) {
             getDelegate().setSkipStateChangedEvent(true);
-            getDelegate().getView().setSelectedIndices(selectedIndices);
-            getDelegate().setSkipStateChangedEvent(false);
+            try {
+                getDelegate().getView().setSelectedIndices(selectedIndices);
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
@@ -111,24 +114,39 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void add(final String item, final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().add(index, item);
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().add(index, item);
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void delItems(final int start, final int end) {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().removeRange(start, end);
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().removeRange(start, end);
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void removeAll() {
         synchronized (getDelegateLock()) {
-            getDelegate().getModel().removeAllElements();
-            revalidate();
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getModel().removeAllElements();
+                revalidate();
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
@@ -136,16 +154,23 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     public void select(final int index) {
         synchronized (getDelegateLock()) {
             getDelegate().setSkipStateChangedEvent(true);
-            getDelegate().getView().setSelectedIndex(index);
-            getDelegate().setSkipStateChangedEvent(false);
+            try {
+                getDelegate().getView().setSelectedIndex(index);
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
     @Override
     public void deselect(final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().getView().getSelectionModel().
-                    removeSelectionInterval(index, index);
+            getDelegate().setSkipStateChangedEvent(true);
+            try {
+                getDelegate().getView().removeSelectionInterval(index, index);
+            } finally {
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
