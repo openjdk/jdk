@@ -87,7 +87,7 @@ final class LazyCollections {
         }
 
         private E getSlowPath(int i) {
-            return orElseComputeSlowPath(elements, i, mutexes.acquireMutex(offsetFor(i)), i, functionHolder);
+            return orElseComputeSlowPath(elements, i, mutexes, i, functionHolder);
         }
 
         @Override
@@ -347,8 +347,7 @@ final class LazyCollections {
             if (v != null) {
                 return v;
             }
-            final Object mutex = mutexes.acquireMutex(offset);
-            return orElseComputeSlowPath(values, index, mutex, key, functionHolder);
+            return orElseComputeSlowPath(values, index, mutexes, key, functionHolder);
         }
 
         @SuppressWarnings("unchecked")
@@ -432,7 +431,7 @@ final class LazyCollections {
                 final V v = map.getAcquire(getKey);
                 return v != null
                         ? v
-                        : orElseComputeSlowPath(map.values, index, map.mutexes.acquireMutex(offsetFor(index)), getKey, functionHolder);
+                        : orElseComputeSlowPath(map.values, index, map.mutexes, getKey, functionHolder);
             }
             @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
             @Override public String toString() { return getKey() + "=" + getValue(); }
@@ -484,7 +483,7 @@ final class LazyCollections {
 
     static final class Mutexes {
 
-        static final Object TOMB_STONE = new Mutexes.MutexObject(-1, Thread.currentThread().threadId());
+        static final Object TOMB_STONE = new Object();
 
         // Filled on demand and then discarded once it is not needed anymore.
         // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
@@ -506,66 +505,19 @@ final class LazyCollections {
                 return mutex;
             }
             // Protect against racy stores of mutexe candidates
-            final Object candidate = new Mutexes.MutexObject(offset, Thread.currentThread().threadId());
+            final Object candidate = new Object();
             final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
-            check(witness, offset);
             return witness == null ? candidate : witness;
         }
 
-        @ForceInline
-        private void disposeOfMutex(long offset) {
-            UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
-            // Todo: the null check is redundant as this method is invoked at most
-            //       `size()` times.
+        private void releaseMutex(long offset) {
+            UNSAFE.putReference(mutexes, offset, TOMB_STONE);
             if (counter != null && counter.decrementAndGet() == 0) {
-                // We don't need these anymore
-                counter = null;
                 mutexes = null;
+                counter = null;
             }
         }
 
-        // Todo: remove this after stabilization
-        private Object check(Object mutex, long realOffset) {
-            if (mutex == null || mutex == TOMB_STONE) {
-                return mutex;
-            }
-            assert (mutex instanceof Mutexes.MutexObject(
-                    long offset, long _
-            )) && offset == realOffset :
-                    mutex +
-                            ", realOffset = " + realOffset +
-                            ", realThread = " + Thread.currentThread().threadId();
-            return mutex;
-        }
-
-        // Todo: remove this after stabilization
-        record MutexObject(long offset, long tid) { }
-
-    }
-
-    public static <E> int indexOf(List<LazyConstant<E>> list, Object o) {
-        Objects.requireNonNull(o);
-        if (o instanceof LazyConstant<?> s) {
-            final int size = list.size();
-            for (int i = 0; i < size; i++) {
-                if (Objects.equals(s, list.get(i))) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    public static <E> int lastIndexOf(List<LazyConstant<E>> list, Object o) {
-        Objects.requireNonNull(o);
-        if (o instanceof LazyConstant<?> s) {
-            for (int i = list.size() - 1; i >= 0; i--) {
-                if (Objects.equals(s, list.get(i))) {
-                    return i;
-                }
-            }
-        }
-        return -1;
     }
 
     @ForceInline
@@ -611,35 +563,30 @@ final class LazyCollections {
     @SuppressWarnings("unchecked")
     static <T> T orElseComputeSlowPath(final T[] array,
                                        final int index,
-                                       final Object mutex,
+                                       final Mutexes mutexes,
                                        final Object input,
                                        final FunctionHolder<?> functionHolder) {
+        final long offset = offsetFor(index);
+        final Object mutex = mutexes.acquireMutex(offset);
         preventReentry(mutex);
         synchronized (mutex) {
             final T t = array[index];  // Plain semantics suffice here
             if (t == null) {
-                final T newValue;
-                if (functionHolder == null) {
-                    // If there is no functionHolder, the input must be a
-                    // `Supplier` because we were called from `.orElseSet(Supplier)`
-                    newValue = ((Supplier<T>) input).get();
-                    Objects.requireNonNull(newValue);
-                } else {
-                    final Object u = functionHolder.function();
-                    newValue = switch (u) {
-                        case Supplier<?> sup -> (T) sup.get();
-                        case IntFunction<?> iFun -> (T) iFun.apply((int) input);
-                        case Function<?, ?> fun ->
-                                ((Function<Object, T>) fun).apply(input);
-                        default -> throw new InternalError("cannot reach here");
-                    };
-                    Objects.requireNonNull(newValue);
-                    // Reduce the counter and if it reaches zero, clear the reference
-                    // to the underlying holder.
-                    functionHolder.countDown();
-                }
+                final T newValue = switch (functionHolder.function()) {
+                    case Supplier<?> sup     -> (T) sup.get();
+                    case IntFunction<?> iFun -> (T) iFun.apply((int) input);
+                    case Function<?, ?> fun  ->  ((Function<Object, T>) fun).apply(input);
+                    default -> throw new InternalError("cannot reach here");
+                };
+                Objects.requireNonNull(newValue);
+                // Reduce the counter and if it reaches zero, clear the reference
+                // to the underlying holder.
+                functionHolder.countDown();
+
                 // The mutex is not reentrant so we know newValue should be returned
                 set(array, index, mutex, newValue);
+                // We do not need the mutex anymore
+                mutexes.releaseMutex(offset);
                 return newValue;
             }
             return t;

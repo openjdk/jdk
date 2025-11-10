@@ -143,12 +143,7 @@ public final class Currency implements Serializable {
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
     private static final LazyConstant<HashSet<Currency>> available =
-            LazyConstant.of(new Supplier<HashSet<Currency>>() {
-                @Override
-                public HashSet<Currency> get() {
-                    return computeAllCurrencies();
-                }
-            });
+            LazyConstant.of(Currency::computeAllCurrencies);
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:

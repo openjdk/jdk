@@ -1788,11 +1788,14 @@ public interface Map<K, V> {
      * implementation-dependent string is returned for uninitialized values.
      * <p>
      * The returned lazy map strongly references its underlying
-     * computing function used to compute values only so long as there are
-     * uncomputed values after which the underlying function is not strongly referenced
-     * anymore and may be collected.
+     * computing function used to compute values at least so long as there are
+     * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
+     *
+     * @implNote  after all values have been initialized successfully, the computing
+     *            function is no longer strongly referenced and becomes eligible for
+     *            garbage collection.
      *
      * @param keys              the (non-null) keys in the returned computed map
      * @param computingFunction to invoke whenever an associated value is first accessed

@@ -86,10 +86,6 @@ import java.util.function.Supplier;
  * If the computing function recursively invokes itself (directly or indirectly via
  * the lazy constant), an {@linkplain IllegalStateException} is thrown, and the lazy
  * constant is not initialized.
- * <p>
- * If the computing function throws any unchecked {@linkplain Exception} or
- * {@linkplain Error}, that {@linkplain Throwable} is propagated to the caller, and the
- * lazy constant remains uninitialized.
  *
  * <h2 id="composition">Composing lazy constants</h2>
  * A lazy constant can depend on other lazy constants, forming a dependency graph
@@ -158,8 +154,8 @@ import java.util.function.Supplier;
  * This is only possible if there is a direct reference from a {@code static final} field
  * to a lazy constant or if there is a chain from a {@code static final} field -- via one
  * or more <em>trusted fields</em> (i.e., {@code static final} fields,
- * {@linkplain Record record} fields, lazy constants, lazy lists, lazy maps,
- * or final instance fields in hidden classes) -- to a lazy constant.
+ * {@linkplain Record record} fields, or final instance fields in hidden classes) --
+ * to a lazy constant.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for {@linkplain Object#equals(Object) equals(obj)} and
@@ -181,7 +177,7 @@ import java.util.function.Supplier;
  *          <p>
  *          Use in static initializers may interact with class initialization order;
  *          cyclic initialization may result in initialization errors as described
- *          in {@jls 12.4} of <cite>The Java Language Specification</cite>.
+ *          in section {@jls 12.4} of <cite>The Java Language Specification</cite>.
  *
  * @implNote
  *           A lazy constant is free to synchronize on itself. Hence, care must be
@@ -206,7 +202,7 @@ public sealed interface LazyConstant<T>
         permits LazyConstantImpl {
 
     /**
-     * {@return the contents of this lazy constant if initialized, otherwise,\
+     * {@return the contents of this lazy constant if initialized, otherwise,
      *          returns {@code other}}
      * <p>
      * This method never triggers initialization of this lazy constant and will observe
@@ -278,13 +274,15 @@ public sealed interface LazyConstant<T>
      *          {@code computingFunction}}
      * <p>
      * The returned lazy constant strongly references the provided
-     * {@code computingFunction} until initialization completes successfully; after
-     * which the computing function is no longer strongly referenced and becomes
-     * eligible for garbage collection.
+     * {@code computingFunction} at least until initialization completes successfully.
      * <p>
      * If the provided computing function is already an instance of
      * {@code LazyConstant}, the method is free to return the provided computing function
      * directly.
+     *
+     * @implNote  after initialization completes successfully, the computing function is
+     *            no longer strongly referenced and becomes eligible for
+     *            garbage collection.
      *
      * @param computingFunction in the form of a {@linkplain Supplier} to be used
      *                          to initialize the constant

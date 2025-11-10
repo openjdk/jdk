@@ -1197,7 +1197,7 @@ public interface List<E> extends SequencedCollection<E> {
     }
 
     /**
-     * {@return a new lazily computed list with the provided {@code size}}
+     * {@return a new lazily computed list of the provided {@code size}}
      * <p>
      * The returned list is an {@linkplain Collection##unmodifiable unmodifiable} list
      * with the provided {@code size}. The list's elements are lazily computed via the
@@ -1235,11 +1235,14 @@ public interface List<E> extends SequencedCollection<E> {
      * implementation-dependent string is returned for uninitialized elements.
      * <p>
      * The returned lazy list strongly references its computing
-     * function used to compute elements only so long as there are uncomputed elements
-     * after which the computing function is not strongly referenced
-     * anymore and may be collected.
+     * function used to compute elements at least so long as there are uninitialized
+     * elements.
      * <p>
      * The returned List is <em>not</em> {@linkplain Serializable}.
+     *
+     * @implNote  after all elements have been initialized successfully, the computing
+     *            function is no longer strongly referenced and becomes eligible for
+     *            garbage collection.
      *
      * @param size              the size of the returned lazy list
      * @param computingFunction to invoke whenever an element is first accessed
