@@ -43,6 +43,9 @@
 // Field bytecodes start with a constant pool index as their operand, which is then rewritten to
 // a "field index", which is an index into the array of ResolvedFieldEntry.
 
+// The explicit paddings are necessary for generating deterministic CDS archives. They prevent
+// the C++ compiler from potentially inserting random values in unused gaps.
+
 //class InstanceKlass;
 class ResolvedFieldEntry {
   friend class VMStructs;

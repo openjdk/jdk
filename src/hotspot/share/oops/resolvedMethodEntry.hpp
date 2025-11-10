@@ -61,6 +61,9 @@
 //       pool entry and thus the same resolved method entry.
 // The is_vfinal flag indicates method pointer for a final method or an index.
 
+// The explicit paddings are necessary for generating deterministic CDS archives. They prevent
+// the C++ compiler from potentially inserting random values in unused gaps.
+
 class InstanceKlass;
 class ResolvedMethodEntry {
   friend class VMStructs;
