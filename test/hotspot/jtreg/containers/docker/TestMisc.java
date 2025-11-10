@@ -40,7 +40,6 @@ import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 
 public class TestMisc {
