@@ -983,6 +983,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">etiopiskur kalendari</type>
 			<type key="calendar" type="ethiopic-amete-alem">etiopiskur amete alem kalendari</type>
 			<type key="calendar" type="gregorian">gregorianskur kalendari</type>
+			<type key="calendar" type="gregorian" scope="core">gregorianskur</type>
 			<type key="calendar" type="hebrew">hebraiskur kalendari</type>
 			<type key="calendar" type="islamic">islamiskur kalendari</type>
 			<type key="calendar" type="islamic-civil">islamiskur kalendari (talvuskapaður, fólkaligt tíðarskeið)</type>
@@ -998,6 +999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="eor" draft="contributed">röðina fyrir fjöltyngi evrópskum skjölum</type>
 			<type key="collation" type="search">vanlig leiting</type>
 			<type key="collation" type="standard">vanlig raðskipan</type>
+			<type key="collation" type="standard" scope="core">vanlig</type>
 			<type key="collation" type="traditional">siðbundin raðskipan</type>
 			<type key="collation" type="zhuyin">zhuyin raðskipan</type>
 			<type key="hc" type="h11">12 tímar klokkuskipan (0–11)</type>
@@ -1123,12 +1125,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'kl'. {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'kl'. {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1148,7 +1156,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">dd.MM.y GGGGG, E</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
@@ -1516,12 +1526,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat type="atTime">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} 'kl'. {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
+							<pattern>{1} 'kl'. {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
 							<pattern>{1} 'kl'. {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1541,7 +1557,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyM">MM.y G</dateFormatItem>
 						<dateFormatItem id="GyMd">dd.MM.y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">dd.MM.y G, E</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
@@ -2311,9 +2329,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Jamaica">
 				<exemplarCity>Jamaika</exemplarCity>
 			</zone>
-			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
-			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>Kuvait</exemplarCity>
 			</zone>
@@ -2405,9 +2420,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Vesturafrika tíð</generic>
-					<standard>Vesturafrika vanlig tíð</standard>
-					<daylight>Vesturafrika summartíð</daylight>
+					<standard>Vesturafrika tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -2755,6 +2768,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Guyana">
 				<long>
 					<standard>Gujana tíð</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii">
+				<long>
+					<standard>Hawaii-Aleutian vanlig tíð</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3332,9 +3350,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
 					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -3965,6 +3985,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Eystur Karibia dollari</displayName>
 				<displayName count="other">Eystur Karibia dollarar</displayName>
 			</currency>
+			<currency type="XCG">
+				<displayName>Karibia gyllin</displayName>
+				<displayName count="one">Karibia gyllin</displayName>
+				<displayName count="other">Karibia gyllin</displayName>
+			</currency>
 			<currency type="XOF">
 				<displayName>Vesturafrika CFA frankur</displayName>
 				<displayName count="one">Vesturafrika CFA frankur</displayName>
@@ -3994,6 +4019,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZMW">
 				<displayName>Sambia kwacha</displayName>
+			</currency>
+			<currency type="ZWG">
+				<displayName>Simbabvi gull</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4204,7 +4232,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partar fyri hvørja millión</displayName>
 				<unitPattern count="one">{0} partur fyri hvørja millión</unitPattern>
 				<unitPattern count="other">{0} partar fyri hvørja millión</unitPattern>
@@ -4857,7 +4885,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ljós</unitPattern>
 				<unitPattern count="other">{0} ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar fyri hvørja milliard</displayName>
 				<unitPattern count="one">{0} part fyri hvørja milliard</unitPattern>
 				<unitPattern count="other">{0} partar fyri hvørja milliard</unitPattern>
@@ -4958,7 +4986,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>partar/millión</displayName>
 				<unitPattern count="one">{0} pt./mill.</unitPattern>
 				<unitPattern count="other">{0} pt./mill.</unitPattern>
@@ -5456,7 +5484,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} ljós</unitPattern>
 				<unitPattern count="other">{0} ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar/milliard</displayName>
 				<unitPattern count="one">{0} part/mia.</unitPattern>
 				<unitPattern count="other">{0} partar/mia.</unitPattern>
@@ -5565,7 +5593,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}lutur</unitPattern>
 				<unitPattern count="other">{0} lutir</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<displayName>pt./mill.</displayName>
 				<unitPattern count="one">{0}pt./mill</unitPattern>
 				<unitPattern count="other">{0}pt./mill</unitPattern>
@@ -6046,7 +6074,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ljós</unitPattern>
 				<unitPattern count="other">{0}ljós</unitPattern>
 			</unit>
-			<unit type="concentr-portion-per-1e9">
+			<unit type="concentr-part-per-1e9">
 				<displayName>partar/mia.</displayName>
 				<unitPattern count="one">{0}part/mia.</unitPattern>
 				<unitPattern count="other">{0}partar/mia.</unitPattern>

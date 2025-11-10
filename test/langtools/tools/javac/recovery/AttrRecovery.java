@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580 8322159 8333107 8332230 8338678 8351260
+ * @bug 8301580 8322159 8333107 8332230 8338678 8351260 8366196
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -339,5 +339,59 @@ public class AttrRecovery extends TestRunner {
             .outdir(curPath)
             .run(Expect.FAIL)
             .writeAll();
+    }
+
+
+    @Test //JDK-8366196
+    public void testInferenceFailure() throws Exception {
+        String code = """
+                      import module java.base;
+                      public class Test {
+                          public void test(Consumer<String> c) {
+                            List.of("")
+                                .stream()
+                                .filter(
+                                    buildPredicate(
+                                        String.class,
+                                        //missing supplier
+                                        c,
+                                        buildSupplier(
+                                            // Missing: Class,
+                                            Integer.class,
+                                            String.class,
+                                            i -> { int check; return i; })));
+                          }
+
+                          private static <T> Predicate<T> buildPredicate(
+                              Class<T> tClass,
+                              Supplier<T> bSupplier,
+                              Consumer<T> cConsumer,
+                              Supplier<T> dSupplier) {
+                            return null;
+                          }
+
+                          private static <T, A, B> Supplier<String> buildSupplier(
+                              Class<T> tClass, Class<A> aClass, Class<B> bClass,
+                              Function<A, B> function) {
+                            return null;
+                          }
+                      }""";
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "Test.java:7:29: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: T, (compiler.misc.inconvertible.types: java.util.function.Consumer<java.lang.String>, java.util.function.Supplier<T>))",
+                "1 error"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
     }
 }

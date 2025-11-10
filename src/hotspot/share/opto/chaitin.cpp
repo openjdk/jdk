@@ -2419,7 +2419,7 @@ void PhaseChaitin::dump_frame() const {
         tty->print_cr("saved fp register");
       else if (return_addr == OptoReg::add(reg, 2*VMRegImpl::slots_per_word) &&
                VerifyStackAtCalls)
-        tty->print_cr("0xBADB100D   +VerifyStackAtCalls");
+        tty->print_cr("<Majik cookie>   +VerifyStackAtCalls");
       else
         tty->print_cr("in_preserve");
     } else if ((int)OptoReg::reg2stack(reg) < fixed_slots) {
