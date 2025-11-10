@@ -70,6 +70,8 @@ class OSContainer: AllStatic {
   static const char * container_type();
 
   static bool available_memory_in_bytes(physical_memory_size_type& value);
+  static bool available_swap_in_bytes(physical_memory_size_type host_free_swap,
+                                      physical_memory_size_type& value);
   static bool memory_limit_in_bytes(physical_memory_size_type& value);
   static bool memory_and_swap_limit_in_bytes(physical_memory_size_type& value);
   static bool memory_and_swap_usage_in_bytes(physical_memory_size_type& value);

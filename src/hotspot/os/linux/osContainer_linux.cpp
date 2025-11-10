@@ -127,6 +127,64 @@ bool OSContainer::available_memory_in_bytes(physical_memory_size_type& value) {
   return false;
 }
 
+bool OSContainer::available_swap_in_bytes(physical_memory_size_type host_free_swap,
+                                          physical_memory_size_type& value) {
+  physical_memory_size_type mem_limit = 0;
+  physical_memory_size_type mem_swap_limit = 0;
+  if (memory_limit_in_bytes(mem_limit) &&
+      memory_and_swap_limit_in_bytes(mem_swap_limit) &&
+      mem_limit != value_unlimited &&
+      mem_swap_limit != value_unlimited) {
+    if (mem_limit >= mem_swap_limit) {
+      value = 0; // no swap, thus no free swap
+      return true;
+    }
+    physical_memory_size_type swap_limit = mem_swap_limit - mem_limit;
+    physical_memory_size_type mem_swap_usage = 0;
+    physical_memory_size_type mem_usage = 0;
+    if (memory_and_swap_usage_in_bytes(mem_swap_usage) &&
+        memory_usage_in_bytes(mem_usage)) {
+      physical_memory_size_type swap_usage = value_unlimited;
+      if (mem_usage > mem_swap_usage) {
+        swap_usage = 0; // delta usage must not be negative
+      } else {
+        swap_usage = mem_swap_usage - mem_usage;
+      }
+      // free swap is based on swap limit (upper bound) and swap usage
+      if (swap_usage >= swap_limit) {
+        value = 0; // free swap must not be negative
+        return true;
+      }
+      value = swap_limit - swap_usage;
+      return true;
+    }
+  }
+  // unlimited or not supported. Leave an appropriate trace message
+  if (log_is_enabled(Trace, os, container)) {
+    char mem_swap_buf[25]; // uint64_t => 20 + 1, 'unlimited' => 9 + 1; 10 < 21 < 25
+    char mem_limit_buf[25];
+    int num = 0;
+    if (mem_swap_limit == value_unlimited) {
+      num = os::snprintf(mem_swap_buf, sizeof(mem_swap_buf), "%s", "unlimited");
+    } else {
+      num = os::snprintf(mem_swap_buf, sizeof(mem_swap_buf), PHYS_MEM_TYPE_FORMAT, mem_swap_limit);
+    }
+    assert(num < 25, "buffer too small");
+    mem_swap_buf[num] = '\0';
+    if (mem_limit == value_unlimited) {
+      num = os::snprintf(mem_limit_buf, sizeof(mem_limit_buf), "%s", "unlimited");
+    } else {
+      num = os::snprintf(mem_limit_buf, sizeof(mem_limit_buf), PHYS_MEM_TYPE_FORMAT, mem_limit);
+    }
+    assert(num < 25, "buffer too small");
+    mem_limit_buf[num] = '\0';
+    log_trace(os,container)("OSContainer::available_swap_in_bytes: container_swap_limit=%s"
+                            " container_mem_limit=%s, host_free_swap: " PHYS_MEM_TYPE_FORMAT,
+                            mem_swap_buf, mem_limit_buf, host_free_swap);
+  }
+  return false;
+}
+
 bool OSContainer::memory_and_swap_limit_in_bytes(physical_memory_size_type& value) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   physical_memory_size_type phys_mem = os::Linux::physical_memory();
