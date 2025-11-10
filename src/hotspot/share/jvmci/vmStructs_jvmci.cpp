@@ -585,6 +585,7 @@
   declare_constant(nmethod::InvalidationReason::UNCOMMON_TRAP)                            \
   declare_constant(nmethod::InvalidationReason::WHITEBOX_DEOPTIMIZATION)                  \
   declare_constant(nmethod::InvalidationReason::ZOMBIE)                                   \
+  declare_constant(nmethod::InvalidationReason::RELOCATED)                                \
                                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \

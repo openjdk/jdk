@@ -1517,6 +1517,11 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
     iter.reloc()->fix_relocation_after_move(&src, &dst);
   }
 
+  {
+    MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
+    clear_inline_caches();
+  }
+
   post_init();
 }
 
@@ -1569,8 +1574,6 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
   if (!is_marked_for_deoptimization() && is_in_use()) {
     assert(method() != nullptr && method()->code() == this, "should be if is in use");
 
-    nm_copy->clear_inline_caches();
-
     // Attempt to start using the copy
     if (nm_copy->make_in_use()) {
       ICache::invalidate_range(nm_copy->code_begin(), nm_copy->code_size());
@@ -1578,7 +1581,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type) {
       methodHandle mh(Thread::current(), nm_copy->method());
       nm_copy->method()->set_code(mh, nm_copy);
 
-      make_not_used();
+      make_not_entrant(InvalidationReason::RELOCATED);
 
       nm_copy->post_compiled_method_load_event();
 
