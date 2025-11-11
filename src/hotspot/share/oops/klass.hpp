@@ -511,6 +511,8 @@ protected:
     return (BasicType) btvalue;
   }
 
+  // VS warns (C4146) about unary minus of unsigned.
+  PRAGMA_DISABLE_MSVC_WARNING(4146)
   // Return a value containing a single set bit that is in the bitset difference between the
   // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
@@ -520,9 +522,7 @@ protected:
     uint candidates = (zlh & ~blh);
     assert(candidates != 0, "must be"); // must be some if there is a solution.
     // Use well known bit hack to isolate the low bit of candidates.
-    // The usual form is (x & -x), but VS warns (C4146) about unary minus of unsigned.
-    // So explicitly use two's complement to avoid warning.
-    uint result = candidates & (~candidates + 1);
+    uint result = candidates & (-candidates);
     assert(is_power_of_2(result), "must be power of 2");
     assert((result & zlh) != 0, "must be set in alh of T_BOOLEAN");
     assert((result & blh) == 0, "must be clear in alh of T_BYTE");
