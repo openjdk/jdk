@@ -1387,7 +1387,14 @@ public:
 
   // Is 'n' a (nested) member of 'loop'?
   int is_member( const IdealLoopTree *loop, Node *n ) const {
-    return loop->is_member(get_loop(n)); }
+    return loop->is_member(get_loop(n));
+  }
+
+  // is the control for 'n' a (nested) member of 'loop'?
+  int ctrl_is_member(const IdealLoopTree *loop, Node *n) {
+    Node* n_ctrl = get_ctrl(n);
+    return loop->is_member(get_loop(n_ctrl));
+  }
 
   // This is the basic building block of the loop optimizations.  It clones an
   // entire loop body.  It makes an old_new loop body mapping; with this
