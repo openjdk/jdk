@@ -25,6 +25,6 @@
  * @test
  * @bug 8151299 8164704
  * @modules java.net.http/jdk.internal.net.http
- * @run testng/timeout=240 java.net.http/jdk.internal.net.http.RawChannelTest
+ * @run testng java.net.http/jdk.internal.net.http.RawChannelTest
  */
 //-Djdk.internal.httpclient.websocket.debug=true
