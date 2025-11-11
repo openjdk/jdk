@@ -485,6 +485,9 @@ class JavaThread: public Thread {
   // For Object.wait() we set this field to know if we need to
   // throw IE at the end of thawing before returning to Java.
   bool _pending_interrupted_exception;
+  // We allow preemption on some klass initialization calls.
+  // We use this boolean to mark such calls.
+  bool _at_preemptable_init;
 
  public:
   bool preemption_cancelled()           { return _preemption_cancelled; }
@@ -493,11 +496,46 @@ class JavaThread: public Thread {
   bool pending_interrupted_exception()           { return _pending_interrupted_exception; }
   void set_pending_interrupted_exception(bool b) { _pending_interrupted_exception = b; }
 
-  bool preempting()           { return _preempt_alternate_return != nullptr; }
+  bool preempting()                              { return _preempt_alternate_return != nullptr; }
   void set_preempt_alternate_return(address val) { _preempt_alternate_return = val; }
 
-private:
+  bool at_preemptable_init()           { return _at_preemptable_init; }
+  void set_at_preemptable_init(bool b) { _at_preemptable_init = b; }
 
+#ifdef ASSERT
+  // Used for extra logging with -Xlog:continuation+preempt
+  InstanceKlass* _preempt_init_klass;
+
+  InstanceKlass* preempt_init_klass() { return _preempt_init_klass; }
+  void set_preempt_init_klass(InstanceKlass* ik) { _preempt_init_klass = ik; }
+
+  int _interp_at_preemptable_vmcall_cnt;
+  int interp_at_preemptable_vmcall_cnt() { return _interp_at_preemptable_vmcall_cnt; }
+
+  bool _interp_redoing_vm_call;
+  bool interp_redoing_vm_call() const { return _interp_redoing_vm_call; };
+
+  class AtRedoVMCall : public StackObj {
+    JavaThread* _thread;
+   public:
+    AtRedoVMCall(JavaThread* t) : _thread(t) {
+      assert(!_thread->_interp_redoing_vm_call, "");
+      _thread->_interp_redoing_vm_call = true;
+      _thread->_interp_at_preemptable_vmcall_cnt++;
+      assert(_thread->_interp_at_preemptable_vmcall_cnt > 0, "Unexpected count: %d",
+             _thread->_interp_at_preemptable_vmcall_cnt);
+    }
+    ~AtRedoVMCall() {
+      assert(_thread->_interp_redoing_vm_call, "");
+      _thread->_interp_redoing_vm_call = false;
+      _thread->_interp_at_preemptable_vmcall_cnt--;
+      assert(_thread->_interp_at_preemptable_vmcall_cnt >= 0, "Unexpected count: %d",
+             _thread->_interp_at_preemptable_vmcall_cnt);
+    }
+  };
+#endif // ASSERT
+
+private:
   friend class VMThread;
   friend class ThreadWaitTransition;
   friend class VM_Exit;
@@ -885,6 +923,7 @@ public:
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
+  DEBUG_ONLY(static ByteSize interp_at_preemptable_vmcall_cnt_offset() { return byte_offset_of(JavaThread, _interp_at_preemptable_vmcall_cnt); })
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }
 
 #if INCLUDE_JVMTI
@@ -1330,8 +1369,8 @@ class NoPreemptMark {
   ContinuationEntry* _ce;
   bool _unpin;
  public:
-  NoPreemptMark(JavaThread* thread) : _ce(thread->last_continuation()), _unpin(false) {
-    if (_ce != nullptr) _unpin = _ce->pin();
+  NoPreemptMark(JavaThread* thread, bool ignore_mark = false) : _ce(thread->last_continuation()), _unpin(false) {
+    if (_ce != nullptr && !ignore_mark) _unpin = _ce->pin();
   }
   ~NoPreemptMark() { if (_unpin) _ce->unpin(); }
 };
