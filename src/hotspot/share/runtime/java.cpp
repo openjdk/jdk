@@ -476,9 +476,6 @@ void before_exit(JavaThread* thread, bool halt) {
 
   NativeHeapTrimmer::cleanup();
 
-  // Run before exit and then stop concurrent GC threads
-  Universe::before_exit();
-
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
   }
@@ -500,6 +497,11 @@ void before_exit(JavaThread* thread, bool halt) {
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::post_vm_death();
   JvmtiAgentList::unload_agents();
+
+  // No user code can be executed in the current thread after this point.
+
+  // Run before exit and then stop concurrent GC threads.
+  Universe::before_exit();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
