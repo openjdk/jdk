@@ -391,9 +391,10 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
-        Http2StreamResponseSubscriber<T> subscriber =
-                new Http2StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+        var cancelTimerOnTermination =
+                exchange.multi.cancelTimerOnResponseBodySubscriberTermination(
+                        exchange.request().isWebSocket(), response.statusCode());
+        return new Http2StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }
 
     // The Http2StreamResponseSubscriber is registered with the HttpClient
@@ -1726,6 +1727,11 @@ class Stream<T> extends ExchangeImpl<T> {
         }
 
         @Override
+        Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
+            return new Http2StreamResponseSubscriber<T>(handler.apply(response), false);
+        }
+
+        @Override
         void completeResponse(Response r) {
             Log.logResponse(r::toString);
             pushCF.complete(r); // not strictly required for push API
@@ -1955,8 +1961,12 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     final class Http2StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+
+        private final boolean cancelTimerOnTermination;
+
+        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber, boolean cancelTimerOnTermination) {
             super(subscriber);
+            this.cancelTimerOnTermination = cancelTimerOnTermination;
         }
 
         @Override
@@ -1971,7 +1981,9 @@ class Stream<T> extends ExchangeImpl<T> {
 
         @Override
         protected void onTermination() {
-            exchange.multi.cancelTimer();
+            if (cancelTimerOnTermination) {
+                exchange.multi.cancelTimer();
+            }
         }
 
     }

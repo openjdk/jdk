@@ -260,6 +260,17 @@ class MultiExchange<T> implements Cancelable {
         }
     }
 
+    /**
+     * {@return {@code true}, if it is allowed to cancel the request timer on
+     * response body subscriber termination; {@code false}, otherwise}
+     *
+     * @param webSocket indicates if the associated request is a WebSocket handshake
+     * @param statusCode the status code of the associated response
+     */
+    public boolean cancelTimerOnResponseBodySubscriberTermination(boolean webSocket, int statusCode) {
+        return webSocket || statusCode < 100 || statusCode >= 200;
+    }
+
     private void requestFilters(HttpRequestImpl r) throws IOException {
         if (Log.trace()) Log.logTrace("Applying request filters");
         for (HeaderFilter filter : filters) {
