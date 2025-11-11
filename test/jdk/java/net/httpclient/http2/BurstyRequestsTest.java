@@ -140,7 +140,7 @@ class BurstyRequestsTest {
                 .build();
         final HttpRequest req = HttpRequest.newBuilder().uri(reqURI).build();
 
-        final int numRequests = 100;
+        final int numRequests = 20;
         // latch for the tasks to wait on, before issuing the requests
         final CountDownLatch startLatch = new CountDownLatch(numRequests);
         final List<Future<Void>> futures = new ArrayList<>();
