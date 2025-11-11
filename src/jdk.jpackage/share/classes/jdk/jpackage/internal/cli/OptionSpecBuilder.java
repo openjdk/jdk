@@ -75,7 +75,7 @@ final class OptionSpecBuilder<T> {
         validatorBuilder = other.validatorBuilder.copy();
 
         if (other.arrayDefaultValue != null) {
-            arrayDefaultValue = Arrays.copyOf(other.arrayDefaultValue, arrayDefaultValue.length);
+            arrayDefaultValue = Arrays.copyOf(other.arrayDefaultValue, other.arrayDefaultValue.length);
         }
         arrayValuePatternSeparator = other.arrayValuePatternSeparator;
         arrayTokenizer = other.arrayTokenizer;
