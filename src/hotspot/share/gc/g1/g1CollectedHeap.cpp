@@ -185,10 +185,13 @@ G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
   G1HeapRegion* res = _hrm.allocate_free_region(type, node_index);
 
   if (res == nullptr && do_expand) {
-    // Currently, only attempts to allocate GC alloc regions set
-    // do_expand to true. So, we should only reach here during a
-    // safepoint.
-    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+    // There are two situations where do_expand is set to true:
+    //  - for mutator regions during initialization
+    //  - for GC alloc regions during a safepoint
+    // Make sure we only reach here before initialization is complete
+    // or during a safepoint.
+    assert(!is_init_completed() ||
+           SafepointSynchronize::is_at_safepoint() , "invariant");
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: %zuB",
                               word_size * HeapWordSize);
@@ -3101,7 +3104,7 @@ G1HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   if (should_allocate) {
     G1HeapRegion* new_alloc_region = new_region(word_size,
                                                 G1HeapRegionType::Eden,
-                                                false /* do_expand */,
+                                                policy()->should_expand_on_mutator_allocation() /* do_expand */,
                                                 node_index);
     if (new_alloc_region != nullptr) {
       new_alloc_region->set_eden();
