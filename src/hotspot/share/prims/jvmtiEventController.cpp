@@ -792,9 +792,6 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
   assert(Threads::number_of_threads() == 0 || JvmtiThreadState_lock->is_locked(), "sanity check");
   EC_TRACE(("[*] # set event callbacks"));
 
-  // May be changing the event handler for ObjectFree.
-  flush_object_free_events(env);
-
   env->set_event_callbacks(callbacks, size_of_callbacks);
 
   jlong enabled_bits = env->env_event_enable()->_event_callback_enabled.get_bits();
@@ -1107,6 +1104,8 @@ JvmtiEventController::set_event_callbacks(JvmtiEnvBase *env,
     // call the functionality without holding the JvmtiThreadState_lock.
     JvmtiEventControllerPrivate::set_event_callbacks(env, callbacks, size_of_callbacks);
   } else {
+    JvmtiEventControllerPrivate::flush_object_free_events(env);
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::set_event_callbacks(env, callbacks, size_of_callbacks);
   }
@@ -1194,6 +1193,8 @@ JvmtiEventController::env_dispose(JvmtiEnvBase *env) {
     // call the functionality without holding the JvmtiThreadState_lock.
     JvmtiEventControllerPrivate::env_dispose(env);
   } else {
+    JvmtiEventControllerPrivate::flush_object_free_events(env);
+
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::env_dispose(env);
   }
