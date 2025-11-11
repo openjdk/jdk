@@ -37,24 +37,15 @@ after the field has been initialized in a constructor.
 
 The methods that provide write access, known as <em>mutation methods</em> are:
 <ul>
-    <li><a href="../Field.html#set(java.lang.Object,java.lang.Object)">
-        java.lang.reflect.Field.set(Object, Object)</a></li>
-    <li><a href="../Field.html#setBoolean(java.lang.Object,boolean)">
-        java.lang.reflect.Field.setBoolean(Object, boolean)</a></li>
-    <li><a href="../Field.html#setByte(java.lang.Object,byte)">
-        java.lang.reflect.Field.setByte(Object, byte)</a></li>
-    <li><a href="../Field.html#setChar(java.lang.Object,char)">
-        java.lang.reflect.Field.setChar(Object, byte)</a></li>
-    <li><a href="../Field.html#setInt(java.lang.Object,int)">
-        java.lang.reflect.Field.setInt(Object, int)</a></li>
-    <li><a href="../Field.html#setLong(java.lang.Object,long)">
-        java.lang.reflect.Field.setLong(Object, long)</a></li>
-    <li><a href="../Field.html#setFloat(java.lang.Object,float)">
-        java.lang.reflect.Field.setFloat(Object, float)</a></li>
-    <li><a href="../Field.html#setDouble(java.lang.Object,double)">
-        java.lang.reflect.Field.setDouble(Object, double)</a></li>
-    <li><a href="{@docRoot}/java.base/java/lang/invoke/MethodHandles.Lookup.html#unreflectSetter(java.lang.reflect.Field)">
-        java.lang.invoke.MethodHandles.Lookup.unreflectSetter(Field)</a></li>
+    <li>{@link java.lang.reflect.Field#set(Object, Object)}</li>
+    <li>{@link java.lang.reflect.Field#setBoolean(Object, boolean)}</li>
+    <li>{@link java.lang.reflect.Field#setByte(Object, byte)}</li>
+    <li>{@link java.lang.reflect.Field#setChar(Object, char)}</li>
+    <li>{@link java.lang.reflect.Field#setInt(Object, int)}</li>
+    <li>{@link java.lang.reflect.Field#setLong(Object, long)}</li>
+    <li>{@link java.lang.reflect.Field#setFloat(Object, float)}</li>
+    <li>{@link java.lang.reflect.Field#setDouble(Object, double)}</li>
+    <li>{@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(java.lang.reflect.Field)}</li>
 </ul>
 
 <p> The use of mutation methods to alter the values of final fields is
@@ -63,12 +54,11 @@ expectation of final fields being immutable.
 
 <p> In the reference implementation, a module can be granted the capability to mutate
 final instance fields of classes in packages that are open to the module using
-the command line option <code>--enable-final-field-mutation=M1,M2, ... M}</code> where
+the command line option <code>--enable-final-field-mutation=M1,M2, ... Mn}</code> where
 <code>M1</code>, <code>M2</code>, <code>...Mn</code> are module names (for the unnamed
 module, the special value <code>ALL-UNNAMED</code> can be used). Mutation of final
 instance fields of classes from modules not listed by that option is deemed
 <em>illegal</em>.
-
 The command line option <code>--illegal-final-field-mutation</code> controls how illegal
 final mutation is handled. Valid values for this command line option are "warn", "allow",
 "debug, and "deny".  If this option is not specified then the default is "warn" so that

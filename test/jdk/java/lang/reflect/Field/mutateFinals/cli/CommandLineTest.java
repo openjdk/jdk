@@ -226,17 +226,49 @@ class CommandLineTest {
     }
 
     /**
-     * Test setting system property to "allow" at runtime. The saved value from startup
-     * should be used, not the system property set at run-time.
+     * Test setting the internal system properties (that correspond to the command line
+     * options) on the commannd line. They should be ignored.
      */
     @Test
-    void testSetPropertyToAllow() throws Exception {
-        test("setSystemPropertyToAllow+testFieldSetInt")
+    void testSetPropertyOnCommandLine() throws Exception {
+        // --enable-final-field-mutation=ALL-UNNAMED
+        test("testFieldSetInt", "-Djdk.module.enable.final.field.mutation.0=ALL-UNNAMED")
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain(WARNING_LINE3)
+                .shouldContain(WARNING_LINE4)
+                .shouldHaveExitValue(0);
+
+        // --illegal-final-field-mutation=allow
+        test("testFieldSetInt", "-Djdk.module.illegal.final.field.mutation=allow")
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain(WARNING_LINE3)
+                .shouldContain(WARNING_LINE4)
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Test setting the internal system properties (that correspond to the command line
+     * options) at runtime. They should be ignored.
+     */
+    @Test
+    void testSetPropertyAtRuntime() throws Exception {
+        // --enable-final-field-mutation=ALL-UNNAMED
+        test("setPropertyIllegalFinalFieldMutationAllow+testFieldSetInt")
             .shouldContain(WARNING_LINE1)
             .shouldContain(WARNING_MUTATED)
             .shouldContain(WARNING_LINE3)
             .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
+
+        // --illegal-final-field-mutation=allow
+        test("setPropertyEnableFinalFieldMutationAllUnnamed+testFieldSetInt")
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain(WARNING_LINE3)
+                .shouldContain(WARNING_LINE4)
+                .shouldHaveExitValue(0);
     }
 
     /**

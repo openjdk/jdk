@@ -72,9 +72,17 @@ public class CommandLineTestHelper {
     }
 
     /**
-     * Used to test that the property value from startup is used.
+     * Set the internal system property that corresponds to the first usage of
+     * --enable-final-field-mutation.
      */
-    static void setSystemPropertyToAllow() {
+    static void setPropertyEnableFinalFieldMutationAllUnnamed() {
+        System.setProperty("jdk.module.enable.final.field.mutation.0", "ALL-UNNAMED");
+    }
+
+    /**
+     * Set the internal system property that corresponds to --illegal-final-field-mutation.
+     */
+    static void setPropertyIllegalFinalFieldMutationAllow() {
         System.setProperty("jdk.module.illegal.final.field.mutation", "allow");
     }
 }
