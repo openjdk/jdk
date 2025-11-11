@@ -336,16 +336,18 @@ protected:
     uint   _entries_offset;  // offset of AOTCodeEntry array describing entries
     uint   _adapters_count;
     uint   _shared_blobs_count;
+    uint   _stubgen_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
     Config _config;
 
   public:
     void init(uint cache_size,
-              uint strings_count,  uint strings_offset,
-              uint entries_count,  uint entries_offset,
-              uint adapters_count, uint shared_blobs_count,
-              uint C1_blobs_count, uint C2_blobs_count) {
+              uint strings_count,       uint strings_offset,
+              uint entries_count,       uint entries_offset,
+              uint adapters_count,      uint shared_blobs_count,
+              uint stubgen_blobs_count, uint C1_blobs_count,
+              uint C2_blobs_count) {
       _version        = AOT_CODE_VERSION;
       _cache_size     = cache_size;
       _strings_count  = strings_count;
@@ -354,6 +356,7 @@ protected:
       _entries_offset = entries_offset;
       _adapters_count = adapters_count;
       _shared_blobs_count = shared_blobs_count;
+      _stubgen_blobs_count = stubgen_blobs_count;
       _C1_blobs_count = C1_blobs_count;
       _C2_blobs_count = C2_blobs_count;
       _config.record();

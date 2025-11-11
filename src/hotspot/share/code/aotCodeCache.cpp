@@ -772,6 +772,7 @@ bool AOTCodeCache::finish_write() {
     AOTCodeEntry* entries_address = _store_entries; // Pointer to latest entry
     uint adapters_count = 0;
     uint shared_blobs_count = 0;
+    uint stubgen_blobs_count = 0;
     uint C1_blobs_count = 0;
     uint C2_blobs_count = 0;
     uint max_size = 0;
@@ -799,6 +800,8 @@ bool AOTCodeCache::finish_write() {
         adapters_count++;
       } else if (kind == AOTCodeEntry::SharedBlob) {
         shared_blobs_count++;
+      } else if (kind == AOTCodeEntry::StubGenBlob) {
+        stubgen_blobs_count++;
       } else if (kind == AOTCodeEntry::C1Blob) {
         C1_blobs_count++;
       } else if (kind == AOTCodeEntry::C2Blob) {
@@ -835,6 +838,7 @@ bool AOTCodeCache::finish_write() {
 
     log_debug(aot, codecache, exit)("  Adapters:  total=%u", adapters_count);
     log_debug(aot, codecache, exit)("  Shared Blobs:  total=%d", shared_blobs_count);
+    log_debug(aot, codecache, exit)("  StubGen Blobs:  total=%d", stubgen_blobs_count);
     log_debug(aot, codecache, exit)("  C1 Blobs:      total=%d", C1_blobs_count);
     log_debug(aot, codecache, exit)("  C2 Blobs:      total=%d", C2_blobs_count);
     log_debug(aot, codecache, exit)("  AOT code cache size: %u bytes, max entry's size: %u bytes", size, max_size);
@@ -844,7 +848,8 @@ bool AOTCodeCache::finish_write() {
     header->init(size, (uint)strings_count, strings_offset,
                  entries_count, new_entries_offset,
                  adapters_count, shared_blobs_count,
-                 C1_blobs_count, C2_blobs_count);
+                 stubgen_blobs_count, C1_blobs_count,
+                 C2_blobs_count);
 
     log_info(aot, codecache, exit)("Wrote %d AOT code entries to AOT Code Cache", entries_count);
   }
@@ -2028,7 +2033,7 @@ void AOTCodeAddressTable::set_c2_stubs_complete() {
 void AOTCodeAddressTable::set_stubgen_stubs_complete() {
   assert(!_stubgen_stubs_complete, "repeated close for stubgen stubs!");
   _stubgen_stubs_complete = true;
-  log_debug(aot, codecache, init)("Stubgen stubs closed");
+  log_debug(aot, codecache, init)("StubGen stubs closed");
 }
 
 AOTCodeAddressTable::~AOTCodeAddressTable() {
