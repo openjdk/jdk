@@ -747,7 +747,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahFreeSet* free_set = heap->free_set();
     ShenandoahHeapLocker locker(heap->lock());
-    ShenandoahRebuildLocker rebuild_locker(free_set->lock());
+    ShenandoahRebuildLocker rebuild_locker(free_set->rebuild_lock());
     size_t young_cset_regions, old_cset_regions;
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.

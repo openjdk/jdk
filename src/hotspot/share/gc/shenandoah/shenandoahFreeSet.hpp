@@ -311,7 +311,7 @@ private:
   ShenandoahRegionPartitions _partitions;
 
   // This locks the rebuild process (in combination with the global heap lock)
-  ShenandoahRebuildLock _lock;
+  ShenandoahRebuildLock _rebuild_lock;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -410,8 +410,8 @@ private:
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
-  ShenandoahRebuildLock* lock() {
-    return &_lock;
+  ShenandoahRebuildLock* rebuild_lock() {
+    return &_rebuild_lock;
   }
 
   // Public because ShenandoahRegionPartitions assertions require access.
@@ -481,7 +481,7 @@ public:
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() {
     shenandoah_assert_not_heaplocked();
-    ShenandoahRebuildLocker locker(lock());
+    ShenandoahRebuildLocker locker(rebuild_lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
 
