@@ -511,7 +511,6 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
         ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahFreeSet* free_set = heap->free_set();
     ShenandoahHeapLocker locker(heap->lock());
-    ShenandoahRebuildLocker rebuild_locker(free_set->rebuild_lock());
     size_t cset_young_regions, cset_old_regions, first_old, last_old, num_old;
     free_set->prepare_to_rebuild(cset_young_regions, cset_old_regions, first_old, last_old, num_old);
     // This is completion of old-gen marking.  We rebuild in order to reclaim immediate garbage and to

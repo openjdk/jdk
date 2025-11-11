@@ -1625,6 +1625,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions,
                                            size_t &first_old_region, size_t &last_old_region, size_t &old_region_count) {
   shenandoah_assert_heaplocked();
+  assert(rebuild_lock() != nullptr, "sanity");
+  rebuild_lock()->lock(false);
   // This resets all state information, removing all regions from all sets.
   clear();
   log_debug(gc, free)("Rebuilding FreeSet");
@@ -1681,6 +1683,10 @@ void ShenandoahFreeSet::finish_rebuild(size_t young_cset_regions, size_t old_cse
   size_t young_region_count = _heap->num_regions() - old_region_count;
   establish_generation_sizes(young_region_count, old_region_count);
   establish_old_collector_alloc_bias();
+
+  // Release the rebuild lock now.  What remains in this function is read-only
+  rebuild_lock()->unlock();
+
   _partitions.assert_bounds();
   log_status();
 }

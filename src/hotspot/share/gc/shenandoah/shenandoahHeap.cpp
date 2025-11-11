@@ -420,11 +420,8 @@ jint ShenandoahHeap::initialize() {
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
 
-    size_t young_cset_regions, old_cset_regions;
-
     // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    ShenandoahRebuildLocker rebuild_locker(_free_set->rebuild_lock());
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
@@ -2576,9 +2573,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
   ShenandoahHeapLocker locker(lock());
-  ShenandoahRebuildLocker rebuild_locker(_free_set->rebuild_lock());
-  size_t young_cset_regions, old_cset_regions;
-  size_t first_old_region, last_old_region, old_region_count;
+  size_t young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
   // If there are no old regions, first_old_region will be greater than last_old_region
   assert((first_old_region > last_old_region) ||
@@ -2597,7 +2592,8 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-    size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
+    size_t allocation_runway =
+      gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
