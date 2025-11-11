@@ -8,10 +8,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Benchmark demonstrating performance impact of polymorphic call sites on HashMap.<init>(Map).
- * 
+ *
  * This test shows that manual inlining of HashMap construction can significantly outperform
  * the built-in HashMap(Map) constructor when the constructor call site becomes polymorphic.
- * 
+ *
  * The setup ensures polymorphic call sites by using HashMap, TreeMap, and LinkedHashMap
  * in both the constructor and manual iteration patterns before benchmarking begins.
  */
@@ -113,7 +113,7 @@ public class HashMapConstructorBenchmark {
         @SuppressWarnings("unchecked")
         Map<String, Integer>[] umSources = new Map[]{
             Collections.unmodifiableMap(inputHashMap),
-            Collections.unmodifiableMap(inputTreeMap), 
+            Collections.unmodifiableMap(inputTreeMap),
             Collections.unmodifiableMap(inputLinkedHashMap),
             Collections.unmodifiableMap(inputConcurrentHashMap),
             Collections.unmodifiableMap(inputWeakHashMap)
