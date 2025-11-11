@@ -1821,6 +1821,8 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   uint old_unique = C->unique();
   // The hash of a node should not change, this would indicate different inputs
   uint old_hash = n->hash();
+  // Remove 'n' from hash table in case it gets modified
+  _table.hash_delete(n);
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are probably happy.
   if (i == nullptr) {
@@ -1847,6 +1849,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     verify_empty_worklist(n);
 
     // Everything is good.
+    hash_find_insert(n);
     return false;
   }
 
