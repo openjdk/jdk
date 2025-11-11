@@ -60,8 +60,7 @@ final class SortedOps {
      */
     static <T> Stream<T> makeRef(AbstractPipeline<?, T, ?> upstream,
                                 Comparator<? super T> comparator) {
-        return Comparator.naturalOrder().equals(comparator) ?
-                new OfRef<>(upstream) : new OfRef<>(upstream, comparator);
+        return new OfRef<>(upstream, comparator);
     }
 
     /**
@@ -109,13 +108,10 @@ final class SortedOps {
          * {@code Comparable}.
          */
         OfRef(AbstractPipeline<?, T, ?> upstream) {
-            super(upstream, StreamShape.REFERENCE,
-                  StreamOpFlag.IS_ORDERED | StreamOpFlag.IS_SORTED);
-            this.isNaturalSort = true;
             // Will throw CCE when we try to sort if T is not Comparable
             @SuppressWarnings("unchecked")
             Comparator<? super T> comp = (Comparator<? super T>) Comparator.naturalOrder();
-            this.comparator = comp;
+            this(upstream, comp);
         }
 
         /**
@@ -124,10 +120,13 @@ final class SortedOps {
          * @param comparator The comparator to be used to evaluate ordering.
          */
         OfRef(AbstractPipeline<?, T, ?> upstream, Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            boolean isNaturalSort = Comparator.naturalOrder().equals(comparator);
             super(upstream, StreamShape.REFERENCE,
-                  StreamOpFlag.IS_ORDERED | StreamOpFlag.NOT_SORTED);
-            this.isNaturalSort = false;
-            this.comparator = Objects.requireNonNull(comparator);
+                  StreamOpFlag.IS_ORDERED |
+                          (isNaturalSort ? StreamOpFlag.SORTED : StreamOpFlag.NOT_SORTED));
+            this.isNaturalSort = isNaturalSort;
+            this.comparator = comparator;
         }
 
         @Override
