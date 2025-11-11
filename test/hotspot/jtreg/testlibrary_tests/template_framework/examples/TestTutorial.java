@@ -1257,7 +1257,7 @@ public class TestTutorial {
                     addDataName("v7", myInt, MUTABLE),
                     templateVerify.asToken("v1, v6, v7")
                 )),
-                templateVerify.asToken("v1, v6, v7")
+                templateVerify.asToken("v1, v6, v7"),
                 let("x6", 42) // escapes the anchor scope
             )),
             // We left the transparent anchoring scope which lets the DataNames and
