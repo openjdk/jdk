@@ -367,6 +367,7 @@ public:
   uint young_list_target_length() const { return AtomicAccess::load(&_young_list_target_length); }
 
   bool should_allocate_mutator_region() const;
+  bool should_expand_on_mutator_allocation() const;
 
   bool use_adaptive_young_list_length() const;
 

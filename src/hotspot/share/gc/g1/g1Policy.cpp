@@ -1187,8 +1187,21 @@ double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_y
 }
 
 bool G1Policy::should_allocate_mutator_region() const {
-  uint young_list_length = _g1h->young_regions_count();
-  return young_list_length < young_list_target_length();
+  if (_g1h->young_regions_count() < young_list_target_length()) {
+    return true;
+  }
+
+  if (should_expand_on_mutator_allocation()) {
+    return true;
+  }
+
+  return false;
+}
+
+bool G1Policy::should_expand_on_mutator_allocation() const {
+  // We can't do a GC during init so allow additional mutator
+  // allocations until we can GC.
+  return !is_init_completed();
 }
 
 bool G1Policy::use_adaptive_young_list_length() const {
