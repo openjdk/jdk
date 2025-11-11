@@ -2507,7 +2507,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *                    {@code SwingConstants.VERTICAL}
      * @param direction less or equal to zero to scroll up/back,
      *                  greater than zero for down/forward
-     * @return the non-negative "unit" increment value for scrolling in the specified direction
+     * @return the non-negative "unit" increment value
+     *         for scrolling in the specified direction
      *
      * @see #getScrollableBlockIncrement
      * @see Scrollable#getScrollableUnitIncrement
