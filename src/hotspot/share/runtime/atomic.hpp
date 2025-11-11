@@ -273,7 +273,7 @@ public:
 
   T compare_exchange(T compare_value, T new_value,
                      atomic_memory_order order = memory_order_conservative) {
-    return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value);
+    return AtomicAccess::cmpxchg(value_ptr(), compare_value, new_value, order);
   }
 };
 
@@ -288,7 +288,7 @@ protected:
 public:
   T exchange(T new_value,
              atomic_memory_order order = memory_order_conservative) {
-    return AtomicAccess::xchg(this->value_ptr(), new_value);
+    return AtomicAccess::xchg(this->value_ptr(), new_value, order);
   }
 };
 
