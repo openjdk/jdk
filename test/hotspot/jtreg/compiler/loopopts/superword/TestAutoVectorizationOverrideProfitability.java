@@ -115,17 +115,18 @@ public class TestAutoVectorizationOverrideProfitability {
     @Test
     @Warmup(10)
     @IR(applyIfCPUFeatureOr = {"avx", "true"},
-        applyIf = {"AutoVectorizationOverrideProfitability", "= 2"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"},
         counts = {IRNode.ADD_REDUCTION_VI, "> 0", IRNode.ADD_VI, "> 0"})
     @IR(applyIfCPUFeatureOr = {"avx", "true"},
-        applyIf = {"AutoVectorizationOverrideProfitability", "< 2"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"},
         counts = {IRNode.ADD_REDUCTION_VI, "= 0", IRNode.ADD_VI, "= 0"})
-    // Current heuristics say that this simple int reduction is not profitable.
-    // But it would actually be profitable, since we are able to move the
-    // reduction out of the loop (we can reorder the reduction). When moving
-    // the reduction out of the loop, we instead accumulate with a simple
-    // ADD_VI inside the loop.
-    // See: JDK-8307516 JDK-8345044
+    // We are able to vectorize the reduction. But on its own, that would
+    // not reduce the cost sufficiently in all cases, because vectorized
+    // reduction nodes are expensive. But since integer addition is associative
+    // we can move the reduction vector out of the loop. Instead, we accumulate
+    // with a simple ADD_VI inside the loop, which is very cheap. After the
+    // loop, we only need to use the vectorized reduction once, to collapse
+    // the partial sums contained in the lanes.
     private static int simpleIntReduction() {
         int sum = 0;
         for (int i = 0; i < aI.length; i++) {
