@@ -279,10 +279,8 @@ public:
 
 template<typename T>
 class AtomicImpl::SupportsExchange : public CommonCore<T> {
-  using Base = CommonCore<T>;
-
 protected:
-  explicit SupportsExchange(T value) : Base(value) {}
+  explicit SupportsExchange(T value) : CommonCore<T>(value) {}
   ~SupportsExchange() = default;
 
 public:
@@ -294,8 +292,6 @@ public:
 
 template<typename T>
 class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
-  using Base = SupportsExchange<T>;
-
   // Guarding the AtomicAccess calls with constexpr checking of I produces
   // better compile-time error messages.
   template<typename I>
@@ -312,7 +308,7 @@ class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
   }
 
 protected:
-  explicit SupportsArithmetic(T value) : Base(value) {}
+  explicit SupportsArithmetic(T value) : SupportsExchange<T>(value) {}
   ~SupportsArithmetic() = default;
 
 public:
@@ -354,10 +350,8 @@ template<typename T>
 class AtomicImpl::Atomic<T, AtomicImpl::Category::Integer>
   : public SupportsArithmetic<T>
 {
-  using Base = SupportsArithmetic<T>;
-
 public:
-  explicit Atomic(T value = 0) : Base(value) {}
+  explicit Atomic(T value = 0) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -396,10 +390,8 @@ template<typename T>
 class AtomicImpl::Atomic<T, AtomicImpl::Category::Byte>
   : public CommonCore<T>
 {
-  using Base = CommonCore<T>;
-
 public:
-  explicit Atomic(T value = 0) : Base(value) {}
+  explicit Atomic(T value = 0) : CommonCore<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
@@ -414,10 +406,8 @@ template<typename T>
 class AtomicImpl::Atomic<T, AtomicImpl::Category::Pointer>
   : public SupportsArithmetic<T>
 {
-  using Base = SupportsArithmetic<T>;
-
 public:
-  explicit Atomic(T value = nullptr) : Base(value) {}
+  explicit Atomic(T value = nullptr) : SupportsArithmetic<T>(value) {}
 
   NONCOPYABLE(Atomic);
 
