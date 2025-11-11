@@ -77,10 +77,6 @@ public class BevelBorder extends AbstractBorder
      * Creates a bevel border with the specified type and whose
      * colors will be derived from the background color of the
      * component passed into the paintBorder method.
-     * If {@code bevelType} is not of known type that is neither
-     * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no bevel border will be painted.
-     *
      * @param bevelType the type of bevel for the border
      */
     public BevelBorder(int bevelType) {
@@ -94,33 +90,18 @@ public class BevelBorder extends AbstractBorder
      * will be derived from specified highlight color and
      * bevel outer shadow color and bevel inner shadow color
      * will be derived from specified shadow color.
-     * If highlight color is {@code null}, the highlight color
-     * is derived from the specified component's background color.
-     * If shadow color is {@code null}, the shadow color
-     * is derived from the specified component's background color.
-     * If {@code bevelType} is not of known type that is neither
-     * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no bevel border will be painted.
-     *
      * @param bevelType the type of bevel for the border
      * @param highlight the color to use for the bevel highlight
      * @param shadow the color to use for the bevel shadow
      */
     public BevelBorder(int bevelType, Color highlight, Color shadow) {
-        this(bevelType, (highlight != null) ? highlight.brighter() : null,
-             highlight, shadow, (shadow != null) ? shadow.brighter() : null);
+         this(bevelType, (highlight != null) ? highlight.brighter() : null,
+              highlight, shadow, (shadow != null) ? shadow.brighter() : null);
     }
 
     /**
      * Creates a bevel border with the specified type, highlight and
      * shadow colors.
-     * If any of the highlight color is {@code null}, the highlight color
-     * is derived from the specified component's background color.
-     * If any of the shadow color is {@code null}, the shadow color
-     * is derived from the specified component's background color.
-     * If {@code bevelType} is not of known type that is neither
-     * {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED},
-     * no bevel border will be painted.
      *
      * @param bevelType the type of bevel for the border
      * @param highlightOuterColor the color to use for the bevel outer highlight
