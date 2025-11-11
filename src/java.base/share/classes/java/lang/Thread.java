@@ -125,7 +125,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * Virtual threads have a fixed {@linkplain #getPriority() thread priority}
  * that cannot be changed.
  *
- * <h2>Creating and Starting Threads</h2>
+ * <h2>Creating And Starting Threads</h2>
  *
  * <p> {@code Thread} defines public constructors for creating platform threads and
  * the {@link #start() start} method to schedule threads to execute. {@code Thread}
@@ -181,12 +181,12 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * the method, usually by throwing an exception.
  *
  * <p> If a thread executing {@link #sleep(long) Thread.sleep} or {@link Object#wait()
- * Object.wait} is interrupted then it causes the method to exit and throw
- * {@link InterruptedException}. Methods that throw {@code InterruptedException} do
- * so after first clearing the interrupted status. Code that catches {@code
- * InterruptedException} should rethrow the exception, or restore the current thread's
- * interrupted status, with {@link #currentThread() Thread.currentThread()}.{@link #interrupt()},
- * before continuing normally or handling it by throwing another type of exception.
+ * Object.wait} is interrupted then it causes the method to throw {@link InterruptedException}.
+ * Methods that throw {@code InterruptedException} do so after first clearing the
+ * interrupted status. Code that catches {@code InterruptedException} should rethrow the
+ * exception, or restore the current thread's interrupted status, with
+ * {@link #currentThread() Thread.currentThread()}.{@link #interrupt()}, before
+ * continuing normally or handling it by throwing another type of exception.
  * Code that throws a different type of exception with the {@code InterruptedException}
  * as {@linkplain Throwable#getCause() cause} should also restore the interrupted
  * status before throwing the exception.
@@ -241,12 +241,10 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *   </tbody>
  * </table>
  * <p> The virtual thread scheduler can be monitored and managed with the
- * {@link jdk.management/jdk.management.VirtualThreadSchedulerMXBean} management
- * interface.
+ * {@code jdk.management.VirtualThreadSchedulerMXBean} management interface.
  *
  * @since   1.0
  */
-@SuppressWarnings("doclint:reference") // cross-module links
 public class Thread implements Runnable {
     /* Make sure registerNatives is the first thing <clinit> does. */
     private static native void registerNatives();
@@ -1635,7 +1633,7 @@ public class Thread implements Runnable {
      * @apiNote It should be rare to use this method directly. It is intended
      * for cases that detect {@linkplain ##thread-interruption thread interruption}
      * and clear the interrupted status before throwing {@link InterruptedException}.
-     * It is also intended for cases that implement an <em>uninterruptible</em>
+     * It may also be useful for cases that implement an <em>uninterruptible</em>
      * method that makes use of an <em>interruptible</em> method such as
      * {@link LockSupport#park()}. The {@code interrupted()} method can be used
      * to test if interrupted and clear the interrupted status to allow the code
