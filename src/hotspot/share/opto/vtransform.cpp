@@ -125,8 +125,7 @@ bool VTransformGraph::schedule() {
         if (!use->is_alive()) { continue; }
 
         // Skip backedges.
-        if ((use->isa_PhiScalar() != nullptr ||
-             use->isa_PhiVector() != nullptr ||
+        if ((use->is_loop_head_phi() ||
              use->isa_CountedLoop() != nullptr
             ) && use->in_req(2) == vtn) {
           continue;
@@ -211,7 +210,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     // Is vtn a loop-phi?
-    if (vtn->isa_LoopPhi() != nullptr ||
+    if (vtn->is_loop_head_phi() ||
         vtn->is_load_or_store_in_loop()) {
       is_not_before_loop.set(vtn->_idx);
       continue;
@@ -238,8 +237,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
     for (uint i = 0; i < vtn->out_strong_edges(); i++) {
       VTransformNode* use = vtn->out_strong_edge(i);
       // Or is vtn a backedge or one of its transitive defs?
-      if (in_loop.test(use->_idx) ||
-          use->isa_LoopPhi() != nullptr) {
+      if (in_loop.test(use->_idx) || use->is_loop_head_phi()) {
         in_loop.set(vtn->_idx);
         break;
       }
@@ -1286,7 +1284,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       for (uint i = 0; i < current_red->out_strong_edges(); i++) {
         VTransformNode* use = current_red->out_strong_edge(i);
         if (use->isa_PhiScalar() == nullptr &&
-            use->isa_PhiVector() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
           assert(false, "reduction has use inside loop");
