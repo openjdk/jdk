@@ -602,7 +602,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                                                               ResponseInfo response) {
         if (debug.on()) debug.log("Creating body subscriber");
         var cancelTimerOnTermination =
-                exchange.multi.cancelTimerOnResponseBodySubscriberTermination(
+                cancelTimerOnResponseBodySubscriberTermination(
                         exchange.request().isWebSocket(), response.statusCode());
         return new Http3StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }

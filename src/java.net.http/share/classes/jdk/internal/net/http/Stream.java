@@ -392,7 +392,7 @@ class Stream<T> extends ExchangeImpl<T> {
     @Override
     Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         var cancelTimerOnTermination =
-                exchange.multi.cancelTimerOnResponseBodySubscriberTermination(
+                cancelTimerOnResponseBodySubscriberTermination(
                         exchange.request().isWebSocket(), response.statusCode());
         return new Http2StreamResponseSubscriber<>(handler.apply(response), cancelTimerOnTermination);
     }

@@ -475,7 +475,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
         BodySubscriber<T> subscriber = handler.apply(response);
         var cancelTimerOnTermination =
-                exchange.multi.cancelTimerOnResponseBodySubscriberTermination(
+                cancelTimerOnResponseBodySubscriberTermination(
                         exchange.request().isWebSocket(), response.statusCode());
         return new Http1ResponseBodySubscriber<>(subscriber, cancelTimerOnTermination, this);
     }
