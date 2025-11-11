@@ -1155,16 +1155,16 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     heap->collection_set()->clear();
     size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     ShenandoahFreeSet* free_set = heap->free_set();
-    ShenandoahRebuildLocker rebuild_locker(free_set->lock());
-    free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    // We also do not expand old generation size following Full GC because we have scrambled age populations and
-    // no longer have objects separated by age into distinct regions.
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalFullGC::compute_balances();
+    {
+      ShenandoahRebuildLocker rebuild_locker(free_set->lock());
+      free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+      // We also do not expand old generation size following Full GC because we have scrambled age populations and
+      // no longer have objects separated by age into distinct regions.
+      if (heap->mode()->is_generational()) {
+        ShenandoahGenerationalFullGC::compute_balances();
+      }
+      free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
     }
-
-    free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
-
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     heap->global_generation()->set_mark_incomplete();
 
