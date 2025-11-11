@@ -1586,8 +1586,9 @@ void VTransformReinterpretVectorNode::print_spec() const {
 
 void VTransformBoolVectorNode::print_spec() const {
   VTransformVectorNode::print_spec();
-  const BoolTest bt(_test._mask);
-  tty->print(" test=");
+  BoolTest::mask m = BoolTest::mask(_test._mask & ~BoolTest::unsigned_compare);
+  const BoolTest bt(m);
+  tty->print(" test=%s", m == _test._mask ? "" : "unsigned ");
   bt.dump_on(tty);
 }
 #endif
