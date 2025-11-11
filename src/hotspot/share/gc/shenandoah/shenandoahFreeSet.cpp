@@ -752,8 +752,8 @@ move_from_partition_to_partition_with_deferred_accounting(idx_t idx, ShenandoahF
           "Orig partition used: %zu must exceed moved used: %zu within region %zd",
           _used[int(orig_partition)], used, idx);
 
-  if (orig_partition == ShenandoahFreeSetPartitionId::Mutator && r->reserved_for_direct_allocation()) {
-    ShenandoahHeap::heap()->free_set()->release_directly_allocatable_region(r);
+  if (orig_partition == ShenandoahFreeSetPartitionId::Mutator && r->is_active_alloc_region()) {
+    ShenandoahHeap::heap()->free_set()->release_alloc_region(r);
   }
 
   _membership[int(orig_partition)].clear_bit(idx);
@@ -941,7 +941,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
     switch (partition) {
       case ShenandoahFreeSetPartitionId::NotFree:
       {
-        assert(!validate_totals || r->reserved_for_direct_allocation() || (capacity != _region_size_bytes), "Should not be retired if empty");
+        assert(!validate_totals || r->is_active_alloc_region() || (capacity != _region_size_bytes), "Should not be retired if empty");
         if (r->is_humongous()) {
           if (r->is_old()) {
             regions[int(ShenandoahFreeSetPartitionId::OldCollector)]++;
@@ -957,7 +957,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
             young_humongous_waste += capacity;
           }
         } else {
-          assert(r->is_cset() || r->reserved_for_direct_allocation() || (capacity < PLAB::min_size() * HeapWordSize),
+          assert(r->is_cset() || r->is_active_alloc_region() || (capacity < PLAB::min_size() * HeapWordSize),
                  "Expect retired remnant size to be smaller than min plab size");
           // This region has been retired already or it is in the cset.  In either case, we set capacity to zero
           // so that the entire region will be counted as used.  We count young cset regions as "retired".
@@ -1190,7 +1190,7 @@ void ShenandoahRegionPartitions::assert_bounds(bool validate_totals) {
 }
 #endif
 
-THREAD_LOCAL uint ShenandoahFreeSet::_alloc_region_index = UINT_MAX;
+THREAD_LOCAL uint ShenandoahFreeSet::_mutator_alloc_region_index = UINT_MAX;
 
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
@@ -1210,9 +1210,9 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _mutator_bytes_allocated_since_gc_start(0)
 {
   clear_internal();
-  _direct_allocation_regions = PaddedArray<ShenandoahDirectAllocationRegion, mtGC>::create_unfreeable(ShenandoahDirectlyAllocatableRegionCount);
-  for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    _direct_allocation_regions[i]._address = nullptr;
+  _mutator_alloc_regions = PaddedArray<ShenandoahAllocRegion, mtGC>::create_unfreeable(ShenandoahMutatorAllocRegionCount);
+  for (uint i = 0; i < ShenandoahMutatorAllocRegionCount; i++) {
+    _mutator_alloc_regions[i]._address = nullptr;
   }
 }
 
@@ -1388,7 +1388,7 @@ HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAll
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
-    if (!r->reserved_for_direct_allocation() && alloc_capacity(r) >= min_size * HeapWordSize) {
+    if (!r->is_active_alloc_region() && alloc_capacity(r) >= min_size * HeapWordSize) {
       HeapWord* result = try_allocate_in(r, req, in_new_region);
       if (result != nullptr) {
         return result;
@@ -1739,7 +1739,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     // If region is not completely free, the current [beg; end] is useless, and we may fast-forward.  If we can extend
     // the existing range, we can exploit that certain regions are already known to be in the Mutator free set.
     while (!can_allocate_from(_heap->get_region(end))) {
-      assert(!_heap->get_region(end)->reserved_for_direct_allocation(), "Must not");
+      assert(!_heap->get_region(end)->is_active_alloc_region(), "Must not");
       // region[end] is not empty, so we restart our search after region[end]
       idx_t slide_delta = end + 1 - beg;
       if (beg + slide_delta > last_possible_start) {
@@ -2186,7 +2186,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
       if (ac >= PLAB::min_size() * HeapWordSize) {
-        if (!region->reserved_for_direct_allocation()) {
+        if (!region->is_active_alloc_region()) {
           if (region->is_trash() || !region->is_old()) {
             // Both young and old collected regions (trashed) are placed into the Mutator set
             _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
@@ -2226,7 +2226,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
             old_collector_used += region_size_bytes - ac;
           }
         } else {
-          // region->reserved_for_direct_allocation(), a reserved region should count in mutator regions,
+          // region->is_active_alloc_region(), a reserved region should count in mutator regions,
           // but it won't be assigned to Mutator in the partition table, the entire region is counted as used.
           total_mutator_regions++;
           mutator_used += region_size_bytes;
@@ -2927,7 +2927,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         young_used_regions++;
         young_used_bytes += region_size_bytes - ac;
       }
-    } else if (!r->reserved_for_direct_allocation()) {
+    } else if (!r->is_active_alloc_region()) {
       // Region is not in Mutator partition. Do the accounting.
       ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
       size_t ac = alloc_capacity(r);
@@ -3324,16 +3324,16 @@ template<bool IS_TLAB>
 HeapWord* ShenandoahFreeSet::cas_allocate_single_for_mutator(uint start_index, ShenandoahAllocRequest &req, bool &in_new_region) {
   HeapWord *obj = nullptr;
   uint i = 0u;
-  while (i < ShenandoahDirectlyAllocatableRegionCount) {
+  while (i < ShenandoahMutatorAllocRegionCount) {
     {
       // Yield to Safepoint
       ThreadBlockInVM tbivm(JavaThread::current());
     }
-    uint idx = (start_index + i) % ShenandoahDirectlyAllocatableRegionCount;
-    ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
+    uint idx = (start_index + i) % ShenandoahMutatorAllocRegionCount;
+    ShenandoahAllocRegion& shared_region = _mutator_alloc_regions[idx];
     ShenandoahHeapRegion* r = nullptr;
     // Intentionally not using AtomicAccess::load, if a mutator see a stale region it will fail to allocate anyway.
-    if ((r = shared_region._address) != nullptr && r->reserved_for_direct_allocation()) {
+    if ((r = shared_region._address) != nullptr && r->is_active_alloc_region()) {
       obj = cas_allocate_in_for_mutator<IS_TLAB>(r, req, in_new_region);
       if (obj != nullptr) {
         return obj;
@@ -3362,7 +3362,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
       return obj;
     }
 
-    uint next_start_index = ShenandoahDirectlyAllocatableRegionCount;
+    uint next_start_index = ShenandoahMutatorAllocRegionCount;
     if (!try_allocate_directly_allocatable_regions(start_idx, req, obj, in_new_region, next_start_index)) {
       if (obj != nullptr) {
         return obj;
@@ -3370,7 +3370,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_single_for_mutator(ShenandoahAllocRequ
 
       // No new directly allocatable region, but an existing region with sufficient memory has been found.
       // This only happens when other thread wins the race to refresh the regions.
-      if (next_start_index != ShenandoahDirectlyAllocatableRegionCount) {
+      if (next_start_index != ShenandoahMutatorAllocRegionCount) {
         start_idx = next_start_index;
       } else {
         return nullptr;
@@ -3407,7 +3407,7 @@ HeapWord* ShenandoahFreeSet::cas_allocate_in_for_mutator(ShenandoahHeapRegion* r
 }
 
 class DirectAllocatableRegionRefillClosure final : public ShenandoahHeapRegionIterationClosure {
-  PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
+  PaddedEnd<ShenandoahAllocRegion>* _direct_allocation_regions;
   // inclusive
   const uint _start_index;
   int _scanned_region;
@@ -3422,40 +3422,40 @@ public:
   uint _next_region_with_sufficient_mem;
   const size_t _min_req_byte_size;
 
-  DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahDirectAllocationRegion>* direct_allocation_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
+  DirectAllocatableRegionRefillClosure(PaddedEnd<ShenandoahAllocRegion>* direct_allocation_regions, uint start_index, ShenandoahAllocRequest &req, HeapWord* &obj, bool &in_new_region)
     : _direct_allocation_regions(direct_allocation_regions),
       _start_index(start_index),
       _scanned_region(0),
       _req(req),
       _obj(obj),
       _in_new_region(in_new_region),
-      _next_region_with_sufficient_mem(ShenandoahDirectlyAllocatableRegionCount),
+      _next_region_with_sufficient_mem(ShenandoahMutatorAllocRegionCount),
       _min_req_byte_size((req.type() == ShenandoahAllocRequest::_alloc_tlab ? req.min_size() : req.size()) * HeapWordSize) {
     _next_retire_eligible_region = find_next_retire_eligible_region();
   }
 
   int find_next_retire_eligible_region() {
-    while (_scanned_region < (int) ShenandoahDirectlyAllocatableRegionCount) {
-      const uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahDirectlyAllocatableRegionCount;
+    while (_scanned_region < (int) ShenandoahMutatorAllocRegionCount) {
+      const uint idx = (_start_index + (size_t) _scanned_region) % ShenandoahMutatorAllocRegionCount;
       _scanned_region++;
-      ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[idx];
+      ShenandoahAllocRegion& shared_region = _direct_allocation_regions[idx];
       ShenandoahHeapRegion* const r = shared_region._address;
       // Found the first eligible region
       if (r == nullptr) {
         return idx;
       }
       if (r->free() < PLAB::min_size_bytes()) {
-        assert(r->reserved_for_direct_allocation(), "Must be direct allocation reserved region.");
+        assert(r->is_active_alloc_region(), "Must be direct allocation reserved region.");
         AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
         while (r->direct_alloc_mutators() > 0) {
           if (os::is_MP()) SpinPause();
           else os::naked_yield();
         }
-        r->release_from_direct_allocation();
+        r->unset_active_alloc_region();
         return idx;
       }
 
-      if (_obj == nullptr && _next_region_with_sufficient_mem == ShenandoahDirectlyAllocatableRegionCount && r->free() >= _min_req_byte_size) {
+      if (_obj == nullptr && _next_region_with_sufficient_mem == ShenandoahMutatorAllocRegionCount && r->free() >= _min_req_byte_size) {
         _next_region_with_sufficient_mem = idx;
       }
     }
@@ -3466,7 +3466,7 @@ public:
     if (_next_retire_eligible_region == -1 && _obj != nullptr) return true;
     size_t ac = _free_set->alloc_capacity(r);
     if (ac < _min_req_byte_size) return false;
-    if (r->reserved_for_direct_allocation()) return false;
+    if (r->is_active_alloc_region()) return false;
     if (ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       return false;
     }
@@ -3495,9 +3495,9 @@ public:
 
     if (_next_retire_eligible_region != -1 && ac >= ShenandoahHeapRegion::max_tlab_size_bytes()) {
       // After satisfying object allocation, the region still has space to fit at least one tlab.
-      ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
+      ShenandoahAllocRegion& shared_region = _direct_allocation_regions[_next_retire_eligible_region];
       assert(AtomicAccess::load(&shared_region._address) == nullptr, "Must have been released.");
-      r->reserve_for_direct_allocation();
+      r->set_active_alloc_region();
       // Remove region from Mutator partition.
       size_t reserved_bytes = _free_set->partitions()->retire_from_partition(ShenandoahFreeSetPartitionId::Mutator, r->index(), r->used());
       _free_set->increase_bytes_allocated(reserved_bytes);
@@ -3522,13 +3522,13 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(uint start_ind
                                                                   bool& in_new_region,
                                                                   uint& new_start_index) {
   assert(Thread::current()->is_Java_thread(), "Must be mutator");
-  assert(start_index < ShenandoahDirectlyAllocatableRegionCount, "Must be");
+  assert(start_index < ShenandoahMutatorAllocRegionCount, "Must be");
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), true);
-  DirectAllocatableRegionRefillClosure cl(_direct_allocation_regions, start_index, req, obj, in_new_region);
+  DirectAllocatableRegionRefillClosure cl(_mutator_alloc_regions, start_index, req, obj, in_new_region);
   iterate_regions_for_alloc<true, false>(&cl, false);
-  if (cl._next_region_with_sufficient_mem != ShenandoahDirectlyAllocatableRegionCount && obj == nullptr) {
+  if (cl._next_region_with_sufficient_mem != ShenandoahMutatorAllocRegionCount && obj == nullptr) {
     new_start_index = cl._next_region_with_sufficient_mem;
   }
   recompute_total_used</* UsedByMutatorChanged */ true,
@@ -3544,16 +3544,16 @@ bool ShenandoahFreeSet::try_allocate_directly_allocatable_regions(uint start_ind
   return cl._new_region_allocated;
 }
 
-void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
+void ShenandoahFreeSet::release_all_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
-  for (uint i = 0; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[i];
+  for (uint i = 0; i < ShenandoahMutatorAllocRegionCount; i++) {
+    ShenandoahAllocRegion& shared_region = _mutator_alloc_regions[i];
     ShenandoahHeapRegion* r = AtomicAccess::load(&shared_region._address);
     if (r != nullptr) {
-      assert(r->reserved_for_direct_allocation(), "Must be");
+      assert(r->is_active_alloc_region(), "Must be");
       AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
-      r->release_from_direct_allocation();
+      r->unset_active_alloc_region();
       size_t const free_bytes = r->free();
       if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
         r->make_empty();
@@ -3567,18 +3567,18 @@ void ShenandoahFreeSet::release_all_directly_allocatable_regions() {
   }
 }
 
-void ShenandoahFreeSet::release_directly_allocatable_region(ShenandoahHeapRegion* region) {
+void ShenandoahFreeSet::release_alloc_region(ShenandoahHeapRegion* region) {
   assert_at_safepoint();
   assert(region->free() != ShenandoahHeapRegion::region_size_bytes(), "Must not");
   shenandoah_assert_heaplocked();
-  for (uint i = 0u; i < ShenandoahDirectlyAllocatableRegionCount; i++) {
-    ShenandoahDirectAllocationRegion& shared_region = _direct_allocation_regions[i];
+  for (uint i = 0u; i < ShenandoahMutatorAllocRegionCount; i++) {
+    ShenandoahAllocRegion& shared_region = _mutator_alloc_regions[i];
     if (AtomicAccess::load(&shared_region._address) == region) {
       AtomicAccess::store(&shared_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       break;
     }
   }
-  region->release_from_direct_allocation();
+  region->unset_active_alloc_region();
   if (region->free() >= PLAB::min_size_bytes()) {
     _partitions.decrease_used(ShenandoahFreeSetPartitionId::Mutator, region->free());
     partitions()->unretire_to_partition(region, ShenandoahFreeSetPartitionId::Mutator);

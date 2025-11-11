@@ -268,7 +268,7 @@ private:
 
   bool _needs_bitmap_reset;
 
-  ShenandoahSharedFlag _direct_alloc_reserved; // Flag to indicate that whether the region is reserved for lock-free direct allocation
+  ShenandoahSharedFlag _active_alloc_region; // Flag indicates that whether the region is an active alloc region.
   volatile int _direct_alloc_mutators = 0;
 
   class DirectAllocMutatorCounter {
@@ -529,18 +529,18 @@ public:
     _needs_bitmap_reset = false;
   }
 
-  inline void reserve_for_direct_allocation() {
-    assert(_direct_alloc_reserved.is_unset(), "Must be");
-    _direct_alloc_reserved.set();
+  inline void set_active_alloc_region() {
+    assert(_active_alloc_region.is_unset(), "Must be");
+    _active_alloc_region.set();
   }
 
-  inline void release_from_direct_allocation() {
-    assert(_direct_alloc_reserved.is_set(), "Must be");
-    _direct_alloc_reserved.unset();
+  inline void unset_active_alloc_region() {
+    assert(_active_alloc_region.is_set(), "Must be");
+    _active_alloc_region.unset();
   }
 
-  inline bool reserved_for_direct_allocation() const {
-    return _direct_alloc_reserved.is_set();
+  inline bool is_active_alloc_region() const {
+    return _active_alloc_region.is_set();
   }
 
   inline int direct_alloc_mutators() const {

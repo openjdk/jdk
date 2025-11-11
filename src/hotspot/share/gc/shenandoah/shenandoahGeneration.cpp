@@ -574,7 +574,7 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
         // We prefer to promote this region in place because it has a small amount of garbage and a large usage.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
-        if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top && !r->reserved_for_direct_allocation()) {
+        if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top && !r->is_active_alloc_region()) {
           // No allocations from this region have been made during concurrent mark. It meets all the criteria
           // for in-place-promotion. Though we only need the value of top when we fill the end of the region,
           // we use this field to indicate that this region should be promoted in place during the evacuation

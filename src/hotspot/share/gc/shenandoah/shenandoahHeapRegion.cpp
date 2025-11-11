@@ -89,7 +89,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
   _recycling.unset();
-  _direct_alloc_reserved.unset();
+  _active_alloc_region.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -859,7 +859,7 @@ size_t ShenandoahHeapRegion::pin_count() const {
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
-  assert(new_affiliation != OLD_GENERATION || !reserved_for_direct_allocation(), "Reserved region can't move to old");
+  assert(new_affiliation != OLD_GENERATION || !is_active_alloc_region(), "Reserved region can't move to old");
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 

@@ -440,7 +440,7 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
-struct ShenandoahDirectAllocationRegion {
+struct ShenandoahAllocRegion {
   ShenandoahHeapRegion* volatile _address = nullptr;
 };
 
@@ -457,8 +457,8 @@ using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  PaddedEnd<ShenandoahDirectAllocationRegion>* _direct_allocation_regions;
-  static THREAD_LOCAL uint _alloc_region_index;
+  PaddedEnd<ShenandoahAllocRegion>* _mutator_alloc_regions;
+  static THREAD_LOCAL uint _mutator_alloc_region_index;
 
   size_t _total_humongous_waste;
 
@@ -682,10 +682,10 @@ private:
   uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionIterationClosure* cl);
 
   static uint alloc_region_index() {
-    if (_alloc_region_index == UINT_MAX) {
-      _alloc_region_index = abs(os::random()) % ShenandoahDirectlyAllocatableRegionCount;
+    if (_mutator_alloc_region_index == UINT_MAX) {
+      _mutator_alloc_region_index = abs(os::random()) % ShenandoahMutatorAllocRegionCount;
     }
-    return _alloc_region_index;
+    return _mutator_alloc_region_index;
   }
 
 public:
@@ -849,9 +849,9 @@ public:
 
   HeapWord* allocate_contiguous_cds(ShenandoahAllocRequest &req);
 
-  void release_all_directly_allocatable_regions();
+  void release_all_alloc_regions();
 
-  void release_directly_allocatable_region(ShenandoahHeapRegion *region);
+  void release_alloc_region(ShenandoahHeapRegion *region);
 
   template<bool IS_TLAB>
   HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);

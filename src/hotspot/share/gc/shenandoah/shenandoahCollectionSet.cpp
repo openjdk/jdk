@@ -103,8 +103,8 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
     if (ShenandoahHeap::heap()->mode()->is_generational() && ShenandoahGenerationalHeap::heap()->is_tenurable(r)) {
       _young_bytes_to_promote += live;
     }
-    if (r->reserved_for_direct_allocation()) {
-      _heap->free_set()->release_directly_allocatable_region(r);
+    if (r->is_active_alloc_region()) {
+      _heap->free_set()->release_alloc_region(r);
     }
   } else if (r->is_old()) {
     _old_bytes_to_evacuate += live;
