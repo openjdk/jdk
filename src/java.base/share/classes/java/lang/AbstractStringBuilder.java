@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.nio.CharBuffer;
 import java.util.Arrays;
@@ -83,6 +84,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * The count is the number of characters used.
      */
     int count;
+
+    /**
+     * Count of how many times the append(char, char) method has been called.
+     * Used for testing optimization effectiveness.
+     */
+    static int appendPairCount = 0;
 
     private static final byte[] EMPTYVALUE = new byte[0];
 
@@ -906,7 +913,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return this;
     }
 
+    @IntrinsicCandidate
     AbstractStringBuilder append(char c1, char c2) {
+        // Increment the appendPairCount when this optimized method is used
+        appendPairCount++;
         byte coder = this.coder;
         int count = this.count;
         byte[] value = this.value;
@@ -922,7 +932,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringUTF16.putChar(value, count, c1);
             StringUTF16.putChar(value, count + 1, c2);
         }
-        this.count = count;
+        this.count = count + 2;
         return this;
     }
 
