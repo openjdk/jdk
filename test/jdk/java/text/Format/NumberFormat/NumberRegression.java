@@ -30,7 +30,7 @@
  * 4125885 4134034 4134300 4140009 4141750 4145457 4147295 4147706 4162198
  * 4162852 4167494 4170798 4176114 4179818 4212072 4212073 4216742 4217661
  * 4243011 4243108 4330377 4233840 4241880 4833877 6177299 8008577 8227313
- * 8174269
+ * 8174269 8369050
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
  * @build HexDumpReader TestUtils
@@ -1776,7 +1776,7 @@ public class NumberRegression {
                 "2%", "1%", "2%", "2%", "1%",
                 "0%", "0%", "1%", "1%", "1%",
                 "0", "2", "0.2", "0.6", "0.04",
-                "0.04", "0.000", "0.002",
+                "0.04", "0.001", "0.002",
         };
         for (int i = 0; i < input.length; i++) {
             DecimalFormat format = new DecimalFormat(pattern[i]);

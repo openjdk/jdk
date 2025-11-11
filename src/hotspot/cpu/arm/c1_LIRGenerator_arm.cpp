@@ -924,7 +924,7 @@ void LIRGenerator::do_Convert(Convert* x) {
       LIRItem value(x->value(), this);
       value.load_item();
       LIR_Opr reg = rlock_result(x);
-      __ convert(x->op(), value.result(), reg, nullptr);
+      __ convert(x->op(), value.result(), reg);
       return;
     }
   }
