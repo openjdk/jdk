@@ -76,6 +76,14 @@ public class TestACSameSrcDst {
         return 0;
     }
 
+    static void test6(int x) {
+        int[] src = new int[10];
+        int l = 0;
+        while (l < 1) { l++; }
+
+        System.arraycopy(src, x + 1, src, x + 1, l);
+    }
+
     public static void main(String[] args) {
         int[] array = new int[15];
         for (int i = 0; i < 20000; i++) {
@@ -101,6 +109,7 @@ public class TestACSameSrcDst {
             if (res != 0) {
                 throw new RuntimeException("bad result: " + res + " != " + 0);
             }
+            test6(0);
         }
     }
 }
