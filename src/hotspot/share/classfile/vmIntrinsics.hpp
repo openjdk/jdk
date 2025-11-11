@@ -1362,9 +1362,10 @@ class methodHandle;
   do_intrinsic(_StringBuilder_int,    java_lang_StringBuilder, object_initializer_name, int_void_signature,        F_R)   \
   do_intrinsic(_StringBuilder_String, java_lang_StringBuilder, object_initializer_name, string_void_signature,     F_R)   \
                                                                                                                           \
-  do_intrinsic(_StringBuilder_append_char,   java_lang_StringBuilder, append_name, char_StringBuilder_signature,   F_R)   \
-  do_intrinsic(_StringBuilder_append_int,    java_lang_StringBuilder, append_name, int_StringBuilder_signature,    F_R)   \
-  do_intrinsic(_StringBuilder_append_String, java_lang_StringBuilder, append_name, String_StringBuilder_signature, F_R)   \
+  do_intrinsic(_StringBuilder_append_char,      java_lang_StringBuilder, append_name, char_StringBuilder_signature,      F_R)   \
+  do_intrinsic(_StringBuilder_append_char_char, java_lang_StringBuilder, append_name, char_char_StringBuilder_signature, F_R)   \
+  do_intrinsic(_StringBuilder_append_int,       java_lang_StringBuilder, append_name, int_StringBuilder_signature,       F_R)   \
+  do_intrinsic(_StringBuilder_append_String,    java_lang_StringBuilder, append_name, String_StringBuilder_signature,    F_R)   \
                                                                                                                           \
   do_intrinsic(_StringBuilder_toString, java_lang_StringBuilder, toString_name, void_string_signature,             F_R)   \
                                                                                                                           \

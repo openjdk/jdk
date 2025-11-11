@@ -248,6 +248,7 @@ public final class StringBuilder
     }
 
     @Override
+    @IntrinsicCandidate
     StringBuilder append(char c1, char c2) {
         super.append(c1, c2);
         return this;

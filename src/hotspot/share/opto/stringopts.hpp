@@ -94,6 +94,9 @@ class PhaseStringOpts : public Phase {
   // Returns the value array of a constant string
   ciTypeArray* get_constant_value(GraphKit& kit, Node* str);
 
+  // Optimize consecutive append(char) calls to use append(char, char)
+  void optimize_append_pairs();
+
   // Clean up any leftover nodes
   void record_dead_node(Node* node);
   void remove_dead_nodes();

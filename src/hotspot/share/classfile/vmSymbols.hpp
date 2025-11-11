@@ -616,9 +616,12 @@ class SerializeClosure;
   template(String_StringBuilder_signature,            "(Ljava/lang/String;)Ljava/lang/StringBuilder;")            \
   template(int_StringBuilder_signature,               "(I)Ljava/lang/StringBuilder;")                             \
   template(char_StringBuilder_signature,              "(C)Ljava/lang/StringBuilder;")                             \
+  template(char_char_StringBuilder_signature,         "(CC)Ljava/lang/StringBuilder;")                            \
   template(String_StringBuffer_signature,             "(Ljava/lang/String;)Ljava/lang/StringBuffer;")             \
   template(int_StringBuffer_signature,                "(I)Ljava/lang/StringBuffer;")                              \
   template(char_StringBuffer_signature,               "(C)Ljava/lang/StringBuffer;")                              \
+  template(char_char_StringBuffer_signature,          "(CC)Ljava/lang/StringBuffer;")                             \
+  template(char_char_AbstractStringBuilder_signature, "(CC)Ljava/lang/AbstractStringBuilder;")                    \
   template(int_String_signature,                      "(I)Ljava/lang/String;")                                    \
   template(boolean_boolean_int_signature,             "(ZZ)I")                                                    \
   template(big_integer_shift_worker_signature,        "([I[IIII)V")                                               \
