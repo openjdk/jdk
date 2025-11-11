@@ -342,13 +342,13 @@ class ValidatorTest {
     private void testWrongManifestPosition(
             Path path, String expectedErrorMessage, EntryWriter... entries) throws IOException {
         createZipFile(path, entries);
+        // first check JAR file with streaming API
+        try (var jis = new JarInputStream(new FileInputStream(path.toFile()))) {
+            var manifest = jis.getManifest();
+            assertNull(manifest, "Manifest not null?!");
+        }
+        // now validate with tool CLI
         try {
-            // first check with streaming API
-            try (var jis = new JarInputStream(new FileInputStream(path.toFile()))) {
-                var manifest = jis.getManifest();
-                assertNull(manifest, "Manifest not null?!");
-            }
-            // next check with tool CLI
             jar("--validate --file " + path);
             fail("Expecting non-zero exit code validating: " + path);
         } catch (IOException e) {
