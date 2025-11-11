@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm_md.h"
+#include "memory/allStatic.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
@@ -342,35 +343,50 @@ class os: AllStatic {
   static bool is_server_class_machine();
   static size_t rss();
 
-  // On platforms with container support (currently only Linux)
-  // we combine machine values with potential container values, abstracting
-  // which value is actually used. These functions are used to get machine
-  // values and container values (when available) separately.
+  // On platforms with container support (currently only Linux) we combine machine values with
+  // potential container values in os:: methods, abstracting which value is actually used.
+  // The os::Machine and os::Container classes and containing methods are used to get machine
+  // and container values (when available) separately.
   static bool is_containerized();
 
-  static int machine_active_processor_count();
+  // The os::Machine class reports system resource metrics from the perspective of the operating
+  // system, without considering container-imposed limits. The values returned by these methods
+  // reflect the resources visible to the process as reported by the OS, and may already be
+  // affected by mechanisms such as virtualization, hypervisor limits, or process affinity,
+  // but do NOT consider further restrictions imposed by container runtimes (e.g., cgroups)
+  class Machine : AllStatic {
+  public:
+    static int active_processor_count();
 
-  [[nodiscard]] static bool machine_available_memory(physical_memory_size_type& value);
-  [[nodiscard]] static bool machine_used_memory(physical_memory_size_type& value);
-  [[nodiscard]] static bool machine_free_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_memory(physical_memory_size_type& value);
 
-  [[nodiscard]] static bool machine_total_swap_space(physical_memory_size_type& value);
-  [[nodiscard]] static bool machine_free_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
 
-  static physical_memory_size_type machine_physical_memory();
+    static physical_memory_size_type physical_memory();
+  };
 
-  // Container values, not safe to use unless `is_containerized()` is true.
-  static double container_processor_count();
+  // The os::Container class reports resource limits as imposed by a supported container runtime
+  // (currently only cgroup-based Linux runtimes). If the process is running inside a
+  // containerized environment, methods from this class report the effective limits imposed
+  // by the container, which may be more restrictive than what os::Machine reports.
+  // These methods are not safe to use unless `os::is_containerized()` is true.
+  class Container : AllStatic {
+  public:
+    static double processor_count(); // Returns the core-equivalent CPU quota
 
-  [[nodiscard]] static bool container_available_memory(physical_memory_size_type& value);
-  [[nodiscard]] static bool container_used_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
+    [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
 
-  [[nodiscard]] static bool container_total_swap_space(physical_memory_size_type& value);
-  [[nodiscard]] static bool container_free_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool total_swap_space(physical_memory_size_type& value);
+    [[nodiscard]] static bool free_swap_space(physical_memory_size_type& value);
 
-  [[nodiscard]] static bool container_memory_limit(physical_memory_size_type& value);
-  [[nodiscard]] static bool container_memory_soft_limit(physical_memory_size_type& value);
-  [[nodiscard]] static bool container_memory_throttle_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_soft_limit(physical_memory_size_type& value);
+    [[nodiscard]] static bool memory_throttle_limit(physical_memory_size_type& value);
+  };
 
   // Returns the id of the processor on which the calling thread is currently executing.
   // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).

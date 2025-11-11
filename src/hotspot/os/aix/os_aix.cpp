@@ -258,7 +258,7 @@ bool os::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::machine_free_memory(physical_memory_size_type& value) {
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
@@ -266,7 +266,7 @@ bool os::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::machine_available_memory(physical_memory_size_type& value) {
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
@@ -281,10 +281,10 @@ bool os::Aix::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
-  return machine_total_swap_space(value);
+  return Machine::total_swap_space(value);
 }
 
-bool os::machine_total_swap_space(physical_memory_size_type& value) {
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -294,10 +294,10 @@ bool os::machine_total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
-  return machine_free_swap_space(value);
+  return Machine::free_swap_space(value);
 }
 
-bool os::machine_free_swap_space(physical_memory_size_type& value) {
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
@@ -310,7 +310,7 @@ physical_memory_size_type os::physical_memory() {
   return Aix::physical_memory();
 }
 
-physical_memory_size_type os::machine_physical_memory() {
+physical_memory_size_type os::Machine::physical_memory() {
   return Aix::physical_memory();
 }
 
@@ -2279,10 +2279,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  return machine_active_processor_count();
+  return Machine::active_processor_count();
 }
 
-int os::machine_active_processor_count() {
+int os::Machine::active_processor_count() {
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;

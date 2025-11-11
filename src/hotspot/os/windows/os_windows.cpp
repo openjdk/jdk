@@ -838,7 +838,7 @@ bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::machine_available_memory(physical_memory_size_type& value) {
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
@@ -846,7 +846,7 @@ bool os::free_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::machine_free_memory(physical_memory_size_type& value) {
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
@@ -866,10 +866,10 @@ bool os::win32::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value)  {
-  return machine_total_swap_space(value);
+  return Machine::total_swap_space(value);
 }
 
-bool os::machine_total_swap_space(physical_memory_size_type& value) {
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -883,10 +883,10 @@ bool os::machine_total_swap_space(physical_memory_size_type& value) {
 }
 
 bool os::free_swap_space(physical_memory_size_type& value) {
-  return machine_free_swap_space(value);
+  return Machine::free_swap_space(value);
 }
 
-bool os::machine_free_swap_space(physical_memory_size_type& value) {
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
@@ -903,7 +903,7 @@ physical_memory_size_type os::physical_memory() {
   return win32::physical_memory();
 }
 
-physical_memory_size_type os::machine_physical_memory() {
+physical_memory_size_type os::Machine::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -930,10 +930,10 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  return machine_active_processor_count();
+  return Machine::active_processor_count();
 }
 
-int os::machine_active_processor_count() {
+int os::Machine::active_processor_count() {
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
   if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
     win32::set_processor_group_warning_displayed(true);

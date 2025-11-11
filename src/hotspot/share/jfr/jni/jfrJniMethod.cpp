@@ -401,13 +401,13 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jclass jvm))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
-  return static_cast<jlong>(os::machine_physical_memory());
+  return static_cast<jlong>(os::Machine::physical_memory());
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
   physical_memory_size_type total_swap_space = 0;
   // Return value ignored - defaulting to 0 on failure.
-  (void)os::machine_total_swap_space(total_swap_space);
+  (void)os::Machine::total_swap_space(total_swap_space);
   return static_cast<jlong>(total_swap_space);
 JVM_END
 

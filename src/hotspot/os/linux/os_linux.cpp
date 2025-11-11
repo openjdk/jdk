@@ -217,7 +217,7 @@ bool os::is_containerized() {
   return OSContainer::is_containerized();
 }
 
-bool os::container_memory_limit(physical_memory_size_type& value) {
+bool os::Container::memory_limit(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong mem_limit = OSContainer::memory_limit_in_bytes();
   if (mem_limit <= 0) {
@@ -227,7 +227,7 @@ bool os::container_memory_limit(physical_memory_size_type& value) {
   value = static_cast<physical_memory_size_type>(mem_limit);
   return true;
 }
-bool os::container_memory_soft_limit(physical_memory_size_type& value) {
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong mem_limit = OSContainer::memory_soft_limit_in_bytes();
   if (mem_limit <= 0) {
@@ -238,7 +238,7 @@ bool os::container_memory_soft_limit(physical_memory_size_type& value) {
   return true;
 }
 
-bool os::container_memory_throttle_limit(physical_memory_size_type& value) {
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong mem_limit = OSContainer::memory_throttle_limit_in_bytes();
   if (mem_limit <= 0) {
@@ -249,7 +249,7 @@ bool os::container_memory_throttle_limit(physical_memory_size_type& value) {
   return true;
 }
 
-bool os::container_used_memory(physical_memory_size_type& value) {
+bool os::Container::used_memory(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong mem_usage = OSContainer::memory_usage_in_bytes();
   if (mem_usage <= 0) {
@@ -261,19 +261,19 @@ bool os::container_used_memory(physical_memory_size_type& value) {
 }
 
 bool os::available_memory(physical_memory_size_type& value) {
-  if (is_containerized() && container_available_memory(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("available container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
-  return machine_available_memory(value);
+  return Machine::available_memory(value);
 }
 
-bool os::machine_available_memory(physical_memory_size_type& value) {
+bool os::Machine::available_memory(physical_memory_size_type& value) {
   return Linux::available_memory(value);
 }
 
-bool os::container_available_memory(physical_memory_size_type& value) {
+bool os::Container::available_memory(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   julong avail_mem = 0;
   if (OSContainer::available_memory_in_container(avail_mem)) {
@@ -310,15 +310,15 @@ bool os::Linux::available_memory(physical_memory_size_type& value) {
 }
 
 bool os::free_memory(physical_memory_size_type& value) {
-  if (is_containerized() && container_available_memory(value)) {
+  if (is_containerized() && Container::available_memory(value)) {
     log_trace(os)("free container memory: " PHYS_MEM_TYPE_FORMAT, value);
     return true;
   }
 
-  return machine_free_memory(value);
+  return Machine::free_memory(value);
 }
 
-bool os::machine_free_memory(physical_memory_size_type& value) {
+bool os::Machine::free_memory(physical_memory_size_type& value) {
   return Linux::free_memory(value);
 }
 
@@ -337,13 +337,13 @@ bool os::Linux::free_memory(physical_memory_size_type& value) {
 }
 
 bool os::total_swap_space(physical_memory_size_type& value) {
-  if (is_containerized() && container_total_swap_space(value)) {
+  if (is_containerized() && Container::total_swap_space(value)) {
     return true;
   } // fallback to the host swap space if the container value fails
-  return machine_total_swap_space(value);
+  return Machine::total_swap_space(value);
 }
 
-bool os::machine_total_swap_space(physical_memory_size_type& value) {
+bool os::Machine::total_swap_space(physical_memory_size_type& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
@@ -354,7 +354,7 @@ bool os::machine_total_swap_space(physical_memory_size_type& value) {
   return true;
 }
 
-bool os::container_total_swap_space(physical_memory_size_type& value) {
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
   jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
@@ -386,7 +386,7 @@ bool os::free_swap_space(physical_memory_size_type& value) {
   }
   size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (is_containerized()) {
-    if (container_free_swap_space(value)) {
+    if (Container::free_swap_space(value)) {
       return true;
     } else {
       // unlimited or not supported. Fall through to return host value
@@ -401,11 +401,11 @@ bool os::free_swap_space(physical_memory_size_type& value) {
   return true;
 }
 
-bool os::machine_free_swap_space(physical_memory_size_type& value) {
+bool os::Machine::free_swap_space(physical_memory_size_type& value) {
   return host_free_swap_f(value);
 }
 
-bool os::container_free_swap_space(physical_memory_size_type& value) {
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
   assert(is_containerized(), "must be running containerized");
   jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
   jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -432,18 +432,18 @@ bool os::container_free_swap_space(physical_memory_size_type& value) {
 physical_memory_size_type os::physical_memory() {
   if (is_containerized()) {
     physical_memory_size_type mem_limit;
-    if (container_memory_limit(mem_limit)) {
+    if (Container::memory_limit(mem_limit)) {
       log_trace(os)("total container memory: " PHYS_MEM_TYPE_FORMAT, mem_limit);
       return mem_limit;
     }
   }
 
-  physical_memory_size_type phys_mem = machine_physical_memory();
+  physical_memory_size_type phys_mem = Machine::physical_memory();
   log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
 }
 
-physical_memory_size_type os::machine_physical_memory() {
+physical_memory_size_type os::Machine::physical_memory() {
   return Linux::physical_memory();
 }
 
@@ -4751,22 +4751,22 @@ int os::active_processor_count() {
   }
 
   if (is_containerized()) {
-    double cpu_quota = container_processor_count();
+    double cpu_quota = Container::processor_count();
     int active_cpus = ceilf(cpu_quota); // Round fractional CPU quota up.
-    assert(active_cpus <= machine_active_processor_count(), "must be");
+    assert(active_cpus <= Machine::active_processor_count(), "must be");
     log_trace(os)("active_processor_count: determined by OSContainer: %d",
                    active_cpus);
     return active_cpus;
   }
 
-  return machine_active_processor_count();
+  return Machine::active_processor_count();
 }
 
-int os::machine_active_processor_count() {
+int os::Machine::active_processor_count() {
   return os::Linux::active_processor_count();
 }
 
-double os::container_processor_count() {
+double os::Container::processor_count() {
   assert(is_containerized(), "must be running containerized");
   return OSContainer::active_processor_count();
 }

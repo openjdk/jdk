@@ -2202,13 +2202,13 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 
 bool os::used_memory(physical_memory_size_type& value) {
   if (is_containerized()) {
-    return container_used_memory(value);
+    return Container::used_memory(value);
   }
 
-  return machine_used_memory(value);
+  return Machine::used_memory(value);
 }
 
-bool os::machine_used_memory(physical_memory_size_type& value) {
+bool os::Machine::used_memory(physical_memory_size_type& value) {
   physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
@@ -2222,43 +2222,43 @@ bool os::is_containerized() {
   return false;
 }
 
-double os::container_processor_count() {
-  assert(is_containerized(), "must be running containerized");
+double os::Container::processor_count() {
+  ShouldNotReachHere();
   return 0.0;
 }
 
-bool os::container_available_memory(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::available_memory(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_used_memory(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::used_memory(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_total_swap_space(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::total_swap_space(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_free_swap_space(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::free_swap_space(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_memory_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::memory_limit(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_memory_soft_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::memory_soft_limit(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 
-bool os::container_memory_throttle_limit(physical_memory_size_type& value) {
-  assert(is_containerized(), "must be running containerized");
+bool os::Container::memory_throttle_limit(physical_memory_size_type& value) {
+  ShouldNotReachHere();
   return false;
 }
 #endif

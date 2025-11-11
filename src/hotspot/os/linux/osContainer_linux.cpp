@@ -122,7 +122,7 @@ bool OSContainer::available_memory_in_container(julong& value) {
 
 jlong OSContainer::memory_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  julong phys_mem = static_cast<julong>(os::machine_physical_memory());
+  julong phys_mem = static_cast<julong>(os::Machine::physical_memory());
   return cgroup_subsystem->memory_limit_in_bytes(phys_mem);
 }
 
