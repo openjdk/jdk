@@ -383,7 +383,8 @@ public class SuspendWithObjectMonitorWait {
                     // resumer thread may have already resumed the
                     // waiter thread.
                 }
-                try { Thread.sleep(1000);
+                try {
+                    Thread.sleep(1000);
                 } catch(Exception e) {}
             }
 
@@ -448,7 +449,8 @@ public class SuspendWithObjectMonitorWait {
                 }
             }
 
-            try { Thread.sleep(1000);
+            try {
+                Thread.sleep(1000);
             } catch(Exception e) {}
 
             checkTestState(TS_RESUMER_RUNNING);
@@ -502,7 +504,8 @@ public class SuspendWithObjectMonitorWait {
                     // resumer thread may have already resumed the
                     // waiter thread.
                 }
-                try { Thread.sleep(1000);
+                try {
+                    Thread.sleep(1000);
                 } catch(Exception e) {}
             }
 
