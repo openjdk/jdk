@@ -200,8 +200,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * selection operation to return early, with the thread's interrupted status set.
  *
  * <p> Code that doesn't invoke any interruptible methods can still respond to interrupt
- * by polling the current thread's interrupt status with
- * {@link Thread#currentThread() Thread.currentThread()}.{@link #isInterrupted() isInterrupted()}.
+ * by polling the current thread's interrupted status with
+ * {@link Thread#currentThread() Thread.currentThread()}.{@link #isInterrupted()
+ * isInterrupted()}.
  *
  * <p> In addition to the {@link #interrupt()} and {@link #isInterrupted()} methods,
  * {@code Thread} also defines the static {@link #interrupted() Thread.interrupted()}
