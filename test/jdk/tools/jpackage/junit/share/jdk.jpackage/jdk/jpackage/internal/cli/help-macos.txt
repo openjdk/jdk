@@ -126,8 +126,8 @@ Options for creating the application launcher(s):
           a list of key, value pairs
           (absolute path or relative to the current directory)
           The keys "arguments", "description", "icon", "java-options",
-          "launcher-as-service", "linux-shortcut", "main-class", "main-jar",
-          "module", "win-console", "win-menu", and "win-shortcut" can be used.
+          "launcher-as-service", "main-class", "main-jar", and "module"
+          can be used.
           These options are added to, or used to overwrite, the original
           command line options to build an additional alternative launcher.
           The main application launcher will be built from the command line
