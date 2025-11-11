@@ -31,7 +31,7 @@
  *
  * In the current jdk builds, this file is first preprocessed to replace
  * @@JCE_DEFAULT_POLICY@ [sic] with "limited" or "unlimited" which is
- * determined by the $(UNLIMTED_CRYPTO) make variable.  This variable is
+ * determined by the $(UNLIMITED_CRYPTO) make variable.  This variable is
  * set by top-level configure script, using either
  * --disable-unlimited-crypto or --enable-unlimited-crypto [default].
  *
