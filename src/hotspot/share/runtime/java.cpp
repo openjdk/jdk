@@ -470,11 +470,25 @@ void before_exit(JavaThread* thread, bool halt) {
   // (one of the callers of before_exit())
   JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
+  if (JvmtiExport::should_post_thread_life()) {
+    JvmtiExport::post_thread_end(thread);
+  }
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution
+  JvmtiExport::post_vm_death();
+  JvmtiAgentList::unload_agents();
+
+  // No user code can be executed in the current thread after this point.
+
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
   WatcherThread::stop();
 
   NativeHeapTrimmer::cleanup();
+
+  // Run before exit and then stop concurrent GC threads.
+  Universe::before_exit();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();
@@ -488,20 +502,6 @@ void before_exit(JavaThread* thread, bool halt) {
     MemMapPrinter::print_all_mappings(tty);
   }
 #endif
-
-  if (JvmtiExport::should_post_thread_life()) {
-    JvmtiExport::post_thread_end(thread);
-  }
-
-  // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::post_vm_death();
-  JvmtiAgentList::unload_agents();
-
-  // No user code can be executed in the current thread after this point.
-
-  // Run before exit and then stop concurrent GC threads.
-  Universe::before_exit();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
