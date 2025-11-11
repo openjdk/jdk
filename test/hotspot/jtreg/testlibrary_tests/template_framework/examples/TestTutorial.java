@@ -1260,7 +1260,7 @@ public class TestTutorial {
                 templateVerify.asToken("v1, v6, v7")
                 let("x6", 42) // escapes the anchor scope
             )),
-            // We left the transparent anchoring scope which lets the DataNames and 
+            // We left the transparent anchoring scope which lets the DataNames and
             // hashtags escape.
             "// x6: #x6\n",
             templateVerify.asToken("v1, v6, v7")
