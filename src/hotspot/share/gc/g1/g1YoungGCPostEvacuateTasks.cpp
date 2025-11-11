@@ -350,11 +350,11 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   //
   // - if it has not been a candidate at the start of collection, it will never
   // changed to be a candidate during the gc (and live).
-  // - any found outstanding (i.e. in the DCQ, or in its remembered set)
-  // references will set the candidate state to false.
+  // - any found outstanding (i.e. in its remembered set, or from the collection
+  // set) references will set the candidate state to false.
   // - there can be no references from within humongous starts regions referencing
   // the object because we never allocate other objects into them.
-  // (I.e. there can be no intra-region references)
+  // (I.e. there can be no intra-region references within humongous objects)
   //
   // It is not required to check whether the object has been found dead by marking
   // or not, in fact it would prevent reclamation within a concurrent cycle, as
@@ -363,16 +363,13 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   // So if at this point in the collection we did not find a reference during gc
   // (or it had enough references to not be a candidate, having many remembered
   // set entries), nobody has a reference to it.
-  // At the start of collection we flush all refinement logs, and remembered sets
-  // are completely up-to-date wrt to references to the humongous object.
   //
-  // So there is no need to re-check remembered set size of the humongous region.
+  // Since remembered sets are only ever updated by concurrent refinement threads
+  // at mutator time, the remembered sets do not need to be checked again.
   //
   // Other implementation considerations:
-  // - never consider object arrays at this time because they would pose
-  // considerable effort for cleaning up the remembered sets. This is
-  // required because stale remembered sets might reference locations that
-  // are currently allocated into.
+  // - never consider non-typeArrays during marking as there is a considerable cost
+  // for maintaining the SATB invariant.
   bool is_reclaimable(uint region_idx) const {
     return G1CollectedHeap::heap()->is_humongous_reclaim_candidate(region_idx);
   }
@@ -393,10 +390,15 @@ public:
     G1HeapRegion* r = _g1h->region_at(region_index);
 
     oop obj = cast_to_oop(r->bottom());
-    guarantee(obj->is_typeArray(),
-              "Only eagerly reclaiming type arrays is supported, but the object "
-              PTR_FORMAT " is not.", p2i(r->bottom()));
-
+    {
+      ResourceMark rm;
+      bool allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
+      bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
+      guarantee(obj->is_typeArray() || (allocated_after_mark_start || !mark_in_progress),
+                "Only eagerly reclaiming primitive arrays is supported, other humongous objects only if allocated after mark start, but the object "
+                PTR_FORMAT " (%s) is not (mark %d allocated after mark: %d).",
+                p2i(r->bottom()), obj->klass()->name()->as_C_string(), mark_in_progress, allocated_after_mark_start);
+    }
     log_debug(gc, humongous)("Reclaimed humongous region %u (object size %zu @ " PTR_FORMAT ")",
                              region_index,
                              obj->size() * HeapWordSize,
@@ -416,6 +418,9 @@ public:
       r->set_containing_set(nullptr);
       _humongous_regions_reclaimed++;
       G1HeapRegionPrinter::eager_reclaim(r);
+      // Humongous non-typeArrays may have dirty card tables. Need to be cleared. Do it
+      // for all types just in case.
+      r->clear_both_card_tables();
       _g1h->free_humongous_region(r, nullptr);
     };
 

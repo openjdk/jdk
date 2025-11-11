@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -53,7 +53,7 @@ import com.sun.org.apache.bcel.internal.util.Args;
  * @see Synthetic
  * @see Deprecated
  * @see Signature
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public abstract class Attribute implements Cloneable, Node {
     private static final boolean debug = false;
@@ -181,6 +181,8 @@ public abstract class Attribute implements Cloneable, Node {
             return new NestHost(nameIndex, length, dataInput, constantPool);
         case Const.ATTR_NEST_MEMBERS:
             return new NestMembers(nameIndex, length, dataInput, constantPool);
+        case Const.ATTR_RECORD:
+            return new Record(nameIndex, length, dataInput, constantPool);
         default:
             // Never reached
             throw new IllegalStateException("Unrecognized attribute type tag parsed: " + tag);
@@ -279,7 +281,7 @@ public abstract class Attribute implements Cloneable, Node {
         try {
             attr = (Attribute) super.clone();
         } catch (final CloneNotSupportedException e) {
-            throw new Error("Clone Not Supported"); // never happens
+            throw new UnsupportedOperationException("Clone Not Supported", e); // never happens
         }
         return attr;
     }

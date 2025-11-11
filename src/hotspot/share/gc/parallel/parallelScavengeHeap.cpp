@@ -51,6 +51,7 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -61,11 +62,18 @@ PSYoungGen*  ParallelScavengeHeap::_young_gen = nullptr;
 PSOldGen*    ParallelScavengeHeap::_old_gen = nullptr;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = nullptr;
 GCPolicyCounters* ParallelScavengeHeap::_gc_policy_counters = nullptr;
+size_t ParallelScavengeHeap::_desired_page_size = 0;
 
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment);
+  assert(_desired_page_size != 0, "Should be initialized");
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, _desired_page_size);
+  // Adjust SpaceAlignment based on actually used large page size.
+  if (UseLargePages) {
+    SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
+  }
+  assert(is_aligned(SpaceAlignment, heap_rs.page_size()), "inv");
 
   trace_actual_reserved_page_size(reserved_heap_size, heap_rs);
 
@@ -79,7 +87,6 @@ jint ParallelScavengeHeap::initialize() {
   card_table->initialize(old_rs.base(), young_rs.base());
 
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
-  barrier_set->initialize();
   BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads
@@ -152,17 +159,6 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
-void ParallelScavengeHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void ParallelScavengeHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -282,9 +278,23 @@ HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_t
     return result;
   }
 
-  // Try allocating from the old gen for non-TLAB in certain scenarios.
+  // Try allocating from the old gen for non-TLAB and large allocations.
   if (!is_tlab) {
-    if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
+    if (!should_alloc_in_eden(size)) {
+      result = old_gen()->cas_allocate_noexpand(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  // In extreme cases, try allocating in from space also.
+  if (_is_heap_almost_full) {
+    result = young_gen()->from_space()->cas_allocate(size);
+    if (result != nullptr) {
+      return result;
+    }
+    if (!is_tlab) {
       result = old_gen()->cas_allocate_noexpand(size);
       if (result != nullptr) {
         return result;
@@ -313,6 +323,14 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         return result;
+      }
+
+      if (!is_init_completed()) {
+        // Can't do GC; try heap expansion to satisfy the request.
+        result = expand_heap_and_allocate(size, is_tlab);
+        if (result != nullptr) {
+          return result;
+        }
       }
 
       gc_count = total_collections();
@@ -365,6 +383,13 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
     bool little_mutator_time = _size_policy->mutator_time_percent() * 100 < (100 - GCTimeLimit);
     bool little_free_space = check_gc_heap_free_limit(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes())
                           && check_gc_heap_free_limit(  _old_gen->free_in_bytes(),   _old_gen->capacity_in_bytes());
+
+    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space Young %f Old %f Counter %zu",
+                  (100 - _size_policy->mutator_time_percent()),
+                  percent_of(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  percent_of(_old_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  _gc_overhead_counter);
+
     if (little_mutator_time && little_free_space) {
       _gc_overhead_counter++;
       if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
@@ -378,8 +403,8 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  // We just finished a young/full gc, try everything to satisfy this allocation request.
+  assert(Heap_lock->is_locked(), "precondition");
+
   HeapWord* result = young_gen()->expand_and_allocate(size);
 
   if (result == nullptr && !is_tlab) {
@@ -417,7 +442,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   }
 
   if (check_gc_overhead_limit()) {
-    log_info(gc)("GCOverheadLimitThreshold %zu reached.", GCOverheadLimitThreshold);
+    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold);
     return nullptr;
   }
 
@@ -431,16 +456,16 @@ void ParallelScavengeHeap::ensure_parsability(bool retire_tlabs) {
   young_gen()->eden_space()->ensure_parsability();
 }
 
-size_t ParallelScavengeHeap::tlab_capacity(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_capacity(thr);
+size_t ParallelScavengeHeap::tlab_capacity() const {
+  return young_gen()->eden_space()->tlab_capacity();
 }
 
-size_t ParallelScavengeHeap::tlab_used(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_used(thr);
+size_t ParallelScavengeHeap::tlab_used() const {
+  return young_gen()->eden_space()->tlab_used();
 }
 
-size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
-  return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
+size_t ParallelScavengeHeap::unsafe_max_tlab_alloc() const {
+  return young_gen()->eden_space()->unsafe_max_tlab_alloc();
 }
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -699,17 +724,14 @@ void ParallelScavengeHeap::print_heap_change(const PreGenGCValues& pre_gc_values
 }
 
 void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
-  // Why do we need the total_collections()-filter below?
-  if (total_collections() > 0) {
-    log_debug(gc, verify)("Tenured");
-    old_gen()->verify();
+  log_debug(gc, verify)("Tenured");
+  old_gen()->verify();
 
-    log_debug(gc, verify)("Eden");
-    young_gen()->verify();
+  log_debug(gc, verify)("Eden");
+  young_gen()->verify();
 
-    log_debug(gc, verify)("CardTable");
-    card_table()->verify_all_young_refs_imprecise();
-  }
+  log_debug(gc, verify)("CardTable");
+  card_table()->verify_all_young_refs_imprecise();
 }
 
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
