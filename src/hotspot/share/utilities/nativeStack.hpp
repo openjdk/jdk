@@ -28,11 +28,21 @@
 #include "globalDefinitions.hpp"
 #include "memory/allStatic.hpp"
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 struct NativeStack : public AllStatic {
   static address current();
 };
 
-#if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
+#ifdef _MSC_VER
+ALWAYSINLINE address NativeStack::current() {
+  CONTEXT context;
+  ::RtlCaptureContext(&context);
+  return reinterpret_cast<address>(X86_ONLY(context.Rsp) AARCH64_ONLY(context.Sp));
+}
+#elif defined(__has_builtin) && __has_builtin(__builtin_stack_address)
 ALWAYSINLINE address NativeStack::current() {
   return static_cast<address>(__builtin_stack_address());
 }
