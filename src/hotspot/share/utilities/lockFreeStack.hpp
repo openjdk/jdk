@@ -25,8 +25,7 @@
 #ifndef SHARE_UTILITIES_LOCKFREESTACK_HPP
 #define SHARE_UTILITIES_LOCKFREESTACK_HPP
 
-#include "runtime/atomic.hpp"
-#include "utilities/atomicNextAccess.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -35,14 +34,11 @@
 // a result, there is no allocation involved in adding objects to the stack
 // or removing them from the stack.
 //
-// To be used in a LockFreeStack of objects of type T, an object of type T
-// must have a list entry member. A list entry member is a data member whose
-// type is either (1) Atomic<T*>, or (2) T* volatile. There must be a
-// non-member or static member function returning a pointer to that member,
-// which is used to provide access to it by a LockFreeStack.  A LockFreeStack
-// is associated with the class of its elements and an entry member from that
-// class by being specialized on the element class and a pointer to the
-// function for accessing that entry member.
+// To be used in a LockFreeStack of objects of type T, an object of
+// type T must have a list entry member of type T* volatile, with an
+// non-member accessor function returning a pointer to that member.  A
+// LockFreeStack is associated with the class of its elements and an
+// entry member from that class.
 //
 // An object can be in multiple stacks at the same time, so long as
 // each stack uses a different entry member. That is, the class of the
@@ -56,12 +52,12 @@
 //
 // \tparam T is the class of the elements in the stack.
 //
-// \tparam next_access is a function pointer.  Applying this function to
+// \tparam next_ptr is a function pointer.  Applying this function to
 // an object of type T must return a pointer to the list entry member
 // of the object associated with the LockFreeStack type.
-template<typename T, auto next_access>
+template<typename T, T* volatile* (*next_ptr)(T&)>
 class LockFreeStack {
-  Atomic<T*> _top;
+  T* volatile _top;
 
   void prepend_impl(T* first, T* last) {
     T* cur = top();
@@ -69,7 +65,7 @@ class LockFreeStack {
     do {
       old = cur;
       set_next(*last, cur);
-      cur = _top.compare_exchange(cur, first);
+      cur = AtomicAccess::cmpxchg(&_top, cur, first);
     } while (old != cur);
   }
 
@@ -93,7 +89,7 @@ public:
         new_top = next(*result);
       }
       // CAS even on empty pop, for consistent membar behavior.
-      result = _top.compare_exchange(result, new_top);
+      result = AtomicAccess::cmpxchg(&_top, result, new_top);
     } while (result != old);
     if (result != nullptr) {
       set_next(*result, nullptr);
@@ -105,7 +101,7 @@ public:
   // list of elements.  Acts as a full memory barrier.
   // postcondition: empty()
   T* pop_all() {
-    return _top.exchange(nullptr);
+    return AtomicAccess::xchg(&_top, (T*)nullptr);
   }
 
   // Atomically adds value to the top of this stack.  Acts as a full
@@ -149,7 +145,7 @@ public:
 
   // Return the most recently pushed element, or nullptr if the stack is empty.
   // The returned element is not removed from the stack.
-  T* top() const { return _top.load_relaxed(); }
+  T* top() const { return AtomicAccess::load(&_top); }
 
   // Return the number of objects in the stack.  There must be no concurrent
   // pops while the length is being determined.
@@ -164,7 +160,7 @@ public:
   // Return the entry following value in the list used by the
   // specialized LockFreeStack class.
   static T* next(const T& value) {
-    return AtomicNextAccess<T, next_access>::next(value);
+    return AtomicAccess::load(next_ptr(const_cast<T&>(value)));
   }
 
   // Set the entry following value to new_next in the list used by the
@@ -172,7 +168,7 @@ public:
   // if value is in an instance of this specialization of LockFreeStack,
   // there must be no concurrent push or pop operations on that stack.
   static void set_next(T& value, T* new_next) {
-    AtomicNextAccess<T, next_access>::set_next(value, new_next);
+    AtomicAccess::store(next_ptr(value), new_next);
   }
 };
 

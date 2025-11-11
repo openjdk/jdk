@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 
@@ -62,15 +62,15 @@ public:
 // to the free list making them available for re-allocation.
 class FreeListAllocator {
   struct FreeNode {
-    Atomic<FreeNode*> _next;
+    FreeNode* volatile _next;
 
     FreeNode() : _next (nullptr) { }
 
-    FreeNode* next() { return _next.load_relaxed(); }
+    FreeNode* next() { return AtomicAccess::load(&_next); }
 
-    Atomic<FreeNode*>* next_addr() { return &_next; }
+    FreeNode* volatile* next_addr() { return &_next; }
 
-    void set_next(FreeNode* next) { _next.store_relaxed(next); }
+    void set_next(FreeNode* next) { AtomicAccess::store(&_next, next); }
   };
 
   struct NodeList {
@@ -85,8 +85,8 @@ class FreeListAllocator {
 
   class PendingList {
     FreeNode* _tail;
-    Atomic<FreeNode*> _head;
-    Atomic<size_t> _count;
+    FreeNode* volatile _head;
+    volatile size_t _count;
 
     NONCOPYABLE(PendingList);
 
@@ -105,7 +105,7 @@ class FreeListAllocator {
     NodeList take_all();
   };
 
-  static Atomic<FreeNode*>* next_ptr(FreeNode& node) { return node.next_addr(); }
+  static FreeNode* volatile* next_ptr(FreeNode& node) { return node.next_addr(); }
   typedef LockFreeStack<FreeNode, &next_ptr> Stack;
 
   FreeListConfig* _config;
@@ -113,12 +113,12 @@ class FreeListAllocator {
 
 #define DECLARE_PADDED_MEMBER(Id, Type, Name) \
   Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_PADDING_SIZE, sizeof(Type))
-  DECLARE_PADDED_MEMBER(1, Atomic<size_t>, _free_count);
+  DECLARE_PADDED_MEMBER(1, volatile size_t, _free_count);
   DECLARE_PADDED_MEMBER(2, Stack, _free_list);
-  DECLARE_PADDED_MEMBER(3, Atomic<bool>, _transfer_lock);
+  DECLARE_PADDED_MEMBER(3, volatile bool, _transfer_lock);
 #undef DECLARE_PADDED_MEMBER
 
-  Atomic<uint> _active_pending_list;
+  volatile uint _active_pending_list;
   PendingList _pending_lists[2];
 
   void delete_list(FreeNode* list);
