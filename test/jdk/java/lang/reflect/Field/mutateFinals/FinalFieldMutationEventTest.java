@@ -95,7 +95,7 @@ class FinalFieldMutationEventTest {
             System.err.println(events);
             if (mutated) {
                 assertEquals(1, events.size(), "1 event expected");
-                checkEvent(events.get(0), field, "java.lang.reflect.Field::setInt");
+                checkEvent(events.get(0), field, "FinalFieldMutationEventTest::testFieldSet");
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }
@@ -129,7 +129,7 @@ class FinalFieldMutationEventTest {
             System.err.println(events);
             if (unreflected) {
                 assertEquals(1, events.size(), "1 event expected");
-                checkEvent(events.get(0), field, "java.lang.invoke.MethodHandles$Lookup::unreflectSetter");
+                checkEvent(events.get(0), field, "FinalFieldMutationEventTest::testUnreflectSetter");
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }

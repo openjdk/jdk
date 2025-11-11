@@ -37,12 +37,10 @@ import jdk.jfr.internal.RemoveFields;
 @Label("Final Field Mutation")
 @Name(Type.EVENT_NAME_PREFIX + "FinalFieldMutation")
 @RemoveFields("duration")
-@StackFilter({"jdk.internal.event.FinalFieldMutationEvent",
-        "java.lang.reflect.Field::postSetFinal",
-        "java.lang.reflect.Field::setFinal",
-        "java.lang.reflect.Field::checkAllowedToUnreflectFinalSetter",
+@StackFilter({
+        "java.lang.reflect.Field",
         "java.lang.reflect.ReflectAccess",
-        "java.lang.invoke.MethodHandles$Lookup::unreflectField"
+        "java.lang.invoke.MethodHandles$Lookup"
 })
 public final class FinalFieldMutationEvent extends MirrorEvent {
 
