@@ -123,35 +123,55 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     if (!UseObjectMonitorTable) {
       assert(tmp1_monitor == tmp1_mark, "should be the same here");
     } else {
+      const Register tmp3_bucket = tmp3;
       Label monitor_found;
+      Label lookup_in_table;
+      Label found_in_cache;
 
       // Load cache address
       la(tmp3_t, Address(xthread, JavaThread::om_cache_oops_offset()));
 
-      const int num_unrolled = 2;
+      const int num_unrolled = OMCache::CAPACITY;
       for (int i = 0; i < num_unrolled; i++) {
         ld(tmp1, Address(tmp3_t));
-        beq(obj, tmp1, monitor_found);
+        beq(obj, tmp1, found_in_cache);
         add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
       }
 
-      Label loop;
+      j(lookup_in_table);
 
-      // Search for obj in cache.
-      bind(loop);
+      bind(found_in_cache);
+      ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
+      j(monitor_found);
 
-      // Check for match.
-      ld(tmp1, Address(tmp3_t));
-      beq(obj, tmp1, monitor_found);
+      bind(lookup_in_table);
 
-      // Search until null encountered, guaranteed _null_sentinel at end.
-      add(tmp3_t, tmp3_t, in_bytes(OMCache::oop_to_oop_difference()));
-      bnez(tmp1, loop);
-      // Cache Miss. Take the slowpath.
-      j(slow_path);
+      // Grab hash code
+      srli(tmp1, tmp1_mark, markWord::hash_shift);
+
+      // Get the table and calculate bucket
+      la(tmp3_t, ExternalAddress(ObjectMonitorTable::current_table_address()));
+      ld(tmp3_t, Address(tmp3_t));
+      ld(tmp2, Address(tmp3_t, ObjectMonitorTable::table_capacity_mask_offset()));
+      andr(tmp1, tmp1, tmp2);
+      ld(tmp3_t, Address(tmp3_t, ObjectMonitorTable::table_buckets_offset()));
+      slli(tmp1, tmp1, LogBytesPerWord);
+      add(tmp3_bucket, tmp3_t, tmp1);
+
+      // Read monitor from bucket
+      ld(tmp1_monitor, Address(tmp3_bucket));
+
+      // Check if empty slot, removed slot or tomb stone
+      li(tmp2, 2);
+      bleu(tmp1_monitor, tmp2, slow_path);
+
+      // Check if object matches
+      ld(tmp3, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+      bs_asm->try_resolve_weak_handle_in_c2(this, tmp3, tmp2, slow_path);
+      bne(tmp3, obj, slow_path);
 
       bind(monitor_found);
-      ld(tmp1_monitor, Address(tmp3_t, OMCache::oop_to_monitor_difference()));
     }
 
     const Register tmp2_owner_addr = tmp2;
