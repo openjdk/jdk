@@ -46,7 +46,7 @@ import jdk.javadoc.doclet.Taglet;
 import static com.sun.source.doctree.DocTree.Kind.*;
 
 /**
- * A base class for block tags to insert a link to an external copy of JLS or JVMS.
+ * A base class for block tags to insert a link to a local copy of JLS or JVMS.
  * The tags can be used as follows:
  *
  * <pre>
@@ -66,6 +66,9 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * <dt>See <i>Java Language Specification</i>:
  * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4 Line terminators</a>
  * }</pre>
+ *
+ * Copies of JLS and JVMS are expected to have been placed in the {@code specs}
+ * folder. These documents are not included in open-source repositories.
  */
 public class JSpec implements Taglet  {
 
