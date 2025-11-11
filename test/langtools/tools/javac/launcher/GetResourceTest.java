@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8210009 8321739
- * @summary Source Launcher classloader should support getResource and getResourceAsStream
+ * @bug 8210009 8321739 8336470
+ * @summary Source Launcher classloader should support getResource/s and getResourceAsStream
  * @modules jdk.compiler
  * @library /tools/lib
  * @build toolbox.JavaTask toolbox.ToolBox
@@ -44,12 +44,12 @@ import toolbox.ToolBox;
  * in order to test the classloader used to launch such programs.
  */
 public class GetResourceTest {
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
         GetResourceTest t = new GetResourceTest();
         t.run();
     }
 
-    void run() throws Exception {
+    void run() {
         ToolBox tb = new ToolBox();
         Path file = Paths.get(tb.testSrc).resolve("src/p/q").resolve("CLTest.java");
         new JavaTask(tb)

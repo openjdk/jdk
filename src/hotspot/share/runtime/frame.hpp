@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,7 @@ class frame {
   address get_deopt_original_pc() const;
 
   void set_pc(address newpc);
+  void adjust_pc(address newpc);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
   void set_sp( intptr_t* newsp ) { _sp = newsp; }
@@ -455,7 +456,8 @@ class frame {
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
-  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true) const;
+  template <typename RegisterMapT>
+  void oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool query_oop_map_cache = true) const;
 
  private:
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
@@ -503,6 +505,18 @@ class frame {
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
+#endif
+
+#if INCLUDE_JFR
+  // Static helper routines
+  static address interpreter_bcp(const intptr_t* fp);
+  static address interpreter_return_address(const intptr_t* fp);
+  static intptr_t* interpreter_sender_sp(const intptr_t* fp);
+  static bool is_interpreter_frame_setup_at(const intptr_t* fp, const void* sp);
+  static intptr_t* sender_sp(intptr_t* fp);
+  static intptr_t* link(const intptr_t* fp);
+  static address return_address(const intptr_t* sp);
+  static intptr_t* fp(const intptr_t* sp);
 #endif
 
 #include CPU_HEADER(frame)

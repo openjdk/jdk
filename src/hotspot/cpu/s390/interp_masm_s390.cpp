@@ -93,8 +93,6 @@ void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr, bool
 // Dispatch value in Lbyte_code and increment Lbcp.
 
 void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bool generate_poll) {
-  verify_FPU(1, state);
-
 #ifdef ASSERT
   address reentry = nullptr;
   { Label OK;
@@ -106,7 +104,15 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
   }
   { Label OK;
     // check if the locals pointer in Z_locals is correct
-    z_cg(Z_locals, _z_ijava_state_neg(locals), Z_fp);
+
+    // _z_ijava_state_neg(locals)) is fp relativized, so we need to
+    // extract the pointer.
+
+    z_lg(Z_R1_scratch, Address(Z_fp, _z_ijava_state_neg(locals)));
+    z_sllg(Z_R1_scratch, Z_R1_scratch, Interpreter::logStackElementSize);
+    z_agr(Z_R1_scratch, Z_fp);
+
+    z_cgr(Z_locals, Z_R1_scratch);
     z_bre(OK);
     reentry = stop_chain_static(reentry, "invalid locals pointer Z_locals: " FILE_AND_LINE);
     bind(OK);
@@ -446,7 +452,7 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
 // Useful if consumed previously by access via stackTop().
 void InterpreterMacroAssembler::popx(int len) {
   add2reg(Z_esp, len*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 // Get Address object of stack top. No checks. No pop.
@@ -460,38 +466,38 @@ void InterpreterMacroAssembler::pop_i(Register r) {
   z_l(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_ptr(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_l(Register r) {
   z_lg(r, Interpreter::expr_offset_in_bytes(0), Z_esp);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_f(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), false);
   add2reg(Z_esp, Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::pop_d(FloatRegister f) {
   mem2freg_opt(f, Address(Z_esp, Interpreter::expr_offset_in_bytes(0)), true);
   add2reg(Z_esp, 2*Interpreter::stackElementSize);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   z_st(r, Address(Z_esp));
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
@@ -503,7 +509,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_l(Register r) {
   assert_different_registers(r, Z_R1_scratch);
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   z_stg(r, Address(Z_esp, offset));
   clear_mem(Address(Z_esp), Interpreter::stackElementSize);
@@ -511,13 +517,13 @@ void InterpreterMacroAssembler::push_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister f) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   freg2mem_opt(f, Address(Z_esp), false);
   add2reg(Z_esp, -Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister d) {
-  debug_only(verify_esp(Z_esp, Z_R1_scratch));
+  DEBUG_ONLY(verify_esp(Z_esp, Z_R1_scratch));
   int offset = -Interpreter::stackElementSize;
   freg2mem_opt(d, Address(Z_esp, offset));
   add2reg(Z_esp, 2 * offset);
@@ -569,8 +575,17 @@ void InterpreterMacroAssembler::store_ptr(int n, Register val) {
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted(Register method) {
   // Satisfy interpreter calling convention (see generate_normal_entry()).
   z_lgr(Z_R10, Z_SP); // Set sender sp (aka initial caller sp, aka unextended sp).
-  // Record top_frame_sp, because the callee might modify it, if it's compiled.
-  z_stg(Z_SP, _z_ijava_state_neg(top_frame_sp), Z_fp);
+#ifdef ASSERT
+  NearLabel ok;
+  Register tmp = Z_R1;
+  z_lg(tmp, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+  z_slag(tmp, tmp, Interpreter::logStackElementSize);
+  z_agr(tmp, Z_fp);
+  z_cgr(tmp, Z_SP);
+  z_bre(ok);
+  stop("corrupted top_frame_sp");
+  bind(ok);
+#endif
   save_bcp();
   save_esp();
   z_lgr(Z_method, method); // Set Z_method (kills Z_fp!).
@@ -618,7 +633,7 @@ void InterpreterMacroAssembler::verify_esp(Register Resp, Register Rtemp) {
     // i.e. IJAVA_STATE.monitors > Resp.
     NearLabel OK;
     Register Rmonitors = Rtemp;
-    z_lg(Rmonitors, _z_ijava_state_neg(monitors), Z_fp);
+    get_monitors(Rmonitors);
     compareU64_and_branch(Rmonitors, Resp, bcondHigh, OK);
     reentry = stop_chain_static(reentry, "too many pops: Z_esp points into monitor area");
     bind(OK);
@@ -656,21 +671,46 @@ void InterpreterMacroAssembler::restore_bcp() {
   z_lg(Z_bcp, Address(Z_fp, _z_ijava_state_neg(bcp)));
 }
 
-void InterpreterMacroAssembler::save_esp() {
-  z_stg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+void InterpreterMacroAssembler::save_esp(Register fp) {
+  if (fp == noreg) {
+    fp = Z_fp;
+  }
+  z_sgrk(Z_R0, Z_esp, fp);
+  z_srag(Z_R0, Z_R0, Interpreter::logStackElementSize);
+  z_stg(Z_R0, Address(fp, _z_ijava_state_neg(esp)));
 }
 
 void InterpreterMacroAssembler::restore_esp() {
   asm_assert_ijava_state_magic(Z_esp);
   z_lg(Z_esp, Address(Z_fp, _z_ijava_state_neg(esp)));
+  z_slag(Z_esp, Z_esp, Interpreter::logStackElementSize);
+  z_agr(Z_esp, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_monitors(Register reg) {
   asm_assert_ijava_state_magic(reg);
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
   mem2reg_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
+  z_slag(reg, reg, Interpreter::logStackElementSize);
+  z_agr(reg, Z_fp);
 }
 
 void InterpreterMacroAssembler::save_monitors(Register reg) {
+#ifdef ASSERT
+  NearLabel ok;
+  z_cg(Z_fp, 0, Z_SP);
+  z_bre(ok);
+  stop("Z_fp is corrupted");
+  bind(ok);
+#endif // ASSERT
+  z_sgr(reg, Z_fp);
+  z_srag(reg, reg, Interpreter::logStackElementSize);
   reg2mem_opt(reg, Address(Z_fp, _z_ijava_state_neg(monitors)));
 }
 
@@ -686,6 +726,8 @@ void InterpreterMacroAssembler::save_mdp(Register mdp) {
 void InterpreterMacroAssembler::restore_locals() {
   asm_assert_ijava_state_magic(Z_locals);
   z_lg(Z_locals, Address(Z_fp, _z_ijava_state_neg(locals)));
+  z_sllg(Z_locals, Z_locals, Interpreter::logStackElementSize);
+  z_agr(Z_locals, Z_fp);
 }
 
 void InterpreterMacroAssembler::get_method(Register reg) {
@@ -829,12 +871,11 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
     Register R_monitor_block_bot = Z_ARG1;
-    const Address monitor_block_top(Z_fp, _z_ijava_state_neg(monitors));
     const Address monitor_block_bot(Z_fp, -frame::z_ijava_state_size);
 
     bind(restart);
     // Starting with top-most entry.
-    z_lg(R_current_monitor, monitor_block_top);
+    get_monitors(R_current_monitor);
     // Points to word before bottom of monitor block.
     load_address(R_monitor_block_bot, monitor_block_bot);
     z_bru(entry);
@@ -973,109 +1014,18 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  (Z_R11, Z_R2) - Address of the object to be locked.
 //  templateTable (monitorenter) is using Z_R2 for object
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
-
-  if (LockingMode == LM_MONITOR) {
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-    return;
-  }
-
-  // template code: (for LM_LEGACY)
-  //
-  // markWord displaced_header = obj->mark().set_unlocked();
-  // monitor->lock()->set_displaced_header(displaced_header);
-  // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-  //   // We stored the monitor address into the object's mark word.
-  // } else if (THREAD->is_lock_owned((address)displaced_header))
-  //   // Simple recursive case.
-  //   monitor->lock()->set_displaced_header(nullptr);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorenter(THREAD, monitor);
-  // }
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   const Register header           = Z_ARG5;
-  const Register object_mark_addr = Z_ARG4;
-  const Register current_header   = Z_ARG5;
   const Register tmp              = Z_R1_scratch;
 
   NearLabel done, slow_case;
 
-  // markWord header = obj->mark().set_unlocked();
-
-  if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(tmp, object);
-    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
-    z_btrue(slow_case);
-  }
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(monitor, object, header, tmp, slow_case);
-  } else if (LockingMode == LM_LEGACY) {
-
-    // Load markWord from object into header.
-    z_lg(header, hdr_offset, object);
-
-    // Set header to be (markWord of object | UNLOCK_VALUE).
-    // This will not change anything if it was unlocked before.
-    z_oill(header, markWord::unlocked_value);
-
-    // monitor->lock()->set_displaced_header(displaced_header);
-    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-    const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
-
-    // Initialize the box (Must happen before we update the object mark!).
-    z_stg(header, mark_offset, monitor);
-
-    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
-
-    // not necessary, use offset in instruction directly.
-    // add2reg(object_mark_addr, hdr_offset, object);
-
-    // Store stack address of the BasicObjectLock (this is monitor) into object.
-    z_csg(header, monitor, hdr_offset, object);
-    assert(current_header == header,
-           "must be same register"); // Identified two registers from z/Architecture.
-
-    z_bre(done);
-
-    // } else if (THREAD->is_lock_owned((address)displaced_header))
-    //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(nullptr);
-
-    // We did not see an unlocked object so try the fast recursive case.
-
-    // Check if owner is self by comparing the value in the markWord of object
-    // (current_header) with the stack pointer.
-    z_sgr(current_header, Z_SP);
-
-    assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-
-    // The prior sequence "LGR, NGR, LTGR" can be done better
-    // (Z_R1 is temp and not used after here).
-    load_const_optimized(Z_R0, (~(os::vm_page_size() - 1) | markWord::lock_mask_in_place));
-    z_ngr(Z_R0, current_header); // AND sets CC (result eq/ne 0)
-
-    // If condition is true we are done and hence we can store 0 in the displaced
-    // header indicating it is a recursive lock and be done.
-    z_brne(slow_case);
-    z_release();  // Member unnecessary on zarch AND because the above csg does a sync before and after.
-    z_stg(Z_R0/*==0!*/, mark_offset, monitor);
-  }
+  fast_lock(monitor, object, header, tmp, slow_case);
   z_bru(done);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorenter(THREAD, monitor);
 
-  // None of the above fast optimizations worked so we have to get into the
-  // slow case of monitor enter.
   bind(slow_case);
   call_VM(noreg,
           CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
           monitor);
-  // }
-
   bind(done);
 }
 
@@ -1087,28 +1037,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
-
-  if (LockingMode == LM_MONITOR) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-    return;
-  }
-
-// else {
-  // template code: (for LM_LEGACY):
-  //
-  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
-  //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(nullptr);
-  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-  //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(nullptr);
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorexit(monitor);
-  // }
-
-  const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
   const Register header         = Z_ARG4;
   const Register current_header = Z_R1_scratch;
   Address obj_entry(monitor, BasicObjectLock::obj_offset());
@@ -1124,56 +1052,16 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   assert_different_registers(monitor, object, header, current_header);
 
-  // if ((displaced_header = monitor->displaced_header()) == nullptr) {
-  //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
-  //   monitor->set_obj(nullptr);
-
-  // monitor->lock()->set_displaced_header(displaced_header);
-  const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-  const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
-
   clear_mem(obj_entry, sizeof(oop));
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Test first if we are in the fast recursive case.
-    MacroAssembler::load_and_test_long(header, Address(monitor, mark_offset));
-    z_bre(done); // header == 0 -> goto done
-  }
 
-  // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
-  //   // We swapped the unlocked mark in displaced_header into the object's mark word.
-  //   monitor->set_obj(nullptr);
-
-  // If we still have a lightweight lock, unlock the object and be done.
-  if (LockingMode == LM_LIGHTWEIGHT) {
-
-    lightweight_unlock(object, header, current_header, slow_case);
-
-    z_bru(done);
-  } else {
-    // The markword is expected to be at offset 0.
-    // This is not required on s390, at least not here.
-    assert(hdr_offset == 0, "unlock_object: review code below");
-
-    // We have the displaced header in header. If the lock is still
-    // lightweight, it will contain the monitor address and we'll store the
-    // displaced header back into the object's mark word.
-    z_lgr(current_header, monitor);
-    z_csg(current_header, header, hdr_offset, object);
-    z_bre(done);
-  }
-
-  // } else {
-  //   // Slow path.
-  //   InterpreterRuntime::monitorexit(monitor);
+  fast_unlock(object, header, current_header, slow_case);
+  z_bru(done);
 
   // The lock has been converted into a heavy lock and hence
   // we need to get into the slow case.
   bind(slow_case);
   z_stg(object, obj_entry);   // Restore object entry, has been cleared above.
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
-
-  // }
-
   bind(done);
 }
 
@@ -2036,6 +1924,11 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
   // Adjust stack pointer for additional monitor entry.
   resize_frame(RegisterOrConstant((intptr_t) delta), Z_fp, false);
 
+  // Rtemp3 is free at this point, use it to store top_frame_sp
+  z_sgrk(Rtemp3, Z_SP, Z_fp);
+  z_srag(Rtemp3, Rtemp3, Interpreter::logStackElementSize);
+  reg2mem_opt(Rtemp3, Address(Z_fp, _z_ijava_state_neg(top_frame_sp)));
+
   if (!stack_is_empty) {
     // Must copy stack contents down.
     NearLabel next, done;
@@ -2188,10 +2081,4 @@ void InterpreterMacroAssembler::pop_interpreter_frame(Register return_pc, Regist
   load_const_optimized(Z_ARG3, 0xb00b1);
   z_stg(Z_ARG3, _z_parent_ijava_frame_abi(return_pc), Z_SP);
 #endif
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  if (VerifyFPU) {
-    unimplemented("verifyFPU");
-  }
 }

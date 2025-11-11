@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "concurrentTestRunner.inline.hpp"
 #include "unittest.hpp"
 
@@ -82,7 +82,7 @@ void TestReserveMemorySpecial_test() {
   // Instead try reserving after the first reservation.
   expected_location = result + large_allocation_size;
   actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), os::large_page_size(), expected_location, false);
-  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can’t verify correct location";
+  EXPECT_TRUE(actual_location != nullptr) << "Unexpected reservation failure, can't verify correct location";
   EXPECT_TRUE(actual_location == expected_location) << "Reservation must be at requested location";
   MemoryReleaser m2(actual_location, os::large_page_size());
 
@@ -90,7 +90,7 @@ void TestReserveMemorySpecial_test() {
   const size_t alignment = os::large_page_size() * 2;
   const size_t new_large_size = alignment * 4;
   char* aligned_request = os::reserve_memory_special(new_large_size, alignment, os::large_page_size(), nullptr, false);
-  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can’t verify correct alignment";
+  EXPECT_TRUE(aligned_request != nullptr) << "Unexpected reservation failure, can't verify correct alignment";
   EXPECT_TRUE(is_aligned(aligned_request, alignment)) << "Returned address must be aligned";
   MemoryReleaser m3(aligned_request, new_large_size);
 }
@@ -376,7 +376,7 @@ static void record_path(char const* name, char const* len_name, wchar_t* path) {
 
   if (convert_to_cstring(buf, JVM_MAXPATHLEN, path)) {
     ::testing::Test::RecordProperty(name, buf);
-    os::snprintf(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
+    os::snprintf_checked(buf, JVM_MAXPATHLEN, "%d", (int) wcslen(path));
     ::testing::Test::RecordProperty(len_name, buf);
   }
 }
@@ -756,7 +756,6 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
   size_t decided_large_page_size = os::win32::large_page_init_decide_size();
   EXPECT_GT(decided_large_page_size, default_page_size) << "Large page size should be greater than the default page size for LargePageSizeInBytes = 4 * min_size";
 
-#if !defined(IA32)
   size_t page_size_count = 0;
   size_t page_size = os::page_sizes().largest();
 
@@ -773,7 +772,6 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
     EXPECT_TRUE(page_size % min_size == 0) << "Each page size should be a multiple of the minimum large page size.";
     EXPECT_LE(page_size, large_page_size) << "Page size should not exceed the determined large page size.";
   }
-#endif
 }
 
 TEST_VM(os_windows, large_page_init_decide_size) {
@@ -809,11 +807,11 @@ TEST_VM(os_windows, large_page_init_decide_size) {
     EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * M); // Set large page size to 5MB
   if (!EnableAllLargePageSizesForWindows) {
     decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
-    EXPECT_EQ(decided_size, size_t{0}) << "Expected decided size to be 0 for large pages bigger than 4mb on IA32 or AMD64";
+    EXPECT_EQ(decided_size, size_t{0}) << "Expected decided size to be 0 for large pages bigger than 4mb on AMD64";
   }
 #endif
 

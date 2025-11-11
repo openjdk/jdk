@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug 8348038
+ * @bug 8348038 8350007
  * @summary Verify use of "-XDignore.symbol.file=true" doesn't cause assertion failure
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -42,7 +41,7 @@ public class JavadocIgnoreSymbolFile {
         try (PrintWriter pw = new PrintWriter(buf)) {
             jdk.javadoc.internal.tool.Main.execute(javadocArgs, pw);
         }
-        String expected = "error: No modules, packages or classes specified. 1 error";
+        String expected = "Usage: javadoc [options] [packagenames] [sourcefiles] [@files] For more details on available options, use --help or --help-extra error: No modules, packages or classes specified. 1 error";
         String actual = buf.toString().trim().replaceAll("\\s+", " ");
         if (!actual.equals(expected))
             throw new AssertionError("unexpected output:\n" + actual);

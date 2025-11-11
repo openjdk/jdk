@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
 
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -88,7 +88,7 @@ class NMTUtil : AllStatic {
 
   // Map memory tag to index
   static inline int tag_to_index(MemTag mem_tag) {
-    assert(tag_is_valid(mem_tag), "Invalid type (%u)", (unsigned)mem_tag);
+    assert(tag_is_valid(mem_tag), "Invalid tag (%u)", (unsigned)mem_tag);
     return static_cast<int>(mem_tag);
   }
 
@@ -104,7 +104,7 @@ class NMTUtil : AllStatic {
 
   // Map an index to memory tag
   static MemTag index_to_tag(int index) {
-    assert(tag_index_is_valid(index), "Invalid type index (%d)", index);
+    assert(tag_index_is_valid(index), "Invalid tag index (%d)", index);
     return static_cast<MemTag>(index);
   }
 

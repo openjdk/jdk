@@ -85,5 +85,17 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>
+        <file name="Color live ranges by allocation.js" url="filters/colorLiveRanges.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Hide exception blocks"/>
+        </file>
+        <file name="Show liveness information.js" url="filters/showLiveness.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Color live ranges by allocation"/>
+        </file>
+        <file name="Show register allocation only.js" url="filters/showRegisterAllocationOnly.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Show liveness information"/>
+        </file>
     </folder>
 </filesystem>

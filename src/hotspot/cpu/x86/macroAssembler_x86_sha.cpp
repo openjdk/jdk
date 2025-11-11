@@ -235,17 +235,10 @@ void MacroAssembler::fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1,
 // and state0 and state1 can never use xmm0 register.
 // ofs and limit are used for multi-block byte array.
 // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
-#ifdef _LP64
 void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
   Register buf, Register state, Register ofs, Register limit, Register rsp,
   bool multi_block, XMMRegister shuf_mask) {
-#else
-void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
-  XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
-  Register buf, Register state, Register ofs, Register limit, Register rsp,
-  bool multi_block) {
-#endif
   Label done_hash, loop0;
 
   address K256 = StubRoutines::x86::k256_addr();
@@ -260,9 +253,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
   palignr(state0, state1, 8);
   pblendw(state1, msgtmp4, 0xF0);
 
-#ifdef _LP64
   movdqu(shuf_mask, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   lea(rax, ExternalAddress(K256));
 
   bind(loop0);
@@ -271,11 +262,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 0-3
   movdqu(msg, Address(buf, 0));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp0, msg);
   paddd(msg, Address(rax, 0));
   sha256rnds2(state1, state0);
@@ -284,11 +271,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 4-7
   movdqu(msg, Address(buf, 16));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp1, msg);
   paddd(msg, Address(rax, 16));
   sha256rnds2(state1, state0);
@@ -298,11 +281,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 8-11
   movdqu(msg, Address(buf, 32));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp2, msg);
   paddd(msg, Address(rax, 32));
   sha256rnds2(state1, state0);
@@ -312,11 +291,7 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   // Rounds 12-15
   movdqu(msg, Address(buf, 48));
-#ifdef _LP64
   pshufb(msg, shuf_mask);
-#else
-  pshufb(msg, ExternalAddress(pshuffle_byte_flip_mask));
-#endif
   movdqa(msgtmp3, msg);
   paddd(msg, Address(rax, 48));
   sha256rnds2(state1, state0);
@@ -491,10 +466,9 @@ void MacroAssembler::fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegiste
 
 }
 
-#ifdef _LP64
 /*
   The algorithm below is based on Intel publication:
-  "Fast SHA-256 Implementations on Intelë Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
+  "Fast SHA-256 Implementations on Intel(R) Architecture Processors" by Jim Guilford, Kirk Yap and Vinodh Gopal.
   The assembly code was originally provided by Sean Gulley and in many places preserves
   the original assembly NAMES and comments to simplify matching Java assembly with its original.
   The Java version was substantially redesigned to replace 1200 assembly instruction with
@@ -1537,7 +1511,7 @@ void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Re
     //ymm13 = A B E F, ymm14 = C D G H
 
     lea(rax, ExternalAddress(K512_W));
-    align(32);
+    align(CodeEntryAlignment);
     bind(block_loop);
     vmovdqu(xmm11, xmm13);//ABEF
     vmovdqu(xmm12, xmm14);//CDGH
@@ -1696,6 +1670,3 @@ void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Re
 
     bind(done_hash);
 }
-
-#endif //#ifdef _LP64
-

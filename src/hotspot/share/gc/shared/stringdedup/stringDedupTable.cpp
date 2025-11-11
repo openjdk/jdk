@@ -22,6 +22,8 @@
  *
  */
 
+#include "cds/aotMappedHeapLoader.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -33,10 +35,10 @@
 #include "gc/shared/stringdedup/stringDedupConfig.hpp"
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
-#include "memory/allocation.hpp"
-#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/access.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -243,20 +245,20 @@ void StringDedup::Table::num_dead_callback(size_t num_dead) {
   // Lock while modifying dead count and state.
   MonitorLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
 
-  switch (Atomic::load(&_dead_state)) {
+  switch (AtomicAccess::load(&_dead_state)) {
   case DeadState::good:
-    Atomic::store(&_dead_count, num_dead);
+    AtomicAccess::store(&_dead_count, num_dead);
     break;
 
   case DeadState::wait1:
     // Set count first, so dedup thread gets this or a later value if it
     // sees the good state.
-    Atomic::store(&_dead_count, num_dead);
-    Atomic::release_store(&_dead_state, DeadState::good);
+    AtomicAccess::store(&_dead_count, num_dead);
+    AtomicAccess::release_store(&_dead_state, DeadState::good);
     break;
 
   case DeadState::wait2:
-    Atomic::release_store(&_dead_state, DeadState::wait1);
+    AtomicAccess::release_store(&_dead_state, DeadState::wait1);
     break;
 
   case DeadState::cleaning:
@@ -475,19 +477,19 @@ void StringDedup::Table::add(TableValue tv, uint hash_code) {
 }
 
 bool StringDedup::Table::is_dead_count_good_acquire() {
-  return Atomic::load_acquire(&_dead_state) == DeadState::good;
+  return AtomicAccess::load_acquire(&_dead_state) == DeadState::good;
 }
 
 // Should be consistent with cleanup_start_if_needed.
 bool StringDedup::Table::is_grow_needed() {
   return is_dead_count_good_acquire() &&
-         ((_number_of_entries - Atomic::load(&_dead_count)) > _grow_threshold);
+         ((_number_of_entries - AtomicAccess::load(&_dead_count)) > _grow_threshold);
 }
 
 // Should be consistent with cleanup_start_if_needed.
 bool StringDedup::Table::is_dead_entry_removal_needed() {
   return is_dead_count_good_acquire() &&
-         Config::should_cleanup_table(_number_of_entries, Atomic::load(&_dead_count));
+         Config::should_cleanup_table(_number_of_entries, AtomicAccess::load(&_dead_count));
 }
 
 StringDedup::Table::TableValue
@@ -514,6 +516,7 @@ void StringDedup::Table::install(typeArrayOop obj, uint hash_code) {
 // access to a String that is incompletely constructed; the value could be
 // set before the coder.
 bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
+  assert(!HeapShared::is_loading_streaming_mode(), "should not reach here");
   typeArrayOop value = java_lang_String::value(java_string);
   assert(value != nullptr, "precondition");
   assert(TypeArrayKlass::cast(value->klass())->element_type() == T_BYTE, "precondition");
@@ -559,6 +562,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
 }
 
 bool StringDedup::Table::try_deduplicate_found_shared(oop java_string, oop found) {
+  assert(!HeapShared::is_loading_streaming_mode(), "should not reach here");
   _cur_stat.inc_known_shared();
   typeArrayOop found_value = java_lang_String::value(found);
   if (found_value == java_lang_String::value(java_string)) {
@@ -609,7 +613,8 @@ bool StringDedup::Table::deduplicate_if_permitted(oop java_string,
 void StringDedup::Table::deduplicate(oop java_string) {
   assert(java_lang_String::is_instance(java_string), "precondition");
   _cur_stat.inc_inspected();
-  if ((StringTable::shared_entry_count() > 0) &&
+  if (AOTMappedHeapLoader::is_in_use() &&
+      (StringTable::shared_entry_count() > 0) &&
       try_deduplicate_shared(java_string)) {
     return;                     // Done if deduplicated against shared StringTable.
   }
@@ -646,7 +651,7 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
   // If dead count is good then we can read it once and use it below
   // without needing any locking.  The recorded count could increase
   // after the read, but that's okay.
-  size_t dead_count = Atomic::load(&_dead_count);
+  size_t dead_count = AtomicAccess::load(&_dead_count);
   // This assertion depends on dead state tracking.  Otherwise, concurrent
   // reference processing could detect some, but a cleanup operation could
   // remove them before they are reported.
@@ -670,8 +675,8 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
 
 void StringDedup::Table::set_dead_state_cleaning() {
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_dead_count, size_t(0));
-  Atomic::store(&_dead_state, DeadState::cleaning);
+  AtomicAccess::store(&_dead_count, size_t(0));
+  AtomicAccess::store(&_dead_state, DeadState::cleaning);
 }
 
 bool StringDedup::Table::start_resizer(bool grow_only, size_t number_of_entries) {
@@ -705,7 +710,7 @@ void StringDedup::Table::cleanup_end() {
   delete _cleanup_state;
   _cleanup_state = nullptr;
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_dead_state, DeadState::wait2);
+  AtomicAccess::store(&_dead_state, DeadState::wait2);
 }
 
 void StringDedup::Table::verify() {

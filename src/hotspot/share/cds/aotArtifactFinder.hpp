@@ -63,6 +63,7 @@ class TypeArrayKlass;
 //      be AOT-initialized:
 //       - If we discover at least one instance of class X, then class X is AOT-initialized (** Note1).
 //       - If AOTClassInitializer::can_archive_initialized_mirror(X) is true, then X is AOT-initialized.
+//         This function checks for the @jdk.internal.vm.annotation.AOTSafeClassInitializer annotation.
 //    - For each AOT-initialized class, we scan all the static fields in its java mirror. This will in
 //      turn discover more Klasses and java heap objects.
 //    - The scanning continues until we reach a steady state.
@@ -79,6 +80,7 @@ class AOTArtifactFinder : AllStatic {
   static void scan_oops_in_array_class(ArrayKlass* ak);
   static void add_cached_type_array_class(TypeArrayKlass* tak);
   static void add_cached_instance_class(InstanceKlass* ik);
+  static void append_to_all_cached_classes(Klass* k);
 public:
   static void initialize();
   static void find_artifacts();

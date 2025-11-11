@@ -47,8 +47,6 @@ private:
   HeapWord** const _top_at_mark_starts_base;
   HeapWord** const _top_at_mark_starts;
 
-  ShenandoahSharedFlag _is_complete;
-
 public:
   ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions);
 
@@ -86,10 +84,6 @@ public:
 
   bool is_bitmap_clear() const;
   bool is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const;
-
-  bool is_complete();
-  void mark_complete();
-  void mark_incomplete();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

@@ -43,14 +43,17 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
     final PlainHttpPublisher writePublisher;
     volatile SSLTube flow;
 
-    AsyncSSLTunnelConnection(InetSocketAddress addr,
+    AsyncSSLTunnelConnection(Origin originServer,
+                             InetSocketAddress addr,
                              HttpClientImpl client,
                              String[] alpn,
                              InetSocketAddress proxy,
-                             ProxyHeaders proxyHeaders)
+                             ProxyHeaders proxyHeaders,
+                             String label)
     {
-        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn);
-        this.plainConnection = new PlainTunnelingConnection(addr, proxy, client, proxyHeaders);
+        super(originServer, addr, client, alpn, label);
+        this.plainConnection = new PlainTunnelingConnection(originServer, addr, proxy, client,
+                proxyHeaders, label);
         this.writePublisher = new PlainHttpPublisher();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Map;
-import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.WinMsiPackage;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -38,25 +36,6 @@ public class WinExeBundler extends AbstractBundler {
     static {
         System.loadLibrary("jpackage");
     }
-
-    public static final BundlerParamInfo<Path> EXE_IMAGE_DIR
-            = new StandardBundlerParam<>(
-                    "win.exe.imageDir",
-                    Path.class,
-                    params -> {
-                        Path imagesRoot = IMAGES_ROOT.fetchFrom(params);
-                        if (!Files.exists(imagesRoot)) {
-                            try {
-                                Files.createDirectories(imagesRoot);
-                            } catch (IOException ioe) {
-                                return null;
-                            }
-                        }
-                        return imagesRoot.resolve("win-exe.image");
-                    },
-                    (s, p) -> null);
-
-    private static final String EXE_WRAPPER_NAME = "msiwrapper.exe";
 
     @Override
     public String getName() {
@@ -74,12 +53,6 @@ public class WinExeBundler extends AbstractBundler {
     }
 
     @Override
-    public Path execute(Map<String, ? super Object> params,
-            Path outputParentDir) throws PackagerException {
-        return bundle(params, outputParentDir);
-    }
-
-    @Override
     public boolean supported(boolean platformInstaller) {
         return msiBundler.supported(platformInstaller);
     }
@@ -92,67 +65,31 @@ public class WinExeBundler extends AbstractBundler {
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
-        return msiBundler.validate(params);
+        return msiBundler.validate(params, WinFromParams.EXE_PACKAGE);
     }
 
-    public Path bundle(Map<String, ? super Object> params, Path outdir)
+    @Override
+    public Path execute(Map<String, ? super Object> params, Path outdir)
             throws PackagerException {
 
-        IOUtils.writableOutputDir(outdir);
+        // Order is important!
+        var pkg = WinFromParams.EXE_PACKAGE.fetchFrom(params);
+        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        Path exeImageDir = EXE_IMAGE_DIR.fetchFrom(params);
+        var msiOutputDir = env.buildRoot().resolve("msi");
 
-        // Write msi to temporary directory.
-        Path msi = msiBundler.execute(params, exeImageDir);
-
-        try {
-            new ScriptRunner()
-            .setDirectory(msi.getParent())
-            .setResourceCategoryId("resource.post-msi-script")
-            .setScriptNameSuffix("post-msi")
-            .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
-            .run(params);
-
-            return buildEXE(params, msi, outdir);
-        } catch (IOException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
-        }
+        return Packager.<WinMsiPackage>build().outputDir(msiOutputDir)
+                .pkg(pkg.msiPackage())
+                .env(env)
+                .pipelineBuilderMutatorFactory((packagingEnv, msiPackage, _) -> {
+                    var msiPackager = new WinMsiPackager(packagingEnv, msiPackage,
+                            msiOutputDir, msiBundler.sysEnv.orElseThrow());
+                    var exePackager = new WinExePackager(packagingEnv, pkg, outdir, msiOutputDir);
+                    return msiPackager.andThen(exePackager);
+                }).execute(WinPackagingPipeline.build());
     }
 
-    private Path buildEXE(Map<String, ? super Object> params, Path msi,
-            Path outdir) throws IOException {
-
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.outputting-to-location"),
-                outdir.toAbsolutePath().toString()));
-
-        // Copy template msi wrapper next to msi file
-        final Path exePath = PathUtils.replaceSuffix(msi, ".exe");
-        try (InputStream is = OverridableResource.readDefault(EXE_WRAPPER_NAME)) {
-            Files.copy(is, exePath);
-        }
-
-        new ExecutableRebrander().addAction((resourceLock) -> {
-            // Embed msi in msi wrapper exe.
-            embedMSI(resourceLock, msi.toAbsolutePath().toString());
-        }).rebrandInstaller(params, exePath);
-
-        Path dstExePath = outdir.toAbsolutePath().resolve(exePath.getFileName());
-        Files.deleteIfExists(dstExePath);
-
-        Files.copy(exePath, dstExePath);
-
-        dstExePath.toFile().setWritable(true, true);
-
-        Log.verbose(MessageFormat.format(
-                I18N.getString("message.output-location"),
-                outdir.toAbsolutePath().toString()));
-
-        return dstExePath;
-    }
+    static native int embedMSI(long resourceLock, String msiPath);
 
     private final WinMsiBundler msiBundler = new WinMsiBundler();
-
-    private static native int embedMSI(long resourceLock, String msiPath);
 }

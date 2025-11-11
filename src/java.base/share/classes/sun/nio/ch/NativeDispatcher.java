@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * Allows different platforms to call different native methods
@@ -34,6 +36,7 @@ import java.io.IOException;
  */
 
 abstract class NativeDispatcher {
+    private static final JavaIOFileDescriptorAccess JIOFDA = SharedSecrets.getJavaIOFileDescriptorAccess();
 
     abstract int read(FileDescriptor fd, long address, int len)
         throws IOException;
@@ -69,11 +72,28 @@ abstract class NativeDispatcher {
 
     abstract void close(FileDescriptor fd) throws IOException;
 
-    // Prepare the given fd for closing by duping it to a known internal fd
-    // that's already closed.  This is necessary on some operating systems
-    // (Solaris and Linux) to prevent fd recycling.
-    //
-    void preClose(FileDescriptor fd) throws IOException {
+    /**
+     * Prepare the given file descriptor for closing. If a virtual thread is blocked
+     * on the file descriptor then it is unparked so that it stops polling. On Unix systems,
+     * if a platform thread is blocked on the file descriptor then the file descriptor is
+     * dup'ed to a special fd and the thread signalled so that the syscall fails with EINTR.
+     */
+    final void preClose(FileDescriptor fd, long reader, long writer) throws IOException {
+        if (NativeThread.isVirtualThread(reader) || NativeThread.isVirtualThread(writer)) {
+            int fdVal = JIOFDA.get(fd);
+            Poller.stopPoll(fdVal);
+        }
+        if (NativeThread.isNativeThread(reader) || NativeThread.isNativeThread(writer)) {
+            implPreClose(fd, reader, writer);
+        }
+    }
+
+    /**
+     * This method does nothing by default. On Unix systems the file descriptor is dup'ed
+     * to a special fd and native threads signalled.
+     */
+
+    void implPreClose(FileDescriptor fd, long reader, long writer) throws IOException {
         // Do nothing by default; this is only needed on Unix
     }
 

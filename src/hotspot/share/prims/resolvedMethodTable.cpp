@@ -35,7 +35,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -175,7 +175,13 @@ oop ResolvedMethodTable::find_method(const Method* method) {
 
   ResolvedMethodTableLookup lookup(thread, method_hash(method), method);
   ResolvedMethodGet rmg(thread, method);
-  _local_table->get(thread, lookup, rmg);
+  bool rehash_warning = false;
+  _local_table->get(thread, lookup, rmg, &rehash_warning);
+  if (rehash_warning) {
+    // if load factor is low but we need to rehash that's a problem with the hash function.
+    log_info(membername, table)("Rehash warning, load factor %g", get_load_factor());
+    trigger_concurrent_work();
+  }
 
   return rmg.get_res_oop();
 }
@@ -209,11 +215,11 @@ oop ResolvedMethodTable::add_method(const Method* method, Handle rmethod_name) {
 }
 
 void ResolvedMethodTable::item_added() {
-  Atomic::inc(&_items_count);
+  AtomicAccess::inc(&_items_count);
 }
 
 void ResolvedMethodTable::item_removed() {
-  Atomic::dec(&_items_count);
+  AtomicAccess::dec(&_items_count);
   log_trace(membername, table) ("ResolvedMethod entry removed");
 }
 
@@ -252,12 +258,12 @@ void ResolvedMethodTable::gc_notification(size_t num_dead) {
 
 void ResolvedMethodTable::trigger_concurrent_work() {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  Atomic::store(&_has_work, true);
+  AtomicAccess::store(&_has_work, true);
   Service_lock->notify_all();
 }
 
 bool ResolvedMethodTable::has_work() {
-  return Atomic::load_acquire(&_has_work);
+  return AtomicAccess::load_acquire(&_has_work);
 }
 
 void ResolvedMethodTable::do_concurrent_work(JavaThread* jt) {
@@ -269,7 +275,7 @@ void ResolvedMethodTable::do_concurrent_work(JavaThread* jt) {
   } else {
     clean_dead_entries(jt);
   }
-  Atomic::release_store(&_has_work, false);
+  AtomicAccess::release_store(&_has_work, false);
 }
 
 void ResolvedMethodTable::grow(JavaThread* jt) {

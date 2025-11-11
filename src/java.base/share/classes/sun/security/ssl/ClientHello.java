@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,7 +568,7 @@ final class ClientHello {
             }
             if (sessionId.length() == 0 &&
                     chc.maximumActiveProtocol.useTLS13PlusSpec() &&
-                    SSLConfiguration.useCompatibilityMode) {
+                    chc.sslConfig.isUseCompatibilityMode()) {
                 // In compatibility mode, the TLS 1.3 legacy_session_id
                 // field MUST be non-empty, so a client not offering a
                 // pre-TLS 1.3 session MUST generate a new 32-byte value.
@@ -824,6 +824,10 @@ final class ClientHello {
                 SSLLogger.fine(
                     "Negotiated protocol version: " + negotiatedProtocol.name);
             }
+
+            // Protocol version is negotiated, update locally supported
+            // signature schemes according to the protocol being used.
+            SignatureScheme.updateHandshakeLocalSupportedAlgs(context);
 
             // Consume the handshake message for the specific protocol version.
             if (negotiatedProtocol.isDTLS) {

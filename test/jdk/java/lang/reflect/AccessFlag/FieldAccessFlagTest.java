@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,11 @@
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static java.lang.reflect.AccessFlag.*;
 
 /*
  * Field modifiers include:
@@ -54,39 +59,41 @@ public class FieldAccessFlagTest {
         ExpectedFieldFlags expected =
             field.getAnnotation(ExpectedFieldFlags.class);
         if (expected != null) {
-            String actual = field.accessFlags().toString();
-            if (!expected.value().equals(actual)) {
+            Set<AccessFlag> base = EnumSet.noneOf(AccessFlag.class);
+            Collections.addAll(base, expected.value());
+            Set<AccessFlag> actual = field.accessFlags();
+            if (!base.equals(actual)) {
                 throw new RuntimeException("On " + field +
-                                           " expected " + expected.value() +
-                                           " got " + actual);
+                        " expected " + base +
+                        " got " + actual);
             }
         }
     }
 
     // Fields
-    @ExpectedFieldFlags("[PUBLIC, STATIC, FINAL]")
+    @ExpectedFieldFlags({PUBLIC, STATIC, FINAL})
     public static final String f1 = "foo";
 
-    @ExpectedFieldFlags("[PRIVATE, VOLATILE, TRANSIENT]")
+    @ExpectedFieldFlags({PRIVATE, VOLATILE, TRANSIENT})
     private volatile transient String secret = "xxyzzy";
 
-    @ExpectedFieldFlags("[PROTECTED]")
+    @ExpectedFieldFlags({PROTECTED})
     protected String meadow = "";
 
     // Enum constant should have the enum access flag set
     static enum MetaSynVar {
-        @ExpectedFieldFlags("[PUBLIC, STATIC, FINAL, ENUM]")
+        @ExpectedFieldFlags({PUBLIC, STATIC, FINAL, ENUM})
         FOO,
 
-        @ExpectedFieldFlags("[PUBLIC, STATIC, FINAL, ENUM]")
+        @ExpectedFieldFlags({PUBLIC, STATIC, FINAL, ENUM})
         BAR;
 
-        @ExpectedFieldFlags("[PRIVATE]") // no "ENUM"
+        @ExpectedFieldFlags({PRIVATE}) // no "ENUM"
         private int field = 0;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ExpectedFieldFlags {
-        String value();
+        AccessFlag[] value();
     }
 }

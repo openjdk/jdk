@@ -129,12 +129,12 @@ public final class JLinkOptionsTest {
         List<String> mods = List.of(release.get(1));
         if (required != null) {
             for (String s : required) {
-                TKit.assertTextStream(s).label("mods").apply(mods.stream());
+                TKit.assertTextStream(s).label("mods").apply(mods);
             }
         }
         if (prohibited != null) {
             for (String s : prohibited) {
-                TKit.assertTextStream(s).label("mods").negate().apply(mods.stream());
+                TKit.assertTextStream(s).label("mods").negate().apply(mods);
             }
         }
     }
@@ -154,7 +154,7 @@ public final class JLinkOptionsTest {
     }
 
     private final JPackageCommand createJPackageCommand(String javaAppDesc) {
-        return JPackageCommand.helloAppImage(javaAppDesc).ignoreDefaultRuntime(true);
+        return JPackageCommand.helloAppImage(javaAppDesc);
     }
 
     private final Set<String> getModulesInRuntime(String ... jlinkOptions) {

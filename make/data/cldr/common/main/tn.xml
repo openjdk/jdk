@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -336,6 +336,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">monongwaga</relative>
 				<relative type="1">ngwaga o tlang</relative>
 			</field>
+			<field type="month">
+				<relative type="-1">kgwedi e fetileng</relative>
+				<relative type="0">kgwedi eno</relative>
+				<relative type="1">kgwedi e tlang</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">beke e fetileng</relative>
+				<relative type="0">beke eno</relative>
+				<relative type="1">beke e tlang</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">maabane</relative>
+				<relative type="0">gompieno</relative>
+				<relative type="1">kamoso</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">Tshipi e fetileng</relative>
+				<relative type="0">Tshipi eno</relative>
+				<relative type="1">Tshipi e tlang</relative>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<metazone type="GMT">
@@ -347,7 +367,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<group>’</group>
+			<group>'</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>

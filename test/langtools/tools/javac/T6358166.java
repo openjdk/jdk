@@ -75,7 +75,9 @@ public class T6358166 extends AbstractProcessor {
 
         JavacTool tool = JavacTool.create();
         JavacTaskImpl task = (JavacTaskImpl) tool.getTask(null, fm, null, allArgs, null, List.of(f), context);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
 
         JavaCompiler c = JavaCompiler.instance(context);
         if (c.errorCount() != 0)

@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public class WindowsTextAreaUI extends BasicTextAreaUI {
+public final class WindowsTextAreaUI extends BasicTextAreaUI {
     /**
      * Creates the object to use for a caret.  By default an
      * instance of WindowsCaret is created.  This method
@@ -42,6 +42,7 @@ public class WindowsTextAreaUI extends BasicTextAreaUI {
      *
      * @return the caret object
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsTextUI.WindowsCaret();
     }

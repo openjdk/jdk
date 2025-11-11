@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130 8162363
  *      8167967 8172528 8175200 8178830 8182257 8186332 8182765 8025091
- *      8203791 8184205 8249633 8261976
+ *      8203791 8184205 8249633 8261976 8350920 8367007
  * @summary Test of the JavaFX doclet features.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -54,10 +54,17 @@ public class TestJavaFX extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-javafx",
                 "--disable-javafx-strict-checks",
-                "-Xdoclint:all,-missing",
                 "-package",
                 "pkg1");
         checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "C.java:78: warning: no comment");
+        checkOutput(Output.OUT, false,
+                "C.java:59: warning: no comment",
+                "C.java:61: warning: no comment",
+                "C.java:63: warning: no comment",
+                "C.java:67: warning: no comment");
 
         checkOutput("pkg1/C.html", true,
                 """
@@ -89,7 +96,7 @@ public class TestJavaFX extends JavadocTester {
                     r-name-link">rate</a></code></div>
                     <div class="col-last odd-row-color">
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played.</div>""",
+                    be played.</div>""",
                 "<dt>Default value:</dt>",
                 """
                     <dt>Since:</dt>
@@ -154,7 +161,7 @@ public class TestJavaFX extends JavadocTester {
                     span class="return-type"><a href="C.DoubleProperty.html" title="class in pkg1">C\
                     .DoubleProperty</a></span>&nbsp;<span class="element-name">rateProperty</span></div>
                     <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</div>""",
+                    be played. This is the second line.</div>""",
                 """
                     <section class="detail" id="setRate(double)">
                     <h3>setRate</h3>
@@ -166,7 +173,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Parameters:</dt>
@@ -184,7 +191,7 @@ public class TestJavaFX extends JavadocTester {
                     <dl class="notes">
                     <dt>Property description:</dt>
                     <dd>Defines the direction/speed at which the <code>Timeline</code> is expected to
-                     be played. This is the second line.</dd>
+                    be played. This is the second line.</dd>
                     <dt>Default value:</dt>
                     <dd>11</dd>
                     <dt>Returns:</dt>
@@ -241,9 +248,56 @@ public class TestJavaFX extends JavadocTester {
                 """
                     <h3 id="properties-inherited-from-class-pkg1.C">Properties inherited from class&\
                     nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a></h3>
-                    <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code></div>""");
+                    <code><a href="C.html#pausedProperty">paused</a>, <a href="C.html#rateProperty">rate</a></code>
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Type</div>
+                    <div class="table-header col-second">Property</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>final <a href="C.BooleanProperty.htm\
+                    l" title="class in pkg1">C.BooleanProperty</a></code></div>
+                    <div class="col-second even-row-color"><code><a href="C.html#pausedProperty" cla\
+                    ss="member-name-link">paused</a></code></div>
+                    <div class="col-last even-row-color">
+                    <div class="block">Defines if paused.</div>
+                    </div>
+                    <div class="col-first odd-row-color"><code>final <a href="C.DoubleProperty.html"\
+                     title="class in pkg1">C.DoubleProperty</a></code></div>
+                    <div class="col-second odd-row-color"><code><a href="C.html#rateProperty" class=\
+                    "member-name-link">rate</a></code></div>
+                    <div class="col-last odd-row-color">
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>
+                    </div>
+                    </div>
+                    </div>
+                    </section>""");
 
         checkOutput("pkg1/D.html", false, "shouldNotAppear");
+
+        // Test for inherited properties and property methods.
+        checkOrder("pkg1/B.html",
+                """
+                    Properties inherited from class&nbsp;<a href="C.html#property-summary" title="class in pkg1">C</a>""",
+                """
+                    <div class="block">Defines if paused.</div>""",
+                """
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>""",
+                """
+                    Methods inherited from class&nbsp;<a href="C.html#method-summary" title="class in pkg1">C</a>""",
+                """
+                    <div class="block">Gets the value of the <code>rate</code> property.</div>""",
+                """
+                    <div class="block">Gets the value of the <code>paused</code> property.</div>""",
+                """
+                    <div class="block">Defines if paused.</div>""",
+                """
+                    <div class="block">Defines the direction/speed at which the <code>Timeline</code> is expected to
+                    be played.</div>""",
+                """
+                    <div class="block">Sets the value of the <code>paused</code> property.</div>""",
+                """
+                    <div class="block">Sets the value of the <code>rate</code> property.</div>""");
     }
 
     /*

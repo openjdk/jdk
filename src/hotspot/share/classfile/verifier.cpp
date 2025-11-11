@@ -26,12 +26,11 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapFrame.hpp"
+#include "classfile/stackMapTable.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -60,6 +59,9 @@
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51
@@ -138,7 +140,7 @@ static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verif
     // Shared classes shouldn't have stackmaps either.
     // However, bytecodes for shared old classes can be verified because
     // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
+    !(klass->in_aot_cache() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -221,12 +223,9 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If dumping static archive then don't fall back to the old verifier on
-    // verification failure. If a class fails verification with the split verifier,
-    // it might fail the CDS runtime verifier constraint check. In that case, we
-    // don't want to share the class. We only archive classes that pass the split
-    // verifier.
-    bool can_failover = !CDSConfig::is_dumping_static_archive() &&
+    // If dumping {classic, final} static archive, don't bother to run the old verifier, as
+    // the class will be excluded from the archive anyway.
+    bool can_failover = !(CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_final_static_archive()) &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
@@ -234,11 +233,14 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klass->external_name());
       log_info(class, init)("Fail over class verification to old verifier for: %s", klass->external_name());
-      // Exclude any classes that fail over during dynamic dumping
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        SystemDictionaryShared::warn_excluded(klass, "Failed over class verification while dynamic dumping");
+#if INCLUDE_CDS
+      // Exclude any classes that are verified with the old verifier, as the old verifier
+      // doesn't call SystemDictionaryShared::add_verification_constraint()
+      if (CDSConfig::is_dumping_archive()) {
+        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
+#endif
       message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
       exception_message = message_buffer;
       exception_name = inference_verify(
@@ -442,10 +444,10 @@ void ErrorContext::details(outputStream* ss, const Method* method) const {
 }
 
 void ErrorContext::reason_details(outputStream* ss) const {
-  streamIndentor si(ss);
-  ss->indent().print_cr("Reason:");
-  streamIndentor si2(ss);
-  ss->indent().print("%s", "");
+  StreamIndentor si(ss, 2);
+  ss->print_cr("Reason:");
+
+  StreamIndentor si2(ss, 2);
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -503,7 +505,6 @@ void ErrorContext::reason_details(outputStream* ss) const {
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
   if (_bci != -1 && method != nullptr) {
-    streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
     if (method->validate_bci(_bci) != -1) {
       Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
@@ -514,46 +515,50 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
       }
     }
     InstanceKlass* ik = method->method_holder();
-    ss->indent().print_cr("Location:");
-    streamIndentor si2(ss);
-    ss->indent().print_cr("%s.%s%s @%d: %s",
+
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Location:");
+
+    StreamIndentor si2(ss, 2);
+    ss->print_cr("%s.%s%s @%d: %s",
         ik->name()->as_C_string(), method->name()->as_C_string(),
         method->signature()->as_C_string(), _bci, bytecode_name);
   }
 }
 
 void ErrorContext::frame_details(outputStream* ss) const {
-  streamIndentor si(ss);
+  StreamIndentor si(ss, 2);
   if (_type.is_valid() && _type.frame() != nullptr) {
-    ss->indent().print_cr("Current Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Current Frame:");
+    StreamIndentor si2(ss, 2);
     _type.frame()->print_on(ss);
   }
   if (_expected.is_valid() && _expected.frame() != nullptr) {
-    ss->indent().print_cr("Stackmap Frame:");
-    streamIndentor si2(ss);
+    ss->print_cr("Stackmap Frame:");
+    StreamIndentor si2(ss, 2);
     _expected.frame()->print_on(ss);
   }
 }
 
 void ErrorContext::bytecode_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Bytecode:");
-    streamIndentor si2(ss);
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Bytecode:");
+    StreamIndentor si2(ss, 2);
     ss->print_data(method->code_base(), method->code_size(), false);
   }
 }
 
 void ErrorContext::handler_details(outputStream* ss, const Method* method) const {
   if (method != nullptr) {
-    streamIndentor si(ss);
+    StreamIndentor si(ss, 2);
+
     ExceptionTable table(method);
     if (table.length() > 0) {
-      ss->indent().print_cr("Exception Handler Table:");
-      streamIndentor si2(ss);
+      ss->print_cr("Exception Handler Table:");
+      StreamIndentor si2(ss, 2);
       for (int i = 0; i < table.length(); ++i) {
-        ss->indent().print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
+        ss->print_cr("bci [%d, %d] => handler: %d", table.start_pc(i),
             table.end_pc(i), table.handler_pc(i));
       }
     }
@@ -562,17 +567,16 @@ void ErrorContext::handler_details(outputStream* ss, const Method* method) const
 
 void ErrorContext::stackmap_details(outputStream* ss, const Method* method) const {
   if (method != nullptr && method->has_stackmap_table()) {
-    streamIndentor si(ss);
-    ss->indent().print_cr("Stackmap Table:");
+    StreamIndentor si(ss, 2);
+    ss->print_cr("Stackmap Table:");
     Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
         stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
-    streamIndentor si2(ss);
+    StreamIndentor si2(ss, 2);
     int current_offset = -1;
     address end_of_sm_table = (address)sm_table + method->stackmap_data()->length();
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
-      ss->indent();
       if (!sm_frame->verify((address)sm_frame, end_of_sm_table)) {
         sm_frame->print_truncated(ss, current_offset);
         return;
@@ -736,13 +740,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
-  StackMapReader reader(this, &stream, code_data, code_length, THREAD);
-  StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
-                               code_data, code_length, CHECK_VERIFY(this));
+  StackMapReader reader(this, &stream, code_data, code_length, &current_frame, max_locals, max_stack, THREAD);
+  StackMapTable stackmap_table(&reader, CHECK_VERIFY(this));
 
   LogTarget(Debug, verification) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(THREAD);
     LogStream ls(lt);
     stackmap_table.print_on(&ls);
   }
@@ -779,13 +781,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     // Merge with the next instruction
     {
-      int target;
       VerificationType type, type2;
       VerificationType atype;
 
       LogTarget(Debug, verification) lt;
       if (lt.is_enabled()) {
-        ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
         lt.print("offset = %d,  opcode = %s", bci,
@@ -1605,9 +1605,8 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_ifle:
           current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_if_acmpeq :
         case Bytecodes::_if_acmpne :
@@ -1618,19 +1617,16 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_ifnonnull :
           current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
-          target = bcs.dest();
           stackmap_table.check_jump_target
-            (&current_frame, target, CHECK_VERIFY(this));
+            (&current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_goto :
-          target = bcs.dest();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s2(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_goto_w :
-          target = bcs.dest_w();
           stackmap_table.check_jump_target(
-            &current_frame, target, CHECK_VERIFY(this));
+            &current_frame, bcs.bci(), bcs.get_offset_s4(), CHECK_VERIFY(this));
           no_control_flow = true; break;
         case Bytecodes::_tableswitch :
         case Bytecodes::_lookupswitch :
@@ -2037,7 +2033,8 @@ void ClassVerifier::verify_cp_type(
 
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
-  if ((types & (1 << tag)) == 0) {
+  // tags up to JVM_CONSTANT_ExternalMax are verifiable and valid for shift op
+  if (tag > JVM_CONSTANT_ExternalMax || (types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());
@@ -2278,15 +2275,14 @@ void ClassVerifier::verify_switch(
       }
     }
   }
-  int target = bci + default_offset;
-  stackmap_table->check_jump_target(current_frame, target, CHECK_VERIFY(this));
+  stackmap_table->check_jump_target(current_frame, bci, default_offset, CHECK_VERIFY(this));
   for (int i = 0; i < keys; i++) {
     // Because check_jump_target() may safepoint, the bytecode could have
     // moved, which means 'aligned_bcp' is no good and needs to be recalculated.
     aligned_bcp = align_up(bcs->bcp() + 1, jintSize);
-    target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
+    int offset = (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
     stackmap_table->check_jump_target(
-      current_frame, target, CHECK_VERIFY(this));
+      current_frame, bci, offset, CHECK_VERIFY(this));
   }
   NOT_PRODUCT(aligned_bcp = nullptr);  // no longer valid at this point
 }
@@ -2440,209 +2436,6 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   }
 }
 
-// Look at the method's handlers.  If the bci is in the handler's try block
-// then check if the handler_pc is already on the stack.  If not, push it
-// unless the handler has already been scanned.
-void ClassVerifier::push_handlers(ExceptionTable* exhandlers,
-                                  GrowableArray<u4>* handler_list,
-                                  GrowableArray<u4>* handler_stack,
-                                  u4 bci) {
-  int exlength = exhandlers->length();
-  for(int x = 0; x < exlength; x++) {
-    if (bci >= exhandlers->start_pc(x) && bci < exhandlers->end_pc(x)) {
-      u4 exhandler_pc = exhandlers->handler_pc(x);
-      if (!handler_list->contains(exhandler_pc)) {
-        handler_stack->append_if_missing(exhandler_pc);
-        handler_list->append(exhandler_pc);
-      }
-    }
-  }
-}
-
-// Return TRUE if all code paths starting with start_bc_offset end in
-// bytecode athrow or loop.
-bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
-  ResourceMark rm;
-  // Create bytecode stream.
-  RawBytecodeStream bcs(method());
-  int code_length = method()->code_size();
-  bcs.set_start(start_bc_offset);
-
-  // Create stack for storing bytecode start offsets for if* and *switch.
-  GrowableArray<u4>* bci_stack = new GrowableArray<u4>(30);
-  // Create stack for handlers for try blocks containing this handler.
-  GrowableArray<u4>* handler_stack = new GrowableArray<u4>(30);
-  // Create list of handlers that have been pushed onto the handler_stack
-  // so that handlers embedded inside of their own TRY blocks only get
-  // scanned once.
-  GrowableArray<u4>* handler_list = new GrowableArray<u4>(30);
-  // Create list of visited branch opcodes (goto* and if*).
-  GrowableArray<u4>* visited_branches = new GrowableArray<u4>(30);
-  ExceptionTable exhandlers(_method());
-
-  while (true) {
-    if (bcs.is_last_bytecode()) {
-      // if no more starting offsets to parse or if at the end of the
-      // method then return false.
-      if ((bci_stack->is_empty()) || (bcs.end_bci() == code_length))
-        return false;
-      // Pop a bytecode starting offset and scan from there.
-      bcs.set_start(bci_stack->pop());
-    }
-    Bytecodes::Code opcode = bcs.raw_next();
-    int bci = bcs.bci();
-
-    // If the bytecode is in a TRY block, push its handlers so they
-    // will get parsed.
-    push_handlers(&exhandlers, handler_list, handler_stack, bci);
-
-    switch (opcode) {
-      case Bytecodes::_if_icmpeq:
-      case Bytecodes::_if_icmpne:
-      case Bytecodes::_if_icmplt:
-      case Bytecodes::_if_icmpge:
-      case Bytecodes::_if_icmpgt:
-      case Bytecodes::_if_icmple:
-      case Bytecodes::_ifeq:
-      case Bytecodes::_ifne:
-      case Bytecodes::_iflt:
-      case Bytecodes::_ifge:
-      case Bytecodes::_ifgt:
-      case Bytecodes::_ifle:
-      case Bytecodes::_if_acmpeq:
-      case Bytecodes::_if_acmpne:
-      case Bytecodes::_ifnull:
-      case Bytecodes::_ifnonnull: {
-        int target = bcs.dest();
-        if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Pop a bytecode starting offset and scan from there.
-            bcs.set_start(bci_stack->pop());
-          }
-        } else {
-          if (target > bci) { // forward branch
-            if (target >= code_length) return false;
-            // Push the branch target onto the stack.
-            bci_stack->push(target);
-            // then, scan bytecodes starting with next.
-            bcs.set_start(bcs.next_bci());
-          } else { // backward branch
-            // Push bytecode offset following backward branch onto the stack.
-            bci_stack->push(bcs.next_bci());
-            // Check bytecodes starting with branch target.
-            bcs.set_start(target);
-          }
-          // Record target so we don't branch here again.
-          visited_branches->append(bci);
-        }
-        break;
-        }
-
-      case Bytecodes::_goto:
-      case Bytecodes::_goto_w: {
-        int target = (opcode == Bytecodes::_goto ? bcs.dest() : bcs.dest_w());
-        if (visited_branches->contains(bci)) {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Been here before, pop new starting offset from stack.
-            bcs.set_start(bci_stack->pop());
-          }
-        } else {
-          if (target >= code_length) return false;
-          // Continue scanning from the target onward.
-          bcs.set_start(target);
-          // Record target so we don't branch here again.
-          visited_branches->append(bci);
-        }
-        break;
-        }
-
-      // Check that all switch alternatives end in 'athrow' bytecodes. Since it
-      // is  difficult to determine where each switch alternative ends, parse
-      // each switch alternative until either hit a 'return', 'athrow', or reach
-      // the end of the method's bytecodes.  This is gross but should be okay
-      // because:
-      // 1. tableswitch and lookupswitch byte codes in handlers for ctor explicit
-      //    constructor invocations should be rare.
-      // 2. if each switch alternative ends in an athrow then the parsing should be
-      //    short.  If there is no athrow then it is bogus code, anyway.
-      case Bytecodes::_lookupswitch:
-      case Bytecodes::_tableswitch:
-        {
-          address aligned_bcp = align_up(bcs.bcp() + 1, jintSize);
-          int default_offset = Bytes::get_Java_u4(aligned_bcp) + bci;
-          int keys, delta;
-          if (opcode == Bytecodes::_tableswitch) {
-            jint low = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
-            jint high = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
-            // This is invalid, but let the regular bytecode verifier
-            // report this because the user will get a better error message.
-            if (low > high) return true;
-            keys = high - low + 1;
-            delta = 1;
-          } else {
-            keys = (int)Bytes::get_Java_u4(aligned_bcp + jintSize);
-            delta = 2;
-          }
-          // Invalid, let the regular bytecode verifier deal with it.
-          if (keys < 0) return true;
-
-          // Push the offset of the next bytecode onto the stack.
-          bci_stack->push(bcs.next_bci());
-
-          // Push the switch alternatives onto the stack.
-          for (int i = 0; i < keys; i++) {
-            int target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
-            if (target > code_length) return false;
-            bci_stack->push(target);
-          }
-
-          // Start bytecode parsing for the switch at the default alternative.
-          if (default_offset > code_length) return false;
-          bcs.set_start(default_offset);
-          break;
-        }
-
-      case Bytecodes::_return:
-        return false;
-
-      case Bytecodes::_athrow:
-        {
-          if (bci_stack->is_empty()) {
-            if (handler_stack->is_empty()) {
-              return true;
-            } else {
-              // Parse the catch handlers for try blocks containing athrow.
-              bcs.set_start(handler_stack->pop());
-            }
-          } else {
-            // Pop a bytecode offset and starting scanning from there.
-            bcs.set_start(bci_stack->pop());
-          }
-        }
-        break;
-
-      default:
-        ;
-    } // end switch
-  } // end while loop
-
-  return false;
-}
-
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
@@ -2667,25 +2460,6 @@ void ClassVerifier::verify_invoke_init(
     // sure that all catch clause paths end in a throw.  Otherwise, this can
     // result in returning an incomplete object.
     if (in_try_block) {
-      ExceptionTable exhandlers(_method());
-      int exlength = exhandlers.length();
-      for(int i = 0; i < exlength; i++) {
-        u2 start_pc = exhandlers.start_pc(i);
-        u2 end_pc = exhandlers.end_pc(i);
-
-        if (bci >= start_pc && bci < end_pc) {
-          if (!ends_in_athrow(exhandlers.handler_pc(i))) {
-            verify_error(ErrorContext::bad_code(bci),
-              "Bad <init> method call from after the start of a try block");
-            return;
-          } else if (log_is_enabled(Debug, verification)) {
-            ResourceMark rm(THREAD);
-            log_debug(verification)("Survived call to ends_in_athrow(): %s",
-                                          current_class()->name()->as_C_string());
-          }
-        }
-      }
-
       // Check the exception handler target stackmaps with the locals from the
       // incoming stackmap (before initialize_object() changes them to outgoing
       // state).
@@ -2889,26 +2663,43 @@ void ClassVerifier::verify_invoke_instructions(
           "Illegal call to internal method");
       return;
     }
-  } else if (opcode == Bytecodes::_invokespecial
-             && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
-             && !ref_class_type.equals(VerificationType::reference_type(
-                  current_class()->super()->name()))) {
-    bool subtype = false;
-    bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    subtype = ref_class_type.is_assignable_from(
-               current_type(), this, false, CHECK_VERIFY(this));
-    if (!subtype) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "current class isn't assignable to reference class.");
-       return;
-    } else if (have_imr_indirect) {
-      verify_error(ErrorContext::bad_code(bci),
-          "Bad invokespecial instruction: "
-          "interface method reference is in an indirect superinterface.");
-      return;
-    }
+  }
+  // invokespecial, when not <init>, must be to a method in the current class, a direct superinterface,
+  // or any superclass (including Object).
+  else if (opcode == Bytecodes::_invokespecial
+           && !is_same_or_direct_interface(current_class(), current_type(), ref_class_type)
+           && !ref_class_type.equals(VerificationType::reference_type(current_class()->super()->name()))) {
 
+    // We know it is not current class, direct superinterface or immediate superclass. That means it
+    // could be:
+    // - a totally unrelated class or interface
+    // - an indirect superinterface
+    // - an indirect superclass (including Object)
+    // We use the assignability test to see if it is a superclass, or else an interface, and keep track
+    // of the latter. Note that subtype can be true if we are dealing with an interface that is not actually
+    // implemented as assignability treats all interfaces as Object.
+
+    bool is_interface = false; // This can only be set true if the assignability check will return true
+                               // and we loaded the class. For any other "true" returns (e.g. same class
+                               // or Object) we either can't get here (same class already excluded above)
+                               // or we know it is not an interface (i.e. Object).
+    bool subtype = ref_class_type.is_reference_assignable_from(current_type(), this, false,
+                                                               &is_interface, CHECK_VERIFY(this));
+    if (!subtype) {  // Totally unrelated class
+      verify_error(ErrorContext::bad_code(bci),
+                   "Bad invokespecial instruction: "
+                   "current class isn't assignable to reference class.");
+      return;
+    } else {
+      // Indirect superclass (including Object), indirect interface, or unrelated interface.
+      // Any interface use is an error.
+      if (is_interface) {
+        verify_error(ErrorContext::bad_code(bci),
+                     "Bad invokespecial instruction: "
+                     "interface method to invoke is not in a direct superinterface.");
+        return;
+      }
+    }
   }
 
   // Get the verification types for the method's arguments.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -647,6 +647,22 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 TransferHandler.getCopyAction());
         map.put(TransferHandler.getPasteAction().getValue(Action.NAME),
                 TransferHandler.getPasteAction());
+
+        if (getComponent() instanceof JPasswordField) {
+            // Edit the action map for Password Field.  This map provides
+            // same actions for double mouse click and
+            // and for triple mouse click (see bugs 4231444, 8354646).
+
+            if (map.get(DefaultEditorKit.selectWordAction) != null) {
+                map.remove(DefaultEditorKit.selectWordAction);
+
+                Action a = map.get(DefaultEditorKit.selectLineAction);
+                if (a != null) {
+                    map.put(DefaultEditorKit.selectWordAction, a);
+                }
+            }
+        }
+
         return map;
     }
 
@@ -1013,14 +1029,17 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
 
     /**
-     * Gets the allocation to give the root View.  Due
-     * to an unfortunate set of historical events this
-     * method is inappropriately named.  The Rectangle
-     * returned has nothing to do with visibility.
+     * Gets the allocation (that is the allocated size) for the root view.
+     * <p>
+     * The returned rectangle is unrelated to visibility.
+     * It is used to set the size of the root view.
+     * <p>
      * The component must have a non-zero positive size for
      * this translation to be computed.
      *
      * @return the bounding box for the root view
+     * @see View#paint
+     * @see View#setSize
      */
     protected Rectangle getVisibleEditorRect() {
         Rectangle alloc = editor.getBounds();

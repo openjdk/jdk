@@ -46,7 +46,7 @@ class fieldDescriptor {
  public:
   fieldDescriptor() {}
   fieldDescriptor(InstanceKlass* ik, int index) {
-    reinitialize(ik, index);
+    reinitialize(ik, ik->field(index));
   }
   inline Symbol* name() const;
   inline Symbol* signature() const;
@@ -84,6 +84,7 @@ class fieldDescriptor {
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return field_flags().is_stable(); }
+  bool is_injected()              const    { return field_flags().is_injected(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 
@@ -102,7 +103,7 @@ class fieldDescriptor {
   inline void set_has_initialized_final_update(const bool value);
 
   // Initialization
-  void reinitialize(InstanceKlass* ik, int index);
+  void reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo);
 
   // Print
   void print() const;

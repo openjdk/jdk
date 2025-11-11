@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,16 +459,12 @@ protected:
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
-  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
+  PhaseIterGVN();
 
-  // Reset IGVN from GVN: call deconstructor, and placement new.
-  // Achieves the same as the following (but without move constructors):
-  // igvn = PhaseIterGVN(gvn);
-  void reset_from_gvn(PhaseGVN* gvn) {
-    if (this != gvn) {
-      this->~PhaseIterGVN();
-      ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
-    }
+  // Reset IGVN: call deconstructor, and placement new.
+  void reset() {
+    this->~PhaseIterGVN();
+    ::new (static_cast<void*>(this)) PhaseIterGVN();
   }
 
   // Reset IGVN with another: call deconstructor, and placement new.
@@ -494,7 +490,10 @@ public:
   void optimize();
 #ifdef ASSERT
   void verify_optimize();
-  bool verify_node_value(Node* n);
+  bool verify_Value_for(Node* n);
+  bool verify_Ideal_for(Node* n, bool can_reshape);
+  bool verify_Identity_for(Node* n);
+  void verify_empty_worklist(Node* n);
 #endif
 
 #ifndef PRODUCT
@@ -529,7 +528,23 @@ public:
 
   // Add users of 'n' to worklist
   static void add_users_to_worklist0(Node* n, Unique_Node_List& worklist);
+
+  // Add one or more users of 'use' to the worklist if it appears that a
+  // known optimization could be applied to those users.
+  // Node 'n' is a node that was modified or is about to get replaced,
+  // and 'use' is one use of 'n'.
+  // Certain optimizations have dependencies that extend beyond a node's
+  // direct inputs, so it is necessary to ensure the appropriate
+  // notifications are made here.
   static void add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_List& worklist);
+
+  // Add users of 'n', and any other nodes that could be directly
+  // affected by changes to 'n', to the worklist.
+  // Node 'n' may be a node that is about to get replaced. In this
+  // case, 'n' should not be considered part of the new graph.
+  // Passing the old node (as 'n'), rather than the new node,
+  // prevents unnecessary notifications when the new node already
+  // has other users.
   void add_users_to_worklist(Node* n);
 
   // Replace old node with new one.
@@ -593,6 +608,14 @@ public:
     // '-XX:VerifyIterativeGVN=10'
     return ((VerifyIterativeGVN % 100) / 10) == 1;
   }
+  static bool is_verify_Ideal() {
+    // '-XX:VerifyIterativeGVN=100'
+    return ((VerifyIterativeGVN % 1000) / 100) == 1;
+  }
+  static bool is_verify_Identity() {
+    // '-XX:VerifyIterativeGVN=1000'
+    return ((VerifyIterativeGVN % 10000) / 1000) == 1;
+  }
 protected:
   // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
@@ -608,6 +631,7 @@ protected:
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
   Unique_Node_List _root_and_safepoints;
+  Unique_Node_List _maybe_top_type_nodes;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
@@ -626,6 +650,8 @@ class PhaseCCP : public PhaseIterGVN {
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_with_cmpu_and_mask(Unique_Node_List& worklist, const Node* use) const;
+  void push_bool_matching_case1b(Unique_Node_List& worklist, const Node* cmpu) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants

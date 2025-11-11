@@ -78,6 +78,7 @@ public class ClassFileVersionsTest {
         // for JDK 10 through FEATURE.
         for (int i = 10; i <= FEATURE; i++) {
             result.add(new Object[]{ 44 + i, 0, Set.of()});
+            result.add(new Object[]{ 44 + i, 0, Set.of(TRANSITIVE)});
         }
 
         result.add(new Object[]{ 44 + FEATURE,
@@ -110,7 +111,6 @@ public class ClassFileVersionsTest {
         for (int i = 10; i <= FEATURE ; i++) {
             // Major class file version of JDK N is 44+n
             result.add(new Object[]{i + 44, 0, Set.of(STATIC)});
-            result.add(new Object[]{i + 44, 0, Set.of(TRANSITIVE)});
             result.add(new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)});
         }
 

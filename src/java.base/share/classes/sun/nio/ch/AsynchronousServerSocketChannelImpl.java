@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
 
 /**
@@ -69,7 +68,7 @@ abstract class AsynchronousServerSocketChannelImpl
 
     AsynchronousServerSocketChannelImpl(AsynchronousChannelGroupImpl group) {
         super(group.provider());
-        this.fd = Net.serverSocket(true);
+        this.fd = Net.serverSocket();
     }
 
     @Override
@@ -156,7 +155,6 @@ abstract class AsynchronousServerSocketChannelImpl
             synchronized (stateLock) {
                 if (localAddress != null)
                     throw new AlreadyBoundException();
-                NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 Net.listen(fd, backlog < 1 ? 50 : backlog);
                 localAddress = Net.localAddress(fd);

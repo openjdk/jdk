@@ -27,8 +27,9 @@
 
 #include "utilities/concurrentHashTable.hpp"
 
+#include "cppstdlib/type_traits.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -36,8 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
-
-#include <type_traits>
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
@@ -63,7 +62,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Node::next() const
 {
-  return Atomic::load_acquire(&_next);
+  return AtomicAccess::load_acquire(&_next);
 }
 
 // Bucket
@@ -72,7 +71,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::Node*
 ConcurrentHashTable<CONFIG, MT>::
   Bucket::first_raw() const
 {
-  return Atomic::load_acquire(&_first);
+  return AtomicAccess::load_acquire(&_first);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -84,7 +83,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   // Due to this assert this methods is not static.
   assert(is_locked(), "Must be locked.");
   Node** tmp = (Node**)dst;
-  Atomic::release_store(tmp, clear_set_state(node, *dst));
+  AtomicAccess::release_store(tmp, clear_set_state(node, *dst));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -93,7 +92,7 @@ ConcurrentHashTable<CONFIG, MT>::
   Bucket::first() const
 {
   // We strip the states bit before returning the ptr.
-  return clear_state(Atomic::load_acquire(&_first));
+  return clear_state(AtomicAccess::load_acquire(&_first));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -150,7 +149,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   if (is_locked()) {
     return false;
   }
-  if (Atomic::cmpxchg(&_first, expect, node) == expect) {
+  if (AtomicAccess::cmpxchg(&_first, expect, node) == expect) {
     return true;
   }
   return false;
@@ -165,7 +164,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
   }
   // We will expect a clean first pointer.
   Node* tmp = first();
-  if (Atomic::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
+  if (AtomicAccess::cmpxchg(&_first, tmp, set_state(tmp, STATE_LOCK_BIT)) == tmp) {
     return true;
   }
   return false;
@@ -178,7 +177,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(is_locked(), "Must be locked.");
   assert(!have_redirect(),
          "Unlocking a bucket after it has reached terminal state.");
-  Atomic::release_store(&_first, clear_state(first()));
+  AtomicAccess::release_store(&_first, clear_state(first()));
 }
 
 template <typename CONFIG, MemTag MT>
@@ -186,7 +185,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   Bucket::redirect()
 {
   assert(is_locked(), "Must be locked.");
-  Atomic::release_store(&_first, set_state(_first, STATE_REDIRECT_BIT));
+  AtomicAccess::release_store(&_first, set_state(_first, STATE_REDIRECT_BIT));
 }
 
 // InternalTable
@@ -222,8 +221,8 @@ inline ConcurrentHashTable<CONFIG, MT>::
       _cs_context(GlobalCounter::critical_section_begin(_thread))
 {
   // This version is published now.
-  if (Atomic::load_acquire(&_cht->_invisible_epoch) != nullptr) {
-    Atomic::release_store_fence(&_cht->_invisible_epoch, (Thread*)nullptr);
+  if (AtomicAccess::load_acquire(&_cht->_invisible_epoch) != nullptr) {
+    AtomicAccess::release_store_fence(&_cht->_invisible_epoch, (Thread*)nullptr);
   }
 }
 
@@ -294,13 +293,13 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   assert(_resize_lock_owner == thread, "Re-size lock not held");
   OrderAccess::fence(); // Prevent below load from floating up.
   // If no reader saw this version we can skip write_synchronize.
-  if (Atomic::load_acquire(&_invisible_epoch) == thread) {
+  if (AtomicAccess::load_acquire(&_invisible_epoch) == thread) {
     return;
   }
   assert(_invisible_epoch == nullptr, "Two thread doing bulk operations");
   // We set this/next version that we are synchronizing for to not published.
   // A reader will zero this flag if it reads this/next version.
-  Atomic::release_store(&_invisible_epoch, thread);
+  AtomicAccess::release_store(&_invisible_epoch, thread);
   GlobalCounter::write_synchronize();
 }
 
@@ -379,7 +378,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::InternalTable*
 ConcurrentHashTable<CONFIG, MT>::
   get_table() const
 {
-  return Atomic::load_acquire(&_table);
+  return AtomicAccess::load_acquire(&_table);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -387,7 +386,7 @@ inline typename ConcurrentHashTable<CONFIG, MT>::InternalTable*
 ConcurrentHashTable<CONFIG, MT>::
   get_new_table() const
 {
-  return Atomic::load_acquire(&_new_table);
+  return AtomicAccess::load_acquire(&_new_table);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -397,7 +396,7 @@ ConcurrentHashTable<CONFIG, MT>::
 {
   InternalTable* old_table = _table;
   // Publish the new table.
-  Atomic::release_store(&_table, _new_table);
+  AtomicAccess::release_store(&_table, _new_table);
   // All must see this.
   GlobalCounter::write_synchronize();
   // _new_table not read any more.
@@ -797,7 +796,7 @@ inline void ConcurrentHashTable<CONFIG, MT>::
   // Create and publish a new table
   InternalTable* table = new InternalTable(log2_size);
   _size_limit_reached = (log2_size == _log2_size_limit);
-  Atomic::release_store(&_table, table);
+  AtomicAccess::release_store(&_table, table);
 }
 
 template <typename CONFIG, MemTag MT>
@@ -1232,35 +1231,34 @@ inline void ConcurrentHashTable<CONFIG, MT>::
 
 template <typename CONFIG, MemTag MT>
 template <typename VALUE_SIZE_FUNC>
-inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
-  statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f)
+inline void ConcurrentHashTable<CONFIG, MT>::
+  internal_statistics_range(Thread* thread, size_t start, size_t stop,
+                            VALUE_SIZE_FUNC& vs_f, NumberSeq& summary, size_t& literal_size)
 {
-  constexpr size_t batch_size = 128;
-  NumberSeq summary;
-  size_t literal_bytes = 0;
-  InternalTable* table = get_table();
-  size_t num_batches = table->_size / batch_size;
-  for (size_t batch_start = 0; batch_start < _table->_size; batch_start += batch_size) {
-    // We batch the use of ScopedCS here as it has been found to be quite expensive to
-    // invoke it for every single bucket.
-    size_t batch_end = MIN2(batch_start + batch_size, _table->_size);
-    ScopedCS cs(thread, this);
-    for (size_t bucket_it = batch_start; bucket_it < batch_end; bucket_it++) {
-      size_t count = 0;
-      Bucket* bucket = table->get_bucket(bucket_it);
-      if (bucket->have_redirect() || bucket->is_locked()) {
-        continue;
-      }
-      Node* current_node = bucket->first();
-      while (current_node != nullptr) {
-        ++count;
-        literal_bytes += vs_f(current_node->value());
-        current_node = current_node->next();
-      }
-      summary.add((double)count);
+  // We batch the use of ScopedCS here as it has been found to be quite expensive to
+  // invoke it for every single bucket.
+  ScopedCS cs(thread, this);
+  for (size_t bucket_it = start; bucket_it < stop; bucket_it++) {
+    size_t count = 0;
+    Bucket* bucket = _table->get_bucket(bucket_it);
+    if (bucket->have_redirect() || bucket->is_locked()) {
+      continue;
     }
+    Node* current_node = bucket->first();
+    while (current_node != nullptr) {
+      ++count;
+      literal_size += vs_f(current_node->value());
+      current_node = current_node->next();
+    }
+    summary.add((double)count);
   }
+}
 
+template <typename CONFIG, MemTag MT>
+inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
+  internal_statistics_epilog(Thread* thread, NumberSeq summary, size_t literal_bytes)
+{
+  unlock_resize_lock(thread);
   if (_stats_rate == nullptr) {
     return TableStatistics(summary, literal_bytes, sizeof(Bucket), sizeof(Node));
   } else {
@@ -1276,28 +1274,12 @@ inline TableStatistics ConcurrentHashTable<CONFIG, MT>::
   if (!try_resize_lock(thread)) {
     return old;
   }
+  InternalTable* table = get_table();
+  NumberSeq summary;
+  size_t    literal_bytes = 0;
 
-  TableStatistics ts = statistics_calculate(thread, vs_f);
-  unlock_resize_lock(thread);
-
-  return ts;
-}
-
-template <typename CONFIG, MemTag MT>
-template <typename VALUE_SIZE_FUNC>
-inline void ConcurrentHashTable<CONFIG, MT>::
-  statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f,
-                outputStream* st, const char* table_name)
-{
-  if (!try_resize_lock(thread)) {
-    st->print_cr("statistics unavailable at this moment");
-    return;
-  }
-
-  TableStatistics ts = statistics_calculate(thread, vs_f);
-  unlock_resize_lock(thread);
-
-  ts.print(st, table_name);
+  internal_statistics_range(thread, 0, table->_size, vs_f, summary, literal_bytes);
+  return internal_statistics_epilog(thread, summary, literal_bytes);
 }
 
 template <typename CONFIG, MemTag MT>

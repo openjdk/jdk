@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,8 +257,9 @@ public final class FileSystems {
      *
      * @throws  IllegalArgumentException
      *          if the pre-conditions for the {@code uri} parameter are not met,
-     *          or the {@code env} parameter does not contain properties required
-     *          by the provider, or a property value is invalid
+     *          or if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  FileSystemAlreadyExistsException
      *          if the file system has already been created
      * @throws  ProviderNotFoundException
@@ -296,8 +297,9 @@ public final class FileSystems {
      *
      * @throws  IllegalArgumentException
      *          if the pre-conditions for the {@code uri} parameter are not met,
-     *          or the {@code env} parameter does not contain properties required
-     *          by the provider, or a property value is invalid
+     *          or if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  FileSystemAlreadyExistsException
      *          if the URI scheme identifies an installed provider and the file
      *          system has already been created
@@ -400,6 +402,10 @@ public final class FileSystems {
      *
      * @return  a new file system
      *
+     * @throws  IllegalArgumentException
+     *          if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  ProviderNotFoundException
      *          if a provider supporting this file type cannot be located
      * @throws  ServiceConfigurationError
@@ -476,6 +482,10 @@ public final class FileSystems {
      *
      * @return  a new file system
      *
+     * @throws  IllegalArgumentException
+     *          if the {@code env} parameter does not contain properties
+     *          required by the provider, contains an invalid combination of
+     *          properties and values, or contains an invalid property value
      * @throws  ProviderNotFoundException
      *          if a provider supporting this file type cannot be located
      * @throws  ServiceConfigurationError

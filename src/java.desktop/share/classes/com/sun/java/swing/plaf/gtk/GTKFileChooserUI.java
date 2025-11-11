@@ -1120,6 +1120,9 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             if (showFileIcons) {
                 setIcon(getFileChooser().getIcon((File)value));
             }
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
         }
     }
@@ -1137,6 +1140,9 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             } else {
                 setText(getFileChooser().getName((File)value) + "/");
             }
+
+            putClientProperty("html.disable", getFileChooser().getClientProperty("html.disable"));
+
             return this;
         }
     }

@@ -24,12 +24,10 @@
 package jdk.test.lib.security;
 
 import java.io.*;
+import java.security.cert.*;
+import java.security.cert.Extension;
 import java.util.*;
 import java.security.*;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.Extension;
 import java.time.temporal.ChronoUnit;
 import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
@@ -43,6 +41,7 @@ import sun.security.x509.AccessDescription;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.IPAddressName;
 import sun.security.x509.SubjectKeyIdentifierExtension;
 import sun.security.x509.BasicConstraintsExtension;
 import sun.security.x509.CertificateSerialNumber;
@@ -51,10 +50,11 @@ import sun.security.x509.DNSName;
 import sun.security.x509.GeneralName;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.KeyUsageExtension;
-import sun.security.x509.SerialNumber;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.URIName;
 import sun.security.x509.KeyIdentifier;
+import sun.security.x509.X500Name;
+
 
 /**
  * Helper class that builds and signs X.509 certificates.
@@ -91,7 +91,7 @@ import sun.security.x509.KeyIdentifier;
 public class CertificateBuilder {
     private final CertificateFactory factory;
 
-    private X500Principal subjectName = null;
+    private X500Name subjectName = null;
     private BigInteger serialNumber = null;
     private PublicKey publicKey = null;
     private Date notBefore = null;
@@ -99,6 +99,89 @@ public class CertificateBuilder {
     private final Map<String, Extension> extensions = new HashMap<>();
     private byte[] tbsCertBytes;
     private byte[] signatureBytes;
+
+    public enum KeyUsage {
+        DIGITAL_SIGNATURE,
+        NONREPUDIATION,
+        KEY_ENCIPHERMENT,
+        DATA_ENCIPHERMENT,
+        KEY_AGREEMENT,
+        KEY_CERT_SIGN,
+        CRL_SIGN,
+        ENCIPHER_ONLY,
+        DECIPHER_ONLY;
+    }
+
+    /**
+     * Create a new CertificateBuilder instance. This method sets the subject name,
+     * public key, authority key id, and serial number.
+     *
+     * @param subjectName entity associated with the public key
+     * @param publicKey the entity's public key
+     * @param caKey public key of certificate signer
+     * @param keyUsages list of key uses
+     * @return
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static CertificateBuilder newCertificateBuilder(String subjectName,
+                           PublicKey publicKey, PublicKey caKey, KeyUsage... keyUsages)
+            throws CertificateException, IOException {
+        SecureRandom random = new SecureRandom();
+
+        boolean [] keyUsage = new boolean[KeyUsage.values().length];
+        for (KeyUsage ku : keyUsages) {
+            keyUsage[ku.ordinal()] = true;
+        }
+
+        CertificateBuilder builder = new CertificateBuilder()
+                .setSubjectName(subjectName)
+                .setPublicKey(publicKey)
+                .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
+                .addSubjectKeyIdExt(publicKey)
+                .addAuthorityKeyIdExt(caKey);
+        if (keyUsages.length != 0) {
+            builder.addKeyUsageExt(keyUsage);
+        }
+        return builder;
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given DNS name
+     * @param critical Sets the extension to critical or non-critical
+     * @param dnsName DNS name to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createDNSSubjectAltNameExt(
+            boolean critical, String dnsName) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new DNSName(dnsName)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given IP address
+     * @param critical Sets the extension to critical or non-critical
+     * @param ipAddress IP address to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createIPSubjectAltNameExt(
+            boolean critical, String ipAddress) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new IPAddressName(ipAddress)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    public static void printCertificate(X509Certificate certificate, PrintStream ps) {
+        try {
+            Base64.Encoder encoder = Base64.getEncoder();
+            ps.println("-----BEGIN CERTIFICATE-----");
+            ps.println(encoder.encodeToString(certificate.getEncoded()));
+            ps.println("-----END CERTIFICATE-----");
+        } catch (CertificateEncodingException exc) {
+            exc.printStackTrace(ps);
+        }
+    }
 
     /**
      * Default constructor for a {@code CertificateBuilder} object.
@@ -117,7 +200,7 @@ public class CertificateBuilder {
      * on this certificate.
      */
     public CertificateBuilder setSubjectName(X500Principal name) {
-        subjectName = name;
+        subjectName = X500Name.asX500Name(name);
         return this;
     }
 
@@ -127,7 +210,23 @@ public class CertificateBuilder {
      * @param name The subject name in RFC 2253 format
      */
     public CertificateBuilder setSubjectName(String name) {
-        subjectName = new X500Principal(name);
+        try {
+            subjectName = new X500Name(name);
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(ioe);
+        }
+        return this;
+    }
+
+    /**
+     * Set the subject name for the certificate. This method is useful when
+     * you need more control over the contents of the subject name.
+     *
+     * @param name an {@code X500Name} to be used as the subject name
+     * on this certificate
+     */
+    public CertificateBuilder setSubjectName(X500Name name) {
+        subjectName = name;
         return this;
     }
 
@@ -175,6 +274,11 @@ public class CertificateBuilder {
      */
     public CertificateBuilder setValidity(Date nbDate, Date naDate) {
         return setNotBefore(nbDate).setNotAfter(naDate);
+    }
+
+    public CertificateBuilder setOneHourValidity() {
+        return setNotBefore(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
     }
 
     /**
@@ -227,6 +331,26 @@ public class CertificateBuilder {
             GeneralNames gNames = new GeneralNames();
             for (String name : dnsNames) {
                 gNames.add(new GeneralName(new DNSName(name)));
+            }
+            addExtension(new SubjectAlternativeNameExtension(false,
+                    gNames));
+        }
+        return this;
+    }
+
+    /**
+     * Helper method to add IPAddress types for the SAN extension
+     *
+     * @param ipAddresses A {@code List} of names to add as IPAddress
+     *         types
+     * @throws IOException if an encoding error occurs.
+     */
+    public CertificateBuilder addSubjectAltNameIPExt(List<String> ipAddresses)
+            throws IOException {
+        if (!ipAddresses.isEmpty()) {
+            GeneralNames gNames = new GeneralNames();
+            for (String name : ipAddresses) {
+                gNames.add(new GeneralName(new IPAddressName(name)));
             }
             addExtension(new SubjectAlternativeNameExtension(false,
                     gNames));
@@ -288,11 +412,8 @@ public class CertificateBuilder {
      *
      * @param bitSettings Boolean array for all nine bit settings in the order
      * documented in RFC 5280 section 4.2.1.3.
-     *
-     * @throws IOException if an encoding error occurs.
      */
-    public CertificateBuilder addKeyUsageExt(boolean[] bitSettings)
-            throws IOException {
+    public CertificateBuilder addKeyUsageExt(boolean[] bitSettings) {
         return addExtension(new KeyUsageExtension(bitSettings));
     }
 
@@ -305,11 +426,9 @@ public class CertificateBuilder {
      * @param maxPathLen The maximum path length issued by this CA.  Values
      * less than zero will omit this field from the resulting extension and
      * no path length constraint will be asserted.
-     *
-     * @throws IOException if an encoding error occurs.
      */
     public CertificateBuilder addBasicConstraintsExt(boolean crit, boolean isCA,
-            int maxPathLen) throws IOException {
+            int maxPathLen) {
         return addExtension(new BasicConstraintsExtension(crit, isCA,
                 maxPathLen));
     }
@@ -389,7 +508,27 @@ public class CertificateBuilder {
     }
 
     /**
-     * Build the certificate.
+     * Build the certificate using the default algorithm for the provided
+     * signing key.
+     *
+     * @param issuerCert The certificate of the issuing authority, or
+     * {@code null} if the resulting certificate is self-signed.
+     * @param issuerKey The private key of the issuing authority
+     *
+     * @return The resulting {@link X509Certificate}
+     *
+     * @throws IOException if an encoding error occurs.
+     * @throws CertificateException If the certificate cannot be generated
+     * by the underlying {@link CertificateFactory}
+     */
+    public X509Certificate build(X509Certificate issuerCert,
+            PrivateKey issuerKey) throws IOException, CertificateException {
+        return build(issuerCert, issuerKey,
+                SignatureUtil.getDefaultSigAlgForKey(issuerKey));
+    }
+
+    /**
+     * Build the certificate using the key and specified signing algorithm.
      *
      * @param issuerCert The certificate of the issuing authority, or
      * {@code null} if the resulting certificate is self-signed.
@@ -401,14 +540,10 @@ public class CertificateBuilder {
      * @throws IOException if an encoding error occurs.
      * @throws CertificateException If the certificate cannot be generated
      * by the underlying {@link CertificateFactory}
-     * @throws NoSuchAlgorithmException If an invalid signature algorithm
-     * is provided.
      */
     public X509Certificate build(X509Certificate issuerCert,
             PrivateKey issuerKey, String algName)
-            throws IOException, CertificateException, NoSuchAlgorithmException {
-        // TODO: add some basic checks (key usage, basic constraints maybe)
-
+            throws IOException, CertificateException {
         byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, algName);
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedCert);
         return (X509Certificate)factory.generateCertificate(bais);
@@ -437,15 +572,14 @@ public class CertificateBuilder {
      */
     private byte[] encodeTopLevel(X509Certificate issuerCert,
             PrivateKey issuerKey, String algName)
-            throws CertificateException, IOException, NoSuchAlgorithmException {
+            throws CertificateException, IOException {
 
-        AlgorithmId signAlg = AlgorithmId.get(algName);
+        AlgorithmId signAlg;
         DerOutputStream outerSeq = new DerOutputStream();
         DerOutputStream topLevelItems = new DerOutputStream();
 
         try {
-            Signature sig = SignatureUtil.fromKey(signAlg.getName(), issuerKey, (Provider)null);
-            // Rewrite signAlg, RSASSA-PSS needs some parameters.
+            Signature sig = SignatureUtil.fromKey(algName, issuerKey, "");
             signAlg = SignatureUtil.fromSignature(sig, issuerKey);
             tbsCertBytes = encodeTbsCert(issuerCert, signAlg);
             sig.update(tbsCertBytes);
@@ -566,7 +700,6 @@ public class CertificateBuilder {
      */
     private void encodeExtensions(DerOutputStream tbsStream)
             throws IOException {
-
         if (extensions.isEmpty()) {
             return;
         }

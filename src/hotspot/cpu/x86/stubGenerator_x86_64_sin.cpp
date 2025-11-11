@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
+ * Copyright (c) 2016, 2025, Intel Corporation. All rights reserved.
  * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -180,7 +180,7 @@ ATTRIBUTE_ALIGNED(8) static const juint _ALL_ONES[] =
 #define __ _masm->
 
 address StubGenerator::generate_libmSin() {
-  StubGenStubId stub_id = StubGenStubId::dsin_id;
+  StubId stub_id = StubId::stubgen_dsin_id;
   StubCodeMark mark(this, stub_id);
   address start = __ pc();
 
@@ -195,11 +195,11 @@ address StubGenerator::generate_libmSin() {
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 #ifdef _WIN64
-  __ push(rsi);
-  __ push(rdi);
+  __ push_ppx(rsi);
+  __ push_ppx(rdi);
 #endif
 
-  __ push(rbx);
+  __ push_ppx(rbx);
   __ subq(rsp, 16);
   __ movsd(Address(rsp, 8), xmm0);
   __ movl(rax, Address(rsp, 12));
@@ -635,11 +635,11 @@ address StubGenerator::generate_libmSin() {
 
   __ bind(B1_4);
   __ addq(rsp, 16);
-  __ pop(rbx);
+  __ pop_ppx(rbx);
 
 #ifdef _WIN64
-  __ pop(rdi);
-  __ pop(rsi);
+  __ pop_ppx(rdi);
+  __ pop_ppx(rsi);
 #endif
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame

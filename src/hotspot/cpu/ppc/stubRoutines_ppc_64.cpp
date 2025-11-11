@@ -74,16 +74,29 @@ static julong compute_inverse_poly(julong long_poly) {
   return div;
 }
 
+static address _crc_table_addr    = nullptr;
+static address _crc32c_table_addr = nullptr;
+
+address StubRoutines::crc_table_addr() {
+  if (_crc_table_addr == nullptr) {
+    _crc_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
+  }
+  return _crc_table_addr;
+}
+address StubRoutines::crc32c_table_addr() {
+  if (_crc32c_table_addr == nullptr) {
+    _crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
+  }
+  return _crc32c_table_addr;
+}
+
 // Constants to fold n words as needed by macroAssembler.
 address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   // Layout of constant table:
-  // <= Power7 Little Endian: 4 tables for byte folding
-  // <= Power7 Big Endian: 1 table for single byte folding + 4 tables for multi-byte folding
   // >= Power8: 1 table for single byte folding + constants for fast vector implementation
-  const bool use_vector = VM_Version::has_vpmsumb();
   const int vector_size = 16 * (CRC32_UNROLL_FACTOR2 + CRC32_UNROLL_FACTOR / CRC32_UNROLL_FACTOR2);
 
-  const int size = use_vector ? CRC32_TABLE_SIZE + vector_size : (4 BIG_ENDIAN_ONLY(+1)) * CRC32_TABLE_SIZE;
+  const int size = CRC32_TABLE_SIZE + vector_size;
   const address consts = (address)os::malloc(size, mtInternal);
   if (consts == nullptr) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CRC constants: no enough space");
@@ -91,43 +104,8 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
   juint* ptr = (juint*)consts;
 
   // Simple table used for single byte folding
-  LITTLE_ENDIAN_ONLY(if (use_vector)) {
-    for (int i = 0; i < 256; ++i) {
-      ptr[i] = fold_byte(i, reverse_poly);
-    }
-  }
-
-  if (!use_vector) {
-    BIG_ENDIAN_ONLY(ptr = (juint*)(consts + CRC32_TABLE_SIZE);)
-    // <= Power7: 4 tables
-    for (int i = 0; i < 256; ++i) {
-      juint a = fold_byte(i, reverse_poly),
-            b = fold_byte(a, reverse_poly),
-            c = fold_byte(b, reverse_poly),
-            d = fold_byte(c, reverse_poly);
-#ifndef VM_LITTLE_ENDIAN
-      a = byteswap(a);
-      b = byteswap(b);
-      c = byteswap(c);
-      d = byteswap(d);
-#endif
-      ptr[i         ] = a;
-      ptr[i +    256] = b;
-      ptr[i + 2* 256] = c;
-      ptr[i + 3* 256] = d;
-    }
-#if 0
-    for (int i = 0; i < 4; ++i) {
-      tty->print_cr("table %d:", i);
-      for (int j = 0; j < 32; ++j) {
-        for (int k = 0; k < 8; ++k) {
-          tty->print("%08x ", ptr[i*256 + j*8 + k]);
-        }
-        tty->cr();
-      }
-    }
-#endif
-    return consts;
+  for (int i = 0; i < 256; ++i) {
+    ptr[i] = fold_byte(i, reverse_poly);
   }
 
   // >= Power8: vector constants

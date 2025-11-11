@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,4 +302,47 @@ public interface CharSequence {
         return cs1.length() - cs2.length();
     }
 
+    /**
+     * Copies characters from this sequence into the given destination array.
+     * The first character to be copied is at index {@code srcBegin}; the last
+     * character to be copied is at index {@code srcEnd-1}. The total number of
+     * characters to be copied is {@code srcEnd-srcBegin}. The
+     * characters are copied into the subarray of {@code dst} starting
+     * at index {@code dstBegin} and ending at index:
+     * <pre>{@code
+     * dstbegin + (srcEnd-srcBegin) - 1
+     * }</pre>
+     *
+     * @param      srcBegin   start copying at this offset.
+     * @param      srcEnd     stop copying at this offset.
+     * @param      dst        the array to copy the data into.
+     * @param      dstBegin   offset into {@code dst}.
+     * @throws     IndexOutOfBoundsException  if any of the following is true:
+     *             <ul>
+     *             <li>{@code srcBegin} is negative
+     *             <li>{@code dstBegin} is negative
+     *             <li>the {@code srcBegin} argument is greater than
+     *             the {@code srcEnd} argument.
+     *             <li>{@code srcEnd} is greater than
+     *             {@code this.length()}.
+     *             <li>{@code dstBegin+srcEnd-srcBegin} is greater than
+     *             {@code dst.length}
+     *             </ul>
+     * @throws     NullPointerException if {@code dst} is {@code null}
+     *
+     * @implSpec
+     * The default implementation invokes {@link #charAt(int index)} in a loop
+     * iterating {@code index} from {@code srcBegin} to {@code srcEnd-1}.
+     * Concurrent truncation of this character sequence can throw
+     * {@code IndexOutOfBoundsException}. In this case, some characters, but not
+     * all, may be already transferred.
+     *
+     * @since 25
+     */
+    public default void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        Objects.checkFromToIndex(srcBegin, srcEnd, length());
+        Objects.checkIndex(dstBegin, dst.length - (srcEnd - srcBegin) + 1);
+        while (srcBegin < srcEnd)
+            dst[dstBegin++] = charAt(srcBegin++);
+    }
 }

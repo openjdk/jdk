@@ -31,10 +31,10 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -391,20 +391,21 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
   return get_instanceKlass()->contains_field_offset(offset);
 }
 
+ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset) {
+  for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
+    ciField* field = _nonstatic_fields->at(i);
+    int field_off = field->offset_in_bytes();
+    if (field_off == field_offset)
+      return field;
+  }
+  return nullptr;
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::get_field_by_offset
 ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
-    for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
-      ciField* field = _nonstatic_fields->at(i);
-      int  field_off = field->offset_in_bytes();
-      if (field_off == field_offset)
-        return field;
-      if (field_off > field_offset)
-        break;
-      // could do binary search or check bins, but probably not worth it
-    }
-    return nullptr;
+    return get_non_static_field_by_offset(field_offset);
   }
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
@@ -430,10 +431,29 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
   return field;
 }
 
+// This is essentially a shortcut for:
+//   get_field_by_offset(field_offset, is_static)->layout_type()
+// except this does not require allocating memory for a new ciField
+BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, const bool is_static) {
+  if (!is_static) {
+    ciField* field = get_non_static_field_by_offset(field_offset);
+    return field != nullptr ? field->layout_type() : T_ILLEGAL;
+  }
 
-static int sort_field_by_offset(ciField** a, ciField** b) {
-  return (*a)->offset_in_bytes() - (*b)->offset_in_bytes();
-  // (no worries about 32-bit overflow...)
+  // Avoid allocating a new ciField by obtaining the field type directly
+  VM_ENTRY_MARK;
+  InstanceKlass* k = get_instanceKlass();
+  fieldDescriptor fd;
+  if (!k->find_field_from_offset(field_offset, is_static, &fd)) {
+    return T_ILLEGAL;
+  }
+
+  // Reproduce the behavior of ciField::layout_type
+  BasicType field_type = fd.field_type();
+  if (is_reference_type(field_type)) {
+    return T_OBJECT;
+  }
+  return type2field[make(field_type)->basic_type()];
 }
 
 // ------------------------------------------------------------------
@@ -476,9 +496,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
 
   int flen = fields->length();
 
-  // Now sort them by offset, ascending.
-  // (In principle, they could mix with superclass fields.)
-  fields->sort(sort_field_by_offset);
   _nonstatic_fields = fields;
   return flen;
 }
@@ -558,6 +575,11 @@ bool ciInstanceKlass::compute_has_trusted_loader() {
     return true; // bootstrap class loader
   }
   return java_lang_ClassLoader::is_trusted_loader(loader_oop);
+}
+
+bool ciInstanceKlass::has_class_initializer() {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->class_initializer() != nullptr;
 }
 
 // ------------------------------------------------------------------

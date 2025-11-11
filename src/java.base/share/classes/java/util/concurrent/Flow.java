@@ -60,7 +60,8 @@ package java.util.concurrent;
  * TRUE} item to a single subscriber.  Because the subscriber receives
  * only a single item, this class does not use buffering and ordering
  * control required in most implementations (for example {@link
- * SubmissionPublisher}).
+ * SubmissionPublisher}), and omits some error processing needed to
+ * fully conform to the Reactive Streams specification.
  *
  * <pre> {@code
  * class OneShotPublisher implements Publisher<Boolean> {

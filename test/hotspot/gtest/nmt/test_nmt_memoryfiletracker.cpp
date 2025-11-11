@@ -33,17 +33,17 @@ public:
     MemoryFileTracker tracker(false);
     MemoryFileTracker::MemoryFile* file = tracker.make_file("test");
     tracker.allocate_memory(file, 0, 100, CALLER_PC, mtTest);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(100));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(100));
     tracker.allocate_memory(file, 100, 100, CALLER_PC, mtTest);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(200));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(200));
     tracker.allocate_memory(file, 200, 100, CALLER_PC, mtTest);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(300));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(300));
     tracker.free_memory(file, 0, 300);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(0));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(0));
     tracker.allocate_memory(file, 0, 100, CALLER_PC, mtTest);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(100));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(100));
     tracker.free_memory(file, 50, 10);
-    EXPECT_EQ(file->_summary.by_type(mtTest)->committed(), sz(90));
+    EXPECT_EQ(file->_summary.by_tag(mtTest)->committed(), sz(90));
   };
 };
 

@@ -42,11 +42,13 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     final PlainHttpPublisher writePublisher;
     private volatile SSLTube flow;
 
-    AsyncSSLConnection(InetSocketAddress addr,
+    AsyncSSLConnection(Origin originServer,
+                       InetSocketAddress addr,
                        HttpClientImpl client,
-                       String[] alpn) {
-        super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn);
-        plainConnection = new PlainHttpConnection(addr, client);
+                       String[] alpn,
+                       String label) {
+        super(originServer, addr, client, alpn, label);
+        plainConnection = new PlainHttpConnection(originServer, addr, client, label);
         writePublisher = new PlainHttpPublisher();
     }
 

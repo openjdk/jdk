@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,22 @@
 #ifndef SHARE_NMT_MEMTRACKER_HPP
 #define SHARE_NMT_MEMTRACKER_HPP
 
+#include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
-#include "nmt/nmtCommon.hpp"
+#include "nmt/memBaseline.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail) ?  \
                     NativeCallStack(1) : FAKE_CALLSTACK)
-
-class MemBaseline;
 
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
@@ -126,12 +127,12 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MemTag mem_tag = mtNone) {
+    MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
 
@@ -139,7 +140,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_released_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_released_region((address)addr, size);
     }
   }
 
@@ -147,18 +148,18 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_uncommitted_region((address)addr, size);
     }
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MemTag mem_tag = mtNone) {
+    const NativeCallStack& stack, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, mem_tag);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -168,8 +169,15 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
+  }
+
+  static inline bool walk_virtual_memory(VirtualMemoryWalker* walker) {
+    assert_post_init();
+    if (!enabled()) return false;
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
   }
 
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
@@ -210,22 +218,26 @@ class MemTracker : AllStatic {
   //  be fully uncommitted.
   //
   // The two new memory regions will be both registered under stack and
-  //  memory flags of the original region.
+  //  memory tags of the original region.
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MemTag mem_tag, MemTag split_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
+      VirtualMemoryTracker::Instance::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
 
-  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
+  static inline void record_virtual_memory_tag(const ReservedSpace& rs, MemTag mem_tag) {
+    record_virtual_memory_tag(rs.base(), rs.size(), mem_tag);
+  }
+
+  static inline void record_virtual_memory_tag(void* addr, size_t size, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
+      VirtualMemoryTracker::Instance::set_reserved_region_tag((address)addr, size, mem_tag);
     }
   }
 
@@ -261,7 +273,7 @@ class MemTracker : AllStatic {
 
   // Stored baseline
   static inline MemBaseline& get_baseline() {
-    return _baseline;
+    return *_baseline;
   }
 
   static void tuning_statistics(outputStream* out);
@@ -314,7 +326,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static MemBaseline      _baseline;
+  static DeferredStatic<MemBaseline> _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

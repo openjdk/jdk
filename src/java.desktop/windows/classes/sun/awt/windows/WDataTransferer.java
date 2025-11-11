@@ -541,7 +541,7 @@ enum EHTMLReadMode {
  *
  * on encode: static convertToHTMLFormat is responsible for HTML clipboard header creation
  */
-class HTMLCodec extends InputStream {
+final class HTMLCodec extends InputStream {
 
     public static final String VERSION = "Version:";
     public static final String START_HTML = "StartHTML:";

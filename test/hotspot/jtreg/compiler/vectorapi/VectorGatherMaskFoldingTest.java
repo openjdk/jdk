@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.nio.ByteOrder;
 
 /**
  * @test
- * @bug 8325520
+ * @bug 8325520 8302459
  * @library /test/lib /
  * @summary Don't allow folding of Load/Store vectors when using incompatible indices or masks
  * @modules jdk.incubator.vector
@@ -1398,7 +1398,12 @@ public class VectorGatherMaskFoldingTest {
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+IncrementalInlineForceCleanup")
+                     .addFlags("--add-modules=jdk.incubator.vector")
                      .start();
+        testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(10000)
+                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation")
+                     .start();
+
     }
 }

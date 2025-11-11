@@ -55,10 +55,10 @@ public class AllocFromSliceTest extends CLayouts {
 
     @Setup
     public void setup() {
-        arr = new byte[1024];
+        arr = new byte[size * 2];
         Random random = new Random(0);
         random.nextBytes(arr);
-        start = random.nextInt(1024 - size);
+        start = random.nextInt(size);
     }
 
     @Benchmark

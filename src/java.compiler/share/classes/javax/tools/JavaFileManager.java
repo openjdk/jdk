@@ -170,7 +170,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
          * @since 9
          */
         default boolean isModuleOrientedLocation() {
-            return getName().matches("\\bMODULE\\b");
+            return StandardLocation.computeIsModuleOrientedLocation(getName());
         }
     }
 

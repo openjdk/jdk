@@ -39,7 +39,7 @@ import com.sun.java.swing.plaf.motif.*;
 import sun.awt.X11.XComponentPeer;
 
 @SuppressWarnings({"serial", "removal"}) // JDK-implementation class
-class XAWTLookAndFeel extends MotifLookAndFeel {
+final class XAWTLookAndFeel extends MotifLookAndFeel {
 
     /**
      * Load the SystemColors into the defaults table.  The keys
@@ -49,6 +49,7 @@ class XAWTLookAndFeel extends MotifLookAndFeel {
      * values, otherwise we create color objects whose values match
      * the default CDE/Motif colors.
      */
+    @Override
     protected void initSystemColorDefaults(UIDefaults table) {
         String[] defaultSystemColors = {
             "desktop", "#005C5C", /* Color of the desktop background */
@@ -83,6 +84,7 @@ class XAWTLookAndFeel extends MotifLookAndFeel {
         loadSystemColors(table, defaultSystemColors, true);
     }
 
+    @Override
     protected void initComponentDefaults(UIDefaults table) {
         super.initComponentDefaults(table);
 

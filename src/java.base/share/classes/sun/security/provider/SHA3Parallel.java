@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,20 @@ import static sun.security.provider.ByteArrayAccess.l2bLittle;
 
 import static sun.security.provider.SHA3.keccak;
 
+/*
+ * This class is for making it possible that NRPAR (= 2) (rather restricted)
+ * SHAKE computations execute in parallel.
+ * The restrictions are:
+ *  1. The messages processed should be such that the absorb phase should
+ * execute a single keccak() call and the byte arrays passed to the constructor
+ * (or reset() method) of this class should be the message padded with the
+ * appropriate padding described in
+ * https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.202.pdf.
+ *  2. The only available way for extracting data is the squeeze() method
+ * that extracts exactly 1 block of data of each computation, delivering it
+ * in the arrays that were passed to the class in the constructor (or the
+ * reset() call).
+ */
 public class SHA3Parallel {
     private int blockSize = 0;
     private static final int DM = 5; // dimension of lanesArr

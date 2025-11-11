@@ -44,6 +44,7 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -57,6 +58,9 @@ public class NoBodyPartOne extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
             try (var cl = new CloseableClient(client, sameClient)) {
                 HttpRequest req = newRequestBuilder(uri)
@@ -78,6 +82,9 @@ public class NoBodyPartOne extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
 
             try (var cl = new CloseableClient(client, sameClient)) {
@@ -101,6 +108,9 @@ public class NoBodyPartOne extends AbstractNoBody {
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
                 client = newHttpClient(sameClient);
+                if (!sameClient && version(uri) == HTTP_3) {
+                    headRequest(client);
+                }
             }
 
             try (var cl = new CloseableClient(client, sameClient)) {

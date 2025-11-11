@@ -27,7 +27,6 @@ questions.
 * common/misctests/classes
 * common/misctests/FileViewer
 * common/misctests/Foo
-* common/misctests/fpustack
 * common/misctests/NoHeader
 * common/misctests/noop
 * common/misctests/Pi

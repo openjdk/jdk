@@ -26,7 +26,7 @@ package sun.awt.X11;
 
 import java.awt.*;
 
-class WindowDimensions {
+final class WindowDimensions {
     private Point loc;
     private Dimension size;
     private Insets insets;
@@ -160,10 +160,12 @@ class WindowDimensions {
         return isClientSizeSet;
     }
 
+    @Override
     public String toString() {
         return "[" + loc + ", " + size + "(" +(isClientSizeSet?"client":"bounds") + ")+" + insets + "]";
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof WindowDimensions)) {
             return false;
@@ -174,6 +176,7 @@ class WindowDimensions {
             && (getBounds().equals(dims.getBounds()));
     }
 
+    @Override
     public int hashCode() {
         return ((insets == null)? (0):(insets.hashCode())) ^ getClientRect().hashCode() ^ getBounds().hashCode();
     }

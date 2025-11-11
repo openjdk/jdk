@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public:
 
   void prepare_collection();
   void collect();
-  void complete_collection();
+  void complete_collection(size_t allocation_word_size);
 
   G1FullGCScope*           scope() { return &_scope; }
   uint                     workers() { return _num_workers; }
@@ -121,7 +121,7 @@ public:
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
   size_t live_words(uint region_index) const {
-    assert(region_index < _heap->max_regions(), "sanity");
+    assert(region_index < _heap->max_num_regions(), "sanity");
     return _live_stats[region_index]._live_words;
   }
 

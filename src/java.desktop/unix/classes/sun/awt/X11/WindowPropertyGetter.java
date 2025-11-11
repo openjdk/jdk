@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.util.*;
 import jdk.internal.misc.Unsafe;
 
-public class WindowPropertyGetter {
+public final class WindowPropertyGetter {
     private static Unsafe unsafe = XlibWrapper.unsafe;
     private final long actual_type = unsafe.allocateMemory(8);
     private final long actual_format = unsafe.allocateMemory(4);

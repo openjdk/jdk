@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,10 +493,9 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     --start;
     while (width >= -epsilon && ++start < length) {
       int cidx = l2v(start) * numvals + advx;
-      if (cidx >= charinfo.length) {
-          break; // layout bailed for some reason
-      }
-      float adv = charinfo[cidx];
+      float adv = cidx < charinfo.length ?
+                  charinfo[cidx] : // layout provided info for this glyph
+                  0; // glyph info omitted, assume no advance
       if (adv != 0) {
           width -= adv + advTracking;
       }
@@ -578,6 +577,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 *   not all do, and it cannot be relied upon.
 * - each glyph maps to a single character, when multiple glyphs exist for a character they all map to it, but
 *   no two characters map to the same glyph
+*   This was only true for the old, ICU layout engine which inserted 0xffff glyphs for ligaturized characters!
 * - multiple glyphs mapping to the same character need not be in sequence (thai, tamil have split characters)
 * - glyphs may be arbitrarily reordered (Indic reorders glyphs)
 * - all glyphs share the same bidi level
@@ -713,8 +713,6 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
     while (gx != gxlimit) {
         // start of new cluster
-        int clusterExtraGlyphs = 0;
-
         minIndex = indices[gx];
         maxIndex = minIndex;
 
@@ -731,14 +729,11 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
         while (gx != gxlimit &&
                ((glyphinfo[gp + advx] == 0) ||
-               (indices[gx] <= maxIndex) ||
-               (maxIndex - minIndex > clusterExtraGlyphs))) {
+               (indices[gx] <= maxIndex))) {
 
-            ++clusterExtraGlyphs; // have an extra glyph in this cluster
             if (DEBUG) {
                 System.err.println("gp=" +gp +" adv=" + glyphinfo[gp + advx] +
-                                   " gx="+ gx+ " i[gx]="+indices[gx] +
-                                   " clusterExtraGlyphs="+clusterExtraGlyphs);
+                                   " gx="+ gx+ " i[gx]="+indices[gx]);
             }
 
             // adjust advance only if new glyph has non-zero advance
@@ -876,7 +871,14 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
   }
 
   public TextLineComponent getSubset(int start, int limit, int dir) {
-    return new ExtendedTextSourceLabel(source.getSubSource(start, limit-start, dir), decorator);
+    if (start == 0 &&
+        limit == source.getLength() &&
+        (dir == source.getBidiLevel() || dir == TextLineComponent.UNCHANGED)) {
+      return this; // avoid unnecessary object creation and text shaping
+    } else {
+      TextSource subSource = source.getSubSource(start, limit-start, dir);
+      return new ExtendedTextSourceLabel(subSource, decorator);
+    }
   }
 
   public String toString() {

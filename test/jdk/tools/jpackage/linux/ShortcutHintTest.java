@@ -164,7 +164,7 @@ public class ShortcutHintTest {
                             "Exec=APPLICATION_LAUNCHER",
                             "Terminal=false",
                             "Type=Application",
-                            "Comment=",
+                            "Comment=APPLICATION_DESCRIPTION",
                             "Icon=APPLICATION_ICON",
                             "Categories=DEPLOY_BUNDLE_CATEGORY",
                             expectedVersionString
@@ -176,7 +176,7 @@ public class ShortcutHintTest {
             TKit.assertTextStream(expectedVersionString)
                     .label(String.format("[%s] file", desktopFile))
                     .predicate(String::equals)
-                    .apply(Files.readAllLines(desktopFile).stream());
+                    .apply(Files.readAllLines(desktopFile));
         }).run();
     }
 }

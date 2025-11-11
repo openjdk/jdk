@@ -24,8 +24,8 @@
  */
 
 #include "gc/shared/barrierSetNMethod.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -89,10 +89,20 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
 
 void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
 #if COMPILER2_OR_JVMCI
-  assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
-         "Error: losing card mark on initialzing store to old gen");
+  if (ReduceInitialCardMarks && ShenandoahCardBarrier && !ShenandoahHeap::heap()->is_in_young(new_obj)) {
+    log_debug(gc)("Newly allocated object (" PTR_FORMAT ") is not in the young generation", p2i(new_obj));
+    // This can happen when an object is newly allocated, but we come to a safepoint before returning
+    // the object. If the safepoint runs a degenerated cycle that is upgraded to a full GC, this object
+    // will have survived two GC cycles. If the tenuring age is very low (1), this object may be promoted.
+    // In this case, we have an allocated object, but it has received no stores yet. If card marking barriers
+    // have been elided, we could end up with an object in old holding pointers to young that won't be in
+    // the remembered set. The solution here is conservative, but this problem should be rare, and it will
+    // correct itself on subsequent cycles when the remembered set is updated.
+    ShenandoahGenerationalHeap::heap()->old_generation()->card_scan()->mark_range_as_dirty(
+      cast_from_oop<HeapWord*>(new_obj), new_obj->size()
+    );
+  }
 #endif // COMPILER2_OR_JVMCI
-  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
@@ -114,15 +124,18 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   assert(queue.index() == 0, "SATB queue index should be zero");
   queue.set_active(_satb_mark_queue_set.is_active());
 
+  if (ShenandoahCardBarrier) {
+    // Every thread always have a pointer to the _current_ _write_ version of the card table.
+    // The JIT'ed code will use this address (+card entry offset) to mark the card as dirty.
+    ShenandoahThreadLocalData::set_card_table(thread, _card_table->write_byte_map_base());
+  }
   ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
 
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::initialize_gclab(thread);
 
     BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
-    }
+    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
 
     if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = JavaThread::cast(thread);

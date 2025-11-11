@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,16 @@
 /*
  * @test
  * @summary Write a lots of shared strings.
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
- * @run driver/timeout=650 SharedStringsStress
+ * @run driver/timeout=2600 SharedStringsStress
  */
+
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
@@ -71,6 +76,7 @@ public class SharedStringsStress {
         OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
             TestCommon.concat(vmOptionsPrefix,
                 "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
+                "-Xlog:aot",
                 "-Xlog:gc+region+cds",
                 "-Xlog:gc+region=trace"));
         TestCommon.checkDump(dumpOutput);
@@ -78,7 +84,7 @@ public class SharedStringsStress {
         dumpOutput.shouldContain("string table array (secondary)");
 
         OutputAnalyzer execOutput = TestCommon.exec(appJar,
-            TestCommon.concat(vmOptionsPrefix, "-Xlog:cds", "HelloString"));
+            TestCommon.concat(vmOptionsPrefix, "-Xlog:aot,cds", "HelloString"));
         TestCommon.checkExec(execOutput);
     }
 }

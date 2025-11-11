@@ -39,6 +39,7 @@ public final class JavaUtils {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(JavaUtils.class);
 
+    @SuppressWarnings("removal")
     private static final SecurityPermission REGISTER_PERMISSION =
         new SecurityPermission("com.sun.org.apache.xml.internal.security.register");
 

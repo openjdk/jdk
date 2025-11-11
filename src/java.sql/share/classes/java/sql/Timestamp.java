@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,7 +493,6 @@ public class Timestamp extends java.util.Date {
      * @throws NullPointerException if {@code dateTime} is null.
      * @since 1.8
      */
-    @SuppressWarnings("deprecation")
     public static Timestamp valueOf(LocalDateTime dateTime) {
         return new Timestamp(dateTime.getYear() - 1900,
                              dateTime.getMonthValue() - 1,

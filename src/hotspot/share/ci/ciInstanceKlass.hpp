@@ -44,6 +44,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciMethod;
   friend class ciField;
   friend class ciReplay;
+  friend class CompileTrainingData;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -67,7 +68,7 @@ private:
   ciInstance*            _java_mirror;
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
-  GrowableArray<ciField*>* _nonstatic_fields;
+  GrowableArray<ciField*>* _nonstatic_fields;  // ordered by JavaFieldStream
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
@@ -80,6 +81,8 @@ private:
   void compute_injected_fields();
   bool compute_injected_fields_helper();
   void compute_transitive_interfaces();
+
+  ciField* get_non_static_field_by_offset(int field_offset);
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -203,6 +206,7 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
+  BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
@@ -229,6 +233,8 @@ public:
 
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
+
+  bool has_class_initializer();
 
   bool contains_field_offset(int offset);
 

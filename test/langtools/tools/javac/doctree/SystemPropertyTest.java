@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5076751 8273244 8284908
+ * @bug 5076751 8273244 8284908 8352249
  * @summary System properties documentation needed in javadocs
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,13 +39,13 @@ class SystemPropertyTest {
      */
     void simple_term() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    SystemProperty[SYSTEM_PROPERTY, pos:5
+    Text[TEXT, pos:0, abc_]
+    SystemProperty[SYSTEM_PROPERTY, pos:4
       property name: xyz.qwe
     ]
-    Text[TEXT, pos:30, _def]
+    Text[TEXT, pos:29, _def]
   body: empty
   block tags: empty
 ]
@@ -56,14 +56,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_with_whitespace() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:26
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:25
       code: compiler.err.dc.unexpected.content
       body: {@systemProperty_xyz_q
     ]
-    Text[TEXT, pos:27, we}]
+    Text[TEXT, pos:26, we}]
   body: empty
   block tags: empty
 ]
@@ -74,14 +74,14 @@ DocComment[DOC_COMMENT, pos:1
      */
     void bad_no_property() {}
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5, prefPos:20
+    Text[TEXT, pos:0, abc_]
+    Erroneous[ERRONEOUS, pos:4, prefPos:19
       code: compiler.err.dc.no.content
       body: {@systemProperty
     ]
-    Text[TEXT, pos:21, }]
+    Text[TEXT, pos:20, }]
   body: empty
   block tags: empty
 ]

@@ -56,7 +56,7 @@ public class Reflection {
         fieldFilterMap = Map.of(
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
-            Class.class, Set.of("classLoader", "classData", "modifiers", "protectionDomain"),
+            Class.class, Set.of("classLoader", "classData", "modifiers", "protectionDomain", "primitive"),
             ClassLoader.class, ALL_MEMBERS,
             Constructor.class, ALL_MEMBERS,
             Field.class, ALL_MEMBERS,
@@ -81,8 +81,9 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    @IntrinsicCandidate
-    public static native int getClassAccessFlags(Class<?> c);
+    public static int getClassAccessFlags(Class<?> c) {
+        return SharedSecrets.getJavaLangAccess().getClassFileAccessFlags(c);
+    }
 
 
     /**

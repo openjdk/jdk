@@ -292,7 +292,7 @@ public class HtmlLinkFactory {
 
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
-            if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
+            if (configuration.isGeneratedDoc(typeElement) && !utils.isHidden(typeElement)) {
                 DocPath fileName = getPath(linkInfo);
                 if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentTypeElement()) {
                         link.add(m_writer.links.createLink(

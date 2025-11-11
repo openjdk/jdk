@@ -73,14 +73,21 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   size_t _reclaimable_bytes;
   double _gc_efficiency;
 
-  // The _group_id is primarily used when printing out per-region liveness information,
-  // making it easier to associate regions with their assigned G1CSetCandidateGroup, if any.
-  // Note:
-  // * _group_id 0 is reserved for special G1CSetCandidateGroups that hold only a single region,
-  //    such as G1CSetCandidateGroups for retained regions.
-  // * _group_id 1 is reserved for the G1CSetCandidateGroup that contains all young regions.
+public:
+  // The _group_id uniquely identifies a candidate group when printing, making it
+  // easier to associate regions with their assigned G1CSetCandidateGroup, if any.
+  // Special values for the id:
+  // * id 0 is reserved for regions that do not have a remembered set.
+  // * id 1 is reserved for the G1CollectionSetCandidate that contains all young regions.
+  // * other ids are handed out incrementally, starting from InitialId.
+  static const uint NoRemSetId = 0;
+  static const uint YoungRegionId = 1;
+  static const uint InitialId = 2;
+
+private:
   const uint _group_id;
   static uint _next_group_id;
+
 public:
   G1CSetCandidateGroup();
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
@@ -89,24 +96,19 @@ public:
   }
 
   void add(G1HeapRegion* hr);
-  void add(G1CollectionSetCandidateInfo& hr_info);
 
   uint length() const { return (uint)_candidates.length(); }
 
   G1CardSet* card_set() { return &_card_set; }
   const G1CardSet* card_set() const { return &_card_set; }
 
-  uint group_id() const { return _group_id; }
-
   void calculate_efficiency();
 
-  size_t liveness() const;
+  double liveness_percent() const;
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
   static int compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2);
-
-  static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   double gc_efficiency() const { return _gc_efficiency; }
 
@@ -120,6 +122,10 @@ public:
     return _card_set_mm.memory_stats();
   }
 
+  size_t cards_occupied() const {
+    return _card_set.occupied();
+  }
+
   void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroupIterator begin() const {
@@ -130,8 +136,10 @@ public:
     return _candidates.end();
   }
 
+  uint group_id() const { return _group_id; }
+
   static void reset_next_group_id() {
-    _next_group_id = 2;
+    _next_group_id = InitialId;
   }
 };
 
@@ -235,10 +243,10 @@ public:
 
   void clear();
 
-  // Merge collection set candidates from marking into the current marking list
+  // Merge collection set candidates from marking into the current marking candidates
   // (which needs to be empty).
-  void set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
-                                   uint num_infos);
+  void set_candidates_from_marking(G1HeapRegion** candidates,
+                                   uint num_candidates);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ class SafepointMechanism : public AllStatic {
   static inline void disarm_local_poll(JavaThread* thread);
 
   static inline bool global_poll();
+
+  static inline bool has_pending_safepoint(JavaThread* thread);
 
   static void process(JavaThread *thread, bool allow_suspend, bool check_async_exception);
 

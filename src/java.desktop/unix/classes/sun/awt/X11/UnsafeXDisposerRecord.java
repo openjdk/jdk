@@ -27,7 +27,7 @@ package sun.awt.X11;
 import jdk.internal.misc.Unsafe;
 import sun.util.logging.PlatformLogger;
 
-class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
+final class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.UnsafeXDisposerRecord");
     private static Unsafe unsafe = XlibWrapper.unsafe;
     final long[] unsafe_ptrs, x_ptrs;
@@ -55,6 +55,7 @@ class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
         }
     }
 
+    @Override
     public void dispose() {
         XToolkit.awtLock();
         try {

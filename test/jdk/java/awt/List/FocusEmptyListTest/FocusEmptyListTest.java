@@ -99,4 +99,4 @@ public class FocusEmptyListTest extends Frame {
 
     }// start()
 
-}// class AutomaticAppletTest
+}

@@ -52,6 +52,10 @@ bool StubRoutines::riscv::_completed = false;
 /**
  *  crc_table[] from jdk/src/java.base/share/native/libzip/zlib/crc32.h
  */
+
+address StubRoutines::crc_table_addr()    { return (address)StubRoutines::riscv::_crc_table; }
+address StubRoutines::crc32c_table_addr() { ShouldNotCallThis(); return nullptr; }
+
 ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
 {
     // Table 0

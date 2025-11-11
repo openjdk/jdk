@@ -1602,7 +1602,9 @@ public class DPrinter {
                 }
             });
 
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("compilation failed at DPrinter.Main::run");
+            }
         }
 
         TaskEvent.Kind getKind(String s) {

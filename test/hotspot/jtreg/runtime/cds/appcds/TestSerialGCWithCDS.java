@@ -128,21 +128,20 @@ public class TestSerialGCWithCDS {
                               "Hello");
         out.shouldNotContain(errMsg);
 
-        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode");
+        System.out.println("2. Exec with " + execGC + " and test ArchiveRelocationMode=0");
         out = TestCommon.exec(helloJar,
                               execGC,
                               small1,
                               small2,
                               coops,
                               "-Xlog:cds,cds+heap",
-                              "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
+                              "-XX:ArchiveRelocationMode=0", // may relocate shared metadata
                               "Hello");
         out.shouldNotContain(errMsg);
 
         int n = 2;
-        if (dumpWithSerial == false && execWithSerial == true) {
-            // We dumped with G1, so we have an archived heap. At exec time, try to load them into
-            // a small SerialGC heap that may be too small.
+        if (execWithSerial == true) {
+            // At exec time, try to load archived objects into a small SerialGC heap that may be too small.
             String[] sizes = {
                 "4m",   // usually this will success load the archived heap
                 "2m",   // usually this will fail to load the archived heap, but app can launch

@@ -50,6 +50,7 @@ public class GDIRenderer implements
                            Region clip, Composite comp, int color,
                            int x1, int y1, int x2, int y2);
 
+    @Override
     public void drawLine(SunGraphics2D sg2d,
                          int x1, int y1, int x2, int y2)
     {
@@ -68,6 +69,7 @@ public class GDIRenderer implements
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
+    @Override
     public void drawRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -85,6 +87,7 @@ public class GDIRenderer implements
                                 int x, int y, int w, int h,
                                 int arcW, int arcH);
 
+    @Override
     public void drawRoundRect(SunGraphics2D sg2d,
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
@@ -103,6 +106,7 @@ public class GDIRenderer implements
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
+    @Override
     public void drawOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -120,6 +124,7 @@ public class GDIRenderer implements
                           int x, int y, int w, int h,
                           int angleStart, int angleExtent);
 
+    @Override
     public void drawArc(SunGraphics2D sg2d,
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
@@ -140,6 +145,7 @@ public class GDIRenderer implements
                            int[] xpoints, int[] ypoints,
                            int npoints, boolean isclosed);
 
+    @Override
     public void drawPolyline(SunGraphics2D sg2d,
                              int[] xpoints, int[] ypoints,
                              int npoints)
@@ -153,6 +159,7 @@ public class GDIRenderer implements
         }
     }
 
+    @Override
     public void drawPolygon(SunGraphics2D sg2d,
                             int[] xpoints, int[] ypoints,
                             int npoints)
@@ -170,6 +177,7 @@ public class GDIRenderer implements
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
+    @Override
     public void fillRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -187,6 +195,7 @@ public class GDIRenderer implements
                                 int x, int y, int w, int h,
                                 int arcW, int arcH);
 
+    @Override
     public void fillRoundRect(SunGraphics2D sg2d,
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
@@ -205,6 +214,7 @@ public class GDIRenderer implements
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
+    @Override
     public void fillOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
@@ -222,6 +232,7 @@ public class GDIRenderer implements
                           int x, int y, int w, int h,
                           int angleStart, int angleExtent);
 
+    @Override
     public void fillArc(SunGraphics2D sg2d,
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
@@ -242,6 +253,7 @@ public class GDIRenderer implements
                            int[] xpoints, int[] ypoints,
                            int npoints);
 
+    @Override
     public void fillPolygon(SunGraphics2D sg2d,
                             int[] xpoints, int[] ypoints,
                             int npoints)
@@ -303,6 +315,7 @@ public class GDIRenderer implements
         }
     }
 
+    @Override
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             doShape(sg2d, s, false);
@@ -318,6 +331,7 @@ public class GDIRenderer implements
         }
     }
 
+    @Override
     public void fill(SunGraphics2D sg2d, Shape s) {
         doShape(sg2d, s, true);
     }
@@ -331,7 +345,8 @@ public class GDIRenderer implements
         return new Tracer();
     }
 
-    public static class Tracer extends GDIRenderer {
+    public static final class Tracer extends GDIRenderer {
+        @Override
         void doDrawLine(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x1, int y1, int x2, int y2)
@@ -339,6 +354,7 @@ public class GDIRenderer implements
             GraphicsPrimitive.tracePrimitive("GDIDrawLine");
             super.doDrawLine(sData, clip, comp, color, x1, y1, x2, y2);
         }
+        @Override
         void doDrawRect(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
@@ -346,6 +362,7 @@ public class GDIRenderer implements
             GraphicsPrimitive.tracePrimitive("GDIDrawRect");
             super.doDrawRect(sData, clip, comp, color, x, y, w, h);
         }
+        @Override
         void doDrawRoundRect(GDIWindowSurfaceData sData,
                              Region clip, Composite comp, int color,
                              int x, int y, int w, int h,
@@ -355,6 +372,7 @@ public class GDIRenderer implements
             super.doDrawRoundRect(sData, clip, comp, color,
                                   x, y, w, h, arcW, arcH);
         }
+        @Override
         void doDrawOval(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
@@ -362,6 +380,7 @@ public class GDIRenderer implements
             GraphicsPrimitive.tracePrimitive("GDIDrawOval");
             super.doDrawOval(sData, clip, comp, color, x, y, w, h);
         }
+        @Override
         void doDrawArc(GDIWindowSurfaceData sData,
                        Region clip, Composite comp, int color,
                        int x, int y, int w, int h,
@@ -371,6 +390,7 @@ public class GDIRenderer implements
             super.doDrawArc(sData, clip, comp, color, x, y, w, h,
                             angleStart, angleExtent);
         }
+        @Override
         void doDrawPoly(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int transx, int transy,
@@ -381,6 +401,7 @@ public class GDIRenderer implements
             super.doDrawPoly(sData, clip, comp, color, transx, transy,
                              xpoints, ypoints, npoints, isclosed);
         }
+        @Override
         void doFillRect(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
@@ -388,6 +409,7 @@ public class GDIRenderer implements
             GraphicsPrimitive.tracePrimitive("GDIFillRect");
             super.doFillRect(sData, clip, comp, color, x, y, w, h);
         }
+        @Override
         void doFillRoundRect(GDIWindowSurfaceData sData,
                              Region clip, Composite comp, int color,
                              int x, int y, int w, int h,
@@ -397,6 +419,7 @@ public class GDIRenderer implements
             super.doFillRoundRect(sData, clip, comp, color,
                                   x, y, w, h, arcW, arcH);
         }
+        @Override
         void doFillOval(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
@@ -404,6 +427,7 @@ public class GDIRenderer implements
             GraphicsPrimitive.tracePrimitive("GDIFillOval");
             super.doFillOval(sData, clip, comp, color, x, y, w, h);
         }
+        @Override
         void doFillArc(GDIWindowSurfaceData sData,
                        Region clip, Composite comp, int color,
                        int x, int y, int w, int h,
@@ -413,6 +437,7 @@ public class GDIRenderer implements
             super.doFillArc(sData, clip, comp, color, x, y, w, h,
                             angleStart, angleExtent);
         }
+        @Override
         void doFillPoly(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int transx, int transy,
@@ -423,6 +448,7 @@ public class GDIRenderer implements
             super.doFillPoly(sData, clip, comp, color, transx, transy,
                              xpoints, ypoints, npoints);
         }
+        @Override
         void doShape(GDIWindowSurfaceData sData,
                      Region clip, Composite comp, int color,
                      int transX, int transY,
@@ -434,6 +460,7 @@ public class GDIRenderer implements
             super.doShape(sData, clip, comp, color,
                           transX, transY, p2df, isfill);
         }
+        @Override
         public void devCopyArea(GDIWindowSurfaceData sData,
                                 int srcx, int srcy,
                                 int dx, int dy,

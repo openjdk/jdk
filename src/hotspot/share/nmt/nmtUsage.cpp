@@ -22,14 +22,15 @@
  *
  */
 
+#include "memory/arena.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
-#include "runtime/threadCritical.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "utilities/vmError.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
@@ -48,19 +49,28 @@ void NMTUsage::walk_thread_stacks() {
   // much memory had been committed if they are backed by virtual memory. This
   // needs to happen before we take the snapshot of the virtual memory since it
   // will update this information.
-  VirtualMemoryTracker::snapshot_thread_stacks();
+  MemTracker::NmtVirtualMemoryLocker locker;
+  VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+
 }
 
 void NMTUsage::update_malloc_usage() {
-  // Thread critical needed keep values in sync, total area size
+  MallocMemorySnapshot* ms;
+  // Lock needed to keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  ThreadCritical tc;
-  const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
+  {
+    ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
+    if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
+      ls = ChunkPoolLocker::LockStrategy::Try;
+    }
+    ChunkPoolLocker cpl(ls);
+    ms = MallocMemorySummary::as_snapshot();
+  }
 
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
-    const MallocMemory* mm = ms->by_type(mem_tag);
+    const MallocMemory* mm = ms->by_tag(mem_tag);
     _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
@@ -84,7 +94,7 @@ void NMTUsage::update_vm_usage() {
   _vm_total.reserved = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
-    const VirtualMemory* vm = vms->by_type(mem_tag);
+    const VirtualMemory* vm = vms->by_tag(mem_tag);
 
     _vm_by_type[i].reserved = vm->reserved();
     _vm_by_type[i].committed = vm->committed();

@@ -25,7 +25,7 @@
  * @test
  * @bug     6440333
  * @summary SimpleJavaFileObject.toString() generates URI with some extra message
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

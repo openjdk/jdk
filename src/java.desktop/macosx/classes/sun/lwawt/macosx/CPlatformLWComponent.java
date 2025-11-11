@@ -28,7 +28,7 @@ package sun.lwawt.macosx;
 
 import sun.lwawt.PlatformWindow;
 
-class CPlatformLWComponent extends CPlatformComponent {
+final class CPlatformLWComponent extends CPlatformComponent {
 
     CPlatformLWComponent() {
         super();

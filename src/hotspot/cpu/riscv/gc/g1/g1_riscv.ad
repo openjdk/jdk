@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -63,13 +63,13 @@ static void write_barrier_post(MacroAssembler* masm,
                                Register new_val,
                                Register tmp1,
                                Register tmp2) {
-  if (!G1PostBarrierStubC2::needs_barrier(node)) {
+  if (!G1BarrierStubC2::needs_post_barrier(node)) {
     return;
   }
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
-  G1PostBarrierStubC2* const stub = G1PostBarrierStubC2::create(node);
-  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, xthread, tmp1, tmp2, stub);
+  bool new_val_may_be_null = G1BarrierStubC2::post_new_val_may_be_null(node);
+  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, xthread, tmp1, tmp2, new_val_may_be_null);
 }
 
 %}

@@ -35,6 +35,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+
 #include <fenv.h>
 #include <math.h>
 
@@ -96,8 +97,11 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 //
 // We will create a region to guard the uct call if there is no one there.
 // The continuation projection (if_cont) of the new_iff is returned which
-// is an IfTrue projection. This code is also used to clone predicates to cloned loops.
-IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
+// is an IfTrue projection. This code is also used to clone predicates to
+// cloned loops. 'rewire_uncommon_proj_phi_inputs' should be set to the
+// non-default value 'true' when called for a false-path loop during
+// Loop Unswitching.
+IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(const ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                         Node* new_entry, const Deoptimization::DeoptReason reason,
                                                         const int opcode, const bool rewire_uncommon_proj_phi_inputs) {
   assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
@@ -123,7 +127,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
     }
     // Move nodes pinned on the projection or whose control is set to
     // the projection to the region.
-    lazy_replace(uncommon_proj_orig, uncommon_trap);
+    replace_node_and_forward_ctrl(uncommon_proj_orig, uncommon_trap);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < uncommon_trap->req(); proj_index++)
@@ -1050,7 +1054,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 #ifdef ASSERT
     const bool exact_trip_count = cl->has_exact_trip_count();
     const uint trip_count = cl->trip_count();
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
            "should have computed trip count on Loop Predication entry");
 #endif
@@ -1167,7 +1171,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
       // Do nothing for iteration-splitted loops
       return false;
     }
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     if (cl->trip_count() == 1) {
       // Not worth to hoist checks out of a loop that is only run for one iteration since the checks are only going to
       // be executed once anyway.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,25 +74,26 @@ public final class SystemProps {
         putIfAbsent(props, "user.dir", raw.propDefault(Raw._user_dir_NDX));
         putIfAbsent(props, "user.name", raw.propDefault(Raw._user_name_NDX));
 
-        // Platform defined encoding cannot be overridden on the command line
+        // Platform defined encodings cannot be overridden on the command line
         put(props, "sun.jnu.encoding", raw.propDefault(Raw._sun_jnu_encoding_NDX));
-        var nativeEncoding = ((raw.propDefault(Raw._file_encoding_NDX) == null)
-                ? raw.propDefault(Raw._sun_jnu_encoding_NDX)
-                : raw.propDefault(Raw._file_encoding_NDX));
+        String nativeEncoding = raw.propDefault(Raw._native_encoding_NDX);
         put(props, "native.encoding", nativeEncoding);
 
         // "file.encoding" defaults to "UTF-8", unless specified in the command line
         // where "COMPAT" designates the native encoding.
-        var fileEncoding = props.getOrDefault("file.encoding", "UTF-8");
-        if ("COMPAT".equals(fileEncoding)) {
+        String fileEncoding = props.get("file.encoding");
+        if (fileEncoding == null) {
+            put(props, "file.encoding", "UTF-8");
+        } else if ("COMPAT".equals(fileEncoding)) {
             put(props, "file.encoding", nativeEncoding);
-        } else {
-            putIfAbsent(props, "file.encoding", fileEncoding);
         }
 
-        // "stdout/err.encoding", prepared for System.out/err. For compatibility
-        // purposes, substitute them with "sun.*" if they don't exist. If "sun.*" aren't
-        // available either, fall back to "native.encoding".
+        // Encoding properties for stdin, stdout, and stderr. For stdout and stderr,
+        // check "sun.stdout.encoding" and "sun.stderr.encoding" properties for backward
+        // compatibility reasons before falling back to the "native.encoding" property.
+        putIfAbsent(props, "stdin.encoding",
+                raw.propDefault(Raw._stdin_encoding_NDX));
+        putIfAbsent(props, "stdin.encoding", nativeEncoding);
         putIfAbsent(props, "stdout.encoding", props.getOrDefault("sun.stdout.encoding",
                 raw.propDefault(Raw._stdout_encoding_NDX)));
         putIfAbsent(props, "stdout.encoding", nativeEncoding);
@@ -209,17 +210,17 @@ public final class SystemProps {
     }
 
     /**
-     * Read the raw properties from native System.c.
+     * Read raw property values from the JVM command line and from
+     * platform-specific code using native methods in System.c.
      */
     public static class Raw {
-        // Array indices written by native vmProperties()
+        // Indexes of array elements written by native platformProperties()
         // The order is arbitrary (but alphabetic for convenience)
         @Native private static final int _display_country_NDX = 0;
         @Native private static final int _display_language_NDX = 1 + _display_country_NDX;
         @Native private static final int _display_script_NDX = 1 + _display_language_NDX;
         @Native private static final int _display_variant_NDX = 1 + _display_script_NDX;
-        @Native private static final int _file_encoding_NDX = 1 + _display_variant_NDX;
-        @Native private static final int _file_separator_NDX = 1 + _file_encoding_NDX;
+        @Native private static final int _file_separator_NDX = 1 + _display_variant_NDX;
         @Native private static final int _format_country_NDX = 1 + _file_separator_NDX;
         @Native private static final int _format_language_NDX = 1 + _format_country_NDX;
         @Native private static final int _format_script_NDX = 1 + _format_language_NDX;
@@ -234,7 +235,8 @@ public final class SystemProps {
         @Native private static final int _https_proxyPort_NDX = 1 + _https_proxyHost_NDX;
         @Native private static final int _java_io_tmpdir_NDX = 1 + _https_proxyPort_NDX;
         @Native private static final int _line_separator_NDX = 1 + _java_io_tmpdir_NDX;
-        @Native private static final int _os_arch_NDX = 1 + _line_separator_NDX;
+        @Native private static final int _native_encoding_NDX = 1 + _line_separator_NDX;
+        @Native private static final int _os_arch_NDX = 1 + _native_encoding_NDX;
         @Native private static final int _os_name_NDX = 1 + _os_arch_NDX;
         @Native private static final int _os_version_NDX = 1 + _os_name_NDX;
         @Native private static final int _path_separator_NDX = 1 + _os_version_NDX;
@@ -242,7 +244,8 @@ public final class SystemProps {
         @Native private static final int _socksProxyHost_NDX = 1 + _socksNonProxyHosts_NDX;
         @Native private static final int _socksProxyPort_NDX = 1 + _socksProxyHost_NDX;
         @Native private static final int _stderr_encoding_NDX = 1 + _socksProxyPort_NDX;
-        @Native private static final int _stdout_encoding_NDX = 1 + _stderr_encoding_NDX;
+        @Native private static final int _stdin_encoding_NDX = 1 + _stderr_encoding_NDX;
+        @Native private static final int _stdout_encoding_NDX = 1 + _stdin_encoding_NDX;
         @Native private static final int _sun_arch_abi_NDX = 1 + _stdout_encoding_NDX;
         @Native private static final int _sun_arch_data_model_NDX = 1 + _sun_arch_abi_NDX;
         @Native private static final int _sun_cpu_endian_NDX = 1 + _sun_arch_data_model_NDX;
@@ -255,7 +258,7 @@ public final class SystemProps {
         @Native private static final int _user_name_NDX = 1 + _user_home_NDX;
         @Native private static final int FIXED_LENGTH = 1 + _user_name_NDX;
 
-        // Array of Strings returned from the VM and Command line properties
+        // Array of property values returned from platform-specific native code
         // The array is not used after initialization is complete.
         private final String[] platformProps;
 
@@ -264,27 +267,26 @@ public final class SystemProps {
         }
 
         /**
-         * Return the value for a well known default from native.
-         * @param index the index of the known property
-         * @return the value
+         * Returns a property value obtained from platform-specific native code.
+         * @param index the index of the property
+         * @return the property value, may be null
          */
         String propDefault(int index) {
             return platformProps[index];
         }
 
         /**
-         * Return a Properties instance of the command line and VM options
-         * defined by name and value.
-         * The Properties instance is sized to include the fixed properties.
+         * Returns a HashMap containing properties obtained from the command line
+         * and from the JVM. The HashMap is sized to include the platform properties.
          *
-         * @return return a Properties instance of the command line and VM options
+         * @return return a HashMap containing command line and JVM properties
          */
         private HashMap<String, String> cmdProperties() {
             String[] vmProps = vmProperties();
-            // While optimal initialCapacity here would be the exact number of properties
-            // divided by LOAD_FACTOR, a large portion of the properties in Raw are
-            // usually not set, so for typical cases the chosen capacity avoids resizing
-            var cmdProps = new HashMap<String, String>((vmProps.length / 2) + Raw.FIXED_LENGTH);
+            // Many platformProperties are null, so this initial size is an overestimate.
+            // However, more properties are added later, including encoding properties
+            // and version properties, so the excess space is justified.
+            HashMap<String, String> cmdProps = HashMap.newHashMap((vmProps.length / 2) + Raw.FIXED_LENGTH);
             for (int i = 0; i < vmProps.length;) {
                 String k = vmProps[i++];
                 if (k != null) {

@@ -36,7 +36,7 @@
 //=============================================================================
 //------------------------------MultiNode--------------------------------------
 const RegMask &MultiNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
@@ -45,30 +45,58 @@ Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->
 // Get a named projection or null if not found
 ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
-  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
-    Node *p = fast_out(i);
-    if (p->is_Proj()) {
-      ProjNode *proj = p->as_Proj();
-      if (proj->_con == which_proj) {
-        assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse), "bad if #2");
-        return proj;
-      }
-    } else {
-      assert(p == this && this->is_Start(), "else must be proj");
-      continue;
-    }
-  }
-  return nullptr;
+  assert(number_of_projs(which_proj) <= 1, "only when there's a single projection");
+  ProjNode* proj = find_first(which_proj);
+  assert(proj == nullptr || (Opcode() != Op_If && Opcode() != Op_RangeCheck) || proj->Opcode() == (which_proj ? Op_IfTrue : Op_IfFalse),
+         "incorrect projection node at If/RangeCheck: IfTrue on false path or IfFalse on true path");
+  return proj;
 }
 
 ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
-  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
-    ProjNode* proj = fast_out(i)->isa_Proj();
-    if (proj != nullptr && (proj->_con == which_proj) && (proj->_is_io_use == is_io_use)) {
-      return proj;
+  assert(number_of_projs(which_proj, is_io_use) <= 1, "only when there's a single projection");
+  return find_first(which_proj, is_io_use);
+}
+
+template<class Callback> ProjNode* MultiNode::apply_to_projs(Callback callback, uint which_proj, bool is_io_use) const {
+  auto filter = [&](ProjNode* proj) {
+    if (proj->_is_io_use == is_io_use && callback(proj) == BREAK_AND_RETURN_CURRENT_PROJ) {
+      return BREAK_AND_RETURN_CURRENT_PROJ;
     }
-  }
-  return nullptr;
+    return CONTINUE;
+  };
+  return apply_to_projs(filter, which_proj);
+}
+
+uint MultiNode::number_of_projs(uint which_proj) const {
+  uint cnt = 0;
+  auto count_projs = [&](ProjNode* proj) {
+    cnt++;
+  };
+  for_each_proj(count_projs, which_proj);
+  return cnt;
+}
+
+uint MultiNode::number_of_projs(uint which_proj, bool is_io_use) const {
+  uint cnt = 0;
+  auto count_projs = [&](ProjNode* proj) {
+    cnt++;
+  };
+  for_each_proj(count_projs, which_proj, is_io_use);
+  return cnt;
+}
+
+ProjNode* MultiNode::find_first(uint which_proj) const {
+  auto find_proj = [&](ProjNode* proj) {
+    return BREAK_AND_RETURN_CURRENT_PROJ;
+  };
+  return apply_to_projs(find_proj, which_proj);
+}
+
+ProjNode* MultiNode::find_first(uint which_proj, bool is_io_use) const {
+  auto find_proj = [](ProjNode* proj) {
+    return BREAK_AND_RETURN_CURRENT_PROJ;
+  };
+  return apply_to_projs(find_proj, which_proj, is_io_use);
 }
 
 // Get a named projection
@@ -120,6 +148,10 @@ const TypePtr *ProjNode::adr_type() const {
   if (bottom_type() == Type::MEMORY) {
     // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
     Node* ctrl = in(0);
+    if (ctrl->Opcode() == Op_Tuple) {
+      // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+      ctrl = ctrl->in(_con);
+    }
     if (ctrl == nullptr)  return nullptr; // node is dead
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
@@ -163,6 +195,15 @@ void ProjNode::check_con() const {
   assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
+//------------------------------Identity---------------------------------------
+Node* ProjNode::Identity(PhaseGVN* phase) {
+  if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
+    // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+    return in(0)->in(_con);
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* ProjNode::Value(PhaseGVN* phase) const {
   if (in(0) == nullptr) return Type::TOP;
@@ -172,7 +213,7 @@ const Type* ProjNode::Value(PhaseGVN* phase) const {
 //------------------------------out_RegMask------------------------------------
 // Pass the buck uphill
 const RegMask &ProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------ideal_reg--------------------------------------
@@ -225,4 +266,9 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
 ProjNode* ProjNode::other_if_proj() const {
   assert(_con == 0 || _con == 1, "not an if?");
   return in(0)->as_If()->proj_out(1-_con);
+}
+
+NarrowMemProjNode::NarrowMemProjNode(InitializeNode* src, const TypePtr* adr_type)
+  : ProjNode(src, TypeFunc::Memory), _adr_type(adr_type) {
+  init_class_id(Class_NarrowMemProj);
 }

@@ -29,6 +29,7 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "runtime/stubDeclarations.hpp"
+#include "runtime/stubInfo.hpp"
 #include "runtime/vframe.hpp"
 
 //------------------------------OptoRuntime------------------------------------
@@ -47,6 +48,12 @@
 // it calls the C++ code "xxx_C".  The generated nmethod is saved in the
 // CodeCache.  Exception handlers use the nmethod to get the callee-save
 // register OopMaps.
+//
+// Please ensure the return type of the runtime call matches its signature,
+// even if the return value is unused. This is crucial for correct handling
+// of runtime calls that return an oop and may trigger deoptimization
+// on return. See rematerialize_objects() in deoptimization.cpp.
+
 class CallInfo;
 
 //
@@ -97,27 +104,14 @@ private:
 
 typedef const TypeFunc*(*TypeFunc_generator)();
 
-// define OptoStubId enum tags: uncommon_trap_id etc
-
-#define C2_BLOB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
-#define C2_STUB_ID_ENUM_DECLARE(name, f, t, r) STUB_ID_NAME(name),
-#define C2_JVMTI_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
-enum class OptoStubId :int {
-  NO_STUBID = -1,
-  C2_STUBS_DO(C2_BLOB_ID_ENUM_DECLARE, C2_STUB_ID_ENUM_DECLARE, C2_JVMTI_STUB_ID_ENUM_DECLARE)
-  NUM_STUBIDS
-};
-#undef C2_BLOB_ID_ENUM_DECLARE
-#undef C2_STUB_ID_ENUM_DECLARE
-#undef C2_JVMTI_STUB_ID_ENUM_DECLARE
-
 class OptoRuntime : public AllStatic {
   friend class Matcher;  // allow access to stub names
+  friend class AOTCodeAddressTable;
 
  private:
   // declare opto stub address/blob holder static fields
 #define C2_BLOB_FIELD_DECLARE(name, type) \
-  static type        BLOB_FIELD_NAME(name);
+  static type*       BLOB_FIELD_NAME(name);
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DECLARE(name, f, t, r) \
   static address     C2_STUB_FIELD_NAME(name) ;
@@ -170,6 +164,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _digestBase_implCompress_without_sha3_Type;
   static const TypeFunc* _digestBase_implCompressMB_with_sha3_Type;
   static const TypeFunc* _digestBase_implCompressMB_without_sha3_Type;
+  static const TypeFunc* _double_keccak_Type;
   static const TypeFunc* _multiplyToLen_Type;
   static const TypeFunc* _montgomeryMultiply_Type;
   static const TypeFunc* _montgomerySquare_Type;
@@ -179,6 +174,18 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _vectorizedMismatch_Type;
   static const TypeFunc* _ghash_processBlocks_Type;
   static const TypeFunc* _chacha20Block_Type;
+  static const TypeFunc* _kyberNtt_Type;
+  static const TypeFunc* _kyberInverseNtt_Type;
+  static const TypeFunc* _kyberNttMult_Type;
+  static const TypeFunc* _kyberAddPoly_2_Type;
+  static const TypeFunc* _kyberAddPoly_3_Type;
+  static const TypeFunc* _kyber12To16_Type;
+  static const TypeFunc* _kyberBarrettReduce_Type;
+  static const TypeFunc* _dilithiumAlmostNtt_Type;
+  static const TypeFunc* _dilithiumAlmostInverseNtt_Type;
+  static const TypeFunc* _dilithiumNttMult_Type;
+  static const TypeFunc* _dilithiumMontMulByConstant_Type;
+  static const TypeFunc* _dilithiumDecomposePoly_Type;
   static const TypeFunc* _base64_encodeBlock_Type;
   static const TypeFunc* _base64_decodeBlock_Type;
   static const TypeFunc* _string_IndexOf_Type;
@@ -199,11 +206,8 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
 
-  // Stub names indexed by sharedStubId
-  static const char *_stub_names[];
-
   // define stubs
-  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
+  static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, StubId stub_id, int is_fancy_jump, bool pass_tls, bool return_pc);
 
   //
   // Implementation of runtime methods
@@ -251,8 +255,8 @@ private:
   // CodeBlob support
   // ===================================================================
 
-  static void generate_uncommon_trap_blob(void);
-  static void generate_exception_blob();
+  static UncommonTrapBlob* generate_uncommon_trap_blob(void);
+  static ExceptionBlob* generate_exception_blob();
 
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
@@ -269,9 +273,9 @@ private:
   static const char* stub_name(address entry);
 
   // Returns the name associated with a given stub id
-  static const char* stub_name(OptoStubId id) {
-    assert(id > OptoStubId::NO_STUBID && id < OptoStubId::NUM_STUBIDS, "stub id out of range");
-    return _stub_names[(int)id];
+  static const char* stub_name(StubId id) {
+    assert(StubInfo::is_c2(id), "not a C2 stub %s", StubInfo::name(id));
+    return StubInfo::name(id);
   }
 
   // access to runtime stubs entry points for java code
@@ -462,6 +466,10 @@ private:
     return _unsafe_setmemory_Type;
   }
 
+//  static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
+//  static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);
+//  static const TypeFunc* double_keccak_Type();
+
   static inline const TypeFunc* array_fill_Type() {
     assert(_array_fill_Type != nullptr, "should be initialized");
     return _array_fill_Type;
@@ -525,6 +533,11 @@ private:
     return is_sha3 ? _digestBase_implCompressMB_with_sha3_Type : _digestBase_implCompressMB_without_sha3_Type;
   }
 
+  static inline const TypeFunc* double_keccak_Type() {
+    assert(_double_keccak_Type != nullptr, "should be initialized");
+    return _double_keccak_Type;
+  }
+
   static inline const TypeFunc* multiplyToLen_Type() {
     assert(_multiplyToLen_Type != nullptr, "should be initialized");
     return _multiplyToLen_Type;
@@ -571,6 +584,66 @@ private:
   static inline const TypeFunc* chacha20Block_Type() {
     assert(_chacha20Block_Type != nullptr, "should be initialized");
     return _chacha20Block_Type;
+  }
+
+  static inline const TypeFunc* kyberNtt_Type() {
+    assert(_kyberNtt_Type != nullptr, "should be initialized");
+    return _kyberNtt_Type;
+  }
+
+  static inline const TypeFunc* kyberInverseNtt_Type() {
+    assert(_kyberInverseNtt_Type != nullptr, "should be initialized");
+    return _kyberInverseNtt_Type;
+  }
+
+  static inline const TypeFunc* kyberNttMult_Type() {
+    assert(_kyberNttMult_Type != nullptr, "should be initialized");
+    return _kyberNttMult_Type;
+  }
+
+  static inline const TypeFunc* kyberAddPoly_2_Type() {
+    assert(_kyberAddPoly_2_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_2_Type;
+  }
+
+  static inline const TypeFunc* kyberAddPoly_3_Type() {
+    assert(_kyberAddPoly_3_Type != nullptr, "should be initialized");
+    return _kyberAddPoly_3_Type;
+  }
+
+  static inline const TypeFunc* kyber12To16_Type() {
+    assert(_kyber12To16_Type != nullptr, "should be initialized");
+    return _kyber12To16_Type;
+  }
+
+  static inline const TypeFunc* kyberBarrettReduce_Type() {
+    assert(_kyberBarrettReduce_Type != nullptr, "should be initialized");
+    return _kyberBarrettReduce_Type;
+  }
+
+  static inline const TypeFunc* dilithiumAlmostNtt_Type() {
+    assert(_dilithiumAlmostNtt_Type != nullptr, "should be initialized");
+    return _dilithiumAlmostNtt_Type;
+  }
+
+  static inline const TypeFunc* dilithiumAlmostInverseNtt_Type() {
+    assert(_dilithiumAlmostInverseNtt_Type != nullptr, "should be initialized");
+    return _dilithiumAlmostInverseNtt_Type;
+  }
+
+  static inline const TypeFunc* dilithiumNttMult_Type() {
+    assert(_dilithiumNttMult_Type != nullptr, "should be initialized");
+    return _dilithiumNttMult_Type;
+  }
+
+  static inline const TypeFunc* dilithiumMontMulByConstant_Type() {
+    assert(_dilithiumMontMulByConstant_Type != nullptr, "should be initialized");
+    return _dilithiumMontMulByConstant_Type;
+  }
+
+  static inline const TypeFunc* dilithiumDecomposePoly_Type() {
+    assert(_dilithiumDecomposePoly_Type != nullptr, "should be initialized");
+    return _dilithiumDecomposePoly_Type;
   }
 
   // Base64 encode function
@@ -669,6 +742,16 @@ private:
     assert(_dtrace_object_alloc_Type != nullptr, "should be initialized");
     return _dtrace_object_alloc_Type;
   }
+
+#ifndef PRODUCT
+  // Signature for runtime calls in debug printing nodes, which depends on which nodes are actually passed
+  // Note: we do not allow more than 7 node arguments as GraphKit::make_runtime_call only allows 8, and we need
+  // one for the static string
+  static const TypeFunc* debug_print_Type(Node* parm0 = nullptr, Node* parm1 = nullptr,
+                                          Node* parm2 = nullptr, Node* parm3 = nullptr,
+                                          Node* parm4 = nullptr, Node* parm5 = nullptr,
+                                          Node* parm6 = nullptr);
+#endif // PRODUCT
 
  private:
  static NamedCounter * volatile _named_counters;

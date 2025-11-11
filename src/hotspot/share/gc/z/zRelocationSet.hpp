@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ private:
 public:
   ZRelocationSet(ZGeneration* generation);
 
+  size_t nforwardings() const;
+
   void install(const ZRelocationSetSelector* selector);
   void reset(ZPageAllocator* page_allocator);
   ZGeneration* generation() const;
@@ -64,6 +66,7 @@ public:
 template <bool Parallel>
 class ZRelocationSetIteratorImpl : public ZArrayIteratorImpl<ZForwarding*, Parallel> {
 public:
+  ZRelocationSetIteratorImpl();
   ZRelocationSetIteratorImpl(ZRelocationSet* relocation_set);
 };
 

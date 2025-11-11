@@ -24,9 +24,9 @@
 
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
-#include "ci/ciObjArray.hpp"
 #include "ci/ciMemberName.hpp"
 #include "ci/ciMethodHandle.hpp"
+#include "ci/ciObjArray.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "opto/addnode.hpp"
@@ -169,10 +169,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_intrinsic() ||
-        method()->is_compiled_lambda_form()) {
-      call->set_method_handle_invoke(true);
-    }
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
@@ -469,8 +465,12 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   // Convert the CallDynamicJava into an inline
   virtual void do_late_inline();
 
+  virtual ciMethod* callee_method() {
+    return _callee;
+  }
+
   virtual void set_callee_method(ciMethod* m) {
-    assert(_callee == nullptr, "repeated inlining attempt");
+    assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
     _callee = m;
   }
 
@@ -987,8 +987,8 @@ CallGenerator* CallGenerator::for_method_handle_call(JVMState* jvms, ciMethod* c
   Compile* C = Compile::current();
   bool should_delay = C->should_delay_inlining();
   if (cg != nullptr) {
-    if (should_delay) {
-      return CallGenerator::for_late_inline(callee, cg);
+    if (should_delay && IncrementalInlineMH) {
+      return CallGenerator::for_mh_late_inline(caller, callee, input_not_const);
     } else {
       return cg;
     }

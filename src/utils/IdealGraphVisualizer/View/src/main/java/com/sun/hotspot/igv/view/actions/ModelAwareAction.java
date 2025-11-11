@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ public abstract class ModelAwareAction extends ContextAction<DiagramViewModel> {
         putValue(Action.SHORT_DESCRIPTION, getDescription());
     }
 
-    protected abstract String iconResource();
-
     protected abstract String getDescription();
 
     public abstract String getName();
@@ -54,7 +52,7 @@ public abstract class ModelAwareAction extends ContextAction<DiagramViewModel> {
 
     @Override
     public void addContextListener(DiagramViewModel model) {
-        model.getSelectedNodesChangedEvent().addListener(this);
+        model.getSelectedElementsChangedEvent().addListener(this);
         model.getDiagramChangedEvent().addListener(this);
         model.getGraphChangedEvent().addListener(this);
         model.getHiddenNodesChangedEvent().addListener(this);
@@ -62,7 +60,7 @@ public abstract class ModelAwareAction extends ContextAction<DiagramViewModel> {
 
     @Override
     public void removeContextListener(DiagramViewModel model) {
-        model.getSelectedNodesChangedEvent().removeListener(this);
+        model.getSelectedElementsChangedEvent().removeListener(this);
         model.getDiagramChangedEvent().removeListener(this);
         model.getGraphChangedEvent().removeListener(this);
         model.getHiddenNodesChangedEvent().removeListener(this);

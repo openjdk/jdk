@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2024 Unicode, Inc.
+<!-- Copyright © 1991-2025 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -99,8 +99,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="chinese" draft="unconfirmed">calendari xinés</type>
 			<type key="calendar" type="japanese" draft="unconfirmed">calendari japonés</type>
-			<type key="collation" type="big5han" draft="unconfirmed">ordre del xinés tradicional - Big5</type>
-			<type key="collation" type="gb2312han" draft="unconfirmed">ordre del xinés simplificat - GB2312</type>
 		</types>
 	</localeDisplayNames>
 	<dates>

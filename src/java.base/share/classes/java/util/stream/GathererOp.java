@@ -150,7 +150,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             final var initializer = gatherer.initializer();
             if (initializer != Gatherer.defaultInitializer()) // Optimization
                 state = initializer.get();
-            sink.begin(size);
+            sink.begin(-1); // GathererOp does not know the size of the output
         }
 
         @Override

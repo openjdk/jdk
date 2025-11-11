@@ -25,10 +25,11 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
-#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/matcher.hpp"
 #include "opto/mempointer.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
@@ -85,6 +86,14 @@ private:
   PhiNode* _iv;
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
+  // We can add speculative runtime-checks if we have one of these:
+  //  - Auto Vectorization Parse Predicate:
+  //      pass all checks or trap -> recompile without this predicate.
+  //  - Multiversioning fast-loop projection:
+  //      pass all checks or go to slow-path-loop, where we have no speculative assumptions.
+  ParsePredicateSuccessProj* _auto_vectorization_parse_predicate_proj;
+  IfTrueNode* _multiversioning_fast_proj;
+
   NOT_PRODUCT(VTrace _vtrace;)
   NOT_PRODUCT(TraceMemPointer _mptrace;)
 
@@ -104,7 +113,9 @@ public:
     _cl        (nullptr),
     _cl_exit   (nullptr),
     _iv        (nullptr),
-    _pre_loop_end (nullptr)
+    _pre_loop_end (nullptr),
+    _auto_vectorization_parse_predicate_proj(nullptr),
+    _multiversioning_fast_proj(nullptr)
 #ifndef PRODUCT
     COMMA
     _mptrace(TraceMemPointer(
@@ -137,6 +148,23 @@ public:
     assert(head != nullptr, "must find head");
     return head;
   };
+
+  ParsePredicateSuccessProj* auto_vectorization_parse_predicate_proj() const {
+    return _auto_vectorization_parse_predicate_proj;
+  }
+
+  IfTrueNode* multiversioning_fast_proj() const {
+    return _multiversioning_fast_proj;
+  }
+
+  bool are_speculative_checks_possible() const {
+    return _auto_vectorization_parse_predicate_proj != nullptr ||
+           _multiversioning_fast_proj != nullptr;
+  }
+
+  bool use_speculative_aliasing_checks() const {
+    return are_speculative_checks_possible() && UseAutoVectorizationSpeculativeAliasingChecks;
+  }
 
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
@@ -176,6 +204,26 @@ public:
   bool is_trace_vpointers() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
+
+  bool is_trace_optimization() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
+  }
+
+  bool is_trace_cost() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
+  }
+
+  bool is_trace_cost_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST_VERBOSE);
+  }
+
+  bool is_trace_speculative_runtime_checks() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
+  }
+
+  bool is_trace_speculative_aliasing_analysis() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_ALIASING_ANALYSIS);
+  }
 #endif
 
   // Is the node in the basic block of the loop?
@@ -195,15 +243,18 @@ public:
       return false;
     }
 
+    // Usually the ctrl of n is already before the pre-loop.
     Node* ctrl = phase()->get_ctrl(n);
-
-    // Quick test: is it in the main-loop?
-    if (lpt()->is_member(phase()->get_loop(ctrl))) {
-      return false;
+    if (is_before_pre_loop(ctrl)) {
+      return true;
     }
 
-    // Is it before the pre-loop?
-    return phase()->is_dominator(ctrl, pre_loop_head());
+    // But in some cases, the ctrl of n is between the pre and
+    // main loop, but the early ctrl is before the pre-loop.
+    // As long as the early ctrl is before the pre-loop, we can
+    // compute n before the pre-loop.
+    Node* early = phase()->compute_early_ctrl(n, ctrl);
+    return is_before_pre_loop(early);
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -212,6 +263,16 @@ public:
 
 private:
   VStatus check_preconditions_helper();
+
+  bool is_before_pre_loop(Node* ctrl) const {
+    // Quick test: is it in the main-loop?
+    if (lpt()->is_member(phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return phase()->is_dominator(ctrl, pre_loop_head());
+  }
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.
@@ -229,7 +290,7 @@ private:
 
 public:
   VSharedData() :
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _node_idx_to_loop_body_idx(&_arena, estimated_node_count(), 0, 0)
   {
   }
@@ -331,37 +392,6 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
-// Find the memory slices in the loop.
-class VLoopMemorySlices : public StackObj {
-private:
-  const VLoop& _vloop;
-
-  GrowableArray<PhiNode*> _heads;
-  GrowableArray<MemNode*> _tails;
-
-public:
-  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
-    _vloop(vloop),
-    _heads(arena, 8, 0, nullptr),
-    _tails(arena, 8, 0, nullptr) {};
-  NONCOPYABLE(VLoopMemorySlices);
-
-  void find_memory_slices();
-
-  const GrowableArray<PhiNode*>& heads() const { return _heads; }
-  const GrowableArray<MemNode*>& tails() const { return _tails; }
-
-  // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
-
-  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
-
-#ifndef PRODUCT
-  void print() const;
-#endif
-};
-
-// Submodule of VLoopAnalyzer.
 // Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
 // This mapping is used so that subsequent datastructures sizes only grow with
 // the body size, and not the number of all nodes in the compilation.
@@ -413,12 +443,79 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop. There are 3 kinds of slices:
+// 1. no use in loop:                     inputs(i) = nullptr,   heads(i) = nullptr
+// 2. stores in loop:                     inputs(i) = entry_mem, heads(i) = phi_mem
+//
+//    <mem state before loop> = entry_mem
+//                      |
+//         CountedLoop  |  +-----------------------+
+//                   |  v  v                       |
+//                   phi_mem                       |
+//                     |                           |
+//                   <stores (and maybe loads)>    |
+//                     |                           |
+//                     +---------------------------+
+//                     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are dependent on the last store in the loop.
+//          Once we vectorize, we may reorder the loads and stores, and replace
+//          scalar mem ops with vector mem ops. We will have to make sure that all
+//          uses after the loop use the new last store.
+//          See: VTransformApplyState::fix_memory_state_uses_after_loop
+//
+// 3. only loads but no stores in loop:   inputs(i) = entry_mem, heads(i) = nullptr
+//
+//    <mem state before loop> = entry_mem
+//     |                 |
+//     |   CountedLoop   |
+//     |             |   |
+//     |            <loads in loop>
+//     |
+//    <mem uses after loop>
+//
+//    Note: the mem uses after the loop are NOT dependent any mem ops in the loop,
+//          since there are no stores.
+//
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+  const VLoopBody& _body;
+
+  GrowableArray<Node*>    _inputs;
+  GrowableArray<PhiNode*> _heads;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop, const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _inputs(arena, num_slices(), num_slices(), nullptr),
+    _heads(arena, num_slices(), num_slices(), nullptr) {};
+  NONCOPYABLE(VLoopMemorySlices);
+
+  const GrowableArray<Node*>& inputs() const { return _inputs; }
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+
+  void find_memory_slices();
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+private:
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  int num_slices() const { return _vloop.phase()->C->num_alias_types(); }
+};
+
+// Submodule of VLoopAnalyzer.
 // Compute the vector element type for every node in the loop body.
 // We need to do this to be able to vectorize the narrower integer
 // types (byte, char, short). In the C2 IR, their operations are
 // done with full int type with 4 byte precision (e.g. AddI, MulI).
 // Example:  char a,b,c;  a = (char)(b + c);
-// However, if we can prove the the upper bits are only truncated,
+// However, if we can prove the upper bits are only truncated,
 // and the lower bits for the narrower type computed correctly, we
 // can compute the operations in the narrower type directly (e.g we
 // perform the AddI or MulI with 1 or 2 bytes). This allows us to
@@ -495,6 +592,32 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Mark all nodes from the loop that are part of any VPointer expression.
+class PointerExpressionNodes : public MemPointerParserCallback {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+  VectorSet        _in_pointer_expression;
+
+public:
+  PointerExpressionNodes(Arena* arena,
+                         const VLoop& vloop,
+                         const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _in_pointer_expression(arena) {}
+
+  virtual void callback(Node* n) override {
+    if (!_vloop.in_bb(n)) { return; }
+    _in_pointer_expression.set(_body.bb_idx(n));
+  }
+
+  bool contains(const Node* n) const {
+    if (!_vloop.in_bb(n)) { return false; }
+    return _in_pointer_expression.test(_body.bb_idx(n));
+  }
+};
+
 // Submodule of VLoopAnalyzer.
 // We compute and cache the VPointer for every load and store.
 class VLoopVPointers : public StackObj {
@@ -510,6 +633,9 @@ private:
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;
 
+  // Mark all nodes that are part of any pointers expression.
+  PointerExpressionNodes _pointer_expression_nodes;
+
 public:
   VLoopVPointers(Arena* arena,
                  const VLoop& vloop,
@@ -521,12 +647,17 @@ public:
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
-                        -1) {}
+                        -1),
+    _pointer_expression_nodes(arena, _vloop, _body) {}
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+  bool is_in_pointer_expression(const Node* n) const {
+    return _pointer_expression_nodes.contains(n);
+  }
 
 private:
   void count_vpointers();
@@ -542,6 +673,9 @@ private:
 //  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
 //                         stores are serialized, even if their memory does not overlap. Thus,
 //                         we refine the memory-dependencies (see construct method).
+//    - Strong edge: must be respected.
+//    - Weak edge:   if we add a speculative aliasing check, we can violate
+//                   the edge, i.e. swap the order.
 class VLoopDependencyGraph : public StackObj {
 private:
   class DependencyNode;
@@ -584,7 +718,7 @@ public:
   bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  void add_node(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges);
   int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
   int find_max_pred_depth(const Node* n) const;
@@ -598,16 +732,23 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _memory_pred_edges_length;
-    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+    const uint _num_strong_memory_edges;
+    const uint _num_weak_memory_edges;
+    int* _memory_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    DependencyNode(MemNode* n, GrowableArray<int>& strong_memory_edges, GrowableArray<int>& weak_memory_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
-    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+    uint num_strong_memory_edges() const { return _num_strong_memory_edges; }
+    uint num_weak_memory_edges() const { return _num_weak_memory_edges; }
 
-    int memory_pred_edge(uint i) const {
-      assert(i < _memory_pred_edges_length, "bounds check");
-      return _memory_pred_edges[i];
+    int strong_memory_edge(uint i) const {
+      assert(i < _num_strong_memory_edges, "bounds check");
+      return _memory_edges[i];
+    }
+
+    int weak_memory_edge(uint i) const {
+      assert(i < _num_weak_memory_edges, "bounds check");
+      return _memory_edges[_num_strong_memory_edges + i];
     }
   };
 
@@ -621,22 +762,40 @@ public:
     const DependencyNode* _dependency_node;
 
     Node* _current;
+    bool _is_current_memory_edge;
+    bool _is_current_weak_memory_edge;
 
-    // Iterate in node->in(i)
-    int _next_pred;
-    int _end_pred;
+    // Iterate in data edges, i.e. iterate node->in(i), excluding control and memory edges.
+    int _next_data_edge;
+    int _end_data_edge;
 
-    // Iterate in dependency_node->memory_pred_edge(i)
-    int _next_memory_pred;
-    int _end_memory_pred;
+    // Iterate in dependency_node->strong_memory_edges()
+    int _next_strong_memory_edge;
+    int _end_strong_memory_edge;
+
+    // Iterate in dependency_node->weak_memory_edge()
+    int _next_weak_memory_edge;
+    int _end_weak_memory_edge;
+
   public:
     PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
+
     Node* current() const {
       assert(!done(), "not done yet");
       return _current;
+    }
+
+    bool is_current_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_memory_edge;
+    }
+
+    bool is_current_weak_memory_edge() const {
+      assert(!done(), "not done yet");
+      return _is_current_weak_memory_edge;
     }
   };
 };
@@ -660,8 +819,8 @@ private:
 
   // Submodules
   VLoopReductions      _reductions;
-  VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
+  VLoopMemorySlices    _memory_slices;
   VLoopTypes           _types;
   VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
@@ -669,11 +828,11 @@ private:
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
     _vloop(vloop),
-    _arena(mtCompiler),
+    _arena(mtCompiler, Arena::Tag::tag_superword),
     _success(false),
     _reductions      (&_arena, vloop),
-    _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
+    _memory_slices   (&_arena, vloop, _body),
     _types           (&_arena, vloop, _body),
     _vpointers       (&_arena, vloop, _body),
     _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
@@ -692,6 +851,15 @@ public:
   const VLoopTypes& types()                      const { return _types; }
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+
+  // Compute the cost of the (scalar) body.
+  float cost_for_scalar_loop() const;
+  bool has_zero_cost(Node* n) const;
+
+  // Cost-modeling with tracing.
+  float cost_for_scalar_node(int opcode) const;
+  float cost_for_vector_node(int opcode, int vlen, BasicType bt) const;
+  float cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
 
 private:
   bool setup_submodules();
@@ -901,6 +1069,43 @@ public:
     }
     return mem_pointer().never_overlaps_with(other.mem_pointer());
   }
+
+  // Delegate to MemPointer::always_overlaps_with, but guard for invalid cases
+  // where we must return a conservative answer: unknown overlap, return false.
+  bool always_overlaps_with(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::always_overlaps_with: invalid VPointer, overlap unknown.");
+      }
+#endif
+      return false;
+    }
+    return mem_pointer().always_overlaps_with(other.mem_pointer());
+  }
+
+  static int cmp_summands(const VPointer& vp1, const VPointer& vp2) {
+    return MemPointer::cmp_summands(vp1.mem_pointer(), vp2.mem_pointer());
+  }
+
+  static int cmp_con(const VPointer& vp1, const VPointer& vp2) {
+    // We use two comparisons, because a subtraction could underflow.
+    jint con1 = vp1.con();
+    jint con2 = vp2.con();
+    if (con1 < con2) { return -1; }
+    if (con1 > con2) { return  1; }
+    return 0;
+  }
+
+  static int cmp_summands_and_con(const VPointer& vp1, const VPointer& vp2) {
+    int cmp = cmp_summands(vp1, vp2);
+    if (cmp != 0) { return cmp; }
+    return cmp_con(vp1, vp2);
+  }
+
+  bool can_make_speculative_aliasing_check_with(const VPointer& other) const;
+  Node* make_pointer_expression(Node* iv_value, Node* ctrl) const;
+  BoolNode* make_speculative_aliasing_check_with(const VPointer& other, Node* ctrl) const;
 
   NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
 
@@ -1296,6 +1501,14 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
+  // For native bases, we have no alignment guarantee. This means we cannot in
+  // general guarantee alignment statically. But we can check alignment with a
+  // speculative runtime check, see VTransform::apply_speculative_runtime_checks.
+  // For this, we need find the Predicate for auto vectorization checks, or else
+  // we need to find the multiversion_if. If we cannot find either, then we
+  // cannot make any speculative runtime checks.
+  const bool     _are_speculative_checks_possible;
+
   DEBUG_ONLY( const bool _is_trace; );
 
   static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
@@ -1309,7 +1522,8 @@ public:
                   const uint vector_length,
                   const Node* init_node,
                   const int pre_stride,
-                  const int main_stride
+                  const int main_stride,
+                  const bool are_speculative_checks_possible
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
       _vpointer(          vpointer),
@@ -1318,7 +1532,8 @@ public:
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
-      _main_stride(       main_stride)
+      _main_stride(       main_stride),
+      _are_speculative_checks_possible(are_speculative_checks_possible)
       DEBUG_ONLY( COMMA _is_trace(is_trace) )
   {
     assert(_mem_ref != nullptr &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,7 +26,6 @@ import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.jaxp.validation.XSGrammarPoolContainer;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
@@ -42,9 +41,12 @@ import java.util.Locale;
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.validation.Schema;
+import jdk.xml.internal.FeaturePropertyBase;
 import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.JdkXmlConfig;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityPropertyManager;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.HandlerBase;
@@ -63,7 +65,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @LastModified: Nov 2023
+ * @LastModified: May 2025
  */
 @SuppressWarnings("deprecation")
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
@@ -169,9 +171,9 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 Boolean temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
                 if (temp != null && temp) {
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
-                            XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                     fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
-                            XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                            FeaturePropertyBase.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 }
             }
         }
@@ -411,7 +413,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
              * it is null.
              */
             if (fSecurityManager == null) {
-                fSecurityManager = new XMLSecurityManager(true);
+                fSecurityManager = JdkXmlConfig.getInstance(false).getXMLSecurityManager(false);
             }
             try {
                 super.setProperty(SECURITY_MANAGER, fSecurityManager);
@@ -422,7 +424,7 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
             }
 
             if (fSecurityPropertyMgr == null) {
-                fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+                fSecurityPropertyMgr = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false);
             }
             try {
                 super.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
@@ -568,20 +570,13 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 super.setProperty(name, value);
             }
 
-            //check if the property is managed by security manager
-            if (fSecurityManager == null ||
-                    !fSecurityManager.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
-                //check if the property is managed by security property manager
-                if (fSecurityPropertyMgr == null ||
-                        !fSecurityPropertyMgr.setValue(name, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {
-                    //fall back to the existing property manager
-                    if (!fInitProperties.containsKey(name)) {
-                        fInitProperties.put(name, super.getProperty(name));
-                    }
-                    super.setProperty(name, value);
+            if (!JdkXmlUtils.setProperty(fSecurityManager, fSecurityPropertyMgr, name, value)) {
+                //fall back to the existing property manager
+                if (!fInitProperties.containsKey(name)) {
+                    fInitProperties.put(name, super.getProperty(name));
                 }
+                super.setProperty(name, value);
             }
-
         }
 
         public synchronized Object getProperty(String name)
@@ -595,19 +590,10 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 return fSAXParser.schemaLanguage;
             }
 
-            /** Check to see if the property is managed by the security manager **/
-            String propertyValue = (fSecurityManager != null) ?
-                    fSecurityManager.getLimitAsString(name) : null;
-            if (propertyValue != null) {
-                return propertyValue;
-            } else {
-                propertyValue = (fSecurityPropertyMgr != null) ?
-                    fSecurityPropertyMgr.getValue(name) : null;
-                if (propertyValue != null) {
-                    return propertyValue;
-                }
+            String value;
+            if ((value = JdkXmlUtils.getProperty(fSecurityManager, fSecurityPropertyMgr, name)) != null) {
+                return value;
             }
-
             return super.getProperty(name);
         }
 

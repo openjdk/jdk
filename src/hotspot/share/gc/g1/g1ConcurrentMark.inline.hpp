@@ -186,7 +186,7 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
 
 inline void G1ConcurrentMark::update_top_at_mark_start(G1HeapRegion* r) {
   uint const region = r->hrm_index();
-  assert(region < _g1h->max_reserved_regions(), "Tried to access TAMS for region %u out of bounds", region);
+  assert(region < _g1h->max_num_regions(), "Tried to access TAMS for region %u out of bounds", region);
   _top_at_mark_starts[region] = r->top();
 }
 
@@ -199,13 +199,13 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start(const G1HeapRegion* r) cons
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start(uint region) const {
-  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_num_regions(), "Tried to access TARS for region %u out of bounds", region);
   return _top_at_mark_starts[region];
 }
 
 inline bool G1ConcurrentMark::obj_allocated_since_mark_start(oop obj) const {
   uint const region = _g1h->addr_to_region(obj);
-  assert(region < _g1h->max_reserved_regions(), "obj " PTR_FORMAT " outside heap %u", p2i(obj), region);
+  assert(region < _g1h->max_num_regions(), "obj " PTR_FORMAT " outside heap %u", p2i(obj), region);
   return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start(region);
 }
 
@@ -217,7 +217,7 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(G1HeapRegion* r) {
   assert(r->is_old() || r->is_humongous(), "precondition");
 
   uint const region = r->hrm_index();
-  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
+  assert(region < _g1h->max_num_regions(), "Tried to access TARS for region %u out of bounds", region);
   assert(_top_at_rebuild_starts[region] == nullptr,
          "TARS for region %u has already been set to " PTR_FORMAT " should be null",
          region, p2i(_top_at_rebuild_starts[region]));
@@ -226,6 +226,10 @@ inline void G1ConcurrentMark::update_top_at_rebuild_start(G1HeapRegion* r) {
 
 inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
   _mark_stats_cache.add_live_words(_g1h->addr_to_region(obj), obj_size);
+}
+
+inline void G1CMTask::inc_incoming_refs(oop const obj) {
+  _mark_stats_cache.inc_incoming_refs(_g1h->addr_to_region(obj));
 }
 
 inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
@@ -287,6 +291,10 @@ inline bool G1CMTask::deal_with_reference(T* p) {
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
   if (obj == nullptr) {
     return false;
+  }
+
+  if (!G1HeapRegion::is_in_same_region(p, obj)) {
+    inc_incoming_refs(obj);
   }
   return make_reference_grey(obj);
 }

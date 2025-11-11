@@ -25,7 +25,7 @@
  * @test
  * @bug     6457284
  * @summary Internationalize "unnamed package" when the term is used in diagnostics
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.util
  */

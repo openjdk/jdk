@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,15 +248,7 @@ public class filter_rt002 extends JDIBase {
 
         log2("      received: ClassPrepareEvent for debuggeeClass");
 
-        String bPointMethod = "methodForCommunication";
-        String lineForComm  = "lineForComm";
-
-        ThreadReference   mainThread = debuggee.threadByNameOrThrow("main");
-
-        BreakpointRequest bpRequest = settingBreakpoint(mainThread,
-                                             debuggeeClass,
-                                            bPointMethod, lineForComm, "zero");
-        bpRequest.enable();
+        setupBreakpointForCommunication(debuggeeClass);
 
     //------------------------------------------------------  testing section
 
@@ -272,7 +264,7 @@ public class filter_rt002 extends JDIBase {
         for (int i = 0; ; i++) {
 
             vm.resume();
-            breakpointForCommunication();
+            breakpointForCommunication(debuggeeName);
 
             int instruction = ((IntegerValue)
                                (debuggeeClass.getValue(debuggeeClass.fieldByName("instruction")))).value();
@@ -340,30 +332,6 @@ public class filter_rt002 extends JDIBase {
         }
         log1("    TESTING ENDS");
         return;
-    }
-
-    protected void breakpointForCommunication()
-            throws JDITestRuntimeException {
-        log2("breakpointForCommunication");
-
-        do {
-            getEventSet();
-
-            Event event = eventIterator.nextEvent();
-            if (event instanceof BreakpointEvent)
-                return;
-
-            log2("      received: " + event);
-
-            if (EventFilters.filtered(event, debuggeeName)) {
-                eventSet.resume();
-            }
-            else {
-                break;
-            }
-        } while (true);
-
-        throw new JDITestRuntimeException("** event IS NOT a breakpoint **");
     }
 
     // ============================== test's additional methods

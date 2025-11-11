@@ -66,6 +66,18 @@ void ParallelArguments::initialize() {
     }
   }
 
+  if (InitialSurvivorRatio < MinSurvivorRatio) {
+    if (FLAG_IS_CMDLINE(InitialSurvivorRatio)) {
+      if (FLAG_IS_CMDLINE(MinSurvivorRatio)) {
+        jio_fprintf(defaultStream::error_stream(),
+          "Inconsistent MinSurvivorRatio vs InitialSurvivorRatio: %zu vs %zu\n", MinSurvivorRatio, InitialSurvivorRatio);
+      }
+      FLAG_SET_DEFAULT(MinSurvivorRatio, InitialSurvivorRatio);
+    } else {
+      FLAG_SET_DEFAULT(InitialSurvivorRatio, MinSurvivorRatio);
+    }
+  }
+
   // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
   // SurvivorRatio has been set, reset their default values to SurvivorRatio +
   // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
@@ -86,45 +98,39 @@ void ParallelArguments::initialize() {
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
-// The alignment used for boundary between young gen and old gen
-static size_t default_gen_alignment() {
-  return 64 * K * HeapWordSize;
-}
-
 void ParallelArguments::initialize_alignments() {
   // Initialize card size before initializing alignments
   CardTable::initialize_card_size();
-  SpaceAlignment = GenAlignment = default_gen_alignment();
+  SpaceAlignment = ParallelScavengeHeap::default_space_alignment();
   HeapAlignment = compute_heap_alignment();
 }
 
 void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
   // Do basic sizing work
   GenArguments::initialize_heap_flags_and_sizes();
-
-  // The survivor ratio's are calculated "raw", unlike the
-  // default gc, which adds 2 to the ratio value. We need to
-  // make sure the values are valid before using them.
-  if (MinSurvivorRatio < 3) {
-    FLAG_SET_ERGO(MinSurvivorRatio, 3);
-  }
-
-  if (InitialSurvivorRatio < 3) {
-    FLAG_SET_ERGO(InitialSurvivorRatio, 3);
-  }
 }
 
 void ParallelArguments::initialize_heap_flags_and_sizes() {
   initialize_heap_flags_and_sizes_one_pass();
 
+  if (!UseLargePages) {
+    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
+    return;
+  }
+
+  // If using large-page, need to update SpaceAlignment so that spaces are page-size aligned.
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
   const size_t page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
+  ParallelScavengeHeap::set_desired_page_size(page_sz);
 
-  // Can a page size be something else than a power of two?
-  assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
-  size_t new_alignment = align_up(page_sz, GenAlignment);
-  if (new_alignment != GenAlignment) {
-    GenAlignment = new_alignment;
+  if (page_sz == os::vm_page_size()) {
+    log_warning(gc, heap)("MinHeapSize (%zu) must be large enough for 4 * page-size; Disabling UseLargePages for heap", MinHeapSize);
+    return;
+  }
+
+  // Space is largepage-aligned.
+  size_t new_alignment = page_sz;
+  if (new_alignment != SpaceAlignment) {
     SpaceAlignment = new_alignment;
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();

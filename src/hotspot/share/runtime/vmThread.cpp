@@ -24,16 +24,17 @@
 
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/vmThreadCpuTimeScope.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "logging/logConfiguration.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -45,8 +46,8 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -67,17 +68,17 @@ void VMOperationTimeoutTask::task() {
 }
 
 bool VMOperationTimeoutTask::is_armed() {
-  return Atomic::load_acquire(&_armed) != 0;
+  return AtomicAccess::load_acquire(&_armed) != 0;
 }
 
 void VMOperationTimeoutTask::arm(const char* vm_op_name) {
   _vm_op_name = vm_op_name;
   _arm_time = os::javaTimeNanos();
-  Atomic::release_store_fence(&_armed, 1);
+  AtomicAccess::release_store_fence(&_armed, 1);
 }
 
 void VMOperationTimeoutTask::disarm() {
-  Atomic::release_store_fence(&_armed, 0);
+  AtomicAccess::release_store_fence(&_armed, 0);
 
   // The two stores to `_armed` are counted in VM-op, but they should be
   // insignificant compared to the actual VM-op duration.
@@ -156,7 +157,7 @@ void VMThread::run() {
   // Notify_lock wait checks on is_running() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify
-  Atomic::store(&_is_running, true);
+  AtomicAccess::store(&_is_running, true);
 
   {
     MutexLocker ml(Notify_lock);
@@ -275,31 +276,25 @@ void VMThread::evaluate_operation(VM_Operation* op) {
   {
     PerfTraceTime vm_op_timer(perf_accumulated_vm_operation_time());
     HOTSPOT_VMOPS_BEGIN(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
 
     EventExecuteVMOperation event;
+    VMThreadCPUTimeScope CPUTimeScope(this, op->is_gc_operation());
     op->evaluate();
     if (event.should_commit()) {
       post_vm_operation_event(&event, op);
     }
 
     HOTSPOT_VMOPS_END(
-                     (char *) op->name(), strlen(op->name()),
+                     (char*) op->name(), strlen(op->name()),
                      op->evaluate_at_safepoint() ? 0 : 1);
-  }
-
-  if (UsePerfData && os::is_thread_cpu_time_supported()) {
-    assert(Thread::current() == this, "Must be called from VM thread");
-    // Update vm_thread_cpu_time after each VM operation.
-    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::vm);
-    tttc.do_thread(this);
   }
 }
 
-class HandshakeALotClosure : public HandshakeClosure {
+class ALotOfHandshakeClosure : public HandshakeClosure {
  public:
-  HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
+  ALotOfHandshakeClosure() : HandshakeClosure("ALotOfHandshakeClosure") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
     JavaThread::cast(thread)->verify_states_for_handshake();
@@ -453,8 +448,8 @@ void VMThread::wait_for_operation() {
     if (handshake_or_safepoint_alot()) {
       if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
-        HandshakeALotClosure hal_cl;
-        Handshake::execute(&hal_cl);
+        ALotOfHandshakeClosure aohc;
+        Handshake::execute(&aohc);
       }
       // When we unlocked above someone might have setup a new op.
       if (_next_vm_operation != nullptr) {
@@ -526,6 +521,13 @@ void VMThread::execute(VM_Operation* op) {
     ((VMThread*)t)->inner_execute(op);
     return;
   }
+
+  // The current thread must not belong to the SuspendibleThreadSet, because an
+  // on-the-fly safepoint can be waiting for the current thread, and the
+  // current thread will be blocked in wait_until_executed, resulting in
+  // deadlock.
+  assert(!t->is_suspendible_thread(), "precondition");
+  assert(!t->is_indirectly_suspendible_thread(), "precondition");
 
   // Avoid re-entrant attempts to gc-a-lot
   SkipGCALot sgcalot(t);

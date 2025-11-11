@@ -82,7 +82,7 @@ public class AppLauncherEnvTest {
         TKit.assertTextStream(expectedEnvVarValue)
             .predicate(TKit.isLinux() ? String::endsWith : String::equals)
             .label(String.format("value of %s env variable", envVarName))
-            .apply(Stream.of(actualEnvVarValue));
+            .apply(List.of(actualEnvVarValue));
 
         final String javaLibraryPath = getValue.apply(2, "java.library.path");
         TKit.assertTrue(

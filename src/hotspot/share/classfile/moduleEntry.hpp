@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 #include "oops/symbolHandle.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
@@ -53,7 +53,7 @@ class ModuleClosure;
 // A ModuleEntry describes a module that has been defined by a call to JVM_DefineModule.
 // It contains:
 //   - Symbol* containing the module's name.
-//   - pointer to the java.lang.Module for this module.
+//   - pointer to the java.lang.Module: the representation of this module as a Java object
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
 //   - a growable array containing other module entries that this module can read.
@@ -63,7 +63,7 @@ class ModuleClosure;
 // data structure.  This lock must be taken on all accesses to either table.
 class ModuleEntry : public CHeapObj<mtModule> {
 private:
-  OopHandle _module;                   // java.lang.Module
+  OopHandle _module_handle;            // java.lang.Module
   OopHandle _shared_pd;                // java.security.ProtectionDomain, cached
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
@@ -96,9 +96,9 @@ public:
   ~ModuleEntry();
 
   Symbol*          name() const                        { return _name; }
-  oop              module() const;
-  OopHandle        module_handle() const               { return _module; }
-  void             set_module(OopHandle j)             { _module = j; }
+  oop              module_oop() const;
+  OopHandle        module_handle() const               { return _module_handle; }
+  void             set_module_handle(OopHandle j)      { _module_handle = j; }
 
   // The shared ProtectionDomain reference is set once the VM loads a shared class
   // originated from the current Module. The referenced ProtectionDomain object is
@@ -186,10 +186,10 @@ public:
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
   // Note caller requires ResourceMark
-  const char* name_as_C_string() {
+  const char* name_as_C_string() const {
     return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
   }
-  void print(outputStream* st = tty);
+  void print(outputStream* st = tty) const;
   void verify();
 
   CDS_ONLY(int shared_path_index() { return _shared_path_index;})
@@ -197,6 +197,7 @@ public:
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
 #if INCLUDE_CDS_JAVA_HEAP
+  bool should_be_archived() const;
   void iterate_symbols(MetaspaceClosure* closure);
   ModuleEntry* allocate_archived_entry() const;
   void init_as_archived_entry();
@@ -205,9 +206,9 @@ public:
   static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
   static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
+  void preload_archived_oops();
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();
-  void update_oops_in_archived_module(int root_oop_index);
   static void verify_archived_module_entries() PRODUCT_RETURN;
 #endif
 };
@@ -233,7 +234,7 @@ class ModuleClosure: public StackObj {
 class ModuleEntryTable : public CHeapObj<mtModule> {
 private:
   static ModuleEntry* _javabase_module;
-  ResourceHashtable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
+  HashTable<SymbolHandle, ModuleEntry*, 109, AnyObj::C_HEAP, mtModule,
                     SymbolHandle::compute_hash> _table;
 
 public:
@@ -263,7 +264,7 @@ public:
   }
 
   static bool javabase_defined() { return ((_javabase_module != nullptr) &&
-                                           (_javabase_module->module() != nullptr)); }
+                                           (_javabase_module->module_oop() != nullptr)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
   static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 

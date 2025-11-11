@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,13 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
+import sun.nio.cs.UTF_8;
 
 /**
  * JdkConsole implementation based on the platform's TTY.
@@ -69,40 +72,6 @@ public final class JdkConsoleImpl implements JdkConsole {
         pw.print(obj);
         pw.flush(); // automatic flushing does not cover print
         return this;
-    }
-
-    @Override
-    public String readln(String prompt) {
-        String line = null;
-        synchronized (writeLock) {
-            synchronized(readLock) {
-                pw.print(prompt);
-                pw.flush(); // automatic flushing does not cover print
-                try {
-                    char[] ca = readline(false);
-                    if (ca != null)
-                        line = new String(ca);
-                } catch (IOException x) {
-                    throw new IOError(x);
-                }
-            }
-        }
-        return line;
-    }
-
-    @Override
-    public String readln() {
-        String line = null;
-        synchronized(readLock) {
-            try {
-                char[] ca = readline(false);
-                if (ca != null)
-                    line = new String(ca);
-            } catch (IOException x) {
-                throw new IOError(x);
-            }
-        }
-        return line;
     }
 
     @Override
@@ -137,6 +106,42 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public char[] readPassword(Locale locale, String format, Object ... args) {
+        return readPassword0(false, locale, format, args);
+    }
+
+    // These two methods are intended for sun.security.util.Password, so tools like keytool can
+    // use JdkConsoleImpl even when standard output is redirected. The Password class should first
+    // check if `System.console()` returns a Console instance and use it if available. Otherwise,
+    // it should call this method to obtain a JdkConsoleImpl. This ensures only one Console
+    // instance exists in the Java runtime.
+    private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
+    public static Optional<JdkConsoleImpl> passwordConsole() {
+        return INSTANCE.orElseSet(() -> {
+            // If there's already a proper console, throw an exception
+            if (System.console() != null) {
+                throw new IllegalStateException("Can’t create a dedicated password " +
+                    "console since a real console already exists");
+            }
+
+            // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
+            // instance, otherwise an empty Optional.
+            return SharedSecrets.getJavaIOAccess().isStdinTty() ?
+                Optional.of(
+                    new JdkConsoleImpl(
+                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                Optional.empty();
+        });
+    }
+
+    // Dedicated entry for sun.security.util.Password when stdout is redirected.
+    // This method strictly avoids producing any output by using noNewLine = true
+    // and an empty format string.
+    public char[] readPasswordNoNewLine() {
+        return readPassword0(true, Locale.getDefault(Locale.Category.FORMAT), "");
+    }
+
+    private char[] readPassword0(boolean noNewLine, Locale locale, String format, Object ... args) {
         char[] passwd = null;
         synchronized (writeLock) {
             synchronized(readLock) {
@@ -169,7 +174,9 @@ public final class JdkConsoleImpl implements JdkConsole {
                             ioe.addSuppressed(x);
                     }
                     if (ioe != null) {
-                        Arrays.fill(passwd, ' ');
+                        if (passwd != null) {
+                            Arrays.fill(passwd, ' ');
+                        }
                         try {
                             if (reader instanceof LineReader lr) {
                                 lr.zeroOut();
@@ -180,7 +187,9 @@ public final class JdkConsoleImpl implements JdkConsole {
                         throw ioe;
                     }
                 }
-                pw.println();
+                if (!noNewLine) {
+                    pw.println();
+                }
             }
         }
         return passwd;
@@ -225,10 +234,11 @@ public final class JdkConsoleImpl implements JdkConsole {
 
     @Override
     public Charset charset() {
-        return charset;
+        return outCharset;
     }
 
-    private final Charset charset;
+    private final Charset inCharset;
+    private final Charset outCharset;
     private final Object readLock;
     private final Object writeLock;
     // Must not block while holding this. It is used in the shutdown hook.
@@ -398,16 +408,18 @@ public final class JdkConsoleImpl implements JdkConsole {
         }
     }
 
-    public JdkConsoleImpl(Charset charset) {
-        Objects.requireNonNull(charset);
-        this.charset = charset;
+    public JdkConsoleImpl(Charset inCharset, Charset outCharset) {
+        Objects.requireNonNull(inCharset);
+        Objects.requireNonNull(outCharset);
+        this.inCharset = inCharset;
+        this.outCharset = outCharset;
         readLock = new Object();
         writeLock = new Object();
         restoreEchoLock = new Object();
         out = StreamEncoder.forOutputStreamWriter(
                 new FileOutputStream(FileDescriptor.out),
                 writeLock,
-                charset);
+                outCharset);
         pw = new PrintWriter(out, true) {
             public void close() {
             }
@@ -416,7 +428,7 @@ public final class JdkConsoleImpl implements JdkConsole {
         reader = new LineReader(StreamDecoder.forInputStreamReader(
                 new FileInputStream(FileDescriptor.in),
                 readLock,
-                charset));
+                inCharset));
         rcb = new char[1024];
     }
 }

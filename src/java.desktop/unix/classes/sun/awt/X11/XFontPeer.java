@@ -33,6 +33,7 @@ final class XFontPeer extends PlatformFont {
         super(name, style);
     }
 
+    @Override
     protected char getMissingGlyphCharacter() {
         return '\u274F';
     }

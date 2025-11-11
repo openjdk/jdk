@@ -33,6 +33,8 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,10 +43,22 @@ import java.util.regex.Pattern;
 public class TestNoNULL {
     private static final Set<String> excludedSourceFiles = new HashSet<>();
     private static final Set<String> excludedTestFiles = new HashSet<>();
-    private static final Set<String> excludedTestExtensions = Set.of(".c", ".java", ".jar", ".class", ".zip");
+    private static final Set<String> excludedTestExtensions = extend(new HashSet<>(List.of(".c", ".java", ".jar", ".class", ".zip")), "excludedTestExtensions");
     private static final Pattern NULL_PATTERN = Pattern.compile("\\bNULL\\b");
     private static Path dir = Paths.get(System.getProperty("test.src"));
     private static int errorCount = 0;
+
+    /**
+     * Extends {@code toExtend} with the comma separated entries in the value of the
+     * {@code propertyName} system property.
+     */
+    private static <T extends Collection<String>> T extend(T toExtend, String propertyName) {
+        String extensions = System.getProperty(propertyName);
+        if (extensions != null) {
+            toExtend.addAll(List.of(extensions.split(",")));
+        }
+        return toExtend;
+    }
 
     public static void main(String[] args) throws IOException {
         int maxIter = 20;
@@ -72,16 +86,15 @@ public class TestNoNULL {
     }
 
     private static void initializeExcludedPaths(Path rootDir) {
-        List<String> sourceExclusions = List.of(
+        List<String> sourceExclusions = extend(new ArrayList<>(List.of(
                 "src/hotspot/share/prims/jvmti.xml",
-                "src/hotspot/share/prims/jvmti.xsl",
-                "src/hotspot/share/utilities/globalDefinitions_visCPP.hpp"
-        );
+                "src/hotspot/share/prims/jvmti.xsl"
+        )), "sourceExclusions");
 
-        List<String> testExclusions = List.of(
+        List<String> testExclusions = extend(new ArrayList<>(List.of(
                 "test/hotspot/jtreg/vmTestbase/nsk/share/jvmti/README",
                 "test/hotspot/jtreg/vmTestbase/nsk/share/jni/README"
-        );
+        )), "testExclusions");
 
         sourceExclusions.forEach(relativePath ->
                 excludedSourceFiles.add(rootDir.resolve(relativePath).normalize().toString()));

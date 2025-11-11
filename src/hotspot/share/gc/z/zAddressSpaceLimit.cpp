@@ -22,31 +22,26 @@
  */
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-
-static size_t address_space_limit() {
-  size_t limit = 0;
-
-  if (os::has_allocatable_memory_limit(&limit)) {
-    return limit;
-  }
-
-  // No limit
-  return SIZE_MAX;
-}
-
-size_t ZAddressSpaceLimit::mark_stack() {
-  // Allow mark stacks to occupy 10% of the address space
-  const size_t limit = address_space_limit() / 10;
-  return align_up(limit, ZMarkStackSpaceExpandSize);
-}
+#include "utilities/ostream.hpp"
 
 size_t ZAddressSpaceLimit::heap() {
   // Allow the heap to occupy 50% of the address space
-  const size_t limit = address_space_limit() / MaxVirtMemFraction;
+  const size_t limit = os::reserve_memory_limit() / MaxVirtMemFraction;
   return align_up(limit, ZGranuleSize);
+}
+
+void ZAddressSpaceLimit::print_limits() {
+  const size_t limit = os::reserve_memory_limit();
+
+  if (limit == SIZE_MAX) {
+    log_info_p(gc, init)("Address Space Size: unlimited");
+  } else {
+    log_info_p(gc, init)("Address Space Size: limited (" EXACTFMT ")", EXACTFMTARGS(limit));
+  }
 }

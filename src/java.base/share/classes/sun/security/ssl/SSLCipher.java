@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1923,9 +1923,9 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--);
+                for (; i >= pos && pt.get(i) == 0; i--);
 
-                if (i < (pos + 1)) {
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }
@@ -2441,10 +2441,9 @@ enum SSLCipher {
 
                 // remove inner plaintext padding
                 int i = pt.limit() - 1;
-                for (; i > 0 && pt.get(i) == 0; i--) {
-                    // blank
-                }
-                if (i < (pos + 1)) {
+                for (; i >= pos && pt.get(i) == 0; i--);
+
+                if (i < pos) {
                     throw new BadPaddingException(
                             "Incorrect inner plaintext: no content type");
                 }

@@ -191,7 +191,7 @@ void OopFlow::clone( OopFlow *flow, int max_size ) {
 OopFlow *OopFlow::make( Arena *A, int max_size, Compile* C ) {
   short *callees = NEW_ARENA_ARRAY(A,short,max_size+1);
   Node **defs    = NEW_ARENA_ARRAY(A,Node*,max_size+1);
-  debug_only( memset(defs,0,(max_size+1)*sizeof(Node*)) );
+  DEBUG_ONLY( memset(defs,0,(max_size+1)*sizeof(Node*)) );
   OopFlow *flow = new (A) OopFlow(callees+1, defs+1, C);
   assert( &flow->_callees[OptoReg::Bad] == callees, "Ok to index at OptoReg::Bad" );
   assert( &flow->_defs   [OptoReg::Bad] == defs   , "Ok to index at OptoReg::Bad" );
@@ -209,7 +209,7 @@ static void clr_live_bit( int *live, int reg ) {
 OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live ) {
   int framesize = regalloc->_framesize;
   int max_inarg_slot = OptoReg::reg2stack(regalloc->_matcher._new_SP);
-  debug_only( char *dup_check = NEW_RESOURCE_ARRAY(char,OptoReg::stack0());
+  DEBUG_ONLY( char *dup_check = NEW_RESOURCE_ARRAY(char,OptoReg::stack0());
               memset(dup_check,0,OptoReg::stack0()) );
 
   OopMap *omap = new OopMap( framesize,  max_inarg_slot );
@@ -351,7 +351,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     } else if( OptoReg::is_valid(_callees[reg])) { // callee-save?
       // It's a callee-save value
       assert( dup_check[_callees[reg]]==0, "trying to callee save same reg twice" );
-      debug_only( dup_check[_callees[reg]]=1; )
+      DEBUG_ONLY( dup_check[_callees[reg]]=1; )
       VMReg callee = OptoReg::as_VMReg(OptoReg::Name(_callees[reg]));
       omap->set_callee_saved(r, callee);
 

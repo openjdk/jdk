@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class ToJavaStringTest {
 
     private MemorySegment strSegment;
 
-    @Param({"5", "20", "100", "200"})
+    @Param({"5", "20", "100", "200", "451"})
     int size;
 
     static {
@@ -58,6 +58,9 @@ public class ToJavaStringTest {
     @Setup
     public void setup() {
         var arena = Arena.ofAuto();
+        while (LOREM.length() < size) {
+            LOREM += LOREM;
+        }
         strSegment = arena.allocateFrom(LOREM.substring(0, size));
     }
 

@@ -24,6 +24,8 @@
 package compiler.lib.generators;
 
 import java.util.random.RandomGenerator;
+import static java.lang.Float.floatToFloat16;
+import static java.lang.Float.float16ToFloat;
 
 /**
  * An adapter for using a {@link RandomGenerator} as a {@link RandomnessSource}.
@@ -64,5 +66,10 @@ public class RandomnessSourceAdapter implements RandomnessSource {
     @Override
     public float nextFloat(float lo, float hi) {
         return rand.nextFloat(lo, hi);
+    }
+
+    @Override
+    public short nextFloat16(short lo, short hi) {
+        return floatToFloat16(rand.nextFloat(float16ToFloat(lo), float16ToFloat(hi)));
     }
 }

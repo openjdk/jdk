@@ -74,16 +74,20 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.javacOpts = \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.extraPropDefns.vmOpts = \
     -XX:+UnlockDiagnosticVMOptions \
     -XX:+LogVMOutput -XX:-DisplayVMOutput -XX:LogFile=vmprops.flags.final.vm.log \
     -XX:+PrintFlagsFinal \
     -XX:+WhiteBoxAPI \
-    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+    --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    java.enablePreview \
     vm.flagless \
     vm.gc.G1 \
     vm.gc.Serial \
@@ -96,8 +100,12 @@ requires.properties= \
     vm.compiler2.enabled \
     vm.cds \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.musl \
+    vm.asan \
+    vm.ubsan \
     vm.debug \
     vm.hasSA \
     vm.hasJFR \
@@ -111,10 +119,11 @@ requires.properties= \
     jdk.containerized \
     jdk.foreign.linker \
     jlink.runtime.linkable \
-    jlink.packagedModules
+    jlink.packagedModules \
+    jdk.static
 
 # Minimum jtreg version
-requiredVersion=7.4+1
+requiredVersion=8.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

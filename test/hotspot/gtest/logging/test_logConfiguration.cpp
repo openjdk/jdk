@@ -216,6 +216,32 @@ TEST_VM_F(LogConfigurationTest, disable_output) {
   }
 }
 
+TEST_VM_F(LogConfigurationTest, disable_tags) {
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging, gc));
+  LogConfiguration::disable_tags(true, LOG_TAGS(logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging, gc));
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  LogConfiguration::disable_tags(true, LOG_TAGS(logging));
+  EXPECT_TRUE(log_is_enabled(Info, logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging));
+
+  set_log_config("stdout", "logging*=info");
+  set_log_config(TestLogFileName, "logging*=info");
+
+  EXPECT_TRUE(log_is_enabled(Info, logging));
+  LogConfiguration::disable_tags(false, LOG_TAGS(logging));
+  EXPECT_FALSE(log_is_enabled(Info, logging, gc));
+  EXPECT_FALSE(log_is_enabled(Info, logging));
+}
+
 // Test reconfiguration of the selected decorators for an output
 TEST_VM_F(LogConfigurationTest, reconfigure_decorators) {
   // Configure stderr with all decorators

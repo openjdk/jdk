@@ -26,7 +26,7 @@
  * @bug     6468404
  * @summary ExecutableElement.getParameters() uses raw type for class loaded from -g bytecode
  * @author  jesse.glick@...
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

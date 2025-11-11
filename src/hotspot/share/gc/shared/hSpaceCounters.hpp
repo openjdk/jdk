@@ -33,8 +33,6 @@
 // that track a collections (logical spaces) in a heap;
 
 class HSpaceCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
  private:
   PerfVariable* _capacity;
   PerfVariable* _used;
@@ -56,7 +54,7 @@ class HSpaceCounters: public CHeapObj<mtGC> {
 
   void update_all(size_t capacity, size_t used);
 
-  debug_only(
+  DEBUG_ONLY(
     // for security reasons, we do not allow arbitrary reads from
     // the counters as they may live in shared memory.
     jlong used();

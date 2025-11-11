@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import sun.jvm.hotspot.utilities.Observer;
 public class VMReg {
   private int value;
 
-  // C2 only
-  public static Address matcherRegEncodeAddr;
-
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -49,26 +46,13 @@ public class VMReg {
       });
   }
 
-  private static void initialize(TypeDataBase db) {
-    if (VM.getVM().isServerCompiler()) {
-      Type type = db.lookupType("Matcher");
-      Field f = type.getField("_regEncode");
-      matcherRegEncodeAddr = f.getStaticFieldAddress();
-    }
-  }
+  private static void initialize(TypeDataBase db) { }
 
   public VMReg(int i) {
     value = i;
   }
 
   public int getValue() {
-    return value;
-  }
-
-  public int regEncode() {
-    if (matcherRegEncodeAddr != null) {
-      return (int) matcherRegEncodeAddr.getCIntegerAt(value, 1, true);
-    }
     return value;
   }
 

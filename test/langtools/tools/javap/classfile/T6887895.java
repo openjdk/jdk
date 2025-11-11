@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,8 @@ public class T6887895 {
                 "java/lang/Object",
                 "java/lang/String",
                 "T6887895",
-                "T6887895$Test"
+                "T6887895$Test",
+                "java/util/Objects",
         };
 
         Set<String> expect = new TreeSet<String>(Arrays.asList(expectNames));

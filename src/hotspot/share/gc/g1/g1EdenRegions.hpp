@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1EDENREGIONS_HPP
 #define SHARE_GC_G1_G1EDENREGIONS_HPP
 
-#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
@@ -41,10 +41,10 @@ private:
 public:
   G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
-  uint add(G1HeapRegion* hr) {
-    assert(!hr->is_eden(), "should not already be set");
+  void add(G1HeapRegion* hr) {
+    assert(hr->is_eden(), "must be");
     _length++;
-    return _regions_on_node.add(hr);
+    _regions_on_node.add(hr);
   }
 
   void clear() {

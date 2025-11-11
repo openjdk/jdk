@@ -26,6 +26,7 @@
 #include "nmt/memMapPrinter.hpp"
 #include "os_windows.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/ostream.hpp"
 
 #include <limits.h>
 #include <winnt.h>
@@ -200,7 +201,7 @@ public:
     st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
     {
-      streamIndentor si(st, 16);
+      StreamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
   }

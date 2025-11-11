@@ -21,18 +21,22 @@
  * questions.
  */
 
-import java.nio.file.Path;
-import java.util.Map;
 import java.lang.invoke.MethodHandles;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.FileAssociations;
+import java.nio.file.Path;
+import java.util.function.Consumer;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CfgFile;
+import jdk.jpackage.test.ConfigurationTarget;
+import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-import jdk.jpackage.test.CfgFile;
 
 /**
  * Test --add-launcher parameter. Output of the test should be
@@ -50,7 +54,7 @@ import jdk.jpackage.test.CfgFile;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AddLauncherTest.java
- * @run main/othervm/timeout=360 -Xmx512m
+ * @run main/othervm/timeout=1440 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest.test
  */
@@ -63,7 +67,7 @@ import jdk.jpackage.test.CfgFile;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AddLauncherTest.java
- * @run main/othervm/timeout=540 -Xmx512m
+ * @run main/othervm/timeout=2160 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=AddLauncherTest
  */
@@ -89,17 +93,17 @@ public class AddLauncherTest {
 
         new AdditionalLauncher("Baz2")
                 .setDefaultArguments()
-                .addRawProperties(Map.entry("description", "Baz2 Description"))
+                .setProperty("description", "Baz2 Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("foo")
                 .setDefaultArguments("yep!")
-                .addRawProperties(Map.entry("description", "foo Description"))
+                .setProperty("description", "foo Description")
                 .applyTo(packageTest);
 
         new AdditionalLauncher("Bar")
                 .setDefaultArguments("one", "two", "three")
-                .addRawProperties(Map.entry("description", "Bar Description"))
+                .setProperty("description", "Bar Description")
                 .setIcon(GOLDEN_ICON)
                 .applyTo(packageTest);
 
@@ -194,8 +198,8 @@ public class AddLauncherTest {
                 .toString();
 
         new AdditionalLauncher("ModularAppLauncher")
-        .addRawProperties(Map.entry("module", expectedMod))
-        .addRawProperties(Map.entry("main-jar", ""))
+        .setProperty("module", expectedMod)
+        .setProperty("main-jar", "")
         .applyTo(cmd);
 
         new AdditionalLauncher("NonModularAppLauncher")
@@ -204,8 +208,8 @@ public class AddLauncherTest {
         .setPersistenceHandler((path, properties) -> TKit.createTextFile(path,
                 properties.stream().map(entry -> String.join(" ", entry.getKey(),
                         entry.getValue()))))
-        .addRawProperties(Map.entry("main-class", nonModularAppDesc.className()))
-        .addRawProperties(Map.entry("main-jar", nonModularAppDesc.jarFileName()))
+        .setProperty("main-class", nonModularAppDesc.className())
+        .setProperty("main-jar", nonModularAppDesc.jarFileName())
         .applyTo(cmd);
 
         cmd.executeAndAssertHelloAppImageCreated();
@@ -231,6 +235,60 @@ public class AddLauncherTest {
         TKit.assertTrue(classpath.startsWith(Path.of("$APPDIR",
                 nonModularAppDesc.jarFileName()).toString()),
                 "Check app.classpath value in ModularAppLauncher cfg file");
+    }
+
+    /**
+     * Test --description option
+     */
+    @Test(ifNotOS = OperatingSystem.MACOS) // Don't run on macOS as launcher description is ignored on this platform
+    @Parameter("true")
+    @Parameter("fase")
+    public void testDescription(boolean withPredefinedAppImage) {
+
+        ConfigurationTarget target;
+        if (TKit.isWindows() || withPredefinedAppImage) {
+            target = new ConfigurationTarget(JPackageCommand.helloAppImage());
+        } else {
+            target = new ConfigurationTarget(new PackageTest().configureHelloApp());
+        }
+
+        target.addInitializer(cmd -> {
+            cmd.setArgumentValue("--name", "Foo").setArgumentValue("--description", "Hello");
+            cmd.setFakeRuntime();
+            cmd.setStandardAsserts(JPackageCommand.StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
+        });
+
+        target.add(new AdditionalLauncher("x"));
+        target.add(new AdditionalLauncher("bye").setProperty("description", "Bye"));
+
+        target.test().ifPresent(test -> {
+            // Make all launchers have shortcuts and thus .desktop files.
+            // Launcher description is recorded in a desktop file and verified automatically.
+            test.mutate(addLinuxShortcuts());
+        });
+
+        target.cmd().ifPresent(withPredefinedAppImage ? JPackageCommand::execute : JPackageCommand::executeAndAssertImageCreated);
+        target.test().ifPresent(test -> {
+            test.run(Action.CREATE_AND_UNPACK);
+        });
+
+        if (withPredefinedAppImage) {
+            new PackageTest().addInitializer(cmd -> {
+                cmd.setArgumentValue("--name", "Bar");
+                // Should not have impact on launcher descriptions, but it does.
+                cmd.setArgumentValue("--description", "Installer");
+            }).usePredefinedAppImage(target.cmd().orElseThrow()).mutate(addLinuxShortcuts()).run(Action.CREATE_AND_UNPACK);
+        }
+    }
+
+    private static Consumer<PackageTest> addLinuxShortcuts() {
+        return test -> {
+            test.forTypes(PackageType.LINUX, () -> {
+                test.addInitializer(cmd -> {
+                    cmd.addArgument("--linux-shortcut");
+                });
+            });
+        };
     }
 
     private static final Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
