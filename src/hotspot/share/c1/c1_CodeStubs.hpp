@@ -61,6 +61,8 @@ class CodeStub: public CompilationResourceObj {
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const = 0;
 #endif
+  Address as_Address(LIR_Assembler* ce, LIR_Address* addr, Register tmp);
+  Address as_Address(LIR_Assembler* ce, LIR_Address* addr);
 
   // label access
   Label* entry()                                 { return &_entry; }
@@ -103,7 +105,7 @@ class C1SafepointPollStub: public CodeStub {
 };
 
 class CounterOverflowStub: public CodeStub {
- private:
+ protected:
   CodeEmitInfo* _info;
   int           _bci;
   LIR_Opr       _method;
@@ -117,14 +119,81 @@ public:
   virtual void emit_code(LIR_Assembler* e);
 
   virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case(_info);
-    visitor->do_input(_method);
+    if (_info) visitor->do_slow_case(_info);
+    if (_method->is_valid()) visitor->do_input(_method);
   }
 
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("CounterOverflowStub"); }
 #endif // PRODUCT
 
+};
+
+class ExtendedCounterOverflowStub: public CounterOverflowStub {
+ private:
+  LIR_Opr _incr;
+  LIR_Opr _addr;
+  LIR_Opr _dest;
+  LIR_Opr _temp_op;
+  LIR_Opr _freq_op;
+  bool    _notify;
+
+public:
+  ExtendedCounterOverflowStub(CodeEmitInfo* info, int bci, LIR_Opr method,
+                              LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
+                              LIR_Opr freq_op, bool notify)
+    : CounterOverflowStub(info, bci, method),
+      _incr(incr), _addr(addr), _dest(dest), _temp_op(temp_op), _freq_op(freq_op),
+      _notify(notify) { }
+
+  virtual void emit_code(LIR_Assembler* e);
+
+  virtual void visit(LIR_OpVisitState* visitor) {
+    CounterOverflowStub::visit(visitor);
+    visitor->do_input(_incr);
+    visitor->do_input(_addr);
+    if (_dest->is_valid())  visitor->do_output(_dest);
+    visitor->do_temp(_temp_op);
+    if (_freq_op->is_valid()) visitor->do_input(_freq_op);
+  }
+
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("ExtendedCounterOverflowStub"); }
+#endif // PRODUCT
+
+};
+
+class Fubarbaz_base : public CompilationResourceObj {
+public:
+  virtual void operator() (LIR_Assembler* ce) = 0;
+};
+
+template<typename T>
+struct Fubarbaz : public Fubarbaz_base {
+  T _lambda;
+  LIR_OpProfileCall* _op;
+
+  Fubarbaz(T lambda, LIR_OpProfileCall* op) : _lambda(lambda), _op(op) {
+  }
+  virtual void operator() (LIR_Assembler* ce) {
+    _lambda(ce, _op);
+  }
+};
+
+class EmitProfileCallStub: public CodeStub {
+private:
+  Fubarbaz_base *_doit;
+
+public:
+  EmitProfileCallStub() {}
+  void set_doit(Fubarbaz_base *doit) { _doit = doit; }
+  virtual void emit_code(LIR_Assembler* ce) {
+    (*_doit)(ce);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("EmitProfileCallStub"); }
+#endif // PRODUCT
+  virtual void visit(LIR_OpVisitState* visitor) { }
 };
 
 class ConversionStub: public CodeStub {

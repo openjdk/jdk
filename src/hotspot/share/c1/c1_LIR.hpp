@@ -2270,7 +2270,7 @@ class LIR_List: public CompilationResourceObj {
 
   void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, LIR_Opr freq, LIR_Opr step, CodeStub* overflow, CodeEmitInfo* info);
   void increment_profile_ctr(LIR_Opr src, LIR_Address* addr, LIR_Opr res, LIR_Opr tmp, CodeStub* overflow = nullptr) {
-    increment_profile_ctr(src, addr, res,tmp, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, overflow, nullptr);
+    increment_profile_ctr(src, addr, res, tmp, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, overflow, nullptr);
   }
 
   void idiv(LIR_Opr left, LIR_Opr right, LIR_Opr res, LIR_Opr tmp, CodeEmitInfo* info);

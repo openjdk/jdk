@@ -587,6 +587,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
         if (op2->_opr1->is_valid())       do_temp(op2->_opr1);
         if (op2->_opr2->is_valid())       do_temp(op2->_opr2);
       }
+      if (op2->overflow() != nullptr)      do_stub(op2->overflow());
 
       break;
     }

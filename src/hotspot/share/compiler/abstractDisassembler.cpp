@@ -338,6 +338,7 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
   }
 }
 
+int barfism;
 
 // Decodes all instructions in the given range [start..end).
 // The output is enclosed in [MachCode] and [/MachCode] tags for later recognition.
@@ -350,6 +351,7 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
 
   outputStream* st = (ost == nullptr) ? tty : ost;
 
+  barfism++;
   st->bol();
   st->cr();
   st->print_cr("Loading hsdis library failed, undisassembled code is shown in MachCode section");

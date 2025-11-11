@@ -2765,6 +2765,8 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+// int ploopy;
+
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                           LIR_Opr freq_op, LIR_Opr step_op,
                                           CodeStub* overflow) {
@@ -2788,6 +2790,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   assert(threshold > 0, "must be");
 
+  // __ mov64(temp, (uintptr_t)&ploopy);
+  // __ addl(Address(temp, 0), 1);
+
   if (profile_capture_ratio > 1) {
     __ step_random(r_profile_rng, temp);
   }
@@ -2795,93 +2800,101 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   Label dont;
   Label *skip = overflow ? overflow->continuation() : &dont;
 
-  if (incr->is_register()) {
-    Register inc = incr->as_register();
-    if (profile_capture_ratio > 1) {
-      __ cmpl(r_profile_rng, threshold);
-      if (! getenv("APH_DISABLE")) {
-        __ jccb(Assembler::aboveEqual, *skip);
-      }
+  if (profile_capture_ratio > 1 && overflow) {
+    __ cmpl(r_profile_rng, threshold);
+    if (! getenv("APH_DISABLE")) {
+      __ jcc(Assembler::below, *overflow->entry());
     }
-    __ movl(temp, dest_adr);
-    if (profile_capture_ratio > 1) {
-      __ sall(inc, ratio_shift);
-    }
-    __ addl(temp, inc);
-    __ movl(dest_adr, temp);
-    __ movl(dest->as_register(), temp);
   } else {
-    jint inc = incr->as_constant_ptr()->as_jint_bits();
-    switch (dest->type()) {
-      case T_INT: {
-        // if (dest->is_register())  __ movl(dest->as_register(), inc);
-        if (profile_capture_ratio > 1) {
-          __ cmpl(r_profile_rng, threshold);
-          if (! getenv("APH_DISABLE")) {
-            __ jccb(Assembler::aboveEqual, *skip);
-          }
+    __ block_comment("increment_profile_ctrX" " {");
+    if (incr->is_register()) {
+      Register inc = incr->as_register();
+      if (profile_capture_ratio > 1) {
+        __ cmpl(r_profile_rng, threshold);
+        if (! getenv("APH_DISABLE")) {
+          __ jccb(Assembler::aboveEqual, *skip);
         }
-        inc *= profile_capture_ratio;
-        if (dest->is_register()) {
-          __ movl(temp, dest_adr);
-          __ addl(temp, inc);
-          __ movl(dest_adr, temp);
-          __ movl(dest->as_register(), temp);
-        } else {
-          __ addl(dest_adr, inc);
-        }
-
-        break;
       }
-      case T_LONG: {
-        // if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
-        if (profile_capture_ratio > 1) {
-          __ cmpl(r_profile_rng, threshold);
-          if (! getenv("APH_DISABLE")) {
-            __ jccb(Assembler::aboveEqual, *skip);
-          }
-        }
-        inc *= profile_capture_ratio;
-        if (dest->is_register()) {
-          __ movq(temp, dest_adr);
-          __ addq(temp, inc);
-          __ movq(dest_adr, temp);
-          __ movq(dest->as_register_lo(), temp);
-        } else {
-          __ addq(dest_adr, inc);
-        }
-
-        break;
+      __ movl(temp, dest_adr);
+      if (profile_capture_ratio > 1) {
+        __ sall(inc, ratio_shift);
       }
-      default:
-        ShouldNotReachHere();
-    }
-  }
-
-  if (incr->is_valid() && overflow) {
-    if (!freq_op->is_valid()) {
-      if (!incr->is_constant()) {
-        __ cmpl(incr->as_register(), 0);
-        __ jcc(Assembler::notEqual, *(overflow->entry()));
-      } else {
-        __ jmp(*(overflow->entry()));
-      }
+      __ addl(temp, inc);
+      __ movl(dest_adr, temp);
+      __ movl(dest->as_register(), temp);
     } else {
-      Register result =
-        dest->type() == T_INT ? dest->as_register() :
-        dest->type() == T_LONG ? dest->as_register_lo() :
-        noreg;
-      if (!incr->is_constant()) {
-        // If step is 0, make sure the overflow check below always fails 
-        __ cmpl(incr->as_register(), 0);
-        __ movl(temp, InvocationCounter::count_increment);
-        __ cmovl(Assembler::notEqual, result, temp);
+      jint inc = incr->as_constant_ptr()->as_jint_bits();
+      switch (dest->type()) {
+        case T_INT: {
+          // if (dest->is_register())  __ movl(dest->as_register(), inc);
+          if (profile_capture_ratio > 1) {
+            __ cmpl(r_profile_rng, threshold);
+            if (! getenv("APH_DISABLE")) {
+              __ jccb(Assembler::aboveEqual, *skip);
+            }
+          }
+          inc *= profile_capture_ratio;
+          if (dest->is_register()) {
+            __ movl(temp, dest_adr);
+            __ addl(temp, inc);
+            __ movl(dest_adr, temp);
+            __ movl(dest->as_register(), temp);
+          } else {
+            __ addl(dest_adr, inc);
+          }
+
+          break;
+        }
+        case T_LONG: {
+          // if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
+          if (profile_capture_ratio > 1) {
+            __ cmpl(r_profile_rng, threshold);
+            if (! getenv("APH_DISABLE")) {
+              __ jccb(Assembler::aboveEqual, *skip);
+            }
+          }
+          inc *= profile_capture_ratio;
+          if (dest->is_register()) {
+            __ movq(temp, dest_adr);
+            __ addq(temp, inc);
+            __ movq(dest_adr, temp);
+            __ movq(dest->as_register_lo(), temp);
+          } else {
+            __ addq(dest_adr, inc);
+          }
+
+          break;
+        }
+        default:
+          ShouldNotReachHere();
       }
-      __ andl(result, freq_op->as_jint());
-      __ jcc(Assembler::equal, *overflow->entry());
+
+      if (incr->is_valid() && overflow) {
+        if (!freq_op->is_valid()) {
+          if (!incr->is_constant()) {
+            __ cmpl(incr->as_register(), 0);
+            __ jcc(Assembler::notEqual, *(overflow->entry()));
+          } else {
+            __ jmp(*(overflow->entry()));
+          }
+        } else {
+          Register result =
+            dest->type() == T_INT ? dest->as_register() :
+            dest->type() == T_LONG ? dest->as_register_lo() :
+            noreg;
+          if (!incr->is_constant()) {
+            // If step is 0, make sure the overflow check below always fails 
+            __ cmpl(incr->as_register(), 0);
+            __ movl(temp, InvocationCounter::count_increment);
+            __ cmovl(Assembler::notEqual, result, temp);
+          }
+          __ andl(result, freq_op->as_jint());
+          __ jcc(Assembler::equal, *overflow->entry());
+        }
+      }
     }
-    __ bind(*overflow->continuation());
   }
+  __ bind(*skip);
 
 #ifndef PRODUCT
   if (CommentedAssembly) {
@@ -2893,16 +2906,37 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
+  Label dont;
+
+  Register temp = op->tmp1()->as_register_lo();
+
+  EmitProfileCallStub *stub = new EmitProfileCallStub();
+
+  int profile_capture_ratio = ProfileCaptureRatio;
+  int ratio_shift = exact_log2(profile_capture_ratio);
+  auto threshold = (1ull << 32) >> ratio_shift;
+  assert(threshold > 0, "must be");
+
+  if (profile_capture_ratio > 1) {
+    __ step_random(r_profile_rng, temp);
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::below, *stub->entry());
+  } else {
+    __ jmp(*stub->entry());
+    // abort();
+  }
+
+#undef __
+#define __ ce->masm()->
+  auto lambda = [=] (LIR_Assembler* ce, LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
   ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = rscratch1;
 
-  Label dont;
-
   Register temp = op->tmp1()->as_register_lo();
 
-  __ step_profile_rng(r_profile_rng, temp, dont);
+  __ bind(*stub->entry());
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -2964,12 +2998,23 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
       __ bind(update_done);
     }
+  exit: {}
   } else {
     // Static call
     __ addptr(counter_addr, DataLayout::counter_increment);
   }
+  __ jmp(*stub->continuation());
+#undef __
+#define __ _masm->
+  };
 
- exit:
+  Fubarbaz_base *ff = new Fubarbaz(lambda, op);
+  stub->set_doit(ff);
+  append_code_stub(stub);
+
+  __ bind(*stub->continuation());
+
+  // lambda(this, op);
   __ bind(dont);
 }
 

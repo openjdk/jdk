@@ -463,6 +463,7 @@ class Assembler : public AbstractAssembler  {
   friend class AbstractAssembler; // for the non-virtual hack
   friend class LIR_Assembler; // as_Address()
   friend class StubGenerator;
+  friend class CodeStub; // as_Address()
 
  public:
   enum Condition {                     // The x86 condition codes used for conditional jumps/moves.

@@ -37,6 +37,42 @@
 
 #define __ ce->masm()->
 
+Address CodeStub::as_Address(LIR_Assembler* ce, LIR_Address* addr, Register tmp) {
+  if (addr->base()->is_illegal()) {
+    assert(addr->index()->is_illegal(), "must be illegal too");
+    AddressLiteral laddr((address)addr->disp(), relocInfo::none);
+    if (! __ reachable(laddr)) {
+      __ movptr(tmp, laddr.addr());
+      Address res(tmp, 0);
+      return res;
+    } else {
+      return __ as_Address(laddr);
+    }
+  }
+
+  Register base = addr->base()->as_pointer_register();
+
+  if (addr->index()->is_illegal()) {
+    return Address( base, addr->disp());
+  } else if (addr->index()->is_cpu_register()) {
+    Register index = addr->index()->as_pointer_register();
+    return Address(base, index, (Address::ScaleFactor) addr->scale(), addr->disp());
+  } else if (addr->index()->is_constant()) {
+    intptr_t addr_offset = (addr->index()->as_constant_ptr()->as_jint() << addr->scale()) + addr->disp();
+    assert(Assembler::is_simm32(addr_offset), "must be");
+
+    return Address(base, addr_offset);
+  } else {
+    Unimplemented();
+    return Address();
+  }
+}
+
+Address CodeStub::as_Address(LIR_Assembler* ce, LIR_Address* addr) {
+  return as_Address(ce, addr, rscratch1);
+}
+
+
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(ce->masm()->pc() - ce->masm()->offset() + safepoint_offset());
@@ -60,6 +96,105 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->verify_oop_map(_info);
   __ jmp(_continuation);
 }
+
+void ExtendedCounterOverflowStub::emit_code(LIR_Assembler* ce) {
+  int profile_capture_ratio = ProfileCaptureRatio;
+  int ratio_shift = exact_log2(profile_capture_ratio);
+  auto threshold = (1ull << 32) >> ratio_shift;
+
+  Label overflow_entry;
+
+  assert(threshold > 0, "must be");
+
+  __ bind(_entry);
+
+  Register temp = _temp_op->as_register();
+  Address dest_adr = as_Address(ce, _addr->as_address_ptr());
+
+  if (_incr->is_register()) {
+    Register inc = _incr->as_register();
+    __ movl(temp, dest_adr);
+    if (profile_capture_ratio > 1) {
+      __ sall(inc, ratio_shift);
+    }
+    __ addl(temp, inc);
+    __ movl(dest_adr, temp);
+    __ movl(_dest->as_register(), temp);
+  } else {
+    jint inc = _incr->as_constant_ptr()->as_jint_bits();
+    switch (_dest->type()) {
+      case T_INT: {
+        inc *= profile_capture_ratio;
+        if (_dest->is_register()) {
+          __ movl(temp, dest_adr);
+          __ addl(temp, inc);
+          __ movl(dest_adr, temp);
+          __ movl(_dest->as_register(), temp);
+        } else {
+          __ addl(dest_adr, inc);
+        }
+
+        break;
+      }
+      case T_LONG: {
+        inc *= profile_capture_ratio;
+        if (_dest->is_register()) {
+          __ movq(temp, dest_adr);
+          __ addq(temp, inc);
+          __ movq(dest_adr, temp);
+          __ movq(_dest->as_register_lo(), temp);
+        } else {
+          __ addq(dest_adr, inc);
+        }
+
+        break;
+      }
+      default:
+        ShouldNotReachHere();
+    }
+  }
+
+
+  if (_incr->is_valid()) {
+    if (!_freq_op->is_valid()) {
+      if (!_incr->is_constant()) {
+        __ cmpl(_incr->as_register(), 0);
+        __ jccb(Assembler::equal, overflow_entry);
+      } else {
+        __ jmp(_notify ? overflow_entry : _continuation);
+      }
+    } else {
+      Register result =
+        _dest->type() == T_INT ? _dest->as_register() :
+        _dest->type() == T_LONG ? _dest->as_register_lo() :
+        noreg;
+      if (!_incr->is_constant()) {
+        // If step is 0, make sure the overflow check below always fails
+        __ cmpl(_incr->as_register(), 0);
+        __ movl(temp, InvocationCounter::count_increment);
+        __ cmovl(Assembler::notEqual, result, temp);
+      }
+      __ andl(result, _freq_op->as_jint());
+      __ jcc(Assembler::notEqual, _continuation);
+    }
+  } else {
+    __ jmp(_continuation);
+  }
+
+  __ bind(overflow_entry);
+
+  if (_notify) {
+    Metadata *m = _method->as_constant_ptr()->as_metadata();
+    ce->store_parameter(m, 1);
+    ce->store_parameter(_bci, 0);
+    __ call(RuntimeAddress(Runtime1::entry_for(StubId::c1_counter_overflow_id)));
+    ce->add_call_info_here(_info);
+    ce->verify_oop_map(_info);
+
+    __ jmp(_continuation);
+  }
+}
+
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);

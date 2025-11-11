@@ -928,15 +928,19 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Opr data_reg = new_pointer_register();
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
     LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
-    // if (ProfileCaptureRatio == 1) {
-    //   __ move(data_addr, data_reg);
-    //   // Use leal instead of add to avoid destroying condition codes on x86
-    //   __ leal(LIR_OprFact::address(fake_incr_value), data_reg);
-    //   __ move(data_reg, data_addr);
-    // } else {
-      LIR_Opr tmp = new_register(T_INT);
-      __ increment_profile_ctr(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
-    // }
+    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
+    if (ProfileCaptureRatio == 1) {
+      __ increment_profile_ctr(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
+    } else {
+      CodeStub *overflow = new ExtendedCounterOverflowStub
+        (/*info*/nullptr, -1, LIR_OprFact::illegalOpr,
+         step, data_addr, LIR_OprFact::intConst(0), tmp, LIR_OprFact::illegalOpr, /*notify*/false);
+
+      __ increment_profile_ctr(step, data_addr, data_reg, tmp,
+                               LIR_OprFact::illegalOpr, step, overflow, /*info*/nullptr);
+      // __ increment_profile_ctr(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
+    }
   }
 }
 
@@ -2388,7 +2392,11 @@ void LIRGenerator::do_Goto(Goto* x) {
       // LIR_Opr dummy = new_register(T_INT);
       LIR_Opr dummy = LIR_OprFact::intConst(0);
       LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
-      __ increment_profile_ctr(inc, counter_addr, dummy, tmp);
+      LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
+      CodeStub *overflow = new ExtendedCounterOverflowStub
+        (/*info*/nullptr, -1, LIR_OprFact::illegalOpr,
+         step, counter_addr, dummy, tmp, LIR_OprFact::illegalOpr, /*notify*/false);
+      __ increment_profile_ctr(inc, counter_addr, dummy, tmp, overflow);
     // }
   }
 
@@ -3190,36 +3198,26 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
   LIR_Opr tmp = new_register(T_INT);
 
+  CodeStub* overflow = nullptr;
+
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
-    CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
+    int freq = frequency << InvocationCounter::count_shift >> exact_log2(ProfileCaptureRatio);
+    overflow = new ExtendedCounterOverflowStub
+      (info, bci, meth,
+       step, counter, result, tmp, LIR_OprFact::intConst(freq), /*notify*/true);
 
-    int freq = frequency << InvocationCounter::count_shift;
     __ increment_profile_ctr(step, counter, result, tmp,
                              LIR_OprFact::intConst(freq), step, overflow, info);
 
-    // if (freq == 0) {
-    //   if (!step->is_constant()) {
-    //     __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-    //     __ branch(lir_cond_notEqual, overflow);
-    //   } else {
-    // __ branch(lir_cond_always, overflow);
-    //   }
-    // } else {
-    //   LIR_Opr mask = load_immediate(freq, T_INT);
-    //   if (!step->is_constant()) {
-    //     // If step is 0, make sure the overflow check below always fails
-    //     __ cmp(lir_cond_notEqual, step, LIR_OprFact::intConst(0));
-    //     __ cmove(lir_cond_notEqual, result, LIR_OprFact::intConst(InvocationCounter::count_increment), result, T_INT);
-    //   }
-    //   __ logical_and(result, mask, result);
-    //   __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
-    //   __ branch(lir_cond_equal, overflow);
-    // }
-    // __ branch_destination(overflow->continuation());
   } else {
-      __ increment_profile_ctr(step, counter, result, tmp);
+    overflow = new ExtendedCounterOverflowStub
+      (info, bci, LIR_OprFact::illegalOpr,
+       step, counter, result, tmp, LIR_OprFact::illegalOpr, /*notify*/false);
+
+    __ increment_profile_ctr(step, counter, result, tmp,
+                             LIR_OprFact::illegalOpr, step, overflow, info);
   }
 }
 
