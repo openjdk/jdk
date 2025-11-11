@@ -97,7 +97,7 @@ class BurstyRequestsTest {
 
     private static final String HANDLER_PATH = "/8326498/";
 
-    private static Field openConnections; // jdk.internal.net.http.HttpClientImpl#openedConnections
+    private static Field openConnections; // Set<> jdk.internal.net.http.HttpClientImpl#openedConnections
 
     private static SSLContext sslContext;
     private static Http2TestServer h2server;
@@ -165,12 +165,25 @@ class BurstyRequestsTest {
             for (final Future<Void> f : futures) {
                 f.get();
             }
-
-            // all requests are done, now verify that the current open TCP connections
-            // is not more than 1.
+            System.err.println("all " + numRequests + " requests completed successfully");
+            // the request completion happens asynchronously to the closing of the HTTP/2 Stream
+            // as well as the HTTP/2 connection. we wait for at most 1 connection to be retained
+            // by HttpClientImpl.
+            System.err.println("waiting for at least " + (numRequests - 1) + " connections to be closed");
+            // now verify that the current open TCP connections is not more than 1.
+            // we let the test timeout if we never reach that count.
             final Set<?> currentOpenConns = (Set<?>) openConnections.get(clientImpl);
-            System.err.println("current open connections: " + currentOpenConns);
-            final int size = currentOpenConns.size();
+            int size = currentOpenConns.size();
+            System.err.println("currently " + size + " open connections: " + currentOpenConns);
+            while (size > 1) {
+                // wait
+                Thread.sleep(100);
+                final int prev = size;
+                size = currentOpenConns.size();
+                if (prev != size) {
+                    System.err.println("currently " + size + " open connections: " + currentOpenConns);
+                }
+            }
             // we expect at most 1 connection will stay open
             assertTrue((size == 0 || size == 1),
                     "unexpected number of current open connections: " + size);
