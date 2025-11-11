@@ -143,6 +143,7 @@ public class MOAT {
         testImmutableSet(AccessFlag.maskToAccessFlags(Modifier.PUBLIC | Modifier.STATIC | Modifier.SYNCHRONIZED, AccessFlag.Location.METHOD), AccessFlag.ABSTRACT);
         testImmutableList(unmodifiableList(Arrays.asList(1,2,3)));
         testImmutableMap(unmodifiableMap(Collections.singletonMap(1,2)));
+        testImmutableMap(unmodifiableMap(new HashMap<>(Map.of(1, 101, 2, 202, 3, 303))));
         testImmutableSeqColl(unmodifiableSequencedCollection(Arrays.asList(1,2,3)), 99);
         testImmutableSeqColl(unmodifiableSequencedSet(new LinkedHashSet<>(Arrays.asList(1,2,3))), 99);
         var lhm = new LinkedHashMap<Integer,Integer>(); lhm.put(1,2); lhm.put(3, 4);
@@ -156,6 +157,8 @@ public class MOAT {
         testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.singletonMap(1,2)));
         testMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
         testEmptyMapMutatorsAlwaysThrow(unmodifiableMap(Collections.emptyMap()));
+
+        testHashMapPutAll();
 
         // Empty collections
         final List<Integer> emptyArray = Arrays.asList(new Integer[]{});
@@ -417,6 +420,27 @@ public class MOAT {
         testMap(mapCollected2);
         testImmutableMap(mapCollected2);
         testMapMutatorsAlwaysThrow(mapCollected2);
+    }
+
+    // Test HashMap.putAll() with various source map types
+    private static void testHashMapPutAll() {
+        Map<Integer,Integer> testData = Map.of(1, 101, 2, 202, 3, 303);
+        HashMap<Integer,Integer> target = new HashMap<>();
+
+        target.putAll(new TreeMap<>(testData));
+        check(target.equals(testData));
+
+        target.clear();
+        target.putAll(new ConcurrentHashMap<>(testData));
+        check(target.equals(testData));
+
+        target.clear();
+        target.putAll(unmodifiableMap(new HashMap<>(testData)));
+        check(target.equals(testData));
+
+        target.clear();
+        target.putAll(unmodifiableMap(new TreeMap<>(testData)));
+        check(target.equals(testData));
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {
@@ -715,6 +739,11 @@ public class MOAT {
                    () -> m.remove(first),
                    () -> m.clear());
             testImmutableMapEntry(m.entrySet().iterator().next());
+
+            // Test putAll from immutable map to HashMap
+            HashMap<Integer,Integer> target = new HashMap<>();
+            target.putAll(m);
+            check(target.equals(m));
         }
         testImmutableSet(m.keySet(), 99);
         testImmutableCollection(m.values(), 99);
@@ -1423,6 +1452,16 @@ public class MOAT {
                 check(m.size() == 2);
                 checkFunctionalInvariants(m);
                 checkNPEConsistency(m);
+
+                // Test putAll with HashMap
+                HashMap<Integer,Integer> source = new HashMap<>();
+                source.put(1, 101);
+                source.put(2, 202);
+                source.put(3, 303);
+
+                m.clear();
+                m.putAll(source);
+                check(m.equals(source));
             }
             catch (Throwable t) { unexpected(t); }
         }
