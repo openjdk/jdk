@@ -444,6 +444,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _terminated(_not_terminated),
   _in_deopt_handler(0),
   _doing_unsafe_access(false),
+  _throwing_unsafe_access_error(false),
   _do_not_unlock_if_synchronized(false),
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
@@ -493,6 +494,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _preempt_alternate_return(nullptr),
   _preemption_cancelled(false),
   _pending_interrupted_exception(false),
+  _at_preemptable_init(false),
+  DEBUG_ONLY(_preempt_init_klass(nullptr) COMMA)
+  DEBUG_ONLY(_interp_at_preemptable_vmcall_cnt(0) COMMA)
+  DEBUG_ONLY(_interp_redoing_vm_call(false) COMMA)
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),

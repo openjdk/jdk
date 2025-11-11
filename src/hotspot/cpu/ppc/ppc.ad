@@ -2088,17 +2088,11 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
-
-  static uint size_exception_handler() {
-    // The exception_handler is a b64_patchable.
-    return MacroAssembler::b64_patchable_size;
-  }
 
   static uint size_deopt_handler() {
     // The deopt_handler is a bl64_patchable.
-    return MacroAssembler::bl64_patchable_size;
+    return MacroAssembler::bl64_patchable_size + BytesPerInstWord;
   }
 
 };
@@ -2114,22 +2108,6 @@ public:
 
 source %{
 
-int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
-  address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return 0;  // CodeBuffer::expand failed
-  }
-
-  int offset = __ offset();
-  __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
-                       relocInfo::runtime_call_type);
-  assert(__ offset() - offset == (int)size_exception_handler(), "must be fixed size");
-  __ end_a_stub();
-
-  return offset;
-}
-
 // The deopt_handler is like the exception handler, but it calls to
 // the deoptimization blob instead of jumping to the exception blob.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
@@ -2140,12 +2118,21 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
 
   int offset = __ offset();
+
+  Label start;
+  __ bind(start);
+
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
+
+  int entry_offset = __ offset();
+
+  __ b(start);
+
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 //=============================================================================
@@ -12381,27 +12368,27 @@ instruct countTrailingZerosL_cnttzd(iRegIdst dst, iRegLsrc src) %{
 %}
 
 // Expand nodes for byte_reverse_int.
-instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(DEF dst, USE src, USE pos, USE shift);
+instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // As insrwi_a, but with USE_DEF.
-instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(USE_DEF dst, USE src, USE pos, USE shift);
+instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(USE_DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12423,12 +12410,12 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI3;
 
     urShiftI_reg_imm(tmpI1, src, imm24);
-    insrwi_a(dst, tmpI1, imm24, imm8);
+    insrwi_a(dst, tmpI1, imm8, imm24);
     urShiftI_reg_imm(tmpI2, src, imm16);
-    insrwi(dst, tmpI2, imm8, imm16);
+    insrwi(dst, tmpI2, imm16, imm8);
     urShiftI_reg_imm(tmpI3, src, imm8);
     insrwi(dst, tmpI3, imm8, imm8);
-    insrwi(dst, src, imm0, imm8);
+    insrwi(dst, src, imm8, imm0);
   %}
 %}
 
@@ -12546,7 +12533,7 @@ instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
     immI16   imm8 %{ (int)  8 %}
 
     urShiftI_reg_imm(dst, src, imm8);
-    insrwi(dst, src, imm16, imm8);
+    insrwi(dst, src, imm8, imm16);
   %}
 %}
 
@@ -12575,7 +12562,7 @@ instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI1;
 
     urShiftI_reg_imm(tmpI1, src, imm8);
-    insrwi(tmpI1, src, imm16, imm8);
+    insrwi(tmpI1, src, imm8, imm16);
     extsh(dst, tmpI1);
   %}
 %}

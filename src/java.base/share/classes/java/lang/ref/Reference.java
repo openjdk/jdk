@@ -25,7 +25,6 @@
 
 package java.lang.ref;
 
-import jdk.internal.vm.annotation.AOTRuntimeSetup;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -291,11 +290,6 @@ public abstract sealed class Reference<@jdk.internal.RequiresIdentity T>
     }
 
     static {
-        runtimeSetup();
-    }
-
-    @AOTRuntimeSetup
-    private static void runtimeSetup() {
         // provide access in SharedSecrets
         SharedSecrets.setJavaLangRefAccess(new JavaLangRefAccess() {
             @Override
