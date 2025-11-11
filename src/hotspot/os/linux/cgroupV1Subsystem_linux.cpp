@@ -165,7 +165,7 @@ bool CgroupV1MemoryController::read_memory_limit_in_bytes(physical_memory_size_t
     physical_memory_size_type hierlimit = 0;
     if (uses_mem_hierarchy() && read_hierarchical_memory_limit_val(hierlimit) &&
         hierlimit < upper_bound) {
-      log_trace(os, container)("Memory Limit is:" PHYS_MEM_TYPE_FORMAT, hierlimit);
+      log_trace(os, container)("Memory Limit is: " PHYS_MEM_TYPE_FORMAT, hierlimit);
       result = hierlimit;
     } else {
       // Exceeding physical memory is treated as unlimited. This implementation
