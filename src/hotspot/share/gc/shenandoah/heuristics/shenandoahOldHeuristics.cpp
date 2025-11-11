@@ -228,8 +228,9 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
     // If region r is evacuated to fragmented memory (to free memory within a partially used region), then we need
     // to decrease the capacity of the fragmented memory by the scaled loss.
 
-    size_t live_data_for_evacuation = r->get_live_data_bytes();
+    const size_t live_data_for_evacuation = r->get_live_data_bytes();
     size_t lost_available = r->free();
+
     if ((lost_available > 0) && (_excess_fragmented_available > 0)) {
       if (lost_available < _excess_fragmented_available) {
         _excess_fragmented_available -= lost_available;
@@ -327,7 +328,8 @@ bool ShenandoahOldHeuristics::top_off_collection_set() {
     ShenandoahYoungGeneration* young_generation = _heap->young_generation();
     size_t young_unaffiliated_regions = young_generation->free_unaffiliated_regions();
     size_t max_young_cset = young_generation->get_evacuation_reserve();
-    size_t planned_young_evac = _mixed_evac_cset->get_young_bytes_reserved_for_evacuation();
+    size_t planned_young_evac =
+      _mixed_evac_cset->get_live_bytes_in_untenurable_regions() + _mixed_evac_cset->get_live_bytes_in_tenurable_regions();
     size_t consumed_from_young_cset = (size_t) (planned_young_evac * ShenandoahEvacWaste);
     size_t available_to_loan_from_young_reserve = ((consumed_from_young_cset >= max_young_cset)?
                                                    0: max_young_cset - consumed_from_young_cset);
@@ -341,7 +343,6 @@ bool ShenandoahOldHeuristics::top_off_collection_set() {
       }
       log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
-      _heap->generation_sizer()->force_transfer_to_old(regions_for_old_expansion);
       size_t budget_supplement = region_size_bytes * regions_for_old_expansion;
       size_t supplement_after_waste = (size_t) (((double) budget_supplement) / ShenandoahOldEvacWaste);
       _old_evacuation_budget += supplement_after_waste;
@@ -473,7 +474,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t defrag_count = 0;
   size_t total_uncollected_old_regions = _last_old_region - _last_old_collection_candidate;
 
-  if (cand_idx > _last_old_collection_candidate) {
+  if ((ShenandoahGenerationalHumongousReserve > 0) && (cand_idx > _last_old_collection_candidate)) {
     // Above, we have added into the set of mixed-evacuation candidates all old-gen regions for which the live memory
     // that they contain is below a particular old-garbage threshold.  Regions that were not selected for the collection
     // set hold enough live memory that it is not considered efficient (by "garbage-first standards") to compact these
@@ -664,12 +665,12 @@ void ShenandoahOldHeuristics::set_trigger_if_old_is_fragmented(size_t first_old_
 }
 
 void ShenandoahOldHeuristics::set_trigger_if_old_is_overgrown() {
-  size_t old_used = _old_generation->used() + _old_generation->get_humongous_waste();
+  // used() includes humongous waste
+  size_t old_used = _old_generation->used();
   size_t trigger_threshold = _old_generation->usage_trigger_threshold();
   // Detects unsigned arithmetic underflow
   assert(old_used <= _heap->capacity(),
-         "Old used (%zu, %zu) must not be more than heap capacity (%zu)",
-         _old_generation->used(), _old_generation->get_humongous_waste(), _heap->capacity());
+         "Old used (%zu) must not be more than heap capacity (%zu)", _old_generation->used(), _heap->capacity());
   if (old_used > trigger_threshold) {
     _growth_trigger = true;
   }
@@ -741,7 +742,8 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   if (_growth_trigger) {
     // Growth may be falsely triggered during mixed evacuations, before the mixed-evacuation candidates have been
     // evacuated.  Before acting on a false trigger, we check to confirm the trigger condition is still satisfied.
-    const size_t current_usage = _old_generation->used() + _old_generation->get_humongous_waste();
+    // _old_generation->used() includes humongous waste.
+    const size_t current_usage = _old_generation->used();
     const size_t trigger_threshold = _old_generation->usage_trigger_threshold();
     const size_t heap_size = heap->capacity();
     const size_t ignore_threshold = (ShenandoahIgnoreOldGrowthBelowPercentage * heap_size) / 100;

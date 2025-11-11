@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,253 +23,259 @@
 
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 
 public class AppImageFileTest {
 
-    @Test
-    public void testIdentity() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put(Arguments.CLIOptions.NAME.getId(), "Foo");
-        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
-        params.put(Arguments.CLIOptions.VERSION.getId(), "2.3");
-        params.put(Arguments.CLIOptions.DESCRIPTION.getId(), "Duck is the King");
-        AppImageFile aif = create(params);
+    static AppImageBuilder build() {
+        return new AppImageBuilder();
+    }
 
-        assertEquals("Foo", aif.getLauncherName());
+    static class AppImageBuilder {
+
+        AppImageBuilder version(String v) {
+            version = Objects.requireNonNull(v);
+            return this;
+        }
+
+        AppImageBuilder launcherName(String v) {
+            launcherName = Objects.requireNonNull(v);
+            return this;
+        }
+
+        AppImageBuilder mainClass(String v) {
+            mainClass = Objects.requireNonNull(v);
+            return this;
+        }
+
+        AppImageBuilder addExtra(Map<String, String> v) {
+            extra.putAll(v);
+            return this;
+        }
+
+        AppImageBuilder addExtra(String key, String value) {
+            extra.putAll(Map.of(key, value));
+            return this;
+        }
+
+        AppImageBuilder addlauncher(String name) {
+            return addlauncher(name, false);
+        }
+
+        AppImageBuilder addlauncher(String name, boolean isService) {
+            return addlauncher(name, isService, Map.of());
+        }
+
+        AppImageBuilder addlauncher(String name, boolean isService, Map<String, String> extra) {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(extra);
+            addLauncherInfos.add(new LauncherInfo(name, isService, extra));
+            return this;
+        }
+
+        AppImageBuilder addlauncher(String name, Map<String, String> extra) {
+            return addlauncher(name, false, extra);
+        }
+
+        AppImageFile create() {
+            final var additionalLaunchers = addLauncherInfos.stream().map(li -> {
+                return (Launcher)new Launcher.Stub(li.name(), Optional.empty(),
+                        List.of(), li.service(), null, Optional.empty(), null, li.extra());
+            }).toList();
+
+            final var startupInfo = new LauncherStartupInfo.Stub(mainClass, List.of(), List.of(), List.of());
+            final var mainLauncher = new Launcher.Stub(launcherName, Optional.of(startupInfo),
+                    List.of(), false, null, Optional.empty(), null, Map.of());
+
+            final var app = new Application.Stub(null, null, version, null, null,
+                    Optional.empty(), List.of(), null, Optional.empty(),
+                    new ApplicationLaunchers(mainLauncher, additionalLaunchers).asList(), extra);
+
+            return new AppImageFile(app);
+        }
+
+        void createInDir(Path dir) {
+            final var file = create();
+            final var copy = toSupplier(() -> {
+                file.save(DUMMY_LAYOUT.resolveAt(dir));
+                return AppImageFile.load(dir, DUMMY_LAYOUT);
+            }).get();
+
+            assertEquals(file, copy);
+        }
+
+        private String version = "1.0";
+        private String launcherName = "Foo";
+        private String mainClass = "Main";
+        private Map<String, String> extra = new HashMap<>();
+        private List<LauncherInfo> addLauncherInfos = new ArrayList<>();
     }
 
     @Test
-    public void testInvalidCommandLine() throws IOException {
-        // Just make sure AppImageFile will tolerate jpackage params that would
-        // never create app image at both load/save phases.
-        // People would edit this file just because they can.
-        // We should be ready to handle curious minds.
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("invalidParamName", "randomStringValue");
-        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
-        params.put(Arguments.CLIOptions.MAIN_JAR.getId(), "test.jar");
-        create(params);
-
-        params = new LinkedHashMap<>();
-        params.put(Arguments.CLIOptions.NAME.getId(), "foo");
-        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
-        params.put(Arguments.CLIOptions.VERSION.getId(), "1.0");
-        create(params);
+    public void testSimple() {
+        build().createInDir(tempFolder);
     }
 
     @ParameterizedTest
     @MethodSource
-    public void testInavlidXml(String[] xmlData) throws IOException {
-        Exception ex = assertThrowsExactly(RuntimeException.class, () -> createFromXml(xmlData));
-        assertTrue(ex.getMessage().contains("generated by another jpackage version or malformed"));
-        assertTrue(ex.getMessage().endsWith(".jpackage.xml\""));
+    public void testExtra(Map<String, String> extra) {
+        build().addExtra(extra).createInDir(tempFolder);
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> testInavlidXml() {
-        return Stream.of(
-                makeArguments((Object)new String[] {"<foo/>"}),
-                makeArguments((Object)new String[] {"<jpackage-state/>"}),
-                makeArguments((Object)new String[] {JPACKAGE_STATE_OPEN, "</jpackage-state>"}),
-                makeArguments((Object)new String[] {
-                        JPACKAGE_STATE_OPEN,
-                        "<main-launcher></main-launcher>",
-                        "</jpackage-state>"
-                }),
-                makeArguments((Object)new String[] {
-                        JPACKAGE_STATE_OPEN,
-                        "<main-launcher>Foo</main-launcher>",
-                        "<main-class></main-class>",
-                        "</jpackage-state>"
-                }),
-                makeArguments((Object)new String[] {
-                        JPACKAGE_STATE_OPEN,
-                        "<launcher>A</launcher>",
-                        "<launcher>B</launcher>",
-                        "</jpackage-state>"
-                })
+    private static Stream<Map<String, String>> testExtra() {
+        return Stream.of(Map.of("a", "b"), Map.of("foo", ""));
+    }
+
+    @Test
+    public void testAdditionalLaunchers() {
+        build().addlauncher("T")
+                .addlauncher("U", true)
+                .addlauncher("F", Map.of("prop", "one", "prop2", "two", "prop3", ""))
+                .createInDir(tempFolder);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    public void testInavlidXml(List<String> xmlData) throws IOException {
+        assertThrowsExactly(ConfigException.class, () -> createFromXml(xmlData), () -> {
+            return I18N.format("error.invalid-app-image", tempFolder, ".jpackage.xml");
+        });
+    }
+
+    private static Stream<List<String>> testInavlidXml() {
+        return Stream.of(List.of("<foo/>"),
+                List.of("<jpackage-state/>"),
+                createXml(),
+                createXml("<main-launcher></main-launcher>"),
+                createXml("<main-launcher>Foo</main-launcher>", "<main-class></main-class>"),
+                createXml("<add-launcher>A</add-launcher>")
         );
     }
 
     @ParameterizedTest
     @MethodSource
-    public void testValidXml(String expectedLauncherName, String xmlData[]) throws IOException {
-        var file = createFromXml(xmlData);
-        assertEquals(expectedLauncherName, file.getLauncherName());
-        assertTrue(file.getAddLaunchers().isEmpty());
+    public void testValidXml(AppImageFile expected, List<String> xmlData) throws IOException, ConfigException {
+        final var actual = createFromXml(xmlData);
+        assertEquals(expected, actual);
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> testValidXml() {
+    private static Stream<Arguments> testValidXml() {
         return Stream.of(
-                makeArguments("Foo", List.of(
-                        JPACKAGE_STATE_OPEN,
-                                "<app-version>1.0</app-version>",
-                                "<main-launcher>Foo</main-launcher>",
-                                "<main-class>main.Class</main-class>",
-                                "<signed>false</signed>",
-                                "<app-store>false</app-store>",
-                        "</jpackage-state>").toArray(String[]::new)
+                Arguments.of(build().version("72").launcherName("Y").mainClass("main.Class").create(), createXml(
+                        "<main-launcher>Y</main-launcher>",
+                        "<app-version>72</app-version>",
+                        "<main-class>main.Class</main-class>")
                 ),
-                makeArguments("Boo", List.of(
-                        JPACKAGE_STATE_OPEN,
-                                "<app-version>1.0</app-version>",
-                                "<main-launcher>Boo</main-launcher>",
-                                "<main-launcher>Bar</main-launcher>",
-                                "<main-class>main.Class</main-class>",
-                                "<signed>false</signed>",
-                                "<app-store>false</app-store>",
-                            "</jpackage-state>").toArray(String[]::new)
+                Arguments.of(build().addExtra("x", "property-x").addExtra("signed", "false")
+                        .addExtra("y", "").addlauncher("another-launcher").addlauncher("service-launcher", true)
+                        .addlauncher("launcher-with-extra", Map.of("a", "", "b", "", "c", "Q"))
+                        .addlauncher("service-launcher-with-extra", true, Map.of("h", "F")).create(), createXml(
+                        "<app-version>1.0</app-version>",
+                        "<main-class>Main</main-class>",
+                        "<y/>",
+                        "<x>property-x</x>",
+                        "<signed>false</signed>",
+                        "<add-launcher name='service-launcher' service='true'/>",
+                        "<add-launcher name='another-launcher'></add-launcher>",
+                        "<add-launcher name='launcher-with-extra'><a></a><b/><c>Q</c></add-launcher>",
+                        "<add-launcher name='service-launcher-with-extra' service='true'><h>F</h></add-launcher>",
+                        "<main-launcher>Foo</main-launcher>")
                 ),
-                makeArguments("duke", List.of(
-                        JPACKAGE_STATE_OPEN,
-                                "<app-version>1.0</app-version>",
-                                "<main-launcher>duke</main-launcher>",
-                                "<main-class>main.Class</main-class>",
-                                "<signed>false</signed>",
-                                "<app-store>false</app-store>",
-                                "<launcher></launcher>",
-                        "</jpackage-state>").toArray(String[]::new)
+                Arguments.of(build().addExtra("signed", "FalsE").create(), createXml(
+                        "<app-version>1.2</app-version>",
+                        "<app-version>1.0</app-version>",
+                        "<main-class>OverwrittenMain</main-class>",
+                        "<main-class>Main</main-class>",
+                        "<main-launcher>Bar</main-launcher>",
+                        "<main-launcher>Foo</main-launcher>",
+                        "<signed>false</signed>",
+                        "<signed>FalsE</signed>")
+                ),
+                Arguments.of(build().addExtra("signed", "true").addExtra("with-comment", "ab")
+                        .addlauncher("a", Map.of("bar", "foo")).create(), createXml(
+                        "<app-version>1.0</app-version>",
+                        "<main-class>Main</main-class>",
+                        "<main-launcher>Foo</main-launcher>",
+                        "<signed>true</signed>",
+                        "<with-comment>a<!-- This is a comment -->b</with-comment>",
+                        "<add-launcher name='a'><name>foo</name><bar>foo</bar><service>true</service></add-launcher>",
+                        "<other><nested>false</nested></other>",
+                        "<another-other>A<child/>B</another-other>")
                 )
         );
     }
 
-    @Test
-    public void testMainLauncherName() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duck App Description");
-        AppImageFile aif = create(params);
-
-        assertEquals("Foo", aif.getLauncherName());
-    }
-
-    @Test
-    public void testMainClass() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duck App Description");
-        AppImageFile aif = create(params);
-
-        assertEquals("main.Class", aif.getMainClass());
-    }
-
-    @Test
-    public void testMacSign() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duck App Description");
-        params.put("mac-sign", Boolean.TRUE);
-        AppImageFile aif = create(params);
-
-        assertTrue(aif.isSigned());
-    }
-
-    @Test
-    public void testCopyAsSigned() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duck App Description");
-        params.put("mac-sign", Boolean.FALSE);
-
-        AppImageFile aif = create(params);
-        assertFalse(aif.isSigned());
-
-        aif = aif.copyAsSigned();
-        assertTrue(aif.isSigned());
-    }
-
-    @Test
-    public void testMacAppStore() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", "Foo");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duck App Description");
-        params.put("mac-app-store", Boolean.TRUE);
-        AppImageFile aif = create(params);
-
-        assertTrue(aif.isAppStore());
-    }
-
-    @Test
-    public void testAddLaunchers() throws IOException {
-        Map<String, Object> params = new LinkedHashMap<>();
-        List<Map<String, Object>> launchersAsMap = new ArrayList<>();
-
-        Map<String, Object> addLauncher2Params = new LinkedHashMap<>();
-        addLauncher2Params.put("name", "Launcher2Name");
-        launchersAsMap.add(addLauncher2Params);
-
-        Map<String, Object> addLauncher3Params = new LinkedHashMap<>();
-        addLauncher3Params.put("name", "Launcher3Name");
-        launchersAsMap.add(addLauncher3Params);
-
-        params.put("name", "Duke App");
-        params.put("main-class", "main.Class");
-        params.put("description", "Duke App Description");
-        params.put("add-launcher", launchersAsMap);
-        AppImageFile aif = create(params);
-
-        List<AppImageFile.LauncherInfo> addLaunchers = aif.getAddLaunchers();
-        assertEquals(2, addLaunchers.size());
-        List<String> names = new ArrayList<>();
-        names.add(addLaunchers.get(0).getName());
-        names.add(addLaunchers.get(1).getName());
-
-        assertTrue(names.contains("Launcher2Name"));
-        assertTrue(names.contains("Launcher3Name"));
-    }
-
-    private AppImageFile create(Map<String, Object> params) throws IOException {
-        AppImageFile.save(tempFolder, params);
-        return AppImageFile.load(tempFolder);
-    }
-
-    private AppImageFile createFromXml(String... xmlData) throws IOException {
-        Path path = AppImageFile.getPathInAppImage(tempFolder);
+    private AppImageFile createFromXml(List<String> xmlData) throws IOException, ConfigException {
+        Path path = AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder));
         path.toFile().mkdirs();
         Files.delete(path);
 
         List<String> data = new ArrayList<>();
         data.add("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>");
-        data.addAll(List.of(xmlData));
+        data.addAll(xmlData);
 
         Files.write(path, data, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
-        AppImageFile image = AppImageFile.load(tempFolder);
+        AppImageFile image = AppImageFile.load(tempFolder, DUMMY_LAYOUT);
         return image;
     }
 
-    static org.junit.jupiter.params.provider.Arguments makeArguments(Object ... args) {
-        return org.junit.jupiter.params.provider.Arguments.of(args);
+    private static void assertEquals(AppImageFile expected, AppImageFile actual) {
+        assertPropertyEquals(expected, actual, AppImageFile::getAppVersion);
+        assertPropertyEquals(expected, actual, AppImageFile::getLauncherName);
+        assertPropertyEquals(expected, actual, AppImageFile::getMainClass);
+        assertPropertyEquals(expected, actual, AppImageFile::getExtra);
+        Assertions.assertEquals(additionaLaunchersAsMap(expected), additionaLaunchersAsMap(actual));
+    }
+
+    private static Map<String, AppImageFile.LauncherInfo> additionaLaunchersAsMap(AppImageFile file) {
+        return file.getAddLaunchers().stream().collect(Collectors.toMap(AppImageFile.LauncherInfo::name, x -> x));
+    }
+
+    private static <T, U> void assertPropertyEquals(T expected, T actual, Function<T, U> getProperty) {
+        Assertions.assertEquals(getProperty.apply(expected), getProperty.apply(actual));
+    }
+
+    private static final List<String> createXml(String ...xml) {
+        final List<String> content = new ArrayList<>();
+        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(), AppImageFile.getVersion()));
+        content.addAll(List.of(xml));
+        content.add("</jpackage-state>");
+        return content;
     }
 
     @TempDir
     private Path tempFolder;
 
-    private static final String JPACKAGE_STATE_OPEN = String.format(
-            "<jpackage-state platform=\"%s\" version=\"%s\">",
-            AppImageFile.getPlatform(), AppImageFile.getVersion());
-
+    private static final ApplicationLayout DUMMY_LAYOUT = ApplicationLayout.build().setAll("").create();
 }

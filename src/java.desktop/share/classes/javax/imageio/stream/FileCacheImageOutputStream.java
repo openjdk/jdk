@@ -30,7 +30,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import javax.imageio.stream.FileCacheImageInputStream.StreamDisposerRecord;
 import com.sun.imageio.stream.StreamCloser;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 /**
  * An implementation of {@code ImageOutputStream} that writes its
@@ -46,6 +49,9 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
 
     private RandomAccessFile cache;
 
+    private final Object disposerReferent = new Object();
+
+    private final StreamDisposerRecord disposerRecord;
     // Pos after last (rightmost) byte written
     private long maxStreamPos = 0L;
 
@@ -91,6 +97,13 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
                                   .toFile();
         this.cache = new RandomAccessFile(cacheFile, "rw");
 
+        // If this instance becomes unreachable the disposer will clean up resources
+        // used for caching. This can't flush any un-flushed cache.
+        this.disposerRecord = new StreamDisposerRecord(cacheFile, cache);
+        Disposer.addRecord(this.disposerReferent, this.disposerRecord);
+        // If the VM is exiting and this instance is still reachable,
+        // StreamCloser will call close() to flush the cache and clean up resources.
+        // However closing the java.io.OutputStream is the application's responsibility.
         this.closeAction = StreamCloser.createCloseAction(this);
         StreamCloser.addToQueue(closeAction);
     }
@@ -231,9 +244,8 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         seek(maxStreamPos);
         flushBefore(maxStreamPos);
         super.close();
-        cache.close();
+        disposerRecord.dispose();
         cache = null;
-        cacheFile.delete();
         cacheFile = null;
         stream.flush();
         stream = null;

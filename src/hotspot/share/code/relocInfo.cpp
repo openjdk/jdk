@@ -26,6 +26,7 @@
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -37,7 +38,6 @@
 #include "utilities/copy.hpp"
 
 #include <new>
-#include <type_traits>
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 
@@ -187,14 +187,17 @@ RelocIterator::RelocIterator(CodeBlob* cb) {
     _code = nullptr;
   }
   _current = cb->relocation_begin() - 1;
-  _end = cb->relocation_end();
-  _addr = cb->content_begin();
+  _end     = cb->relocation_end();
+  _addr    = cb->content_begin();
 
   _section_start[CodeBuffer::SECT_CONSTS] = cb->content_begin();
-  _section_start[CodeBuffer::SECT_INSTS] = cb->code_begin();
+  _section_start[CodeBuffer::SECT_INSTS ] = cb->code_begin();
+  _section_start[CodeBuffer::SECT_STUBS ] = cb->code_end();
 
-  _section_end[CodeBuffer::SECT_CONSTS] = cb->code_begin();
-  _section_start[CodeBuffer::SECT_INSTS] = cb->code_end();
+  _section_end  [CodeBuffer::SECT_CONSTS] = cb->code_begin();
+  _section_end  [CodeBuffer::SECT_INSTS ] = cb->code_end();
+  _section_end  [CodeBuffer::SECT_STUBS ] = cb->code_end();
+
   assert(!has_current(), "just checking");
   set_limits(nullptr, nullptr);
 }
@@ -403,11 +406,12 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   pd_set_call_destination(callee);
 }
 
-
 #ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
 void trampoline_stub_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
   // Finalize owner destination only for nmethods
   if (dest->blob() != nullptr) return;
+  // We either relocate a nmethod residing in CodeCache or just generated code from CodeBuffer
+  assert(src->blob() == nullptr || nativeCall_at(owner())->raw_destination() == owner(), "destination should be empty");
   pd_fix_owner_after_move();
 }
 #endif

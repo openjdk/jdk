@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ class ResolvedIndyEntry {
   u1 _flags;                     // Flags: [0000|00|has_appendix|resolution_failed]
 
 public:
+  // The copy_from() pattern in resolvedFieldEntry.hpp is not necessary
+  // as we have no unused padding (on 32- or 64-bit platforms).
+
   ResolvedIndyEntry() :
     _method(nullptr),
     _resolved_references_index(0),
@@ -74,7 +77,7 @@ public:
   };
 
   // Getters
-  Method* method()               const { return Atomic::load_acquire(&_method); }
+  Method* method()               const { return AtomicAccess::load_acquire(&_method); }
   u2 resolved_references_index() const { return _resolved_references_index;     }
   u2 constant_pool_index()       const { return _cpool_index;                   }
   u2 num_parameters()            const { return _number_of_parameters;          }
@@ -98,7 +101,7 @@ public:
   void set_num_parameters(int value) {
     assert(_number_of_parameters == 0 || _number_of_parameters == value,
       "size must not change: parameter_size=%d, value=%d", _number_of_parameters, value);
-    Atomic::store(&_number_of_parameters, (u2)value);
+    AtomicAccess::store(&_number_of_parameters, (u2)value);
     guarantee(_number_of_parameters == value,
       "size must not change: parameter_size=%d, value=%d", _number_of_parameters, value);
   }
@@ -110,7 +113,7 @@ public:
     set_has_appendix(has_appendix);
     // Set the method last since it is read lock free.
     // Resolution is indicated by whether or not the method is set.
-    Atomic::release_store(&_method, m);
+    AtomicAccess::release_store(&_method, m);
   }
 
   void set_has_appendix(bool has_appendix) {

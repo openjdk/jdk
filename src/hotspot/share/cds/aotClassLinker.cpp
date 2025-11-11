@@ -93,7 +93,7 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
       bool v = try_add_candidate(ik);
       assert(v, "must succeed for VM class");
     }
-    InstanceKlass* super = ik->java_super();
+    InstanceKlass* super = ik->super();
     if (super != nullptr) {
       add_vm_class(super);
     }
@@ -137,7 +137,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   if (ik->is_hidden()) {
-    assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
+    assert(!ik->defined_by_other_loaders(), "hidden classes are archived only for builtin loaders");
     if (!CDSConfig::is_dumping_method_handles()) {
       return false;
     }
@@ -151,7 +151,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     }
   }
 
-  InstanceKlass* s = ik->java_super();
+  InstanceKlass* s = ik->super();
   if (s != nullptr && !try_add_candidate(s)) {
     return false;
   }
@@ -191,8 +191,8 @@ void AOTClassLinker::write_to_archive() {
   assert_at_safepoint();
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    AOTLinkedClassTable* table = AOTLinkedClassTable::get(CDSConfig::is_dumping_static_archive());
-    table->set_boot(write_classes(nullptr, true));
+    AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+    table->set_boot1(write_classes(nullptr, true));
     table->set_boot2(write_classes(nullptr, false));
     table->set_platform(write_classes(SystemDictionary::java_platform_loader(), false));
     table->set_app(write_classes(SystemDictionary::java_system_loader(), false));
@@ -212,16 +212,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
       continue;
     }
 
-    if (ik->is_shared() && CDSConfig::is_dumping_dynamic_archive()) {
-      if (CDSConfig::is_using_aot_linked_classes()) {
-        // This class was recorded as AOT-linked for the base archive,
-        // so there's no need to do so again for the dynamic archive.
-      } else {
-        list.append(ik);
-      }
-    } else {
-      list.append(ArchiveBuilder::current()->get_buffered_addr(ik));
-    }
+    list.append(ArchiveBuilder::current()->get_buffered_addr(ik));
   }
 
   if (list.length() == 0) {

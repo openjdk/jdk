@@ -1687,8 +1687,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
   __ get_method(rcx); // rcx holds method
-  __ profile_taken_branch(rax, rbx); // rax holds updated MDP, rbx
-                                     // holds bumped taken count
+  __ profile_taken_branch(rax); // rax holds updated MDP
 
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
@@ -1739,7 +1738,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // rax: MDO
-    // rbx: MDO bumped taken-count
     // rcx: method
     // rdx: target offset
     // r13: target bcp
@@ -1825,6 +1823,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // it will be preserved in rbx.
       __ mov(rbx, rax);
 
+      JFR_ONLY(__ enter_jfr_critical_section();)
+
       call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
       // rax is OSR buffer, move it to expected parameter location
@@ -1839,13 +1839,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       // pop the interpreter frame
       __ movptr(sender_sp, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
       __ leave();                                // remove frame anchor
+      JFR_ONLY(__ leave_jfr_critical_section();)
       __ pop(retaddr);                           // get return address
-      __ mov(rsp, sender_sp);                   // set sp to sender sp
+      __ mov(rsp, sender_sp);                    // set sp to sender sp
       // Ensure compiled code always sees stack at proper alignment
       __ andptr(rsp, -(StackAlignmentInBytes));
-
-      // unlike x86 we need no specialized return from compiled code
-      // to the interpreter or the call stub.
 
       // push the return address
       __ push(retaddr);
@@ -2198,8 +2196,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
-  Label L_clinit_barrier_slow;
-  Label resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
 
@@ -2217,37 +2214,38 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
       ShouldNotReachHere();
   }
   __ cmpl(temp, code);  // have we resolved this bytecode?
-  __ jcc(Assembler::equal, resolved);
-
-  // resolve first time through
-  // Class initialization barrier slow path lands here as well.
-  __ bind(L_clinit_barrier_slow);
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ movl(temp, code);
-  __ call_VM(noreg, entry, temp);
-  // Update registers with resolved info
-  __ load_method_entry(cache, index);
-
-  __ bind(resolved);
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = temp;
     const Register klass  = temp;
 
+    __ jcc(Assembler::notEqual, L_clinit_barrier_slow);
     __ movptr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ jcc(Assembler::equal, L_done);
   }
+
+  // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ movl(temp, code);
+  __ call_VM_preemptable(noreg, entry, temp);
+  // Update registers with resolved info
+  __ load_method_entry(cache, index);
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
-                                            Register cache,
-                                            Register index) {
+                                                      Register cache,
+                                                      Register index) {
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
-  Label resolved;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2264,16 +2262,28 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     __ load_unsigned_byte(temp, Address(cache, in_bytes(ResolvedFieldEntry::put_code_offset())));
   }
   __ cmpl(temp, code);  // have we resolved this bytecode?
-  __ jcc(Assembler::equal, resolved);
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = temp;
+
+    __ jcc(Assembler::notEqual, L_clinit_barrier_slow);
+    __ movptr(field_holder, Address(cache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ clinit_barrier(field_holder, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
+  } else {
+    __ jcc(Assembler::equal, L_done);
+  }
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(temp, code);
-  __ call_VM(noreg, entry, temp);
+  __ call_VM_preemptable(noreg, entry, temp);
   // Update registers with resolved info
   __ load_field_entry(cache, index);
-
-  __ bind(resolved);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
@@ -3634,8 +3644,8 @@ void TemplateTable::_new() {
 
   __ get_constant_pool(c_rarg1);
   __ get_unsigned_2_byte_index_at_bcp(c_rarg2, 1);
-  call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
-   __ verify_oop(rax);
+  __ call_VM_preemptable(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::_new), c_rarg1, c_rarg2);
+  __ verify_oop(rax);
 
   // continue
   __ bind(done);

@@ -321,6 +321,7 @@ class VectorRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
+  inline VMReg as_VMReg() const;
 
   // testers
   constexpr bool is_valid() const { return (0 <= _encoding && _encoding < number_of_registers); }
@@ -392,7 +393,6 @@ class VectorSRegister {
 
   // accessors
   constexpr int encoding() const { assert(is_valid(), "invalid register"); return _encoding; }
-  inline VMReg as_VMReg() const;
   VectorSRegister successor() const { return VectorSRegister(encoding() + 1); }
 
   // testers
@@ -484,8 +484,8 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   enum {
     max_gpr = Register::number_of_registers * 2,
     max_fpr = max_gpr + FloatRegister::number_of_registers * 2,
-    max_vsr = max_fpr + VectorSRegister::number_of_registers * 4,
-    max_cnd = max_vsr + ConditionRegister::number_of_registers,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * 4,
+    max_cnd = max_vr  + ConditionRegister::number_of_registers,
     max_spr = max_cnd + SpecialRegister::number_of_registers,
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives
@@ -523,7 +523,7 @@ constexpr FloatRegister F11_ARG11  = F11; // volatile
 constexpr FloatRegister F12_ARG12  = F12; // volatile
 constexpr FloatRegister F13_ARG13  = F13; // volatile
 
-// Register declarations to be used in frame manager assembly code.
+// Register declarations to be used in template interpreter assembly code.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R14_bcp       = R14;
 constexpr Register R15_esp       = R15;      // slot below top of expression stack for ld/st with update
@@ -533,7 +533,7 @@ constexpr Register R17_tos       = R17;      // The interpreter's top of (expres
 constexpr Register R18_locals    = R18;      // address of first param slot (receiver).
 constexpr Register R19_method    = R19;      // address of current method
 
-// Temporary registers to be used within frame manager. We can use
+// Temporary registers to be used within template interpreter. We can use
 // the non-volatiles because the call stub has saved them.
 // Use only non-volatile registers in order to keep values across C-calls.
 constexpr Register R21_tmp1 = R21;

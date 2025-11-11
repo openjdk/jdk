@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Shutdown tests
  * @build KullaTesting TestingInputStream
- * @run testng ShutdownTest
+ * @run junit ShutdownTest
  */
 
 import java.io.IOException;
@@ -37,11 +37,13 @@ import java.util.function.Consumer;
 
 import jdk.jshell.JShell;
 import jdk.jshell.JShell.Subscription;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import org.testng.annotations.BeforeMethod;
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 public class ShutdownTest extends KullaTesting {
 
@@ -51,12 +53,13 @@ public class ShutdownTest extends KullaTesting {
         ++shutdownCount;
     }
 
-    @Test(enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testExit() {
         shutdownCount = 0;
         getState().onShutdown(this::shutdownCounter);
         assertEval("System.exit(1);");
-        assertEquals(shutdownCount, 1);
+        assertEquals(1, shutdownCount);
     }
 
     @Test
@@ -64,7 +67,7 @@ public class ShutdownTest extends KullaTesting {
         shutdownCount = 0;
         getState().onShutdown(this::shutdownCounter);
         getState().close();
-        assertEquals(shutdownCount, 1);
+        assertEquals(1, shutdownCount);
     }
 
     @Test
@@ -73,7 +76,7 @@ public class ShutdownTest extends KullaTesting {
         Subscription token = getState().onShutdown(this::shutdownCounter);
         getState().unsubscribe(token);
         getState().close();
-        assertEquals(shutdownCount, 0);
+        assertEquals(0, shutdownCount);
     }
 
     @Test
@@ -85,46 +88,56 @@ public class ShutdownTest extends KullaTesting {
         getState().unsubscribe(subscription1);
         getState().close();
 
-        assertEquals(listener1.getEvents(), 0, "Checking got events");
-        assertEquals(listener2.getEvents(), 1, "Checking got events");
+        assertEquals(0, listener1.getEvents(), "Checking got events");
+        assertEquals(1, listener2.getEvents(), "Checking got events");
 
         getState().close();
 
-        assertEquals(listener1.getEvents(), 0, "Checking got events");
-        assertEquals(listener2.getEvents(), 1, "Checking got events");
+        assertEquals(0, listener1.getEvents(), "Checking got events");
+        assertEquals(1, listener2.getEvents(), "Checking got events");
 
         getState().unsubscribe(subscription2);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testCloseException() {
-        getState().close();
-        getState().eval("45");
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            getState().close();
+            getState().eval("45");
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-          enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testShutdownException() {
-        assertEval("System.exit(0);");
-        getState().eval("45");
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            assertEval("System.exit(0);");
+            getState().eval("45");
+        });
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test
     public void testNullCallback() {
-        getState().onShutdown(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            getState().onShutdown(null);
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testSubscriptionAfterClose() {
-        getState().close();
-        getState().onShutdown(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            getState().close();
+            getState().onShutdown(e -> {});
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class,
-          enabled = false) //TODO 8139873
+    @Test //TODO 8139873
+    @Disabled
     public void testSubscriptionAfterShutdown() {
-        assertEval("System.exit(0);");
-        getState().onShutdown(e -> {});
+        Assertions.assertThrows(IllegalStateException.class, () -> {
+            assertEval("System.exit(0);");
+            getState().onShutdown(e -> {});
+        });
     }
 
     @Test
@@ -150,13 +163,13 @@ public class ShutdownTest extends KullaTesting {
 
     private Method currentTestMethod;
 
-    @BeforeMethod
-    public void setUp(Method testMethod) {
-        currentTestMethod = testMethod;
+    @BeforeEach
+    public void setUp(TestInfo testInfo) {
+        currentTestMethod = testInfo.getTestMethod().orElseThrow();
         super.setUp();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
     }
 

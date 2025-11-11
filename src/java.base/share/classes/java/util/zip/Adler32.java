@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.nio.ch.DirectBuffer;
 
 import static java.util.zip.ZipUtils.NIO_ACCESS;
 
@@ -100,7 +99,7 @@ public class Adler32 implements Checksum {
         if (buffer.isDirect()) {
             NIO_ACCESS.acquireSession(buffer);
             try {
-                adler = updateByteBuffer(adler, ((DirectBuffer)buffer).address(), pos, rem);
+                adler = updateByteBuffer(adler, NIO_ACCESS.getBufferAddress(buffer), pos, rem);
             } finally {
                 NIO_ACCESS.releaseSession(buffer);
             }

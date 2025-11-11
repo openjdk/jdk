@@ -92,6 +92,7 @@ hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/c2/irTests \
   compiler/codegen \
+  compiler/gallery \
   compiler/loopopts/superword \
   compiler/vectorapi \
   compiler/vectorization \
@@ -142,7 +143,6 @@ tier1_common = \
   sources \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
-  gtest/LockStackGtests.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
@@ -313,7 +313,8 @@ tier3_gc_gcold = \
 tier1_gc_gcbasher = \
   gc/stress/gcbasher/TestGCBasherWithG1.java \
   gc/stress/gcbasher/TestGCBasherWithSerial.java \
-  gc/stress/gcbasher/TestGCBasherWithParallel.java
+  gc/stress/gcbasher/TestGCBasherWithParallel.java \
+  gc/stress/gcbasher/TestGCBasherWithZ.java
 
 tier1_gc_shenandoah = \
   gc/shenandoah/options/ \
@@ -413,9 +414,12 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/aotAnnotations \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
+ -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
@@ -426,9 +430,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
- -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
- -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
- -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
@@ -450,7 +451,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaInvokeVirtual.java \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
- -runtime/cds/appcds/LambdaWithJavaAgent.java \
  -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
@@ -494,7 +494,6 @@ hotspot_cds_verify_shared_spaces = \
   runtime/cds/appcds/customLoader/LoaderSegregationTest.java \
   runtime/cds/appcds/javaldr/ArrayTest.java \
   runtime/cds/appcds/jigsaw/modulepath/ExportModule.java \
-  runtime/cds/appcds/jvmti/dumpingWithAgent/DumpingWithJavaAgent.java \
   runtime/cds/appcds/sharedStrings/SharedStringsBasic.java
 
 # No need to run every test with EpsilonGC. A small subset will provide enough
@@ -510,17 +509,23 @@ hotspot_cds_epsilongc = \
   runtime/cds/appcds/jigsaw \
   runtime/cds/appcds/loaderConstraints
 
-# Run CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
+# Run "old" CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
 # those that rely on redefining classes that are already archived.
+# Note that appcds/aotXXX directories are excluded -- those tests already specifically
+# test AOT class linking, so there's no need to run them again with -XX:+AOTClassLinking.
 hotspot_aot_classlinking = \
   runtime/cds \
+ -runtime/cds/appcds/aotAnnotations \
  -runtime/cds/appcds/aotCache \
  -runtime/cds/appcds/aotClassLinking \
  -runtime/cds/appcds/aotCode \
+ -runtime/cds/appcds/aotFlags \
+ -runtime/cds/appcds/aotProfile \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \
+ -runtime/cds/appcds/LambdaContainsOldInf.java \
  -runtime/cds/appcds/customLoader/CustomClassListDump.java \
  -runtime/cds/appcds/customLoader/HelloCustom_JFR.java \
  -runtime/cds/appcds/customLoader/OldClassAndInf.java \
@@ -528,17 +533,8 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
  -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
- -runtime/cds/appcds/dynamicArchive/ModulePath.java \
- -runtime/cds/appcds/dynamicArchive/LambdaCustomLoader.java \
- -runtime/cds/appcds/dynamicArchive/LambdaForOldInfInBaseArchive.java \
- -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
- -runtime/cds/appcds/dynamicArchive/LambdasInTwoArchives.java \
- -runtime/cds/appcds/dynamicArchive/OldClassAndInf.java \
- -runtime/cds/appcds/dynamicArchive/OldClassInBaseArchive.java \
- -runtime/cds/appcds/dynamicArchive/OldClassVerifierTrouble.java \
+ -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/HelloExtTest.java \
- -runtime/cds/appcds/javaldr/GCDuringDump.java \
- -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
  -runtime/cds/appcds/jigsaw/ExactOptionMatch.java \
  -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
@@ -568,6 +564,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
  -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
+ -runtime/cds/appcds/SignedJar.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
@@ -575,6 +572,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
+ -runtime/cds/appcds/VerifyObjArrayCloneTest.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
  -runtime/cds/serviceability/ReplaceCriticalClasses.java \
  -runtime/cds/serviceability/transformRelatedClasses/TransformInterfaceAndImplementor.java \

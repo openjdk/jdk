@@ -22,14 +22,14 @@
  *
  */
 
-#include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "logging/log.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();

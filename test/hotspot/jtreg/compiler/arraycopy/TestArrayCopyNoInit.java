@@ -29,7 +29,7 @@
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
  *                   compiler.arraycopy.TestArrayCopyNoInit
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseCompactObjectHeaders -XX:-UseTLAB
+ *                   -XX:+UseCompactObjectHeaders -XX:-UseTLAB
  *                   compiler.arraycopy.TestArrayCopyNoInit
  */
 

@@ -95,7 +95,7 @@ public class SingleByte
             }
 
             if (isASCIICompatible) {
-                int n = JLA.uncheckedDecodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
                 sp += n;
                 dp += n;
             }
@@ -217,7 +217,7 @@ public class SingleByte
             int len = Math.min(dl - dp, sl - sp);
 
             if (isASCIICompatible) {
-                int n = JLA.uncheckedEncodeASCII(sa, sp, da, dp, len);
+                int n = JLA.encodeASCII(sa, sp, da, dp, len);
                 sp += n;
                 dp += n;
                 len -= n;
@@ -290,32 +290,8 @@ public class SingleByte
             repl = newReplacement[0];
         }
 
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + Math.min(len, dst.length);
-            while (sp < sl) {
-                char c = src[sp++];
-                int b = encode(c);
-                if (b != UNMAPPABLE_ENCODING) {
-                    dst[dp++] = (byte)b;
-                    continue;
-                }
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                    Character.isLowSurrogate(src[sp])) {
-                    if (len > dst.length) {
-                        sl++;
-                        len--;
-                    }
-                    sp++;
-                }
-                dst[dp++] = repl;
-            }
-            return dp;
-        }
-
         @Override
-        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = (char)(src[sp++] & 0xff);
@@ -330,8 +306,7 @@ public class SingleByte
         }
 
         @Override
-        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
+        public int encodeFromUTF16(byte[] src, int sp, int len, byte[] dst, int dp) {
             int sl = sp + Math.min(len, dst.length);
             while (sp < sl) {
                 char c = StringUTF16.getChar(src, sp++);

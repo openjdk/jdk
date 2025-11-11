@@ -45,12 +45,6 @@ public:
   // Records end of cycle for young and old and establishes size of live bytes in old
   static void handle_completion(ShenandoahHeap* heap);
 
-  // Full GC may have promoted regions and may have temporarily violated constraints on the usage and
-  // capacity of the old generation. This method will balance the accounting of regions between the
-  // young and old generations. This is somewhat vestigial, but the outcome of this method is used
-  // when rebuilding the free sets.
-  static void balance_generations_after_gc(ShenandoahHeap* heap);
-
   // This will compute the target size for the old generation. It will be expressed in terms of
   // a region surplus and deficit, which will be redistributed accordingly after rebuilding the
   // free set.
@@ -82,7 +76,6 @@ class ShenandoahPrepareForGenerationalCompactionObjectClosure : public ObjectClo
 private:
   PreservedMarks*             const _preserved_marks;
   ShenandoahGenerationalHeap* const _heap;
-  uint                              _tenuring_threshold;
 
   // _empty_regions is a thread-local list of heap regions that have been completely emptied by this worker thread's
   // compaction efforts.  The worker thread that drives these efforts adds compacted regions to this list if the

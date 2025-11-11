@@ -123,6 +123,18 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   log_develop_debug(gc, barrier)("Cleaned read_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(read_table[0])), p2i(end_bp));
 }
 
+void ShenandoahDirectCardMarkRememberedSet::mark_write_table_as_clean() {
+  CardValue* write_table = _card_table->write_byte_map();
+  CardValue* bp = &(write_table)[0];
+  CardValue* end_bp = &(write_table)[_card_table->last_valid_index()];
+
+  while (bp <= end_bp) {
+    *bp++ = CardTable::clean_card_val();
+  }
+
+  log_develop_debug(gc, barrier)("Cleaned write_table from " PTR_FORMAT " to " PTR_FORMAT, p2i(&(write_table[0])), p2i(end_bp));
+}
+
 // No lock required because arguments align with card boundaries.
 void ShenandoahCardCluster::reset_object_range(HeapWord* from, HeapWord* to) {
   assert(((((unsigned long long) from) & (CardTable::card_size() - 1)) == 0) &&
@@ -234,8 +246,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Do not use in non-generational mode");
   ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(left);
   assert(region->is_old(), "Do not use for young regions");
-  // For HumongousRegions it's more efficient to jump directly to the
-  // start region.
+  // For humongous regions it's more efficient to jump directly to the start region.
   assert(!region->is_humongous(), "Use region->humongous_start_region() instead");
 #endif
   if (starts_object(card_index) && get_first_start(card_index) == 0) {
@@ -279,22 +290,13 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   // 4. Every allocation under TAMS updates the object start array.
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-#define WALK_FORWARD_IN_BLOCK_START true
+#define WALK_FORWARD_IN_BLOCK_START false
   while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
   }
 #undef WALK_FORWARD_IN_BLOCK_START // false
-#ifdef ASSERT
-  if (p + obj->size() <= left) {
-    const CardValue* const wtbm = _rs->card_table()->write_byte_map();
-    const CardValue* const rtbm = _rs->card_table()->read_byte_map();
-    log_info(gc)("Anticipating assert failure, card[%zu] is %s in read table, %s in write table", cur_index, 
-                 (rtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean",
-                 (wtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean");
-  }
-#endif
   assert(p < left, "p should start before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
   return p;
@@ -338,6 +340,10 @@ void ShenandoahScanRemembered::mark_range_as_clean(HeapWord* p, size_t num_heap_
 
 void ShenandoahScanRemembered::mark_read_table_as_clean() {
   _rs->mark_read_table_as_clean();
+}
+
+void ShenandoahScanRemembered::mark_write_table_as_clean() {
+  _rs->mark_write_table_as_clean();
 }
 
 void ShenandoahScanRemembered::reset_object_range(HeapWord* from, HeapWord* to) {
@@ -634,7 +640,7 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
 
 #ifdef ASSERT
   CardValue* start_bp = &(_card_table->write_byte_map())[0];
-  CardValue* end_bp = &(new_ptr)[_card_table->last_valid_index()];
+  CardValue* end_bp = &(start_bp[_card_table->last_valid_index()]);
 
   while (start_bp <= end_bp) {
     assert(*start_bp == CardTable::clean_card_val(), "Should be clean: " PTR_FORMAT, p2i(start_bp));
@@ -693,9 +699,9 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   struct ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
-    log_debug(gc)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
-                  "%zu at offset %zu, size: %zu",
-                  worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
+    log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
+                          "%zu at offset %zu, size: %zu",
+                          worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
     if (region->is_old()) {
       size_t cluster_size =
         CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;

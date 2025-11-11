@@ -164,10 +164,6 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_slow(stackChunkOop chunk, Oo
 
 template <typename OopT>
 void InstanceStackChunkKlass::oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr) {
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    return;
-  }
-
   StackChunkOopIterateFilterClosure<OopIterateClosure> cl(closure, mr);
   if (chunk->has_bitmap()) {
     chunk->iterate_lockstack<OopT>(&cl);
@@ -199,7 +195,8 @@ public:
   }
 
   const RegisterMap* get_map(const RegisterMap* map,      intptr_t* sp) { return map; }
-  const RegisterMap* get_map(const SmallRegisterMap* map, intptr_t* sp) { return map->copy_to_RegisterMap(&_map, sp); }
+  template <typename SmallRegisterMapT>
+  const RegisterMap* get_map(const SmallRegisterMapT map, intptr_t* sp) { return map->copy_to_RegisterMap(&_map, sp); }
 
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {

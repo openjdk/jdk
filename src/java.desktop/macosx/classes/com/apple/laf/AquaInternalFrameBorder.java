@@ -42,7 +42,7 @@ import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaInternalFrameBorderMetrics;
 import java.awt.geom.AffineTransform;
 
-public class AquaInternalFrameBorder implements Border, UIResource {
+public final class AquaInternalFrameBorder implements Border, UIResource {
     private static final int kCloseButton = 0;
     private static final int kIconButton = 1;
     private static final int kGrowButton = 2;
@@ -142,11 +142,13 @@ public class AquaInternalFrameBorder implements Border, UIResource {
     }
 
     // Border interface
+    @Override
     public boolean isBorderOpaque() {
         return false;
     }
 
     // Border interface
+    @Override
     public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
         // For expanded InternalFrames, the frame & component are the same object
         paintBorder((JInternalFrame)c, c, g, x, y, w, h);
@@ -412,6 +414,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
     }
 
     // Border interface
+    @Override
     public Insets getBorderInsets(final Component c) {
         if (fBorderInsets == null) fBorderInsets = new Insets(0, 0, 0, 0);
 

@@ -215,7 +215,7 @@
     uint64_t bcp;
     uint64_t esp;
     uint64_t mdx;
-    uint64_t top_frame_sp; // Maybe define parent_frame_abi and move there.
+    uint64_t top_frame_sp; // Original sp to be restored when returning from an i2i call
     uint64_t sender_sp;
     // Slots only needed for native calls. Maybe better to move elsewhere.
     uint64_t oop_tmp;
@@ -363,7 +363,7 @@
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
   inline frame(intptr_t* sp, address pc, kind knd = kind::nmethod);
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
-  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map = nullptr);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 
  private:

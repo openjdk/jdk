@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,8 @@ public class tc03t002 extends DebugeeClass {
 /* =================================================================== */
 
 class tc03t002Thread extends Thread {
-
+    // The thread name prefix is used to find thread from jvmti agent.
+    final static String threadNamePrefix = "Debuggee Thread";
     static Wicket startingBarrier = new Wicket(3);
     static Wicket lockingBarrier = new Wicket(3);
     Wicket waitingBarrier = new Wicket();
@@ -112,7 +113,7 @@ class tc03t002Thread extends Thread {
     Object lock2;
 
     public tc03t002Thread(Object o1, Object o2) {
-        super("Debuggee Thread " + o1 + o2);
+        super(threadNamePrefix + " " + o1 + o2);
         lock1 = o1;
         lock2 = o2;
     }

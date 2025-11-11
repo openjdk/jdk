@@ -27,7 +27,6 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -36,6 +35,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -48,9 +48,10 @@
 
 class GCHeapLog;
 class GCHeapSummary;
+class GCMemoryManager;
+class GCMetaspaceLog;
 class GCTimer;
 class GCTracer;
-class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
@@ -88,19 +89,19 @@ public:
 //   ZCollectedHeap
 //
 class CollectedHeap : public CHeapObj<mtGC> {
+  friend class CPUTimeUsage::GC;
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsSTWGCActiveMark; // Block structured external access to _is_stw_gc_active
   friend class MemAllocator;
 
  private:
-  GCHeapLog* _gc_heap_log;
+  GCHeapLog*      _heap_log;
+  GCMetaspaceLog* _metaspace_log;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
-
-  SoftRefPolicy _soft_ref_policy;
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
@@ -130,6 +131,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
+  jlong _vmthread_cpu_time;
+
   // Reason for current garbage collection.  Should be set to
   // a value reflecting no collection between collections.
   GCCause::Cause _gc_cause;
@@ -156,8 +159,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be
   // called to allocate TLABs, only individual objects.
-  virtual HeapWord* mem_allocate(size_t size,
-                                 bool* gc_overhead_limit_was_exceeded) = 0;
+  virtual HeapWord* mem_allocate(size_t size) = 0;
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
@@ -166,7 +168,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
 protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
-  DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
@@ -204,6 +205,13 @@ protected:
     return static_cast<T*>(heap);
   }
 
+  // Print any relevant tracing info that flags imply.
+  // Default implementation does nothing.
+  virtual void print_tracing_info() const = 0;
+
+  // Stop any onging concurrent work and prepare for exit.
+  virtual void stop() = 0;
+
  public:
 
   static inline size_t filler_array_max_size() {
@@ -237,12 +245,20 @@ protected:
   // This is the correct place to place such initialization methods.
   virtual void post_initialize();
 
-  // Stop any onging concurrent work and prepare for exit.
-  virtual void stop() {}
+  bool is_shutting_down() const;
+
+  // If the VM is shutting down, we may have skipped VM_CollectForAllocation.
+  // In this case, stall the allocation request briefly in the hope that
+  // the VM shutdown completes before the allocation request returns.
+  void stall_for_vm_shutdown();
+
+  void before_exit();
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
   virtual void safepoint_synchronize_end() {}
+
+  void add_vmthread_cpu_time(jlong time);
 
   void initialize_reserved_region(const ReservedHeapSpace& rs);
 
@@ -256,11 +272,6 @@ protected:
   size_t free_at_last_gc() const { return _capacity_at_last_gc - _used_at_last_gc; }
   size_t used_at_last_gc() const { return _used_at_last_gc; }
   void update_capacity_and_used_at_gc();
-
-  // Return "true" if the part of the heap that allocates Java
-  // objects has reached the maximal committed limit that it can
-  // reach, without a garbage collection.
-  virtual bool is_maximal_no_gc() const = 0;
 
   // Support for java.lang.Runtime.maxMemory():  return the maximum amount of
   // memory that the vm could make available for storing 'normal' java objects.
@@ -298,9 +309,6 @@ protected:
   static void fill_with_objects(HeapWord* start, size_t words, bool zap = true);
 
   static void fill_with_object(HeapWord* start, size_t words, bool zap = true);
-  static void fill_with_object(MemRegion region, bool zap = true) {
-    fill_with_object(region.start(), region.word_size(), zap);
-  }
   static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
@@ -333,17 +341,17 @@ protected:
   virtual void ensure_parsability(bool retire_tlabs);
 
   // The amount of space available for thread-local allocation buffers.
-  virtual size_t tlab_capacity(Thread *thr) const = 0;
+  virtual size_t tlab_capacity() const = 0;
 
-  // The amount of used space for thread-local allocation buffers for the given thread.
-  virtual size_t tlab_used(Thread *thr) const = 0;
+  // The amount of space used for thread-local allocation buffers.
+  virtual size_t tlab_used() const = 0;
 
   virtual size_t max_tlab_size() const;
 
   // An estimate of the maximum allocation that could be performed
   // for thread-local allocation buffers without triggering any
   // collection or expansion activity.
-  virtual size_t unsafe_max_tlab_alloc(Thread *thr) const = 0;
+  virtual size_t unsafe_max_tlab_alloc() const = 0;
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
@@ -387,9 +395,6 @@ protected:
     }
   }
 
-  // Return the SoftRefPolicy for the heap;
-  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
-
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;
   virtual GrowableArray<MemoryPool*> memory_pools() = 0;
@@ -420,6 +425,8 @@ protected:
 
   virtual void initialize_serviceability() = 0;
 
+  void print_relative_to_gc(GCWhen::Type when) const;
+
  public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
@@ -434,6 +441,8 @@ protected:
   // some reason a context doesn't allow using the Access API, then this function
   // explicitly checks if the given memory location contains a null value.
   virtual bool contains_null(const oop* p) const;
+
+  void print_invocation_on(outputStream* st, const char* type, GCWhen::Type when) const;
 
   // Print heap information.
   virtual void print_heap_on(outputStream* st) const = 0;
@@ -450,12 +459,8 @@ protected:
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
-  // Print any relevant tracing info that flags imply.
-  // Default implementation does nothing.
-  virtual void print_tracing_info() const = 0;
-
-  void print_heap_before_gc();
-  void print_heap_after_gc();
+  void print_before_gc() const;
+  void print_after_gc() const;
 
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;
@@ -495,6 +500,7 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

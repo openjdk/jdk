@@ -104,7 +104,7 @@ private:
 
   // State variables involved in construction of a mixed-evacuation collection set.  These variables are initialized
   // when client code invokes prime_collection_set().  They are consulted, and sometimes modified, when client code
-  // calls top_off_collection_set() to possibly expand the number old-gen regions in a mixed evacuation cset, and by
+  // calls top_off_collection_set() to possibly expand the number of old-gen regions in a mixed evacuation cset, and by
   // finalize_mixed_evacs(), which prepares the way for mixed evacuations to begin.
   ShenandoahCollectionSet* _mixed_evac_cset;
   size_t _evacuated_old_bytes;
@@ -136,7 +136,7 @@ private:
  protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
 
-  // This internal helper route adds as many mixed evacuation candidate regions as fit within the old-gen evacuation budget
+  // This internal helper routine adds as many mixed evacuation candidate regions as fit within the old-gen evacuation budget
   // to the collection set.  This may be called twice to prepare for any given mixed evacuation cycle, the first time with
   // a conservative old evacuation budget, and the second time with a larger more aggressive old evacuation budget.  Returns
   // true iff we need to finalize mixed evacs.  (If no regions are added to the collection set, there is no need to finalize

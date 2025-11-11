@@ -228,9 +228,6 @@ public class CDSTestUtils {
     public static final boolean copyChildStdoutToMainStdout =
         Boolean.getBoolean("test.cds.copy.child.stdout");
 
-    // This property is passed to child test processes
-    public static final String TestTimeoutFactor = System.getProperty("test.timeout.factor", "1.0");
-
     public static final String UnableToMapMsg =
         "Unable to map shared archive: test did not complete";
 
@@ -433,14 +430,13 @@ public class CDSTestUtils {
         ArrayList<String> cmd = new ArrayList<String>();
         cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
-        cmd.add("-Dtest.timeout.factor=" + TestTimeoutFactor);
+        cmd.add("-Dtest.timeout.factor=" + Utils.TIMEOUT_FACTOR);
 
         if (!opts.useSystemArchive) {
             if (opts.archiveName == null)
                 opts.archiveName = getDefaultArchiveName();
             cmd.add("-XX:SharedArchiveFile=" + opts.archiveName);
         }
-        addVerifyArchivedFields(cmd);
 
         if (opts.useVersion)
             cmd.add("-version");
@@ -778,8 +774,10 @@ public class CDSTestUtils {
 
     // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
     // must be copied, because the java.home property is derived from the canonicalized paths of these 2 files.
-    // Set a list of {jvm, "java"} which will be physically copied. If a file needs copied physically, add it to the list.
-    private static String[] phCopied = {System.mapLibraryName("jvm"), "java"};
+    // The jvm.cfg file must be copied because the cds/NonJVMVariantLocation.java
+    // test is testing a CDS archive can be loaded from a non-JVM variant directory.
+    // Set a list of {jvm, "java", "jvm.cfg"} which will be physically copied. If a file needs copied physically, add it to the list.
+    private static String[] phCopied = {System.mapLibraryName("jvm"), "java", "jvm.cfg"};
     public static void clone(File src, File dst) throws Exception {
         if (dst.exists()) {
             if (!dst.isDirectory()) {

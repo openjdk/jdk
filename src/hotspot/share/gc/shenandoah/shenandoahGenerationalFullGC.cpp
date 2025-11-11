@@ -41,7 +41,7 @@ void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation
 }
 
 void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
-  assert(generation->used_including_humongous_waste() <= generation->used_regions_size(),
+  assert(generation->used() <= generation->used_regions_size(),
          "%s consumed can be no larger than span of affiliated regions", generation->name());
 }
 #else
@@ -53,8 +53,7 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 void ShenandoahGenerationalFullGC::prepare() {
   auto heap = ShenandoahGenerationalHeap::heap();
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
-  heap->set_gc_generation(heap->global_generation());
-  heap->set_active_generation();
+  heap->set_active_generation(heap->global_generation());
 
   // Full GC supersedes any marking or coalescing in old generation.
   heap->old_generation()->cancel_gc();
@@ -81,7 +80,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   assert_usage_not_more_than_regions_used(young);
 
   // Establish baseline for next old-has-grown trigger.
-  old->set_live_bytes_after_last_mark(old->used_including_humongous_waste());
+  old->set_live_bytes_after_last_mark(old->used());
 }
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
@@ -100,59 +99,6 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
   // we came to the full GC from an incomplete global cycle, we need to indicate
   // that the old regions are parsable.
   heap->old_generation()->set_parsable(true);
-}
-
-// Full GC has scattered aged objects throughout the heap.  There are no more aged regions, so there is no anticipated
-// promotion.  Furthermore, Full GC has cancelled any ongoing mixed evacuation efforts so there are no anticipated old-gen
-// evacuations.  Size old-gen to represent its current usage by setting the balance.  This feeds into rebuild of freeset.
-void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {
-  ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::cast(heap);
-  ShenandoahOldGeneration* const old_gen = gen_heap->old_generation();
-
-  size_t old_usage = old_gen->used_regions_size();
-  size_t old_capacity = old_gen->max_capacity();
-
-  assert(old_usage % ShenandoahHeapRegion::region_size_bytes() == 0, "Old usage must align with region size");
-  assert(old_capacity % ShenandoahHeapRegion::region_size_bytes() == 0, "Old capacity must align with region size");
-
-  ssize_t region_balance;
-  if (old_capacity > old_usage) {
-    size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
-    // Since the act of FullGC does not honor old and young budgets, excess_old_regions are conceptually unaffiliated.
-    region_balance = checked_cast<ssize_t>(excess_old_regions);
-  } else if (old_capacity < old_usage) {
-    // Since the old_usage already consumes more regions than in old_capacity, we know these regions are not affiliated young,
-    // so arrange to transfer them.
-    size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-    region_balance = 0 - checked_cast<ssize_t>(old_regions_deficit);
-  } else {
-    region_balance = 0;
-  }
-  old_gen->set_region_balance(region_balance);
-  // Rebuild free set will log adjustments to generation sizes.
-
-  ShenandoahYoungGeneration* const young_gen = gen_heap->young_generation();
-  size_t anticipated_young_capacity = young_gen->max_capacity() + region_balance * ShenandoahHeapRegion::region_size_bytes();
-  size_t young_usage = young_gen->used_regions_size();
-  assert(anticipated_young_capacity >= young_usage, "sanity");
-
-  size_t anticipated_max_collector_reserve = anticipated_young_capacity - young_usage;
-  size_t desired_collector_reserve = (anticipated_young_capacity * ShenandoahEvacReserve) / 100;
-  size_t young_reserve;
-  if (desired_collector_reserve > anticipated_max_collector_reserve) {
-    // Trigger next concurrent GC immediately
-    young_reserve = anticipated_max_collector_reserve;
-  } else {
-    young_reserve = desired_collector_reserve;
-  }
-
-  size_t reserve_for_promo = 0;
-  size_t reserve_for_mixed = 0;
-
-  // Reserves feed into rebuild calculations
-  young_gen->set_evacuation_reserve(young_reserve);
-  old_gen->set_evacuation_reserve(reserve_for_mixed);
-  old_gen->set_promoted_reserve(reserve_for_promo);
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
@@ -207,7 +153,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
                                                           ShenandoahHeapRegion* from_region, uint worker_id) :
         _preserved_marks(preserved_marks),
         _heap(ShenandoahGenerationalHeap::heap()),
-        _tenuring_threshold(0),
         _empty_regions(empty_regions),
         _empty_regions_pos(0),
         _old_to_region(nullptr),
@@ -226,8 +171,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
     _young_to_region = from_region;
     _young_compact_point = from_region->bottom();
   }
-
-  _tenuring_threshold = _heap->age_census()->tenuring_threshold();
 }
 
 void ShenandoahPrepareForGenerationalCompactionObjectClosure::set_from_region(ShenandoahHeapRegion* from_region) {
@@ -293,7 +236,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
-      (from_region_age + object_age >= _tenuring_threshold)) {
+      _heap->age_census()->is_tenurable(from_region_age + object_age)) {
     if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
       finish_old_region();
       _old_to_region = nullptr;

@@ -79,8 +79,6 @@ JAVADOC_TAGS := \
     -tag see \
     -taglet build.tools.taglet.ExtLink \
     -taglet build.tools.taglet.Incubating \
-    -taglet build.tools.taglet.PreviewNote \
-    --preview-note-tag previewNote \
     -tagletpath $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     $(CUSTOM_JAVADOC_TAGS) \
     #
@@ -98,7 +96,7 @@ JAVADOC_DISABLED_DOCLINT_PACKAGES := org.w3c.* javax.smartcardio
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -serialwarn -encoding utf-8 -docencoding utf-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --override-methods=summary --syntax-highlight
+    --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
@@ -238,8 +236,8 @@ define create_overview_file
       #
   ifneq ($$($1_GROUPS), )
     $1_OVERVIEW_TEXT += \
-      <p>This document is divided into \
-      $$(subst 2,two,$$(subst 3,three,$$(words $$($1_GROUPS)))) sections:</p> \
+      <p>This document has \
+      $$(subst 2,two,$$(subst 3,three,$$(words $$($1_GROUPS)))) major sections:</p> \
       <blockquote><dl> \
       #
     $1_OVERVIEW_TEXT += $$(foreach g, $$($1_GROUPS), \
@@ -248,7 +246,10 @@ define create_overview_file
     )
     $1_OVERVIEW_TEXT += \
         </dl></blockquote> \
-        #
+    <p><a href="../specs/index.html">Related documents</a> specify the Java \
+    programming language, the Java Virtual Machine, various protocols and file \
+    formats pertaining to the Java platform, and tools included in the JDK.</p> \
+    #
   endif
   $1_OVERVIEW_TEXT += \
       </body></html> \
@@ -542,7 +543,9 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # Format: space-delimited list of names, including at most one '%' as a
 # wildcard. Spec source files match if their filename or any enclosing folder
 # name matches one of the items in SPEC_FILTER.
-SPEC_FILTER := %
+ifeq ($(SPEC_FILTER), )
+  SPEC_FILTER := %
+endif
 
 ApplySpecFilter = \
     $(strip $(foreach file, $(1), \

@@ -22,9 +22,8 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -50,7 +49,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
@@ -252,6 +251,10 @@ void Klass::initialize(TRAPS) {
   ShouldNotReachHere();
 }
 
+void Klass::initialize_preemptable(TRAPS) {
+  ShouldNotReachHere();
+}
+
 Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
 #ifdef ASSERT
   tty->print_cr("Error: find_field called on a klass oop."
@@ -279,16 +282,17 @@ static markWord make_prototype(const Klass* kls) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therfore seed the mark word with the narrow Klass ID.
-    // Note that only those Klass that can be instantiated have a narrow Klass ID.
-    // For those who don't, we leave the klass bits empty and assert if someone
-    // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
-        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    // We therefore seed the mark word with the narrow Klass ID.
+    precond(CompressedKlassPointers::is_encodable(kls));
+    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
   }
 #endif
   return prototype;
+}
+
+void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
@@ -302,7 +306,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 Klass::Klass(KlassKind kind) : _kind(kind),
                                _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
-  CDS_ONLY(_shared_class_flags = 0;)
+  CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
@@ -611,31 +615,19 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 }
 
 
-// superklass links
-InstanceKlass* Klass::superklass() const {
-  assert(super() == nullptr || super()->is_instance_klass(), "must be instance klass");
-  return _super == nullptr ? nullptr : InstanceKlass::cast(_super);
-}
-
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
-// The log parameter is for clean_weak_klass_links to report unlinked classes.
-Klass* Klass::subklass(bool log) const {
+Klass* Klass::subklass() const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
-  for (Klass* chain = Atomic::load_acquire(&_subklass);
+  for (Klass* chain = AtomicAccess::load_acquire(&_subklass);
        chain != nullptr;
        // Do not need load_acquire on _next_sibling, because inserts never
        // create _next_sibling edges to dead data.
-       chain = Atomic::load(&chain->_next_sibling))
+       chain = AtomicAccess::load(&chain->_next_sibling))
   {
     if (chain->is_loader_alive()) {
       return chain;
-    } else if (log) {
-      if (log_is_enabled(Trace, class, unload)) {
-        ResourceMark rm;
-        log_trace(class, unload)("unlinking class (subclass): %s", chain->external_name());
-      }
     }
   }
   return nullptr;
@@ -644,9 +636,9 @@ Klass* Klass::subklass(bool log) const {
 Klass* Klass::next_sibling(bool log) const {
   // Do not need load_acquire on _next_sibling, because inserts never
   // create _next_sibling edges to dead data.
-  for (Klass* chain = Atomic::load(&_next_sibling);
+  for (Klass* chain = AtomicAccess::load(&_next_sibling);
        chain != nullptr;
-       chain = Atomic::load(&chain->_next_sibling)) {
+       chain = AtomicAccess::load(&chain->_next_sibling)) {
     // Only return alive klass, there may be stale klass
     // in this chain if cleaned concurrently.
     if (chain->is_loader_alive()) {
@@ -663,7 +655,7 @@ Klass* Klass::next_sibling(bool log) const {
 
 void Klass::set_subklass(Klass* s) {
   assert(s != this, "sanity check");
-  Atomic::release_store(&_subklass, s);
+  AtomicAccess::release_store(&_subklass, s);
 }
 
 void Klass::set_next_sibling(Klass* s) {
@@ -671,7 +663,7 @@ void Klass::set_next_sibling(Klass* s) {
   // Does not need release semantics. If used by cleanup, it will link to
   // already safely published data, and if used by inserts, will be published
   // safely using cmpxchg.
-  Atomic::store(&_next_sibling, s);
+  AtomicAccess::store(&_next_sibling, s);
 }
 
 void Klass::append_to_sibling_list() {
@@ -679,42 +671,47 @@ void Klass::append_to_sibling_list() {
     assert_locked_or_safepoint(Compile_lock);
   }
   DEBUG_ONLY(verify();)
-  // add ourselves to superklass' subklass list
-  InstanceKlass* super = superklass();
+  // add ourselves to super' subklass list
+  InstanceKlass* super = java_super();
   if (super == nullptr) return;     // special case: class Object
   assert((!super->is_interface()    // interfaces cannot be supers
-          && (super->superklass() == nullptr || !is_interface())),
+          && (super->java_super() == nullptr || !is_interface())),
          "an interface can only be a subklass of Object");
 
   // Make sure there is no stale subklass head
   super->clean_subklass();
 
   for (;;) {
-    Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
+    Klass* prev_first_subklass = AtomicAccess::load_acquire(&_super->_subklass);
     if (prev_first_subklass != nullptr) {
-      // set our sibling to be the superklass' previous first subklass
+      // set our sibling to be the super' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
       set_next_sibling(prev_first_subklass);
     }
     // Note that the prev_first_subklass is always alive, meaning no sibling_next links
     // are ever created to not alive klasses. This is an important invariant of the lock-free
     // cleaning protocol, that allows us to safely unlink dead klasses from the sibling list.
-    if (Atomic::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
+    if (AtomicAccess::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
       return;
     }
   }
   DEBUG_ONLY(verify();)
 }
 
-void Klass::clean_subklass() {
+// The log parameter is for clean_weak_klass_links to report unlinked classes.
+Klass* Klass::clean_subklass(bool log) {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
-    Klass* subklass = Atomic::load_acquire(&_subklass);
+    Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
-      return;
+      return subklass;
+    }
+    if (log && log_is_enabled(Trace, class, unload)) {
+      ResourceMark rm;
+      log_trace(class, unload)("unlinking class (subclass): %s", subklass->external_name());
     }
     // Try to fix _subklass until it points at something not dead.
-    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling(log));
   }
 }
 
@@ -733,8 +730,7 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     assert(current->is_loader_alive(), "just checking, this should be live");
 
     // Find and set the first alive subklass
-    Klass* sub = current->subklass(true);
-    current->clean_subklass();
+    Klass* sub = current->clean_subklass(true);
     if (sub != nullptr) {
       stack.push(sub);
     }
@@ -749,14 +745,17 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
+  }
+}
+
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
   }
 }
 
@@ -808,12 +807,20 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
-  set_is_shared();
+  set_in_aot_cache();
 
-  // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
-  // Even though the bitmaps always match, the canonical order of elements in the table
-  // is not guaranteed to stay the same (see tie breaker during Robin Hood hashing in Klass::hash_insert).
-  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _secondary_supers_bitmap, "broken table");
+  if (CDSConfig::is_dumping_classic_static_archive()) {
+    // "Classic" static archives are required to have deterministic contents.
+    // The elements in _secondary_supers are addresses in the ArchiveBuilder
+    // output buffer, so they should have deterministic values. If we rehash
+    // _secondary_supers, its elements will appear in a deterministic order.
+    //
+    // Note that the bitmap is guaranteed to be deterministic, regardless of the
+    // actual addresses of the elements in _secondary_supers. So rehashing shouldn't
+    // change it.
+    uintx bitmap = hash_secondary_supers(secondary_supers(), true);
+    assert(bitmap == _secondary_supers_bitmap, "bitmap should not be changed due to rehashing");
+  }
 }
 
 void Klass::remove_java_mirror() {
@@ -831,12 +838,12 @@ void Klass::remove_java_mirror() {
     if (orig_mirror == nullptr) {
       assert(CDSConfig::is_dumping_final_static_archive(), "sanity");
       if (is_instance_klass()) {
-        assert(InstanceKlass::cast(this)->is_shared_unregistered_class(), "sanity");
+        assert(InstanceKlass::cast(this)->defined_by_other_loaders(), "sanity");
       } else {
         precond(is_objArray_klass());
         Klass *k = ObjArrayKlass::cast(this)->bottom_klass();
         precond(k->is_instance_klass());
-        assert(InstanceKlass::cast(k)->is_shared_unregistered_class(), "sanity");
+        assert(InstanceKlass::cast(k)->defined_by_other_loaders(), "sanity");
       }
     } else {
       oop scratch_mirror = HeapShared::scratch_java_mirror(orig_mirror);
@@ -853,7 +860,7 @@ void Klass::remove_java_mirror() {
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
-  assert(is_shared(), "must be set");
+  assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, aot, unshareable)) {
@@ -868,11 +875,10 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
-
-    // Add to class loader list first before creating the mirror
-    // (same order as class file parsing)
-    loader_data->add_class(this);
   }
+  // Add to class loader list first before creating the mirror
+  // (same order as class file parsing)
+  loader_data->add_class(this);
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -888,12 +894,12 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
   // Obtain java.lang.Module, if available
-  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module() : (oop)nullptr));
+  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr));
 
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -1055,7 +1061,7 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
 #ifdef ASSERT
-  if (UseCompressedClassPointers && needs_narrow_id()) {
+  if (UseCompressedClassPointers) {
     // Stricter checks for both correct alignment and placement
     CompressedKlassPointers::check_encodable(this);
   } else {

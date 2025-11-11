@@ -29,7 +29,7 @@
  *          with bad header fields.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
- * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
  */
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
@@ -38,10 +38,10 @@ import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 import jdk.test.lib.net.SimpleSSLContext;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
+
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
@@ -69,8 +70,9 @@ import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 import static java.util.List.of;
 import static java.util.Map.entry;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 // Code copied from ContinuationFrameTest
 public class BadHeadersTest {
@@ -85,11 +87,11 @@ public class BadHeadersTest {
         of(entry("hello", "world!"), entry(":status", "200"))                      // Pseudo header is not the first one
     );
 
-    SSLContext sslContext;
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    String http2URI;
-    String https2URI;
+    private static SSLContext sslContext;
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String http2URI;
+    private static String https2URI;
 
     /**
      * A function that returns a list of 1) one HEADERS frame ( with an empty
@@ -127,8 +129,7 @@ public class BadHeadersTest {
                 return frames;
             };
 
-    @DataProvider(name = "variants")
-    public Object[][] variants() {
+    static Object[][] variants() {
         return new Object[][] {
                 { http2URI,  false, oneContinuation },
                 { https2URI, false, oneContinuation },
@@ -142,8 +143,8 @@ public class BadHeadersTest {
         };
     }
 
-
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void test(String uri,
               boolean sameClient,
               BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> headerFramesSupplier)
@@ -172,7 +173,8 @@ public class BadHeadersTest {
         }
     }
 
-    @Test(dataProvider = "variants")
+    @ParameterizedTest
+    @MethodSource("variants")
     void testAsync(String uri,
                    boolean sameClient,
                    BiFunction<Integer,List<ByteBuffer>,List<Http2Frame>> headerFramesSupplier)
@@ -211,8 +213,7 @@ public class BadHeadersTest {
     // sync with implementation.
     static void assertDetailMessage(Throwable throwable, int iterationIndex) {
         try {
-            assertTrue(throwable instanceof ProtocolException,
-                    "Expected ProtocolException, got " + throwable);
+            assertInstanceOf(ProtocolException.class, throwable, "Expected ProtocolException, got " + throwable);
             assertTrue(throwable.getMessage().contains("malformed response"),
                     "Expected \"malformed response\" in: " + throwable.getMessage());
 
@@ -239,8 +240,8 @@ public class BadHeadersTest {
         }
     }
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -264,8 +265,8 @@ public class BadHeadersTest {
         https2TestServer.start();
     }
 
-    @AfterTest
-    public void teardown() throws Exception {
+    @AfterAll
+    static void teardown() throws Exception {
         http2TestServer.stop();
         https2TestServer.stop();
     }

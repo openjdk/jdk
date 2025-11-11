@@ -57,7 +57,7 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
   // ignored during the final image assembly.
 
   GrowableArray<Array<int>*> tmp_cp_recipes;
-  GrowableArray<int> tmp_cp_flags;
+  GrowableArray<int> tmp_flags;
 
   GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
   for (int i = 0; i < klasses->length(); i++) {
@@ -70,12 +70,16 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
       ConstantPool* cp = ik->constants();
       ConstantPoolCache* cp_cache = cp->cache();
 
+      if (ik->is_initialized()) {
+        flags |= WAS_INITED;
+      }
+
       for (int cp_index = 1; cp_index < cp->length(); cp_index++) { // Index 0 is unused
         if (cp->tag_at(cp_index).value() == JVM_CONSTANT_Class) {
           Klass* k = cp->resolved_klass_at(cp_index);
           if (k->is_instance_klass()) {
             cp_indices.append(cp_index);
-            flags |= HAS_CLASS;
+            flags |= CP_RESOLVE_CLASS;
           }
         }
       }
@@ -85,10 +89,12 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
         if (field_entries != nullptr) {
           for (int i = 0; i < field_entries->length(); i++) {
             ResolvedFieldEntry* rfe = field_entries->adr_at(i);
-            if (rfe->is_resolved(Bytecodes::_getfield) ||
+            if (rfe->is_resolved(Bytecodes::_getstatic) ||
+                rfe->is_resolved(Bytecodes::_putstatic) ||
+                rfe->is_resolved(Bytecodes::_getfield) ||
                 rfe->is_resolved(Bytecodes::_putfield)) {
               cp_indices.append(rfe->constant_pool_index());
-              flags |= HAS_FIELD_AND_METHOD;
+              flags |= CP_RESOLVE_FIELD_AND_METHOD;
             }
           }
         }
@@ -103,7 +109,7 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
                 rme->is_resolved(Bytecodes::_invokestatic) ||
                 rme->is_resolved(Bytecodes::_invokehandle)) {
               cp_indices.append(rme->constant_pool_index());
-              flags |= HAS_FIELD_AND_METHOD;
+              flags |= CP_RESOLVE_FIELD_AND_METHOD;
             }
           }
         }
@@ -115,7 +121,7 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
             int cp_index = rie->constant_pool_index();
             if (rie->is_resolved()) {
               cp_indices.append(cp_index);
-              flags |= HAS_INDY;
+              flags |= CP_RESOLVE_INDY;
             }
           }
         }
@@ -123,18 +129,26 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
     }
 
     if (cp_indices.length() > 0) {
+      LogStreamHandle(Trace, aot, resolve) log;
+      if (log.is_enabled()) {
+        log.print("ConstantPool entries for %s to be pre-resolved:", k->external_name());
+        for (int i = 0; i < cp_indices.length(); i++) {
+          log.print(" %d", cp_indices.at(i));
+        }
+        log.print("\n");
+      }
       tmp_cp_recipes.append(ArchiveUtils::archive_array(&cp_indices));
     } else {
       tmp_cp_recipes.append(nullptr);
     }
-    tmp_cp_flags.append(flags);
+    tmp_flags.append(flags);
   }
 
   _cp_recipes = ArchiveUtils::archive_array(&tmp_cp_recipes);
   ArchivePtrMarker::mark_pointer(&_cp_recipes);
 
-  _cp_flags = ArchiveUtils::archive_array(&tmp_cp_flags);
-  ArchivePtrMarker::mark_pointer(&_cp_flags);
+  _flags = ArchiveUtils::archive_array(&tmp_flags);
+  ArchivePtrMarker::mark_pointer(&_flags);
 }
 
 void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
@@ -142,7 +156,7 @@ void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
 
   for (int i = 0; i < _all_klasses->length(); i++) {
     Array<int>* cp_indices = _cp_recipes->at(i);
-    int flags = _cp_flags->at(i);
+    int flags = _flags->at(i);
     if (cp_indices != nullptr) {
       InstanceKlass* ik = InstanceKlass::cast(_all_klasses->at(i));
       if (ik->is_loaded()) {
@@ -152,13 +166,13 @@ void FinalImageRecipes::apply_recipes_for_constantpool(JavaThread* current) {
         for (int j = 0; j < cp_indices->length(); j++) {
           preresolve_list.at_put(cp_indices->at(j), true);
         }
-        if ((flags & HAS_CLASS) != 0) {
+        if ((flags & CP_RESOLVE_CLASS) != 0) {
           AOTConstantPoolResolver::preresolve_class_cp_entries(current, ik, &preresolve_list);
         }
-        if ((flags & HAS_FIELD_AND_METHOD) != 0) {
+        if ((flags & CP_RESOLVE_FIELD_AND_METHOD) != 0) {
           AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(current, ik, &preresolve_list);
         }
-        if ((flags & HAS_INDY) != 0) {
+        if ((flags & CP_RESOLVE_INDY) != 0) {
           AOTConstantPoolResolver::preresolve_indy_cp_entries(current, ik, &preresolve_list);
         }
       }
@@ -171,9 +185,10 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
   Handle class_loader(THREAD, SystemDictionary::java_system_loader());
   for (int i = 0; i < _all_klasses->length(); i++) {
     Klass* k = _all_klasses->at(i);
+    int flags = _flags->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_shared_unregistered_class()) {
+      if (ik->defined_by_other_loaders()) {
         SystemDictionaryShared::init_dumptime_info(ik);
         SystemDictionaryShared::add_unregistered_class(THREAD, ik);
         SystemDictionaryShared::copy_unregistered_class_size_and_crc32(ik);
@@ -184,10 +199,15 @@ void FinalImageRecipes::load_all_classes(TRAPS) {
           log_error(aot)("Unable to resolve class from CDS archive: %s", ik->external_name());
           log_error(aot)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
           log_error(aot)("Please check if your VM command-line is the same as in the training run");
-          MetaspaceShared::unrecoverable_writing_error();
+          AOTMetaspace::unrecoverable_writing_error();
         }
         assert(ik->is_loaded(), "must be");
         ik->link_class(CHECK);
+
+        if (ik->has_aot_safe_initializer() && (flags & WAS_INITED) != 0) {
+          assert(ik->class_loader() == nullptr, "supported only for boot classes for now");
+          ik->initialize(CHECK);
+        }
       }
     }
   }
@@ -208,7 +228,7 @@ void FinalImageRecipes::apply_recipes(TRAPS) {
       log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       log_error(aot)("Please check if your VM command-line is the same as in the training run");
-      MetaspaceShared::unrecoverable_writing_error("Unexpected exception, use -Xlog:aot,exceptions=trace for detail");
+      AOTMetaspace::unrecoverable_writing_error("Unexpected exception, use -Xlog:aot,exceptions=trace for detail");
     }
   }
 

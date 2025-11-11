@@ -33,7 +33,7 @@ import java.io.*;
  * @author Clemens Eisserer
  */
 
-public class XRGlyphCacheEntry {
+public final class XRGlyphCacheEntry {
     long glyphInfoPtr;
 
     int lastUsed;
