@@ -941,7 +941,7 @@ final class AES_Crypt extends SymmetricCipher {
      * Generate the cipher's round keys as outlined in section 5.2 of the spec.
      *
      * @param key [in] the symmetric key byte array.
-     * @param rounds [in] the number rounds for generating the round keys.
+     * @param rounds [in] the number of rounds for generating the round keys.
      *
      * @return the cipher round keys.
      */
