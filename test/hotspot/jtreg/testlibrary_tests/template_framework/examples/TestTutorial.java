@@ -1238,6 +1238,7 @@ public class TestTutorial {
                 let("x5", 7), // we can define it again.
                 templateVerify.asToken("v1, v4, v5, v2")
             )),
+            // We left the non-transparent anchoring scope which does not let anything escape
             templateVerify.asToken("v1"),
 
             // Let us now do something that probably should never be done. But still
