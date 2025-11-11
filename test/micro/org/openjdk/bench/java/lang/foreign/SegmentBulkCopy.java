@@ -38,6 +38,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
@@ -49,63 +50,115 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class SegmentBulkCopy {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "16", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
-    public int ELEM_SIZE;
+    public int size;
 
     byte[] srcArray;
     byte[] dstArray;
-    MemorySegment heapSrcSegment;
-    MemorySegment heapDstSegment;
-    MemorySegment nativeSrcSegment;
-    MemorySegment nativeDstSegment;
-    ByteBuffer srcBuffer;
-    ByteBuffer dstBuffer;
 
-    @Setup
-    public void setup() {
-        srcArray = new byte[ELEM_SIZE];
-        dstArray = new byte[ELEM_SIZE];
-        heapSrcSegment = MemorySegment.ofArray(srcArray);
-        heapDstSegment = MemorySegment.ofArray(dstArray);
-        nativeSrcSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        srcBuffer = ByteBuffer.wrap(srcArray);
-        dstBuffer = ByteBuffer.wrap(dstArray);
+    public static class Array extends SegmentBulkCopy {
+
+        ByteBuffer srcBuffer;
+        ByteBuffer dstBuffer;
+
+        @Setup
+        public void setup() {
+            srcArray = new byte[size];
+            dstArray = new byte[size];
+            srcBuffer = ByteBuffer.wrap(srcArray);
+            dstBuffer = ByteBuffer.wrap(dstArray);
+        }
+
+        @Benchmark
+        public void arrayCopy() {
+            System.arraycopy(srcArray, 0, dstArray, 0, size);
+        }
+
+        @Benchmark
+        public void bufferCopy() {
+            dstBuffer.put(srcBuffer);
+        }
+
     }
 
-    @Benchmark
-    public void arrayCopy() {
-        System.arraycopy(srcArray, 0, dstArray, 0, ELEM_SIZE);
-    }
+    public static class Segment extends SegmentBulkCopy {
 
-    @Benchmark
-    public void bufferCopy() {
-        dstBuffer.put(srcBuffer);
-    }
+        enum SegmentType {HEAP, NATIVE}
+        enum Alignment {ALIGNED, UNALIGNED}
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
-    @Benchmark
-    public void heapSegmentCopyJava() {
-        MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
-    }
+        @Param({"HEAP", "NATIVE"})
+        String segmentType;
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
-    @Benchmark
-    public void heapSegmentCopyUnsafe() {
-        MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
-    }
+        @Param({"ALIGNED", "UNALIGNED"})
+        String alignment;
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
-    @Benchmark
-    public void nativeSegmentCopyJava() {
-        MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
-    }
+        MemorySegment srcSegment;
+        MemorySegment dstSegment;
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
-    @Benchmark
-    public void nativeSegmentCopyUnsafe() {
-        MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
+        @Setup
+        public void setup() {
+            srcArray = new byte[size + 1];
+            dstArray = new byte[size + 1];
+
+            switch (Segment.SegmentType.valueOf(segmentType)) {
+                case HEAP -> {
+                    srcSegment = MemorySegment.ofArray(srcArray);
+                    dstSegment = MemorySegment.ofArray(dstArray);
+                }
+                case NATIVE -> {
+                    srcSegment = Arena.ofAuto().allocate(srcArray.length, Long.BYTES);
+                    dstSegment = Arena.ofAuto().allocate(dstArray.length, Long.BYTES);
+                }
+            }
+            switch (Segment.Alignment.valueOf(alignment)) {
+                case ALIGNED -> {
+                    srcSegment = srcSegment.asSlice(0, size);
+                    dstSegment = dstSegment.asSlice(0, size);
+                }
+                case UNALIGNED -> {
+                    srcSegment = srcSegment.asSlice(1, size);
+                    dstSegment = dstSegment.asSlice(1, size);
+                }
+            }
+        }
+
+        @Benchmark
+        @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
+        public void copy() {
+            MemorySegment.copy(srcSegment, 0, dstSegment, 0, size);
+        }
+
+        @Benchmark
+        public void copyLoopIntInt() {
+            for (int i = 0; i < (int) srcSegment.byteSize(); i++) {
+                final byte v = srcSegment.get(ValueLayout.JAVA_BYTE, i);
+                dstSegment.set(ValueLayout.JAVA_BYTE, i, v);
+            }
+        }
+
+        @Benchmark
+        public void copyLoopIntLong() {
+            for (int i = 0; i < srcSegment.byteSize(); i++) {
+                final byte v = srcSegment.get(ValueLayout.JAVA_BYTE, i);
+                dstSegment.set(ValueLayout.JAVA_BYTE, i, v);
+            }
+        }
+
+        @Benchmark
+        public void copyLoopLongLong() {
+            for (long i = 0; i < srcSegment.byteSize(); i++) {
+                final byte v = srcSegment.get(ValueLayout.JAVA_BYTE, i);
+                dstSegment.set(ValueLayout.JAVA_BYTE, i, v);
+            }
+        }
+
+        @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
+        @Benchmark
+        public void copyUnsafe() {
+            MemorySegment.copy(srcSegment, 0, dstSegment, 0, size);
+        }
+
     }
 
 }

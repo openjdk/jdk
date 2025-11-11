@@ -51,99 +51,104 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class SegmentBulkFill {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+    private static final byte ZERO = 0;
+
+    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "16", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
-    public int ELEM_SIZE;
+    public int size;
 
     byte[] array;
-    MemorySegment heapSegment;
-    MemorySegment nativeSegment;
-    MemorySegment unalignedSegment;
-    ByteBuffer buffer;
 
-    @Setup
-    public void setup() {
-        array = new byte[ELEM_SIZE];
-        heapSegment = MemorySegment.ofArray(array);
-        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE, 8);
-        unalignedSegment = Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
-        buffer = ByteBuffer.wrap(array);
-    }
+    public static class Array extends SegmentBulkFill {
 
-    @Benchmark
-    public void arraysFill() {
-        Arrays.fill(array, (byte) 0);
-    }
+        ByteBuffer buffer;
 
-    @Benchmark
-    public void arraysFillLoop() {
-        for (int i = 0; i < array.length; i++) {
-            array[i] = 0;
+        @Setup
+        public void setup() {
+            array = new byte[size];
+            buffer = ByteBuffer.wrap(array);
         }
-    }
 
-    @Benchmark
-    public void bufferFillLoop() {
-        for (int i = 0; i < array.length; i++) {
-            buffer.put(i, (byte)0);
+        @Benchmark
+        public void arraysFill() {
+            Arrays.fill(array, ZERO);
         }
-    }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void heapSegmentFillJava() {
-        heapSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void heapSegmentFillUnsafe() {
-        heapSegment.fill((byte) 0);
-    }
-
-    @Benchmark
-    public void heapSegmentFillLoop() {
-        for (long i = 0; i < heapSegment.byteSize(); i++) {
-            heapSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        @Benchmark
+        public void arraysFillLoop() {
+            for (int i = 0; i < array.length; i++) {
+                array[i] = ZERO;
+            }
         }
-    }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void nativeSegmentFillJava() {
-        nativeSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void nativeSegmentFillUnsafe() {
-        nativeSegment.fill((byte) 0);
-    }
-
-    @Benchmark
-    public void nativeSegmentFillLoop() {
-        for (long i = 0; i < nativeSegment.byteSize(); i++) {
-            nativeSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        @Benchmark
+        public void bufferFillLoop() {
+            for (int i = 0; i < array.length; i++) {
+                buffer.put(i, ZERO);
+            }
         }
+
     }
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void unalignedSegmentFillJava() {
-        unalignedSegment.fill((byte) 0);
-    }
+    public static class Segment extends SegmentBulkFill {
 
-    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void unalignedSegmentFillUnsafe() {
-        unalignedSegment.fill((byte) 0);
-    }
+        enum SegmentType {HEAP, NATIVE}
+        enum Alignment {ALIGNED, UNALIGNED}
 
-    @Benchmark
-    public void unalignedSegmentFillLoop() {
-        for (long i = 0; i < unalignedSegment.byteSize(); i++) {
-            unalignedSegment.set(ValueLayout.JAVA_BYTE, i, (byte) 0);
+        @Param({"HEAP", "NATIVE"})
+        String segmentType;
+
+        @Param({"ALIGNED", "UNALIGNED"})
+        String alignment;
+
+        MemorySegment segment;
+
+        @Setup
+        public void setup() {
+            array = new byte[size + 1]; // Allow for adjustment
+            switch (SegmentType.valueOf(segmentType)) {
+                case HEAP   -> segment = MemorySegment.ofArray(array);
+                case NATIVE -> segment = Arena.ofAuto().allocate(array.length, Long.BYTES);
+            }
+            switch (Alignment.valueOf(alignment)) {
+                case ALIGNED   -> segment = segment.asSlice(0, size);
+                case UNALIGNED -> segment = segment.asSlice(1, size);
+            }
         }
+
+        @Benchmark
+        @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+        public void fill() {
+            segment.fill(ZERO);
+        }
+
+        @Benchmark
+        public void fillLoopIntInt() {
+            for (int i = 0; i < (int)segment.byteSize(); i++) {
+                segment.set(ValueLayout.JAVA_BYTE, i, ZERO);
+            }
+        }
+
+        @Benchmark
+        public void fillLoopIntLong() {
+            for (int i = 0; i < segment.byteSize(); i++) {
+                segment.set(ValueLayout.JAVA_BYTE, i, ZERO);
+            }
+        }
+
+        @Benchmark
+        public void fillLoopLongLong() {
+            for (long i = 0; i < segment.byteSize(); i++) {
+                segment.set(ValueLayout.JAVA_BYTE, i, ZERO);
+            }
+        }
+
+        @Benchmark
+        @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+        public void fillUnsafe() {
+            segment.fill(ZERO);
+        }
+
     }
 
 }
