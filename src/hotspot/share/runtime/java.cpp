@@ -481,7 +481,7 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 
   // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
+  // may be attached late and JVMTI must track phases of VM execution.
   JvmtiExport::post_vm_death();
   JvmtiAgentList::unload_agents();
 

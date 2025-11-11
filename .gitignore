@@ -19,8 +19,6 @@ NashornProfile.txt
 /.project/
 /.settings/
 /compile_commands.json
-/src/hotspot/CMakeLists.txt
-/src/hotspot/compile_commands.json
 /.cache
 /.gdbinit
 /.lldbinit
