@@ -31,6 +31,7 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStack.hpp"
 #include "utilities/ostream.hpp"
 #ifdef __APPLE__
 # include <mach/mach_time.h>
@@ -633,7 +634,7 @@ class os: AllStatic {
   static void breakpoint();
   static bool start_debugging(char *buf, int buflen);
 
-  static inline address current_stack_pointer();
+  static address current_stack_pointer();
   static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
@@ -1108,5 +1109,9 @@ class os: AllStatic {
 // It'd also be eligible for inlining on many platforms.
 
 extern "C" int SpinPause();
+
+ALWAYSINLINE address os::current_stack_pointer() {
+  return NativeStack::current();
+}
 
 #endif // SHARE_RUNTIME_OS_HPP
