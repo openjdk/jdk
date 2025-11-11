@@ -203,7 +203,7 @@ public class SegmentFactories {
         long allocationSize;
         long allocationBase;
         long result;
-        if (byteAlignment > MAX_MALLOC_ALIGN) {
+        if (byteAlignment >= MAX_MALLOC_ALIGN) {
             allocationSize = alignedSize + byteAlignment - MAX_MALLOC_ALIGN;
             if (shouldReserve) {
                 AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
