@@ -586,7 +586,7 @@ public class JlinkTask {
         return finder;
     }
 
-    private static String getJlinkRuntimeVersion() {
+    private static String getCurrentRuntimeVersion() {
         ModuleReference current = ModuleLayer.boot()
                 .configuration()
                 .findModule("java.base")
@@ -604,7 +604,7 @@ public class JlinkTask {
      * the target runtime image.
      */
     private static void checkJavaBaseVersion(ModuleReference target) {
-        String currentRelease = getJlinkRuntimeVersion();
+        String currentRelease = getCurrentRuntimeVersion();
         String targetRelease;
 
         try {
@@ -616,7 +616,7 @@ public class JlinkTask {
             // target release has no release.txt
             // the java.base module must be older than the jlink runtime
             // silently ignore and fall through to version mismatch
-            targetRelease = "missing";
+            targetRelease = "";
         }
 
         // Current runtime image and the target runtime image are not compatible build
