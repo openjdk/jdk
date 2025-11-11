@@ -244,18 +244,6 @@ final class Validator {
                 warn(formatMsg("warn.validator.invalid.entry.name", entryName));
                 isValid = false;
             }
-            if ("META-INF/MANIFEST.MF".equals(entryName)) {
-                int index = entryInfo.cen().order();
-                if (index > 1) { // expect base manifest at index 0 or 1
-                    String position = Integer.toString(index);
-                    errorAndInvalid(formatMsg("error.validator.wrong.position", entryName, position));
-                } else if (index == 1) { // ensure "META-INF/" preceeds manifest
-                    String firstName = entries.sequencedKeySet().getFirst();
-                    if (!"META-INF/".equals(firstName)) {
-                        errorAndInvalid(formatMsg("error.validator.wrong.position", firstName, "0"));
-                    }
-                }
-            }
             // Check duplicate entries in CEN
             checkDuplicates(entryInfo.cen().count(), "warn.validator.duplicate.cen.entry", entryName);
             // Check duplicate entries in LOC
@@ -271,6 +259,19 @@ final class Validator {
                 outOfOrder = true;
                 isValid = false;
                 warn(getMsg("warn.validator.order.mismatch"));
+            }
+            // Check location of an optional manifest entry
+            if ("META-INF/MANIFEST.MF".equals(entryName)) {
+                int index = entryInfo.cen().order();
+                if (index > 1) { // Expect base manifest at index 0 or 1
+                    String position = Integer.toString(index);
+                    errorAndInvalid(formatMsg("error.validator.wrong.position", entryName, position));
+                } else if (index == 1) { // Ensure "META-INF/" preceeds manifest
+                    String firstName = entries.sequencedKeySet().getFirst();
+                    if (!"META-INF/".equals(firstName)) {
+                        errorAndInvalid(formatMsg("error.validator.wrong.position", firstName, "0"));
+                    }
+                }
             }
         }
 
