@@ -129,18 +129,24 @@ source %{
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
-      // NEON instructions support them. But the match rule support for them is profitable for
-      // Vector API intrinsics.
+      // NEON instructions support them. They use multiple instructions which is more
+      // expensive in almost all cases where we would auto vectorize.
+      // But the match rule support for them is profitable for Vector API intrinsics.
       if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
+          opcode == Op_MulVL ||
           // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
           // They are not suitable for auto-vectorization because the result would not conform
           // to the JLS, Section Evaluation Order.
+          // Note: we could implement sequential reductions for these reduction operators, but
+          //       this will still almost never lead to speedups, because the sequential
+          //       reductions are latency limited along the reduction chain, and not
+          //       throughput limited. This is unlike unordered reductions (associative op)
+          //       and element-wise ops which are usually throughput limited.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
-          opcode == Op_MulVL) {
+          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
         return false;
       }
     }
