@@ -37,6 +37,7 @@ import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.*;
@@ -392,6 +393,12 @@ public class Attr extends JCTree.Visitor {
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
                 return rs.findIdent(null, env, (Name)node.getName(), KindSelector.TYP_PCK);
             }
+
+            @Override
+            public Symbol visitPrimitiveType(PrimitiveTypeTree node, Env<AttrContext> p) {
+                return syms.errSymbol;
+            }
+
         }
 
     public Type coerce(Type etype, Type ttype) {

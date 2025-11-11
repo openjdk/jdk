@@ -83,6 +83,10 @@ import javax.tools.Diagnostic.Kind;
  * {@link #trees Field}
  * {@link #getSupportedSourceVersion Method}
  * {@link #init(ProcessingEnvironment Method}
+ * {@link double Bad}
+ * {@link double.NAN Bad}
+ * {@link double#NAN Bad}
+ * {@link double#double Bad}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad

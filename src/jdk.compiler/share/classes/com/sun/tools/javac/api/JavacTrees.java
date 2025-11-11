@@ -460,6 +460,8 @@ public class JavacTrees extends DocTrees {
                             return null;
                         }
                     }
+                } else if (t.isPrimitive()) {
+                    return null;
                 } else {
                     Type e = t;
                     // If this is an array type convert to element type
