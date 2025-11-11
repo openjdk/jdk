@@ -49,11 +49,6 @@ public interface WindbgDebugger extends JVMDebugger {
   public WindbgAddress readCompKlassAddress(long address) throws DebuggerException;
   public WindbgOopHandle readOopHandle(long address) throws DebuggerException;
   public WindbgOopHandle readCompOopHandle(long address) throws DebuggerException;
-
-  // The returned array of register contents is guaranteed to be in
-  // the same order as in the DbxDebugger for Solaris/x86 or amd64; that is,
-  // the indices match those in debugger/x86/X86ThreadContext.java or
-  // debugger/amd64/AMD64ThreadContext.java.
   public long[]       getThreadIntegerRegisterSet(long threadId) throws DebuggerException;
 
   public long         getThreadIdFromSysId(long sysId) throws DebuggerException;
