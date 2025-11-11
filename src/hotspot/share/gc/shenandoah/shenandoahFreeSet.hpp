@@ -113,8 +113,6 @@ public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
 
-  static const size_t FreeSetUnderConstruction = SIZE_MAX;
-
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
 
@@ -235,20 +233,12 @@ public:
     return _available[int(which_partition)];
   }
 
-  // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
-  // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
-  // enforce a consistency assert.
+  // Return available_in assuming caller does not hold the heap lock but does hold the rebuild_lock.
+  // The returned value may be "stale" because we do not enforce the heap lock on reads.  Acquiring the
+  // rebuild_lock prevents us from returning "bogus" values that are "worse than stale".  During rebuild
+  // of the freeset, the value of _available is not reliable.
   inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
-    shenandoah_assert_not_heaplocked();
-#ifdef ASSERT
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
-           (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
-           "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
-           _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-           partition_membership_name(ssize_t(which_partition)));
-#endif
     return _available[int(which_partition)];
   }
 
@@ -418,10 +408,7 @@ private:
   void log_status();
 
 public:
-  static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
-
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
-
 
   ShenandoahRebuildLock* lock() {
     return &_lock;
@@ -493,6 +480,7 @@ public:
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() {
+    shenandoah_assert_not_heaplocked();
     ShenandoahRebuildLocker locker(lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
