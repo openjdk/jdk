@@ -49,7 +49,7 @@
     if (is_Register()) {
       return (value() % Register::max_slots_per_register == 0);
     } else if (is_FloatRegister()) {
-      return true; // Single slot
+      return (value() % FloatRegister::max_slots_per_register == 0); // Single slot
     } else {
       return false;
     }

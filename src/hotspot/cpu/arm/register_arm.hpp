@@ -83,7 +83,7 @@ class Register {
  public:
   enum {
     number_of_registers = 16,
-    max_slots_per_register = 1 << (LogBytesPerWord - LogBytesPerInt) // LogBytesPerWord depends on _LP64
+    max_slots_per_register = 1
   };
 
   class RegisterImpl : public AbstractRegisterImpl {
@@ -93,12 +93,10 @@ class Register {
 
    public:
 
-    // accessors
-    int raw_encoding() const {return this - first();}
-    int encoding() const {assert(is_valid(), "invalid register"); return raw_encoding();}
-
-    // testers
-    bool is_valid() const {return 0 <= raw_encoding() && raw_encoding() < number_of_registers;}
+    // accessors and testers
+    int raw_encoding() const { return this - first(); }
+    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     inline Register successor() const;
 
@@ -138,16 +136,16 @@ inline Register Register::RegisterImpl::successor() const {
   return as_Register(encoding() + 1);
 }
 
-constexpr Register R0 = as_Register(0);
-constexpr Register R1 = as_Register(1);
-constexpr Register R2 = as_Register(2);
-constexpr Register R3 = as_Register(3);
-constexpr Register R4 = as_Register(4);
-constexpr Register R5 = as_Register(5);
-constexpr Register R6 = as_Register(6);
-constexpr Register R7 = as_Register(7);
-constexpr Register R8 = as_Register(8);
-constexpr Register R9 = as_Register(9);
+constexpr Register R0  = as_Register( 0);
+constexpr Register R1  = as_Register( 1);
+constexpr Register R2  = as_Register( 2);
+constexpr Register R3  = as_Register( 3);
+constexpr Register R4  = as_Register( 4);
+constexpr Register R5  = as_Register( 5);
+constexpr Register R6  = as_Register( 6);
+constexpr Register R7  = as_Register( 7);
+constexpr Register R8  = as_Register( 8);
+constexpr Register R9  = as_Register( 9);
 constexpr Register R10 = as_Register(10);
 constexpr Register R11 = as_Register(11);
 constexpr Register R12 = as_Register(12);
@@ -194,12 +192,10 @@ class FloatRegister {
 
    public:
 
-    // accessors
-    int raw_encoding() const {return this - first();}
-    int encoding() const {assert(is_valid(), "invalid register"); return raw_encoding();}
-
-    // testers
-    bool is_valid() const {return 0 <= raw_encoding() && raw_encoding() < number_of_registers;}
+    // accessors and testers
+    int raw_encoding() const { return this - first(); }
+    int encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
+    bool is_valid() const    { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
     inline FloatRegister successor() const;
 
@@ -255,16 +251,16 @@ inline FloatRegister FloatRegister::FloatRegisterImpl::successor() const {
  * S1-S6 are named with "_reg" suffix to avoid conflict with
  * constants defined in sharedRuntimeTrig.cpp
  */
-constexpr FloatRegister S0 = as_FloatRegister(0);
+constexpr FloatRegister S0  = as_FloatRegister( 0);
 constexpr FloatRegister S1_reg = as_FloatRegister(1);
 constexpr FloatRegister S2_reg = as_FloatRegister(2);
 constexpr FloatRegister S3_reg = as_FloatRegister(3);
 constexpr FloatRegister S4_reg = as_FloatRegister(4);
 constexpr FloatRegister S5_reg = as_FloatRegister(5);
 constexpr FloatRegister S6_reg = as_FloatRegister(6);
-constexpr FloatRegister S7 = as_FloatRegister(7);
-constexpr FloatRegister S8 = as_FloatRegister(8);
-constexpr FloatRegister S9 = as_FloatRegister(9);
+constexpr FloatRegister S7  = as_FloatRegister( 7);
+constexpr FloatRegister S8  = as_FloatRegister( 8);
+constexpr FloatRegister S9  = as_FloatRegister( 9);
 constexpr FloatRegister S10 = as_FloatRegister(10);
 constexpr FloatRegister S11 = as_FloatRegister(11);
 constexpr FloatRegister S12 = as_FloatRegister(12);
@@ -289,16 +285,16 @@ constexpr FloatRegister S30 = as_FloatRegister(30);
 constexpr FloatRegister S31 = as_FloatRegister(31);
 constexpr FloatRegister Stemp = S30;
 
-constexpr FloatRegister D0 = as_FloatRegister(0);
-constexpr FloatRegister D1 = as_FloatRegister(2);
-constexpr FloatRegister D2 = as_FloatRegister(4);
-constexpr FloatRegister D3 = as_FloatRegister(6);
-constexpr FloatRegister D4 = as_FloatRegister(8);
-constexpr FloatRegister D5 = as_FloatRegister(10);
-constexpr FloatRegister D6 = as_FloatRegister(12);
-constexpr FloatRegister D7 = as_FloatRegister(14);
-constexpr FloatRegister D8 = as_FloatRegister(16);
-constexpr FloatRegister D9 = as_FloatRegister(18);
+constexpr FloatRegister D0  = as_FloatRegister( 0);
+constexpr FloatRegister D1  = as_FloatRegister( 2);
+constexpr FloatRegister D2  = as_FloatRegister( 4);
+constexpr FloatRegister D3  = as_FloatRegister( 6);
+constexpr FloatRegister D4  = as_FloatRegister( 8);
+constexpr FloatRegister D5  = as_FloatRegister(10);
+constexpr FloatRegister D6  = as_FloatRegister(12);
+constexpr FloatRegister D7  = as_FloatRegister(14);
+constexpr FloatRegister D8  = as_FloatRegister(16);
+constexpr FloatRegister D9  = as_FloatRegister(18);
 constexpr FloatRegister D10 = as_FloatRegister(20);
 constexpr FloatRegister D11 = as_FloatRegister(22);
 constexpr FloatRegister D12 = as_FloatRegister(24);
@@ -413,18 +409,18 @@ constexpr VFPSystemRegister vfpsnoreg = VFPSystemRegister();
 
 inline constexpr VFPSystemRegister as_VFPSystemRegister(int encoding) {
   switch (encoding) {
-    case VFPSystemRegister::_FPSID_store_idx: return VFPSystemRegister(VFPSystemRegister::FPSID);
-    case VFPSystemRegister::_FPSCR_store_idx: return VFPSystemRegister(VFPSystemRegister::FPSCR);
-    case VFPSystemRegister::_MVFR0_store_idx: return VFPSystemRegister(VFPSystemRegister::MVFR0);
-    case VFPSystemRegister::_MVFR1_store_idx: return VFPSystemRegister(VFPSystemRegister::MVFR1);
+    case VFPSystemRegister::FPSID: return VFPSystemRegister(VFPSystemRegister::_FPSID_store_idx);
+    case VFPSystemRegister::FPSCR: return VFPSystemRegister(VFPSystemRegister::_FPSCR_store_idx);
+    case VFPSystemRegister::MVFR0: return VFPSystemRegister(VFPSystemRegister::_MVFR0_store_idx);
+    case VFPSystemRegister::MVFR1: return VFPSystemRegister(VFPSystemRegister::_MVFR1_store_idx);
     default: return vfpsnoreg;
   }
 }
 
-constexpr VFPSystemRegister FPSID = as_VFPSystemRegister(  0);
-constexpr VFPSystemRegister FPSCR = as_VFPSystemRegister(  1);
-constexpr VFPSystemRegister MVFR0 = as_VFPSystemRegister(0x6);
-constexpr VFPSystemRegister MVFR1 = as_VFPSystemRegister(0x7);
+constexpr VFPSystemRegister FPSID = as_VFPSystemRegister(VFPSystemRegister::FPSID);
+constexpr VFPSystemRegister FPSCR = as_VFPSystemRegister(VFPSystemRegister::FPSCR);
+constexpr VFPSystemRegister MVFR0 = as_VFPSystemRegister(VFPSystemRegister::MVFR0);
+constexpr VFPSystemRegister MVFR1 = as_VFPSystemRegister(VFPSystemRegister::MVFR1);
 
 /*
  * Register definitions shared across interpreter and compiler
