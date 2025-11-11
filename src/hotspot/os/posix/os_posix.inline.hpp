@@ -34,14 +34,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-ALWAYSINLINE address os::current_stack_pointer() {
-#if defined(__has_builtin) && __has_builtin(__builtin_stack_address)
-  return static_cast<address>(__builtin_stack_address());
-#else
-  return os::Posix::current_stack_pointer();
-#endif
-}
-
 // Platform Mutex/Monitor implementation
 
 inline void PlatformMutex::lock() {
