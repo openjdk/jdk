@@ -1165,7 +1165,7 @@ public class TestTutorial {
         // In this section, we will look at some subtle facts about the behavior of
         // transparent scopes around hook insertion. This is intended for expert users
         // so feel free to skip it until you extensively use hook insertion.
-        // More info can also be found in the javadocs of the Hook class.
+        // More info can also be found in the Javadocs of the Hook class.
 
         // Helper method to check that the expected DataNames are available.
         var templateVerify = Template.make("toList", (String toList) -> scope(
