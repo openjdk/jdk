@@ -69,6 +69,7 @@
  *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
  *      -XX:-TieredCompilation
  *      -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+StressIGVN
  *      -XX:StressSeed=3497198372
  *      compiler.loopopts.superword.TestLoopPhiApplyBadType
@@ -83,6 +84,7 @@
  *      -XX:CompileCommand=dontinline,*TestLoopPhiApplyBadType::notInlined
  *      -XX:-TieredCompilation
  *      -Xbatch
+ *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+StressIGVN
  *      compiler.loopopts.superword.TestLoopPhiApplyBadType
  */
