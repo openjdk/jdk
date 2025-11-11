@@ -533,7 +533,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         public String formatExceptionMessage(AbstractMemorySegmentImpl segment, long offset, long length) {
             return String.format("Out of bound access on segment %s; " +
                             "attempting to access an element of length %d at offset %d " +
-                            "which is outside the valid range 0 < offset+length < byteSize (=%d)",
+                            "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
                     segment, length, offset, segment.byteSize());
         }
     };

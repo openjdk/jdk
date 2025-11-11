@@ -220,7 +220,7 @@ public class TestSegments {
         } catch (IndexOutOfBoundsException ex) {
             assertTrue(ex.getMessage().startsWith("Out of bound access"));
             assertTrue(ex.getMessage().endsWith("attempting to access an element of length 4 at offset 8 " +
-                    "which is outside the valid range 0 < offset+length < byteSize (=10)"));
+                    "which is outside the valid range 0 <= offset+length < byteSize (=10)"));
         } catch (Exception ex) {
             fail("Unexpected exception type thrown: " + ex);
         }
