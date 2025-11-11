@@ -156,7 +156,8 @@ public class ToolGuide implements Taglet {
                 return pe.getEnclosingElement() != null
                         ? "../" + pkgPart
                         : pkgPart;
-            case CLASS:
+
+            case CLASS, ENUM, RECORD, INTERFACE, ANNOTATION_TYPE:
                 TypeElement te = (TypeElement)elem;
                 return te.getQualifiedName()
                         .toString()
@@ -164,7 +165,10 @@ public class ToolGuide implements Taglet {
                         .replaceAll("[^/]+", "..");
 
             default:
-                throw new IllegalArgumentException(elem.getKind().toString());
+                var enclosing = elem.getEnclosingElement();
+                if (enclosing == null)
+                    throw new IllegalArgumentException(elem.getKind().toString());
+                return docRoot(enclosing);
         }
     }
 }
