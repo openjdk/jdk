@@ -629,7 +629,7 @@ public:
   PhiNode* node() const { return _node; }
 
   virtual VTransformPhiScalarNode* isa_PhiScalar() override { return this; }
-  virtual bool is_loop_head_phi() const { return in_req(0)->isa_CountedLoop() != nullptr; }
+  virtual bool is_loop_head_phi() const override { return in_req(0)->isa_CountedLoop() != nullptr; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   virtual void apply_backedge(VTransformApplyState& apply_state) const override;
@@ -885,7 +885,7 @@ public:
   VTransformPhiVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties) :
     VTransformVectorNode(vtransform, req, properties) {}
   virtual VTransformPhiVectorNode* isa_PhiVector() override { return this; }
-  virtual bool is_loop_head_phi() const { return in_req(0)->isa_CountedLoop() != nullptr; }
+  virtual bool is_loop_head_phi() const override { return in_req(0)->isa_CountedLoop() != nullptr; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   virtual void apply_backedge(VTransformApplyState& apply_state) const override;
