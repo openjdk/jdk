@@ -124,7 +124,7 @@ final class SortedOps {
             boolean isNaturalSort = Comparator.naturalOrder().equals(comparator);
             super(upstream, StreamShape.REFERENCE,
                   StreamOpFlag.IS_ORDERED |
-                          (isNaturalSort ? StreamOpFlag.SORTED : StreamOpFlag.NOT_SORTED));
+                          (isNaturalSort ? StreamOpFlag.IS_SORTED : StreamOpFlag.NOT_SORTED));
             this.isNaturalSort = isNaturalSort;
             this.comparator = comparator;
         }
