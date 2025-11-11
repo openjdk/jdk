@@ -297,15 +297,6 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
     assert(oopDesc::is_oop(obj), "Should be an object");
   }
 #undef WALK_FORWARD_IN_BLOCK_START // false
-#ifdef ASSERT
-  if (p + obj->size() <= left) {
-    const CardValue* const wtbm = _rs->card_table()->write_byte_map();
-    const CardValue* const rtbm = _rs->card_table()->read_byte_map();
-    log_info(gc)("Anticipating assert failure, card[%zu] is %s in read table, %s in write table", cur_index,
-                 (rtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean",
-                 (wtbm[cur_index] ==CardTable::dirty_card_val())? "dirty": "clean");
-  }
-#endif
   assert(p < left, "p should start before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
   return p;
