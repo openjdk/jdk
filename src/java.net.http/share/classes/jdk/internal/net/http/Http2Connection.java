@@ -25,6 +25,7 @@
 
 package jdk.internal.net.http;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -131,7 +132,7 @@ import static jdk.internal.net.http.frame.SettingsFrame.MAX_HEADER_LIST_SIZE;
  * and incoming stream creation (Server push). Incoming frames destined for a
  * stream are provided by calling Stream.incoming().
  */
-class Http2Connection  {
+class Http2Connection implements Closeable {
 
     final Logger debug = Utils.getDebugLogger(this::dbgString);
     static final Logger DEBUG_LOGGER =
@@ -909,7 +910,8 @@ class Http2Connection  {
     /**
      * Closes the connection normally (with a NO_ERROR termination cause), if not already closed.
      */
-    final void close() {
+    @Override
+    public final void close() {
         close(Http2TerminationCause.noErrorTermination());
     }
 
