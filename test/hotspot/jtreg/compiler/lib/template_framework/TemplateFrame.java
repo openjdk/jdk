@@ -39,7 +39,7 @@ import java.util.Map;
  *
  * <p>
  * A {@link Template} can have multiple {@link TemplateFrame}s, if there are nested
- * scopes. The outermost {@link TemplateFrame} determines the id of the {@link Tmeplate}
+ * scopes. The outermost {@link TemplateFrame} determines the id of the {@link Template}
  * use and performs the subtraction of fuel from the outer {@link Template}. Inner
  * {@link TemplateFrame}s ensure the correct availability of hashtag replacement and
  * {@link Template#setFuelCost} definitions, so that they are local to their scope and
