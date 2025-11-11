@@ -186,15 +186,16 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * interrupted status. Code that catches {@code InterruptedException} should rethrow the
  * exception, or restore the current thread's interrupted status, with
  * {@link #currentThread() Thread.currentThread()}.{@link #interrupt()}, before
- * continuing normally or handling it by throwing another type of exception.
- * Code that throws a different type of exception with the {@code InterruptedException}
- * as {@linkplain Throwable#getCause() cause} should also restore the interrupted
- * status before throwing the exception.
+ * continuing normally or handling it by throwing another type of exception. Code that
+ * throws another type of exception with the {@code InterruptedException} as {@linkplain
+ * Throwable#getCause() cause}, or the {@code InterruptedException} as a {@linkplain
+ * Throwable#addSuppressed(Throwable) suppressed exception}, should also restore the
+ * interrupted status before throwing the exception.
  *
  * <p> If a thread executing a blocking I/O operation on an {@link
  * java.nio.channels.InterruptibleChannel} is interrupted then it causes the channel to be
  * closed, and the blocking I/O operation to throw {@link java.nio.channels.ClosedByInterruptException}
- * with the thread's interrupted status set. If a thread is blocked in a {@linkplain
+ * with the thread's interrupted status set. If a thread blocked in a {@linkplain
  * java.nio.channels.Selector selection operation} is interrupted then it causes the
  * selection operation to return early, with the thread's interrupted status set.
  *

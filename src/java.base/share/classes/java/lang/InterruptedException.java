@@ -27,18 +27,15 @@ package java.lang;
 
 /**
  * Thrown when a thread executing a blocking method is {@linkplain Thread#interrupt()
- * interrupted}. {@link Thread#sleep(long)}, {@link Object#wait()} and many other
- * blocking methods throw this exception if interrupted.
+ * interrupted}. {@link Thread#sleep(long) Thread.sleep}, {@link Object#wait()
+ * Object.wait} and many other blocking methods throw this exception if interrupted.
  *
  * <p> Blocking methods that throw {@code InterruptedException} clear the thread's
  * interrupted status before throwing the exception. Code that catches {@code
  * InterruptedException} should rethrow the exception, or restore the current thread's
  * interrupted status, with {@link Thread#currentThread()
  * Thread.currentThread()}.{@link Thread#interrupt() interrupt()}, before continuing
- * normally or handling it by throwing another type of exception. Code that throws a
- * different type of exception with the {@code InterruptedException} as {@linkplain
- * Throwable#getCause() cause} should also restore the interrupted status before
- * throwing the exception.
+ * normally or handling it by throwing another type of exception.
  *
  * @author  Frank Yellin
  * @see     Thread##thread-interruption Thread Interruption
