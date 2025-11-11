@@ -1217,7 +1217,7 @@ public class TestTutorial {
                 )),
                 // x4 escapes to the caller out here, and not to the anchor scope.
                 "// x4: #x4\n",
-                // And v4 escapes to the anchor scope, which is available from hee too.
+                // And v4 escapes to the anchor scope, which is available from here too.
                 // Interesting detail: the ordering in the list indicates that v1
                 // is from the outermost scope of the template, v4 is located at the
                 // anchor scope, and v2 is located inside the anchor scope, and
