@@ -2965,7 +2965,7 @@ size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_w
   // For humongous allocations, consider that allocation in the result as well -
   // it will be allocated as such. Otherwise G1 will allocate the object in young
   // gen. In that case, do not account here.
-  return cur_occupancy + is_humongous(allocation_word_size) ? allocation_used_bytes(allocation_word_size) : 0;
+  return cur_occupancy + (is_humongous(allocation_word_size) ? allocation_used_bytes(allocation_word_size) : 0);
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
