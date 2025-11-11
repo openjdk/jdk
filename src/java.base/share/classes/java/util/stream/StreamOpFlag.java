@@ -24,6 +24,7 @@
  */
 package java.util.stream;
 
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Spliterator;
@@ -738,9 +739,9 @@ enum StreamOpFlag {
      *
      * @implSpec
      * If the spliterator is naturally {@code SORTED} (the associated
-     * {@code Comparator} is {@code null}) then the characteristic is converted
-     * to the {@link #SORTED} flag, otherwise the characteristic is not
-     * converted.
+     * {@code Comparator} is {@code null} or {@code Comparator.naturalOrder()}) then
+     * the characteristic is converted to the {@link #SORTED} flag, otherwise
+     * the characteristic is not converted.
      *
      * @param spliterator the spliterator from which to obtain characteristic
      *        bit set.
@@ -748,7 +749,9 @@ enum StreamOpFlag {
      */
     static int fromCharacteristics(Spliterator<?> spliterator) {
         int characteristics = spliterator.characteristics();
-        if ((characteristics & Spliterator.SORTED) != 0 && spliterator.getComparator() != null) {
+        if ((characteristics & Spliterator.SORTED) != 0 &&
+                !(spliterator.getComparator() == null ||
+                        spliterator.getComparator().equals(Comparator.naturalOrder()))) {
             // Do not propagate the SORTED characteristic if it does not correspond
             // to a natural sort order
             return characteristics & SPLITERATOR_CHARACTERISTICS_MASK & ~Spliterator.SORTED;

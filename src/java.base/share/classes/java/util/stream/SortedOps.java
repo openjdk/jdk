@@ -60,7 +60,8 @@ final class SortedOps {
      */
     static <T> Stream<T> makeRef(AbstractPipeline<?, T, ?> upstream,
                                 Comparator<? super T> comparator) {
-        return new OfRef<>(upstream, comparator);
+        return Comparator.naturalOrder().equals(comparator) ?
+                new OfRef<>(upstream) : new OfRef<>(upstream, comparator);
     }
 
     /**

@@ -377,5 +377,10 @@ public class StreamOpFlagsTest {
             int flags = StreamOpFlag.fromCharacteristics(new SortedEmptySpliterator((a, b) -> 0));
             assertEquals(flags, 0);
         }
+
+        {
+            int flags = StreamOpFlag.fromCharacteristics(new SortedEmptySpliterator(Comparator.naturalOrder()));
+            assertEquals(flags, StreamOpFlag.IS_SORTED);
+        }
     }
 }

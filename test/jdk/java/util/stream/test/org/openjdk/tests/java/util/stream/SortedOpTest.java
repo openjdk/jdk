@@ -25,6 +25,7 @@ package org.openjdk.tests.java.util.stream;
 import org.testng.annotations.Test;
 
 import java.util.*;
+import java.util.Comparator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -115,8 +116,12 @@ public class SortedOpTest extends OpTestCase {
 
         Collections.reverse(to10);
         assertSorted(to10.stream().sorted().iterator());
+        assertSorted(to10.stream().sorted(Comparator.naturalOrder()).iterator());
 
         Spliterator<Integer> s = to10.stream().sorted().spliterator();
+        assertTrue(s.hasCharacteristics(Spliterator.SORTED));
+
+        s = to10.stream().sorted(Comparator.naturalOrder()).spliterator();
         assertTrue(s.hasCharacteristics(Spliterator.SORTED));
 
         s = to10.stream().sorted(cInteger.reversed()).spliterator();
