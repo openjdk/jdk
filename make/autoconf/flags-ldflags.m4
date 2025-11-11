@@ -52,10 +52,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # add --no-as-needed to disable default --as-needed link flag on some GCC toolchains
     # add --icf=all (Identical Code Folding — merges identical functions)
     BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
-      if test "x$OPENJDK_TARGET_LIBC" != xmusl; then
-        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--icf=all"
-      fi
+    if test "x$LINKER_TYPE" = "xgold"; then
+      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--icf=all"
     fi
 
     # Linux : remove unused code+data in link step
