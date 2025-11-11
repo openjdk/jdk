@@ -751,7 +751,9 @@ enum StreamOpFlag {
         int characteristics = spliterator.characteristics();
         if ((characteristics & Spliterator.SORTED) != 0 &&
                 !(spliterator.getComparator() == null ||
-                        spliterator.getComparator().equals(Comparator.naturalOrder()))) {
+        if ((characteristics & Spliterator.SORTED) != 0 &&
+                spliterator.getComparator() instanceof Comparator c &&
+                !c.equals(Comparator.naturalOrder()))) {
             // Do not propagate the SORTED characteristic if it does not correspond
             // to a natural sort order
             return characteristics & SPLITERATOR_CHARACTERISTICS_MASK & ~Spliterator.SORTED;
