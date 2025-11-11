@@ -27,7 +27,7 @@
 #if !defined(_MSC_VER) && (!defined(__has_builtin) || !__has_builtin(__builtin_stack_address))
 #ifndef S390
 NOINLINE address NativeStack::current() {
-  return __builtin_dwarf_cfa();
+  return static_cast<address>(__builtin_dwarf_cfa());
 }
 #else
 asm (R"(
