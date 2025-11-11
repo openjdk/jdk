@@ -292,17 +292,20 @@ public:
 
 template<typename T>
 class AtomicImpl::SupportsArithmetic : public SupportsExchange<T> {
-  // Guarding the AtomicAccess calls with constexpr checking of I produces
+  // Guarding the AtomicAccess calls with constexpr checking of Offset produces
   // better compile-time error messages.
-  template<typename I>
-  static constexpr bool check_i() {
-    static_assert(sizeof(I) <= sizeof(T), "offset size exceeds value size");
+  template<typename Offset>
+  static constexpr bool check_offset_type() {
+    static_assert(std::is_integral_v<Offset>, "offset must be integral");
+    static_assert(sizeof(Offset) <= sizeof(T), "offset size exceeds value size");
     if constexpr (!std::is_integral_v<T>) {
       static_assert(std::is_pointer_v<T>, "must be");
     } else if constexpr (std::is_signed_v<T>) {
-      static_assert(std::is_signed_v<I>, "value is signed but offset is unsigned");
+      static_assert(std::is_signed_v<Offset>,
+                    "value is signed but offset is unsigned");
     } else {
-      static_assert(std::is_unsigned_v<I>, "value is unsigned but offset is signed");
+      static_assert(std::is_unsigned_v<Offset>,
+                    "value is unsigned but offset is signed");
     }
     return true;
   }
@@ -312,34 +315,34 @@ protected:
   ~SupportsArithmetic() = default;
 
 public:
-  template<typename I>
-  T add_then_fetch(I add_value,
+  template<typename Offset>
+  T add_then_fetch(Offset add_value,
                    atomic_memory_order order = memory_order_conservative) {
-    if constexpr (check_i<I>()) {
+    if constexpr (check_offset_type<Offset>()) {
       return AtomicAccess::add(this->value_ptr(), add_value, order);
     }
   }
 
-  template<typename I>
-  T fetch_then_add(I add_value,
+  template<typename Offset>
+  T fetch_then_add(Offset add_value,
                    atomic_memory_order order = memory_order_conservative) {
-    if constexpr (check_i<I>()) {
+    if constexpr (check_offset_type<Offset>()) {
       return AtomicAccess::fetch_then_add(this->value_ptr(), add_value, order);
     }
   }
 
-  template<typename I>
-  T sub_then_fetch(I sub_value,
+  template<typename Offset>
+  T sub_then_fetch(Offset sub_value,
                    atomic_memory_order order = memory_order_conservative) {
-    if constexpr (check_i<I>()) {
+    if constexpr (check_offset_type<Offset>()) {
       return AtomicAccess::sub(this->value_ptr(), sub_value, order);
     }
   }
 
-  template<typename I>
-  T fetch_then_sub(I sub_value,
+  template<typename Offset>
+  T fetch_then_sub(Offset sub_value,
                    atomic_memory_order order = memory_order_conservative) {
-    if constexpr (check_i<I>()) {
+    if constexpr (check_offset_type<Offset>()) {
       // AtomicAccess doesn't currently provide fetch_then_sub.
       return sub_then_fetch(sub_value, order) + sub_value;
     }
