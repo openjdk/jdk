@@ -26,7 +26,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
-#include "vtransform.hpp"
 #include "opto/vtransform.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
@@ -125,9 +124,7 @@ bool VTransformGraph::schedule() {
         if (!use->is_alive()) { continue; }
 
         // Skip backedges.
-        if ((use->is_loop_head_phi() ||
-             use->isa_CountedLoop() != nullptr
-            ) && use->in_req(2) == vtn) {
+        if ((use->is_loop_head_phi() || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) {
           continue;
         }
 
@@ -1338,7 +1335,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
   vtn_identity_vector->init_req(1, vtn_identity);
 
-  // Look at old scalar phsai
+  // Look at old scalar phi.
   VTransformPhiScalarNode* phi_scalar = in_req(1)->isa_PhiScalar();
   PhiNode* old_phi = phi_scalar->node();
   VTransformNode* init = phi_scalar->in_req(1);
@@ -1353,6 +1350,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformPhiVectorNode* phi_vector = new (vtransform.arena()) VTransformPhiVectorNode(vtransform, 3, properties);
   phi_vector->init_req(0, phi_scalar->in_req(0));
   phi_vector->init_req(1, vtn_identity_vector);
+  // Note: backedge comes later
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
   VTransformReductionVectorNode* first_red   = this;
