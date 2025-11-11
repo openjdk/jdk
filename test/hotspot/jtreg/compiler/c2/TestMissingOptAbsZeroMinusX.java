@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 8371558
- * @summary An expression of the form "abs(0-x)" should be transformed to "abs(x)"
- *          This test verifies that changes to the inputs of the Sub node are
- *          propagated as expected and that the optimization is not missed.
+ * @summary An expression of the form "abs(0-x)" should be transformed to "abs(x)".
+ *          This test ensures that updates to the Sub node’s inputs propagate as
+ *          expected and that the optimization is not missed.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.c2.TestMissingOptAbsZeroMinusX::test*
  *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestMissingOptAbsZeroMinusX
@@ -41,16 +41,45 @@ public class TestMissingOptAbsZeroMinusX {
     static boolean b;
 
     public static void main(String[] strArr) {
-        test();
+        // no known reproducer for AbsL
+        testAbsI();
+        testAbsF();
+        testAbsD();
     }
 
-    static void test() {
+    static void testAbsI() {
         int d = 4;
-        for (int i = 8; i < 141; i += 3) {
-            b = (d -= a) != Math.abs(d);
-            for (long f = 3; f < 211; f++)
-                for (int e = 1; 3 > e; ++e)
-                    d = 0;
+        for (int i = 8; i < 133; i += 3) {
+            d -= a;
+            b = (d != Math.abs(d));
+            for (long f = 3; f < 127; f++) {
+                for (int e = 1; e < 3; e++) {}
+            }
+            d = 0;
+        }
+    }
+
+    static void testAbsF() {
+        float d = 12.3f;
+        for (int i = 8; i < 133; i += 3) {
+            d -= a;
+            b = (d != Math.abs(d));
+            for (long f = 3; f < 127; f++) {
+                for (int e = 1; e < 3; e++) {}
+            }
+            d = 0.0f;
+        }
+    }
+
+    static void testAbsD() {
+        double d = 12.3;
+        for (int i = 8; i < 133; i += 3) {
+            d -= a;
+            b = (d != Math.abs(d));
+            for (long f = 3; f < 127; f++) {
+                for (int e = 1; e < 3; e++) {}
+            }
+            d = 0.0;
         }
     }
 }
