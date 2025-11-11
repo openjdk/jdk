@@ -470,6 +470,12 @@ void before_exit(JavaThread* thread, bool halt) {
   // (one of the callers of before_exit())
   JFR_ONLY(Jfr::on_vm_shutdown(true, false, halt);)
 
+  // Stop the WatcherThread. We do this before disenrolling various
+  // PeriodicTasks to reduce the likelihood of races.
+  WatcherThread::stop();
+
+  NativeHeapTrimmer::cleanup();
+
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
@@ -480,12 +486,6 @@ void before_exit(JavaThread* thread, bool halt) {
   JvmtiAgentList::unload_agents();
 
   // No user code can be executed in the current thread after this point.
-
-  // Stop the WatcherThread. We do this before disenrolling various
-  // PeriodicTasks to reduce the likelihood of races.
-  WatcherThread::stop();
-
-  NativeHeapTrimmer::cleanup();
 
   // Run before exit and then stop concurrent GC threads.
   Universe::before_exit();
