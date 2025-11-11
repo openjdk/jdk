@@ -632,6 +632,10 @@ public final class StandardOption {
 
         return option(name, AdditionalLauncher.class)
                 .valuePattern("<launcher name>=<file path>")
+                .description("main.option.add-launcher" + resourceKeySuffix(OperatingSystem.current()))
+                .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                    b.description("main.option.add-launcher" + resourceKeySuffix(context.os()));
+                }))
                 .outOfScope(NOT_BUILDING_APP_IMAGE)
                 .converterExceptionFormatString("")
                 .converterExceptionFactory((optionName, optionValue, formatString, cause) -> {
