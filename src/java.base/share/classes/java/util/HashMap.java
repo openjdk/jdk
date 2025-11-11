@@ -495,10 +495,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     @SuppressWarnings({"unchecked"})
     private void putMapEntries(HashMap<? extends K, ? extends V> src, boolean evict) {
-        for (Node<? extends K, ? extends V> node : src.table) {
-            while (node != null) {
-                putVal(node.hash, node.key, node.value, false, evict);
-                node = node.next;
+        if (src.table != null) {
+            for (Node<? extends K, ? extends V> node : src.table) {
+                while (node != null) {
+                    putVal(node.hash, node.key, node.value, false, evict);
+                    node = node.next;
+                }
             }
         }
     }

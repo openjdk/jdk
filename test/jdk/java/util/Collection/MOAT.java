@@ -441,6 +441,12 @@ public class MOAT {
         target.clear();
         target.putAll(unmodifiableMap(new TreeMap<>(testData)));
         check(target.equals(testData));
+
+        // Test empty HashMap putAll (regression test for NPE)
+        target.clear();
+        HashMap<Integer,Integer> emptySource = new HashMap<>();
+        target.putAll(emptySource);
+        check(target.isEmpty());
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {
