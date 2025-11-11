@@ -881,17 +881,29 @@ class Http2Connection  {
     }
 
     /**
-     * Returns the exception which caused the connection to be terminated. If the connection
-     * hasn't yet been terminated or if the connection was terminated normally (without any
-     * exception) then this method returns an empty Optional.
+     * Returns the exception which caused the connection to be terminated. Even a normal termination
+     * of a connection will have a {@code IOException} associated with it.
+     * If the connection hasn't yet been terminated then this method returns an empty Optional.
      */
     final Optional<IOException> getTerminationException() {
         final Http2TerminationCause terminationCause = this.connTerminator.getTerminationCause();
-        if (terminationCause == null) {
-            // connection isn't terminated
-            return Optional.empty();
+        if (terminationCause != null) {
+            return Optional.of(terminationCause.getCloseCause());
         }
-        return Optional.of(terminationCause.getCloseCause());
+        // there can be window of race where the termination cause isn't yet set
+        // but the connection isn't open. that can happen when the underlying SocketChannel
+        // is closed behind the scenes and the Http2Connection isn't aware of it and hasn't
+        // set a termination cause for it.
+        // so here we check if the connection isn't open and if it isn't then we call
+        // Terminator.getTerminationCause() which has the necessary infrastructure to create
+        // and return a termination cause for that situation.
+        if (!isOpen()) {
+            final Http2TerminationCause tc = this.connTerminator.getTerminationCause();
+            assert tc != null : "termination cause is null for a closed connection";
+            return Optional.of(tc.getCloseCause());
+        }
+        // connection isn't terminated
+        return Optional.empty();
     }
 
     /**
@@ -2103,13 +2115,20 @@ class Http2Connection  {
             this.terminate(Http2TerminationCause.idleTimedOut());
         }
 
+        /**
+         * Returns the termination cause for the connection. This method guarantees
+         * that if the {@linkplain Http2Connection#isOpen() connection is not open}
+         * then this returns a non-null termination cause.
+         */
         private Http2TerminationCause getTerminationCause() {
             final Http2TerminationCause tc = this.terminationCause.get();
             if (tc != null) {
                 return tc;
             }
             if (!connection.channel().isOpen()) {
-                // terminate the connection
+                // if the underlying SocketChannel isn't open, then terminate the connection.
+                // that way when Http2Connection.isOpen() returns false in that situation, then this
+                // getTerminationCause() will return a termination cause.
                 terminate(Http2TerminationCause.forException(new IOException("channel is not open")));
                 final Http2TerminationCause terminated = this.terminationCause.get();
                 assert terminated != null : "missing termination cause";
