@@ -28,18 +28,18 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator) :
-  SATBMarkQueueSet(allocator), _filter_mode(FILTER_MARKED)
+  SATBMarkQueueSet(allocator), _filter_out_young(false)
 {}
 
 SATBMarkQueue& ShenandoahSATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
   return ShenandoahThreadLocalData::satb_mark_queue(t);
 }
 
-class ShenandoahSatbFilterOutMarked {
+class ShenandoahSATBMarkQueueFilterFn {
   ShenandoahHeap* const _heap;
 
 public:
-  explicit ShenandoahSatbFilterOutMarked(ShenandoahHeap* heap) : _heap(heap) {}
+  explicit ShenandoahSATBMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
 
   // Return true if entry should be filtered out (removed), false if it should be retained.
   bool operator()(const void* entry) const {
@@ -47,11 +47,11 @@ public:
   }
 };
 
-class ShenandoahSatbFilterOutYoung {
+class ShenandoahSATBOldMarkQueueFilterFn {
   ShenandoahHeap* const _heap;
 
 public:
-  explicit ShenandoahSatbFilterOutYoung(ShenandoahHeap* heap) : _heap(heap) {}
+  explicit ShenandoahSATBOldMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
 
   // Return true if entry should be filtered out (removed), false if it should be retained.
   bool operator()(const void* entry) const {
@@ -61,33 +61,11 @@ public:
   }
 };
 
-class ShenandoahSatbFilterOutOld {
-  ShenandoahHeap* const _heap;
-
-public:
-  explicit ShenandoahSatbFilterOutOld(ShenandoahHeap* heap) : _heap(heap) {}
-
-  // Return true if entry should be filtered out (removed), false if it should be retained.
-  bool operator()(const void* entry) const {
-    assert(!_heap->is_concurrent_old_mark_in_progress(), "Should only use this when old marking is not in progress");
-    assert(_heap->is_concurrent_young_mark_in_progress(), "Should only use this when young marking is in progress");
-    return !_heap->requires_marking(entry) || !_heap->is_in_young(entry);
-  }
-};
-
 void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  switch (_filter_mode) {
-    case FILTER_MARKED:
-      apply_filter(ShenandoahSatbFilterOutMarked(heap), queue);
-      break;
-    case FILTER_YOUNG:
-      apply_filter(ShenandoahSatbFilterOutYoung(heap), queue);
-      break;
-    case FILTER_OLD:
-      apply_filter(ShenandoahSatbFilterOutOld(heap), queue);
-      break;
-    default:
-      ShouldNotReachHere();
+  if (_filter_out_young) {
+    apply_filter(ShenandoahSATBOldMarkQueueFilterFn(heap), queue);
+  } else {
+    apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);
   }
 }
