@@ -49,7 +49,7 @@ import java.util.Map;
  * The hashtag replacements are a set of key-value pairs from the template arguments
  * and queries such as {@link Template#let} definitions. Each {@link TemplateFrame}
  * has such a set of hashtag replacements, and implicitly provides access to the
- * hashtag replacmeents of the outer {@link TemplateFrame}s, up to the outermost
+ * hashtag replacements of the outer {@link TemplateFrame}s, up to the outermost
  * of the current {@link Template}. Inner scopes of a {@link Template} have access to
  * the outer scope hashtag replacements, and any hashtag replacement defined inside an
  * inner scope is local and disappears once we leave the scope.
