@@ -424,8 +424,8 @@ public:
 // Test whether Atomic<T> has exchange().
 template<typename T>
 class AtomicImpl::HasExchange {
-  template<typename Check> static char* test(decltype(&Check::exchange));
-  template<typename> static char test(...);
+  template<typename Check> static void* test(decltype(&Check::exchange));
+  template<typename> static int test(...);
   using test_type = decltype(test<Atomic<T>>(nullptr));
 public:
   static constexpr bool value = std::is_pointer_v<test_type>;
