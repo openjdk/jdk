@@ -29,6 +29,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -74,7 +75,7 @@ class BufferSizePropertyClampTest {
 
             @Override
             public void publish(LogRecord record) {
-                var message = MessageFormat.format(record.getMessage(), record.getParameters());
+                var message = new MessageFormat(record.getMessage(), Locale.ROOT).format(record.getParameters());
                 CLIENT_LOGGER_MESSAGES.add(message);
             }
 
@@ -99,8 +100,8 @@ class BufferSizePropertyClampTest {
                 "Unexpected number of logger messages: " + CLIENT_LOGGER_MESSAGES);
         var expectedMessage = "ERROR: Property value for jdk.httpclient.bufsize=" +
                 System.getProperty("jdk.httpclient.bufsize") +
-                " not in [1..16384]: using default=16384";
-        assertEquals(expectedMessage, CLIENT_LOGGER_MESSAGES.getFirst().replaceAll(",", ""));
+                " not in [1..16,384]: using default=16,384";
+        assertEquals(expectedMessage, CLIENT_LOGGER_MESSAGES.getFirst());
     }
 
 }
