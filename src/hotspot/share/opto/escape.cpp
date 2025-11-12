@@ -1332,7 +1332,7 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
 
     if (use->is_AddP()) {
       reduce_phi_on_field_access(use, alloc_worklist);
-      _compile->print_method(PHASE_EA_AFTER_PHI_ADDPP_REDUCTION, 6, use);
+      _compile->print_method(PHASE_EA_AFTER_PHI_ADDP_REDUCTION, 6, use);
     } else if(use->is_Cmp()) {
       reduce_phi_on_cmp(use);
       _compile->print_method(PHASE_EA_AFTER_PHI_CMP_REDUCTION, 6, use);

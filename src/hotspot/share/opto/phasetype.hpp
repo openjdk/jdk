@@ -65,7 +65,7 @@
   flags(EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS,  "EA: 6. After reduce_phi_on_safepoints") \
   flags(EA_BEFORE_PHI_REDUCTION,            "EA: 5. Before Phi Reduction") \
   flags(EA_AFTER_PHI_CASTPP_REDUCTION,      "EA: 5. Phi -> CastPP Reduction") \
-  flags(EA_AFTER_PHI_ADDPP_REDUCTION,       "EA: 5. Phi -> AddPP Reduction") \
+  flags(EA_AFTER_PHI_ADDP_REDUCTION,       "EA: 5. Phi -> AddP Reduction") \
   flags(EA_AFTER_PHI_CMP_REDUCTION,         "EA: 5. Phi -> Cmp Reduction") \
   flags(AFTER_EA,                       "After Escape Analysis") \
   flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
