@@ -146,6 +146,9 @@ public class CheckStylesheetClasses {
         // used for themes
         removeAll(styleSheetNames, "theme-dark", "theme-light", "theme-os");
 
+        // used for note tags
+        removeAll(styleSheetNames, "note-tag-important", "note-tag-critical");
+
         // very JDK specific
         styleSheetNames.remove("module-graph");
         styleSheetNames.remove("sealed-graph");

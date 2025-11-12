@@ -55,6 +55,7 @@ import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
 
 import com.sun.source.doctree.InlineTagTree;
+import com.sun.source.doctree.NoteTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -360,6 +361,7 @@ public class TagletManager {
             String name = switch (tag.getKind()) {
                 case UNKNOWN_INLINE_TAG -> ((InlineTagTree) tag).getTagName();
                 case UNKNOWN_BLOCK_TAG -> ((BlockTagTree) tag).getTagName();
+                case NOTE -> ((NoteTree) tag).getTagName();
                 default -> tag.getKind().tagName;
             };
             if (name == null) {

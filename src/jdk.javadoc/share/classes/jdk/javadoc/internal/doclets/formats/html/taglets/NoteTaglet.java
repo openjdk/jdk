@@ -34,6 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
 
@@ -108,12 +109,22 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         var attr = getAttributes(note);
         var header = attr.getOrDefault("header", defaultHeader);
         var kind = attr.getOrDefault("kind", defaultKind);
+        var id = attr.getOrDefault("id", null);
 
         var result = HtmlTree.DIV(HtmlStyles.noteTag)
                 .add(HtmlTree.DT(RawHtml.of(header)))
                 .add(HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note))));
+        if (id != null) {
+            result.setId(HtmlId.of(id));
+        }
         if (kind != null) {
             result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
+        }
+        for (var entry : attr.entrySet()) {
+            var name = entry.getKey();
+            if (!"header".equalsIgnoreCase(name) && !"kind".equalsIgnoreCase(name) && !"id".equalsIgnoreCase(name)) {
+                result.putDataAttr(name, entry.getValue());
+            }
         }
         return result;
     }

@@ -245,9 +245,14 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         var htmlWriter = tagletWriter.htmlWriter;
 
         ContentBuilder body = new ContentBuilder();
+        boolean many = false;
         for (DocTree simpleTag : simpleTags) {
+            if (many) {
+                body.add(", ");
+            }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
             body.add(htmlWriter.commentTagsToContent(element, bodyTags, context.within(simpleTag)));
+            many = true;
         }
         return new ContentBuilder(
                 HtmlTree.DT(RawHtml.of(header)),
