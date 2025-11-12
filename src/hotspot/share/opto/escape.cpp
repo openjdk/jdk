@@ -5042,6 +5042,10 @@ static const char *esc_names[] = {
   "GlobalEscape"
 };
 
+const char* PointsToNode::esc_name() const {
+  return esc_names[(int)escape_state()];
+}
+
 void PointsToNode::dump_header(bool print_state, outputStream* out) const {
   NodeType nt = node_type();
   out->print("%s(%d) ", node_type_names[(int) nt], _pidx);

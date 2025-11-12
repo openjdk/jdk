@@ -85,13 +85,17 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>
-        <file name="Show connection graph nodes.js" url="filters/showConnectionNodes.filter">
+        <file name="Show connection graph info.js" url="filters/showConnectionInfo.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide exception blocks"/>
         </file>
+        <file name="Show connection graph nodes only.js" url="filters/showConnectionGraphNodesOnly.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Show connection graph info"/>
+        </file>
         <file name="Color by escape analysis state.js" url="filters/colorEscapeAnalysis.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show connection graph nodes"/>
+            <attr name="after" stringvalue="Show connection graph nodes only"/>
         </file>
         <file name="Color live ranges by allocation.js" url="filters/colorLiveRanges.filter">
             <attr name="enabled" boolvalue="true"/>

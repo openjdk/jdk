@@ -12,8 +12,8 @@ var worstColor  = java.awt.Color.decode("#cc0000"); // Red.
 colorize(and([hasProperty("is_non_escaping"),
               hasProperty("is_scalar_replaceable")]),
          bestColor);
-colorize(and([matches("escape", "no_escape"),
-              hasProperty("replaceable")]),
+colorize(and([matches("escape_state", "NoEscape"),
+              hasProperty("scalar_replaceable")]),
          bestColor);
 
 // Object does not escape compilation unit but is not scalar replaceable,
@@ -21,8 +21,8 @@ colorize(and([matches("escape", "no_escape"),
 colorize(and([hasProperty("is_non_escaping"),
               not(hasProperty("is_scalar_replaceable"))]),
          betterColor);
-colorize(and([matches("escape", "no_escape"),
-              not(hasProperty("replaceable"))]),
+colorize(and([matches("escape_state", "NoEscape"),
+              not(hasProperty("scalar_replaceable"))]),
          betterColor);
 
 // Object may escape compilation unit but does not escape thread.
@@ -30,8 +30,8 @@ colorize(and([matches("escape", "no_escape"),
 colorize(and([hasProperty("does_not_escape_thread"),
               not(hasProperty("is_non_escaping"))]),
          worseColor);
-colorize(and([matches("escape", "arg_escape"),
-              not(hasProperty("replaceable"))]),
+colorize(and([matches("escape_state", "ArgEscape"),
+              not(hasProperty("scalar_replaceable"))]),
          worseColor);
 
 // Object may escape compilation unit and thread. Nothing to do.
@@ -39,6 +39,6 @@ colorize(and([matches("name", "Allocate"),
               not(hasProperty("is_non_escaping")),
               not(hasProperty("does_not_escape_thread"))]),
          worstColor);
-colorize(and([matches("escape", "global_escape"),
-              not(hasProperty("replaceable"))]),
+colorize(and([matches("escape_state", "GlobalEscape"),
+              not(hasProperty("scalar_replaceable"))]),
          worstColor);

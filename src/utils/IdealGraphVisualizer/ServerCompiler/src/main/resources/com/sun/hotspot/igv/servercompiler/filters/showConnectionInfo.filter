@@ -10,9 +10,7 @@ function mergeAndAppendTypeInfo(extra_label, ea_node) {
   return new_extra_label + ea_node;
 }
 
-editProperty(or([matches("ea_node", "javaobject"),
-                 matches("ea_node", "localvar"),
-                 matches("ea_node", "field")]),
+editProperty(hasProperty("ea_node"),
              ["extra_label", "ea_node"],
              "extra_label",
              function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1]);});

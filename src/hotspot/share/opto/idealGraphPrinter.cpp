@@ -759,15 +759,13 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     if (_congraph && node->_idx < _congraph->nodes_size()) {
       PointsToNode* ptn = _congraph->ptnode_adr(node->_idx);
       if (ptn != nullptr) {
-        print_prop("ea_node", ptn->is_JavaObject() ? "javaobject" :
-                              ptn->is_LocalVar() ? "localvar" :
-                              ptn->is_Field() ? "field" :
-                              "");
-        print_prop("escape", ptn->escape_state() == PointsToNode::EscapeState::NoEscape ? "no_escape" :
-                             ptn->escape_state() == PointsToNode::EscapeState::ArgEscape ? "arg_escape" :
-                             ptn->escape_state() == PointsToNode::EscapeState::GlobalEscape ? "global_escape" :
-                             "");
-        print_prop("replaceable", ptn->scalar_replaceable() ? "true" : "");
+        stringStream node_head;
+        ptn->dump_header(false, &node_head);
+        print_prop("ea_node", node_head.freeze());
+        print_prop("escape_state", ptn->esc_name());
+        if (ptn->scalar_replaceable()) {
+          print_prop("scalar_replaceable", "true");
+        }
       }
     }
 
