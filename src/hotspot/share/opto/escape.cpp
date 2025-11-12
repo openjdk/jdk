@@ -320,7 +320,7 @@ bool ConnectionGraph::compute_escape() {
         found_nsr_alloc = true;
       }
     }
-    _compile->print_method(PHASE_EA_ADJUST_SCALAR_REPLACEABLE_ITER, 6);
+    _compile->print_method(PHASE_EA_ADJUST_SCALAR_REPLACEABLE_ITER, 6, n);
   }
 
   // Propagate NSR (Not Scalar Replaceable) state.
@@ -1317,14 +1317,14 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
     }
   }
 
-  _compile->print_method(PHASE_EA_BEFORE_PHI_REDUCTION, 5);
+  _compile->print_method(PHASE_EA_BEFORE_PHI_REDUCTION, 5, ophi);
 
   // CastPPs need to be processed before Cmps because during the process of
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
     reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist);
-    _compile->print_method(PHASE_EA_AFTER_PHI_CASTPP_REDUCTION, 6);
+    _compile->print_method(PHASE_EA_AFTER_PHI_CASTPP_REDUCTION, 6, castpps.at(i));
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -1332,11 +1332,12 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
 
     if (use->is_AddP()) {
       reduce_phi_on_field_access(use, alloc_worklist);
+      _compile->print_method(PHASE_EA_AFTER_PHI_ADDPP_REDUCTION, 6, use);
     } else if(use->is_Cmp()) {
       reduce_phi_on_cmp(use);
+      _compile->print_method(PHASE_EA_AFTER_PHI_CMP_REDUCTION, 6, use);
     }
 
-    _compile->print_method(PHASE_EA_AFTER_PHI_ADDPP_CMP_REDUCTION, 6);
   }
 
   _igvn->set_delay_transform(delay);
@@ -2573,7 +2574,7 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
         }
       }
       if (!verify) {
-        _compile->print_method(PHASE_EA_CONNECTION_GRAPH_PROPAGATE_ITER, 6);
+        _compile->print_method(PHASE_EA_CONNECTION_GRAPH_PROPAGATE_ITER, 6, e->ideal_node());
       }
     }
   }
@@ -3150,7 +3151,6 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
               // objects.
               revisit_reducible_phi_status(jobj, reducible_merges);
               found_nsr_alloc = true;
-              _compile->print_method(PHASE_EA_PROPAGATE_NSR_ITER, 5);
               break;
             }
           }
@@ -3163,6 +3163,7 @@ void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNod
             break;
           }
         }
+        _compile->print_method(PHASE_EA_PROPAGATE_NSR_ITER, 5, jobj->ideal_node());
       }
     }
   }
