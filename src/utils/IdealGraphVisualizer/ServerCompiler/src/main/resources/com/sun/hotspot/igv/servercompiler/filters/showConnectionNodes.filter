@@ -16,4 +16,3 @@ editProperty(or([matches("ea_node", "javaobject"),
              ["extra_label", "ea_node"],
              "extra_label",
              function(propertyValues) {return mergeAndAppendTypeInfo(propertyValues[0], propertyValues[1]);});
-

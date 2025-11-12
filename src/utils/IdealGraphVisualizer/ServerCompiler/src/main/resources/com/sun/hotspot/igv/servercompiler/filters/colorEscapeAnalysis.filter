@@ -1,4 +1,5 @@
-// Color allocation nodes to indicate the result of scape analysis.
+// Color those nodes present in the escape analysis connection graph
+// to indicate the result of scape analysis.
 // This filter is relevant between the first EA phase and "After Macro
 // Expansion".
 

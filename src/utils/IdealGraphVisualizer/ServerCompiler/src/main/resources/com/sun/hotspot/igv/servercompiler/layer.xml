@@ -21,10 +21,6 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show custom node info"/>
         </file>
-        <file name="Show connection graph nodes.js" url="filters/showConnectionNodes.filter">
-            <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show connection node types"/>
-        </file>
         <file name="Simplify graph.js" url="filters/simplifyGraph.filter">
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Show types"/>
@@ -89,13 +85,17 @@
             <attr name="enabled" boolvalue="false"/>
             <attr name="after" stringvalue="Hide uncommon trap blocks"/>
         </file>
+        <file name="Show connection graph nodes.js" url="filters/showConnectionNodes.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Hide exception blocks"/>
+        </file>
         <file name="Color by escape analysis state.js" url="filters/colorEscapeAnalysis.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Color by escape analysis state"/>
+            <attr name="after" stringvalue="Show connection graph nodes"/>
         </file>
         <file name="Color live ranges by allocation.js" url="filters/colorLiveRanges.filter">
             <attr name="enabled" boolvalue="true"/>
-            <attr name="after" stringvalue="Hide exception blocks"/>
+            <attr name="after" stringvalue="Color by escape analysis state"/>
         </file>
         <file name="Show liveness information.js" url="filters/showLiveness.filter">
             <attr name="enabled" boolvalue="false"/>
