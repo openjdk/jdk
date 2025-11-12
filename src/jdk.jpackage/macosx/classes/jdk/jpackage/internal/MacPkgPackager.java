@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -75,6 +76,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
     enum PkgPackageTaskID implements TaskID {
         PREPARE_MAIN_SCRIPTS,
+        LOG_NO_MAIN_SCRIPTS,
         CREATE_DISTRIBUTION_XML_FILE,
         CREATE_COMPONENT_PLIST_FILE,
         PREPARE_SERVICES
@@ -154,7 +156,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
             data.put("SERVICES_PACKAGE_ID", servicesPkg.identifier());
 
             MacPkgInstallerScripts.createServicesScripts()
-                    .setResourceDir(env.resourceDir().orElse(null))
+                    .setResourceDir(env)
                     .setSubstitutionData(data)
                     .saveInFolder(servicesScriptsDir);
 
@@ -218,6 +220,10 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
                         .action(this::prepareMainScripts)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .add()
+                .task(PkgPackageTaskID.LOG_NO_MAIN_SCRIPTS)
+                        .action(this::logNoMainScripts)
+                        .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
+                        .add()
                 .task(PkgPackageTaskID.CREATE_DISTRIBUTION_XML_FILE)
                         .action(this::prepareDistributionXMLFile)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
@@ -259,6 +265,8 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         if (scriptsRoot().isEmpty()) {
             disabledTasks.add(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS);
+        } else {
+            disabledTasks.add(PkgPackageTaskID.LOG_NO_MAIN_SCRIPTS);
         }
 
         for (final var taskID : disabledTasks) {
@@ -287,7 +295,8 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
     }
 
     Optional<Path> scriptsRoot() {
-        if (pkg.app().appStore() || pkg.isRuntimeInstaller()) {
+        if (pkg.app().appStore() || pkg.isRuntimeInstaller() ||
+                MacPkgInstallerScripts.createAppScripts().setResourceDir(env).isEmpty()) {
             return Optional.empty();
         } else {
             return Optional.of(env.configDir().resolve("scripts"));
@@ -349,17 +358,16 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         Files.createDirectories(scriptsRoot);
 
-        final Map<String, String> data = new HashMap<>();
-
-        final var appLocation = pkg.asInstalledPackageApplicationLayout().orElseThrow().appDirectory();
-
-        data.put("INSTALL_LOCATION", Path.of("/").resolve(pkg.relativeInstallDir()).toString());
-        data.put("APP_LOCATION", appLocation.toString());
-
         MacPkgInstallerScripts.createAppScripts()
-                .setResourceDir(env.resourceDir().orElse(null))
-                .setSubstitutionData(data)
+                .setResourceDir(env)
                 .saveInFolder(scriptsRoot);
+    }
+
+    private void logNoMainScripts() throws IOException {
+        // Should not create any files, but merely log what files the user
+        // should add to the resource directory to customize install scripts.
+        MacPkgInstallerScripts.createAppScripts()
+                .saveInFolder(env.configDir().resolve("scripts"));
     }
 
     private void prepareDistributionXMLFile() throws IOException {

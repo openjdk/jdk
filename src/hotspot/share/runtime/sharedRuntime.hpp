@@ -384,10 +384,6 @@ class SharedRuntime: AllStatic {
   // deopt blob
   static void generate_deopt_blob(void);
 
-  static bool handle_ic_miss_helper_internal(Handle receiver, nmethod* caller_nm, const frame& caller_frame,
-                                             methodHandle callee_method, Bytecodes::Code bc, CallInfo& call_info,
-                                             bool& needs_ic_stub_refill, TRAPS);
-
  public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
@@ -549,7 +545,6 @@ class SharedRuntime: AllStatic {
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);
-  static bool should_fixup_call_destination(address destination, address entry_point, address caller_pc, Method* moop, CodeBlob* cb);
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
@@ -871,7 +866,6 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
-  static bool contains(const CodeBlob* b);
   static const char* name(AdapterHandlerEntry* handler);
   static uint32_t id(AdapterHandlerEntry* handler);
 #ifndef PRODUCT

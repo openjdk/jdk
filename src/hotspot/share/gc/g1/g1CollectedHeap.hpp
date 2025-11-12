@@ -169,6 +169,17 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckRegionAttrTableClosure;
 
 private:
+  // GC Overhead Limit functionality related members.
+  //
+  // The goal is to return null for allocations prematurely (before really going
+  // OOME) in case both GC CPU usage (>= GCTimeLimit) and not much available free
+  // memory (<= GCHeapFreeLimit) so that applications can exit gracefully or try
+  // to keep running by easing off memory.
+  uintx _gc_overhead_counter;        // The number of consecutive garbage collections we were over the limits.
+
+  void update_gc_overhead_counter();
+  bool gc_overhead_limit_exceeded();
+
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
@@ -296,9 +307,11 @@ private:
                                uint old_marking_started_after,
                                uint old_marking_completed_after);
 
-  // Attempt to start a concurrent cycle with the indicated cause.
+  // Attempt to start a concurrent cycle with the indicated cause, for potentially
+  // allocating allocation_word_size words.
   // precondition: should_do_concurrent_full_gc(cause)
-  bool try_collect_concurrently(GCCause::Cause cause,
+  bool try_collect_concurrently(size_t allocation_word_size,
+                                GCCause::Cause cause,
                                 uint gc_counter,
                                 uint old_marking_started_before);
 
@@ -439,18 +452,14 @@ private:
   //
   // * If either call cannot satisfy the allocation request using the
   //   current allocating region, they will try to get a new one. If
-  //   this fails, they will attempt to do an evacuation pause and
-  //   retry the allocation.
-  //
-  // * If all allocation attempts fail, even after trying to schedule
-  //   an evacuation pause, allocate_new_tlab() will return null,
-  //   whereas mem_allocate() will attempt a heap expansion and/or
-  //   schedule a Full GC.
+  //   this fails, (only) mem_allocate() will attempt to do an evacuation
+  //   pause and retry the allocation. Allocate_new_tlab() will return null,
+  //   deferring to the following mem_allocate().
   //
   // * We do not allow humongous-sized TLABs. So, allocate_new_tlab
   //   should never be called with word_size being humongous. All
   //   humongous allocation requests should go to mem_allocate() which
-  //   will satisfy them with a special path.
+  //   will satisfy them in a special path.
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
@@ -463,12 +472,13 @@ private:
   // should only be used for non-humongous allocations.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
-                                      size_t* actual_word_size);
-
+                                      size_t* actual_word_size,
+                                      bool allow_gc);
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
-  // pause. This should only be used for non-humongous allocations.
-  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size);
+  // pause if allow_gc is set. This should only be used for non-humongous
+  // allocations.
+  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -504,9 +514,9 @@ private:
   //    be accounted for in case shrinking of the heap happens.
   // - it returns false if it is unable to do the collection due to the
   //   GC locker being active, true otherwise.
-  void do_full_collection(bool clear_all_soft_refs,
-                          bool do_maximal_compaction,
-                          size_t allocation_word_size);
+  void do_full_collection(size_t allocation_word_size,
+                          bool clear_all_soft_refs,
+                          bool do_maximal_compaction);
 
   // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   void do_full_collection(bool clear_all_soft_refs) override;
@@ -637,15 +647,16 @@ public:
                               size_t word_size,
                               bool update_remsets);
 
-  // We register a region with the fast "in collection set" test. We
-  // simply set to true the array slot corresponding to this region.
-  void register_young_region_with_region_attr(G1HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
-  }
+  // The following methods update the region attribute table, i.e. a compact
+  // representation of per-region information that is regularly accessed
+  // during GC.
+  inline void register_young_region_with_region_attr(G1HeapRegion* r);
   inline void register_new_survivor_region_with_region_attr(G1HeapRegion* r);
-  inline void register_region_with_region_attr(G1HeapRegion* r);
-  inline void register_old_region_with_region_attr(G1HeapRegion* r);
+  inline void register_old_collection_set_region_with_region_attr(G1HeapRegion* r);
   inline void register_optional_region_with_region_attr(G1HeapRegion* r);
+
+  // Updates region state without overwriting the type in the region attribute table.
+  inline void update_region_attr(G1HeapRegion* r);
 
   void clear_region_attr(const G1HeapRegion* hr) {
     _region_attr.clear(hr);
@@ -657,7 +668,7 @@ public:
 
   // Verify that the G1RegionAttr remset tracking corresponds to actual remset tracking
   // for all regions.
-  void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
+  void verify_region_attr_is_remset_tracked() PRODUCT_RETURN;
 
   void clear_bitmap_for_region(G1HeapRegion* hr);
 
@@ -758,20 +769,17 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t         word_size,
-                                uint           gc_count_before,
-                                bool*          succeeded,
+  HeapWord* do_collection_pause(size_t word_size,
+                                uint gc_count_before,
+                                bool* succeeded,
                                 GCCause::Cause gc_cause);
 
-  // Perform an incremental collection at a safepoint, possibly
-  // followed by a by-policy upgrade to a full collection.
+  // Perform an incremental collection at a safepoint, possibly followed by a
+  // by-policy upgrade to a full collection.
+  // The collection should expect to be followed by an allocation of allocation_word_size.
   // precondition: at safepoint on VM thread
   // precondition: !is_stw_gc_active()
-  void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
-
-  // Helper for do_collection_pause_at_safepoint, containing the guts
-  // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(size_t allocation_word_size);
+  void do_collection_pause_at_safepoint(size_t allocation_word_size);
 
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -1037,9 +1045,10 @@ public:
   // "CollectedHeap" supports.
   void collect(GCCause::Cause cause) override;
 
-  // Perform a collection of the heap with the given cause.
+  // Try to perform a collection of the heap with the given cause to allocate allocation_word_size
+  // words.
   // Returns whether this collection actually executed.
-  bool try_collect(GCCause::Cause cause, const G1GCCounters& counters_before);
+  bool try_collect(size_t allocation_word_size, GCCause::Cause cause, const G1GCCounters& counters_before);
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
@@ -1193,10 +1202,10 @@ public:
   // Section on thread-local allocation buffers (TLABs)
   // See CollectedHeap for semantics.
 
-  size_t tlab_capacity(Thread* ignored) const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_capacity() const override;
+  size_t tlab_used() const override;
   size_t max_tlab_size() const override;
-  size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
+  size_t unsafe_max_tlab_alloc() const override;
 
   inline bool is_in_young(const oop obj) const;
   inline bool requires_barriers(stackChunkOop obj) const override;

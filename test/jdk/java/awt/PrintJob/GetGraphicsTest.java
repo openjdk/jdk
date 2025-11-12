@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 50510568367702
+  @bug 5051056 8367702
   @key headful printer
   @summary  PrintJob.getGraphics() should return null after PrintJob.end() is called.
   @run main GetGraphicsTest
