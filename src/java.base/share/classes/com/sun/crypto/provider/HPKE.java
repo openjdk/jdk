@@ -147,7 +147,7 @@ public class HPKE extends CipherSpi {
                     "Unsupported params type: " + params.getClass());
         }
         if (impl.hasEncrypt()) {
-            impl.aead.start(impl.opmode, impl.context.k, impl.context.ComputeNonce());
+            impl.aead.start(impl.opmode, impl.context.k, impl.context.computeNonce());
             state = ENCRYPT_AND_EXPORT;
         } else {
             state = EXPORT_ONLY;
@@ -170,7 +170,7 @@ public class HPKE extends CipherSpi {
             throw new UnsupportedOperationException();
         }
         if (state == AFTER_FINAL) {
-            impl.aead.start(impl.opmode, impl.context.k, impl.context.ComputeNonce());
+            impl.aead.start(impl.opmode, impl.context.k, impl.context.computeNonce());
             state = ENCRYPT_AND_EXPORT;
         }
     }
@@ -230,7 +230,7 @@ public class HPKE extends CipherSpi {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
         } else {
-            return impl.context.ExportKey(algorithm, context, length);
+            return impl.context.exportKey(algorithm, context, length);
         }
     }
 
@@ -239,13 +239,13 @@ public class HPKE extends CipherSpi {
         if (state == BEGIN) {
             throw new IllegalStateException("State: " + state);
         } else {
-            return impl.context.ExportData(context, length);
+            return impl.context.exportData(context, length);
         }
     }
 
     private static class AEAD {
         final Cipher cipher;
-        final int Nk, Nn, Nt;
+        final int nk, nn, nt;
         final int id;
         public AEAD(int id) throws InvalidAlgorithmParameterException {
             this.id = id;
@@ -253,19 +253,19 @@ public class HPKE extends CipherSpi {
                 switch (id) {
                     case HPKEParameterSpec.AEAD_AES_128_GCM -> {
                         cipher = Cipher.getInstance("AES/GCM/NoPadding");
-                        Nk = 16;
+                        nk = 16;
                     }
                     case HPKEParameterSpec.AEAD_AES_256_GCM -> {
                         cipher = Cipher.getInstance("AES/GCM/NoPadding");
-                        Nk = 32;
+                        nk = 32;
                     }
                     case HPKEParameterSpec.AEAD_CHACHA20_POLY1305 -> {
                         cipher = Cipher.getInstance("ChaCha20-Poly1305");
-                        Nk = 32;
+                        nk = 32;
                     }
                     case HPKEParameterSpec.EXPORT_ONLY -> {
                         cipher = null;
-                        Nk = -1;
+                        nk = -1;
                     }
                     default -> throw new InvalidAlgorithmParameterException(
                             "Unknown aead_id: " + id);
@@ -273,7 +273,7 @@ public class HPKE extends CipherSpi {
             } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
                 throw new ProviderException("Internal error", e);
             }
-            Nn = 12; Nt = 16;
+            nn = 12; nt = 16;
         }
 
         void start(int opmode, SecretKey key, byte[] nonce) {
@@ -281,7 +281,7 @@ public class HPKE extends CipherSpi {
                 if (id == HPKEParameterSpec.AEAD_CHACHA20_POLY1305) {
                     cipher.init(opmode, key, new IvParameterSpec(nonce));
                 } else {
-                    cipher.init(opmode, key, new GCMParameterSpec(Nt * 8, nonce));
+                    cipher.init(opmode, key, new GCMParameterSpec(nt * 8, nonce));
                 }
             } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
                 throw new ProviderException("Internal error", e);
@@ -309,7 +309,7 @@ public class HPKE extends CipherSpi {
             final byte[] base_nonce;
             final SecretKey exporter_secret;
 
-            byte[] seq = new byte[aead.Nn];
+            byte[] seq = new byte[aead.nn];
 
             public Context(SecretKey sk, byte[] base_nonce,
                     SecretKey exporter_secret) {
@@ -318,36 +318,36 @@ public class HPKE extends CipherSpi {
                 this.exporter_secret = exporter_secret;
             }
 
-            SecretKey ExportKey(String algorithm, byte[] exporter_context, int L) {
+            SecretKey exportKey(String algorithm, byte[] exporter_context, int length) {
                 if (exporter_context == null) {
                     throw new IllegalArgumentException("Null exporter_context");
                 }
                 try {
                     var kdf = KDF.getInstance(kdfAlg);
                     return kdf.deriveKey(algorithm, DHKEM.labeledExpand(
-                            exporter_secret, suite_id, SEC, exporter_context, L));
+                            exporter_secret, suite_id, SEC, exporter_context, length));
                 } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
-                    // algorithm not accepted by HKDF, L too big or too small
+                    // algorithm not accepted by HKDF, length too big or too small
                     throw new IllegalArgumentException("Invalid input", e);
                 }
             }
 
-            byte[] ExportData(byte[] exporter_context, int L) {
+            byte[] exportData(byte[] exporter_context, int length) {
                 if (exporter_context == null) {
                     throw new IllegalArgumentException("Null exporter_context");
                 }
                 try {
                     var kdf = KDF.getInstance(kdfAlg);
                     return kdf.deriveData(DHKEM.labeledExpand(
-                            exporter_secret, suite_id, SEC, exporter_context, L));
+                            exporter_secret, suite_id, SEC, exporter_context, length));
                 } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
-                    // algorithm not accepted by HKDF, L too big or too small
+                    // algorithm not accepted by HKDF, length too big or too small
                     throw new IllegalArgumentException("Invalid input", e);
                 }
             }
 
-            private byte[] ComputeNonce() {
-                var result = new byte[aead.Nn];
+            private byte[] computeNonce() {
+                var result = new byte[aead.nn];
                 for (var i = 0; i < result.length; i++) {
                     result[i] = (byte)(seq[i] ^ base_nonce[i]);
                 }
@@ -448,7 +448,7 @@ public class HPKE extends CipherSpi {
 
             var usePSK = usePSK(params.psk());
             int mode = params.authKey() == null ? (usePSK ? 1 : 0) : (usePSK ? 3 : 2);
-            context = KeySchedule(mode, shared_secret,
+            context = keySchedule(mode, shared_secret,
                     params.info(),
                     params.psk(),
                     params.psk_id());
@@ -504,9 +504,9 @@ public class HPKE extends CipherSpi {
             params = p;
             suite_id = concat(
                     HPKE,
-                    DHKEM.I2OSP(params.kem_id(), 2),
-                    DHKEM.I2OSP(params.kdf_id(), 2),
-                    DHKEM.I2OSP(params.aead_id(), 2));
+                    DHKEM.i2OSP(params.kem_id(), 2),
+                    DHKEM.i2OSP(params.kdf_id(), 2),
+                    DHKEM.i2OSP(params.aead_id(), 2));
             switch (params.kdf_id()) {
                 case HPKEParameterSpec.KDF_HKDF_SHA256 -> {
                     kdfAlg = "HKDF-SHA256";
@@ -526,7 +526,7 @@ public class HPKE extends CipherSpi {
             aead = new AEAD(params.aead_id());
         }
 
-        private Context KeySchedule(int mode,
+        private Context keySchedule(int mode,
                 SecretKey shared_secret,
                 byte[] info,
                 SecretKey psk,
@@ -561,10 +561,10 @@ public class HPKE extends CipherSpi {
                 if (hasEncrypt()) {
                     // ChaCha20-Poly1305 does not care about algorithm name
                     var key = kdf.deriveKey("AES", DHKEM.labeledExpand(secret_x,
-                            suite_id, KEY, key_schedule_context, aead.Nk));
+                            suite_id, KEY, key_schedule_context, aead.nk));
                     // deriveData must be called because we need to increment nonce
                     var base_nonce = kdf.deriveData(DHKEM.labeledExpand(secret_x,
-                            suite_id, BASE_NONCE, key_schedule_context, aead.Nn));
+                            suite_id, BASE_NONCE, key_schedule_context, aead.nn));
                     return new Context(key, base_nonce, exporter_secret);
                 } else {
                     return new Context(null, null, exporter_secret);

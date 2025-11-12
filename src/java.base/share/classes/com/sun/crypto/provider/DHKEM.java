@@ -96,24 +96,24 @@ public class DHKEM implements KEMSpi {
 
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
-            Objects.checkFromToIndex(from, to, params.Nsecret);
+            Objects.checkFromToIndex(from, to, params.nsecret);
             Objects.requireNonNull(algorithm, "null algorithm");
             KeyPair kpE = params.generateKeyPair(secureRandom);
             PrivateKey skE = kpE.getPrivate();
             PublicKey pkE = kpE.getPublic();
-            byte[] pkEm = params.SerializePublicKey(pkE);
-            byte[] pkRm = params.SerializePublicKey(pkR);
+            byte[] pkEm = params.serializePublicKey(pkE);
+            byte[] pkRm = params.serializePublicKey(pkR);
             try {
                 SecretKey key;
                 if (skS == null) {
                     byte[] kem_context = concat(pkEm, pkRm);
                     key = params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skE, pkR));
+                            params.dh(skE, pkR));
                 } else {
-                    byte[] pkSm = params.SerializePublicKey(pkS);
+                    byte[] pkSm = params.serializePublicKey(pkS);
                     byte[] kem_context = concat(pkEm, pkRm, pkSm);
                     key = params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skE, pkR), params.DH(skS, pkR));
+                            params.dh(skE, pkR), params.dh(skS, pkR));
                 }
                 return new KEM.Encapsulated(key, pkEm, null);
             } catch (UnsupportedOperationException e) {
@@ -126,24 +126,24 @@ public class DHKEM implements KEMSpi {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation,
                 int from, int to, String algorithm) throws DecapsulateException {
-            Objects.checkFromToIndex(from, to, params.Nsecret);
+            Objects.checkFromToIndex(from, to, params.nsecret);
             Objects.requireNonNull(algorithm, "null algorithm");
             Objects.requireNonNull(encapsulation, "null encapsulation");
-            if (encapsulation.length != params.Npk) {
+            if (encapsulation.length != params.npk) {
                 throw new DecapsulateException("incorrect encapsulation size");
             }
             try {
-                PublicKey pkE = params.DeserializePublicKey(encapsulation);
-                byte[] pkRm = params.SerializePublicKey(pkR);
+                PublicKey pkE = params.deserializePublicKey(encapsulation);
+                byte[] pkRm = params.serializePublicKey(pkR);
                 if (pkS == null) {
                     byte[] kem_context = concat(encapsulation, pkRm);
                     return params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skR, pkE));
+                            params.dh(skR, pkE));
                 } else {
-                    byte[] pkSm = params.SerializePublicKey(pkS);
+                    byte[] pkSm = params.serializePublicKey(pkS);
                     byte[] kem_context = concat(encapsulation, pkRm, pkSm);
                     return params.deriveKey(algorithm, from, to, kem_context,
-                            params.DH(skR, pkE), params.DH(skR, pkS));
+                            params.dh(skR, pkE), params.dh(skR, pkS));
                 }
             } catch (UnsupportedOperationException e) {
                 throw e;
@@ -156,12 +156,12 @@ public class DHKEM implements KEMSpi {
 
         @Override
         public int engineSecretSize() {
-            return params.Nsecret;
+            return params.nsecret;
         }
 
         @Override
         public int engineEncapsulationSize() {
-            return params.Npk;
+            return params.npk;
         }
     }
 
@@ -214,9 +214,9 @@ public class DHKEM implements KEMSpi {
         ;
 
         private final int kem_id;
-        private final int Nsecret;
-        private final int Nsk;
-        private final int Npk;
+        private final int nsecret;
+        private final int nsk;
+        private final int npk;
         private final String kaAlgorithm;
         private final String keyAlgorithm;
         private final AlgorithmParameterSpec spec;
@@ -224,18 +224,18 @@ public class DHKEM implements KEMSpi {
 
         private final byte[] suiteId;
 
-        Params(int kem_id, int Nsecret, int Nsk, int Npk,
+        Params(int kem_id, int nsecret, int nsk, int npk,
                 String kaAlgorithm, String keyAlgorithm, AlgorithmParameterSpec spec,
                 String hkdfAlgorithm) {
             this.kem_id = kem_id;
             this.spec = spec;
-            this.Nsecret = Nsecret;
-            this.Nsk = Nsk;
-            this.Npk = Npk;
+            this.nsecret = nsecret;
+            this.nsk = nsk;
+            this.npk = npk;
             this.kaAlgorithm = kaAlgorithm;
             this.keyAlgorithm = keyAlgorithm;
             this.hkdfAlgorithm = hkdfAlgorithm;
-            suiteId = concat(KEM, I2OSP(kem_id, 2));
+            suiteId = concat(KEM, i2OSP(kem_id, 2));
         }
 
         private boolean isEC() {
@@ -255,18 +255,18 @@ public class DHKEM implements KEMSpi {
             }
         }
 
-        private byte[] SerializePublicKey(PublicKey k) {
+        private byte[] serializePublicKey(PublicKey k) {
             if (isEC()) {
                 ECPoint w = ((ECPublicKey) k).getW();
                 return ECUtil.encodePoint(w, ((NamedCurve) spec).getCurve());
             } else {
                 byte[] uArray = ((XECPublicKey) k).getU().toByteArray();
                 ArrayUtil.reverse(uArray);
-                return Arrays.copyOf(uArray, Npk);
+                return Arrays.copyOf(uArray, npk);
             }
         }
 
-        private PublicKey DeserializePublicKey(byte[] data)
+        private PublicKey deserializePublicKey(byte[] data)
                 throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
             KeySpec keySpec;
             if (isEC()) {
@@ -282,7 +282,7 @@ public class DHKEM implements KEMSpi {
             return KeyFactory.getInstance(keyAlgorithm).generatePublic(keySpec);
         }
 
-        private SecretKey DH(PrivateKey skE, PublicKey pkR)
+        private SecretKey dh(PrivateKey skE, PublicKey pkR)
                 throws NoSuchAlgorithmException, InvalidKeyException {
             KeyAgreement ka = KeyAgreement.getInstance(kaAlgorithm);
             ka.init(skE);
@@ -296,12 +296,12 @@ public class DHKEM implements KEMSpi {
         private SecretKey deriveKey(String alg, int from, int to,
                 byte[] kem_context, SecretKey... dhs)
                 throws NoSuchAlgorithmException {
-            if (from == 0 && to == Nsecret) {
-                return ExtractAndExpand(kem_context, alg, dhs);
+            if (from == 0 && to == nsecret) {
+                return extractAndExpand(kem_context, alg, dhs);
             } else {
                 // First get shared secrets in "Generic" and then get a slice
                 // of it in the requested algorithm.
-                var fullKey = ExtractAndExpand(kem_context, "Generic", dhs);
+                var fullKey = extractAndExpand(kem_context, "Generic", dhs);
                 if ("RAW".equalsIgnoreCase(fullKey.getFormat())) {
                     byte[] km = fullKey.getEncoded();
                     if (km == null) {
@@ -322,14 +322,14 @@ public class DHKEM implements KEMSpi {
             }
         }
 
-        private SecretKey ExtractAndExpand(byte[] kem_context, String alg, SecretKey... dhs)
+        private SecretKey extractAndExpand(byte[] kem_context, String alg, SecretKey... dhs)
                 throws NoSuchAlgorithmException {
             var kdf = KDF.getInstance(hkdfAlgorithm);
             var builder = labeledExtract(suiteId, EAE_PRK);
             for (var dh : dhs) builder.addIKM(dh);
             try {
                 return kdf.deriveKey(alg,
-                        labeledExpand(builder, suiteId, SHARED_SECRET, kem_context, Nsecret));
+                        labeledExpand(builder, suiteId, SHARED_SECRET, kem_context, nsecret));
             } catch (InvalidAlgorithmParameterException e) {
                 throw new ProviderException(e);
             }
@@ -371,7 +371,7 @@ public class DHKEM implements KEMSpi {
                         throw new ProviderException("DeriveKeyPairError");
                     }
                     byte[] bytes = kdf.deriveData(labeledExpand(builder,
-                            suiteId, CANDIDATE, I2OSP(counter, 1), Nsk));
+                            suiteId, CANDIDATE, i2OSP(counter, 1), nsk));
                     // bitmask is defined to be 0xFF for P-256 and P-384, and 0x01 for P-521
                     if (this == Params.P521) {
                         bytes[0] = (byte) (bytes[0] & 0x01);
@@ -379,17 +379,17 @@ public class DHKEM implements KEMSpi {
                     sk = new BigInteger(1, (bytes));
                     counter = counter + 1;
                 }
-                PrivateKey k = DeserializePrivateKey(sk.toByteArray());
+                PrivateKey k = deserializePrivateKey(sk.toByteArray());
                 return new KeyPair(getPublicKey(k), k);
             } else {
                 byte[] sk = kdf.deriveData(labeledExpand(builder,
-                        suiteId, SK, EMPTY, Nsk));
-                PrivateKey k = DeserializePrivateKey(sk);
+                        suiteId, SK, EMPTY, nsk));
+                PrivateKey k = deserializePrivateKey(sk);
                 return new KeyPair(getPublicKey(k), k);
             }
         }
 
-        private PrivateKey DeserializePrivateKey(byte[] data) throws Exception {
+        private PrivateKey deserializePrivateKey(byte[] data) throws Exception {
             KeySpec keySpec = isEC()
                     ? new ECPrivateKeySpec(new BigInteger(1, (data)), (NamedCurve) spec)
                     : new XECPrivateKeySpec(spec, data);
@@ -486,7 +486,7 @@ public class DHKEM implements KEMSpi {
     // I2OSP(n, w) as defined in RFC 9180 Section 3.
     // In DHKEM and HPKE, number is always <65536
     // and converted to at most 2 bytes.
-    public static byte[] I2OSP(int n, int w) {
+    public static byte[] i2OSP(int n, int w) {
         assert n < 65536;
         assert w == 1 || w == 2;
         if (w == 1) {
@@ -506,22 +506,22 @@ public class DHKEM implements KEMSpi {
 
     // Create a labeled info from info and labels
     private static byte[] labeledInfo(
-            byte[] suiteId, byte[] label, byte[] info, int L) {
-        return concat(I2OSP(L, 2), HPKE_V1, suiteId, label, info);
+            byte[] suiteId, byte[] label, byte[] info, int length) {
+        return concat(i2OSP(length, 2), HPKE_V1, suiteId, label, info);
     }
 
     // LabeledExpand from a builder
     public static HKDFParameterSpec labeledExpand(
             HKDFParameterSpec.Builder builder,
-            byte[] suiteId, byte[] label, byte[] info, int L) {
+            byte[] suiteId, byte[] label, byte[] info, int length) {
         return builder.thenExpand(
-                labeledInfo(suiteId, label, info, L), L);
+                labeledInfo(suiteId, label, info, length), length);
     }
 
     // LabeledExpand from a prk
     public static HKDFParameterSpec labeledExpand(
-            SecretKey prk, byte[] suiteId, byte[] label, byte[] info, int L) {
+            SecretKey prk, byte[] suiteId, byte[] label, byte[] info, int length) {
         return HKDFParameterSpec.expandOnly(
-                prk, labeledInfo(suiteId, label, info, L), L);
+                prk, labeledInfo(suiteId, label, info, length), length);
     }
 }
