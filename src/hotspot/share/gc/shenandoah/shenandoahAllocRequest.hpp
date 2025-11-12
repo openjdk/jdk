@@ -35,19 +35,26 @@ public:
   // bit 1: LAB (0) or shared (1) alloc
   // bit 2: if LAB, then GCLAB (0) or PLAB (1)
   // bit 3: if mutator, then normal (0) or CDS (1)
+  // bit 5: if GC and shared, then YOUNG_GENERATION (0) or OLD_GENERATION (1); PLAB is always OLD_GENERATION (1)
+  // bit 6: if GC shared OLD_GENERATION alloc, then non-promotion (0) or promotion (1).
   typedef int Type;
 
-  static constexpr int bit_gc_alloc   = 1 << 1;
-  static constexpr int bit_lab_alloc  = 1 << 2;
-  static constexpr int bit_plab_alloc = 1 << 3;
-  static constexpr int bit_cds_alloc  = 1 << 4;
+  static constexpr int bit_gc_alloc         = 1 << 1;
+  static constexpr int bit_lab_alloc        = 1 << 2;
+  static constexpr int bit_plab_alloc       = 1 << 3;
+  static constexpr int bit_cds_alloc        = 1 << 4;
+  static constexpr int bit_old_alloc        = 1 << 5;
+  static constexpr int bit_promotion_alloc  = 1 << 6;
 
-  static constexpr Type _alloc_shared    = 0;
-  static constexpr Type _alloc_tlab      = bit_lab_alloc;
-  static constexpr Type _alloc_cds       = bit_cds_alloc;
-  static constexpr Type _alloc_shared_gc = bit_gc_alloc;
-  static constexpr Type _alloc_gclab     = bit_gc_alloc | bit_lab_alloc;
-  static constexpr Type _alloc_plab      = bit_gc_alloc | bit_lab_alloc | bit_plab_alloc;
+
+  static constexpr Type _alloc_shared              = 0;
+  static constexpr Type _alloc_tlab                = bit_lab_alloc;
+  static constexpr Type _alloc_cds                 = bit_cds_alloc;
+  static constexpr Type _alloc_shared_gc           = bit_gc_alloc;
+  static constexpr Type _alloc_shared_gc_old       = _alloc_shared_gc | bit_old_alloc;
+  static constexpr Type _alloc_shared_gc_promotion = _alloc_shared_gc_old | bit_promotion_alloc;
+  static constexpr Type _alloc_gclab               = bit_gc_alloc | bit_lab_alloc;
+  static constexpr Type _alloc_plab                = bit_gc_alloc | bit_lab_alloc | bit_plab_alloc | bit_old_alloc;
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
@@ -59,6 +66,10 @@ public:
         return "Shared";
       case _alloc_shared_gc:
         return "Shared GC";
+      case _alloc_shared_gc_old:
+        return "Shared GC Old";
+      case _alloc_shared_gc_promotion:
+        return "Shared GC Promotion";
       case _alloc_gclab:
         return "GCLAB";
       case _alloc_plab:
@@ -88,20 +99,14 @@ private:
   // This is the type of the request.
   Type _alloc_type;
 
-  // This is the generation which the request is targeting.
-  ShenandoahAffiliation const _affiliation;
-
-  // True if this request is trying to copy any object from young to old (promote).
-  bool _is_promotion;
-
 #ifdef ASSERT
   // Check that this is set before being read.
   bool _actual_size_set;
 #endif
 
-  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type, ShenandoahAffiliation affiliation, bool is_promotion = false) :
+  ShenandoahAllocRequest(size_t _min_size, size_t _requested_size, Type _alloc_type) :
           _min_size(_min_size), _requested_size(_requested_size),
-          _actual_size(0), _waste(0), _alloc_type(_alloc_type), _affiliation(affiliation), _is_promotion(is_promotion)
+          _actual_size(0), _waste(0), _alloc_type(_alloc_type)
 #ifdef ASSERT
           , _actual_size_set(false)
 #endif
@@ -109,31 +114,34 @@ private:
 
 public:
   static inline ShenandoahAllocRequest for_tlab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab, ShenandoahAffiliation::YOUNG_GENERATION);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_tlab);
   }
 
   static inline ShenandoahAllocRequest for_gclab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab, ShenandoahAffiliation::YOUNG_GENERATION);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_gclab);
   }
 
   static inline ShenandoahAllocRequest for_plab(size_t min_size, size_t requested_size) {
-    return ShenandoahAllocRequest(min_size, requested_size, _alloc_plab, ShenandoahAffiliation::OLD_GENERATION);
+    return ShenandoahAllocRequest(min_size, requested_size, _alloc_plab);
   }
 
   static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahAffiliation affiliation, bool is_promotion = false) {
     if (is_promotion) {
       assert(affiliation == ShenandoahAffiliation::OLD_GENERATION, "Should only promote to old generation");
-      return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc, affiliation, true);
+      return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc_promotion);
     }
-    return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc, affiliation);
+    if (affiliation ==OLD_GENERATION) {
+      return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc_old);
+    }
+    return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc);
   }
 
   static inline ShenandoahAllocRequest for_shared(size_t requested_size) {
-    return ShenandoahAllocRequest(0, requested_size, _alloc_shared, ShenandoahAffiliation::YOUNG_GENERATION);
+    return ShenandoahAllocRequest(0, requested_size, _alloc_shared);
   }
 
   static inline ShenandoahAllocRequest for_cds(size_t requested_size) {
-    return ShenandoahAllocRequest(0, requested_size, _alloc_cds, ShenandoahAffiliation::YOUNG_GENERATION);
+    return ShenandoahAllocRequest(0, requested_size, _alloc_cds);
   }
 
   inline size_t size() const {
@@ -187,23 +195,23 @@ public:
   }
 
   bool is_old() const {
-    return _affiliation == OLD_GENERATION;
+    return (_alloc_type & bit_old_alloc) != 0;
   }
 
   bool is_young() const {
-    return _affiliation == YOUNG_GENERATION;
+    return (_alloc_type & bit_old_alloc) == 0;
   }
 
   ShenandoahAffiliation affiliation() const {
-    return _affiliation;
+    return (_alloc_type & bit_old_alloc) == 0 ? YOUNG_GENERATION : OLD_GENERATION ;
   }
 
   const char* affiliation_name() const {
-    return shenandoah_affiliation_name(_affiliation);
+    return shenandoah_affiliation_name(affiliation());
   }
 
   bool is_promotion() const {
-    return _is_promotion;
+    return (_alloc_type & bit_promotion_alloc) != 0;
   }
 };
 
