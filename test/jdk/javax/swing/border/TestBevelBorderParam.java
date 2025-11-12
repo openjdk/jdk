@@ -34,30 +34,29 @@ import javax.swing.border.BevelBorder;
 public class TestBevelBorderParam {
 
     public static void main(String[] args) throws Exception {
-        boolean failure = false;
         StringBuilder str = new StringBuilder();
+
         try {
             BorderFactory.createBevelBorder(BevelBorder.RAISED, null, null);
         } catch (NullPointerException ex) {
-            failure = true;
             str.append("\n");
             str.append("BorderFactory.createBevelBorder throws NPE for null highlight and shadow");
         }
+
         try {
             BorderFactory.createSoftBevelBorder(BevelBorder.RAISED, null, null);
         } catch (NullPointerException e) {
-            failure = true;
             str.append("\n");
             str.append("BorderFactory.createSoftBevelBorder throws NPE for null highlight and shadow");
         }
+
         try {
             new BevelBorder(BevelBorder.RAISED, null, null);
         } catch (NullPointerException ex) {
-            failure = true;
             str.append("\n");
             str.append("BevelBorder constructor throws NPE for null highlight and shadow");
         }
-        if (failure) {
+        if (str.length() != 0) {
             throw new RuntimeException(str.toString());
         }
     }

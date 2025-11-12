@@ -95,8 +95,9 @@ public class BevelBorder extends AbstractBorder
      * @param shadow the color to use for the bevel shadow
      */
     public BevelBorder(int bevelType, Color highlight, Color shadow) {
-         this(bevelType, (highlight != null) ? highlight.brighter() : null,
-              highlight, shadow, (shadow != null) ? shadow.brighter() : null);
+        this(bevelType,
+             (highlight != null) ? highlight.brighter() : null, highlight,
+             shadow, (shadow != null) ? shadow.brighter() : null);
     }
 
     /**
