@@ -260,7 +260,8 @@ public sealed interface LazyConstant<T>
      * initialization by other threads atomically (i.e., it observes the
      * contents if and only if the initialization has already completed).
      * <p>
-     * If this lazy constant is initialized, the {@linkplain Object#toString()} of the
+     * If this lazy constant is initialized, an implementation-dependent string
+     * containing the {@linkplain Object#toString()} of the
      * contents will be returned; otherwise, an implementation-dependent string is
      * returned that indicates this lazy constant is not yet initialized.
      */

@@ -124,6 +124,16 @@ final class LazyConstantTest {
         assertSame(constant, c1);
     }
 
+    @Test
+    void toStringTest() {
+        Supplier<String> supplier = () -> "str";
+        LazyConstant<String> lazy = LazyConstant.of(supplier);
+        var expectedSubstring = "computing function=" + supplier;
+        assertTrue(lazy.toString().contains(expectedSubstring));
+        lazy.get();
+        assertTrue(lazy.toString().contains("str"));
+    }
+
     @ParameterizedTest
     @MethodSource("lazyConstants")
     void toStringUnset(LazyConstant<Integer> constant) {
