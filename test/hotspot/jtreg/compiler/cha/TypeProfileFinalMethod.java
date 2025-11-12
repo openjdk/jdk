@@ -101,6 +101,7 @@ public class TypeProfileFinalMethod {
                 "c1: { inline:[\"-" + Launcher.class.getName()+"::test1\"] }," +
                 // Make sure to inline test1 in C2 compilation
                 "c2: { inline:[\"+" + Launcher.class.getName()+"::test1\"]," +
+                // Print the inline tree for checking
                 "      PrintInlining:true }" +
                 "}]";
             WB.addCompilerDirective(directive);
