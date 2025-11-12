@@ -1605,7 +1605,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
   }
 
-  size_t ac = alloc_capacity(r);
   ShenandoahFreeSetPartitionId orig_partition;
   if (req.is_mutator_alloc()) {
     assert(req.type() == ShenandoahAllocRequest::_alloc_tlab ||
