@@ -38,7 +38,7 @@ class SpinCriticalSectionHelper {
 };
 
 // Short critical section. To be used when having a
-// mutex is considered to be expensive. 
+// mutex is considered to be expensive.
 class SpinCriticalSection {
 private:
   volatile int* const _lock;
@@ -72,7 +72,7 @@ public:
     // It is safe to not have any atomic operations here,
     // as a thread either sees a nullptr or a pointer to a thread which
     // succeeded in locking the lock. Comparison will fail in both
-    // cases if it is not a succeeded thread. 
+    // cases if it is not a succeeded thread.
     if (_lock_owner == Thread::current()) {
       SpinCriticalSectionHelper::SpinRelease(_lock);
     }
