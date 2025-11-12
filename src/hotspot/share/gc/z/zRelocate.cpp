@@ -1174,7 +1174,7 @@ public:
             has_affinity_current_node = true;
           }
 
-          // Perform the forwarding task.
+          // Perform the forwarding task
           claim_and_do_forwarding(forwarding);
           return true;
         }
@@ -1183,13 +1183,13 @@ public:
         current_node = (current_node + 1) % num_nodes;
         has_affinity_current_node = false;
 
-        // If we've looped back to the starting node, there's no more work to do
+        // If we've looped back to the starting node there's no more work to do
         if (current_node == start_node) {
           return false;
         }
       }
 
-      // No more work.
+      // No more work
       return false;
     };
 
