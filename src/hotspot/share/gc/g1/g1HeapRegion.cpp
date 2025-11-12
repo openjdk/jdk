@@ -428,7 +428,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
 void G1HeapRegion::print() const { print_on(tty); }
 
 void G1HeapRegion::print_on(outputStream* st) const {
-  st->print("|%4u", this->_hrm_index);
+  st->print("|%5u", this->_hrm_index);
   st->print("|" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
   st->print("|%3d%%", (int) ((double) used() * 100 / capacity()));
@@ -442,7 +442,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %-9s ",
             p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
