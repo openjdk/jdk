@@ -511,8 +511,6 @@ protected:
     return (BasicType) btvalue;
   }
 
-  // VS warns (C4146) about unary minus of unsigned.
-  PRAGMA_DISABLE_MSVC_WARNING(4146)
   // Return a value containing a single set bit that is in the bitset difference between the
   // layout helpers for array-of-boolean and array-of-byte.
   static int layout_helper_boolean_diffbit() {
