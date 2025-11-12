@@ -317,13 +317,12 @@ public class BasicImageReader implements AutoCloseable {
     }
 
     public String[] getEntryNames() {
-        int[] attributeOffsets = new int[offsets.capacity()];
-        offsets.get(attributeOffsets);
-        return IntStream.of(attributeOffsets)
-                        .filter(o -> o != 0)
-                        .mapToObj(o -> ImageLocation.readFrom(this, o).getFullName())
-                        .sorted()
-                        .toArray(String[]::new);
+        return IntStream.range(0, offsets.capacity())
+                .map(offsets::get)
+                .filter(o -> o != 0)
+                .mapToObj(o -> ImageLocation.readFrom(this, o).getFullName())
+                .sorted()
+                .toArray(String[]::new);
     }
 
     ImageLocation getLocation(int offset) {
