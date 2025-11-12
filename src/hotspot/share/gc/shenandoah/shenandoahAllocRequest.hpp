@@ -31,23 +31,25 @@
 
 class ShenandoahAllocRequest : StackObj {
 public:
+  // Small values for mutator alloc, larger values for gc alloc;
+  // odd for lab alloc, and even value for non-lab alloc;
   enum Type {
+    _alloc_cds        = 0, // Allocate for CDS
+    _alloc_tlab       = 1, // Allocate TLAB
     _alloc_shared     = 2, // Allocate common, outside of TLAB
-    _alloc_cds        = 4, // Allocate for CDS
-    _alloc_tlab       = 5, // Allocate TLAB
-    _alloc_shared_gc  = 6, // Allocate common, outside of GCLAB/PLAB
-    _alloc_gclab      = 7, // Allocate GCLAB
-    _alloc_plab       = 9  // Allocate PLAB
+    _alloc_shared_gc  = 4, // Allocate common, outside of GCLAB/PLAB
+    _alloc_gclab      = 5, // Allocate GCLAB
+    _alloc_plab       = 7  // Allocate PLAB
   };
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
-      case _alloc_shared:
-        return "Shared";
-      case _alloc_cds:
-        return "CDS";
       case _alloc_tlab:
         return "TLAB";
+      case _alloc_cds:
+        return "CDS";
+      case _alloc_shared:
+        return "Shared";
       case _alloc_shared_gc:
         return "Shared GC";
       case _alloc_gclab:
@@ -166,7 +168,7 @@ public:
   }
 
   inline bool is_mutator_alloc() const {
-    return _alloc_type <= _alloc_tlab;
+    return _alloc_type <= _alloc_shared;
   }
 
   inline bool is_gc_alloc() const {
