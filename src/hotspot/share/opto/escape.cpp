@@ -1337,7 +1337,6 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_work
       reduce_phi_on_cmp(use);
       _compile->print_method(PHASE_EA_AFTER_PHI_CMP_REDUCTION, 6, use);
     }
-
   }
 
   _igvn->set_delay_transform(delay);
