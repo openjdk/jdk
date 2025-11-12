@@ -108,19 +108,16 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
 
 
     protected boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
-        boolean isAppLimited;
-        isAppLimited = sentTime.isAfter(lastFullWindow);
+        boolean isAppLimited = sentTime.isAfter(lastFullWindow);
         if (!isAppLimited) {
             if (wEstBytes < cwndPriorBytes) {
                 wEstBytes += Math.max((long) (ALPHA * maxDatagramSize * packetBytes / congestionWindow), 1);
             } else {
                 wEstBytes += Math.max((long)maxDatagramSize * packetBytes / congestionWindow, 1);
             }
-            // Wcubic(t) = C * (t-K [seconds])^3 + Wmax (segments)
-            // target = Wcubic(t)
-            // this is less aggressive than RFC 9438, which uses target=Wcubic(t+RTT),
-            // but seems to work well enough
-            double dblTargetBytes = (C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
+            // target = Wcubic(t + RTT)
+            long rttNanos = TimeUnit.MICROSECONDS.toNanos(rttEstimator.state().smoothedRttMicros());
+            double dblTargetBytes = wCubicBytes(timeNanos + rttNanos);
             long targetBytes;
             // not sure if dblTarget can overflow a long, but 1.5 congestionWindow can not.
             if (dblTargetBytes > 1.5 * congestionWindow) {
@@ -136,6 +133,11 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
             }
         }
         return isAppLimited;
+    }
+
+    // Wcubic(t) = C * (t-K [seconds])^3 + Wmax (segments)
+    private double wCubicBytes(long timeNanos) {
+        return (C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
     }
 
     protected void onCongestionEvent(Deadline sentTime) {

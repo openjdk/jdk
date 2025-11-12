@@ -189,7 +189,7 @@ public class CubicTest {
          */
         System.err.println("***** testCubic *****");
         QuicRttEstimator rtt = new QuicRttEstimator();
-        rtt.consumeRttSample(4_000_000, 0, Deadline.MIN);
+        rtt.consumeRttSample(1_500_000, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
         long cwnd = cc.congestionWindow();
@@ -203,7 +203,7 @@ public class CubicTest {
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
         assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
         // advance "t" to 3 seconds,
-        Deadline sentTime = timeSource.advanceMillis(3000);
+        Deadline sentTime = timeSource.advanceMillis(1500);
         // send and acknowledge a whole cwnd of data
         tmp = (int) cc.congestionWindow();
         cc.packetSent(tmp);
