@@ -178,7 +178,7 @@ public class CubicTest {
          Manually created test vector:
          - ramp up the congestion window to 36 packets
          - trigger congestion; window will be reduced to 25.2 packets, K=3 seconds
-         - to make things easier, set RTT = 3+ seconds, advance "t" to 3 seconds,
+         - set RTT = 1.5 seconds, advance "t" to 1.5 seconds,
            send and acknowledge a whole cwnd of data
          - cwnd should be back to 36 packets, give or take a few bytes.
          */
@@ -197,7 +197,7 @@ public class CubicTest {
         // trigger congestion; window will be reduced to 25.2 packets, K=3 seconds
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
         assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected reduced congestion window");
-        // advance "t" to 3 seconds,
+        // advance "t" to 1.5 seconds,
         Deadline sentTime = timeSource.advanceMillis(1500);
         // send and acknowledge a whole cwnd of data
         tmp = (int) cc.congestionWindow();
