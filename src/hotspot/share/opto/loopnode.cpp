@@ -1794,7 +1794,6 @@ jlong PhaseIdealLoop::LoopIVStride::compute_non_zero_stride_con(const BoolTest::
 void CountedLoopConverter::LoopStructure::build() {
   _is_valid = false;
 
-  _back_control = _phase->loop_exit_control(_head, _loop);
   if (_back_control == nullptr) {
     return;
   }
@@ -2409,7 +2408,7 @@ bool CountedLoopConverter::LoopStructure::is_infinite_loop(const TypeInteger* li
   return false;
 }
 
-bool CountedLoopConverter::has_truncation_wrap(CountedLoopNode::TruncatedIncrement truncation, Node* phi,
+bool CountedLoopConverter::has_truncation_wrap(TruncatedIncrement truncation, Node* phi,
                                                jlong stride_con) {
   // If iv trunc type is smaller than int (i.e., short/char/byte), check for possible wrap.
   if (!TypeInteger::bottom(_iv_bt)->higher_equal(truncation.trunc_type())) {
@@ -2736,7 +2735,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
 // Check if there is a dominating loop limit check of the form 'init < limit' starting at the loop entry.
 // If there is one, then we do not need to create an additional Loop Limit Check Predicate.
 bool CountedLoopConverter::has_dominating_loop_limit_check(Node* init_trip, Node* limit, const jlong stride_con,
-                                                     const BasicType iv_bt, Node* loop_entry) const {
+                                                           const BasicType iv_bt, Node* loop_entry) const {
   PhaseIterGVN& _igvn = _phase->igvn();
 
   // Eagerly call transform() on the Cmp and Bool node to common them up if possible. This is required in order to
@@ -3068,7 +3067,7 @@ Node* LoopLimitNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 // Match increment with optional truncation:
 // CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
-void CountedLoopNode::TruncatedIncrement::build(Node* expr) {
+void CountedLoopConverter::TruncatedIncrement::build(Node* expr) {
   _is_valid = false;
 
   // Quick cutouts:

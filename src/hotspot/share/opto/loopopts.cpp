@@ -2843,7 +2843,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     Node* phi = cmp1;
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
-      CountedLoopNode::TruncatedIncrement add(T_INT);
+      CountedLoopConverter::TruncatedIncrement add(T_INT);
       add.build(in);
       if (add.is_valid() && add.incr()->in(1) == phi) {
         add2 = add.incr()->in(2);
@@ -2853,7 +2853,7 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
   } else {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
-    CountedLoopNode::TruncatedIncrement add(T_INT);
+    CountedLoopConverter::TruncatedIncrement add(T_INT);
     add.build(addtrunc);
     if (add.is_valid() && add.incr()->in(1)->is_Phi()) {
       Node* phi = add.incr()->in(1);
@@ -4285,7 +4285,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     // if the extra phi is removed
     inner = 0;
     for (uint i = 1; i < loop_incr->req(); ++i) {
-      CountedLoopNode::TruncatedIncrement increment(T_INT);
+      CountedLoopConverter::TruncatedIncrement increment(T_INT);
       increment.build(loop_incr->in(i));
       if (!increment.is_valid()) {
         continue;

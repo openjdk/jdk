@@ -273,32 +273,6 @@ public:
   CountedLoopEndNode* loopexit() const { return (CountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
   int   stride_con() const;
 
-  // Match increment with optional truncation
-  class TruncatedIncrement {
-    bool _is_valid = false;
-
-    BasicType _bt;
-
-    Node* _incr = nullptr;
-    Node* _outer_trunc = nullptr;
-    Node* _inner_trunc = nullptr;
-    const TypeInteger* _trunc_type = nullptr;
-
-  public:
-    TruncatedIncrement(BasicType bt) :
-      _bt(bt) {}
-
-    void build(Node* expr);
-
-    bool is_valid() const { return _is_valid; }
-    Node* incr() const { return _incr; }
-
-    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
-    Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
-    Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
-    const TypeInteger* trunc_type() const { return _trunc_type; }
-  };
-
   // A 'main' loop has a pre-loop and a post-loop.  The 'main' loop
   // can run short a few iterations and may start a few iterations in.
   // It will be RCE'd and unrolled and aligned.
@@ -2060,6 +2034,32 @@ public:
 class CountedLoopConverter {
   friend class PhaseIdealLoop;
 
+  // Match increment with optional truncation
+  class TruncatedIncrement {
+    bool _is_valid = false;
+
+    BasicType _bt;
+
+    Node* _incr = nullptr;
+    Node* _outer_trunc = nullptr;
+    Node* _inner_trunc = nullptr;
+    const TypeInteger* _trunc_type = nullptr;
+
+  public:
+    TruncatedIncrement(BasicType bt) :
+      _bt(bt) {}
+
+    void build(Node* expr);
+
+    bool is_valid() const { return _is_valid; }
+    Node* incr() const { return _incr; }
+
+    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
+    Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
+    Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
+    const TypeInteger* trunc_type() const { return _trunc_type; }
+  };
+
   class LoopStructure {
     bool _is_valid = false;
 
@@ -2071,7 +2071,7 @@ class CountedLoopConverter {
     Node* _back_control = nullptr;
     PhaseIdealLoop::LoopExitTest _exit_test;
     PhaseIdealLoop::LoopIVIncr _iv_incr;
-    CountedLoopNode::TruncatedIncrement _truncated_increment;
+    TruncatedIncrement _truncated_increment;
     PhaseIdealLoop::LoopIVStride _stride;
     PhiNode* _phi = nullptr;
     SafePointNode* _safepoint = nullptr;
@@ -2098,7 +2098,7 @@ class CountedLoopConverter {
     Node* back_control() const { return _back_control; }
     PhaseIdealLoop::LoopExitTest& exit_test() { return _exit_test; }
     PhaseIdealLoop::LoopIVIncr& iv_incr() { return _iv_incr; }
-    CountedLoopNode::TruncatedIncrement& truncated_increment() { return _truncated_increment; }
+    TruncatedIncrement& truncated_increment() { return _truncated_increment; }
     PhaseIdealLoop::LoopIVStride& stride() { return _stride; }
     PhiNode* phi() const { return _phi; }
     SafePointNode* sfpt() const { return _safepoint; }
@@ -2132,7 +2132,7 @@ class CountedLoopConverter {
                                        Node* loop_entry) const;
 
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask) const;
-  bool has_truncation_wrap(CountedLoopNode::TruncatedIncrement truncation, Node* phi, jlong stride_con);
+  bool has_truncation_wrap(TruncatedIncrement truncation, Node* phi, jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
   bool is_safepoint_invalid(SafePointNode* sfpt) const;
 
