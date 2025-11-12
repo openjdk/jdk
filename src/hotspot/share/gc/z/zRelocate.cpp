@@ -1217,7 +1217,7 @@ public:
 
     if (UseNUMA && has_affinity) {
       // Restore the affinity of the thread so that it isn't bound to a specific
-      // node any more.
+      // node any more
       os::numa_set_thread_affinity(Thread::current(), -1);
     }
   }
