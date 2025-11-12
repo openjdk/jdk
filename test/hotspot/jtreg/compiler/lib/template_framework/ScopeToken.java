@@ -23,8 +23,6 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
 /**
  * A {@link ScopeToken} represents a scope in a {@link Template}, which can be
  * created with {@link Template#scope}, {@link Template#transparentScope}, and other related methods.
