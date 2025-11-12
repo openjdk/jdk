@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @bug 8123456
  * @summary Test JAAS access to in-memory credential caches
  * @library /test/lib ../auto
  * @requires os.family != "windows"

@@ -69,6 +69,8 @@ static char* jstring_to_cstring(JNIEnv *env, jstring jstr) {
     if (utf_chars == NULL) return NULL;
 
     char *result = strdup(utf_chars);
+    if (result == NULL) return NULL;
+
     (*env)->ReleaseStringUTFChars(env, jstr, utf_chars);
     return result;
 }
@@ -139,7 +141,6 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_setDefaultCache
     free(cache_name);
     return JNI_TRUE;
 }
-
 
 /**
  * Copy real Kerberos credentials from a source cache to an in-memory cache.
