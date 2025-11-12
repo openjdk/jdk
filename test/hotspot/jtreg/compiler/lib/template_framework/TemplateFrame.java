@@ -166,8 +166,8 @@ class TemplateFrame {
 
     void setFuelCost(float fuelCost) {
         this.fuelCost = fuelCost;
-        if (this.isTransparentForFuel) {
-            this.parent.setFuelCost(fuelCost);
+        if (isTransparentForFuel) {
+            parent.setFuelCost(fuelCost);
         }
     }
 }

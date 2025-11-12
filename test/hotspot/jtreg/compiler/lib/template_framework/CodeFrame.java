@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The {@link CodeFrame} represents a frame (i.e. scope) of generated code by appending {@link Code} to the {@code 'codeList'}
+ * The {@link CodeFrame} represents a frame (i.e. scope) of generated code by appending {@link Code} to the {@link #codeList}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
  * {@link Template#addDataName}. {@link Hook}s can be added to a code frame, which allows code to be inserted at that
  * location later.
@@ -42,7 +42,7 @@ import java.util.List;
  * diverge from the nesting order of the {@link Template} when using {@link Hook#insert}, where
  * the execution jumps from the current (caller) {@link CodeFrame} scope to the scope of the
  * {@link Hook#anchor}. This ensures that the {@link Name}s of the anchor scope are accessed,
- * and not of the ones from the caller scope. Once the {@link Hook#insert}ion is complete, we
+ * and not the ones from the caller scope. Once the {@link Hook#insert}ion is complete, we
  * jump back to the caller {@link CodeFrame}.
  *
  * <p>
@@ -55,9 +55,7 @@ import java.util.List;
  */
 
 /*
- * Below, we look at a few examples, and show the use of CodeFrames (c) and TemplateFrames (t).
- *
- * Example1: anchoring and insertion in the same Template
+ * Below, we look at an example, and show the use of CodeFrames (c) and TemplateFrames (t).
  *
  * Explanations:
  *  - Generally, every scope has a CodeFrame and a TemplateFrame. There can be multiple
@@ -97,18 +95,18 @@ import java.util.List;
  *   t1 c1  t2 c2b ... t3 c3                        +---- t4 ----c4
  *   t1 c1  t2 c2b ... t3 c3                              t4     c4
  *   t1 c1  t2 c2b ... t3 c3 <-- TemplateFrame nesting ---t4     c4
- *   t1 c1  t2 c2b ... t3 c3     with hashtag             t4     c4
- *   t1 c1  t2 c2b ... t3 c3     and setFuelCost          t4     c4
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4 "use hashtag #x"           -> t: hashtag queried in insertion and caller scope
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4                               c: code added to anchoring scope
+ *   t1 c1  t2 c2b ... t3 c3     with hashtag             t4     c4                            // t: Concerns Template Frame
+ *   t1 c1  t2 c2b ... t3 c3     and setFuelCost          t4     c4                            // c: Concerns Code Frame
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 "use hashtag #x"           -> t: hashtag queried in Insertion (t4) and Caller Scope (t3)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                               c: code added to Anchoring Scope (c2a)
  *   t1 c1  t2 c2b ... t3 c3                              t4     c4
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4 let("x", 42)               -> t: hashtag escapes to caller scope because
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  insertion scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 let("x", 42)               -> t: hashtag definition escapes to Caller Scope (t3) because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  Insertion Scope is transparent
  *   t1 c1  t2 c2b ... t3 c3                              t4     c4
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4 dataNames(...)...sample()  -> c: sample from insertion and anchoring scope
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4 addDataName(...)           -> c: names escape to the caller scope because
- *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  insertion scope is transparent
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 dataNames(...)...sample()  -> c: sample from Insertion (c4) and Anchoring Scope (c2a)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  (CodeFrame nesting: c2a -> c4)
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4 addDataName(...)           -> c: names escape to the Caller Scope (c3) because
+ *   t1 c1  t2 c2b ... t3 c3                              t4     c4                                  Insertion Scope is transparent
  *   t1 c1  t2 c2b ... t3 c3                              t4     c4
  *   t1 c1  t2 c2b ... t3 c3                              ))
  *   t1 c1  t2 c2b ... t3 c3

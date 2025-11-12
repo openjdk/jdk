@@ -284,7 +284,7 @@ final class Renderer {
         }
 
         // Tear down CodeFrame nesting. If no nesting happened, the code is already
-        // in the currendCodeFrame.
+        // in the currentCodeFrame.
         if (!isTransparentForNames) {
             outerCodeFrame.addCode(currentCodeFrame.getCode());
             currentCodeFrame = outerCodeFrame;

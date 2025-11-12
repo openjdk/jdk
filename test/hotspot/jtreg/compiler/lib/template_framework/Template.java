@@ -771,7 +771,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * also be found in the interface comment for {@link Template}.
      *
      * <p>
-     * In some cases, it can be helpful to have different {@link setFuelCost} within
+     * In some cases, it can be helpful to have different {@link #setFuelCost} within
      * a single template, depending on the code nesting depth. Example:
      *
      * <p>
@@ -788,7 +788,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *         // CODE2: with the for-loop, we already have a deeper nesting
      *         //        depth, and recursive template uses should not get
      *         //        as much fuel as in CODE1.
-     *     )
+     *     ),
      *     """
      *     }
      *     """

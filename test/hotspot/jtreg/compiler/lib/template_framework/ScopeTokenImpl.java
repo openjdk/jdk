@@ -30,8 +30,9 @@ import java.util.List;
  * hashtag replacements and {@link Template#setFuelCost} are local, or escape to
  * outer scopes.
  *
+ * <p>
  * Note: We want the {@link ScopeToken} to be public, but the internals of the
- *       record should be private. One way too solve this is with a public interface
+ *       record should be private. One way to solve this is with a public interface
  *       that exposes nothing but its name, and a private implementation via a
  *       record that allows easy destructuring with pattern matching.
  */

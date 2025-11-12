@@ -91,7 +91,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         }
 
         // Wrap the FilteredSet as a Predicate.
-        private static record StructuralNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+        private record StructuralNamePredicate(FilteredSet fs) implements NameSet.Predicate {
             public boolean check(Name type) {
                 return fs.check(type);
             }
@@ -175,7 +175,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sample(Function<StructuralName, ScopeToken> function) {
-            return new NameSampleToken<StructuralName>(predicate(), null, null, function);
+            return new NameSampleToken<>(predicate(), null, null, function);
         }
 
         /**
@@ -245,7 +245,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token toList(Function<List<StructuralName>, ScopeToken> function) {
-            return new NamesToListToken(predicate(), function);
+            return new NamesToListToken<>(predicate(), function);
         }
 
         /**
@@ -259,7 +259,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(Function<StructuralName, ScopeToken> function) {
-            return new NameForEachToken<StructuralName>(predicate(), null, null, function);
+            return new NameForEachToken<>(predicate(), null, null, function);
         }
 
         /**
@@ -283,7 +283,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(String name, String type, Function<StructuralName, ScopeToken> function) {
-            return new NameForEachToken<StructuralName>(predicate(), name, type, function);
+            return new NameForEachToken<>(predicate(), name, type, function);
         }
     }
 }

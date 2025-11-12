@@ -116,7 +116,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
         }
 
         // Wrap the FilteredSet as a Predicate.
-        private static record DataNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+        private record DataNamePredicate(FilteredSet fs) implements NameSet.Predicate {
             public boolean check(Name type) {
                 return fs.check(type);
             }
@@ -202,7 +202,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sample(Function<DataName, ScopeToken> function) {
-            return new NameSampleToken<DataName>(predicate(), null, null, function);
+            return new NameSampleToken<>(predicate(), null, null, function);
         }
 
         /**
@@ -326,7 +326,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token toList(Function<List<DataName>, ScopeToken> function) {
-            return new NamesToListToken(predicate(), function);
+            return new NamesToListToken<>(predicate(), function);
         }
 
         /**
@@ -334,13 +334,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * making each of these {@link DataName}s available to a separate inner scope.
          *
          * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
-         *                 for each of the {@link DataName}s in the filtereds set.
+         *                 for each of the {@link DataName}s in the filtered set.
          * @return The token representing the for-each execution and the respective inner scopes.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(Function<DataName, ScopeToken> function) {
-            return new NameForEachToken<DataName>(predicate(), null, null, function);
+            return new NameForEachToken<>(predicate(), null, null, function);
         }
 
         /**
@@ -364,7 +364,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token forEach(String name, String type, Function<DataName, ScopeToken> function) {
-            return new NameForEachToken<DataName>(predicate(), name, type, function);
+            return new NameForEachToken<>(predicate(), name, type, function);
         }
     }
 }
