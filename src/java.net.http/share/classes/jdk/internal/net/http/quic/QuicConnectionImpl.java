@@ -368,7 +368,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     private static QuicCongestionController createCongestionController
             (String dbgTag, QuicRttEstimator rttEstimator) {
-        String algo = System.getProperty("jdk.httpclient.quic.congestionController", "cubic");
+        String algo = System.getProperty("jdk.internal.httpclient.quic.congestionController", "cubic");
         if (algo.equalsIgnoreCase("reno")) {
             return new QuicRenoCongestionController(dbgTag, rttEstimator);
         } else {
