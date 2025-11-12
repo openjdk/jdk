@@ -25,6 +25,7 @@
 
 package jdk.internal.util;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
@@ -37,6 +38,7 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  * @since 21
  */
 public final class DecimalDigits {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
@@ -460,9 +462,8 @@ public final class DecimalDigits {
     public static void appendPair(StringBuilder buf, int v) {
         int packed = DIGITS[v & 0x7f];
         buf.append(
-                SharedSecrets.getJavaLangAccess()
-                        .uncheckedNewStringWithLatin1Bytes(
-                                new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8)}));
+                JLA.uncheckedNewStringWithLatin1Bytes(
+                        new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8)}));
     }
 
     /**
@@ -483,8 +484,7 @@ public final class DecimalDigits {
         int y01 = v / 100;
         int packed = DIGITS[y01 & 0x7f] | (DIGITS[(v - y01 * 100) & 0x7f] << 16);
         buf.append(
-                SharedSecrets.getJavaLangAccess()
-                        .uncheckedNewStringWithLatin1Bytes(
-                                new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8), (byte) (packed >> 16), (byte) (packed >> 24)}));
+                JLA.uncheckedNewStringWithLatin1Bytes(
+                        new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8), (byte) (packed >> 16), (byte) (packed >> 24)}));
     }
 }
