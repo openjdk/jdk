@@ -298,7 +298,6 @@ public abstract class VerifyJimage implements Runnable {
                 try (Stream<Path> files = Files.walk(modDir)) {
                     files.map(modDir::relativize)
                             .filter(ClassLoadingVerifier::isClassFile)
-                            .map(Object::toString)
                             .map(ClassLoadingVerifier::toClassName)
                             .forEach(cn -> loadClass(cn, loader));
                 } catch (IOException ex) {
@@ -320,9 +319,14 @@ public abstract class VerifyJimage implements Runnable {
             }
         }
 
-        /** Maps a module-relative JRT path to its corresponding class name. */
-        private static String toClassName(String path) {
-            return path.substring(0, path.length() - CLASS_SUFFIX.length()).replace('/', '.');
+        /**
+         * Maps a module-relative JRT path of a class file to its corresponding
+         * fully-qualified class name.
+         */
+        private static String toClassName(Path path) {
+            // JRT uses '/' as the separator, and relative paths don't start with '/'.
+            String s = path.toString();
+            return s.substring(0, s.length() - CLASS_SUFFIX.length()).replace('/', '.');
         }
 
         /** Whether a module-relative JRT file system path is a class file. */
