@@ -53,7 +53,9 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # add --icf=all (Identical Code Folding — merges identical functions)
     BASIC_LDFLAGS="-Wl,-z,defs -Wl,-z,relro -Wl,-z,now -Wl,--no-as-needed -Wl,--exclude-libs,ALL"
     if test "x$LINKER_TYPE" = "xgold"; then
-      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--icf=all"
+      if test x$DEBUG_LEVEL = xrelease; then
+        BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,--icf=all"
+      fi
     fi
 
     # Linux : remove unused code+data in link step
