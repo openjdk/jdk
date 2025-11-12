@@ -464,4 +464,27 @@ public final class DecimalDigits {
                         .uncheckedNewStringWithLatin1Bytes(
                                 new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8)}));
     }
+
+    /**
+     * Appends the four-digit string representation of the {@code int}
+     * argument to the given {@code StringBuilder}.
+     * <p>
+     * The integer {@code v} is formatted as four decimal digits.
+     * Values from 0 to 9 are formatted with leading zeros (e.g., 5 becomes "0005"),
+     * values from 10 to 99 become three leading zeros (e.g., 25 becomes "0025"),
+     * values from 100 to 999 become two leading zeros (e.g., 123 becomes "0123"),
+     * and values from 1000 to 9999 become one leading zero or no leading zeros.
+     * If the value is outside the range 0-9999, the behavior is unspecified.
+     *
+     * @param buf the {@code StringBuilder} to append to.
+     * @param v the {@code int} value (should be between 0 and 9999 inclusive).
+     */
+    public static void appendQuad(StringBuilder buf, int v) {
+        int y01 = v / 100;
+        int packed = DIGITS[y01 & 0x7f] | (DIGITS[(v - y01 * 100) & 0x7f] << 16);
+        buf.append(
+                SharedSecrets.getJavaLangAccess()
+                        .uncheckedNewStringWithLatin1Bytes(
+                                new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8), (byte) (packed >> 16), (byte) (packed >> 24)}));
+    }
 }

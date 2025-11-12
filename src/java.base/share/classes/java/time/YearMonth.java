@@ -1199,12 +1199,11 @@ public final class YearMonth
     public String toString() {
         int absYear = Math.abs(year);
         StringBuilder buf = new StringBuilder(9);
-        if (absYear < 1000) {
+        if (absYear < 10000) {
             if (year < 0) {
-                buf.append(year - 10000).deleteCharAt(1);
-            } else {
-                buf.append(year + 10000).deleteCharAt(0);
+                buf.append('-');
             }
+            DecimalDigits.appendQuad(buf, absYear);
         } else {
             buf.append(year);
         }

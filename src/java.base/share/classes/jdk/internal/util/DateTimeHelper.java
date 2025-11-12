@@ -51,13 +51,11 @@ public final class DateTimeHelper {
     public static void formatTo(StringBuilder buf, LocalDate date) {
         int year    = date.getYear(),
             absYear = Math.abs(year);
-        if (absYear < 1000) {
+        if (absYear < 10000) {
             if (year < 0) {
                 buf.append('-');
             }
-            int y01 = absYear / 100;
-            DecimalDigits.appendPair(buf, y01);
-            DecimalDigits.appendPair(buf, absYear - y01 * 100);
+            DecimalDigits.appendQuad(buf, absYear);
         } else {
             if (year > 9999) {
                 buf.append('+');
