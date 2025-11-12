@@ -5202,6 +5202,7 @@ const char* ConnectionGraph::trace_merged_message(PointsToNode* other) const {
     return nullptr;
   }
 }
+
 #endif
 
 void ConnectionGraph::record_for_optimizer(Node *n) {
