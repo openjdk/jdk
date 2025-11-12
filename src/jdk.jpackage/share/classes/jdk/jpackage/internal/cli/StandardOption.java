@@ -32,7 +32,6 @@ import static jdk.jpackage.internal.cli.StandardBundlingOperation.CREATE_NATIVE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.SIGN_MAC_APP_IMAGE;
 import static jdk.jpackage.internal.cli.StandardBundlingOperation.fromOptionName;
 import static jdk.jpackage.internal.cli.StandardOptionContext.createOptionSpecBuilderMutator;
-import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITHOUT_CONTEXT;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.ERROR_WITH_VALUE_AND_OPTION_NAME;
 import static jdk.jpackage.internal.cli.StandardOptionValueExceptionFactory.forMessageWithOptionValueAndName;
@@ -177,10 +176,7 @@ public final class StandardOption {
 
     public static final OptionValue<String> COPYRIGHT = stringOption("copyright").valuePattern("copyright string").create();
 
-    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file")
-            .validatorExceptionFormatString("ERR_LicenseFileNotExit")
-            .validatorExceptionFactory(ERROR_WITHOUT_CONTEXT)
-            .create();
+    public static final OptionValue<Path> LICENSE_FILE = fileOption("license-file").create();
 
     public static final OptionValue<String> APP_VERSION = stringOption("app-version").create();
 
@@ -216,12 +212,10 @@ public final class StandardOption {
             .validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
                 if (cause.orElseThrow() instanceof StandardValidator.DirectoryListingIOException) {
                     formatString = "error.path-parameter-ioexception";
-                    return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
-                } else {
-                    return ERROR_WITH_VALUE.create(optionName, optionValue, formatString, cause);
                 }
+                return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
             })
-            .validatorExceptionFormatString("ERR_BuildRootInvalid")
+            .validatorExceptionFormatString("error.parameter-not-empty-directory")
             .validator(StandardValidator.IS_DIRECTORY_EMPTY_OR_NON_EXISTENT)
             .create();
 
@@ -236,8 +230,6 @@ public final class StandardOption {
 
     public static final OptionValue<Path> PREDEFINED_APP_IMAGE = directoryOption("app-image")
             .scope(CREATE_NATIVE).inScope(SIGN_MAC_APP_IMAGE).inScope(BundlingOperationModifier.BUNDLE_PREDEFINED_APP_IMAGE)
-            .validatorExceptionFactory(ERROR_WITH_VALUE)
-            .validatorExceptionFormatString("ERR_AppImageNotExist")
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-image" + resourceKeySuffix(context.os()));

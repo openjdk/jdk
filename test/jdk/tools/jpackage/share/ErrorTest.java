@@ -364,6 +364,10 @@ public final class ErrorTest {
             cmd.execute(1);
         }
 
+        TestSpec mapExpectedMessages(UnaryOperator<CannedFormattedString> mapper) {
+            return new TestSpec(type, appDesc, addArgs, removeArgs, expectedMessages.stream().map(mapper).toList());
+        }
+
         @Override
         public final String toString() {
             final var sb = new StringBuilder();
@@ -411,7 +415,7 @@ public final class ErrorTest {
                     .error("error.parameter-not-directory", "non-existent.runtime", "--runtime-image"),
             // non-existent app image
             testSpec().noAppDesc().nativeType().addArgs("--name", "foo", "--app-image", "non-existent.appimage")
-                    .error("ERR_AppImageNotExist", "non-existent.appimage"),
+                    .error("error.parameter-not-directory", "non-existent.appimage", "--app-image"),
             // non-existent resource-dir
             testSpec().addArgs("--resource-dir", "non-existent.dir")
                     .error("error.parameter-not-directory", "non-existent.dir", "--resource-dir"),
@@ -420,7 +424,7 @@ public final class ErrorTest {
                     .error("error.parameter-not-file", "non-existent.icon", "--icon"),
             // non-existent license file
             testSpec().nativeType().addArgs("--license-file", "non-existent.license")
-                    .error("ERR_LicenseFileNotExit"),
+                    .error("error.parameter-not-file", "non-existent.license", "--license-file"),
             // invalid type
             testSpec().addArgs("--type", "invalid-type")
                     .error("ERR_InvalidInstallerType", "invalid-type"),
@@ -435,9 +439,6 @@ public final class ErrorTest {
             // no module in module path
             testSpec().noAppDesc().addArgs("--module", "com.foo.bar", "--runtime-image", Token.JAVA_HOME.token())
                     .error("error.no-module-in-path", "com.foo.bar"),
-            // --main-jar and --module-name
-            testSpec().noAppDesc().addArgs("--main-jar", "foo.jar", "--module", "foo.bar")
-                    .error("ERR_BothMainJarAndModule"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
                     .error("ERR_CannotParseOptions", "foo"),
@@ -445,6 +446,12 @@ public final class ErrorTest {
             testSpec().addArgs("--jlink-options", "--foo")
                     .error("error.jlink.failed", "Error: unknown option: --foo")
         ).map(TestSpec.Builder::create).toList());
+
+        // --main-jar and --module-name
+        createMutuallyExclusive(
+                new ArgumentGroup("--module", "foo.bar"),
+                new ArgumentGroup("--main-jar", "foo.jar")
+        ).map(TestSpec.Builder::noAppDesc).map(TestSpec.Builder::create).forEach(testCases::add);
 
         // forbidden jlink options
         testCases.addAll(Stream.of("--output", "--add-modules", "--module-path").map(opt -> {
@@ -540,13 +547,21 @@ public final class ErrorTest {
     public static void testAdditionLaunchers(TestSpec spec) {
         final Path propsFile = TKit.createTempFile("add-launcher.properties");
         TKit.createPropertiesFile(propsFile, Map.of());
-        spec.test(Map.of(Token.ADD_LAUNCHER_PROPERTY_FILE, cmd -> propsFile));
+        spec.mapExpectedMessages(cannedStr -> {
+            return cannedStr.mapArgs(arg -> {
+                if (arg == Token.ADD_LAUNCHER_PROPERTY_FILE) {
+                    return propsFile;
+                } else {
+                    return arg;
+                }
+            });
+        }).test(Map.of(Token.ADD_LAUNCHER_PROPERTY_FILE, cmd -> propsFile));
     }
 
     public static Collection<Object[]> testAdditionLaunchers() {
         return fromTestSpecBuilders(Stream.of(
             testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                    .error("ERR_NoAddLauncherName"),
+                    .error("error.parameter-add-launcher-malformed", Token.ADD_LAUNCHER_PROPERTY_FILE, "--add-launcher"),
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
                     .error("error.launcher-duplicate-name", "foo")
         ));
@@ -734,7 +749,7 @@ public final class ErrorTest {
     private static void invalidShortcut(Consumer<TestSpec> accumulator, String shortcutOption) {
         Objects.requireNonNull(shortcutOption);
         Stream.of("true", "false", "").map(value -> {
-            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.invalid-option-value", value, shortcutOption).create();
+            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.parameter-not-launcher-shortcut-dir", value, shortcutOption).create();
         }).forEach(accumulator);
     }
 
