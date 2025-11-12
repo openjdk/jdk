@@ -175,15 +175,15 @@ public:
   }
 
   inline bool is_mutator_alloc() const {
-    return !is_gc_alloc();
+    return (_alloc_type & bit_gc_alloc) == 0;
   }
 
   inline bool is_gc_alloc() const {
-    return (_alloc_type & bit_gc_alloc) == bit_gc_alloc;
+    return (_alloc_type & bit_gc_alloc) != 0;
   }
 
   inline bool is_lab_alloc() const {
-    return (_alloc_type & bit_lab_alloc) == bit_lab_alloc;
+    return (_alloc_type & bit_lab_alloc) != 0;
   }
 
   bool is_old() const {
