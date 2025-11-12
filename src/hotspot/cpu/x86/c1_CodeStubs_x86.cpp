@@ -97,6 +97,8 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ jmp(_continuation);
 }
 
+long x7fe_counts, x7fe_overs;
+
 void ExtendedCounterOverflowStub::emit_code(LIR_Assembler* ce) {
   int profile_capture_ratio = ProfileCaptureRatio;
   int ratio_shift = exact_log2(profile_capture_ratio);
@@ -113,18 +115,21 @@ void ExtendedCounterOverflowStub::emit_code(LIR_Assembler* ce) {
 
   if (_incr->is_register()) {
     Register inc = _incr->as_register();
-    __ movl(temp, dest_adr);
     if (profile_capture_ratio > 1) {
-      __ sall(inc, ratio_shift);
+      __ shll(inc, ratio_shift);
     }
+    __ movl(temp, dest_adr);
     __ addl(temp, inc);
     __ movl(dest_adr, temp);
     __ movl(_dest->as_register(), temp);
+
+    if (profile_capture_ratio > 1) {
+      __ shrl(inc, ratio_shift);
+    }
   } else {
     jint inc = _incr->as_constant_ptr()->as_jint_bits();
     switch (_dest->type()) {
       case T_INT: {
-        inc *= profile_capture_ratio;
         if (_dest->is_register()) {
           __ movl(temp, dest_adr);
           __ addl(temp, inc);
@@ -171,8 +176,27 @@ void ExtendedCounterOverflowStub::emit_code(LIR_Assembler* ce) {
       if (!_incr->is_constant()) {
         // If step is 0, make sure the overflow check below always fails
         __ cmpl(_incr->as_register(), 0);
-        __ movl(temp, InvocationCounter::count_increment);
-        __ cmovl(Assembler::notEqual, result, temp);
+        __ movl(temp, InvocationCounter::count_increment * ProfileCaptureRatio);
+        __ cmovl(Assembler::equal, result, temp);
+      }
+      // long x7fe_counts, x7fe_overs;
+      if (getenv("APH_BAZ_BARF") && // inc != 0x7fe
+          ! _incr-> is_constant()
+          ) {
+        Label nonzero;
+        __ push(temp);
+
+        __ testl(result, _freq_op->as_jint());
+        __ jcc(Assembler::notEqual, nonzero);
+
+        __ lea(temp, ExternalAddress((address)&x7fe_overs));
+        __ addl(Address(temp), 1);
+
+        __ bind(nonzero);
+        __ lea(temp, ExternalAddress((address)&x7fe_counts));
+        __ addl(Address(temp), 1);
+
+        __ pop(temp);
       }
       __ andl(result, _freq_op->as_jint());
       __ jcc(Assembler::notEqual, _continuation);

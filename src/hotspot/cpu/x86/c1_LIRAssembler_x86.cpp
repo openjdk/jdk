@@ -1260,7 +1260,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
     __ cmpptr(recv, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
     __ jccb(Assembler::notEqual, next_test);
     Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ addptr(data_addr, DataLayout::counter_increment);
+    __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
     __ jmp(*update_done);
     __ bind(next_test);
   }
@@ -1272,7 +1272,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
     __ cmpptr(recv_addr, NULL_WORD);
     __ jccb(Assembler::notEqual, next_test);
     __ movptr(recv_addr, recv);
-    __ movptr(Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))), DataLayout::counter_increment);
+    __ movptr(Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))), DataLayout::counter_increment * ProfileCaptureRatio);
     __ jmp(*update_done);
     __ bind(next_test);
   }
@@ -2769,7 +2769,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                           LIR_Opr freq_op, LIR_Opr step_op,
-                                          CodeStub* overflow) {
+                                          CodeStub* stub) {
   // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   // RegisterOrConstant dest_adr = addr->is_address() ? as_Address(addr->as_address_ptr())
@@ -2798,12 +2798,12 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   }
 
   Label dont;
-  Label *skip = overflow ? overflow->continuation() : &dont;
+  Label *skip = stub ? stub->continuation() : &dont;
 
-  if (profile_capture_ratio > 1 && overflow) {
+  if (profile_capture_ratio > 1 && stub) {
     __ cmpl(r_profile_rng, threshold);
     if (! getenv("APH_DISABLE")) {
-      __ jcc(Assembler::below, *overflow->entry());
+      __ jcc(Assembler::below, *stub->entry());
     }
   } else {
     __ block_comment("increment_profile_ctrX" " {");
@@ -2817,11 +2817,14 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
       }
       __ movl(temp, dest_adr);
       if (profile_capture_ratio > 1) {
-        __ sall(inc, ratio_shift);
+        __ shll(inc, ratio_shift);
       }
       __ addl(temp, inc);
       __ movl(dest_adr, temp);
       __ movl(dest->as_register(), temp);
+      if (profile_capture_ratio > 1) {
+        __ shrl(inc, ratio_shift);
+      }
     } else {
       jint inc = incr->as_constant_ptr()->as_jint_bits();
       switch (dest->type()) {
@@ -2869,13 +2872,13 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
           ShouldNotReachHere();
       }
 
-      if (incr->is_valid() && overflow) {
+      if (incr->is_valid() && stub) {
         if (!freq_op->is_valid()) {
           if (!incr->is_constant()) {
             __ cmpl(incr->as_register(), 0);
-            __ jcc(Assembler::notEqual, *(overflow->entry()));
+            __ jcc(Assembler::notEqual, *(stub->entry()));
           } else {
-            __ jmp(*(overflow->entry()));
+            __ jmp(*(stub->entry()));
           }
         } else {
           Register result =
@@ -2883,13 +2886,13 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
             dest->type() == T_LONG ? dest->as_register_lo() :
             noreg;
           if (!incr->is_constant()) {
-            // If step is 0, make sure the overflow check below always fails 
+            // If step is 0, make sure the stub check below always fails
             __ cmpl(incr->as_register(), 0);
-            __ movl(temp, InvocationCounter::count_increment);
+            __ movl(temp, InvocationCounter::count_increment * ProfileCaptureRatio);
             __ cmovl(Assembler::notEqual, result, temp);
           }
           __ andl(result, freq_op->as_jint());
-          __ jcc(Assembler::equal, *overflow->entry());
+          __ jcc(Assembler::equal, *stub->entry());
         }
       }
     }
@@ -2906,25 +2909,16 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
-  Label dont;
 
   Register temp = op->tmp1()->as_register_lo();
-
-  EmitProfileCallStub *stub = new EmitProfileCallStub();
 
   int profile_capture_ratio = ProfileCaptureRatio;
   int ratio_shift = exact_log2(profile_capture_ratio);
   auto threshold = (1ull << 32) >> ratio_shift;
   assert(threshold > 0, "must be");
 
-  if (profile_capture_ratio > 1) {
-    __ step_random(r_profile_rng, temp);
-    __ cmpl(r_profile_rng, threshold);
-    __ jcc(Assembler::below, *stub->entry());
-  } else {
-    __ jmp(*stub->entry());
-    // abort();
-  }
+  EmitProfileCallStub *stub
+    = profile_capture_ratio > 1 ? new EmitProfileCallStub() : nullptr;
 
 #undef __
 #define __ ce->masm()->
@@ -2936,7 +2930,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
   Register temp = op->tmp1()->as_register_lo();
 
-  __ bind(*stub->entry());
+  if (stub != nullptr)  __ bind(*stub->entry());
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -2968,7 +2962,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment);
+          __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
           goto exit;
         }
       }
@@ -2984,7 +2978,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
           __ mov_metadata(recv_addr, known_klass->constant_encoding(), rscratch1);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment);
+          __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
           goto exit;
         }
       }
@@ -2994,28 +2988,34 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
       // Increment total counter to indicate polymorphic case.
-      __ addptr(counter_addr, DataLayout::counter_increment);
+      __ addptr(counter_addr, DataLayout::counter_increment * ProfileCaptureRatio);
 
       __ bind(update_done);
     }
   exit: {}
   } else {
     // Static call
-    __ addptr(counter_addr, DataLayout::counter_increment);
+    __ addptr(counter_addr, DataLayout::counter_increment * ProfileCaptureRatio);
   }
-  __ jmp(*stub->continuation());
+
+  if (stub != nullptr)  __ jmp(*stub->continuation());
+
 #undef __
 #define __ _masm->
   };
 
-  Fubarbaz_base *ff = new Fubarbaz(lambda, op);
-  stub->set_doit(ff);
-  append_code_stub(stub);
+  if (stub != nullptr) {
+    __ step_random(r_profile_rng, temp);
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::below, *stub->entry());
+    __ bind(*stub->continuation());
 
-  __ bind(*stub->continuation());
-
-  // lambda(this, op);
-  __ bind(dont);
+    Fubarbaz_base *ff = new Fubarbaz(lambda, op);
+    stub->set_doit(ff);
+    append_code_stub(stub);
+  } else {
+    lambda(this, op);
+  }
 }
 
 int kludge;
