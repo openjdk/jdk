@@ -44,10 +44,10 @@ public:
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
-      case _alloc_tlab:
-        return "TLAB";
       case _alloc_cds:
         return "CDS";
+      case _alloc_tlab:
+        return "TLAB";
       case _alloc_shared:
         return "Shared";
       case _alloc_shared_gc:
