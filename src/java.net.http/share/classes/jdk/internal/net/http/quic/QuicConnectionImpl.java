@@ -334,7 +334,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.logTag = logTagFormat.formatted(labelId);
         this.dbgTag = dbgTag(quicInstance, logTag);
-        this.congestionController = new QuicRenoCongestionController(dbgTag);
+        this.congestionController = new QuicRenoCongestionController(dbgTag, rttEstimator);
         this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.firstFlightVersion(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
