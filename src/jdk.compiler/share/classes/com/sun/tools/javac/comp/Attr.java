@@ -124,6 +124,7 @@ public class Attr extends JCTree.Visitor {
     final ArgumentAttr argumentAttr;
     final MatchBindingsComputer matchBindingsComputer;
     final AttrRecover attrRecover;
+    final boolean captureMRefReturnType;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -175,6 +176,7 @@ public class Attr extends JCTree.Visitor {
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        captureMRefReturnType = Source.Feature.ERASE_POLY_SIG_RETURN_TYPE.allowedInSource(source);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
@@ -3832,9 +3834,10 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
+            Type capturedResType = captureMRefReturnType ? types.capture(resType) : resType;
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
-                            checkContext.checkWarner(tree, resType, returnType))) {
+                    new FunctionalReturnContext(checkContext).compatible(capturedResType, returnType,
+                            checkContext.checkWarner(tree, capturedResType, returnType))) {
                 incompatibleReturnType = null;
             }
         }

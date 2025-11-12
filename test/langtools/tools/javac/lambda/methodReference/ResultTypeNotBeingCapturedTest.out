@@ -1,0 +1,3 @@
+ResultTypeNotBeingCapturedTest.java:43:66: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<compiler.misc.type.captureof: 1, ?>>, ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<?>>)
+ResultTypeNotBeingCapturedTest.java:47:42: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<compiler.misc.type.captureof: 1, ?>>, ResultTypeNotBeingCapturedTest.X<ResultTypeNotBeingCapturedTest.X<?>>)
+2 errors
