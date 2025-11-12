@@ -310,7 +310,13 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
-  // This locks the rebuild process (in combination with the global heap lock)
+  // This locks the rebuild process (in combination with the global heap lock).  Whenever we rebuild the free set,
+  // we first acquire the global heap lock and then we acquire this _rebuild_lock in a nested context.  Threads that
+  // need to check available, acquire only the _rebuild_lock to make sure that they are not obtaining the value of
+  // available for a partially reconstructed free-set.
+  //
+  // Note that there is rank ordering of nested locks to prevent deadlock.  All threads that need to acquire both
+  // locks will acquire them in the same order: first the global heap lock and then the rebuild lock.
   ShenandoahRebuildLock _rebuild_lock;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
