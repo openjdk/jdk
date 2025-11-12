@@ -234,9 +234,10 @@ public:
   }
 
   // Return available_in assuming caller does not hold the heap lock but does hold the rebuild_lock.
-  // The returned value may be "stale" because we do not enforce the heap lock on reads.  Acquiring the
-  // rebuild_lock prevents us from returning "bogus" values that are "worse than stale".  During rebuild
-  // of the freeset, the value of _available is not reliable.
+  // The returned value may be "slightly stale" because we do not assure that every fetch of this value
+  // sees the most recent update of this value.  Requiring the caller to hold the rebuild_lock assures
+  // that we don't see "bogus" values that are "worse than stale".  During rebuild of the freeset, the
+  // value of _available is not reliable.
   inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     return _available[int(which_partition)];
