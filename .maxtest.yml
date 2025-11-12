@@ -14,5 +14,5 @@ tests:
       JAVA_HOME: /network-raid/opt/java/jdk-25.0.1
   clusterParameters:
     cpus: 1.0
-    mem: 1024.0
+    mem: 2048.0
     rocky9: 1.0
