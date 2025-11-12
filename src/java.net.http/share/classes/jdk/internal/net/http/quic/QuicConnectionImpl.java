@@ -601,6 +601,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             SSLHandshakeException sslHandshakeException = null;
             if (!handshakeCF.isDone()) {
                 sslHandshakeException = sslHandshakeException(cause);
+                if (Log.errors()) {
+                    Log.logError("%s QUIC handshake failed: %s"
+                            .formatted(logTag(), cause));
+                    Log.logError(cause);
+                }
                 handshakeCF.completeExceptionally(sslHandshakeException);
             }
             if (!handshakeReachedPeerCF.isDone()) {
