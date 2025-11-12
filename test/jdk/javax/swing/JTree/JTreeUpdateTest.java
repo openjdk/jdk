@@ -43,7 +43,7 @@ public class JTreeUpdateTest {
 
     static final String INSTRUCTIONS = """
         A frame with two identical JTrees is shown.
-        If the left JTree's text is abbreviated 
+        If the left JTree's text is abbreviated
         and JTree items are cramped with little space between rows
         then press Fail.
         If the left JTree is identical with right JTree, press Pass.
@@ -97,4 +97,4 @@ public class JTreeUpdateTest {
             throw new RuntimeException(e);
         }
     }
-} 
+}
