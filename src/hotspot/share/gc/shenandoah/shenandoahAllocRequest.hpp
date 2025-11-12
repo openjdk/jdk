@@ -31,16 +31,23 @@
 
 class ShenandoahAllocRequest : StackObj {
 public:
-  // Small values for mutator alloc, larger values for gc alloc;
-  // odd for lab alloc, and even value for non-lab alloc;
-  enum Type {
-    _alloc_cds        = 0, // Allocate for CDS
-    _alloc_tlab       = 1, // Allocate TLAB
-    _alloc_shared     = 2, // Allocate common, outside of TLAB
-    _alloc_shared_gc  = 4, // Allocate common, outside of GCLAB/PLAB
-    _alloc_gclab      = 5, // Allocate GCLAB
-    _alloc_plab       = 7  // Allocate PLAB
-  };
+  // bit 0: mutator (0) or GC (1) alloc
+  // bit 1: LAB (0) or shared (1) alloc
+  // bit 2: if LAB, then GCLAB (0) or PLAB (1)
+  // bit 3: if mutator, then normal (0) or CDS (1)
+  typedef int Type;
+
+  static constexpr int bit_gc_alloc   = 1 << 1;
+  static constexpr int bit_lab_alloc  = 1 << 2;
+  static constexpr int bit_plab_alloc = 1 << 3;
+  static constexpr int bit_cds_alloc  = 1 << 4;
+
+  static constexpr Type _alloc_shared    = 0;
+  static constexpr Type _alloc_tlab      = bit_lab_alloc;
+  static constexpr Type _alloc_cds       = bit_cds_alloc;
+  static constexpr Type _alloc_shared_gc = bit_gc_alloc;
+  static constexpr Type _alloc_gclab     = bit_gc_alloc | bit_lab_alloc;
+  static constexpr Type _alloc_plab      = bit_gc_alloc | bit_lab_alloc | bit_plab_alloc;
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
@@ -168,15 +175,15 @@ public:
   }
 
   inline bool is_mutator_alloc() const {
-    return _alloc_type <= _alloc_shared;
+    return !is_gc_alloc();
   }
 
   inline bool is_gc_alloc() const {
-    return _alloc_type >= _alloc_shared_gc;
+    return (_alloc_type & bit_gc_alloc) == bit_gc_alloc;
   }
 
   inline bool is_lab_alloc() const {
-    return (_alloc_type & 1) == 1;
+    return (_alloc_type & bit_lab_alloc) == bit_lab_alloc;
   }
 
   bool is_old() const {
