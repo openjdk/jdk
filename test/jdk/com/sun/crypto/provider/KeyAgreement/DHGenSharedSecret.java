@@ -57,7 +57,8 @@ public class DHGenSharedSecret {
 
         // generate keyPairs using parameters
         KeyPairGenerator keyGen =
-            KeyPairGenerator.getInstance("DH", "SunJCE");
+            KeyPairGenerator.getInstance("DH",
+                    System.getProperty("test.provider.name", "SunJCE"));
         keyGen.initialize(spec);
 
         // Alice generates her key pairs
@@ -77,11 +78,13 @@ public class DHGenSharedSecret {
         // bob uses it to generate Secret
         X509EncodedKeySpec x509Spec =
             new X509EncodedKeySpec(alicePubKeyEnc);
-        KeyFactory bobKeyFac = KeyFactory.getInstance("DH", "SunJCE");
+        KeyFactory bobKeyFac = KeyFactory.getInstance("DH",
+                            System.getProperty("test.provider.name", "SunJCE"));
         PublicKey alicePubKey = bobKeyFac.generatePublic(x509Spec);
 
 
-        KeyAgreement bobAlice = KeyAgreement.getInstance("DH", "SunJCE");
+        KeyAgreement bobAlice = KeyAgreement.getInstance("DH",
+                            System.getProperty("test.provider.name", "SunJCE"));
         start = System.currentTimeMillis();
         bobAlice.init(keyB.getPrivate());
         bobAlice.doPhase(alicePubKey, true);

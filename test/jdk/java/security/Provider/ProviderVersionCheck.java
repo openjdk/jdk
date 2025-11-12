@@ -42,6 +42,11 @@ public class ProviderVersionCheck {
 
         for (Provider p: Security.getProviders()) {
             System.out.print(p.getName() + " ");
+            if (p.getName().equals(System.getProperty("test.provider.name"))) {
+                // Version numbers of non JDK-providers do not match JDK version number.
+                continue;
+            }
+
             String specVersion = System.getProperty("java.specification.version");
             if (p.getVersion() != Double.parseDouble(specVersion)) {
                 System.out.println("failed. " + "Version received was " +
