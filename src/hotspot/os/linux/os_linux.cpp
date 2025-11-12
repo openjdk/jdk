@@ -2964,8 +2964,8 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
-bool os::numa_set_thread_affinity(Thread* thread, int node) {
-  return Linux::numa_set_thread_affinity(thread->osthread()->thread_id(), node);
+void os::numa_set_thread_affinity(Thread* thread, int node) {
+  Linux::numa_set_thread_affinity(thread->osthread()->thread_id(), node);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -3373,23 +3373,23 @@ int os::Linux::numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen)
   return -1;
 }
 
-bool os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
+void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
   // We only set affinity if running libnuma v2 (_numa_sched_setaffinity
   // is available) and we have all affinity mask
   if (_numa_sched_setaffinity == nullptr ||
       _numa_all_cpus_ptr == nullptr ||
       _numa_affinity_masks->is_empty()) {
-    return false;
+    return;
   }
 
-  // If the node is -1, the affinity is reverted to the original affinity
-  // of the thread when the VM was started
   if (node == -1) {
-    return _numa_sched_setaffinity(tid, _numa_all_cpus_ptr) == 0;
+    // If the node is -1, the affinity is reverted to the original affinity
+    // of the thread when the VM was started
+    _numa_sched_setaffinity(tid, _numa_all_cpus_ptr) == 0;
+  } else {
+    // Normal case, set the affinity to the corresponding affinity mask
+    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node)) == 0;
   }
-
-  // Normal case, set the affinity to the corresponding affinity mask
-  return _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node)) == 0;
 }
 
 int os::Linux::get_node_by_cpu(int cpu_id) {
