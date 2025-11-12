@@ -50,7 +50,7 @@ public final class CaseFolding {
     */
     public static boolean isDefined(int cp) {
          return getDefined(cp) != -1;
-     }
+    }
 
    /**
     * Returns the case-folded form of the specified code point according
@@ -132,12 +132,11 @@ public final class CaseFolding {
     *           additionalClosingCharacters.contains(Character.toUpperCase(ch))
     * }</pre>
     *
-    * <p>
-    * @spec https://www.unicode.org/reports/tr18/#Simple_Loose_Matches
     * @param start the starting code point of the character range
     * @param end the ending code point of the character range
     * @return a {@code int[]} containing the all simple case equivalents of characters in the range, excluding
     *         those already in the range
+    * @spec https://www.unicode.org/reports/tr18/#Simple_Loose_Matches
     */
     public static int[] getClassRangeClosingCharacters(int start, int end) {
         int[] expanded = new int[expanded_case_cps.length];

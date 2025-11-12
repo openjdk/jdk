@@ -251,7 +251,9 @@ public class UnicodeCaseFoldingTest {
                 Arguments.of("\u03C2", "\u03C3", 0), // ς vs σ
                 Arguments.of("\uD835\uDD23", "R", 1), // 𝔯 (fraktur r) vs R
                 Arguments.of("\uFF26", "E", 1), // Ｆ (full-width F) vs E
-                Arguments.of("\u00C9clair", "Eclair", 1) // Éclair vs Eclair
+                Arguments.of("\u00C9clair", "Eclair", 1), // Éclair vs Eclair
+                Arguments.of("\u03bc\u00df", "\u00b5s", 1),
+                Arguments.of("\u00b5s", "\u03bc\u00df", -1)
         );
     }
 

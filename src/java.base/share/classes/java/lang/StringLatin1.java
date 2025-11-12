@@ -275,7 +275,7 @@ final class StringLatin1 {
         if (k1 < last || f1 != 0) {
             return 1;
         }
-        if (k2 < olast || f1 != 0) {
+        if (k2 < olast || f2 != 0) {
             return -1;
         }
         return 0;
