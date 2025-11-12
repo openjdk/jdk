@@ -1657,46 +1657,31 @@ uint PhaseChaitin::Select( ) {
       }
     }
 
-    auto is_commutative_oper = [](MachNode* def) {
-      if (def) {
-        switch(def->ideal_Opcode()) {
-          case Op_AddI: case Op_AddL:
-          case Op_MulI: case Op_MulL:
-          case Op_XorI: case Op_XorL:
-          case Op_OrI:  case Op_OrL:
-          case Op_AndI: case Op_AndL:
-            return true;
-          default:
-            return false;
-        }
-      }
-      return false;
-    };
-
+    uint lrg_in1 = 0;
     Node* def = lrg->_def;
     MachNode* mdef = lrg->is_singledef() && !lrg->_is_bound && def->is_Mach() ? def->as_Mach() : nullptr;
-    if (mdef != nullptr && Matcher::should_attempt_register_biasing(mdef->Opcode())) {
-      if (mdef->req() > 1) {
-        Node* in1 = mdef->in(mdef->oper_input_base());
-        if (in1 != nullptr) {
-          uint lrin1 = _lrg_map.find(in1);
-          // If a def does not interfere with first input's def,
-          // then bias its color towards its input's def.
-          if (lrin1 != 0 && lrg->_copy_bias == 0) {
-            lrg->_copy_bias = lrin1;
-          }
+    if (Matcher::should_attempt_register_biasing(mdef, 1)) {
+      Node* in1 = mdef->in(mdef->operand_index(1));
+      if (in1 != nullptr) {
+        lrg_in1 = _lrg_map.find(in1);
+        // Complex memory operand covers multiple incoming
+        // edges needed for address computation, biasing def
+        // towards any address component will not result into
+        // NDD demotion by assembler.
+        if (lrg_in1 != 0 && lrg->_copy_bias == 0 && mdef->operand_num_edges(1) == 1) {
+          lrg->_copy_bias = lrg_in1;
         }
       }
+    }
 
-      if (is_commutative_oper(mdef) && mdef->req() > 2) {
-        Node* in2 = mdef->in(mdef->oper_input_base() + 1);
-        if (in2 != nullptr) {
-          uint lrin2 = _lrg_map.find(in2);
-          // If a def does not interfere with second input's def,
-          // then bias its color towards its input's def.
-          if (lrin2 != 0 && lrg->_copy_bias2 == 0) {
-            lrg->_copy_bias2 = lrin2;
-          }
+    // For commutative operation, def allocation can also be
+    // biased towards LRG of second input's def.
+    if (Matcher::should_attempt_register_biasing(mdef, 2)) {
+      Node* in2 = mdef->in(mdef->operand_index(2));
+      if (in2 != nullptr) {
+        uint lrg_in2 = _lrg_map.find(in2);
+        if (lrg_in2 != 0 && lrg->_copy_bias2 == 0 && mdef->operand_num_edges(2) == 1) {
+          lrg->_copy_bias2 = lrg_in2;
         }
       }
     }

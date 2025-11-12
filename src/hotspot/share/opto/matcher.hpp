@@ -506,7 +506,7 @@ public:
   DEBUG_ONLY( bool verify_after_postselect_cleanup(); )
 
  public:
-  static bool should_attempt_register_biasing(int mopc);
+  static bool should_attempt_register_biasing(const MachNode* mdef, int oper_index);
 
   // This routine is run whenever a graph fails to match.
   // If it returns, the compiler should bailout to interpreter without error.

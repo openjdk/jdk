@@ -1893,7 +1893,7 @@ bool Matcher::is_reg2reg_move(MachNode* m) {
   return false;
 }
 
-bool Matcher::should_attempt_register_biasing(int mopc) {
+bool Matcher::should_attempt_register_biasing(const MachNode* mdef, int oper_index) {
   return false;
 }
 
