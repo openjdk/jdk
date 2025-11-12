@@ -74,11 +74,35 @@ class [[deprecated]] bad_array_new_length;
 
 // Prefer HotSpot mechanisms for padding.
 //
-// Visual Studio => error C2370: '...': redefinition; different storage class
-#ifndef TARGET_COMPILER_visCPP
+// The syntax for redeclaring these for deprecation is tricky, and not
+// supported by some versions of some compilers.  Dispatch on compiler and
+// version to decide whether to redeclare deprecated.
+
+#if defined(__clang__)
+#if __clang_major__ >= 19
+// clang18 and earlier may accept the declaration but go wrong with uses.
+// Different warnings and link-time failures are both possible.
+#define CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES 1
+#endif // restrict clang version
+
+#elif defined(__GNUC__)
+#if (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 2)
+// g++11.5 accepts the declaration and reports deprecation for uses, but also
+// has link-time failure for uses. Haven't tested intermediate versions.
+#define CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES 1
+#endif // restrict gcc version
+
+#elif defined(_MSVC)
+// VS2022-17.13.2 => error C2370: '...': redefinition; different storage class
+
+#endif // Compiler dispatch
+
+// Redeclare deprecated if such is supported.
+#ifdef CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES
 [[deprecated]] extern const size_t hardware_destructive_interference_size;
 [[deprecated]] extern const size_t hardware_constructive_interference_size;
-#endif // not TARGET_COMPILER_visCPP
+#undef CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES
+#endif // CAN_DEPRECATE_HARDWARE_INTERFERENCE_SIZES
 
 } // namespace std
 
