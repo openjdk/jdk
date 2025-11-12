@@ -642,15 +642,15 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     // Dump escape analysis state for relevant nodes.
     if (node->is_Allocate()) {
       AllocateNode* alloc = node->as_Allocate();
-       if (alloc->_is_scalar_replaceable) {
-         print_prop("is_scalar_replaceable", "true");
-       }
-       if (alloc->_is_non_escaping) {
-         print_prop("is_non_escaping", "true");
-       }
-       if (alloc->does_not_escape_thread()) {
-         print_prop("does_not_escape_thread", "true");
-       }
+      if (alloc->_is_scalar_replaceable) {
+        print_prop("is_scalar_replaceable", "true");
+      }
+      if (alloc->_is_non_escaping) {
+        print_prop("is_non_escaping", "true");
+      }
+      if (alloc->does_not_escape_thread()) {
+        print_prop("does_not_escape_thread", "true");
+      }
     }
     if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
       print_prop("has_ea_local_in_scope", "true");
@@ -758,7 +758,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
 
     if (_congraph && node->_idx < _congraph->nodes_size()) {
       PointsToNode* ptn = _congraph->ptnode_adr(node->_idx);
-      if (ptn) {
+      if (ptn != nullptr) {
         print_prop("ea_node", ptn->is_JavaObject() ? "javaobject" :
                               ptn->is_LocalVar() ? "localvar" :
                               ptn->is_Field() ? "field" :
