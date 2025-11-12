@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @spec https://www.rfc-editor.org/rfc/rfc9438.html
  *       RFC 9438: CUBIC for Fast and Long-Distance Networks
  */
-public class QuicCubicCongestionController extends QuicBaseCongestionController {
+public final class QuicCubicCongestionController extends QuicBaseCongestionController {
 
     public static final double BETA = 0.7;
     public static final double ALPHA = 3 * (1 - BETA) / (1 + BETA);

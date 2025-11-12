@@ -37,7 +37,7 @@ import jdk.internal.net.http.common.Log;
  * @spec https://www.rfc-editor.org/info/rfc9002
  *      RFC 9002: QUIC Loss Detection and Congestion Control
  */
-class QuicRenoCongestionController extends QuicBaseCongestionController {
+final class QuicRenoCongestionController extends QuicBaseCongestionController {
     public QuicRenoCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         super(dbgTag, rttEstimator);
     }
