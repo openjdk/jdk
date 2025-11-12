@@ -114,13 +114,13 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
-  NOT_PRODUCT(if (C->igv_printer()) C->igv_printer()->set_congraph(congraph);)
+  NOT_PRODUCT(if (C->igv_printer() != nullptr) C->igv_printer()->set_congraph(congraph);)
   // Perform escape analysis
   if (congraph->compute_escape()) {
     // There are non escaping objects.
     C->set_congraph(congraph);
   }
-  NOT_PRODUCT(if (C->igv_printer()) C->igv_printer()->set_congraph(nullptr);)
+  NOT_PRODUCT(if (C->igv_printer() != nullptr) C->igv_printer()->set_congraph(nullptr);)
   // Cleanup.
   if (oop_null->outcnt() == 0) {
     igvn->hash_delete(oop_null);
