@@ -77,13 +77,6 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
     return false;
   }
 
-  // Do not find source file and line number if the function in vDSO.
-  // See vDSO(7) manpage to check vDSO names in each architectures.
-  if (strcmp(filepath, "linux-vdso.so.1") == 0 /* aarch64, x86-64, riscv */ ||
-      strcmp(filepath, "linux-vdso64.so.1") == 0 /* ppc/64, s390x */ ) {
-    return false;
-  }
-
   const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
 
   ElfFile* file = get_elf_file(filepath);
@@ -102,7 +95,7 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
 
   DWARF_LOG_SUMMARY("pc: " PTR_FORMAT ", offset: " INT32_FORMAT_X_0 ", filename: %s, line: %u",
                        p2i(pc), offset_in_library, filename, *line);
-  DWARF_LOG_INFO("") // To structure the debug output better.
+  DWARF_LOG_INFO(""); // To structure the debug output better.
   return true;
 #endif // clang
 }
@@ -121,6 +114,11 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
 
   file = new (std::nothrow)ElfFile(filepath);
   if (file != nullptr) {
+    _decoder_status = file->get_status();
+    if (has_error()) {
+      delete file;
+      return nullptr;
+    }
     if (_opened_elf_files != nullptr) {
       file->set_next(_opened_elf_files);
     }
