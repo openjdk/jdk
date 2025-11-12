@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -1484,6 +1485,13 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
     return;
   }
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
+
+  if (thread->is_aot_thread()) {
+    // The AOT thread is hidden from view but has no thread oop when it starts due
+    // to bootstrapping complexity, so we check for it before checking for bound
+    // virtual threads. When exiting it is filtered out due to being hidden.
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_THREAD_START, ("[%s] Trg Thread Start event triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
