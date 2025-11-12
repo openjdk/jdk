@@ -435,7 +435,19 @@ jint ShenandoahHeap::initialize() {
 
     _free_set = new ShenandoahFreeSet(this, _num_regions);
     post_initialize_heuristics();
-    _free_set->rebuild();
+
+    // We are initializing free set.  We ignore cset region tallies.
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    if (mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      // We cannot call
+      //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
+      // until after the heap is fully initialized.  So we make up a safe value here.
+      size_t allocation_runway = InitialHeapSize / 2;
+      gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions, young_cset_regions);
+    }
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 
   if (AlwaysPreTouch) {

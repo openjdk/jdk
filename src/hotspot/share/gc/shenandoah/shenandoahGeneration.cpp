@@ -811,7 +811,20 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->rebuild();
+
+    // We are preparing for evacuation.  At this time, we ignore cset region tallies.
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    if (heap->mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      // We know that old is large enough to represent any evacuations that are directed to Old.  If we ended up budgeting
+      // more memory for old than is required by the chosen collection set, this is our opportunity to transfer some
+      // regions from old to mutator in order to expand the allocation runway.
+      size_t mutator_xfer_limit = 0;
+      gen_heap->compute_old_generation_balance(mutator_xfer_limit, old_cset_regions, young_cset_regions);
+    }
+    // Free set construction uses reserve quantities, because they are known to be valid here
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 }
 
