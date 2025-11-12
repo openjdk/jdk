@@ -1376,7 +1376,7 @@ public:
   Node* exact_limit( IdealLoopTree *loop );
 
   // Return a post-walked LoopNode
-  IdealLoopTree *get_loop( Node *n ) const {
+  IdealLoopTree *get_loop(const Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
@@ -1386,14 +1386,13 @@ public:
   IdealLoopTree* ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
-  int is_member( const IdealLoopTree *loop, Node *n ) const {
+  bool is_member(const IdealLoopTree* loop, const Node* n) const {
     return loop->is_member(get_loop(n));
   }
 
   // is the control for 'n' a (nested) member of 'loop'?
-  int ctrl_is_member(const IdealLoopTree *loop, Node *n) {
-    Node* n_ctrl = get_ctrl(n);
-    return loop->is_member(get_loop(n_ctrl));
+  bool ctrl_is_member(const IdealLoopTree* loop, const Node* n) {
+    return is_member(loop, get_ctrl(n));
   }
 
   // This is the basic building block of the loop optimizations.  It clones an
