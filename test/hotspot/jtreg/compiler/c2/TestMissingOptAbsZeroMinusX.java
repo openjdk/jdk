@@ -27,7 +27,7 @@
  * @summary An expression of the form "abs(0-x)" should be transformed to "abs(x)".
  *          This test ensures that updates to the Sub node’s inputs propagate as
  *          expected and that the optimization is not missed.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xbatch -Xcomp
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.c2.TestMissingOptAbsZeroMinusX::test*
  *      -XX:VerifyIterativeGVN=1110 compiler.c2.TestMissingOptAbsZeroMinusX
  * @run main compiler.c2.TestMissingOptAbsZeroMinusX
