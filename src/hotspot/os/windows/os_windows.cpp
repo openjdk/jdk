@@ -1827,12 +1827,12 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load %s-bit .dll on a %s-bit platform",
                          lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf_checked(ebuf, ebuflen - 1,
+    os::snprintf_checked(ebuf, ebuflen,
                          "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                          lib_arch, running_arch_str);
   }
@@ -3150,7 +3150,6 @@ void os::large_page_init() {
   _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
-#if !defined(IA32)
     if (EnableAllLargePageSizesForWindows) {
       size_t min_size = GetLargePageMinimum();
 
@@ -3159,7 +3158,6 @@ void os::large_page_init() {
         _page_sizes.add(page_size);
       }
     }
-#endif
 
     _page_sizes.add(_large_page_size);
   }
@@ -4161,11 +4159,6 @@ void os::win32::initialize_system_info() {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
   _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
-
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Adjust MaxRAM according to the maximum virtual address space available.
-    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
-  }
 
   _is_windows_server = IsWindowsServer();
 
@@ -6258,4 +6251,107 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   }
   *sigInfo = nullptr;
   return nullptr;
+}
+
+/*
+ * Windows/x64 does not use stack frames the way expected by Java:
+ * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
+ * [2] in rare cases, when alloca() is used, a frame pointer is used, but this may
+ *     not be RBP.
+ * See http://msdn.microsoft.com/en-us/library/ew5tede7.aspx
+ *
+ * So it's not possible to print the native stack using the
+ *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
+ * loop in vmError.cpp. We need to roll our own loop.
+ * This approach works for Windows AArch64 as well.
+ */
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char* buf, int buf_size, address& lastpc)
+{
+  CONTEXT ctx;
+  if (context != nullptr) {
+    memcpy(&ctx, context, sizeof(ctx));
+  } else {
+    RtlCaptureContext(&ctx);
+  }
+
+  st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+  DWORD machine_type;
+  STACKFRAME stk;
+  memset(&stk, 0, sizeof(stk));
+  stk.AddrStack.Mode      = AddrModeFlat;
+  stk.AddrFrame.Mode      = AddrModeFlat;
+  stk.AddrPC.Mode         = AddrModeFlat;
+
+#if defined(_M_AMD64)
+  stk.AddrStack.Offset    = ctx.Rsp;
+  stk.AddrFrame.Offset    = ctx.Rbp;
+  stk.AddrPC.Offset       = ctx.Rip;
+  machine_type            = IMAGE_FILE_MACHINE_AMD64;
+#elif defined(_M_ARM64)
+  stk.AddrStack.Offset    = ctx.Sp;
+  stk.AddrFrame.Offset    = ctx.Fp;
+  stk.AddrPC.Offset       = ctx.Pc;
+  machine_type            = IMAGE_FILE_MACHINE_ARM64;
+#else
+  #error unknown architecture
+#endif
+
+  // Ensure we consider dynamically loaded DLLs
+  SymbolEngine::refreshModuleList();
+
+  int count = 0;
+  address lastpc_internal = 0;
+  while (count++ < StackPrintLimit) {
+    intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
+    intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
+    address pc = (address)stk.AddrPC.Offset;
+
+    if (pc != nullptr) {
+      if (count == 2 && lastpc_internal == pc) {
+        // Skip it -- StackWalk64() may return the same PC
+        // (but different SP) on the first try.
+      } else {
+        // Don't try to create a frame(sp, fp, pc) -- on WinX64, stk.AddrFrame
+        // may not contain what Java expects, and may cause the frame() constructor
+        // to crash. Let's just print out the symbolic address.
+        frame::print_C_frame(st, buf, buf_size, pc);
+        // print source file and line, if available
+        char buf[128];
+        int line_no;
+        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
+        } else {
+          st->print("  (no source info available)");
+        }
+        st->cr();
+      }
+      lastpc_internal = pc;
+    }
+
+    PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
+    if (p == nullptr) {
+      // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
+      lastpc = lastpc_internal;
+      break;
+    }
+
+    BOOL result = WindowsDbgHelp::stackWalk64(
+        machine_type,              // __in      DWORD MachineType,
+        GetCurrentProcess(),       // __in      HANDLE hProcess,
+        GetCurrentThread(),        // __in      HANDLE hThread,
+        &stk,                      // __inout   LP STACKFRAME64 StackFrame,
+        &ctx);                     // __inout   PVOID ContextRecord,
+
+    if (!result) {
+      break;
+    }
+  }
+  if (count > StackPrintLimit) {
+    st->print_cr("...<more frames>...");
+  }
+  st->cr();
+
+  return true;
 }

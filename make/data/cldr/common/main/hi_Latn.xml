@@ -20,7 +20,6 @@ annotations.
 		<languages>
 			<language type="af">Afreeki</language>
 			<language type="bgc">Hariyaanvi</language>
-			<language type="bn">Bangla</language>
 			<language type="bo">Tibbati</language>
 			<language type="ckb">Kurdish, Sorani</language>
 			<language type="crh">Crimean Turkish</language>
@@ -37,10 +36,8 @@ annotations.
 		</languages>
 		<scripts>
 			<script type="Bali">Baali</script>
-			<script type="Beng">Bangla</script>
 			<script type="Inds">Sindhu</script>
 			<script type="Mymr">Burmese</script>
-			<script type="Orya">Odia</script>
 			<script type="Talu">Naya Tai Lue</script>
 		</scripts>
 		<territories>
@@ -122,10 +119,13 @@ annotations.
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
 			<type key="lw" type="breakall">Sabhi Words mein Line Breaks allow karein</type>
 			<type key="lw" type="keepall">Sabhi Words mein Line Breaks se bachein</type>
+			<type key="lw" type="keepall" scope="core">Sabhi rakhein</type>
 			<type key="lw" type="normal">Words ke liye normal Line Breaks</type>
 			<type key="lw" type="phrase">Phrases mein Line Breaks se bachein</type>
+			<type key="lw" type="phrase" scope="core">Phrases mein rakhein</type>
 			<type key="numbers" type="beng">Bangla Digits</type>
 			<type key="numbers" type="hanidec">Chinese Decimal Numbers</type>
+			<type key="numbers" type="hanidec" scope="core">Positional decimal system ke liye digits ke taur par Chinese number ideographs kaa use</type>
 			<type key="numbers" type="hans">Simplified Chinese Numbers</type>
 			<type key="numbers" type="hansfin">Simplified Chinese Financial Numbers</type>
 			<type key="numbers" type="hant">Traditional Chinese Numbers</type>
@@ -195,6 +195,9 @@ annotations.
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'par'</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0} 'par'</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -202,6 +205,9 @@ annotations.
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0} 'par'</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1} {0} 'par'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -216,6 +222,10 @@ annotations.
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Bhms">h:mm.ss B</dateFormatItem>
+						<dateFormatItem id="EBh">E, B h</dateFormatItem>
+						<dateFormatItem id="Eh">E, h a</dateFormatItem>
+						<dateFormatItem id="hv">h a, v</dateFormatItem>
+						<dateFormatItem id="Hv">HH'h', v</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
@@ -444,7 +454,10 @@ annotations.
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0} 'baje'</pattern>
+							<pattern>{1}, {0} 'par'</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'par'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -452,7 +465,10 @@ annotations.
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0} 'baje'</pattern>
+							<pattern>{1}, {0} 'par'</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="relative">
+							<pattern>{1}, {0} 'par'</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -466,11 +482,10 @@ annotations.
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y, d MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y, dd MMM, E</dateFormatItem>
-						<dateFormatItem id="GyMMMEEEEd">G y, dd MMMM, E</dateFormatItem>
+						<dateFormatItem id="EBh">E, B h</dateFormatItem>
+						<dateFormatItem id="Eh">E, h a</dateFormatItem>
+						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="hv">h a, v</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM 'kaa' 'week' W</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
@@ -1176,9 +1191,6 @@ annotations.
 		</fields>
 		<timeZoneNames>
 			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-				</short>
 				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
@@ -1294,6 +1306,14 @@ annotations.
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
+					<pattern alt="noCurrency">#,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
@@ -1361,6 +1381,11 @@ annotations.
 				<unitPattern count="one">{0} percent</unitPattern>
 				<unitPattern count="other">{0} percent</unitPattern>
 			</unit>
+			<unit type="concentr-ofglucose">
+				<displayName>glucose level</displayName>
+				<unitPattern count="one">{0} kaa glucose level</unitPattern>
+				<unitPattern count="other">{0} kaa glucose level</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>miles per Imp. gallon</displayName>
 				<unitPattern count="one">{0} mile per Imp. gallon</unitPattern>
@@ -1418,6 +1443,11 @@ annotations.
 				<displayName>millimetres mercury</displayName>
 				<unitPattern count="one">{0} millimetre mercury</unitPattern>
 				<unitPattern count="other">{0} millimetres mercury</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>mercury level</displayName>
+				<unitPattern count="one">{0} kaa mercury level</unitPattern>
+				<unitPattern count="other">{0} kaa mercury level</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0} inch mercury</unitPattern>
@@ -1491,6 +1521,11 @@ annotations.
 				<unitPattern count="one">{0} CD</unitPattern>
 				<unitPattern count="other">{0} CD</unitPattern>
 			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>Hg level</displayName>
+				<unitPattern count="one">{0} kaa Hg level</unitPattern>
+				<unitPattern count="other">{0} kaa Hg level</unitPattern>
+			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bars</unitPattern>
@@ -1538,9 +1573,6 @@ annotations.
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-6">
-				<unitPrefixPattern>μ {0}</unitPrefixPattern>
-			</compoundUnit>
 			<unit type="concentr-karat">
 				<displayName>karat</displayName>
 				<unitPattern count="one">{0}kt</unitPattern>
@@ -1577,6 +1609,11 @@ annotations.
 			<unit type="mass-pound">
 				<unitPattern count="one">{0}#</unitPattern>
 				<unitPattern count="other">{0}#</unitPattern>
+			</unit>
+			<unit type="pressure-ofhg">
+				<displayName>Hg level</displayName>
+				<unitPattern count="one">{0} kaa Hg level</unitPattern>
+				<unitPattern count="other">{0} kaa Hg level</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0}bar</unitPattern>

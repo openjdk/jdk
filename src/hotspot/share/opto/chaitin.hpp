@@ -129,7 +129,7 @@ public:
   // count of bits in the current mask.
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
-  void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void set_mask(const RegMask& rm) { _mask.assignFrom(rm); DEBUG_ONLY(_msize_valid = 0;) }
   void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
   void and_with( const RegMask &rm ) { _mask.and_with(rm); DEBUG_ONLY(_msize_valid=0;)}
   void subtract( const RegMask &rm ) { _mask.subtract(rm); DEBUG_ONLY(_msize_valid=0;)}
