@@ -299,14 +299,20 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::max_size())) {
+      if (!is_promotion || !has_plab || (size > plab_min_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
         if (is_promotion && copy != nullptr) {
-          log_debug(gc, plab)("Made a shared promotion of size: %zu, actual PLAB size for thread: %zu, min PLAB: %zu, max PLAB: %zu",
-                              size * HeapWordSize, ShenandoahThreadLocalData::get_plab_actual_size(thread) * HeapWordSize,
-                              PLAB::min_size() * HeapWordSize, plab_max_size() * HeapWordSize);
+          // Our plab has too much remaining to throw away, but it can't fit this object so we allow a shared allocation
+          // in this case.
+          PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+          if (plab != nullptr) {
+            log_debug(gc, plab)("Made a shared promotion of size: %zu, actual PLAB size for thread: %zu, remaining: %zu, min PLAB: %zu, max PLAB: %zu",
+                                size * HeapWordSize, ShenandoahThreadLocalData::get_plab_actual_size(thread) * HeapWordSize,
+                                plab->words_remaining() * HeapWordSize, plab_min_size() * HeapWordSize, plab_max_size() * HeapWordSize);
+
+          }
         }
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
@@ -434,14 +440,17 @@ inline HeapWord* ShenandoahGenerationalHeap::allocate_from_plab(Thread* thread, 
     return nullptr;
   }
 
-  // if plab->word_size() <= 0, thread's plab not yet initialized for this pass, so allow_plab_promotions() is not trustworthy
   HeapWord* obj = plab->allocate(size);
   if ((obj == nullptr) && (plab->words_remaining() < plab_min_size())) {
+    // What remains in this plab is smaller than the minimum plab, so allocate a new plab (retiring this pla).
     // allocate_from_plab_slow will establish allow_plab_promotions(thread) for future invocations
     obj = allocate_from_plab_slow(thread, size, is_promotion);
   }
+
   // if plab->words_remaining() >= ShenGenHeap::heap()->plab_min_size(), just return nullptr so we can use a shared allocation
   if (obj == nullptr) {
+    log_debug(gc, plab)("PLAB remaining (%zu) is more than the minimum PLAB size (%zu), save this PLAB",
+                        plab->words_remaining() * HeapWordSize, plab_min_size() * HeapWordSize);
     return nullptr;
   }
 
@@ -573,8 +582,14 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
 
   // When the plab was instantiated, its entirety was treated as if the entire buffer was going to be dedicated to
   // promotions.  Now that we are retiring the buffer, we adjust for the reality that the plab is not entirely promotions.
-  //  1. Some of the plab may have been dedicated to evacuations.
+  //  1. Some of the plab may have been dedicated to old evacuations.
   //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
+#ifdef ASSERT
+  const size_t actual_size_words = ShenandoahThreadLocalData::get_plab_actual_size(thread);
+  const size_t plab_size_words = plab->word_sz();
+  assert(actual_size_words == plab_size_words || actual_size_words == 0, "Actual plab size and plab word size should be the same");
+#endif
+
   size_t not_promoted =
           ShenandoahThreadLocalData::get_plab_actual_size(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
   ShenandoahThreadLocalData::reset_plab_promoted(thread);
