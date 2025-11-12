@@ -43,8 +43,7 @@ final class QuicRenoCongestionController extends QuicBaseCongestionController {
     }
 
     protected boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
-        boolean isAppLimited;
-        isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
+        boolean isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
         if (!isAppLimited) {
             congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
         }
