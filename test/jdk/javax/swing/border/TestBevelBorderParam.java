@@ -56,6 +56,7 @@ public class TestBevelBorderParam {
             str.append("\n");
             str.append("BevelBorder constructor throws NPE for null highlight and shadow");
         }
+
         if (str.length() != 0) {
             throw new RuntimeException(str.toString());
         }
