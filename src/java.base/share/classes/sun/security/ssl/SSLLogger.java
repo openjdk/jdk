@@ -215,9 +215,28 @@ public final class SSLLogger {
 
     // Logs a warning message and always returns false. This method
     // can be used as an OR Predicate to add a log in a stream filter.
-    public static boolean logWarning(String option, String s) {
+    public static boolean logWarning(String option, String s,
+            Object... params) {
         if (SSLLogger.isOn && SSLLogger.isOn(option)) {
-            SSLLogger.warning(s);
+            SSLLogger.warning(s, params);
+        }
+        return false;
+    }
+
+    // Logs an info message and always returns false. This method
+    // can be used as an OR Predicate to add a log in a stream filter.
+    public static boolean logInfo(String option, String s, Object... params) {
+        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+            SSLLogger.info(s, params);
+        }
+        return false;
+    }
+
+    // Logs a fine message and always returns false. This method
+    // can be used as an OR Predicate to add a log in a stream filter.
+    public static boolean logFine(String option, String s, Object... params) {
+        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+            SSLLogger.fine(s, params);
         }
         return false;
     }
