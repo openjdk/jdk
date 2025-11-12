@@ -29,16 +29,16 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 
-static size_t get_max_offset_for_map() {
-  // The page table has (ZAddressOffsetMax >> ZGranuleSizeShift) slots
-  const size_t max_count = ZAddressOffsetMax >> ZGranuleSizeShift;
+static size_t get_offset_upper_limit_for_map() {
+  // The page table has (ZAddressOffsetUpperLimit >> ZGranuleSizeShift) slots
+  const size_t max_count = ZAddressOffsetUpperLimit >> ZGranuleSizeShift;
   const size_t required_count = ZIndexDistributor::get_count(max_count);
 
   return required_count << ZGranuleSizeShift;
 }
 
 ZPageTable::ZPageTable()
-  : _map(get_max_offset_for_map()) {}
+  : _map(get_offset_upper_limit_for_map()) {}
 
 void ZPageTable::insert(ZPage* page) {
   const zoffset offset = page->start();

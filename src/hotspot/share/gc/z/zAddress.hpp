@@ -46,11 +46,16 @@ const size_t     ZAddressHeapBaseMinShift = 34; // 16GB
 const size_t     ZAddressMaxCapacityLimit = size_t(1) << 44; // 16TB
 extern size_t    ZAddressPlatformMaxAddressSpace;
 
-// Describes the maximal offset inside the heap.
+// Describes the offset inside the heap.
 extern size_t    ZAddressOffsetBits;
 const  size_t    ZAddressOffsetShift = 0;
 extern uintptr_t ZAddressOffsetMask;
+
+// Describes the computational max offset inside the heap.
 extern size_t    ZAddressOffsetMax;
+
+// Describes the reserved upper limit for offset inside the heap.
+extern size_t    ZAddressOffsetUpperLimit;
 
 // Describes the maximal offset inside the backing storage.
 extern size_t    ZBackingOffsetMax;
@@ -330,11 +335,15 @@ private:
 
   static void set_good_masks();
   static void pd_set_good_masks();
-  static void set_heap_base(size_t heap_base_shift);
 
 public:
   static void initialize();
-  static bool set_next_heap_base();
+
+  static void set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper_limit);
+
+  static size_t initial_heap_base_shift();
+  static size_t next_heap_base_shift(size_t heap_base_shift);
+  static void validate_heap_base_shift(size_t heap_base_shift);
 
   static void flip_young_mark_start();
   static void flip_young_relocate_start();

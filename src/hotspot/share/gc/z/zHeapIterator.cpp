@@ -256,7 +256,7 @@ ZHeapIterator::ZHeapIterator(uint nworkers,
                              bool for_verify)
   : _visit_weaks(visit_weaks),
     _for_verify(for_verify),
-    _bitmaps(ZAddressOffsetMax),
+    _bitmaps(ZAddressOffsetUpperLimit),
     _bitmaps_lock(),
     _queues(nworkers),
     _array_chunk_queues(nworkers),

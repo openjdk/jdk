@@ -44,11 +44,11 @@ using namespace testing;
 class ZForwardingTest : public ZTest {
 public:
   // Setup and tear down
-  ZHeap*            _old_heap;
-  ZGenerationOld*   _old_old;
-  ZGenerationYoung* _old_young;
-  ZAddressReserver  _zaddress_reserver;
-  zoffset           _page_offset;
+  ZHeap*                _old_heap;
+  ZGenerationOld*       _old_old;
+  ZGenerationYoung*     _old_young;
+  ZTestAddressReserver  _zaddress_reserver;
+  zoffset               _page_offset;
 
   virtual void SetUp() {
     // Only run test on supported Windows versions

@@ -26,42 +26,104 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zArray.hpp"
+#include "gc/z/zRange.hpp"
 #include "gc/z/zRangeRegistry.hpp"
 #include "gc/z/zValue.hpp"
 #include "gc/z/zVirtualMemory.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-using ZVirtualMemoryRegistry = ZRangeRegistry<ZVirtualMemory>;
+class ZVirtualMemoryReserver : AllStatic {
+private:
+  // Platform specific implementation
+  static bool pd_reserve(uintptr_t addr, size_t size);
+  static void pd_split_reserved(uintptr_t addr, size_t split_size, size_t size);
+  static void pd_unreserve(uintptr_t addr, size_t size);
 
-class ZVirtualMemoryReserver {
-  friend class ZTest;
-  friend class ZMapperTest;
-  friend class ZVirtualMemoryManagerTest;
+public:
+  static bool reserve(uintptr_t addr, size_t size);
+  static void split_reserved(uintptr_t addr, size_t split_size, size_t size);
+  static void unreserve(uintptr_t addr, size_t size);
+};
+
+class ZVirtualMemoryWithHeapBaseReserver {
+  friend class ZVirtualMemoryReservationTest;
 
 private:
-
-  ZVirtualMemoryRegistry _registry;
-  const size_t           _reserved;
+  // The heap base to reserve against
+  const uintptr_t               _heap_base;
+  ZArray<ZVirtualMemoryUntyped> _reserved_ranges;
 
   static size_t calculate_min_range(size_t size);
 
-  // Platform specific implementation
-  void pd_register_callbacks(ZVirtualMemoryRegistry* registry);
-  bool pd_reserve(zaddress_unsafe addr, size_t size);
-  void pd_unreserve(zaddress_unsafe addr, size_t size);
-
-  bool reserve_contiguous(zoffset start, size_t size);
+  bool reserve_contiguous(uintptr_t addr, size_t size);
   bool reserve_contiguous(size_t size);
-  size_t reserve_discontiguous(zoffset start, size_t size, size_t min_range);
+  size_t reserve_discontiguous(uintptr_t start, size_t size, size_t min_range);
   size_t reserve_discontiguous(size_t size);
-
-  size_t reserve(size_t required_size, size_t desired_size);
-  void unreserve(const ZVirtualMemory& vmem);
 
   DEBUG_ONLY(size_t force_reserve_discontiguous(size_t size);)
 
+  size_t unreserve_all();
+
 public:
-  ZVirtualMemoryReserver(size_t size);
-  ZVirtualMemoryReserver(size_t required_size, size_t desired_size);
+  ZVirtualMemoryWithHeapBaseReserver(size_t heap_base);
+  ~ZVirtualMemoryWithHeapBaseReserver();
+
+  uintptr_t heap_base() const;
+  size_t offset_max() const;
+
+  size_t reserve(size_t size);
+
+  void transfer_reserved_ranges_to(ZArray<ZVirtualMemoryUntyped>* to);
+};
+
+class ZVirtualMemoryAdaptiveReserver {
+  friend class ZTest;
+  friend class ZMapperTest;
+  friend class ZVirtualMemoryRegistryTest;
+  friend class ZVirtualMemoryReservationTest;
+
+private:
+  // Accepted heap base
+  uintptr_t                     _heap_base;
+  // Accepted reserved ranges
+  ZArray<ZVirtualMemoryUntyped> _reserved_ranges;
+
+  void accept(ZVirtualMemoryWithHeapBaseReserver* reserver);
+
+public:
+  ZVirtualMemoryAdaptiveReserver();
+
+  size_t reserve(size_t required_size, size_t desired_size);
+  size_t unreserve_after(size_t keep_size);
+  void unreserve_all();
+
+  uintptr_t heap_base() const;
+  ZArray<ZVirtualMemoryUntyped>* reserved_ranges();
+
+  uintptr_t bottom() const;
+  uintptr_t end() const;
+  size_t reserved() const;
+};
+
+using ZVirtualMemoryRegistry = ZRangeRegistry<ZVirtualMemory>;
+
+class ZVirtualMemoryReservation {
+  friend class ZMapperTest;
+  friend class ZTestAddressReserver;
+  friend class ZVirtualMemoryReservationTest;
+
+private:
+  ZVirtualMemoryRegistry _registry;
+
+  // Platform specific implementation
+  void pd_register_callbacks(ZVirtualMemoryRegistry* registry);
+
+  void unreserve(const ZVirtualMemory& vmem);
+
+  void transfer_reserved_ranges(ZArray<ZVirtualMemoryUntyped>* reserved_ranges);
+
+public:
+  ZVirtualMemoryReservation(ZArray<ZVirtualMemoryUntyped>* reserved_ranges);
 
   void initialize_partition_registry(ZVirtualMemoryRegistry* partition_registry, size_t size);
 
@@ -88,7 +150,7 @@ private:
 public:
   ZVirtualMemoryManager(size_t max_capacity);
 
-  zoffset_end initialize_partitions(ZVirtualMemoryReserver* reserver, size_t size_for_partitions);
+  void initialize_partitions(ZVirtualMemoryReservation* reservation, size_t size_for_partitions);
 
   bool is_initialized() const;
   bool is_multi_partition_enabled() const;

@@ -37,4 +37,9 @@ public:
   int granule_count() const;
 };
 
+struct ZVirtualMemoryUntyped {
+  uintptr_t _start;
+  size_t    _size;
+};
+
 #endif // SHARE_GC_Z_ZVIRTUALMEMORY_HPP

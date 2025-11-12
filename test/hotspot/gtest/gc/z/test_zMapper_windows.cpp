@@ -36,9 +36,9 @@ class ZMapperTest : public ZTest {
 private:
   static constexpr size_t ReservationSize = 3 * ZGranuleSize;
 
-  ZAddressReserver        _zaddress_reserver;
-  ZVirtualMemoryReserver* _reserver;
-  ZVirtualMemoryRegistry* _registry;
+  ZTestAddressReserver       _zaddress_reserver;
+  ZVirtualMemoryReservation* _reservation;
+  ZVirtualMemoryRegistry*    _registry;
 
 public:
   virtual void SetUp() {
@@ -48,12 +48,12 @@ public:
     }
 
     _zaddress_reserver.SetUp(ReservationSize);
-    _reserver = _zaddress_reserver.reserver();
+    _reservation = _zaddress_reserver.reservation();
     _registry = _zaddress_reserver.registry();
 
-    if (_reserver->reserved() < ReservationSize || !_registry->is_contiguous()) {
+    if (_reservation->reserved() < ReservationSize || !_registry->is_contiguous()) {
       GTEST_SKIP() << "Fixture failed to reserve adequate memory, reserved "
-          << (_reserver->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
+          << (_reservation->reserved() >> ZGranuleSizeShift) << " * ZGranuleSize";
     }
   }
 
@@ -65,7 +65,7 @@ public:
 
     // Best-effort cleanup
     _registry = nullptr;
-    _reserver = nullptr;
+    _reservation = nullptr;
     _zaddress_reserver.TearDown();
   }
 
@@ -79,11 +79,11 @@ public:
     ASSERT_EQ(top,    ZVirtualMemory(bottom.start() + 2 * ZGranuleSize, ZGranuleSize));
 
     // Unreserve the middle part
-    _reserver->unreserve(middle);
+    _reservation->unreserve(middle);
 
     // Make sure that we still can unreserve the memory before and after
-    _reserver->unreserve(bottom);
-    _reserver->unreserve(top);
+    _reservation->unreserve(bottom);
+    _reservation->unreserve(top);
   }
 };
 

@@ -26,6 +26,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.inline.hpp"
+#include "gc/z/zOnError.hpp"
 #include "gc/z/zVerify.hpp"
 #include "logging/log.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -42,6 +43,7 @@ size_t     ZAddressPlatformMaxAddressSpace;
 size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
 size_t     ZAddressOffsetMax;
+size_t     ZAddressOffsetUpperLimit;
 
 size_t     ZBackingOffsetMax;
 
@@ -108,22 +110,34 @@ static void initialize_check_oop_function() {
 #endif
 }
 
-void ZGlobalsPointers::set_heap_base(size_t heap_base_shift) {
-  assert(heap_base_shift <= ZAddressHeapBaseMaxShift, "Heap base shift to large");
-  assert(heap_base_shift <= ZAddressPlatformHeapBaseMaxShift, "Heap base shift to large");
-  assert(heap_base_shift >= ZAddressHeapBaseMinShift, "Heap base shift to small");
-  assert(heap_base_shift >= ZAddressMaxHeapRequiredHeapBaseShift, "Heap base shift to small");
+void ZGlobalsPointers::set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper_limit) {
+  log_trace(gc, init)("Set Heap Base: " PTR_FORMAT, heap_base);
 
   // Setup the heap base
-  ZAddressHeapBaseShift = heap_base_shift;
-  ZAddressHeapBase = (uintptr_t)1 << ZAddressHeapBaseShift;
+  ZAddressHeapBase = heap_base;
+  ZAddressHeapBaseShift = exact_log2(heap_base);
 
-  log_trace(gc, init)("Set Heap Base: " PTR_FORMAT, ZAddressHeapBase);
+  z_on_error_capture_64_5(ZAddressHeapBaseShift, ZAddressHeapBaseMaxShift, ZAddressPlatformHeapBaseMaxShift,
+                          ZAddressHeapBaseMinShift, ZAddressMaxHeapRequiredHeapBaseShift);
+
+  assert(ZAddressHeapBaseShift <= ZAddressHeapBaseMaxShift, "Heap base shift to large");
+  assert(ZAddressHeapBaseShift <= ZAddressPlatformHeapBaseMaxShift, "Heap base shift to large");
+  assert(ZAddressHeapBaseShift >= ZAddressHeapBaseMinShift, "Heap base shift to small");
+  assert(ZAddressHeapBaseShift >= ZAddressMaxHeapRequiredHeapBaseShift, "Heap base shift to small");
 
   // Setup the offset
   ZAddressOffsetBits = ZAddressHeapBaseShift;
   ZAddressOffsetMask = (((uintptr_t)1 << ZAddressOffsetBits) - 1) << ZAddressOffsetShift;
   ZAddressOffsetMax = (uintptr_t)1 << ZAddressOffsetBits;
+  ZAddressOffsetUpperLimit = heap_upper_limit - heap_base;
+
+  {
+    z_on_error_capture_64_3(ZAddressHeapBase, ZAddressOffsetMax, ZAddressOffsetUpperLimit);
+
+    assert(ZAddressOffsetUpperLimit <= ZAddressOffsetMax,
+        "Unexpected ZAddressOffsetUpperLimit: " PTR_FORMAT " ZAddressOffsetMax: " PTR_FORMAT,
+        ZAddressOffsetUpperLimit, ZAddressOffsetMax);
+  }
 }
 
 size_t ZGlobalsPointers::ZAddressPlatformHeapBaseMaxShift;
@@ -153,7 +167,6 @@ void ZGlobalsPointers::initialize() {
   ZAddressInitialHeapBaseShift = ZForceHighestHeapBase
       ? ZAddressPlatformHeapBaseMaxShift
       : MAX2(MIN2(ZAddressHeapBaseRecommendInitalMinShift, ZAddressPlatformHeapBaseMaxShift), ZAddressMaxHeapRecommendedHeapBaseShift);
-  set_heap_base(ZAddressInitialHeapBaseShift);
 
   ZPointerRemappedYoungMask = ZPointerRemapped10 | ZPointerRemapped00;
   ZPointerRemappedOldMask = ZPointerRemapped01 | ZPointerRemapped00;
@@ -167,18 +180,29 @@ void ZGlobalsPointers::initialize() {
   initialize_check_oop_function();
 }
 
-bool ZGlobalsPointers::set_next_heap_base() {
+void ZGlobalsPointers::validate_heap_base_shift(size_t heap_base_shift) {
+  assert(heap_base_shift <= ZAddressHeapBaseMaxShift, "Heap base shift to large");
+  assert(heap_base_shift <= ZAddressPlatformHeapBaseMaxShift, "Heap base shift to large");
+  assert(heap_base_shift >= ZAddressHeapBaseMinShift, "Heap base shift to small");
+  assert(heap_base_shift >= ZAddressMaxHeapRequiredHeapBaseShift, "Heap base shift to small");
+}
+
+size_t ZGlobalsPointers::initial_heap_base_shift() {
+  return ZAddressInitialHeapBaseShift;
+}
+
+size_t ZGlobalsPointers::next_heap_base_shift(size_t heap_base_shift) {
+  validate_heap_base_shift(heap_base_shift);
+
   const size_t min_heap_base_shift = MAX2(ZAddressMaxHeapRequiredHeapBaseShift, ZAddressHeapBaseMinShift);
 
-  const size_t next_heap_base_shift = ZAddressHeapBaseShift == min_heap_base_shift
+  const size_t next_heap_base_shift = heap_base_shift == min_heap_base_shift
       ? ZAddressPlatformHeapBaseMaxShift
-      : ZAddressHeapBaseShift - 1;
+      : heap_base_shift - 1;
 
-  // Set next heap base
-  set_heap_base(next_heap_base_shift);
+  validate_heap_base_shift(next_heap_base_shift);
 
-  // Signal if we have reached the inital heap base
-  return next_heap_base_shift != ZAddressInitialHeapBaseShift;
+  return next_heap_base_shift;
 }
 
 void ZGlobalsPointers::flip_young_mark_start() {
