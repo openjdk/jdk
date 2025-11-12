@@ -880,7 +880,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *         """,
      *         "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
      *     ))
-     * )));
+     * ));
      * }
      *
      * @param key Name for the hashtag replacement.
