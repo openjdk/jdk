@@ -398,7 +398,6 @@ public class Attr extends JCTree.Visitor {
             public Symbol visitPrimitiveType(PrimitiveTypeTree node, Env<AttrContext> p) {
                 return syms.errSymbol;
             }
-
         }
 
     public Type coerce(Type etype, Type ttype) {
