@@ -428,7 +428,7 @@ public final class ErrorTest {
             testSpec().removeArgs("--input").error("error.no-input-parameter"),
             // no --module-path
             testSpec().appDesc("com.other/com.other.Hello").removeArgs("--module-path")
-                    .error("ERR_MissingArgument", "--runtime-image or --module-path"),
+                    .error("ERR_MissingArgument2", "--runtime-image", "--module-path"),
             // no main class in module path
             testSpec().noAppDesc().addArgs("--module", "java.base", "--runtime-image", Token.JAVA_HOME.token())
                     .error("ERR_NoMainClass"),
