@@ -1351,6 +1351,82 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   }
 #endif //ASSERT
 
+
+  // In rare cases, `_type` and `t` have incompatible opinion on speculative type, resulting into a too small intersection
+  // (such as AnyNull), which is removed in cleanup_speculative. From that `ft` has empty speculative type. After the end
+  // of the current `Value` call, `ft` (that is returned) is becoming `_type`. If verification happens then, `t` would be the
+  // same (union of input types), but the new `_type` has now no speculative type, the result of `t->filter_speculative(_type)`
+  // has the speculative type of `t` (if it's not removed because e.g. the resulting type is exact and non null) and not empty
+  // (like the previously returned type). In such a case, doing the filtering one time more allows to reach a fixpoint.
+  if (ft->speculative() == nullptr && t->speculative() != nullptr) {
+    const Type* first_ft = ft;
+    ft = t->filter_speculative(first_ft);
+#ifdef ASSERT
+    // The following logic has been moved into TypeOopPtr::filter.
+    const Type* jt = t->join_speculative(first_ft);
+    if (jt->empty()) {           // Emptied out???
+      // Otherwise it's something stupid like non-overlapping int ranges
+      // found on dying counted loops.
+      assert(ft == Type::TOP, ""); // Canonical empty value
+    }
+
+    else {
+
+      if (jt != ft && jt->base() == ft->base()) {
+        if (jt->isa_int() &&
+            jt->is_int()->_lo == ft->is_int()->_lo &&
+            jt->is_int()->_hi == ft->is_int()->_hi)
+          jt = ft;
+        if (jt->isa_long() &&
+            jt->is_long()->_lo == ft->is_long()->_lo &&
+            jt->is_long()->_hi == ft->is_long()->_hi)
+          jt = ft;
+      }
+      if (jt != ft) {
+        tty->print("merge type:  "); t->dump(); tty->cr();
+        tty->print("kill type:   "); _type->dump(); tty->cr();
+        tty->print("join type:   "); jt->dump(); tty->cr();
+        tty->print("filter type: "); ft->dump(); tty->cr();
+      }
+      assert(jt == ft, "");
+    }
+#endif //ASSERT
+  }
+
+#ifdef ASSERT
+  const Type* ft_ = t->filter_speculative(ft);
+  if (!Type::equals(ft, ft_)) {
+    stringStream ss;
+
+    for (uint i = 1; i < req(); ++i) {
+      ss.print("in(%d): ", i);
+      if (r->in(i) && phase->type(r->in(i)) == Type::CONTROL) {
+        const Type* ti = phase->type(in(i));
+        ti->dump_on(&ss);
+      }
+      ss.print_cr("");
+    }
+
+    ss.print("t: ");
+    t->dump_on(&ss);
+    ss.print_cr("");
+
+    ss.print("_type: ");
+    _type->dump_on(&ss);
+    ss.print_cr("");
+
+    ss.print("Filter once: ");
+    ft->dump_on(&ss);
+    ss.print_cr("");
+    ss.print("Filter twice: ");
+    ft_->dump_on(&ss);
+    ss.print_cr("");
+    tty->print("%s", ss.base());
+    tty->flush();
+    assert(false, "computed type would not pass verification");
+  }
+#endif
+
   // Deal with conversion problems found in data loops.
   ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
