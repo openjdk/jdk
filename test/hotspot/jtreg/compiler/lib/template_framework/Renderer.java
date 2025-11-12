@@ -343,62 +343,62 @@ final class Renderer {
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
             }
-            case ScopeToken st -> {
-                renderScopeToken(st);
+            case ScopeToken scopeToken -> {
+                renderScopeToken(scopeToken);
             }
-            case NameSampleToken nst -> {
-                Name n = currentCodeFrame.sampleName(nst.predicate());
-                if (n == null) {
-                    throw new RendererException("No Name found for " + nst.predicate().toString());
+            case NameSampleToken nameScopeToken -> {
+                Name name = currentCodeFrame.sampleName(nameScopeToken.predicate());
+                if (name == null) {
+                    throw new RendererException("No Name found for " + nameScopeToken.predicate().toString());
                 }
-                ScopeToken st = nst.getScopeToken(n);
-                renderScopeToken(st, () -> {
-                    if (nst.name() != null) {
-                        addHashtagReplacement(nst.name(), n.name());
+                ScopeToken scopeToken = nameScopeToken.getScopeToken(name);
+                renderScopeToken(scopeToken, () -> {
+                    if (nameScopeToken.name() != null) {
+                        addHashtagReplacement(nameScopeToken.name(), name.name());
                     }
-                    if (nst.type() != null) {
-                        addHashtagReplacement(nst.type(), n.type());
+                    if (nameScopeToken.type() != null) {
+                        addHashtagReplacement(nameScopeToken.type(), name.type());
                     }
                 });
             }
-            case NameForEachToken nfet -> {
-                List<Name> list = currentCodeFrame.listNames(nfet.predicate());
-                list.stream().forEach(n -> {
-                    ScopeToken st = nfet.getScopeToken(n);
-                    renderScopeToken(st, () -> {
-                        if (nfet.name() != null) {
-                            addHashtagReplacement(nfet.name(), n.name());
+            case NameForEachToken nameForEachToken -> {
+                List<Name> list = currentCodeFrame.listNames(nameForEachToken.predicate());
+                list.stream().forEach(name -> {
+                    ScopeToken scopeToken = nameForEachToken.getScopeToken(name);
+                    renderScopeToken(scopeToken, () -> {
+                        if (nameForEachToken.name() != null) {
+                            addHashtagReplacement(nameForEachToken.name(), name.name());
                         }
-                        if (nfet.type() != null) {
-                            addHashtagReplacement(nfet.type(), n.type());
+                        if (nameForEachToken.type() != null) {
+                            addHashtagReplacement(nameForEachToken.type(), name.type());
                         }
                     });
                 });
             }
-            case NamesToListToken stlt -> {
-                List<Name> list = currentCodeFrame.listNames(stlt.predicate());
-                renderScopeToken(stlt.getScopeToken(list));
+            case NamesToListToken nameToListToken -> {
+                List<Name> list = currentCodeFrame.listNames(nameToListToken.predicate());
+                renderScopeToken(nameToListToken.getScopeToken(list));
             }
-            case NameCountToken nct -> {
-                int count = currentCodeFrame.countNames(nct.predicate());
-                renderScopeToken(nct.getScopeToken(count));
+            case NameCountToken nameCountToken -> {
+                int count = currentCodeFrame.countNames(nameCountToken.predicate());
+                renderScopeToken(nameCountToken.getScopeToken(count));
             }
-            case NameHasAnyToken nhat -> {
-                boolean hasAny = currentCodeFrame.hasAnyNames(nhat.predicate());
-                renderScopeToken(nhat.getScopeToken(hasAny));
+            case NameHasAnyToken nameHasAnyToken -> {
+                boolean hasAny = currentCodeFrame.hasAnyNames(nameHasAnyToken.predicate());
+                renderScopeToken(nameHasAnyToken.getScopeToken(hasAny));
             }
             case SetFuelCostToken(float fuelCost) -> {
                 currentTemplateFrame.setFuelCost(fuelCost);
             }
-            case LetToken lt -> {
-                ScopeToken st = lt.getScopeToken();
-                renderScopeToken(st, () -> {
-                    addHashtagReplacement(lt.key(), lt.value());
+            case LetToken letToken -> {
+                ScopeToken scopeToken = letToken.getScopeToken();
+                renderScopeToken(scopeToken, () -> {
+                    addHashtagReplacement(letToken.key(), letToken.value());
                 });
             }
-            case HookIsAnchoredToken hiat -> {
-                boolean isAnchored = currentCodeFrame.codeFrameForHook(hiat.hook()) != null;
-                renderScopeToken(hiat.getScopeToken(isAnchored));
+            case HookIsAnchoredToken hookIsAnchoredToken -> {
+                boolean isAnchored = currentCodeFrame.codeFrameForHook(hookIsAnchoredToken.hook()) != null;
+                renderScopeToken(hookIsAnchoredToken.getScopeToken(isAnchored));
             }
         }
     }
