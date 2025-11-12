@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8179678
+ * @bug 8179678 8297933 8371628
  * @summary ArrayCopy with same src and dst can cause incorrect execution or compiler crash
  *
  * @run main/othervm -XX:CompileCommand=compileonly,TestACSameSrcDst::test* TestACSameSrcDst
