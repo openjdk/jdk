@@ -1,11 +1,10 @@
-// This filter appends simplified type information to the (possibly already
-// existing) extra-label line.
-// If the phase type is available, show it. If the bottom type is available and
-// differs from the bottom type, show it too (prefixed with 'B:').
+// This filter appends escape analysis connection graph node information to the
+// (possibly already existing) extra-label line.
+// This is only carried out for those nodes that are relevant to escape
+// analysis (and therefore represented in the connection graph).
 
-// Merge a possibly existing extra label, bottom type, and phase type into a
-// new, single extra label. For memory nodes, add an extra label with the memory
-// slice, extracted from the dump_spec field.
+// Merge a possibly existing extra label with the escape analysis node type into a
+// new, single extra label.
 function mergeAndAppendTypeInfo(extra_label, ea_node) {
   new_extra_label = extra_label == null ? "" : (extra_label + " ");
   return new_extra_label + ea_node;
