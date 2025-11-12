@@ -119,18 +119,24 @@ source %{
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
-      // NEON instructions support them. But the match rule support for them is profitable for
-      // Vector API intrinsics.
+      // NEON instructions support them. They use multiple instructions which is more
+      // expensive in almost all cases where we would auto vectorize.
+      // But the match rule support for them is profitable for Vector API intrinsics.
       if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
+          opcode == Op_MulVL ||
           // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
           // They are not suitable for auto-vectorization because the result would not conform
           // to the JLS, Section Evaluation Order.
+          // Note: we could implement sequential reductions for these reduction operators, but
+          //       this will still almost never lead to speedups, because the sequential
+          //       reductions are latency limited along the reduction chain, and not
+          //       throughput limited. This is unlike unordered reductions (associative op)
+          //       and element-wise ops which are usually throughput limited.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
-          opcode == Op_MulVL) {
+          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
         return false;
       }
     }
@@ -5069,29 +5075,31 @@ instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
 %}
 
 instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
-                    vReg tmp3, vReg tmp4, pReg ptmp, pRegGov pgtmp) %{
+                    vReg tmp3, pReg ptmp, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ptmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp, TEMP pgtmp);
   match(Set dst (CompressV src pg));
-  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, tmp4, $ptmp, $pgtmp" %}
+  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, $ptmp, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_compress_byte($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                         $tmp1$$FloatRegister,$tmp2$$FloatRegister,
-                         $tmp3$$FloatRegister,$tmp4$$FloatRegister,
-                         $ptmp$$PRegister, $pgtmp$$PRegister);
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister,
+                         $ptmp$$PRegister, $pgtmp$$PRegister, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcompressS(vReg dst, vReg src, pReg pg,
-                    vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
+instruct vcompressS(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ sve_dup($tmp1$$FloatRegister, __ H, 0);
     __ sve_compress_short($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                          $tmp1$$FloatRegister,$tmp2$$FloatRegister, $pgtmp$$PRegister);
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $pgtmp$$PRegister,
+                          length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -21,20 +21,21 @@
  * questions.
  */
 
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Predicate;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.CannedFormattedString;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --app-image parameter. The output installer should provide the same
@@ -55,56 +56,79 @@ import jdk.jpackage.test.Annotations.Test;
  */
 public class AppImagePackageTest {
 
+    /**
+     * Create a native bundle from a valid predefined app image produced by jpackage.
+     */
     @Test
     public static void test() {
-        Path appimageOutput = TKit.workDir().resolve("appimage");
 
-        JPackageCommand appImageCmd = JPackageCommand.helloAppImage()
-                .setArgumentValue("--dest", appimageOutput);
+        final var appImageCmd = createAppImageCommand();
 
         new PackageTest()
-        .addRunOnceInitializer(() -> appImageCmd.execute())
-        .addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageCmd.outputBundle());
-            cmd.removeArgumentWithValue("--input");
-        }).addBundleDesktopIntegrationVerifier(false).run();
+        .addRunOnceInitializer(appImageCmd::execute)
+        .usePredefinedAppImage(appImageCmd)
+        .addBundleDesktopIntegrationVerifier(false).run();
     }
 
+    /**
+     * Create a native bundle from a predefined app image not produced by jpackage
+     * but having a valid ".jpackage.xml" file.
+     *
+     * @param withIcon {@code true} if jpackage command line should have "--icon"
+     *                 option
+     */
     @Test
     @Parameter("true")
     @Parameter("false")
     public static void testEmpty(boolean withIcon) throws IOException {
-        final String name = "EmptyAppImagePackageTest";
-        final String imageName = name + (TKit.isOSX() ? ".app" : "");
-        Path appImageDir = TKit.createTempDirectory("appimage").resolve(imageName);
 
-        Files.createDirectories(appImageDir.resolve("bin"));
-        Path libDir = Files.createDirectories(appImageDir.resolve("lib"));
-        TKit.createTextFile(libDir.resolve("README"),
-                List.of("This is some arbitrary text for the README file\n"));
+        final var appImageCmd = createAppImageCommand();
 
         new PackageTest()
-        .addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageDir);
-            if (withIcon) {
-                cmd.addArguments("--icon", iconPath("icon"));
+        .addRunOnceInitializer(appImageCmd::execute)
+        .addRunOnceInitializer(() -> {
+            var layout = appImageCmd.appLayout();
+            if (!TKit.isOSX()) {
+                // Delete the launcher if not on macOS.
+                // On macOS, deleting the launcher will render the app bundle invalid.
+                TKit.deleteIfExists(appImageCmd.appLauncherPath());
             }
-            cmd.removeArgumentWithValue("--input");
-            new AppImageFile("EmptyAppImagePackageTest", "Hello").save(appImageDir);
+            // Delete the runtime.
+            TKit.deleteDirectoryRecursive(layout.runtimeDirectory());
+            // Delete the "app" dir.
+            TKit.deleteDirectoryRecursive(layout.appDirectory());
 
-            // on mac, with --app-image and without --mac-package-identifier,
-            // will try to infer it from the image, so foreign image needs it.
-            if (TKit.isOSX()) {
-                cmd.addArguments("--mac-package-identifier", name);
+            new AppImageFile(appImageCmd.name(), "PhonyMainClass").save(appImageCmd.outputBundle());
+            var appImageDir = appImageCmd.outputBundle();
+
+            TKit.trace(String.format("Files in [%s] app image:", appImageDir));
+            try (var files = Files.walk(appImageDir)) {
+                files.sequential()
+                        .filter(Predicate.isEqual(appImageDir).negate())
+                        .map(path -> String.format("[%s]", appImageDir.relativize(path)))
+                        .forEachOrdered(TKit::trace);
+                TKit.trace("Done");
             }
         })
-        // On macOS we always signing app image and signing will fail, since
-        // test produces invalid app bundle.
-        .setExpectedExitCode(TKit.isOSX() ? 1 : 0)
-        .run(Action.CREATE, Action.UNPACK);
-        // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+        .usePredefinedAppImage(appImageCmd)
+        .addInitializer(cmd -> {
+            if (withIcon) {
+                cmd.setArgumentValue("--icon", iconPath("icon"));
+            }
+
+            cmd.excludeStandardAsserts(
+                    StandardAssert.MAIN_JAR_FILE,
+                    StandardAssert.MAIN_LAUNCHER_FILES,
+                    StandardAssert.MAC_BUNDLE_STRUCTURE,
+                    StandardAssert.RUNTIME_DIRECTORY);
+        })
+        .run(Action.CREATE_AND_UNPACK);
     }
 
+    /**
+     * Bad predefined app image - not an output of jpackage.
+     * jpackage command using the bad predefined app image doesn't have "--name" option.
+     */
     @Test
     public static void testBadAppImage() throws IOException {
         Path appImageDir = TKit.createTempDirectory("appimage");
@@ -114,6 +138,9 @@ public class AppImagePackageTest {
         }).run(Action.CREATE);
     }
 
+    /**
+     * Bad predefined app image - not an output of jpackage.
+     */
     @Test
     public static void testBadAppImage2() throws IOException {
         Path appImageDir = TKit.createTempDirectory("appimage");
@@ -121,12 +148,13 @@ public class AppImagePackageTest {
         configureBadAppImage(appImageDir).run(Action.CREATE);
     }
 
+    /**
+     * Bad predefined app image - valid app image missing ".jpackage.xml" file.
+     */
     @Test
-    public static void testBadAppImage3() throws IOException {
-        Path appImageDir = TKit.createTempDirectory("appimage");
+    public static void testBadAppImage3() {
 
-        JPackageCommand appImageCmd = JPackageCommand.helloAppImage().
-                setFakeRuntime().setArgumentValue("--dest", appImageDir);
+        final var appImageCmd = createAppImageCommand();
 
         configureBadAppImage(appImageCmd.outputBundle()).addRunOnceInitializer(() -> {
             appImageCmd.execute();
@@ -134,12 +162,13 @@ public class AppImagePackageTest {
         }).run(Action.CREATE);
     }
 
+    /**
+     * Bad predefined app image - valid app image with invalid ".jpackage.xml" file.
+     */
     @Test
-    public static void testBadAppImageFile() throws IOException {
-        final var appImageRoot = TKit.createTempDirectory("appimage");
+    public static void testBadAppImageFile() {
 
-        final var appImageCmd = JPackageCommand.helloAppImage().
-                setFakeRuntime().setArgumentValue("--dest", appImageRoot);
+        final var appImageCmd = createAppImageCommand();
 
         final var appImageDir = appImageCmd.outputBundle();
 
@@ -162,11 +191,15 @@ public class AppImagePackageTest {
 
     private static PackageTest configureBadAppImage(Path appImageDir, CannedFormattedString expectedError) {
         return new PackageTest().addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageDir);
-            cmd.removeArgumentWithValue("--input");
+            cmd.usePredefinedAppImage(appImageDir);
             cmd.ignoreDefaultVerbose(true); // no "--verbose" option
             cmd.validateOutput(expectedError);
         }).setExpectedExitCode(1);
+    }
+
+    private static JPackageCommand createAppImageCommand() {
+        final var appImageRoot = TKit.createTempDirectory("appimage");
+        return JPackageCommand.helloAppImage().setFakeRuntime().setArgumentValue("--dest", appImageRoot);
     }
 
     private static Path iconPath(String name) {

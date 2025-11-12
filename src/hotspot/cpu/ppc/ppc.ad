@@ -2450,31 +2450,27 @@ bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
 }
 
 // Register for DIVI projection of divmodI.
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI.
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL.
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL.
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 %}
@@ -3434,7 +3430,6 @@ encode %{
 
     // Create the call node.
     CallDynamicJavaDirectSchedNode *call = new CallDynamicJavaDirectSchedNode();
-    call->_method_handle_invoke = _method_handle_invoke;
     call->_vtable_index      = _vtable_index;
     call->_method            = _method;
     call->_optimized_virtual = _optimized_virtual;
@@ -11569,15 +11564,15 @@ instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP 
 
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   predicate(!UseObjectMonitorTable);
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
+    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -11592,8 +11587,8 @@ instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iR
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -11601,14 +11596,14 @@ instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iR
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmpFastUnlockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
-    __ fast_unlock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($crx$$CondRegister, $oop$$Register, $box$$Register,
+                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -12386,27 +12381,27 @@ instruct countTrailingZerosL_cnttzd(iRegIdst dst, iRegLsrc src) %{
 %}
 
 // Expand nodes for byte_reverse_int.
-instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(DEF dst, USE src, USE pos, USE shift);
+instruct insrwi_a(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // As insrwi_a, but with USE_DEF.
-instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 pos, immI16 shift) %{
-  effect(USE_DEF dst, USE src, USE pos, USE shift);
+instruct insrwi(iRegIdst dst, iRegIsrc src, immI16 n, immI16 b) %{
+  effect(USE_DEF dst, USE src, USE n, USE b);
   predicate(false);
 
-  format %{ "INSRWI  $dst, $src, $pos, $shift" %}
+  format %{ "INSRWI  $dst, $src, $n, $b" %}
   size(4);
   ins_encode %{
-    __ insrwi($dst$$Register, $src$$Register, $shift$$constant, $pos$$constant);
+    __ insrwi($dst$$Register, $src$$Register, $n$$constant, $b$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -12428,12 +12423,12 @@ instruct bytes_reverse_int_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI3;
 
     urShiftI_reg_imm(tmpI1, src, imm24);
-    insrwi_a(dst, tmpI1, imm24, imm8);
+    insrwi_a(dst, tmpI1, imm8, imm24);
     urShiftI_reg_imm(tmpI2, src, imm16);
-    insrwi(dst, tmpI2, imm8, imm16);
+    insrwi(dst, tmpI2, imm16, imm8);
     urShiftI_reg_imm(tmpI3, src, imm8);
     insrwi(dst, tmpI3, imm8, imm8);
-    insrwi(dst, src, imm0, imm8);
+    insrwi(dst, src, imm8, imm0);
   %}
 %}
 
@@ -12551,7 +12546,7 @@ instruct bytes_reverse_ushort_Ex(iRegIdst dst, iRegIsrc src) %{
     immI16   imm8 %{ (int)  8 %}
 
     urShiftI_reg_imm(dst, src, imm8);
-    insrwi(dst, src, imm16, imm8);
+    insrwi(dst, src, imm8, imm16);
   %}
 %}
 
@@ -12580,7 +12575,7 @@ instruct bytes_reverse_short_Ex(iRegIdst dst, iRegIsrc src) %{
     iRegLdst tmpI1;
 
     urShiftI_reg_imm(tmpI1, src, imm8);
-    insrwi(tmpI1, src, imm16, imm8);
+    insrwi(tmpI1, src, imm8, imm16);
     extsh(dst, tmpI1);
   %}
 %}

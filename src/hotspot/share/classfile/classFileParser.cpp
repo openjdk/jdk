@@ -4678,11 +4678,15 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       return signature + 1;
     case JVM_SIGNATURE_CLASS: {
       if (_major_version < JAVA_1_5_VERSION) {
+        signature++;
+        length--;
         // Skip over the class name if one is there
-        const char* const p = skip_over_field_name(signature + 1, true, --length);
-
+        const char* const p = skip_over_field_name(signature, true, length);
+        assert(p == nullptr || p > signature, "must parse one character at least");
         // The next character better be a semicolon
-        if (p && (p - signature) > 1 && p[0] == JVM_SIGNATURE_ENDCLASS) {
+        if (p != nullptr                             && // Parse of field name succeeded.
+            p - signature < static_cast<int>(length) && // There is at least one character left to parse.
+            p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
       }
@@ -5519,6 +5523,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
+    guarantee_property((u4)cp_size < 0xffff, "Overflow in constant pool size for hidden class %s", CHECK);
     cp_size++;
   }
 

@@ -139,6 +139,37 @@ public final class Duration
      */
     public static final Duration ZERO = new Duration(0, 0);
     /**
+     * The minimum supported {@code Duration}, which is {@link Long#MIN_VALUE}
+     * seconds.
+     *
+     * @apiNote This constant represents the smallest possible instance of
+     * {@code Duration}. Since {@code Duration} is directed, the smallest
+     * possible duration is negative.
+     *
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MIN} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
+     *
+     * @since 26
+     */
+    public static final Duration MIN = new Duration(Long.MIN_VALUE, 0);
+    /**
+     * The maximum supported {@code Duration}, which is {@link Long#MAX_VALUE}
+     * seconds and {@code 999,999,999} nanoseconds.
+     *
+     * @apiNote This constant represents the largest possible instance of
+     * {@code Duration}.
+     *
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MAX} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
+     *
+     * @since 26
+     */
+    public static final Duration MAX = new Duration(Long.MAX_VALUE, 999_999_999);
+    /**
      * Serialization version.
      */
     @java.io.Serial
