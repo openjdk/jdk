@@ -1071,6 +1071,14 @@ void PhaseIterGVN::optimize() {
 }
 
 #ifdef ASSERT
+static void check_verify_failure(bool failure) {
+  // If we get this assert, check why the reported nodes were not processed again in IGVN.
+  // We should either make sure that these nodes are properly added back to the IGVN worklist
+  // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
+  // in the verification code above if that is not possible for some reason (like Load nodes).
+  assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
+}
+
 void PhaseIterGVN::verify_optimize() {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
@@ -1079,15 +1087,14 @@ void PhaseIterGVN::verify_optimize() {
       is_verify_Identity()) {
     ResourceMark rm;
     Unique_Node_List worklist;
-    bool failure = false;
     // BFS all nodes, starting at root
     worklist.push(C->root());
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
-      if (is_verify_Value())    { failure |= verify_Value_for(n); }
-      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, false); }
-      if (is_verify_Ideal())    { failure |= verify_Ideal_for(n, true); }
-      if (is_verify_Identity()) { failure |= verify_Identity_for(n); }
+      if (is_verify_Value())    { check_verify_failure(verify_Value_for(n)); }
+      if (is_verify_Ideal())    { check_verify_failure(verify_Ideal_for(n, false)); }
+      if (is_verify_Ideal())    { check_verify_failure(verify_Ideal_for(n, true)); }
+      if (is_verify_Identity()) { check_verify_failure(verify_Identity_for(n)); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -1098,11 +1105,6 @@ void PhaseIterGVN::verify_optimize() {
         worklist.push(n->fast_out(i));
       }
     }
-    // If we get this assert, check why the reported nodes were not processed again in IGVN.
-    // We should either make sure that these nodes are properly added back to the IGVN worklist
-    // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
-    // in the verification code above if that is not possible for some reason (like Load nodes).
-    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
 
   verify_empty_worklist(nullptr);
