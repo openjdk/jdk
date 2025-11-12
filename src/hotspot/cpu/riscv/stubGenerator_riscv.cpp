@@ -2759,10 +2759,13 @@ class StubGenerator: public StubCodeGenerator {
     be_load_counter_128(counter_hi, counter_lo, counter);
 
     Label L_next, L_encrypt_next, L_main_loop, L_exit;
-    // Encrypt bytes left with last encryptedCounter
+    // Check the last saved_encrypted_ctr used value, we fall through
+    // to L_encrypt_next when the used value lower than block_size
     __ bind(L_next);
     __ bgeu(used, block_size, L_main_loop);
 
+    // There is still data left fewer than block_size after L_main_loop
+    // or last used, we encrypt them one by one.
     __ bind(L_encrypt_next);
     __ add(t0, saved_encrypted_ctr, used);
     __ lbu(t1, Address(t0));
@@ -2776,6 +2779,8 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(len, L_exit);
     __ j(L_next);
 
+    // We will calculate the next saved_encrypted_ctr and encrypt the blocks of data
+    // one by one until there is less than a full block remaining if len not zero
     __ bind(L_main_loop);
     __ beqz(len, L_exit);
     __ vle32_v(v16, counter);
@@ -2784,15 +2789,16 @@ class StubGenerator: public StubCodeGenerator {
     generate_aes_encrypt(v16, working_vregs, round);
 
     __ vse32_v(v16, saved_encrypted_ctr);
-    __ mv(used, 0);
 
     // 128-bit little-endian increment
     add_counter_128(counter_hi, counter_lo);
     // 128-bit big-endian store
     be_store_counter_128(counter_hi, counter_lo, counter);
-
+    __ mv(used, 0);
+    // Check if we have a full block_size
     __ bltu(len, block_size, L_encrypt_next);
 
+    // We have one full block to encrypt at least
     __ vle32_v(v17, in);
     __ vxor_vv(v16, v16, v17);
     __ vse32_v(v16, out);
