@@ -27,19 +27,18 @@ import jdk.internal.net.http.quic.*;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.List;
 
 import static jdk.internal.net.http.quic.QuicCubicCongestionController.ALPHA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=trace,quic:cc CubicTest
+ * @run junit/othervm -Djdk.httpclient.HttpClient.log=trace,quic:cc CubicTest
  */
 public class CubicTest {
     static class TimeSource implements TimeLine {
@@ -105,13 +104,13 @@ public class CubicTest {
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
-        assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
+        assertEquals(cc.initialWindow(), cc.congestionWindow(), "Unexpected starting congestion window");
         do {
             cc.packetSent(packetSize);
             // reduce to 70% of the last value, but not below 2*SMSS
             long newCongestionWindow = Math.max((long) (QuicCubicCongestionController.BETA * cc.congestionWindow()), 2 * packetSize);
             cc.packetLost(List.of(new TestQuicPacket(packetSize)), Deadline.MAX, false);
-            assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
+            assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected reduced congestion window");
         } while (cc.congestionWindow() > 2 * packetSize);
     }
 
@@ -122,17 +121,17 @@ public class CubicTest {
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
-        assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
+        assertEquals(cc.initialWindow(), cc.congestionWindow(), "Unexpected starting congestion window");
         cc.packetSent(packetSize);
         long newCongestionWindow = (long) (QuicCubicCongestionController.BETA * cc.congestionWindow());
         // lose packet to exit slow start
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), Deadline.MAX, false);
-        assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
+        assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected reduced congestion window");
         Deadline sentTime = timeSource.instant().plus(1, ChronoUnit.NANOS);
         // congestion window should not increase when sender is app-limited
         cc.packetSent(packetSize);
         cc.packetAcked(packetSize, sentTime);
-        assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected congestion window change");
+        assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected congestion window change");
     }
 
     @Test
@@ -142,13 +141,13 @@ public class CubicTest {
         rtt.consumeRttSample(1, 0, Deadline.MIN);
         QuicCongestionController cc = new QuicCubicCongestionController(timeSource, rtt);
         int packetSize = (int) cc.maxDatagramSize();
-        assertEquals(cc.congestionWindow(), cc.initialWindow(), "Unexpected starting congestion window");
+        assertEquals(cc.initialWindow(), cc.congestionWindow(), "Unexpected starting congestion window");
         int startingWindow = (int) cc.congestionWindow();
         // lose packet to exit slow start
         cc.packetSent(packetSize);
         long newCongestionWindow = (long) (QuicCubicCongestionController.BETA * cc.congestionWindow());
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
-        assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
+        assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected reduced congestion window");
         // exit loss recovery to start increasing cwnd
         Deadline sentTime = timeSource.advanceMillis(1);
         do {
@@ -160,10 +159,8 @@ public class CubicTest {
             cc.packetAcked(startingCwnd, sentTime);
             long expectedCwnd = (long) (startingCwnd + ALPHA * packetSize);
             long actualCwnd = cc.congestionWindow();
-            assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
-                    "actual cwnd %s not within the expected range (%s, %s)".formatted(
-                            actualCwnd, expectedCwnd - 1, expectedCwnd + 1
-                    ));
+            assertEquals(expectedCwnd, actualCwnd,  1.0,
+                    "actual cwnd not within the expected range");
         } while (cc.congestionWindow() < startingWindow);
         // test that the window increases roughly by maxDatagramSize every RTT after passing cwndPrior
         int startingCwnd = (int) cc.congestionWindow();
@@ -171,10 +168,8 @@ public class CubicTest {
         cc.packetAcked(startingCwnd, sentTime);
         int expectedCwnd = startingCwnd + packetSize;
         long actualCwnd = cc.congestionWindow();
-        assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
-                "actual cwnd %s not within the expected range (%s, %s)".formatted(
-                        actualCwnd, expectedCwnd - 1, expectedCwnd + 1
-                ));
+        assertEquals(expectedCwnd, actualCwnd,  1.0,
+                "actual cwnd not within the expected range");
     }
 
     @Test
@@ -197,11 +192,11 @@ public class CubicTest {
         int tmp = (int) (36 * packetSize - cwnd);
         cc.packetSent(tmp + packetSize);
         cc.packetAcked(tmp, timeSource.instant());
-        assertEquals(cc.congestionWindow(), 36*packetSize, "Unexpected congestion window");
+        assertEquals(36*packetSize, cc.congestionWindow(), "Unexpected congestion window");
         long newCongestionWindow = (long) (QuicCubicCongestionController.BETA * cc.congestionWindow());
         // trigger congestion; window will be reduced to 25.2 packets, K=3 seconds
         cc.packetLost(List.of(new TestQuicPacket(packetSize)), timeSource.instant(), false);
-        assertEquals(cc.congestionWindow(), newCongestionWindow, "Unexpected reduced congestion window");
+        assertEquals(newCongestionWindow, cc.congestionWindow(), "Unexpected reduced congestion window");
         // advance "t" to 3 seconds,
         Deadline sentTime = timeSource.advanceMillis(1500);
         // send and acknowledge a whole cwnd of data
@@ -212,9 +207,7 @@ public class CubicTest {
         cc.packetAcked(tmp, sentTime);
         long expectedCwnd = 36 * packetSize;
         long actualCwnd = cc.congestionWindow();
-        assertTrue(actualCwnd >= expectedCwnd - 1 && actualCwnd <= expectedCwnd + 1,
-                "actual cwnd %s not within the expected range (%s, %s)".formatted(
-                        actualCwnd, expectedCwnd - 1, expectedCwnd + 1
-                ));
+        assertEquals(expectedCwnd, actualCwnd,  1.0,
+                "actual cwnd not within the expected range");
     }
 }
