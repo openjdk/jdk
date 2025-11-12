@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8278373 8164094
+ * @bug 7021614 8278373 8164094 8371248
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @summary check references in at-see and {at-link} tags
  * @modules jdk.compiler
@@ -87,6 +87,7 @@ import javax.tools.Diagnostic.Kind;
  * {@link double.NAN Bad}
  * {@link double#NAN Bad}
  * {@link double#double Bad}
+ * {@link java.base/double Bad}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
