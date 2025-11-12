@@ -40,6 +40,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 import jdk.internal.access.SharedSecrets;
 
+import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
 import sun.security.x509.AlgorithmId;
 
@@ -430,7 +431,7 @@ public final class KeyUtil {
      * @return the hash algorithm
      * @throws NoSuchAlgorithmException if key is from an unknown configuration
      */
-    public static String hashAlgFromHSS(PublicKey publicKey)
+    public static ObjectIdentifier hashAlgFromHSS(PublicKey publicKey)
             throws NoSuchAlgorithmException {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
@@ -449,7 +450,7 @@ public final class KeyUtil {
                     + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
             return switch (num) {
                 // RFC 8554 only supports SHA_256 hash algorithm
-                case 5, 6, 7, 8, 9 -> "SHA-256";
+                case 5, 6, 7, 8, 9 -> AlgorithmId.SHA256_oid;
                 default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
             };
         } catch (IOException e) {
@@ -469,6 +470,8 @@ public final class KeyUtil {
                 if (k instanceof SecretKeySpec sk) {
                     SharedSecrets.getJavaxCryptoSpecAccess()
                             .clearSecretKeySpec(sk);
+                } else if (k instanceof PBKDF2KeyImpl p2k) {
+                    p2k.clear();
                 } else {
                     try {
                         k.destroy();

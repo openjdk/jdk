@@ -322,8 +322,6 @@ public:
 };
 
 class ZGlobalsPointers : public AllStatic {
-  friend class ZAddressTest;
-
 private:
   static size_t ZAddressPlatformHeapBaseMaxShift;
   static size_t ZAddressMaxHeapRequiredHeapBaseShift;
