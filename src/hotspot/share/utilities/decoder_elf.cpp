@@ -95,7 +95,7 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
 
   DWARF_LOG_SUMMARY("pc: " PTR_FORMAT ", offset: " INT32_FORMAT_X_0 ", filename: %s, line: %u",
                        p2i(pc), offset_in_library, filename, *line);
-  DWARF_LOG_INFO(""); // To structure the debug output better.
+  DWARF_LOG_INFO("") // To structure the debug output better.
   return true;
 #endif // clang
 }
