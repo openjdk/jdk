@@ -283,7 +283,7 @@ public final class Security {
                 try {
                     if (Files.isSameFile(path, activePath)) {
                         throw new InternalError(
-                                "Cyclic include of '" + resolve(path) + "'");
+                                "Cyclic include of '" + path + "'");
                     }
                 } catch (IOException ignore) {}
             }

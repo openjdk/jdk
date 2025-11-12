@@ -394,8 +394,9 @@ public class ConfigFileTest {
         masterFile.addRelativeInclude(file0);
 
         ex.setMasterFile(masterFile);
-        ex.assertError(
-                "InternalError: Cyclic include of '" + masterFile.path + "'");
+        ex.assertError("Cyclic include");
+        ex.getOutputAnalyzer().stderrMatches("\\QInternalError: Cyclic " +
+                "include of '\\E[^']+\\Q" + masterFile.fileName + "'\\E");
     }
 
     static void testCannotIncludeURL(Executor ex, FilesManager filesMgr)
