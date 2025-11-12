@@ -32,25 +32,24 @@
 class ShenandoahAllocRequest : StackObj {
 public:
   enum Type {
-    _alloc_shared,      // Allocate common, outside of TLAB
-    _alloc_shared_gc,   // Allocate common, outside of GCLAB/PLAB
-    _alloc_cds,         // Allocate for CDS
-    _alloc_tlab,        // Allocate TLAB
-    _alloc_gclab,       // Allocate GCLAB
-    _alloc_plab,        // Allocate PLAB
-    _ALLOC_LIMIT
+    _alloc_shared     = 2, // Allocate common, outside of TLAB
+    _alloc_cds        = 4, // Allocate for CDS
+    _alloc_tlab       = 5, // Allocate TLAB
+    _alloc_shared_gc  = 6, // Allocate common, outside of GCLAB/PLAB
+    _alloc_gclab      = 7, // Allocate GCLAB
+    _alloc_plab       = 9  // Allocate PLAB
   };
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
       case _alloc_shared:
         return "Shared";
-      case _alloc_shared_gc:
-        return "Shared GC";
       case _alloc_cds:
         return "CDS";
       case _alloc_tlab:
         return "TLAB";
+      case _alloc_shared_gc:
+        return "Shared GC";
       case _alloc_gclab:
         return "GCLAB";
       case _alloc_plab:
@@ -167,51 +166,15 @@ public:
   }
 
   inline bool is_mutator_alloc() const {
-    switch (_alloc_type) {
-      case _alloc_tlab:
-      case _alloc_shared:
-      case _alloc_cds:
-        return true;
-      case _alloc_gclab:
-      case _alloc_plab:
-      case _alloc_shared_gc:
-        return false;
-      default:
-        ShouldNotReachHere();
-        return false;
-    }
+    return _alloc_type <= _alloc_tlab;
   }
 
   inline bool is_gc_alloc() const {
-    switch (_alloc_type) {
-      case _alloc_tlab:
-      case _alloc_shared:
-      case _alloc_cds:
-        return false;
-      case _alloc_gclab:
-      case _alloc_plab:
-      case _alloc_shared_gc:
-        return true;
-      default:
-        ShouldNotReachHere();
-        return false;
-    }
+    return _alloc_type >= _alloc_shared_gc;
   }
 
   inline bool is_lab_alloc() const {
-    switch (_alloc_type) {
-      case _alloc_tlab:
-      case _alloc_gclab:
-      case _alloc_plab:
-        return true;
-      case _alloc_shared:
-      case _alloc_shared_gc:
-      case _alloc_cds:
-        return false;
-      default:
-        ShouldNotReachHere();
-        return false;
-    }
+    return (_alloc_type & 1) == 1;
   }
 
   bool is_old() const {
