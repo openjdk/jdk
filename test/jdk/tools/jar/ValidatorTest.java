@@ -310,6 +310,12 @@ class ValidatorTest {
         }
     }
 
+    /**
+     * Validates that the LOC MANIFEST.MF entries are at the expected positions.
+     *
+     * It does not do a similar CEN check in the event that the LOC and CEN
+     * entries do not match. Those mismatch cases are already checked by other tests.
+     */
     @Test
     public void testWrongManifestPositions() throws IOException {
         testWrongManifestPosition(
@@ -318,7 +324,7 @@ class ValidatorTest {
                 entry: PLACEHOLDER, stored at wrong position: 0
                 """,
                 EntryWriter.ofText("PLACEHOLDER", "0"),
-                EntryWriter.ofText(META_INF + "MANIFEST.MF", "# empty"));
+                EntryWriter.ofText(META_INF + "MANIFEST.MF", "Manifest-Version: 1.0"));
         testWrongManifestPosition(
                 Path.of("wrong-entry-position-B.jar"),
                 """
@@ -326,7 +332,7 @@ class ValidatorTest {
                 """,
                 EntryWriter.ofDirectory(META_INF),
                 EntryWriter.ofText("PLACEHOLDER", "1"),
-                EntryWriter.ofText(META_INF + "MANIFEST.MF", "# empty"));
+                EntryWriter.ofText(META_INF + "MANIFEST.MF", "Manifest-Version: 1.0"));
         testWrongManifestPosition(
                 Path.of("wrong-entry-position-C.jar"),
                 """
@@ -336,7 +342,7 @@ class ValidatorTest {
                 EntryWriter.ofText("PLACEHOLDER1", "1"),
                 EntryWriter.ofText("PLACEHOLDER2", "2"),
                 EntryWriter.ofText("PLACEHOLDER3", "3"),
-                EntryWriter.ofText(META_INF + "MANIFEST.MF", "# empty"));
+                EntryWriter.ofText(META_INF + "MANIFEST.MF", "Manifest-Version: 1.0"));
     }
 
     private void testWrongManifestPosition(
