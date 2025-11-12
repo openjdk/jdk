@@ -195,9 +195,10 @@ inline int StackChunkFrameStream<frame_kind>::stack_argsize() const {
 }
 
 template <ChunkFrames frame_kind>
-inline int StackChunkFrameStream<frame_kind>::num_oops() const {
+template <typename RegisterMapT>
+inline int StackChunkFrameStream<frame_kind>::num_oops(RegisterMapT* map) const {
   if (is_interpreted()) {
-    return interpreter_frame_num_oops();
+    return interpreter_frame_num_oops(map);
   } else if (is_compiled()) {
     return oopmap()->num_oops();
   } else {
@@ -365,7 +366,7 @@ template <class OopClosureType, class RegisterMapT>
 inline void StackChunkFrameStream<frame_kind>::iterate_oops(OopClosureType* closure, const RegisterMapT* map) const {
   if (is_interpreted()) {
     frame f = to_frame();
-    f.oops_interpreted_do(closure, nullptr, true);
+    f.oops_interpreted_do(closure, map, true);
   } else {
     DEBUG_ONLY(int oops = 0;)
     for (OopMapStream oms(oopmap()); !oms.is_done(); oms.next()) {

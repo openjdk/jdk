@@ -192,9 +192,7 @@ final class ConfigFilesStasher {
     }
 
     private static ApplicationLayout appImageAppLayout(JPackageCommand cmd) {
-        if (cmd.isRuntime()) {
-            throw new UnsupportedOperationException();
-        }
+        cmd.verifyNotRuntime();
 
         if (cmd.isImagePackageType()) {
             return platformAppImage();
