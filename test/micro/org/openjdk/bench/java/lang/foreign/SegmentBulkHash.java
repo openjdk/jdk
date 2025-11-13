@@ -111,8 +111,7 @@ public class SegmentBulkHash {
                 case ALIGNED   -> s.asSlice(0, size);
                 case UNALIGNED -> s.asSlice(1, size);
             };
-
-            // Always use the same alignment regardless of size
+            
             segment = (AbstractMemorySegmentImpl) s;
         }
 
