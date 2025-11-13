@@ -113,7 +113,7 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   } else if (user_specified_NewSize) {
     _sizer_kind = SizerNewSizeOnly;
   } else {
-    assert(user_specified_MaxNewSize, "");
+    postcond(user_specified_MaxNewSize);
     _sizer_kind = SizerMaxNewSizeOnly;
   }
 }
