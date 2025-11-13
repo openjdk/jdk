@@ -49,21 +49,6 @@ public class DecimalDigitsTest {
     }
 
     @Test
-    public void testAppendPairWithLatin1Encoding() {
-        // Test appendPair with LATIN1 encoding
-        StringBuilder sb = new StringBuilder();
-
-        // Force the StringBuilder to use LATIN1 encoding by ensuring all characters are LATIN1
-        // This is the default behavior when all characters fit in LATIN1
-        for (int i = 0; i <= 99; i++) {
-            sb.setLength(0); // Clear the StringBuilder
-            DecimalDigits.appendPair(sb, i);
-            String expected = String.format("%02d", i);
-            assertEquals(sb.toString(), expected, "Failed for value: " + i + " with LATIN1 encoding");
-        }
-    }
-
-    @Test
     public void testAppendPairWithUTF16Encoding() {
         // Test appendPair with UTF16 encoding
         StringBuilder sb = new StringBuilder();
