@@ -2205,19 +2205,19 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             setCompileOptions(new String[] {"-Xlint:deprecation"});
             assertOKWithWarning("compiler.warn.has.been.deprecated",
-                    """
-                            record R(
-                                /**
-                                 * @deprecated
-                                 */
-                                @Deprecated
-                                int i
-                            ) {}
-                            class Client {
-                                R r;
-                                int j = r.i();
-                            }
-                            """
+                """
+                record R(
+                    /**
+                     * @deprecated
+                     */
+                    @Deprecated
+                    int i
+                ) {}
+                class Client {
+                    R r;
+                    int j = r.i();
+                }
+                """
             );
         } finally {
             setCompileOptions(previousOptions);
