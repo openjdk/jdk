@@ -463,8 +463,8 @@ public final class DecimalDigits {
         // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packed = DIGITS[v & 0x7f];
-        // The temporary String and byte[] objects created here are typically eliminated 
-        // by the JVM's escape analysis and scalar replacement optimizations during 
+        // The temporary String and byte[] objects created here are typically eliminated
+        // by the JVM's escape analysis and scalar replacement optimizations during
         // runtime compilation, avoiding actual heap allocations in optimized code.
         buf.append(
                 JLA.uncheckedNewStringWithLatin1Bytes(
@@ -490,8 +490,8 @@ public final class DecimalDigits {
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packedHigh = DIGITS[(v / 100) & 0x7f];
         int packedLow  = DIGITS[(v % 100) & 0x7f];
-        // The temporary String and byte[] objects created here are typically eliminated 
-        // by the JVM's escape analysis and scalar replacement optimizations during 
+        // The temporary String and byte[] objects created here are typically eliminated
+        // by the JVM's escape analysis and scalar replacement optimizations during
         // runtime compilation, avoiding actual heap allocations in optimized code.
         buf.append(
                 JLA.uncheckedNewStringWithLatin1Bytes(
