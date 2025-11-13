@@ -132,13 +132,10 @@
                         FloatRegister op1, FloatRegister op2,
                         Register dst, Register src, bool is_single);
 
-  void enc_cmove_fp_cmp(int cmpFlag,
-                        Register op1, Register op2, Register tmp1, Register tmp2,
+  void enc_cmove_fp_cmp(int cmpFlag, Register op1, Register op2,
                         FloatRegister dst, FloatRegister src, bool is_single);
 
-  void enc_cmove_fp_cmp_fp(int cmpFlag,
-                           FloatRegister op1, FloatRegister op2,
-                           Register tmp1, Register tmp2,
+  void enc_cmove_fp_cmp_fp(int cmpFlag, FloatRegister op1, FloatRegister op2,
                            FloatRegister dst, FloatRegister src,
                            bool cmp_single, bool cmov_single);
 

@@ -1235,26 +1235,7 @@ void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Regist
 
 // ----------- cmove float/double -----------
 
-void MacroAssembler::cmov_fp_eq(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    xorr(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_eq(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bne(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1265,26 +1246,7 @@ void MacroAssembler::cmov_fp_eq(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_ne(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    xorr(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_ne(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   beq(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1295,26 +1257,7 @@ void MacroAssembler::cmov_fp_ne(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_le(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    slt(t0, cmp2, cmp1);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_le(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bgt(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1325,26 +1268,7 @@ void MacroAssembler::cmov_fp_le(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_leu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    sltu(t0, cmp2, cmp1);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_leu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bgtu(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1355,26 +1279,7 @@ void MacroAssembler::cmov_fp_leu(Register cmp1, Register cmp2, Register tmpDst, 
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_ge(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    slt(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_ge(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   blt(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1385,26 +1290,7 @@ void MacroAssembler::cmov_fp_ge(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_geu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    sltu(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_geu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bltu(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1415,26 +1301,7 @@ void MacroAssembler::cmov_fp_geu(Register cmp1, Register cmp2, Register tmpDst, 
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_lt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    slt(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_lt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bge(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1445,26 +1312,7 @@ void MacroAssembler::cmov_fp_lt(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_ltu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    sltu(t0, cmp1, cmp2);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_ltu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bgeu(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1475,26 +1323,7 @@ void MacroAssembler::cmov_fp_ltu(Register cmp1, Register cmp2, Register tmpDst, 
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_gt(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    slt(t0, cmp2, cmp1);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_gt(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   ble(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1505,26 +1334,7 @@ void MacroAssembler::cmov_fp_gt(Register cmp1, Register cmp2, Register tmpDst, R
   bind(no_set);
 }
 
-void MacroAssembler::cmov_fp_gtu(Register cmp1, Register cmp2, Register tmpDst, Register tmpSrc, FloatRegister dst, FloatRegister src, bool is_single) {
-  if (UseZicond) {
-    sltu(t0, cmp2, cmp1);
-    if (is_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0,  tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (is_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
+void MacroAssembler::cmov_fp_gtu(Register cmp1, Register cmp2, FloatRegister dst, FloatRegister src, bool is_single) {
   Label no_set;
   bleu(cmp1, cmp2, no_set);
   if (is_single) {
@@ -1700,32 +1510,8 @@ void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Regi
 //   java code      :  cmp1 != cmp2 ? dst : src
 //   transformed to :  CMove dst, (cmp1 eq cmp2), dst, src
 void MacroAssembler::cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2,
-                                       Register tmpDst, Register tmpSrc,
                                        FloatRegister dst, FloatRegister src,
                                        bool cmp_single, bool cmov_single) {
-  if (UseZicond) {
-    if (cmp_single) {
-      feq_s(t0, cmp1, cmp2);
-    } else {
-      feq_d(t0, cmp1, cmp2);
-    }
-    if (cmov_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_nez(tmpDst, tmpDst, t0);
-    czero_eqz(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (cmov_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
   Label no_set;
   if (cmp_single) {
     // jump if cmp1 != cmp2, including the case of NaN
@@ -1748,32 +1534,8 @@ void MacroAssembler::cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2,
 //   java code      :  cmp1 == cmp2 ? dst : src
 //   transformed to :  CMove dst, (cmp1 ne cmp2), dst, src
 void MacroAssembler::cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2,
-                                       Register tmpDst, Register tmpSrc,
                                        FloatRegister dst, FloatRegister src,
                                        bool cmp_single, bool cmov_single) {
-  if (UseZicond) {
-    if (cmp_single) {
-      feq_s(t0, cmp1, cmp2);
-    } else {
-      feq_d(t0, cmp1, cmp2);
-    }
-    if (cmov_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (cmov_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
   Label no_set;
   if (cmp_single) {
     // jump if cmp1 == cmp2
@@ -1799,32 +1561,8 @@ void MacroAssembler::cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2,
 //     java code      :  cmp1 > cmp2 ? dst : src
 //     transformed to :  CMove dst, (cmp1 le cmp2), dst, src
 void MacroAssembler::cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2,
-                                       Register tmpDst, Register tmpSrc,
                                        FloatRegister dst, FloatRegister src,
                                        bool cmp_single, bool cmov_single) {
-  if (UseZicond) {
-    if (cmp_single) {
-      flt_s(t0, cmp2, cmp1);
-    } else {
-      flt_d(t0, cmp2, cmp1);
-    }
-    if (cmov_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (cmov_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
   Label no_set;
   if (cmp_single) {
     // jump if cmp1 > cmp2
@@ -1850,32 +1588,8 @@ void MacroAssembler::cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2,
 //     java code      :  cmp1 >= cmp2 ? dst : src
 //     transformed to :  CMove dst, (cmp1 lt cmp2), dst, src
 void MacroAssembler::cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2,
-                                       Register tmpDst, Register tmpSrc,
                                        FloatRegister dst, FloatRegister src,
                                        bool cmp_single, bool cmov_single) {
-  if (UseZicond) {
-    if (cmp_single) {
-      fle_s(t0, cmp2, cmp1);
-    } else {
-      fle_d(t0, cmp2, cmp1);
-    }
-    if (cmov_single) {
-      fmv_x_w(tmpDst, dst);
-      fmv_x_w(tmpSrc, src);
-    } else {
-      fmv_x_d(tmpDst, dst);
-      fmv_x_d(tmpSrc, src);
-    }
-    czero_eqz(tmpDst, tmpDst, t0);
-    czero_nez(t0 , tmpSrc, t0);
-    orr(tmpDst, tmpDst, t0);
-    if (cmov_single) {
-      fmv_w_x(dst, tmpDst);
-    } else {
-      fmv_d_x(dst, tmpDst);
-    }
-    return;
-  }
   Label no_set;
   if (cmp_single) {
     // jump if cmp1 >= cmp2
