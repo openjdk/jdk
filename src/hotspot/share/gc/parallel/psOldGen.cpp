@@ -202,10 +202,21 @@ void PSOldGen::try_expand_till_size(size_t target_capacity_bytes) {
 
 bool PSOldGen::expand(size_t bytes) {
 #ifdef ASSERT
-  if (!Thread::current()->is_VM_thread()) {
-    assert_lock_strong(PSOldGenExpand_lock);
+  //  During startup (is_init_completed() == false), expansion can occur for
+  //    1. java-threads invoking heap-allocation (using Heap_lock)
+  //    2. CDS construction by a single thread (using PSOldGenExpand_lock but not needed)
+  //
+  //  After startup (is_init_completed() == true), expansion can occur for
+  //    1. GC workers for promoting to old-gen (using PSOldGenExpand_lock)
+  //    2. VM thread to satisfy the pending allocation
+  //    Both cases are inside safepoint pause, but are never overlapping.
+  //
+  if (is_init_completed()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+    assert(Thread::current()->is_VM_thread() || PSOldGenExpand_lock->owned_by_self(), "precondition");
+  } else {
+    assert(Heap_lock->owned_by_self() || PSOldGenExpand_lock->owned_by_self(), "precondition");
   }
-  assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
 #endif
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
