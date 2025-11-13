@@ -372,8 +372,22 @@ public interface JavaLangAccess {
      */
     char uncheckedGetUTF16Char(byte[] bytes, int index);
 
+    /**
+     * For performance reasons, two Latin1 characters are appended to the StringBuilder in a single call.
+     * @param buf the StringBuilder
+     * @param c1 the first latin1 char
+     * @param c2 the second latin1 char
+     */
     void appendLatin1(StringBuilder buf, char c1, char c2);
 
+    /**
+     * For performance reasons, four Latin1 characters are appended to the StringBuilder in a single call.
+     * @param buf the StringBuilder
+     * @param c1 the first latin1 char
+     * @param c2 the second latin1 char
+     * @param c3 the third latin1 char
+     * @param c4 the fourth latin1 char
+     */
     void appendLatin1(StringBuilder buf, char c1, char c2, char c3, char c4);
 
     /**

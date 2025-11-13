@@ -897,6 +897,11 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         return this;
     }
 
+    /**
+     * For performance reasons, two Latin1 characters are appended to the StringBuilder in a single call.
+     * @param c1 the first latin1 char
+     * @param c2 the second latin1 char
+     */
     final void appendLatin1(char c1, char c2) {
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
@@ -911,6 +916,13 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         this.value = value;
     }
 
+    /**
+     * For performance reasons, four Latin1 characters are appended to the StringBuilder in a single call.
+     * @param c1 the first latin1 char
+     * @param c2 the second latin1 char
+     * @param c3 the third latin1 char
+     * @param c4 the fourth latin1 char
+     */
     final void appendLatin1(char c1, char c2, char c3, char c4) {
         int count = this.count;
         int newCount = count + 4;
