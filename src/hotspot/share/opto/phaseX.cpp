@@ -2853,7 +2853,7 @@ bool PhaseCCP::needs_revisit(Node* n) const {
     return true;
   }
   // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-  if (n->Opcode() == Op_CmpP) {
+  if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     return true;
   }
   return false;
