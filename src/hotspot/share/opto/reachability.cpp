@@ -205,7 +205,7 @@ void PhaseIdealLoop::remove_rf(ReachabilityFenceNode* rf) {
 //======================================================================
 //---------------------------- Phase 1 ---------------------------------
 // Optimization pass over reachability fences during loop opts.
-// Eliminate redundant RFs and move RFs with loop-invariant referent out of the loop.
+// Moves RFs with loop-invariant referents out of the loop.
 bool PhaseIdealLoop::optimize_reachability_fences() {
   Compile::TracePhase tp(_t_reachability_optimize);
 
@@ -256,7 +256,7 @@ bool PhaseIdealLoop::optimize_reachability_fences() {
 //======================================================================
 //---------------------------- Phase 2 ---------------------------------
 
-// Linearly traverse CFG upwards starting at n until first merge point.
+// Linearly traverse CFG upwards starting at ctrl_start until first merge point.
 // All encountered safepoints are recorded in safepoints list, except
 // the ones filtered out by is_interfering_sfpt_candidate().
 static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_Stack& stack, VectorSet& visited,
@@ -270,6 +270,8 @@ static void enumerate_interfering_sfpts_linear_traversal(Node* ctrl_start, Node_
         stack.push(ctrl, 1);
         return; // stop at merge points
       } else if (ctrl->is_SafePoint() && is_interfering_sfpt_candidate(ctrl->as_SafePoint())) {
+        assert(!ctrl->is_CallStaticJava() || !ctrl->as_CallStaticJava()->is_uncommon_trap(),
+               "uncommon traps should not be enumerated");
         interfering_sfpts.push(ctrl);
       }
     }
