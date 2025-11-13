@@ -32,19 +32,19 @@
 class ShenandoahAllocRequest : StackObj {
 public:
   // bit 0: mutator (0) or GC (1) alloc
-  // bit 1: LAB (0) or shared (1) alloc
+  // bit 1: shared (0) or LAB (1) alloc
   // bit 2: if LAB, then GCLAB (0) or PLAB (1)
   // bit 3: if mutator, then normal (0) or CDS (1)
-  // bit 5: if GC and shared, then YOUNG_GENERATION (0) or OLD_GENERATION (1); PLAB is always OLD_GENERATION (1)
-  // bit 6: if GC shared OLD_GENERATION alloc, then non-promotion (0) or promotion (1).
+  // bit 4: if GC and shared, then YOUNG_GENERATION (0) or OLD_GENERATION (1); PLAB is always OLD_GENERATION (1)
+  // bit 5: if GC shared OLD_GENERATION alloc, then non-promotion (0) or promotion (1).
   typedef int Type;
 
-  static constexpr int bit_gc_alloc         = 1 << 1;
-  static constexpr int bit_lab_alloc        = 1 << 2;
-  static constexpr int bit_plab_alloc       = 1 << 3;
-  static constexpr int bit_cds_alloc        = 1 << 4;
-  static constexpr int bit_old_alloc        = 1 << 5;
-  static constexpr int bit_promotion_alloc  = 1 << 6;
+  static constexpr int bit_gc_alloc         = 1 << 0;
+  static constexpr int bit_lab_alloc        = 1 << 1;
+  static constexpr int bit_plab_alloc       = 1 << 2;
+  static constexpr int bit_cds_alloc        = 1 << 3;
+  static constexpr int bit_old_alloc        = 1 << 4;
+  static constexpr int bit_promotion_alloc  = 1 << 5;
 
 
   static constexpr Type _alloc_shared              = 0;
