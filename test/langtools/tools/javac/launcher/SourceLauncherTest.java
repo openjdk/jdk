@@ -920,14 +920,6 @@ public class SourceLauncherTest extends TestRunner {
         }
     }
 
-    void checkContains(String name, String found, String expect) {
-        expect = expect.replace("\n", tb.lineSeparator);
-        out.println(name + ": " + found);
-        if (!found.contains(expect)) {
-            error("Expected output not found: " + expect);
-        }
-    }
-
     void checkEqual(String name, List<String> found, List<String> expect) {
         out.println(name + ": " + found);
         tb.checkEqual(expect, found);
