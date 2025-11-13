@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8042054
- * @summary JTree.updateUI sould use updated item size information
+ * @summary JTree.updateUI should use updated item size information
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual JTreeUpdateTest
@@ -43,9 +43,8 @@ public class JTreeUpdateTest {
 
     static final String INSTRUCTIONS = """
         A frame with two identical JTrees is shown.
-        If the left JTree's text is abbreviated
-        and JTree items are cramped with little space between rows
-        then press Fail.
+        If the left JTree's text is abbreviated and JTree items
+        are cramped with little space between rows then press Fail.
         If the left JTree is identical with right JTree, press Pass.
     """;
 
@@ -53,13 +52,13 @@ public class JTreeUpdateTest {
         PassFailJFrame.builder()
                 .title("JTreeUpdateTest Test instructions")
                 .instructions(INSTRUCTIONS)
-                .columns(40)
+                .columns(30)
                 .testUI(JTreeUpdateTest::createUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    static JFrame createUI() {
+    private static JFrame createUI() {
         setLaf("javax.swing.plaf.metal.MetalLookAndFeel");
 
         final JFrame frame = new JFrame("JTreeUpdateTest");
@@ -79,13 +78,10 @@ public class JTreeUpdateTest {
         frame.pack();
         frame.setLocationRelativeTo(null);
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                setLaf("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-                SwingUtilities.updateComponentTreeUI(frame);
-                SwingUtilities.updateComponentTreeUI(tree2);
-            }
+        SwingUtilities.invokeLater(() -> {
+            setLaf("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            SwingUtilities.updateComponentTreeUI(frame);
+            SwingUtilities.updateComponentTreeUI(tree2);
         });
         return frame;
     }
