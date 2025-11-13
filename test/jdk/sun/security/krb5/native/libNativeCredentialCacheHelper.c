@@ -85,78 +85,19 @@ static void print_krb5_error(const char *operation, krb5_error_code code) {
 }
 
 /**
- * Create an in-memory credential cache using native krb5 API.
+ * Creates an in-memory credential cache, copies credentials from a file cache,
+ * and sets it as the default cache in one atomic operation.
  */
-JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_createInMemoryCache
-  (JNIEnv *env, jclass cls, jstring cacheName)
+JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_createInMemoryCacheFromFileCache
+  (JNIEnv *env, jclass cls, jstring inMemoryCacheName, jstring fileCacheName)
 {
     krb5_error_code ret;
-    krb5_ccache ccache;
-    char *cache_name = NULL;
-
-    ret = ensure_context();
-    if (ret) {
-        print_krb5_error("ensure_context", ret);
-        return JNI_FALSE;
-    }
-
-    cache_name = jstring_to_cstring(env, cacheName);
-    if (cache_name == NULL) {
-        return JNI_FALSE;
-    }
-
-    // Resolve the memory cache
-    ret = krb5_cc_resolve(g_context, cache_name, &ccache);
-    if (ret) {
-        print_krb5_error("krb5_cc_resolve", ret);
-        free(cache_name);
-        return JNI_FALSE;
-    }
-
-    printf("Created memory cache: %s\n", cache_name);
-
-    krb5_cc_close(g_context, ccache);
-    free(cache_name);
-    return JNI_TRUE;
-}
-
-/**
- * Set KRB5CCNAME so that the test will pick up the in-memory credential cache.
- */
-JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_setDefaultCache
-  (JNIEnv *env, jclass cls, jstring cacheName)
-{
-    char *cache_name = jstring_to_cstring(env, cacheName);
-    if (cache_name == NULL) {
-        return JNI_FALSE;
-    }
-
-    // Set KRB5CCNAME environment variable
-    if (setenv("KRB5CCNAME", cache_name, 1) != 0) {
-        free(cache_name);
-        return JNI_FALSE;
-    }
-
-    printf("Set default cache to: %s\n", cache_name);
-    free(cache_name);
-    return JNI_TRUE;
-}
-
-/**
- * Copy real Kerberos credentials from a source cache to an in-memory cache.
- * in-memory cache.  Used to move OneKDC-generated TGTs to an in-memory cache
- * for testing.
- */
-JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInMemoryCache
-  (JNIEnv *env, jclass cls, jstring inMemoryCacheName, jstring sourceCacheName)
-{
-    krb5_error_code ret;
-    krb5_ccache source_ccache = NULL;
+    krb5_ccache file_ccache = NULL;
     krb5_ccache in_memory_ccache = NULL;
     krb5_cc_cursor cursor;
     krb5_creds creds;
     char *in_memory_cache_name = NULL;
-    char *source_cache_name = NULL;
+    char *file_cache_name = NULL;
     int copied_count = 0;
 
     ret = ensure_context();
@@ -165,49 +106,39 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInM
         return JNI_FALSE;
     }
 
-    // Convert Java strings
     in_memory_cache_name = jstring_to_cstring(env, inMemoryCacheName);
-    if (sourceCacheName != NULL) {
-        source_cache_name = jstring_to_cstring(env, sourceCacheName);
-    }
-
-    if (!in_memory_cache_name) {
-        printf("Failed to get in-memory cache name\n");
+    file_cache_name = jstring_to_cstring(env, fileCacheName);
+    if (!in_memory_cache_name || !file_cache_name) {
+        printf("Failed to get file or in-memory cache names\n");
         goto cleanup;
     }
 
-    printf("Copying credentials to in-memory cache: %s from source: %s\n",
-        in_memory_cache_name,
-        source_cache_name ? source_cache_name : "default cache"
-    );
+    printf("Creating in-memory cache: %s from file cache: %s\n",
+        in_memory_cache_name, file_cache_name);
 
-    // Open source cache (or default cache if sourceCacheName is null)
-    if (source_cache_name) {
-        ret = krb5_cc_resolve(g_context, source_cache_name, &source_ccache);
-        if (ret) {
-            print_krb5_error("krb5_cc_resolve (source)", ret);
-            goto cleanup;
-        }
-    } else {
-        ret = krb5_cc_default(g_context, &source_ccache);
-        if (ret) {
-            print_krb5_error("krb5_cc_default", ret);
-            goto cleanup;
-        }
+    // Resolve FILE: ccache
+    ret = krb5_cc_resolve(g_context, file_cache_name, &file_ccache);
+    if (ret) {
+        print_krb5_error("krb5_cc_resolve (file cache)", ret);
+        printf("ERROR: File cache does not exist or cannot be accessed: %s\n", file_cache_name);
+        goto cleanup;
     }
 
-    // Open/resolve memory cache
+    // Resolve in-memory cache
     ret = krb5_cc_resolve(g_context, in_memory_cache_name, &in_memory_ccache);
     if (ret) {
         print_krb5_error("krb5_cc_resolve (in-memory)", ret);
         goto cleanup;
     }
 
-    // Get principal from source cache for initialization
+    printf("Created in-memory cache: %s\n", in_memory_cache_name);
+
+    // Get principal from file cache for initialization
     krb5_principal principal = NULL;
-    ret = krb5_cc_get_principal(g_context, source_ccache, &principal);
+    ret = krb5_cc_get_principal(g_context, file_ccache, &principal);
     if (ret) {
         print_krb5_error("krb5_cc_get_principal", ret);
+        printf("ERROR: Cannot get principal from file cache: %s\n", file_cache_name);
         goto cleanup;
     }
 
@@ -219,16 +150,15 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInM
         goto cleanup;
     }
 
-    // Start credential cursor on source cache
-    ret = krb5_cc_start_seq_get(g_context, source_ccache, &cursor);
+    // Copy credentials from file cache to in-memory cache
+    ret = krb5_cc_start_seq_get(g_context, file_ccache, &cursor);
     if (ret) {
         print_krb5_error("krb5_cc_start_seq_get", ret);
         krb5_free_principal(g_context, principal);
         goto cleanup;
     }
 
-    // Copy each credential from source to memory cache
-    while ((ret = krb5_cc_next_cred(g_context, source_ccache, &cursor, &creds)) == 0) {
+    while ((ret = krb5_cc_next_cred(g_context, file_ccache, &cursor, &creds)) == 0) {
         ret = krb5_cc_store_cred(g_context, in_memory_ccache, &creds);
         if (ret) {
             print_krb5_error("krb5_cc_store_cred", ret);
@@ -236,34 +166,58 @@ JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_copyCredentialsToInM
             break;
         }
 
-        printf("Copied in-memory credential: %s -> %s\n",
-               creds.client ? "client" : "unknown",
-               creds.server ? "server" : "unknown");
+        // Print the actual credential names
+        char *client_name = NULL;
+        char *server_name = NULL;
+        if (creds.client) {
+            krb5_unparse_name(g_context, creds.client, &client_name);
+        }
+        if (creds.server) {
+            krb5_unparse_name(g_context, creds.server, &server_name);
+        }
+
+        printf("Copied credential: %s -> %s\n",
+               client_name ? client_name : "unknown",
+               server_name ? server_name : "unknown");
+
+        if (client_name) krb5_free_unparsed_name(g_context, client_name);
+        if (server_name) krb5_free_unparsed_name(g_context, server_name);
 
         copied_count++;
         krb5_free_cred_contents(g_context, &creds);
     }
 
     // End the cursor (expected to return KRB5_CC_END)
-    krb5_cc_end_seq_get(g_context, source_ccache, &cursor);
+    krb5_cc_end_seq_get(g_context, file_ccache, &cursor);
 
-    // Success if we copied at least one credential
-    if (copied_count > 0) {
-        printf("Successfully copied %d credentials to in-memory cache: %s\n",
-               copied_count, in_memory_cache_name);
-        ret = 0;
-    } else {
-        printf("No credentials found in source cache to copy to in-memory cache\n");
+    if (copied_count == 0) {
+        printf("ERROR: No credentials found in file cache to copy: %s\n", file_cache_name);
         ret = KRB5_CC_NOTFOUND;
+        krb5_free_principal(g_context, principal);
+        goto cleanup;
     }
 
+    printf("Successfully copied %d credentials to in-memory cache: %s\n",
+           copied_count, in_memory_cache_name);
+
+    // Set KRB5CCNAME environment variable to point to in-memory cache
+    if (setenv("KRB5CCNAME", in_memory_cache_name, 1) != 0) {
+        printf("ERROR: Failed to set KRB5CCNAME environment variable\n");
+        ret = -1;
+        krb5_free_principal(g_context, principal);
+        goto cleanup;
+    }
+
+    printf("Set KRB5CCNAME to: %s\n", in_memory_cache_name);
+    ret = 0;
     krb5_free_principal(g_context, principal);
 
 cleanup:
-    if (source_ccache) krb5_cc_close(g_context, source_ccache);
+    if (file_ccache) krb5_cc_close(g_context, file_ccache);
+    if (file_cache_name) free(file_cache_name);
+
     if (in_memory_ccache) krb5_cc_close(g_context, in_memory_ccache);
     if (in_memory_cache_name) free(in_memory_cache_name);
-    if (source_cache_name) free(source_cache_name);
 
     return (ret == 0) ? JNI_TRUE : JNI_FALSE;
 }

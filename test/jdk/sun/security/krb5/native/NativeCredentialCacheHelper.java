@@ -38,27 +38,19 @@ public class NativeCredentialCacheHelper {
     }
 
     /**
-     * Create an in-memory credential cache using native krb5 API.
-     * @param cacheName The name for the in-memory cache (e.g., "MEMORY:test123")
-     * @return true if cache was created successfully, false otherwise
+     * Creates an in-memory credential cache, copies credentials from a file cache,
+     * and sets it as the default cache in one atomic operation.
+     *
+     * This method performs all three operations required to set up an in-memory cache:
+     * 1. Creates the in-memory cache using native krb5 API
+     * 2. Copies real Kerberos credentials from the file cache to the in-memory cache
+     * 3. Sets KRB5CCNAME so that JAAS will use the in-memory cache
+     *
+     * @param inMemoryCacheName The name for the in-memory cache (e.g., "MEMORY:test123")
+     * @param fileCacheName The file cache name to copy from (e.g., "FILE:/path/to/cache")
+     * @return true if all operations succeeded, false if any operation failed
      */
-    public static native boolean createInMemoryCache(String cacheName);
-
-    /**
-     * Copy real Kerberos credentials from a source cache to an in-memory cache.
-     * Used to move OneKDC-generated TGTs to an in-memory cache for testing.
-     * @param inMemoryCacheName The target in-memory cache name (e.g., "MEMORY:test123")
-     * @param sourceCacheName The source cache name (null for default cache)
-     * @return true if credentials were copied successfully, false otherwise
-     */
-    public static native boolean copyCredentialsToInMemoryCache(String inMemoryCacheName, String sourceCacheName);
-
-    /**
-     * Set KRB5CCNAME so that the test will pick up the in-memory credential cache.
-     * @param cacheName The credential cache name to set as default
-     * @return true if set successfully, false otherwise
-     */
-    public static native boolean setDefaultCache(String cacheName);
+    public static native boolean createInMemoryCacheFromFileCache(String inMemoryCacheName, String fileCacheName);
 }
 
 

@@ -122,41 +122,24 @@ public class NativeCacheTest {
      * Copy the TGT to an in-memory cache using JNI
      */
     private static String copyTGTToInMemoryCache() throws Exception {
-        System.out.println("Copying credentials to memory cache");
+        System.out.println("Creating in-memory cache and copying TGT from file cache");
 
-        String memoryCacheName = "MEMORY:test_" + System.currentTimeMillis();
-
-        // Create the in-memory cache
-        if (!NativeCredentialCacheHelper.createInMemoryCache(memoryCacheName)) {
-            throw new RuntimeException("Failed to create memory cache");
-        }
-        System.out.println("Created memory cache: " + memoryCacheName);
-
-        // Try to copy credentials from the file cache
-        boolean copied = false;
+        // Check that the FILE: ccache exists
         File fileCache = new File("onekdc_cache.ccache");
-        if (fileCache.exists()) {
-            System.out.println("Copying from: " + fileCache.getAbsolutePath());
-            copied = NativeCredentialCacheHelper.copyCredentialsToInMemoryCache(
-                memoryCacheName,
-                "FILE:" + fileCache.getAbsolutePath()
-            );
+        if (!fileCache.exists()) {
+            throw new RuntimeException("File cache does not exist: " + fileCache.getAbsolutePath());
         }
 
-        // Fallback to the default cache if copying from file cache fails
-        if (!copied) {
-            copied = NativeCredentialCacheHelper.copyCredentialsToInMemoryCache(memoryCacheName, null);
+        // Create MEMORY: ccache from the FILE: ccache
+        String memoryCacheName = "MEMORY:test_" + System.currentTimeMillis();
+        if (!NativeCredentialCacheHelper.createInMemoryCacheFromFileCache(
+                memoryCacheName, "FILE:" + fileCache.getAbsolutePath())) {
+            throw new RuntimeException("Failed to create in-memory cache from file cache");
         }
 
-        if (copied) {
-            System.out.println("Credentials copied to memory cache");
-        } else {
-            System.out.println("No credentials found to copy");
-        }
-
-        // Set as the default cache for JAAS testing
-        NativeCredentialCacheHelper.setDefaultCache(memoryCacheName);
         System.setProperty("KRB5CCNAME", memoryCacheName);
+
+        System.out.println("Successfully created in-memory cache with credentials: " + memoryCacheName);
 
         return memoryCacheName;
     }
@@ -177,36 +160,26 @@ public class NativeCacheTest {
             throw new RuntimeException("test setup error - KRB5CCNAME not pointing to in-memory cache");
         }
 
-        try {
-            Credentials creds = Credentials.acquireDefaultCreds();
+        Credentials creds = Credentials.acquireDefaultCreds();
 
-            if (creds != null) {
-                String client = creds.getClient().toString();
-                String server = creds.getServer().toString();
+        if (creds != null) {
+            String client = creds.getClient().toString();
+            String server = creds.getServer().toString();
 
-                System.out.println("SUCCESS: JAAS retrieved credentials from in-memory cache");
+            // Verify these are the OneKDC test credentials
+            if (client.contains("dummy") && server.contains("RABBIT.HOLE") && server.contains("krbtgt")) {
+                System.out.println("SUCCESS: Retrieved correct OneKDC test credentials from in-memory cache");
                 System.out.println("Client: " + client);
                 System.out.println("Server: " + server);
-
-                // Verify these are the OneKDC test credentials
-                if (client.contains("dummy") && server.contains("RABBIT.HOLE")) {
-                    System.out.println("SUCCESS: Retrieved correct OneKDC test credentials from in-memory cache");
-                    if (server.contains("krbtgt")) {
-                        System.out.println("Retrieved TGT as expected");
-                    }
-                } else {
-                    System.out.println("ERROR: JAAS retrieved wrong credentials from in-memory cache");
-                    System.out.println("Expected: dummy@RABBIT.HOLE -> krbtgt/RABBIT.HOLE@RABBIT.HOLE");
-                    System.out.println("Found: " + client + " -> " + server);
-                    throw new RuntimeException("in-memory cache test failed - wrong credentials retrieved");
-                }
-
             } else {
-                System.out.println("JAAS accessed in-memory cache but found no credentials");
+                System.out.println("ERROR: JAAS retrieved wrong credentials from in-memory cache");
+                System.out.println("Expected: dummy@RABBIT.HOLE -> krbtgt/RABBIT.HOLE@RABBIT.HOLE");
+                System.out.println("Found: " + client + " -> " + server);
+                throw new RuntimeException("in-memory cache test failed - wrong credentials retrieved");
             }
-
-        } catch (Exception e) {
-            System.out.println("JAAS error: " + e.getMessage());
+        } else {
+            System.out.println("ERROR: JAAS accessed in-memory cache but found no credentials");
+            throw new RuntimeException("in-memory cache test failed - no credentials retrieved");
         }
     }
 }
