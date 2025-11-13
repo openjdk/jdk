@@ -395,7 +395,7 @@ public class ConfigFileTest {
 
         ex.setMasterFile(masterFile);
         ex.assertError("Cyclic include");
-        ex.getOutputAnalyzer().stderrMatches("\\QInternalError: Cyclic " +
+        ex.getOutputAnalyzer().stderrShouldMatch("\\QInternalError: Cyclic " +
                 "include of '\\E[^']+\\Q" + masterFile.fileName + "'\\E");
     }
 
