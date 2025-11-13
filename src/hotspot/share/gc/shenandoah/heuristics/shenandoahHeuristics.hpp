@@ -36,7 +36,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && (name)) {                                  \
       log_info(gc)("Heuristics ergonomically sets -XX:-" #name);            \
-      FLAG_SET_DEFAULT(name, false);                                        \
+      FLAG_SET_ERGO(name, false);                                           \
     }                                                                       \
   } while (0)
 
@@ -44,7 +44,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && !(name)) {                                 \
       log_info(gc)("Heuristics ergonomically sets -XX:+" #name);            \
-      FLAG_SET_DEFAULT(name, true);                                         \
+      FLAG_SET_ERGO(name, true);                                            \
     }                                                                       \
   } while (0)
 
@@ -52,7 +52,7 @@
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name)) {                                            \
       log_info(gc)("Heuristics ergonomically sets -XX:" #name "=" #value);  \
-      FLAG_SET_DEFAULT(name, value);                                        \
+      FLAG_SET_ERGO(name, value);                                           \
     }                                                                       \
   } while (0)
 

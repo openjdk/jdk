@@ -1908,11 +1908,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req, bo
     }
   }
 
-  // KELVIN TODO: SHOULD I USE 
-  // retire_range_from_partition() will adjust bounds on Mutator free set if appropriate
-  //   _partitions.retire_range_from_partition(ShenandoahFreeSetPartitionId::Mutator, beg, end);
-  // instead of multiple calls to _partitions.retire_from_partition(Mutator, i, r->used()) abovev?
-
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_used);
   increase_bytes_allocated(total_used);
   req.set_actual_size(words_size);
@@ -2871,7 +2866,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_trashed_regi
 
   assert(young_available >= young_unaffiliated_regions * region_size_bytes, "sanity");
   assert(old_available >= old_unaffiliated_regions * region_size_bytes, "sanity");
-  
+
   // Consult old-region balance to make adjustments to current generation capacities and availability.
   // The generation region transfers take place after we rebuild.  old_region_balance represents number of regions
   // to transfer from old to young.
