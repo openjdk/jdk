@@ -36,6 +36,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * @run junit NonPublicMethodTypeTest
  */
 public class NonPublicMethodTypeTest {
+    // Java language and JVM allow using fields and methods with inaccessible
+    // classes or interfaces in its signature, as long as the field or method
+    // is accessible and its declaring class or interface is accessible.
+    // Such inaccessible classes and interfaces are treated as if an arbitrary
+    // subtype of their accessible types, or an arbitrary supertype of their
+    // accessible subtypes.
+    // java.lang.invoke is stricter - MethodType constant pool entry resolution
+    // for such signatures fail, so they can't be used for MethodHandle or indy.
     enum Internal { INSTANCE }
 
     public interface InternalParameter {
@@ -45,6 +53,7 @@ public class NonPublicMethodTypeTest {
     @Test
     void testNonPublicParameter() throws Throwable {
         // Creation should be successful
+        // 8333854 - BSM usage fails for looking up such methods
         InternalParameter instance = (InternalParameter) Proxy.newProxyInstance(
                 InternalParameter.class.getClassLoader(),
                 new Class[] { InternalParameter.class },
@@ -53,6 +62,7 @@ public class NonPublicMethodTypeTest {
                 instance.getClass().getPackage(),
                 "Proxy class should not be able to access method parameter " +
                         "Internal class's package");
+        // Calls should be always successful
         instance.call(null);
         instance.call(Internal.INSTANCE);
     }
@@ -65,6 +75,9 @@ public class NonPublicMethodTypeTest {
     void testNonPublicReturn() throws Throwable {
         AtomicReference<Internal> returnValue = new AtomicReference<>();
         // Creation should be successful
+        // A lot of annotation interfaces are implemented by such proxy classes,
+        // due to presence of package-private annotation interface or enum-typed
+        // elements in public annotation interfaces.
         InternalReturn instance = (InternalReturn) Proxy.newProxyInstance(
                 InternalReturn.class.getClassLoader(),
                 new Class[] { InternalReturn.class },
@@ -86,6 +99,7 @@ public class NonPublicMethodTypeTest {
         returnValue.set(null);
         instance.call();
         // checkcast fails - proxy class cannot access the return type
+        // See JDK-8349716
         returnValue.set(Internal.INSTANCE);
         assertThrows(IllegalAccessError.class, instance::call);
     }

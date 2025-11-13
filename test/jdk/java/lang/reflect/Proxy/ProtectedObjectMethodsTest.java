@@ -54,14 +54,23 @@ public class ProtectedObjectMethodsTest {
     }
 
     interface FakeClone {
+        // This method is not related to Object::clone in the JVM, but most
+        // implementations in the Java Language override Object::clone as
+        // covariant overrides
         FakeClone clone();
     }
 
     interface TrueClone {
+        // This method is identical to Object::clone in the JVM, that calls
+        // to Object::clone can always call an implementation of this method
+        // if it exists
         Object clone();
     }
 
     interface PrimitiveClone {
+        // This method is not related to Object::clone in the JVM, but it can't
+        // be implemented in the Java Language unless using a lambda expression,
+        // due to the Java language covariant override restrictions.
         int clone();
     }
 
@@ -69,16 +78,22 @@ public class ProtectedObjectMethodsTest {
     @Test
     void testDistinctClone() throws Throwable {
         {
+            // This proxy declares FakeClone clone(); which cannot be
+            // invoked through Object::clone.
             var fake = (FakeClone) Proxy.newProxyInstance(FakeClone.class.getClassLoader(), new Class[] { FakeClone.class }, (p, _, _) -> p);
             assertSame(fake, fake.clone());
+            // Verify the default Object::clone behavior (this is not Cloneable)
             assertThrows(CloneNotSupportedException.class, () -> {
                 var _ = (Object) OBJECT_CLONE.invoke((Object) fake);
             });
         }
 
         {
+            // This proxy declares FakeClone clone(); which cannot be
+            // invoked through Object::clone.
             var fake = (FakeClone) Proxy.newProxyInstance(FakeClone.class.getClassLoader(), new Class[] { FakeClone.class, Cloneable.class }, (p, _, _) -> p);
             assertSame(fake, fake.clone());
+            // Verify the default Object::clone behavior (this is Cloneable)
             var fakeClone = (Object) OBJECT_CLONE.invoke((Object) fake);
             assertNotSame(fake, fakeClone);
             assertSame(fake.getClass(), fakeClone.getClass());
@@ -86,16 +101,22 @@ public class ProtectedObjectMethodsTest {
         }
 
         {
+            // This proxy declares int clone(); which cannot be
+            // invoked through Object::clone.
             var instance = (PrimitiveClone) Proxy.newProxyInstance(PrimitiveClone.class.getClassLoader(), new Class[] { PrimitiveClone.class }, (_, _, _) -> 42);
             assertEquals(42, instance.clone());
+            // Verify the default Object::clone behavior (this is not Cloneable)
             assertThrows(CloneNotSupportedException.class, () -> {
                 var _ = (Object) OBJECT_CLONE.invoke((Object) instance);
             });
         }
 
         {
+            // This proxy declares int clone(); which cannot be
+            // invoked through Object::clone
             var instance = (PrimitiveClone) Proxy.newProxyInstance(PrimitiveClone.class.getClassLoader(), new Class[] { PrimitiveClone.class, Cloneable.class }, (_, _, _) -> 76);
             assertEquals(76, instance.clone());
+            // Verify the default Object::clone behavior (this is Cloneable)
             var clone = (Object) OBJECT_CLONE.invoke((Object) instance);
             assertNotSame(instance, clone);
             assertSame(instance.getClass(), clone.getClass());
@@ -107,33 +128,48 @@ public class ProtectedObjectMethodsTest {
     @Test
     void testDuplicateClone() throws Throwable {
         {
-            // TrueClone::clone accidentally overrides Object::clone
+            // This proxy declares Object clone();, which
+            // accidentally overrides Object::clone
             var instance = (TrueClone) Proxy.newProxyInstance(TrueClone.class.getClassLoader(), new Class[] { TrueClone.class }, (p, _, _) -> p);
             assertSame(instance, instance.clone());
+            // Verify Object::clone is overridden
             assertSame(instance, (Object) OBJECT_CLONE.invoke((Object) instance));
         }
 
         {
-            // Use the TrueClone to bridge Object::clone and FakeClone::clone
+            // This proxy declares Object clone(); and FakeClone clone();.
+            // They are considered duplicate methods and dispatched equivalently.
+            // Object clone() accidentally overrides Object::clone, so now
+            // FakeClone clone() can be called through Object::clone
             var instance = Proxy.newProxyInstance(TrueClone.class.getClassLoader(), new Class[] { TrueClone.class, FakeClone.class }, (p, _, _) -> p);
             assertSame(instance, ((FakeClone) instance).clone());
             assertSame(instance, ((TrueClone) instance).clone());
+            // Verify Object::clone is overridden
             assertSame(instance, (Object) OBJECT_CLONE.invoke((Object) instance));
         }
     }
 
     interface FalseFinalize {
+        // This method is not related to Object::finalize in the JVM, but it can't
+        // be implemented in the Java Language unless using a lambda expression,
+        // due to the Java language covariant override restrictions.
         int finalize();
     }
 
     interface TrueFinalize {
+        // This method is identical to Object::finalize in the JVM, that calls
+        // to Object::finalize can always call an implementation of this method
+        // if it exists
         void finalize();
     }
 
     @Test
     void testDistinctFinalize() throws Throwable {
         AtomicInteger invokeCount = new AtomicInteger();
+        // This proxy declares int finalize(), which cannot be
+        // invoked through Object::finalize.
         var instance = Proxy.newProxyInstance(FalseFinalize.class.getClassLoader(), new Class[] { FalseFinalize.class }, (_, _, _) -> invokeCount.incrementAndGet());
+        // Verify the default Object::finalize behavior
         OBJECT_FINALIZE.invoke(instance);
         assertEquals(0, invokeCount.get());
         assertEquals(1, ((FalseFinalize) instance).finalize());
@@ -142,7 +178,10 @@ public class ProtectedObjectMethodsTest {
     @Test
     void testDuplicateFinalize() throws Throwable {
         AtomicInteger invokeCount = new AtomicInteger();
+        // This proxy declares void finalize(), which can be
+        // invoked through Object::finalize.
         var instance = Proxy.newProxyInstance(TrueFinalize.class.getClassLoader(), new Class[] { TrueFinalize.class }, (_, _, _) -> invokeCount.incrementAndGet());
+        // Verify the overridden Object::finalize behavior
         OBJECT_FINALIZE.invoke(instance);
         assertEquals(1, invokeCount.get());
         ((TrueFinalize) instance).finalize();

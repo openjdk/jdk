@@ -49,6 +49,10 @@ public class BridgeMethodsTest {
     @Test
     void testExceptionTypes() throws Throwable {
         class MyException extends Exception {}
+        // This proxy has two distinct methods, even though the
+        // Java language would treat the first one as overridden:
+        // Object call() throws Exception;  - from Callable
+        // String call();                   - from StringCallable
         var instance = Proxy.newProxyInstance(StringCallable.class.getClassLoader(),
                 new Class[] { StringCallable.class }, (_, _, _) -> { throw new MyException(); });
         // The exception can't be thrown through StringCallable.call which has no throws
@@ -67,6 +71,10 @@ public class BridgeMethodsTest {
     @SuppressWarnings("unchecked")
     void testMethodObjects() throws Throwable {
         List<Method> methods = new ArrayList<>();
+        // This proxy has two distinct methods, even though the
+        // Java language would treat the first one as overridden:
+        // void accept(Object);    - from Consumer
+        // void accept(String);    - from SpecificConsumer
         var instance = Proxy.newProxyInstance(SpecificConsumer.class.getClassLoader(),
                 new Class[] { SpecificConsumer.class }, (_, m, _) -> methods.add(m));
         ((Consumer<Object>) instance).accept(null);
