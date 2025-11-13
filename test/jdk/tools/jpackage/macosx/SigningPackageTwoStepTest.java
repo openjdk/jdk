@@ -66,6 +66,7 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build SigningPackageTwoStepTest
  * @requires (jpackage.test.MacSignTests == "run")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
  *  --jpt-before-run=SigningBase.verifySignTestEnvReady
@@ -198,10 +199,8 @@ public class SigningPackageTwoStepTest {
 
             test.forTypes(signPackage.keySet()).addRunOnceInitializer(() -> {
                 appImageCmd.setArgumentValue("--dest", TKit.createTempDirectory("appimage")).execute(0);
-            }).addInitializer(cmd -> {
+            }).usePredefinedAppImage(appImageCmd).addInitializer(cmd -> {
                 MacHelper.useKeychain(cmd, keychain);
-                cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                cmd.removeArgumentWithValue("--input");
                 Optional.ofNullable(signPackage.get(cmd.packageType())).ifPresent(signOption -> {
                     signOption.setTo(cmd);
                 });

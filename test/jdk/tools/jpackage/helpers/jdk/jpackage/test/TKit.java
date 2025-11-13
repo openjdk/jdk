@@ -26,6 +26,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
@@ -313,8 +314,11 @@ public final class TKit {
     public static void createTextFile(Path filename, Stream<String> lines) {
         trace(String.format("Create [%s] text file...",
                 filename.toAbsolutePath().normalize()));
-        ThrowingRunnable.toRunnable(() -> Files.write(filename,
-                lines.peek(TKit::trace).collect(Collectors.toList()))).run();
+        try {
+            Files.write(filename, lines.peek(TKit::trace).toList());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 
@@ -322,16 +326,24 @@ public final class TKit {
             Collection<Map.Entry<String, String>> props) {
         trace(String.format("Create [%s] properties file...",
                 propsFilename.toAbsolutePath().normalize()));
-        ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
-                props.stream().map(e -> String.join("=", e.getKey(),
-                e.getValue())).peek(TKit::trace).collect(Collectors.toList()))).run();
+        try {
+            Files.write(propsFilename, props.stream().map(e -> {
+                return String.join("=", e.getKey(), e.getValue());
+            }).peek(TKit::trace).toList());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 
-    public static void traceFileContents(Path path, String label) throws IOException {
+    public static void traceFileContents(Path path, String label) {
         assertFileExists(path);
         trace(String.format("Dump [%s] %s...", path, label));
-        Files.readAllLines(path).forEach(TKit::trace);
+        try {
+            Files.readAllLines(path).forEach(TKit::trace);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
         trace("Done");
     }
 
@@ -896,7 +908,14 @@ public final class TKit {
     public static void assertSymbolicLinkExists(Path path) {
         assertPathExists(path, true);
         assertTrue(Files.isSymbolicLink(path), String.format
-                ("Check [%s] is a symbolic link", path));
+                ("Check [%s] is a symbolic link", Objects.requireNonNull(path)));
+    }
+
+    public static void assertSymbolicLinkTarget(Path symlinkPath, Path expectedTargetPath) {
+        assertSymbolicLinkExists(symlinkPath);
+        var targetPath = toFunction(Files::readSymbolicLink).apply(symlinkPath);
+        assertEquals(expectedTargetPath, targetPath,
+                String.format("Check the target of the symbolic link [%s]", symlinkPath));
     }
 
     public static void assertFileExists(Path path) {
