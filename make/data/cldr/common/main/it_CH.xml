@@ -169,12 +169,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
-			<group>’</group>
+			<group>'</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>

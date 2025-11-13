@@ -197,6 +197,11 @@ private:
   // for all environments, global array indexed by jvmtiEvent
   static JvmtiEventEnabled _universal_global_event_enabled;
 
+  // These fields are used to synchronize stop posting events and
+  // wait until already executing callbacks are finished.
+  volatile static bool  _execution_finished;
+  volatile static int   _in_callback_count;
+
 public:
   static bool is_enabled(jvmtiEvent event_type);
 
@@ -245,6 +250,10 @@ public:
   static void vm_start();
   static void vm_init();
   static void vm_death();
+  static bool is_execution_finished();
+  static void inc_in_callback_count();
+  static void dec_in_callback_count();
+  static int in_callback_count();
 };
 
 #endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP

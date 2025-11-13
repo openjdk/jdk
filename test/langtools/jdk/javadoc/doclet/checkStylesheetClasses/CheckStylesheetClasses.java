@@ -143,9 +143,6 @@ public class CheckStylesheetClasses {
                 "search-result-desc", "search-result-label", "search-result-link", "selected",
                 "sort-asc", "sort-desc", "two-column-search-results", "visible");
 
-        // used for themes
-        removeAll(styleSheetNames, "theme-dark", "theme-light", "theme-os");
-
         // very JDK specific
         styleSheetNames.remove("module-graph");
         styleSheetNames.remove("sealed-graph");

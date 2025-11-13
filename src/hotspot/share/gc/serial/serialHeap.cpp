@@ -67,6 +67,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threads.hpp"
@@ -268,6 +269,8 @@ size_t SerialHeap::max_capacity() const {
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
+  assert(Heap_lock->is_locked(), "precondition");
+
   HeapWord* result = _young_gen->expand_and_allocate(size);
 
   if (result == nullptr && !is_tlab) {
@@ -314,6 +317,14 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       result = mem_allocate_cas_noexpand(size, is_tlab);
       if (result != nullptr) {
         break;
+      }
+
+      if (!is_init_completed()) {
+        // Can't do GC; try heap expansion to satisfy the request.
+        result = expand_heap_and_allocate(size, is_tlab);
+        if (result != nullptr) {
+          return result;
+        }
       }
 
       gc_count_before = total_collections();
@@ -649,16 +660,16 @@ bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   return addr < _old_gen->space()->top();
 }
 
-size_t SerialHeap::tlab_capacity(Thread* thr) const {
+size_t SerialHeap::tlab_capacity() const {
   // Only young-gen supports tlab allocation.
   return _young_gen->tlab_capacity();
 }
 
-size_t SerialHeap::tlab_used(Thread* thr) const {
+size_t SerialHeap::tlab_used() const {
   return _young_gen->tlab_used();
 }
 
-size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
+size_t SerialHeap::unsafe_max_tlab_alloc() const {
   return _young_gen->unsafe_max_tlab_alloc();
 }
 

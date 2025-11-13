@@ -82,7 +82,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   // Save object being locked into the BasicObjectLock...
   std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
-  lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
+  fast_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   b(done);
 
   bind(slow_int);
@@ -104,7 +104,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
-  lightweight_unlock(Roop, Rmark, slow_int);
+  fast_unlock(Roop, Rmark, slow_int);
   b(done);
   bind(slow_int);
   b(slow_case); // far

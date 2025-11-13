@@ -134,6 +134,7 @@ class MoveNode;
 class MulNode;
 class MultiNode;
 class MultiBranchNode;
+class NarrowMemProjNode;
 class NegNode;
 class NegVNode;
 class NeverBranchNode;
@@ -422,6 +423,13 @@ public:
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
   // Return the unique out edge.
   Node* unique_out() const { assert(_outcnt==1,"not unique"); return _out[0]; }
+
+  // In some cases, a node n is only used by a single use, but the use may use
+  // n once or multiple times:
+  //   use = ConvF2I(this)
+  //   use = AddI(this, this)
+  Node* unique_multiple_edges_out_or_null() const;
+
   // Delete out edge at position 'i' by moving last out edge to position 'i'
   void  raw_del_out(uint i) {
     assert(i < _outcnt,"oob");
@@ -764,6 +772,7 @@ public:
         DEFINE_CLASS_ID(IfFalse,   IfProj, 1)
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
+      DEFINE_CLASS_ID(NarrowMemProj, Proj, 6)
 
     DEFINE_CLASS_ID(Mem, Node, 4)
       DEFINE_CLASS_ID(Load, Mem, 0)
@@ -982,6 +991,7 @@ public:
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
   DEFINE_CLASS_QUERY(MulVL)
+  DEFINE_CLASS_QUERY(NarrowMemProj)
   DEFINE_CLASS_QUERY(Neg)
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
