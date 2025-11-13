@@ -5427,7 +5427,10 @@ public class JavacParser implements Parser {
      */
     protected JCVariableDecl formalParameter(boolean lambdaParameter, boolean recordComponent) {
         JCModifiers mods = !recordComponent ? optFinal(Flags.PARAMETER) : modifiersOpt();
-        if (recordComponent && mods.flags != 0) {
+        if (recordComponent && mods.flags != 0 && mods.flags != Flags.DEPRECATED) {
+            /* for record components we only allow the DEPRECATED flag, which can be set with a
+             * @deprecated javadoc tag
+             */
             log.error(mods.pos, Errors.RecordCantDeclareFieldModifiers);
         }
         if (recordComponent) {
