@@ -91,7 +91,7 @@ public:
     const size_t page_sz = os::vm_page_size();
     size_t index;
     for (index = 0; index < touch_pages; index ++) {
-      if (IS_PAGE_CONTAINED_IN_COMMITTED_REGION(page_num[index])) { // Already tagged
+      if (IS_PAGE_CONTAINED_IN_COMMITTED_REGION(page_num[index])) { // Already tagged?
         continue;
       }
       address page_addr = base + page_num[index] * page_sz;
