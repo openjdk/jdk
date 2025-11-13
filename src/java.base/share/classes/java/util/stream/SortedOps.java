@@ -122,11 +122,11 @@ final class SortedOps {
         OfRef(AbstractPipeline<?, T, ?> upstream, Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator);
             boolean isNaturalSort = Comparator.naturalOrder().equals(comparator);
+            this.comparator = comparator;
+            this.isNaturalSort = isNaturalSort;
             super(upstream, StreamShape.REFERENCE,
                   StreamOpFlag.IS_ORDERED |
                           (isNaturalSort ? StreamOpFlag.IS_SORTED : StreamOpFlag.NOT_SORTED));
-            this.isNaturalSort = isNaturalSort;
-            this.comparator = comparator;
         }
 
         @Override
