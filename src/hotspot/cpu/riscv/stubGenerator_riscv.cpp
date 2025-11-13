@@ -2794,6 +2794,7 @@ class StubGenerator: public StubCodeGenerator {
     add_counter_128(counter_hi, counter_lo);
     // 128-bit big-endian store
     be_store_counter_128(counter_hi, counter_lo, counter);
+
     __ mv(used, 0);
     // Check if we have a full block_size
     __ bltu(len, block_size, L_encrypt_next);
