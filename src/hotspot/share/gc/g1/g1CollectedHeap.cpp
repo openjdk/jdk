@@ -2961,10 +2961,11 @@ void G1CollectedHeap::abandon_collection_set() {
 }
 
 size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
-  const size_t cur_occupancy =  (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
-  // For humongous allocations, consider that allocation in the result as well -
-  // it will be allocated as such. Otherwise G1 will allocate the object in young
-  // gen. In that case, do not account here.
+  // For simplicity, just count whole regions.
+  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
+  // Humongous allocations will always be assigned to non-young heap, so consider
+  // that allocation in the result as well. Otherwise the allocation will always
+  // be in young gen, so there is no need to account it here.
   return cur_occupancy + (is_humongous(allocation_word_size) ? allocation_used_bytes(allocation_word_size) : 0);
 }
 
