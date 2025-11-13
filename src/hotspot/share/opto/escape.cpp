@@ -2512,7 +2512,7 @@ bool ConnectionGraph::complete_connection_graph(
 // and check that we still have non-escaping java objects.
 bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptnodes_worklist,
                                                GrowableArray<JavaObjectNode*>& non_escaped_allocs_worklist,
-                                               bool verify) {
+                                               bool print_method) {
   GrowableArray<PointsToNode*> escape_worklist;
   // First, put all nodes with GlobalEscape and ArgEscape states on worklist.
   int ptnodes_length = ptnodes_worklist.length();
@@ -2572,7 +2572,7 @@ bool ConnectionGraph::find_non_escaped_objects(GrowableArray<PointsToNode*>& ptn
           escape_worklist.push(e);
         }
       }
-      if (!verify) {
+      if (print_method) {
         _compile->print_method(PHASE_EA_CONNECTION_GRAPH_PROPAGATE_ITER, 6, e->ideal_node());
       }
     }
@@ -3185,7 +3185,7 @@ void ConnectionGraph::verify_connection_graph(
   assert(new_edges == 0, "graph was not complete");
   // Verify that escape state is final.
   int length = non_escaped_allocs_worklist.length();
-  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist, /*verify=*/ true);
+  find_non_escaped_objects(ptnodes_worklist, non_escaped_allocs_worklist, /*print_method=*/ false);
   assert((non_escaped_length == non_escaped_allocs_worklist.length()) &&
          (non_escaped_length == length) &&
          (_worklist.length() == 0), "escape state was not final");
