@@ -43,7 +43,7 @@ interface Validator<T, U extends Exception> {
     /**
      * Thrown to indicate that the given value didn't pass validation.
      */
-    static final class ValidatingConsumerException extends RuntimeException{
+    static final class ValidatingConsumerException extends RuntimeException {
 
         ValidatingConsumerException(String msg, Exception cause) {
             super(msg, Objects.requireNonNull(cause));
