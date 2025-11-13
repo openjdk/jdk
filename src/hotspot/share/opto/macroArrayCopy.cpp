@@ -210,11 +210,11 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   if (length_type == nullptr) {
     assert(_igvn.type(length) == Type::TOP, "");
     return;
-  } else if (length_type->_hi <= 0) {
-    // Nothing to copy
-    return;
-  } else if (length_type->_lo > inline_limit) {
-    // Cannot inline
+  }
+
+  const TypeLong* inline_range = TypeLong::make(0, inline_limit, Type::WidenMin);
+  if (length_type->join(inline_range) == Type::TOP) {
+    // The ranges do not intersect, the inline check will surely fail
     return;
   }
 
@@ -233,7 +233,7 @@ void PhaseMacroExpand::generate_partial_inlining_block(Node** ctrl, MergeMemNode
   Node* inline_block = generate_guard(ctrl, bol_le, nullptr, PROB_FAIR);
   Node* stub_block = *ctrl;
 
-  Node* casted_length = new CastLLNode(inline_block, length, TypeLong::make(0, inline_limit, Type::WidenMin), ConstraintCastNode::RegularDependency);
+  Node* casted_length = new CastLLNode(inline_block, length, inline_range, ConstraintCastNode::RegularDependency);
   transform_later(casted_length);
   Node* mask_gen = VectorMaskGenNode::make(casted_length, type);
   transform_later(mask_gen);
