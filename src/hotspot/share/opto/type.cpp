@@ -4489,7 +4489,7 @@ void TypeInstPtr::dump2(Dict &d, uint depth, outputStream* st) const {
   if (_klass_is_exact) {
     st->print(":exact");
   }
-  
+
   dump_offset(st);
   dump_instance_id(st);
   dump_inline_depth(st);
