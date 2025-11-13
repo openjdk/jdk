@@ -25,7 +25,6 @@ package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
-
 import java.awt.*;
 import java.util.*;
 import java.util.List;
