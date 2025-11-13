@@ -2716,12 +2716,10 @@ public class TestVectorConditionalMove {
         }
 
         //     I for D
-        boolean passed = true;
         testCMoveIEQforD(aI, bI, cD, dD, rD, rD);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rD[i], cmoveIEQforD(aI[i], bI[i], cD[i], dD[i]));
         }
-        Asserts.assertEquals(passed, true);
 
         testCMoveINEforD(aI, bI, cD, dD, rD, rD);
         for (int i = 0; i < SIZE; i++) {
