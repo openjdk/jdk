@@ -1193,7 +1193,8 @@ public:
 // to
 //     for (int = 0; i < stop - start; i+= stride) { ... }
 // Template Assertion Predicates added so far were with an init value of start. They need to be updated with the new
-// init value of 0:
+// init value of 0 (otherwise when a template assertion predicate is turned into an initialized assertion predicate, it
+// performs an incorrect check):
 //                                zero
 //        init                     |
 //         |           ===>   OpaqueLoopInit   init
