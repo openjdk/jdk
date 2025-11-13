@@ -2596,6 +2596,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // Check for "abs(0-x)" into "abs(x)" conversion
+  if (use->is_Sub()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
+          u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI) {
+        worklist.push(u);
+      }
+    }
+  }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
   };
