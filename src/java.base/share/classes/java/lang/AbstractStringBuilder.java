@@ -703,16 +703,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     }
 
     private AbstractStringBuilder appendNull() {
-        byte coder = this.coder;
-        int count = this.count;
-        int newCount = count + 4;
-        byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
-        if (isLatin1(coder))
-            StringLatin1.putCharsAt(value, count, 'n', 'u', 'l', 'l');
-        else
-            StringUTF16.putCharsAt(value, count, 'n', 'u', 'l', 'l');
-        this.count = newCount;
-        this.value = value;
+        appendLatin1('n', 'u', 'l', 'l');
         return this;
     }
 
@@ -904,6 +895,33 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         }
         this.count = count;
         return this;
+    }
+
+    final void appendLatin1(char c1, char c2) {
+        int count = this.count;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, count + 2);
+        if (isLatin1(coder)) {
+            value[count    ] = (byte) c1;
+            value[count + 1] = (byte) c2;
+        } else {
+            StringUTF16.putChar(value, count, c1);
+            StringUTF16.putChar(value, count + 1, c2);
+        }
+        this.count = count + 2;
+        this.value = value;
+    }
+
+    final void appendLatin1(char c1, char c2, char c3, char c4) {
+        int count = this.count;
+        int newCount = count + 4;
+        byte[] value = ensureCapacitySameCoder(this.value, coder, newCount);
+        if (isLatin1(coder)) {
+            StringLatin1.putCharsAt(value, count, c1, c2, c3, c4);
+        } else {
+            StringUTF16.putCharsAt(value, count, c1, c2, c3, c4);
+        }
+        this.count = newCount;
+        this.value = value;
     }
 
     /**

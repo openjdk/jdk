@@ -372,6 +372,10 @@ public interface JavaLangAccess {
      */
     char uncheckedGetUTF16Char(byte[] bytes, int index);
 
+    void appendLatin1(StringBuilder buf, char c1, char c2);
+
+    void appendLatin1(StringBuilder buf, char c1, char c2, char c3, char c4);
+
     /**
      * Put the {@code ch} at {@code index} in a {@code byte[]} in internal
      * UTF-16 representation.

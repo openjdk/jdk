@@ -463,12 +463,9 @@ public final class DecimalDigits {
         // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
         // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packed = DIGITS[v & 0x7f];
-        // The temporary String and byte[] objects created here are typically eliminated
-        // by the JVM's escape analysis and scalar replacement optimizations during
-        // runtime compilation, avoiding actual heap allocations in optimized code.
-        buf.append(
-                JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) packed, (byte) (packed >> 8)}));
+        JLA.appendLatin1(buf,
+                (char) (byte) (packed),
+                (char) (byte) (packed >> 8));
     }
 
     /**
@@ -488,14 +485,14 @@ public final class DecimalDigits {
     public static void appendQuad(StringBuilder buf, int v) {
         // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
         // which allows the JIT compiler to eliminate array bounds checks for performance.
-        int packedHigh = DIGITS[(v / 100) & 0x7f];
-        int packedLow  = DIGITS[(v % 100) & 0x7f];
+        int packed = DIGITS[(v / 100) & 0x7f] | (DIGITS[(v % 100) & 0x7f] << 16);
         // The temporary String and byte[] objects created here are typically eliminated
         // by the JVM's escape analysis and scalar replacement optimizations during
         // runtime compilation, avoiding actual heap allocations in optimized code.
-        buf.append(
-                JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) packedHigh, (byte) (packedHigh >> 8),
-                                    (byte) packedLow,  (byte) (packedLow  >> 8)}));
+        JLA.appendLatin1(buf,
+                (char) (byte) (packed),
+                (char) (byte) (packed >> 8),
+                (char) (byte) (packed >> 16),
+                (char) (byte) (packed >> 24));
     }
 }
