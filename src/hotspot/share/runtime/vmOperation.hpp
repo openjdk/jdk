@@ -48,7 +48,6 @@
   template(Verify)                                \
   template(HeapDumper)                            \
   template(CollectForMetadataAllocation)          \
-  template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
