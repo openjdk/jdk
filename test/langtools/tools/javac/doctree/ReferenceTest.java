@@ -43,6 +43,7 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
@@ -88,6 +89,26 @@ import javax.tools.Diagnostic.Kind;
  * {@link double#NAN Bad}
  * {@link double#double Bad}
  * {@link java.base/double Bad}
+ *
+ * {@link List<String> Interface}
+ * {@link List<String>.add Bad}
+ * {@link List<String>#add Method}
+ * {@link List<String>#add(Object) Method}
+ * {@link Map<String, String>.Entry Interface}
+ * {@link Map<String, String>.Entry<String, String> Interface}
+ * {@link Map<String, String>.Entry<String, String>.getKey Bad}
+ * {@link Map<String, String>.Entry<String, String>#getKey Method}
+ * {@link Map<String, String>.Entry<String, String>#setValue(Object) Method}
+ *
+ * {@link java.base/java.util.List<String> Interface}
+ * {@link java.base/java.util.List<String>.add Bad}
+ * {@link java.base/java.util.List<String>#add Method}
+ * {@link java.base/java.util.List<String>#add(Object) Method}
+ * {@link java.base/java.util.Map<String, String>.Entry Interface}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String> Interface}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>.getKey Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Method}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Method}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
