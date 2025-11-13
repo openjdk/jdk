@@ -797,17 +797,34 @@ class Field extends AccessibleObject implements Member {
      *     {@code Field} object; and</li>
      * <li><a href="doc-files/MutationMethods.html">final field mutation is enabled</a>
      *     for the caller's module; and</li>
-     * <li>the field's {@linkplain #getDeclaringClass() declaring class} {@code D} is
-     *     in a package that is {@linkplain Module#isOpen(String, Module) open} to the
-     *     caller's module. This condition is not met if the module containing
-     *     {@code D} has been {@linkplain Module#addOpens(String, Module) updated}
-     *     to open the package to the caller module; and </li>
+     * <li> at least one of the following holds:
+     *     <ul>
+     *     <li> the field's {@linkplain #getDeclaringClass() declaring class} {@code D}
+     *     and the caller class are in the same module, or </li>
+     *     <li> the field is {@code public} and {@code D} is {@code public} in a
+     *     package that the module containing {@code D} exports to at least the caller's
+     *     module (This condition is not met if the module containing {@code D} has
+     *     been updated with {@linkplain Module#addExports(String, Module) addExports} to
+     *     export the package to the caller's module.), or </li>
+     *     <li> {@code D} is in a package that is {@linkplain Module#isOpen(String, Module)
+     *     open} to the caller's module (This condition is not met if the module containing
+     *     {@code D} has been updated with {@linkplain Module#addOpens(String, Module)
+     *     addOpens} to open the package to the caller module.); and </li>
+     *     </ul>
+     * </li>
      * <li>the field's declaring class is not a {@linkplain Class#isRecord()
      *     record class}; and </li>
      * <li>the field's declaring class is not a {@linkplain Class#isHidden()
      *     hidden class}; and </li>
      * <li>the field is non-static. </li>
      * </ul>
+     *
+     * <p> These conditions are more restrictive than the conditions specified by {@link
+     * #setAccessible(boolean)} to suppress access checks. In particular, updating a
+     * {@link Module} to {@linkplain Module#addExports(String, Module) export} or
+     * {@linkplain Module#addOpens(String, Module) open} a package cannot be used to
+     * allow <em>write</em> access to final fields. If any of the above conditions is not
+     * met, this method throws an {@code IllegalAccessException}.
      *
      * <p>This method may be called by <a href="{@docRoot}/../specs/jni/index.html">
      * JNI code</a> with no caller class on the stack. In that case, and when the
@@ -1465,11 +1482,10 @@ class Field extends AccessibleObject implements Member {
     private void preSetFinal(Class<?> caller, boolean unreflect) throws IllegalAccessException {
         assert isFinalInstanceInNormalClass();
 
-        // check if package is open to caller module
         if (caller != null) {
-            if (!Modules.isStaticallyOpened(clazz.getModule(),
-                                            clazz.getPackageName(),
-                                            caller.getModule())) {
+            // declaring class in package that is statically opened to caller, or
+            // public field and declaring class is public in package statically exported to caller
+            if (!isFinalStaticallyDeeplyAccessible(caller)) {
                 throw new IllegalAccessException(notOpenToCallerMessage(caller, unreflect));
             }
         } else {
@@ -1522,6 +1538,34 @@ class Field extends AccessibleObject implements Member {
 
         // record JFR event
         FinalFieldMutationEvent.offer(getDeclaringClass(), getName());
+    }
+
+    /**
+     * Returns true if this field's declaring class is in a module that is opened
+     * to the given caller's module, or the field is public in a declaring class
+     * that is public in a package exported statically to the given caller's module.
+     */
+    private boolean isFinalStaticallyDeeplyAccessible(Class<?> caller) {
+        assert isFinalInstanceInNormalClass();
+
+        // all fields in unnamed modules are deeply accessible
+        Module declaringModule = clazz.getModule();
+        if (!declaringModule.isNamed()) return true;
+
+        // all fields in the caller's module are deeply accessible
+        Module callerModule = caller.getModule();
+        if (callerModule == declaringModule) return true;
+
+        // public field, public class, package exported to caller's module
+        String pn = clazz.getPackageName();
+        if (Modifier.isPublic(modifiers)
+                && Modifier.isPublic(clazz.getModifiers())
+                && Modules.isStaticallyExported(declaringModule, pn, callerModule)) {
+            return true;
+        }
+
+        // package open to caller's module
+        return Modules.isStaticallyOpened(declaringModule, pn, callerModule);
     }
 
     /**

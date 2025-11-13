@@ -908,6 +908,12 @@ public final class Module implements AnnotatedElement {
      * If the caller's module is this module then update this module to export
      * the given package to the given module.
      *
+     * <p> Exporting a package with this method does not allow the given module to
+     * {@linkplain Field#set(Object, Object) reflectively set} or {@linkplain
+     * java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field) obtain a method
+     * handle with write access} to a public final field declared in a public class
+     * in the package.
+     *
      * <p> This method has no effect if the package is already exported (or
      * <em>open</em>) to the given module. </p>
      *
