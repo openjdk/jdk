@@ -22,6 +22,6 @@
  */
 @SuppressWarnings("module")
 module m3 {
-    requires m1;
-    provides p1.Mutator with p3.M3Mutator;
+    requires test;
+    provides test.spi.Mutator with p3.M3Mutator;
 }

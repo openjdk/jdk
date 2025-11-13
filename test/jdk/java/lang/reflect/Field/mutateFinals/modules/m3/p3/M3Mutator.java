@@ -26,7 +26,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 
-public class M3Mutator implements p1.Mutator {
+public class M3Mutator implements test.spi.Mutator {
 
     @Override
     public void set(Field f, Object obj, Object value) throws IllegalAccessException {

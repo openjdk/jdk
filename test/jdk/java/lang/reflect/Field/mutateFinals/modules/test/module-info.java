@@ -20,8 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-@SuppressWarnings("module")
-module m2 {
-    requires test;
-    provides test.spi.Mutator with p2.M2Mutator;
+module test {
+    requires org.junit.platform.console.standalone;
+    opens test to org.junit.platform.console.standalone;
+
+    opens test.fieldholders to m1;
+    exports test.fieldholders to m2;
+
+    exports test.spi;
+    uses test.spi.Mutator;
+    provides test.spi.Mutator with test.internal.TestMutator;
 }

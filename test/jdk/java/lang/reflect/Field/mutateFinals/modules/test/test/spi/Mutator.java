@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package p1;
+package test.spi;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;

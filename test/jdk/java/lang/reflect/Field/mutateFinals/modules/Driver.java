@@ -24,13 +24,12 @@
 /**
  * @test
  * @bug 8353835
- * @summary Test mutating final field in m1 from m1, m2 and m3. The package with the final
- *     field is open to m2 and not open to m3.
- * @build m1/* m2/* m3/*
- * @run junit/othervm -DallowedToMutate=m1,m2 m1/p1.TestMain
- * @run junit/othervm --illegal-final-field-mutation=allow -DallowedToMutate=m1,m2 m1/p1.TestMain
- * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m1 -DallowedToMutate=m1 m1/p1.TestMain
- * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m2 -DallowedToMutate=m2 m1/p1.TestMain
- * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m1,m2,m3 -DallowedToMutate=m1,m2 m1/p1.TestMain
- * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m1,m2,m3 --add-opens m1/p1=m3 -DallowedToMutate=m1,m2,m3 m1/p1.TestMain
+ * @summary Test mutating final fields in module test from code in modules test, m1, m2 and m3
+ * @build test/* m1/* m2/* m3/*
+ * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=test,m1,m2,m3
+ *     test/test.TestMain
+ * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=test,m1,m2,m3
+ *     --add-exports test/test.fieldholders=m3 test/test.TestMain
+ * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=test,m1,m2,m3
+ *     --add-opens test/test.fieldholders=m2 test/test.TestMain
  */

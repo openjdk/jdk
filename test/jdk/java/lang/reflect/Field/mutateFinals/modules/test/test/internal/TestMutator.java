@@ -20,13 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package p1;
+package test.internal;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 
-public class M1Mutator implements test.spi.Mutator {
+public class TestMutator implements test.spi.Mutator {
 
     @Override
     public void set(Field f, Object obj, Object value) throws IllegalAccessException {
