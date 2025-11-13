@@ -59,6 +59,20 @@ import static org.testng.Assert.assertEquals;
  */
 public class RawChannelTest {
 
+    // can't use jdk.test.lib when injected in java.net.httpclient
+    // Seed can be specified on the @run line with -Dseed=<seed>
+    private static class RandomFactory {
+        private static long getSeed() {
+            long seed = Long.getLong("seed", new Random().nextLong());
+            System.out.println("Seed from RandomFactory = "+seed+"L");
+            return seed;
+        }
+        public static Random getRandom() {
+            return new Random(getSeed());
+        }
+    }
+
+    private static final Random RANDOM = RandomFactory.getRandom();
     private final AtomicLong clientWritten = new AtomicLong();
     private final AtomicLong serverWritten = new AtomicLong();
     private final AtomicLong clientRead = new AtomicLong();
@@ -114,6 +128,51 @@ public class RawChannelTest {
 
             chan.registerEvent(new RawChannel.RawEvent() {
 
+                private final ByteBuffer reusableBuffer = ByteBuffer.allocate(32768);
+
+                @Override
+                public int interestOps() {
+                    return SelectionKey.OP_WRITE;
+                }
+
+                @Override
+                public void handle() {
+                    int i = writeHandles.incrementAndGet();
+                    print("OP_WRITE #%s", i);
+                    if (i > 3) { // Fill up the send buffer not more than 3 times
+                        try {
+                            chan.shutdownOutput();
+                            outputCompleted.complete(null);
+                        } catch (IOException e) {
+                            outputCompleted.completeExceptionally(e);
+                            e.printStackTrace();
+                            closeChannel(chan);
+                        }
+                        return;
+                    }
+                    long total = 0;
+                    try {
+                        long n;
+                        do {
+                            ByteBuffer[] array = {reusableBuffer.slice()};
+                            n = chan.write(array, 0, 1);
+                            total += n;
+                        } while (n > 0);
+                        print("OP_WRITE clogged SNDBUF with %s bytes", total);
+                        clientWritten.addAndGet(total);
+                        chan.registerEvent(this);
+                        writeStall.countDown(); // signal send buffer is full
+                    } catch (IOException e) {
+                        print("OP_RIGHT failed: " + e);
+                        outputCompleted.completeExceptionally(e);
+                        closeChannel(chan);
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            });
+
+            chan.registerEvent(new RawChannel.RawEvent() {
+
                 @Override
                 public int interestOps() {
                     return SelectionKey.OP_READ;
@@ -155,51 +214,6 @@ public class RawChannelTest {
                         clientRead.addAndGet(r);
                     }
                     print("OP_READ read %s bytes (%s total)", total, clientRead.get());
-                }
-            });
-
-            chan.registerEvent(new RawChannel.RawEvent() {
-
-                private final ByteBuffer reusableBuffer = ByteBuffer.allocate(32768);
-
-                @Override
-                public int interestOps() {
-                    return SelectionKey.OP_WRITE;
-                }
-
-                @Override
-                public void handle() {
-                    int i = writeHandles.incrementAndGet();
-                    print("OP_WRITE #%s", i);
-                    if (i > 3) { // Fill up the send buffer not more than 3 times
-                        try {
-                            chan.shutdownOutput();
-                            outputCompleted.complete(null);
-                        } catch (IOException e) {
-                            outputCompleted.completeExceptionally(e);
-                            e.printStackTrace();
-                            closeChannel(chan);
-                        }
-                        return;
-                    }
-                    long total = 0;
-                    try {
-                        long n;
-                        do {
-                            ByteBuffer[] array = {reusableBuffer.slice()};
-                            n = chan.write(array, 0, 1);
-                            total += n;
-                        } while (n > 0);
-                        print("OP_WRITE clogged SNDBUF with %s bytes", total);
-                        clientWritten.addAndGet(total);
-                        chan.registerEvent(this);
-                        writeStall.countDown(); // signal send buffer is full
-                    } catch (IOException e) {
-                        print("OP_RIGHT failed: " + e);
-                        outputCompleted.completeExceptionally(e);
-                        closeChannel(chan);
-                        throw new UncheckedIOException(e);
-                    }
                 }
             });
 
@@ -403,6 +417,8 @@ public class RawChannelTest {
     }
 
     private static byte[] byteArrayOfSize(int bound) {
-        return new byte[new Random().nextInt(1 + bound)];
+        // bound must be > 1; No need to check it,
+        // nextInt will throw IllegalArgumentException if needed
+        return new byte[RANDOM.nextInt(1, bound + 1)];
     }
 }

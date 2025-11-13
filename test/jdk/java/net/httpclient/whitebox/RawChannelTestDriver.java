@@ -25,6 +25,11 @@
  * @test
  * @bug 8151299 8164704
  * @modules java.net.http/jdk.internal.net.http
- * @run testng java.net.http/jdk.internal.net.http.RawChannelTest
+ * @run testng/othervm java.net.http/jdk.internal.net.http.RawChannelTest
  */
+// use
+//     @run testng/othervm -Dseed=6434511950803022575
+//          java.net.http/jdk.internal.net.http.RawChannelTest
+// to reproduce a failure with a particular seed (e.g. 6434511950803022575)
+// if this test is observed failing with that seed
 //-Djdk.internal.httpclient.websocket.debug=true
