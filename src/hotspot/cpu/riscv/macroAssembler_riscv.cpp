@@ -1502,6 +1502,7 @@ void MacroAssembler::cmov_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, Regi
   mv(dst, src);
   bind(no_set);
 }
+
 // ----------- cmove float/double, compare float/double -----------
 
 // Move src to dst only if cmp1 == cmp2,

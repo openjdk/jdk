@@ -10476,6 +10476,7 @@ instruct cmovL_cmpP(iRegLNoSp dst, iRegL src, iRegP op1, iRegP op2, cmpOpU cop) 
 
   ins_pipe(pipe_class_compare);
 %}
+
 // --------- CMoveF ---------
 
 instruct cmovF_cmpI(fRegF dst, fRegF src, iRegI op1, iRegI op2, cmpOp cop) %{

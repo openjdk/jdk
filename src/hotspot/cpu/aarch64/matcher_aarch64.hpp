@@ -204,5 +204,4 @@
   static bool is_feat_fp16_supported() {
     return (VM_Version::supports_fphp() && VM_Version::supports_asimdhp());
   }
-
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP
