@@ -164,6 +164,11 @@ source %{
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
   }
+
+  bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+    // Prefer predicate if the mask type is "TypeVectMask".
+    return vt->isa_vectmask() != nullptr;
+  }
 %}
 
 // All VEC instructions
