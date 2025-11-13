@@ -330,9 +330,8 @@ public class Credentials {
             // credentials from any supported credential cache types on those
             // platforms (in particular, the default ticket cache on Windows and
             // MacOSX is not a file, so cannot use the pure Java code)
-            if (OperatingSystem.isWindows() ||
-                    OperatingSystem.isMacOS() ||
-                        OperatingSystem.isLinux()) {
+            if (OperatingSystem.isWindows() || OperatingSystem.isMacOS()
+                    || OperatingSystem.isLinux()) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG != null) {
