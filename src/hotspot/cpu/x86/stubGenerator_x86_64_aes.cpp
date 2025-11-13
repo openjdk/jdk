@@ -3527,6 +3527,8 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
 
   __ bind(MESG_BELOW_32_BLKS);
   __ subl(len, 16 * 16);
+  __ cmpl(len, 256);
+  __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
   __ addl(pos, 16 * 16);
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
 
@@ -4016,13 +4018,15 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   const Register rounds = r10;
   const XMMRegister ctr_blockx = xmm9;
   const XMMRegister aad_hashx = xmm8;
-  Label encrypt_done, encrypt_by_8_new, encrypt_by_8;
+  Label encrypt_done, encrypt_by_8_new, encrypt_by_8, exit;
 
   //This routine should be called only for message sizes of 128 bytes or more.
   //Macro flow:
   //process 8 16 byte blocks in initial_num_blocks.
   //process 8 16 byte blocks at a time until all are done 'encrypt_by_8_new  followed by ghash_last_8'
   __ xorl(pos, pos);
+  __ cmpl(len, 128);
+  __ jcc(Assembler::less, exit);
 
   //Generate 8 constants for htbl
   generateHtbl_8_block_avx2(subkeyHtbl);
@@ -4090,6 +4094,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ vpxor(xmm0, xmm0, xmm0, Assembler::AVX_128bit);
   __ vpxor(xmm13, xmm13, xmm13, Assembler::AVX_128bit);
 
+  __ bind(exit);
  }
 
 #undef __
