@@ -605,24 +605,20 @@ public class JlinkTask {
      */
     private static void checkJavaBaseVersion(ModuleReference target) {
         String currentRelease = getCurrentRuntimeVersion();
-        String targetRelease;
 
-        try {
-            targetRelease = getReleaseInfo(target).get();
-            if (currentRelease.equals(targetRelease)) {
-                return;
-            }
-        } catch (NoSuchElementException nsee) {
-            // target release has no release.txt
-            // the java.base module must be older than the jlink runtime
-            // silently ignore and fall through to version mismatch
-            targetRelease = "";
+        Optional<String> releaseInfo = getReleaseInfo(target);
+        if (releaseInfo.isEmpty()) {
+            throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.missing",
+                    currentRelease));
         }
 
-        // Current runtime image and the target runtime image are not compatible build
-        throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                currentRelease,
-                targetRelease));
+        var targetRelease = releaseInfo.get();
+        if (!currentRelease.equals(targetRelease)) {
+            // Current runtime image and the target runtime image are not compatible build
+            throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
+                    currentRelease,
+                    targetRelease));
+        }
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
