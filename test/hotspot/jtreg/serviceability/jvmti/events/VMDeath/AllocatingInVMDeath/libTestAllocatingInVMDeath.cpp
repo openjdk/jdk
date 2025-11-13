@@ -39,7 +39,7 @@ cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
   jni->CallStaticObjectMethod(clz, mid);
   if (jni->ExceptionOccurred()) {
     jni->ExceptionDescribe();
-    fatal(jni, "Unexpected exception occured in cbVMDeath.");
+    fatal(jni, "cbVMDeath: unexpected exception occurred in Java upcall method.");
   }
 }
 
