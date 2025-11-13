@@ -450,9 +450,8 @@ private:
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
-#ifdef ASSERT
+  // Value is a don't care in release builds
   bool _old_trash_not_in_bounds;
-#endif
 
   // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
   // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate

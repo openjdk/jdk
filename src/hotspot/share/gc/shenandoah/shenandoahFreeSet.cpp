@@ -1261,9 +1261,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
   _total_humongous_waste(0),
-#ifdef ASSERT
   _old_trash_not_in_bounds(false),
-#endif
   _alloc_bias_weight(0),
   _total_young_used(0),
   _total_old_used(0),
@@ -2491,9 +2489,7 @@ void ShenandoahFreeSet::transfer_humongous_regions_from_mutator_to_old_collector
                              /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ true,
                              /* UnaffiliatedChangesAreYoungNeutral */ true>();
-#ifdef ASSERT
   _partitions.assert_bounds(true, _old_trash_not_in_bounds);
-#endif
   // global_used is unaffected by this transfer
 
   // No need to adjust ranges because humongous regions are not allocatable
