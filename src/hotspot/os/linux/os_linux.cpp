@@ -3234,23 +3234,27 @@ void os::Linux::build_numa_affinity_masks() {
     return;
   }
 
+  // It's important that we respect any user configuration by removing the
+  // CPUs we're not allowed to run on from the affinity mask. For example,
+  // if the user runs the JVM with "numactl -C 0-1,4-5" on a machine with
+  // the following NUMA setup:
+  // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
+  // We expect to get the following affinity masks:
+  // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+
   const int num_nodes = get_existing_num_nodes();
   const unsigned num_cpus = (unsigned)os::processor_count();
 
   for (int i = 0; i < num_nodes; i++) {
     struct bitmask* affinity_mask = _numa_allocate_cpumask();
+
+    // Fill the affinity mask with all CPUs belonging to NUMA node i
     _numa_node_to_cpus_v2(i, affinity_mask);
 
-    // Make sure we respect any user configuration by removing the CPUs we're
-    // not allowed to run on from the affinity mask. For example, if the user
-    // runs the JVM with "numactl -C 0-1,4-5" on a machine with the following
-    // NUMA setup:
-    // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
-    // We expect to get the following affinity masks:
-    // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+    // Clear the bits of all CPUs that the process is not allowed to
+    // execute tasks on
     for (unsigned j = 0; j < num_cpus; j++) {
-      if (_numa_bitmask_isbitset(affinity_mask, j) &&
-          !_numa_bitmask_isbitset(_numa_all_cpus_ptr, j)) {
+      if (!_numa_bitmask_isbitset(_numa_all_cpus_ptr, j)) {
         _numa_bitmask_clearbit(affinity_mask, j);
       }
     }
