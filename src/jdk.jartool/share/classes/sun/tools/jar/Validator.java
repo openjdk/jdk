@@ -265,11 +265,11 @@ final class Validator {
                 int index = entryInfo.cen().order();
                 if (index > 1) { // Expect base manifest at index 0 or 1
                     String position = Integer.toString(index);
-                    errorAndInvalid(formatMsg("error.validator.wrong.position", entryName, position));
+                    errorAndInvalid(formatMsg("error.validator.manifest.wrong.position", position));
                 } else if (index == 1) { // Ensure "META-INF/" preceeds manifest
                     String firstName = entries.sequencedKeySet().getFirst();
                     if (!"META-INF/".equals(firstName)) {
-                        errorAndInvalid(formatMsg("error.validator.wrong.position", firstName, "0"));
+                        errorAndInvalid(formatMsg("error.validator.metainf.wrong.position", firstName));
                     }
                 }
             }

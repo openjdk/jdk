@@ -311,9 +311,16 @@ class ValidatorTest {
     }
 
     /**
-     * Validates that the LOC MANIFEST.MF entries are at the expected positions.
-     *
-     * It does not do a similar CEN check in the event that the LOC and CEN
+     * Validates that base manifest-related entries are at expected LOC positions.
+     * <p>
+     * Copied from <code>JarInputStream.java</code>:
+     * <pre>
+     * This implementation assumes the META-INF/MANIFEST.MF entry
+     * should be either the first or the second entry (when preceded
+     * by the dir META-INF/). It skips the META-INF/ and then
+     * "consumes" the MANIFEST.MF to initialize the Manifest object.
+     * </pre>
+     * This test does not do a similar CEN check in the event that the LOC and CEN
      * entries do not match. Those mismatch cases are already checked by other tests.
      */
     @Test
@@ -321,14 +328,14 @@ class ValidatorTest {
         testWrongManifestPosition(
                 Path.of("wrong-entry-position-A.jar"),
                 """
-                entry: PLACEHOLDER, stored at wrong position: 0
+                expected entry META-INF/ to be at position 0, but found: PLACEHOLDER
                 """,
                 EntryWriter.ofText("PLACEHOLDER", "0"),
                 EntryWriter.ofText(META_INF + "MANIFEST.MF", "Manifest-Version: 1.0"));
         testWrongManifestPosition(
                 Path.of("wrong-entry-position-B.jar"),
                 """
-                entry: META-INF/MANIFEST.MF, stored at wrong position: 2
+                expected entry META-INF/MANIFEST.MF to be at position 0 or 1, but found it at position: 2
                 """,
                 EntryWriter.ofDirectory(META_INF),
                 EntryWriter.ofText("PLACEHOLDER", "1"),
@@ -336,7 +343,7 @@ class ValidatorTest {
         testWrongManifestPosition(
                 Path.of("wrong-entry-position-C.jar"),
                 """
-                entry: META-INF/MANIFEST.MF, stored at wrong position: 4
+                expected entry META-INF/MANIFEST.MF to be at position 0 or 1, but found it at position: 4
                 """,
                 EntryWriter.ofDirectory(META_INF),
                 EntryWriter.ofText("PLACEHOLDER1", "1"),
