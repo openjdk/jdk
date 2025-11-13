@@ -29,7 +29,6 @@
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/ostream.hpp"
 
 // Portions of code courtesy of Clifford Click
 
