@@ -38,7 +38,6 @@ import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -79,6 +79,7 @@ import static java.lang.System.out;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.Utils
  * @compile  ../ReferenceTracker.java
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
@@ -221,7 +222,6 @@ public class PostHTTP3Test implements HttpServerAdapters {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
                 .build();
         return TRACKER.track(client);
     }
@@ -375,7 +375,7 @@ public class PostHTTP3Test implements HttpServerAdapters {
             var tracker = TRACKER.getTracker(client);
             client = null;
             System.gc();
-            AssertionError error = TRACKER.check(tracker, 1000);
+            AssertionError error = TRACKER.check(tracker, Utils.adjustTimeout(1000));
             if (error != null) throw error;
         }
         System.out.println("test: DONE");
@@ -437,7 +437,7 @@ public class PostHTTP3Test implements HttpServerAdapters {
         var tracker = TRACKER.getTracker(client);
         client = null;
         System.gc();
-        AssertionError error = TRACKER.check(tracker, 1000);
+        AssertionError error = TRACKER.check(tracker, Utils.adjustTimeout(1000));
         if (error != null) throw error;
     }
 
@@ -466,7 +466,7 @@ public class PostHTTP3Test implements HttpServerAdapters {
                 sharedClient == null ? null : sharedClient.toString();
         sharedClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(Utils.adjustTimeout(1000));
         try {
             h3TestServer.stop();
         } finally {

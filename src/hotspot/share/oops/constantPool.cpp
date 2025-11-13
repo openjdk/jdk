@@ -24,10 +24,8 @@
 
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/archiveHeapLoader.hpp"
-#include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -358,7 +356,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
           int index = object_to_cp_index(i);
           if (tag_at(index).is_string()) {
             assert(java_lang_String::is_instance(obj), "must be");
-            if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
+            if (!HeapShared::is_string_too_large_to_archive(obj)) {
               scratch_rr->obj_at_put(i, obj);
             }
             continue;
@@ -398,7 +396,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_is_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (ArchiveHeapLoader::is_in_use() &&
+    if (HeapShared::is_archived_heap_in_use() &&
         _cache->archived_references() != nullptr) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -538,18 +536,23 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
   assert(tag_at(cp_index).is_klass(), "must be resolved");
 
-  Klass* k = resolved_klass_at(cp_index);
   bool can_archive;
+  Klass* k = nullptr;
 
-  if (k == nullptr) {
-    // We'd come here if the referenced class has been excluded via
-    // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
-    // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
-    // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
     can_archive = false;
   } else {
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
+    k = resolved_klass_at(cp_index);
+    if (k == nullptr) {
+      // We'd come here if the referenced class has been excluded via
+      // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
+      // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
+      // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
+      can_archive = false;
+    } else {
+      ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+      can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
+    }
   }
 
   if (!can_archive) {

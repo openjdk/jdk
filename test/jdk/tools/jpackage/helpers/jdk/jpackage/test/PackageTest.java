@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +60,7 @@ import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.test.JPackageCommand.ActionRole;
 
 
 /**
@@ -234,6 +234,15 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest usePredefinedAppImage(JPackageCommand appImageCmd) {
+        appImageCmd.verifyIsOfType(PackageType.IMAGE);
+        addInitializer(cmd -> {
+            cmd.usePredefinedAppImage(appImageCmd.outputBundle());
+        });
+        appImageCmd.getVerifyActionsWithRole(ActionRole.LAUNCHER_VERIFIER).forEach(this::addInstallVerifier);
+        return this;
+    }
+
     public PackageTest disablePackageInstaller() {
         currentTypes.forEach(disabledInstallers::add);
         return this;
@@ -318,6 +327,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest mutate(Consumer<PackageTest> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
         final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
@@ -334,7 +348,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
-        return forTypes(List.of(type), () -> action.accept(this));
+        return forTypes(List.of(type), action);
+    }
+
+    public PackageTest forTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return forTypes(types, () -> action.accept(this));
     }
 
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
@@ -348,7 +366,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
-        return notForTypes(List.of(type), () -> action.accept(this));
+        return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return notForTypes(types, () -> action.accept(this));
     }
 
     public PackageTest configureHelloApp() {
@@ -772,7 +794,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, true);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, true);
                 }
             }
 
@@ -780,7 +802,7 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            cmd.runStandardAsserts();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
@@ -853,7 +875,7 @@ public final class PackageTest extends RunnablePackageTest {
                 }
 
                 if (isOfType(cmd, LINUX)) {
-                    LinuxHelper.verifyDesktopFiles(cmd, false);
+                    LinuxHelper.verifyDesktopIntegrationFiles(cmd, false);
                 }
             }
 

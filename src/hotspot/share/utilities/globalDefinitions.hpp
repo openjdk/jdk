@@ -26,6 +26,10 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -33,10 +37,7 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 class oopDesc;
 
@@ -1253,6 +1254,32 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
+// Some convenient bit shift operations that accepts a BasicType as the last
+// argument. These avoid potential mistakes with overloaded functions only
+// distinguished by lhs argument type.
+#define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
+inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
+  if (bt == T_INT) {                                   \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
+  }                                                    \
+  assert(bt == T_LONG, "unsupported basic type");      \
+  return FUNC(lhs, rhs);                              \
+}
+
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_left)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right_unsigned)
+
+#undef JAVA_INTERGER_SHIFT_BASIC_TYPE
+
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
@@ -1346,6 +1373,14 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 // Converts any type T to a reference type.
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
+
+// This provides a workaround for static_assert(false) in discarded or
+// otherwise uninstantiated places.  Instead use
+//   static_assert(DependentAlwaysFalse<T>, "...")
+// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
+// using have implemented that change as a DR:
+// https://cplusplus.github.io/CWG/issues/2518.html
+template<typename T> inline constexpr bool DependentAlwaysFalse = false;
 
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.

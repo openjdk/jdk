@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,13 @@
  * @test
  * @bug 4847239
  * @summary Verify directory parameter behavior in File.createTempFile(String,String,File)
+ * @library /test/lib
+ * @run junit TargetDirectory
  */
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.condition.DisabledIf;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,24 +46,36 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import jdk.test.lib.Platform;
 
-public class TargetDirectory {
-    public static void main(String[] args) throws Exception {
-        // Target directory exists and is writable
-        Path dir = Path.of("target");
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class TargetDirectory {
+
+    @TempDir(cleanup = CleanupMode.ALWAYS)
+    Path tempDir;
+
+    @Test
+    void testWritableDirectory() throws Exception {
+        Path dir = tempDir.resolve("target");
         File target = Files.createDirectory(dir).toFile();
         File tmp = File.createTempFile("passes", null, target);
-        if (!Files.exists(tmp.toPath())) {
-            throw new RuntimeException("Temp file not created");
-        }
-        tmp.delete();
+        assertTrue(Files.exists(tmp.toPath()), "Temp file not created");
+    }
 
-        // Make target directory read-only
+    @Test
+    @DisabledIf("jdk.test.lib.Platform#isRoot")
+    void testReadOnlyDirectory() throws Exception {
+        Path dir = tempDir.resolve("target");
+        File target = Files.createDirectory(dir).toFile();
+
+        // Make 'target' read-only
         if (Files.getFileStore(dir).supportsFileAttributeView("posix")) {
             PosixFileAttributeView view =
                 Files.getFileAttributeView(dir, PosixFileAttributeView.class);
             Set<PosixFilePermission> perms = new HashSet<>();
-            perms.add(PosixFilePermission.valueOf("OWNER_READ"));
+            perms.add(PosixFilePermission.OWNER_READ);
             view.setPermissions(perms);
         } else if (Files.getFileStore(dir).supportsFileAttributeView("acl")) {
             AclFileAttributeView view = Files.getFileAttributeView(dir,
@@ -76,30 +94,20 @@ public class TargetDirectory {
             throw new RuntimeException("Required attribute view not supported");
         }
 
-        // Target directory exists but is read-only
-        try {
-            File.createTempFile("readonly", null, target);
-            throw new RuntimeException("Exception not thrown for read-only target directory");
-        } catch (IOException expected) {
-        } finally {
-            target.delete();
-        }
+        assertThrows(IOException.class,
+            () -> File.createTempFile("readonly", null, target));
+    }
 
-        // Target directory does not exist
-        try {
-            File.createTempFile("nonexistent", null, new File("void"));
-            throw new RuntimeException("Exception not thrown for non-existent target directory");
-        } catch (IOException expected) {
-        }
+    @Test
+    void testNonExistentDirectory() {
+        assertThrows(IOException.class,
+            () -> File.createTempFile("nonexistent", null, new File(tempDir.toFile(), "void")));
+    }
 
-        // Target is a file, not a directory
-        target = Files.createFile(Path.of("file")).toFile();
-        try {
-            File.createTempFile("file", null, target);
-            throw new RuntimeException("Exception not thrown for file target");
-        } catch (IOException expected) {
-        } finally {
-            target.delete();
-        }
+    @Test
+    void testTargetIsFile() throws Exception {
+        File target = Files.createFile(tempDir.resolve("file")).toFile();
+        assertThrows(IOException.class,
+            () -> File.createTempFile("file", null, target));
     }
 }
