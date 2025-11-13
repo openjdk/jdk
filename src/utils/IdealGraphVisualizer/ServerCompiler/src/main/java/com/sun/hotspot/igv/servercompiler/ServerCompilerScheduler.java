@@ -529,6 +529,14 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+        // Add dominator properties to nodes
+        for (InputBlock block : blocks) {
+            for (InputNode node : block.getNodes()) {
+                node.getProperties().setProperty("block", block.getName());
+                node.getProperties().setProperty("idom", block.getIDom());
+                node.getProperties().setProperty("dom_depth", String.valueOf(block.getDomDepth()));
+            }
+        }
     }
 
     // Recompute the input array of the given node, including empty slots.
@@ -665,7 +673,19 @@ public class ServerCompilerScheduler implements Scheduler {
             dominatorMap.put(b, idom);
             if (idom != null) {
                 graph.addDominatorBlockEdge(idom, b);
+                b.setIDom(idom.getName());
             }
+        }
+        if (root != null) {
+            setBlockDepth(D.dominatorTree(), root, 1);
+        }
+    }
+
+    private void setBlockDepth(Graph<InputBlock> domTree, InputBlock block, int depth) {
+        block.setDomDepth(depth);
+        for (Iterator<InputBlock> it = domTree.getSuccNodes(block); it.hasNext(); ) {
+            InputBlock child = it.next();
+            setBlockDepth(domTree, child, depth + 1);
         }
     }
 
