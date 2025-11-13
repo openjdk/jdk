@@ -228,6 +228,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
   }
 
+  split_thru_phi_yank_old_nodes(n, region);
+  _igvn.replace_node(n, phi);
+
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print_cr("Split %d %s through %d Phi in %d %s",
@@ -236,6 +239,28 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 #endif // !PRODUCT
 
   return phi;
+}
+
+// If the region is a Loop, we are removing the old n,
+// and need to yank it from the _body. If any phi we
+// just split through now has no use any more, it also
+// has to be removed.
+void PhaseIdealLoop::split_thru_phi_yank_old_nodes(Node* n, Node* region) {
+  IdealLoopTree* region_loop = get_loop(region);
+  if (region->is_Loop() && region_loop->is_innermost()) {
+    region_loop->_body.yank(n);
+    for (uint j = 1; j < n->req(); j++) {
+      PhiNode* phi = n->in(j)->isa_Phi();
+      // Check that phi belongs to the region and only has n as a use.
+      if (phi != nullptr &&
+          phi->in(0) == region &&
+          phi->unique_multiple_edges_out_or_null() == n) {
+        assert(get_ctrl(phi) == region, "sanity");
+        assert(get_ctrl(n) == region, "sanity");
+        region_loop->_body.yank(phi);
+      }
+    }
+  }
 }
 
 // Test whether node 'x' can move into an inner loop relative to node 'n'.
@@ -1207,13 +1232,10 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   if (must_throttle_split_if()) return n;
 
-  // Split 'n' through the merge point if it is profitable
-  Node *phi = split_thru_phi( n, n_blk, policy );
-  if (!phi) return n;
+  // Split 'n' through the merge point if it is profitable, replacing it with a new phi.
+  Node* phi = split_thru_phi(n, n_blk, policy);
+  if (phi == nullptr) { return n; }
 
-  // Found a Phi to split thru!
-  // Replace 'n' with the new phi
-  _igvn.replace_node( n, phi );
   // Moved a load around the loop, 'en-registering' something.
   if (n_blk->is_Loop() && n->is_Load() &&
       !phi->in(LoopNode::LoopBackControl)->is_Load())
@@ -1444,15 +1466,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       return;
     }
 
-    // Found a Phi to split thru!
-    // Replace 'n' with the new phi
-    _igvn.replace_node(n, phi);
-
     // Now split the bool up thru the phi
-    Node *bolphi = split_thru_phi(bol, n_ctrl, -1);
+    Node* bolphi = split_thru_phi(bol, n_ctrl, -1);
     guarantee(bolphi != nullptr, "null boolean phi node");
-
-    _igvn.replace_node(bol, bolphi);
     assert(iff->in(1) == bolphi, "");
 
     if (bolphi->Value(&_igvn)->singleton()) {
@@ -1461,8 +1477,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
     // Conditional-move?  Must split up now
     if (!iff->is_If()) {
-      Node *cmovphi = split_thru_phi(iff, n_ctrl, -1);
-      _igvn.replace_node(iff, cmovphi);
+      Node* cmovphi = split_thru_phi(iff, n_ctrl, -1);
       return;
     }
 
@@ -2678,8 +2693,9 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         if (head->is_strip_mined() && mode != IgnoreStripMined) {
           CountedLoopNode* cl = head->as_CountedLoop();
           CountedLoopEndNode* cle = cl->loopexit();
-          Node* cle_out = cle->proj_out_or_null(false);
-          if (use == cle_out) {
+          // is use the projection that exits the loop from the CountedLoopEndNode?
+          if (use->in(0) == cle) {
+            IfFalseNode* cle_out = use->as_IfFalse();
             IfNode* le = cl->outer_loop_end();
             use = le->proj_out(false);
             use_loop = get_loop(use);
@@ -2742,12 +2758,13 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         }
 
         assert(use->is_Proj(), "loop exit should be projection");
-        // lazy_replace() below moves all nodes that are:
+        // replace_node_and_forward_ctrl() below moves all nodes that are:
         // - control dependent on the loop exit or
         // - have control set to the loop exit
-        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
-        // possible to use it, the loop exit projection is cloned and becomes the new exit projection. The initial one
-        // becomes dead and is "replaced" by the region.
+        // below the post-loop merge point.
+        // replace_node_and_forward_ctrl() takes a dead control as first input.
+        // To make it possible to use it, the loop exit projection is cloned and becomes the
+        // new exit projection. The initial one becomes dead and is "replaced" by the region.
         Node* use_clone = use->clone();
         register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
@@ -2756,7 +2773,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
         set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
-        lazy_replace(use, r);
+        replace_node_and_forward_ctrl(use, r);
         // Map the (cloned) old use to the new merge point
         old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
