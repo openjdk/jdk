@@ -161,6 +161,15 @@ public class Modules {
     }
 
     /**
+     * Return true if a given module has statically exported the given package to a given
+     * other module. "statically exported" means the module declaration, --add-exports on
+     * the command line, or Add-Exports in the main manifest of an executable JAR.
+     */
+    public static boolean isStaticallyExported(Module m, String pn, Module other) {
+        return JLA.isStaticallyExported(m, pn, other);
+    }
+
+    /**
      * Return true if a given module has statically opened the given package to a given
      * other module. "statically open" means the module declaration, --add-opens on the
      * command line, or Add-Opens in the main manifest of an executable JAR.

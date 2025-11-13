@@ -299,6 +299,11 @@ public interface JavaLangAccess {
     boolean isFinalMutationEnabled(Module m);
 
     /**
+     * Return true if a given module has statically exported the given package to a given other module.
+     */
+    boolean isStaticallyExported(Module module, String pn, Module other);
+
+    /**
      * Return true if a given module has statically opened the given package to a given other module.
      */
     boolean isStaticallyOpened(Module module, String pn, Module other);

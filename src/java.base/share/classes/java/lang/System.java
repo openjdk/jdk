@@ -2108,6 +2108,9 @@ public final class System {
             public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
                 m.ensureNativeAccess(owner, methodName, currentClass, jni);
             }
+            public boolean isStaticallyExported(Module m, String pn, Module other) {
+                return m.isStaticallyExported(pn, other);
+            }
             public boolean isStaticallyOpened(Module m, String pn, Module other) {
                 return m.isStaticallyOpened(pn, other);
             }

@@ -762,33 +762,50 @@ public final class Module implements AnnotatedElement {
     }
 
     /**
+     * Returns {@code true} if this module statically exports a package to the given module.
+     * If the package is exported to the given module via {@code addExports} then this method
+     * returns {@code false}.
+     */
+    boolean isStaticallyExported(String pn, Module other) {
+        return isStaticallyExportedOrOpened(pn, other, false);
+    }
+
+    /**
      * Returns {@code true} if this module statically opens a package to the given module.
      * If the package is opened to the given module via {@code addOpens} then this method
      * returns {@code false}.
      */
     boolean isStaticallyOpened(String pn, Module other) {
-        // all packages in unnamed modules are open
+        return isStaticallyExportedOrOpened(pn, other, true);
+    }
+
+    /**
+     * Returns {@code true} if this module exports or opens a package to the
+     * given module via its module declaration or CLI options.
+     */
+    private boolean isStaticallyExportedOrOpened(String pn, Module other, boolean open) {
+        // all packages in unnamed modules are exported and open
         if (!isNamed())
             return true;
 
-        // all packages are open to self
+        // all packages are exported/open to self
         if (other == this && descriptor.packages().contains(pn))
             return true;
 
-        // all packages in open and automatic modules are open
+        // all packages in open and automatic modules are exported/open
         if (descriptor.isOpen() || descriptor.isAutomatic())
             return descriptor.packages().contains(pn);
 
-        // opened via module descriptor
-        if (isExplicitlyExportedOrOpened(pn, other, true))
+        // exported/opened via module descriptor
+        if (isExplicitlyExportedOrOpened(pn, other, open))
             return true;
 
         return false;
     }
 
     /**
-     * Returns {@code true} if this module exports or opens a package to
-     * the given module via its module declaration or CLI options.
+     * Returns {@code true} if this module exports or opens a package to the
+     * given module via its module declaration or CLI options.
      */
     private boolean isExplicitlyExportedOrOpened(String pn, Module other, boolean open) {
         // test if package is open to everyone or <other>
@@ -886,7 +903,6 @@ public final class Module implements AnnotatedElement {
     boolean isReflectivelyOpened(String pn, Module other) {
         return isReflectivelyExportedOrOpened(pn, other, true);
     }
-
 
     /**
      * If the caller's module is this module then update this module to export
