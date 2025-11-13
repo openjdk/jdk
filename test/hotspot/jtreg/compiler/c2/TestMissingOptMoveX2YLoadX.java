@@ -47,7 +47,7 @@ public class TestMissingOptMoveX2YLoadX {
     }
 
     static void test() {
-        int e = 8, f, g = 9, h = 2;
+        int e = 8, f, g = 9, h = 2, i[] = new int[N];
         long j[] = new long[N];
         while (++e < 37) {
             for (f = 1; f < 7; f++) {
