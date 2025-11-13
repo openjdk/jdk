@@ -2651,7 +2651,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_aescrypt_decryptBlock_id;
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
     StubCodeMark mark(this, stub_id);
 
     const Register in                  = c_rarg0;
