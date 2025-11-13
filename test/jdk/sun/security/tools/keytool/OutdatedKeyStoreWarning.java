@@ -27,16 +27,25 @@
  * @summary Validate that keytool and jarsigner emit warnings for
  *         JKS and JCEKS keystore with java.security.debug=keystore
  * @library /test/lib
+ * @modules java.base/sun.security.tools.keytool
+ *          java.base/sun.security.x509
+ * @run main/othervm -Djava.security.debug=keystore OutdatedKeyStoreWarning
  */
 
+import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.PrintStream;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Locale;
 
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.util.JarUtils;
+
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
 
 public class OutdatedKeyStoreWarning {
 
@@ -91,6 +100,10 @@ public class OutdatedKeyStoreWarning {
                         .shouldHaveExitValue(0);
             });
         }
+
+        for (String type : ksTypes) {
+            checkStoreAPIWarning(type);
+        }
     }
 
     private static void checkWarnings(String type, RunnableWithException r) throws Exception {
@@ -114,6 +127,45 @@ public class OutdatedKeyStoreWarning {
                 !msg.contains(KS_WARNING2) ||
                 !msg.contains("Warning:")) {
             throw new RuntimeException("Expected warning not found for " + type + ":\n" + msg);
+        }
+    }
+
+    // Test case for: KeyStore.getInstance("JKS" or "JCEKS"), load(null, null), and
+    // store it where warning should be emitted.
+    private static void checkStoreAPIWarning(String type) throws Exception {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        PrintStream origErr = System.err;
+        PrintStream origOut = System.out;
+
+        try {
+            PrintStream pStream = new PrintStream(bOut);
+            System.setErr(pStream);
+            System.setOut(pStream);
+
+            KeyStore ks = KeyStore.getInstance(type);
+            ks.load(null, null);
+
+            CertAndKeyGen cag = new CertAndKeyGen("EC", "SHA256withECDSA");
+            cag.generate("secp256r1");
+            X509Certificate cert = cag.getSelfCertificate(new X500Name("CN=one"), 3600);
+            ks.setKeyEntry("dummy", cag.getPrivateKey(), "changeit".toCharArray(),
+                    new Certificate[] {cert});
+
+            try (FileOutputStream fos = new FileOutputStream(type.toLowerCase() +
+                    "_storeAPI.ks")) {
+                ks.store(fos, "changeit".toCharArray());
+            }
+        } finally {
+            System.setErr(origErr);
+            System.setOut(origOut);
+        }
+
+        String msg = bOut.toString();
+        if (!msg.contains("WARNING: " + type.toUpperCase(Locale.ROOT)) ||
+                !msg.contains(KS_WARNING1) ||
+                !msg.contains(KS_WARNING2)) {
+            throw new RuntimeException("Expected warning not found for KeyStore.store() API (" +
+                    type + "):\n" + msg);
         }
     }
 

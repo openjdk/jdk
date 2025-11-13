@@ -167,6 +167,7 @@ public class Main {
     char[] storepass; // keystore password
     boolean protectedPath; // protected authentication path
     String storetype; // keystore type
+    String realStoreType;
     String providerName; // provider name
     List<String> providers = null; // list of provider names
     List<String> providerClasses = null; // list of provider classes
@@ -1486,7 +1487,7 @@ public class Main {
         if (weakKeyStore) {
             warnings.add(String.format(rb.getString(
                     "jks.storetype.warning"),
-                    store.getType(), keystore));
+                    realStoreType, keystore));
         }
 
         if ((strict) && (!errors.isEmpty())) {
@@ -2429,9 +2430,22 @@ public class Main {
                             is.close();
                         }
                     }
-                    if (store.getType().equalsIgnoreCase("JKS")
-                            || store.getType().equalsIgnoreCase("JCEKS")) {
-                        weakKeyStore = true;
+
+                    File storeFile = new File(keyStoreName);
+                    if (storeFile.exists()) {
+                        // Probe for real type. A JKS can be loaded as PKCS12 because
+                        // DualFormat support, vice versa.
+                        try {
+                            KeyStore keyStore = KeyStore.getInstance(storeFile, storepass);
+                            realStoreType = keyStore.getType();
+                            if (realStoreType.equalsIgnoreCase("JKS")
+                                    || realStoreType.equalsIgnoreCase("JCEKS")) {
+                                weakKeyStore = true;
+                            }
+                        } catch (KeyStoreException e) {
+                            // Probing not supported, therefore cannot be JKS or JCEKS.
+                            // Skip the legacy type warning at all.
+                        }
                     }
                 }
                 Enumeration<String> aliases = store.aliases();

@@ -627,6 +627,10 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
 
             dos.write(digest);
             dos.flush();
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
         }
     }
 
@@ -791,15 +795,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                String type = this.getClass().getSimpleName().
-                        toUpperCase(Locale.ROOT);
-                if (type.equals("JKS")){
-                    debug.println("WARNING: JKS uses outdated cryptographic "
-                            + "algorithms and will be removed in a future "
-                            + "release. Migrate to PKCS12 using:\n"
-                            + "keytool -importkeystore -srckeystore <keystore> "
-                            + "-destkeystore <keystore> -deststoretype pkcs12");
-                }
+                emitWeakKeyStoreWarning();
             }
 
             /*
@@ -849,5 +845,17 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             passwdBytes[j++] = (byte)password[i];
         }
         return passwdBytes;
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        String type = this.getClass().getSimpleName().
+                toUpperCase(Locale.ROOT);
+        if (type.equals("JKS")){
+            debug.println("WARNING: JKS uses outdated cryptographic "
+                    + "algorithms and will be removed in a future "
+                    + "release. Migrate to PKCS12 using:\n"
+                    + "keytool -importkeystore -srckeystore <keystore> "
+                    + "-destkeystore <keystore> -deststoretype pkcs12");
+        }
     }
 }

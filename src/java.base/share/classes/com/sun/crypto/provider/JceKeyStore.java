@@ -661,6 +661,10 @@ public final class JceKeyStore extends KeyStoreSpi {
                     dos.close();
                 }
             }
+
+            if (debug != null) {
+                emitWeakKeyStoreWarning();
+            }
         }
     }
 
@@ -863,11 +867,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                 }
 
                 if (debug != null) {
-                    debug.println("WARNING: JCEKS uses outdated cryptographic "
-                            + "algorithms and will be removed in a future "
-                            + "release. Migrate to PKCS12 using:\n"
-                            + "keytool -importkeystore -srckeystore <keystore> "
-                            + "-destkeystore <keystore> -deststoretype pkcs12");
+                    emitWeakKeyStoreWarning();
                 }
 
                 /*
@@ -985,5 +985,13 @@ public final class JceKeyStore extends KeyStoreSpi {
 
             return Status.UNDECIDED;
         }
+    }
+
+    private void emitWeakKeyStoreWarning() {
+        debug.println("WARNING: JCEKS uses outdated cryptographic "
+                + "algorithms and will be removed in a future "
+                + "release. Migrate to PKCS12 using:\n"
+                + "keytool -importkeystore -srckeystore <keystore> "
+                + "-destkeystore <keystore> -deststoretype pkcs12");
     }
 }
