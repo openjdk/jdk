@@ -43,6 +43,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -53,14 +55,12 @@ public class SegmentBulkFill {
 
     private static final byte ZERO = 0;
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "16", "64", "512",
-            "4096", "32768", "262144", "2097152", "16777216", "134217728"})
+    @Param({"2", "4", "8", "12", "16", "64", "512", "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int size;
-
-    byte[] array;
 
     public static class Array extends SegmentBulkFill {
 
+        byte[] array;
         ByteBuffer buffer;
 
         @Setup
@@ -105,15 +105,18 @@ public class SegmentBulkFill {
 
         @Setup
         public void setup() {
-            array = new byte[size + 1]; // Allow for adjustment
-            switch (SegmentType.valueOf(segmentType)) {
-                case HEAP   -> segment = MemorySegment.ofArray(array);
-                case NATIVE -> segment = Arena.ofAuto().allocate(array.length, Long.BYTES);
-            }
-            switch (Alignment.valueOf(alignment)) {
-                case ALIGNED   -> segment = segment.asSlice(0, size);
-                case UNALIGNED -> segment = segment.asSlice(1, size);
-            }
+            // A long array is likely to be aligned at 8-byte boundaries
+            long[] baseArray = new long[size / Long.BYTES + 1];
+            var heapSegment = MemorySegment.ofArray(baseArray);
+
+            segment = switch (SegmentType.valueOf(segmentType)) {
+                case HEAP   -> heapSegment;
+                case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, heapSegment, JAVA_LONG, 0L, baseArray.length);
+            };
+            segment = switch (Alignment.valueOf(alignment)) {
+                case ALIGNED   -> segment.asSlice(0, size);
+                case UNALIGNED -> segment.asSlice(1, size);
+            };
         }
 
         @Benchmark

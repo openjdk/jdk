@@ -45,6 +45,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -54,17 +55,8 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentBulkHash {
 
-    @Param({"2", /*"3", "4", "5", "6", "7", "8", "12", "16", "64", "512",
-            "4096", "32768", "262144", "2097152", "16777216", "134217728"*/})
+    @Param({"2", "4", "8", "12", "16", "64", "512", "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int size;
-
-    byte[] randomArray;
-
-    void baseSetup() {
-        randomArray = new byte[size + 1];
-        var rnd = new Random(42);
-        rnd.nextBytes(randomArray);
-    }
 
     public static class Array extends SegmentBulkHash {
 
@@ -72,7 +64,10 @@ public class SegmentBulkHash {
 
         @Setup
         public void setup() {
-            baseSetup();
+            byte[]  randomArray = new byte[size + 1];
+            var rnd = new Random(42);
+            rnd.nextBytes(randomArray);
+
             array = Arrays.copyOf(randomArray, size);
         }
 
@@ -98,17 +93,24 @@ public class SegmentBulkHash {
 
         @Setup
         public void setup() {
-            baseSetup();
-            MemorySegment s = null;
+            // A long array is likely to be aligned at 8-byte boundaries
+            long[] baseArray;
 
-            switch (SegmentBulkFill.Segment.SegmentType.valueOf(segmentType)) {
-                case HEAP   -> s = MemorySegment.ofArray(randomArray);
-                case NATIVE -> s = Arena.ofAuto().allocate(randomArray.length, Long.BYTES);
+            baseArray = new long[size / Long.BYTES + 1];
+            var rnd = new Random(42);
+            for (int i = 0; i < baseArray.length; i++) {
+                baseArray[i] = rnd.nextLong();
             }
-            switch (SegmentBulkFill.Segment.Alignment.valueOf(alignment)) {
-                case ALIGNED   -> s = s.asSlice(0, size);
-                case UNALIGNED -> s = s.asSlice(1, size);
-            }
+            var heapSegment = MemorySegment.ofArray(baseArray);
+
+            var s = switch (SegmentType.valueOf(segmentType)) {
+                    case HEAP   -> heapSegment;
+                    case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, heapSegment, JAVA_LONG, 0L, baseArray.length);
+            };
+            s = switch (Alignment.valueOf(alignment)) {
+                case ALIGNED   -> s.asSlice(0, size);
+                case UNALIGNED -> s.asSlice(1, size);
+            };
 
             // Always use the same alignment regardless of size
             segment = (AbstractMemorySegmentImpl) s;
@@ -120,27 +122,30 @@ public class SegmentBulkHash {
         }
 
         @Benchmark
-        public void hashLoopIntInt() {
+        public int hashLoopIntInt() {
             int result = 1;
             for (int i = 0; i < (int)segment.byteSize(); i++) {
                 result = 31 * result + segment.get(JAVA_BYTE, i);
             }
+            return result;
         }
 
         @Benchmark
-        public void hashLoopIntLong() {
+        public int hashLoopIntLong() {
             int result = 1;
             for (int i = 0; i < segment.byteSize(); i++) {
                 result = 31 * result + segment.get(JAVA_BYTE, i);
             }
+            return result;
         }
 
         @Benchmark
-        public void hashLoopLongLong() {
+        public int hashLoopLongLong() {
             int result = 1;
             for (long i = 0; i < segment.byteSize(); i++) {
                 result = 31 * result + segment.get(JAVA_BYTE, i);
             }
+            return result;
         }
 
     }

@@ -40,7 +40,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -50,14 +53,13 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class SegmentBulkCopy {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "12", "16", "64", "512",
-            "4096", "32768", "262144", "2097152", "16777216", "134217728"})
+    @Param({"2", "4", "8", "12", "16", "64", "512", "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int size;
 
-    byte[] srcArray;
-    byte[] dstArray;
-
     public static class Array extends SegmentBulkCopy {
+
+        byte[] srcArray;
+        byte[] dstArray;
 
         ByteBuffer srcBuffer;
         ByteBuffer dstBuffer;
@@ -65,6 +67,8 @@ public class SegmentBulkCopy {
         @Setup
         public void setup() {
             srcArray = new byte[size];
+            var rnd = new Random(42);
+            rnd.nextBytes(srcArray);
             dstArray = new byte[size];
             srcBuffer = ByteBuffer.wrap(srcArray);
             dstBuffer = ByteBuffer.wrap(dstArray);
@@ -98,20 +102,27 @@ public class SegmentBulkCopy {
 
         @Setup
         public void setup() {
-            srcArray = new byte[size + 1];
-            dstArray = new byte[size + 1];
+            // A long array is likely to be aligned at 8-byte boundaries
+            long[] baseArray;
 
-            switch (Segment.SegmentType.valueOf(segmentType)) {
+            baseArray = new long[size / Long.BYTES + 1];
+            var rnd = new Random(42);
+            for (int i = 0; i < baseArray.length; i++) {
+                baseArray[i] = rnd.nextLong();
+            }
+
+            switch (SegmentType.valueOf(segmentType)) {
                 case HEAP -> {
-                    srcSegment = MemorySegment.ofArray(srcArray);
-                    dstSegment = MemorySegment.ofArray(dstArray);
+                    srcSegment = MemorySegment.ofArray(baseArray);
+                    dstSegment = MemorySegment.ofArray(baseArray.clone());
                 }
                 case NATIVE -> {
-                    srcSegment = Arena.ofAuto().allocate(srcArray.length, Long.BYTES);
-                    dstSegment = Arena.ofAuto().allocate(dstArray.length, Long.BYTES);
+                    var s = MemorySegment.ofArray(baseArray);
+                    srcSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, s, JAVA_LONG, 0L, baseArray.length);
+                    dstSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, s, JAVA_LONG, 0L, baseArray.length);
                 }
             }
-            switch (Segment.Alignment.valueOf(alignment)) {
+            switch (Alignment.valueOf(alignment)) {
                 case ALIGNED -> {
                     srcSegment = srcSegment.asSlice(0, size);
                     dstSegment = dstSegment.asSlice(0, size);
