@@ -1035,8 +1035,8 @@ public class ExhaustivenessComputer {
 
             reducedAdded.remove(current);
 
-    Set<PatternDescription> combinedPatterns =      
-              Stream.concat(basePatterns.stream(), 
+    Set<PatternDescription> combinedPatterns =
+              Stream.concat(basePatterns.stream(),
                                         replace(inMissingPatterns, toExpand, reducedAdded).stream())
                           .collect(Collectors.toSet());
 
@@ -1152,7 +1152,7 @@ public class ExhaustivenessComputer {
                 }
             }
             // 'index' must be one of rootPatternRecord.nested; if not, `isUnderRoot` is inconsistent.
-            Assert.check(index != (-1)); 
+            Assert.check(index != (-1));
 
             int indexFin = index;
             Set<PatternDescription> filteredBasePatterns =
