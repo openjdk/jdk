@@ -38,18 +38,18 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 
-final class StandardValidator {
+final public class StandardValidator {
 
     private StandardValidator() {
     }
 
-    static final Predicate<Path> IS_DIRECTORY = Files::isDirectory;
+    public static final Predicate<Path> IS_DIRECTORY = Files::isDirectory;
 
-    static final Predicate<Path> IS_EXISTENT_NOT_DIRECTORY = path -> {
+    public static final Predicate<Path> IS_EXISTENT_NOT_DIRECTORY = path -> {
         return Files.exists(path) && !Files.isDirectory(path);
     };
 
-    static final Predicate<Path> IS_DIRECTORY_OR_NON_EXISTENT = path -> {
+    public static final Predicate<Path> IS_DIRECTORY_OR_NON_EXISTENT = path -> {
         return !Files.exists(path) || Files.isDirectory(path);
     };
 
@@ -69,6 +69,8 @@ final class StandardValidator {
         }
     };
 
+    public static Predicate<Path> IS_DIRECTORY_EMPTY_OR_NON_EXISTENT_PREDICATE = toPredicate(IS_DIRECTORY_EMPTY_OR_NON_EXISTENT);
+
     static final Consumer<String> IS_URL = url -> {
         try {
             new URI(url);
@@ -76,6 +78,8 @@ final class StandardValidator {
             throw new ValidatingConsumerException(ex);
         }
     };
+
+    public static Predicate<String> IS_URL_PREDICATE = toPredicate(IS_URL);
 
     static final Consumer<String> IS_CLASSNAME = str -> {
         try {
@@ -85,8 +89,10 @@ final class StandardValidator {
         }
     };
 
+    public static Predicate<String> IS_CLASSNAME_PREDICATE = toPredicate(IS_CLASSNAME);
+
     // Copied from DeployParams.validateName()
-    static final Predicate<String> IS_NAME_VALID = s -> {
+    public static final Predicate<String> IS_NAME_VALID = s -> {
         if (s.length() == 0 || s.indexOf('\\') != -1 || s.indexOf('/') != -1 || s.isBlank() || !s.equals(s.trim())) {
             return false;
         }
@@ -122,12 +128,24 @@ final class StandardValidator {
     };
 
 
-    static final class DirectoryListingIOException extends RuntimeException{
+    public static final class DirectoryListingIOException extends RuntimeException {
 
         DirectoryListingIOException(IOException cause) {
             super(Objects.requireNonNull(cause));
         }
 
         private static final long serialVersionUID = 1L;
+    }
+
+
+    private static <T> Predicate<T> toPredicate(Consumer<T> validator) {
+        return v -> {
+            try {
+                validator.accept(v);
+                return true;
+            } catch (ValidatingConsumerException ex) {
+                return false;
+            }
+        };
     }
 }
