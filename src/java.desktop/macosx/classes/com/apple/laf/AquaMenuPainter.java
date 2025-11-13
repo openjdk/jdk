@@ -535,13 +535,13 @@ public final class AquaMenuPainter {
             final int w = viewR.width;
             checkIconR.x = w - (checkIconR.x + checkIconR.width);
             if (menuItem.getHorizontalTextPosition() != SwingConstants.CENTER) {
-                int d = textR.x - iconR.x;
-                if (d > 0) {
+                int delta = textR.x - iconR.x;
+                if (delta > 0) {
                     textR.x = iconR.x;
-                    iconR.x = iconR.x + d + textR.width - iconR.width;
+                    iconR.x = iconR.x + delta + textR.width - iconR.width;
                 } else {
                     iconR.x = textR.x;
-                    textR.x = iconR.x - d + iconR.width - textR.width;
+                    textR.x = iconR.x - delta + iconR.width - textR.width;
                 }
             }
             iconR.x = w - (iconR.x + iconR.width);
