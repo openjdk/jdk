@@ -1327,29 +1327,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
-    private void processBlockDominatorConnection(BlockConnection blockDominatorConnection) {
-        boolean isDashed = blockDominatorConnection.getStyle() == Connection.ConnectionStyle.DASHED;
-        boolean isBold = blockDominatorConnection.getStyle() == Connection.ConnectionStyle.BOLD;
-        boolean isVisible = blockDominatorConnection.getStyle() != Connection.ConnectionStyle.INVISIBLE;
-        Point lastPoint = null;
-        LineWidget predecessor = null;
-        for (Point currentPoint : blockDominatorConnection.getControlPoints()) {
-            if (currentPoint == null) { // Long connection, has been cut vertically.
-                currentPoint = specialNullPoint;
-            } else if (lastPoint != specialNullPoint && lastPoint != null) {
-                List<BlockConnection> connectionList = Collections.singletonList(blockDominatorConnection);
-                Point src = new Point(lastPoint);
-                Point dest = new Point(currentPoint);
-                predecessor = new LineWidget(this, null, connectionList, src, dest, predecessor, isBold, isDashed);
-                predecessor.setVisible(isVisible);
-                connectionLayer.addChild(predecessor);
-                addObject(new ConnectionSet(connectionList), predecessor);
-                predecessor.getActions().addAction(hoverAction);
-            }
-            lastPoint = currentPoint;
-        }
-    }
-
     @Override
     public void setInteractionMode(InteractionMode mode) {
         panAction.setEnabled(mode == InteractionMode.PANNING);
@@ -1576,10 +1553,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         if (getModel().getShowCFG()) {
-            Set<BlockConnection> connections = getModel().getShowDominatorTree() ? getModel().getDiagram().getBlockDominatorConnections() : getModel().getDiagram().getBlockConnections();
+            Set<BlockConnection> connections = getModel().getShowDominatorTree() ?
+                    getModel().getDiagram().getBlockDominatorConnections() :
+                    getModel().getDiagram().getBlockConnections();
             for (BlockConnection blockConnection : connections) {
                 if (isVisibleBlockConnection(blockConnection)) {
-                    processBlockDominatorConnection(blockConnection);
+                    processBlockConnection(blockConnection);
                 }
             }
         }
