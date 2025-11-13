@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.nio.file;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.file.FileStore;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -109,17 +110,19 @@ class CopyMoveHelper {
         LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
-        // retrieve source posix view, null if unsupported
-        final PosixFileAttributeView sourcePosixView =
-            Files.getFileAttributeView(source, PosixFileAttributeView.class);
+        FileSystemProvider provider = source.getFileSystem().provider();
+
+        // retrieve whether source posix view is supported
+        FileStore fileStore = provider.getFileStore(source);
+        boolean sourceSupportsPosixFileAttributeView =
+            fileStore.supportsFileAttributeView(PosixFileAttributeView.class);
 
         // attributes of source file
         BasicFileAttributes sourceAttrs = null;
-        if (sourcePosixView != null) {
+        if (sourceSupportsPosixFileAttributeView)
             sourceAttrs = Files.readAttributes(source,
                                                PosixFileAttributes.class,
                                                linkOptions);
-        }
         if (sourceAttrs == null)
             sourceAttrs = Files.readAttributes(source,
                                                BasicFileAttributes.class,
@@ -130,7 +133,6 @@ class CopyMoveHelper {
             throw new IOException("Copying of symbolic links not supported");
 
         // ensure source can be copied
-        FileSystemProvider provider = source.getFileSystem().provider();
         provider.checkAccess(source, AccessMode.READ);
 
         // delete target if it exists and REPLACE_EXISTING is specified
@@ -151,7 +153,7 @@ class CopyMoveHelper {
         // copy basic and, if supported, POSIX attributes to target
         if (opts.copyAttributes) {
             BasicFileAttributeView targetView = null;
-            if (sourcePosixView != null) {
+            if (sourceSupportsPosixFileAttributeView) {
                 targetView = Files.getFileAttributeView(target,
                                                      PosixFileAttributeView.class);
             }
