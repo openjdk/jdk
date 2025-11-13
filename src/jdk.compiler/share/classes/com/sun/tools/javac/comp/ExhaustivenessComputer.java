@@ -1019,8 +1019,10 @@ public class ExhaustivenessComputer {
 
             reducedAdded.remove(current);
 
-            Set<PatternDescription> combinedPatterns =
-                    joinSets(basePatterns, replace(inMissingPatterns, toExpand, reducedAdded));
+    Set<PatternDescription> combinedPatterns =      
+              Stream.concat(basePatterns.stream(), 
+                                        replace(inMissingPatterns, toExpand, reducedAdded).stream())
+                          .collect(Collectors.toSet());
 
             if (computeCoverage(selectorType, combinedPatterns, PatternEquivalence.LOOSE).covered()) {
                 it.remove();
@@ -1031,8 +1033,8 @@ public class ExhaustivenessComputer {
         return reduced;
     }
     /*
-     * Sort patterns so that those that those that are prefered for removal
-     * are in front of those that are preferred to remain (when there's a choice).
+     * Sort patterns so that those that are preferred for removal are in front
+     * of those that are preferred to remain (when there's a choice).
      */
     private SequencedSet<PatternDescription> partialSortPattern(Set<PatternDescription> candidates,
                                                                 Set<? extends PatternDescription> basePatterns,
@@ -1134,7 +1136,8 @@ public class ExhaustivenessComputer {
                     break;
                 }
             }
-            Assert.check(index != (-1));
+            // 'index' must be one of rootPatternRecord.nested; if not, `isUnderRoot` is inconsistent.
+            Assert.check(index != (-1)); 
 
             int indexFin = index;
             Set<PatternDescription> filteredBasePatterns =
