@@ -43,7 +43,7 @@ import javax.management.ObjectName;
  * end the AOT recording. More operations and/or properties may be added in a
  * future release.
  *
- * @since 26 
+ * @since 26
  */
 public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
   /**
