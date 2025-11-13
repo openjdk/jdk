@@ -2796,7 +2796,7 @@ void PhaseCCP::analyze() {
 
   // This is the meat of CCP: pull from worklist; compute new value; push changes out.
 
-  // Do the first round.
+  // Do the first round. Since all initial types are TOP, this will visit all alive nodes.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
     DEBUG_ONLY(worklist_verify.push(n);)
@@ -2811,7 +2811,7 @@ void PhaseCCP::analyze() {
     analyze_step(worklist, n);
   }
 
-  // More rounds to catch updates in revisited nodes.
+  // More rounds to catch updates far in the graph.
   // Revisit nodes that might be able to refine their types at the end of the round.
   // If so, process these nodes. If there is remaining work, start another round.
   do {
