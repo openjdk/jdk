@@ -460,10 +460,15 @@ public final class DecimalDigits {
      * @param v the {@code int} value (should be between 0 and 99 inclusive).
      */
     public static void appendPair(StringBuilder buf, int v) {
+        // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
+        // which allows the JIT compiler to eliminate array bounds checks for performance.
         int packed = DIGITS[v & 0x7f];
+        // The temporary String and byte[] objects created here are typically eliminated 
+        // by the JVM's escape analysis and scalar replacement optimizations during 
+        // runtime compilation, avoiding actual heap allocations in optimized code.
         buf.append(
                 JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8)}));
+                        new byte[] {(byte) packed, (byte) (packed >> 8)}));
     }
 
     /**
@@ -481,10 +486,16 @@ public final class DecimalDigits {
      * @param v the {@code int} value (should be between 0 and 9999 inclusive).
      */
     public static void appendQuad(StringBuilder buf, int v) {
-        int y01 = v / 100;
-        int packed = DIGITS[y01 & 0x7f] | (DIGITS[(v - y01 * 100) & 0x7f] << 16);
+        // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
+        // which allows the JIT compiler to eliminate array bounds checks for performance.
+        int packedHigh = DIGITS[(v / 100) & 0x7f];
+        int packedLow  = DIGITS[(v % 100) & 0x7f];
+        // The temporary String and byte[] objects created here are typically eliminated 
+        // by the JVM's escape analysis and scalar replacement optimizations during 
+        // runtime compilation, avoiding actual heap allocations in optimized code.
         buf.append(
                 JLA.uncheckedNewStringWithLatin1Bytes(
-                        new byte[] {(byte) (packed & 0xFF), (byte) (packed >> 8), (byte) (packed >> 16), (byte) (packed >> 24)}));
+                        new byte[] {(byte) packedHigh, (byte) (packedHigh >> 8),
+                                    (byte) packedLow,  (byte) (packedLow  >> 8)}));
     }
 }
