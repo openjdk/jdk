@@ -2372,10 +2372,19 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
         size_t ac = alloc_capacity(region);
         size_t humongous_waste_bytes = 0;
         if (region->is_humongous_start()) {
-          oop obj = cast_to_oop(region->bottom());
-          size_t byte_size = obj->size() * HeapWordSize;
-          size_t region_span = ShenandoahHeapRegion::required_regions(byte_size);
-          humongous_waste_bytes = region_span * ShenandoahHeapRegion::region_size_bytes() - byte_size;
+          // Since rebuild does not necessarily happen at a safepoint, a newly allocated humongous object may not have been
+          // fully initialized.  Therefore, we cannot safely consult its header.
+          ShenandoahHeapRegion* last_of_humongous_continuation = region;
+          size_t next_idx;
+          for (next_idx = idx + 1; next_idx < num_regions; next_idx++) {
+            ShenandoahHeapRegion* humongous_cont_candidate = _heap->get_region(next_idx);
+            if (!humongous_cont_candidate->is_humongous_continuation()) {
+              break;
+            }
+            last_of_humongous_continuation = humongous_cont_candidate;
+          }
+          // For humongous regions, used() is established while holding the global heap lock so it is reliable here
+          humongous_waste_bytes = ShenandoahHeapRegion::region_size_bytes() - last_of_humongous_continuation->used();
         }
         if (region->is_old()) {
           old_collector_used += region_size_bytes;
