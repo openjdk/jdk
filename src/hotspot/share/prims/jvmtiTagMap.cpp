@@ -2190,7 +2190,7 @@ class SimpleRootsClosure : public OopClosure {
   virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
 };
 
-// A supporting closure used to process ClassLoaderData roots
+// A supporting closure used to process ClassLoaderData roots.
 class CLDRootsClosure: public OopClosure {
 private:
   bool _continue;

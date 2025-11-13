@@ -76,7 +76,7 @@ Java_KindSystemClass_getObjectsWithTags(JNIEnv* jni, jclass clazz) {
   check_jvmti_error(err, "Allocate failed");
 
   for (int i = 0; i < class_counter; i++) {
-    tags[i] = i+1;
+    tags[i] = i + 1;
   }
 
   jint count = 0;
@@ -98,7 +98,6 @@ Java_KindSystemClass_getObjectsWithTags(JNIEnv* jni, jclass clazz) {
   return array;
 }
 
-
 extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   if (vm->GetEnv(reinterpret_cast<void**>(&jvmti), JVMTI_VERSION) != JNI_OK || !jvmti) {
     LOG("Could not initialize JVMTI\n");
@@ -110,4 +109,3 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *
   check_jvmti_error(jvmti->AddCapabilities(&capabilities), "adding capabilities");
   return JVMTI_ERROR_NONE;
 }
-
