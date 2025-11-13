@@ -214,8 +214,7 @@ class VM_CollectForMetadataAllocation: public VM_GC_Collect_Operation {
                                   size_t size,
                                   Metaspace::MetadataType mdtype,
                                   uint gc_count_before,
-                                  uint full_gc_count_before,
-                                  GCCause::Cause gc_cause);
+                                  uint full_gc_count_before);
 
   virtual VMOp_Type type() const { return VMOp_CollectForMetadataAllocation; }
   virtual void doit();
