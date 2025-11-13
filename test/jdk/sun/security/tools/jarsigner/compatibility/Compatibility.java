@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375 8260286 8267319 8353749
+ * @bug 8217375 8260286 8267319
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
