@@ -1827,7 +1827,11 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
   uint old_unique = C->unique();
   // The hash of a node should not change, this would indicate different inputs
   uint old_hash = n->hash();
-  // Remove 'n' from hash table in case it gets modified
+  // Remove 'n' from hash table in case it gets modified. We want to avoid
+  // hitting the "Need to remove from hash before changing edges" assert if
+  // a change occurs. Instead, we would like to proceed with the optimization,
+  // return and finally hit the assert in PhaseIterGVN::verify_optimize to get
+  // a more meaningful message
   _table.hash_delete(n);
   Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are probably happy.
