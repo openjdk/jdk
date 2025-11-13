@@ -7479,13 +7479,8 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
   // Intel's extension is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
-  // The ppc64 and riscv64 stubs of encryption and decryption use the same round keys (sessionK[0]).
-  Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
-  assert (objSessionK != nullptr, "wrong version of com.sun.crypto.provider.AES_Crypt");
-  if (objSessionK == nullptr) {
-    return (Node *) nullptr;
-  }
-  Node* objAESCryptKey = load_array_element(objSessionK, intcon(0), TypeAryPtr::OOPS, /* set_ctrl */ true);
+  // The ppc64, s390 and riscv64 stubs of encryption and decryption use the same round keys.
+  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "sessionKe", "[I");
 #else
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
