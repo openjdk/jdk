@@ -58,7 +58,7 @@ public class PrintVMInfoAtExitTest {
     // Make sure the heap summary is present.
     output_detail.shouldMatch("Java Heap \\(reserved=[0-9]+KB, committed=" + committed_kb + "KB\\)");
     // Check reserved >= committed.
-    String reserved_kb_string = output_detail.firstMatch("reserved=([0-9]+)KB, committed=" + committed_kb + "KB", 1);
+    String reserved_kb_string = output_detail.firstMatch("Java Heap \\(reserved=([0-9]+)KB, committed=" + committed_kb + "KB\\)", 1);
     int reserved_kb = Integer.parseInt(reserved_kb_string);
     if (reserved_kb < committed_kb) {
         throw new RuntimeException("committed more memory than reserved");
