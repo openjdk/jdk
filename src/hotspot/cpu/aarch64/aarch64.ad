@@ -1,7 +1,6 @@
 //
 // Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1195,10 +1194,15 @@ class HandlerImpl {
 
  public:
 
+  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
+  static uint size_exception_handler() {
+    return MacroAssembler::far_codestub_branch_size();
+  }
+
   static uint size_deopt_handler() {
-    // count one branch instruction and one far call instruction sequence
+    // count one adr and one far branch instruction
     return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
   }
 };
@@ -2257,6 +2261,25 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
+// Emit exception handler code.
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
+{
+  // mov rscratch1 #exception_blob_entry_point
+  // br rscratch1
+  // Note that the code buffer's insts_mark is always relative to insts.
+  // That's why we must use the macroassembler to generate a handler.
+  address base = __ start_a_stub(size_exception_handler());
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
+  int offset = __ offset();
+  __ far_jump(RuntimeAddress(OptoRuntime::exception_blob()->entry_point()));
+  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
+  __ end_a_stub();
+  return offset;
+}
+
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
 {
@@ -2267,18 +2290,14 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm)
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
-
   int offset = __ offset();
-  Label start;
-  __ bind(start);
-  __ far_call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  int entry_offset = __ offset();
-  __ b(start);
+  __ adr(lr, __ pc());
+  __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
-  return entry_offset;
+  return offset;
 }
 
 // REQUIRED MATCHER CODE
@@ -16262,7 +16281,7 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
@@ -16271,13 +16290,13 @@ instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp
   format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
@@ -16286,7 +16305,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2, $tmp3" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

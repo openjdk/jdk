@@ -1019,7 +1019,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   NearLabel done, slow_case;
 
-  lightweight_lock(monitor, object, header, tmp, slow_case);
+  fast_lock(monitor, object, header, tmp, slow_case);
   z_bru(done);
 
   bind(slow_case);
@@ -1054,7 +1054,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   clear_mem(obj_entry, sizeof(oop));
 
-  lightweight_unlock(object, header, current_header, slow_case);
+  fast_unlock(object, header, current_header, slow_case);
   z_bru(done);
 
   // The lock has been converted into a heavy lock and hence

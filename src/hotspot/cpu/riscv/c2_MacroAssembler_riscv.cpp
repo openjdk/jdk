@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box,
+                                  Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -74,7 +74,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   const Register tmp1_mark = tmp1;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == 0
     Label push;
@@ -205,8 +205,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
   // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
-                                                Register tmp1, Register tmp2, Register tmp3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box,
+                                    Register tmp1, Register tmp2, Register tmp3) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -225,7 +225,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
   const Register tmp2_top = tmp2;
   const Register tmp3_t = tmp3;
 
-  { // Lightweight unlock
+  { // Fast unlock
     Label push_and_slow_path;
 
     // Check if obj is top of lock-stack.
