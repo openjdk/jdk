@@ -32,7 +32,7 @@
  * @requires !vm.emulatedClient
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+SegmentedCodeCache
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+SegmentedCodeCache
  * -XX:+UnlockExperimentalVMOptions -XX:+NMethodRelocation compiler.whitebox.DeoptimizeRelocatedNMethod
  */
 
@@ -59,9 +59,6 @@ public class DeoptimizeRelocatedNMethod {
 
         // Enqueue method for compilation and wait until it is done
         WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        while (WHITE_BOX.isMethodQueuedForCompilation(method)) {
-            Thread.onSpinWait();
-        }
 
         // Verify now compiled
         CompilerWhiteBoxTest.checkCompiled(method, false);
