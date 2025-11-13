@@ -579,10 +579,15 @@ public:
     instruction_code = 0x0f,
     instruction_size = 8,
     instruction_offset = 0,
-    displacement_offset = 4
+    displacement_offset = 4,
+
+    // The two parts should be checked separately to prevent out of bounds access in case
+    // the return address points to the deopt handler stub code entry point which could be
+    // at the end of page.
+    first_check_size = 2
   };
 
-  bool check() const { return short_at(0) == 0x1f0f && short_at(2) == 0x0084; }
+  bool check() const { return short_at(0) == 0x1f0f && short_at(first_check_size) == 0x0084; }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     int32_t data = int_at(displacement_offset);
     if (data == 0) {

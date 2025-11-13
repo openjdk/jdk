@@ -2130,6 +2130,8 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ b(start);
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
+  assert(__ offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
   return entry_offset;
