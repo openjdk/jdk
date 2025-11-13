@@ -525,6 +525,22 @@ public class ExhaustivenessComputer {
      *   of an existing record pattern (the binding pattern may stand in place of
      *   a record pattern). This is only used to compute the missing patterns that
      *   would make the original pattern set exhaustive.
+     *
+     * For example, having (with mismatchingCandidate == 0):
+     * existing: R(A _, Box(var _)) {}
+     * cadidate: R(B _, Box(var _)) {}
+     * these are always equivalent; as all nested patterns except of
+     * component 0 are exactly equivalent
+     *
+     * existing: R(A _, SubtypeOfBox _) {}
+     * cadidate: R(A _, Box _) {}
+     * this is only equivalent when useHashes == false; Box _ could be replaced
+     * with a more specific SubtypeOfBox _
+     *
+     * existing: R(A _, Box(var _)) {}
+     * cadidate: R(A _, Box _) {}
+     * this is only equivalent when useHashes == false and patternEquivalence == LOOSE;
+     * Box _ is accepted in place of the more specific record pattern
      */
     private boolean nestedComponentsEquivalent(RecordPattern existing,
                                                RecordPattern candidate,
@@ -550,7 +566,7 @@ public class ExhaustivenessComputer {
                         }
                     } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
                         if (patternEquivalence == PatternEquivalence.LOOSE) {
-                            if (!types.isSubtype(types.erasure(nestedExisting.recordType()), types.erasure(nestedCandidate.type))) {
+                            if (!isSubtypeErasure(nestedExisting.recordType(), nestedCandidate.type)) {
                                 return false;
                             }
                         } else {
@@ -1116,8 +1132,7 @@ public class ExhaustivenessComputer {
                 }
             }
 
-            //assert?
-            return null;
+            throw Assert.error();
         }
 
         private boolean basePatternsHaveRecordPatternOnThisSpot(Set<? extends PatternDescription> basePatterns,
@@ -1164,21 +1179,13 @@ public class ExhaustivenessComputer {
             return false;
         }
 
-    private Set<PatternDescription> joinSets(Collection<? extends PatternDescription> s1,
-                                             Collection<? extends PatternDescription> s2) {
-        Set<PatternDescription> result = new HashSet<>();
-
-        result.addAll(s1);
-        result.addAll(s2);
-
-        return result;
-    }
-
     /*
-     * Based on {@code basePattern} generate new {@code RecordPattern}s such that all
-     * components instead of {@code replaceComponent}th component, which is replaced
-     * with values from {@code updatedNestedPatterns}. Resulting {@code RecordPatterns}s
-     * are sent to {@code target}.
+     * Using {@code basePattern} as a starting point, generate new {@code
+     * RecordPattern}s, such that all corresponding components but one, are the
+     * same. The component described by the {@code replaceComponent} index is
+     * replaced with all {@code PatternDescription}s taken from {@code
+     * updatedNestedPatterns} and the resulting {@code RecordPatterns}s are sent
+     * to {@code target}.
      */
     private void generatePatternsWithReplacedNestedPattern(RecordPattern basePattern,
                                                            int replaceComponent,
