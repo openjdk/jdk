@@ -56,8 +56,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
 
-  virtual void print_log(size_t occupancy);
-  virtual void send_jfr_event(G1NewTracer* tracer, size_t occupancy);
+  virtual void print_log(size_t non_young_occupancy);
+  virtual void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
 
 public:
   virtual ~G1IHOPControl() { }
@@ -80,7 +80,7 @@ public:
   // the first mixed gc.
   virtual void update_marking_length(double marking_length_s) = 0;
 
-  void report_statistics(G1NewTracer* tracer, size_t occupancy);
+  void report_statistics(G1NewTracer* tracer, size_t non_young_occupancy);
 };
 
 // The returned concurrent mark starting occupancy threshold is a fixed value
@@ -143,8 +143,8 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
  protected:
   virtual double last_marking_length_s() const { return _marking_times_s.last(); }
 
-  virtual void print_log(size_t occupancy);
-  virtual void send_jfr_event(G1NewTracer* tracer, size_t occupancy);
+  virtual void print_log(size_t non_young_occupancy);
+  virtual void send_trace_event(G1NewTracer* tracer, size_t non_young_occupancy);
 
  public:
   G1AdaptiveIHOPControl(double ihop_percent,
