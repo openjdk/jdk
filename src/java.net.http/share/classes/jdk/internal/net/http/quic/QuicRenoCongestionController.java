@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,12 @@ class QuicRenoCongestionController implements QuicCongestionController {
     private Deadline congestionRecoveryStartTime;
     private long ssThresh = Long.MAX_VALUE;
 
-    public QuicRenoCongestionController(String dbgTag) {
+    private final QuicPacer pacer;
+
+    public QuicRenoCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         this.dbgTag = dbgTag;
         this.timeSource = TimeSource.source();
+        this.pacer = new QuicPacer(rttEstimator, this);
     }
 
     private boolean inCongestionRecovery(Deadline sentTime) {
@@ -83,7 +86,7 @@ class QuicRenoCongestionController implements QuicCongestionController {
         congestionWindow = Math.max(minimumWindow, ssThresh);
         maxBytesInFlight = 0;
         if (Log.quicCC()) {
-            Log.logQuic(dbgTag+ " Congestion: ssThresh: " + ssThresh +
+            Log.logQuic(dbgTag + " Congestion: ssThresh: " + ssThresh +
                     ", in flight: " + bytesInFlight +
                     ", cwnd:" + congestionWindow);
         }
@@ -103,8 +106,10 @@ class QuicRenoCongestionController implements QuicCongestionController {
             if (bytesInFlight >= MAX_BYTES_IN_FLIGHT) {
                 return false;
             }
-            var canSend = congestionWindow - bytesInFlight >= maxDatagramSize;
-            return canSend;
+            if (isCwndLimited() || isPacerLimited()) {
+                return false;
+            }
+            return true;
         } finally {
             lock.unlock();
         }
@@ -132,6 +137,7 @@ class QuicRenoCongestionController implements QuicCongestionController {
             if (bytesInFlight > maxBytesInFlight) {
                 maxBytesInFlight = bytesInFlight;
             }
+            pacer.packetSent(packetBytes);
         } finally {
             lock.unlock();
         }
@@ -147,8 +153,8 @@ class QuicRenoCongestionController implements QuicCongestionController {
             // Here we limit cwnd growth based on the maximum bytes in flight
             // observed since the last congestion event
             if (inCongestionRecovery(sentTime)) {
-                if (Log.quicCC()) {
-                    Log.logQuic(dbgTag+ " Acked, in recovery: bytes: " + packetBytes +
+                if (Log.quicCC() && Log.trace()) {
+                    Log.logQuic(dbgTag + " Acked, in recovery: bytes: " + packetBytes +
                             ", in flight: " + bytesInFlight);
                 }
                 return;
@@ -165,9 +171,9 @@ class QuicRenoCongestionController implements QuicCongestionController {
                     congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
                 }
             }
-            if (Log.quicCC()) {
+            if (Log.quicCC() && Log.trace()) {
                 if (isAppLimited) {
-                    Log.logQuic(dbgTag+ " Acked, not blocked: bytes: " + packetBytes +
+                    Log.logQuic(dbgTag + " Acked, not blocked: bytes: " + packetBytes +
                             ", in flight: " + bytesInFlight);
                 } else {
                     Log.logQuic(dbgTag + " Acked, increased: bytes: " + packetBytes +
@@ -194,7 +200,7 @@ class QuicRenoCongestionController implements QuicCongestionController {
                 congestionWindow = minimumWindow;
                 congestionRecoveryStartTime = null;
                 if (Log.quicCC()) {
-                    Log.logQuic(dbgTag+ " Persistent congestion: ssThresh: " + ssThresh +
+                    Log.logQuic(dbgTag + " Persistent congestion: ssThresh: " + ssThresh +
                             ", in flight: " + bytesInFlight +
                             ", cwnd:" + congestionWindow);
                 }
@@ -213,6 +219,96 @@ class QuicRenoCongestionController implements QuicCongestionController {
                     bytesInFlight -= packet.size();
                 }
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public long congestionWindow() {
+        lock.lock();
+        try {
+            return congestionWindow;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public long initialWindow() {
+        lock.lock();
+        try {
+            return Math.max(14720, 2 * maxDatagramSize);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public long maxDatagramSize() {
+        lock.lock();
+        try {
+            return maxDatagramSize;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean isSlowStart() {
+        lock.lock();
+        try {
+            return congestionWindow < ssThresh;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void updatePacer(Deadline now) {
+        lock.lock();
+        try {
+            pacer.updateQuota(now);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean isPacerLimited() {
+        lock.lock();
+        try {
+            return !pacer.canSend();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean isCwndLimited() {
+        lock.lock();
+        try {
+            return congestionWindow - bytesInFlight < maxDatagramSize;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Deadline pacerDeadline() {
+        lock.lock();
+        try {
+            return pacer.twoPacketDeadline();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void appLimited() {
+        lock.lock();
+        try {
+            pacer.appLimited();
         } finally {
             lock.unlock();
         }
