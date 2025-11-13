@@ -154,7 +154,7 @@ public class CriticalSubjectAltName implements HostnameVerifier {
         ks.load(null, null);
         ks.setCertificateEntry("Trusted Cert", trustedCert);
 
-        Certificate[] chain = new Certificate[] {serverCert, trustedCert};
+        Certificate[] chain = new Certificate[] {serverCert};
         ks.setKeyEntry("Server key", serverKeys.getPrivate(),
                 PASSPHRASE, chain);
 
@@ -164,7 +164,7 @@ public class CriticalSubjectAltName implements HostnameVerifier {
         SSLContext ctx = SSLContext.getInstance(protocol);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, PASSPHRASE);
-        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        ctx.init(kmf.getKeyManagers(), null, null);
         return ctx;
     }
 
@@ -187,10 +187,7 @@ public class CriticalSubjectAltName implements HostnameVerifier {
      */
     void doClientSide() throws Exception {
 
-        if (!serverReady.await(SERVER_WAIT_SECS, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Server did not start within " +
-                    SERVER_WAIT_SECS + " seconds.");
-        }
+        serverReady.await();
 
         SSLContext ctx = createClientContext();
         URL url = new URL("https://localhost:"+serverPort+"/index.html");
