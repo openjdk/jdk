@@ -3385,10 +3385,10 @@ void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
   if (node == -1) {
     // If the node is -1, the affinity is reverted to the original affinity
     // of the thread when the VM was started
-    _numa_sched_setaffinity(tid, _numa_all_cpus_ptr) == 0;
+    _numa_sched_setaffinity(tid, _numa_all_cpus_ptr);
   } else {
     // Normal case, set the affinity to the corresponding affinity mask
-    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node)) == 0;
+    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node));
   }
 }
 
