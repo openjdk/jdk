@@ -5544,7 +5544,7 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     InitializeNode* init = alloc->initialization();
     Node* alloc_mem = alloc->in(TypeFunc::Memory);
     C->gvn_replace_by(callprojs.fallthrough_ioproj, alloc->in(TypeFunc::I_O));
-    C->gvn_replace_by(init->proj_out(TypeFunc::Memory), alloc_mem);
+    init->replace_mem_projs_by(alloc_mem, C);
 
     // The CastIINode created in GraphKit::new_array (in AllocateArrayNode::make_ideal_length) must stay below
     // the allocation (i.e. is only valid if the allocation succeeds):
@@ -5595,8 +5595,20 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
     }
     const TypePtr* telemref = ary_type->add_offset(Type::OffsetBot);
     int            elemidx  = C->get_alias_index(telemref);
-    set_memory(init->proj_out_or_null(TypeFunc::Memory), Compile::AliasIdxRaw);
-    set_memory(init->proj_out_or_null(TypeFunc::Memory), elemidx);
+    // Need to properly move every memory projection for the Initialize
+#ifdef ASSERT
+    int mark_idx = C->get_alias_index(ary_type->add_offset(oopDesc::mark_offset_in_bytes()));
+    int klass_idx = C->get_alias_index(ary_type->add_offset(oopDesc::klass_offset_in_bytes()));
+#endif
+    auto move_proj = [&](ProjNode* proj) {
+      int alias_idx = C->get_alias_index(proj->adr_type());
+      assert(alias_idx == Compile::AliasIdxRaw ||
+             alias_idx == elemidx ||
+             alias_idx == mark_idx ||
+             alias_idx == klass_idx, "should be raw memory or array element type");
+      set_memory(proj, alias_idx);
+    };
+    init->for_each_proj(move_proj, TypeFunc::Memory);
 
     Node* allocx = _gvn.transform(alloc);
     assert(allocx == alloc, "where has the allocation gone?");
@@ -7273,7 +7285,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   const TypeInstPtr* tinst = _gvn.type(cipherBlockChaining_object)->isa_instptr();
   assert(tinst != nullptr, "CBC obj is null");
   assert(tinst->is_loaded(), "CBC obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
@@ -7359,7 +7371,7 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   const TypeInstPtr* tinst = _gvn.type(electronicCodeBook_object)->isa_instptr();
   assert(tinst != nullptr, "ECB obj is null");
   assert(tinst->is_loaded(), "ECB obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
@@ -7429,7 +7441,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   const TypeInstPtr* tinst = _gvn.type(counterMode_object)->isa_instptr();
   assert(tinst != nullptr, "CTR obj is null");
   assert(tinst->is_loaded(), "CTR obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -7469,7 +7481,7 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64 and riscv64 stubs of encryption and decryption use the same round keys (sessionK[0]).
   Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
-  assert (objSessionK != nullptr, "wrong version of com.sun.crypto.provider.AESCrypt");
+  assert (objSessionK != nullptr, "wrong version of com.sun.crypto.provider.AES_Crypt");
   if (objSessionK == nullptr) {
     return (Node *) nullptr;
   }
@@ -7477,7 +7489,7 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
 #else
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
-  assert (objAESCryptKey != nullptr, "wrong version of com.sun.crypto.provider.AESCrypt");
+  assert (objAESCryptKey != nullptr, "wrong version of com.sun.crypto.provider.AES_Crypt");
   if (objAESCryptKey == nullptr) return (Node *) nullptr;
 
   // now have the array, need to get the start address of the K array
@@ -7512,7 +7524,7 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
   assert(tinst->is_loaded(), "CBCobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -7575,7 +7587,7 @@ Node* LibraryCallKit::inline_electronicCodeBook_AESCrypt_predicate(bool decrypti
   assert(tinst->is_loaded(), "ECBobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -7635,7 +7647,7 @@ Node* LibraryCallKit::inline_counterMode_AESCrypt_predicate() {
   assert(tinst->is_loaded(), "CTRobj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();
@@ -8608,7 +8620,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
   assert(tinst != nullptr, "GCTR obj is null");
   assert(tinst->is_loaded(), "GCTR obj is not loaded");
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -8662,7 +8674,7 @@ Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
   assert(tinst->is_loaded(), "GCTR obj is not loaded");
 
   // we want to do an instanceof comparison against the AESCrypt class
-  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
+  ciKlass* klass_AESCrypt = tinst->instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
   if (!klass_AESCrypt->is_loaded()) {
     // if AESCrypt is not even loaded, we never take the intrinsic fast path
     Node* ctrl = control();

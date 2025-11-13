@@ -30,9 +30,8 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 
-CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred) :
+CodeCacheUnloadingTask::CodeCacheUnloadingTask(bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),
-  _num_workers(num_workers),
   _first_nmethod(nullptr),
   _claimed_nmethod(nullptr) {
   // Get first alive nmethod

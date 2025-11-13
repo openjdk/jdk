@@ -15,12 +15,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ff">Fulah</language>
 		</languages>
+		<scripts>
+			<script type="Hrkt">Japanese Syllabaries</script>
+		</scripts>
+		<keys>
+			<key type="lw">Line Breaks Within Words</key>
+		</keys>
+		<types>
+			<type key="numbers" type="armnlow" scope="core">Armenian Lowercase</type>
+			<type key="numbers" type="fullwide" scope="core">Full-Width</type>
+			<type key="numbers" type="greklow" scope="core">Greek Lowercase</type>
+			<type key="numbers" type="hansfin" scope="core">Simplified Chinese Financial</type>
+			<type key="numbers" type="hantfin" scope="core">Traditional Chinese Financial</type>
+			<type key="numbers" type="jpanfin" scope="core">Japanese Financial</type>
+			<type key="numbers" type="native" scope="core">Native Digits</type>
+			<type key="numbers" type="roman" scope="core">Roman Uppercase</type>
+			<type key="numbers" type="romanlow" scope="core">Roman Lowercase</type>
+		</types>
 	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="generic">
 				<dateTimeFormats>
 					<availableFormats>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
@@ -126,7 +144,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="GyMd">dd/MM/y G</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
 						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
@@ -136,14 +154,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMMEEEEd">EEEE, d MMMM y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d – d</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEEEEd">
 							<greatestDifference id="d">EEEE d MMM – EEEE d MMM y G</greatestDifference>
 							<greatestDifference id="G">EEEE d MMM y G – EEEE d MMM y G</greatestDifference>
 							<greatestDifference id="M">EEEE d MMM – EEEE d MMM y G</greatestDifference>
 							<greatestDifference id="y">EEEE d MMM y – EEEE d MMM y G</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y – y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E, d MMM – E, d MMM y</greatestDifference>
@@ -164,12 +197,69 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="islamic">
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'at' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMEd">E, d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
-						<dateFormatItem id="M">LL</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMMEEEEd">EEEE, d MMMM y G</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MEEEEd">EEEE, d/M</dateFormatItem>
+						<dateFormatItem id="MMMEEEEd">EEEE, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMEEEEd">EEEE, d MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEEEEd">EEEE, d MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">EEEE, d MMMM y G</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -179,15 +269,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<short>
 					<daylight>BST</daylight>
 				</short>
-			</zone>
-			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
-			</zone>
-			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
-			</zone>
-			<zone type="America/Cancun">
-				<exemplarCity>Cancun</exemplarCity>
 			</zone>
 			<metazone type="Europe_Central">
 				<short>
@@ -217,6 +298,92 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 		</timeZoneNames>
 	</dates>
+	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one">0k</pattern>
+					<pattern type="1000" count="other">0k</pattern>
+					<pattern type="10000" count="one">00k</pattern>
+					<pattern type="10000" count="other">00k</pattern>
+					<pattern type="100000" count="one">000k</pattern>
+					<pattern type="100000" count="other">000k</pattern>
+					<pattern type="1000000" count="one">0m</pattern>
+					<pattern type="1000000" count="other">0m</pattern>
+					<pattern type="10000000" count="one">00m</pattern>
+					<pattern type="10000000" count="other">00m</pattern>
+					<pattern type="100000000" count="one">000m</pattern>
+					<pattern type="100000000" count="other">000m</pattern>
+					<pattern type="1000000000" count="one">0bn</pattern>
+					<pattern type="1000000000" count="other">0bn</pattern>
+					<pattern type="10000000000" count="one">00bn</pattern>
+					<pattern type="10000000000" count="other">00bn</pattern>
+					<pattern type="100000000000" count="one">000bn</pattern>
+					<pattern type="100000000000" count="other">000bn</pattern>
+					<pattern type="1000000000000" count="one">0tn</pattern>
+					<pattern type="1000000000000" count="other">0tn</pattern>
+					<pattern type="10000000000000" count="one">00tn</pattern>
+					<pattern type="10000000000000" count="other">00tn</pattern>
+					<pattern type="100000000000000" count="one">000tn</pattern>
+					<pattern type="100000000000000" count="other">000tn</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one">¤0k</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">¤ 0k</pattern>
+					<pattern type="1000" count="other">¤0k</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0k</pattern>
+					<pattern type="10000" count="one">¤00k</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">¤ 00k</pattern>
+					<pattern type="10000" count="other">¤00k</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00k</pattern>
+					<pattern type="100000" count="one">¤000k</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">¤ 000k</pattern>
+					<pattern type="100000" count="other">¤000k</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000k</pattern>
+					<pattern type="1000000" count="one">¤0m</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">¤ 0m</pattern>
+					<pattern type="1000000" count="other">¤0m</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0m</pattern>
+					<pattern type="10000000" count="one">¤00m</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">¤ 00m</pattern>
+					<pattern type="10000000" count="other">¤00m</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00m</pattern>
+					<pattern type="100000000" count="one">¤000m</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">¤ 000m</pattern>
+					<pattern type="100000000" count="other">¤000m</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000m</pattern>
+					<pattern type="1000000000" count="one">¤0bn</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">¤ 0bn</pattern>
+					<pattern type="1000000000" count="other">¤0bn</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0bn</pattern>
+					<pattern type="10000000000" count="one">¤00bn</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">¤ 00bn</pattern>
+					<pattern type="10000000000" count="other">¤00bn</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00bn</pattern>
+					<pattern type="100000000000" count="one">¤000bn</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">¤ 000bn</pattern>
+					<pattern type="100000000000" count="other">¤000bn</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000bn</pattern>
+					<pattern type="1000000000000" count="one">¤0tn</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">¤ 0tn</pattern>
+					<pattern type="1000000000000" count="other">¤0tn</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0tn</pattern>
+					<pattern type="10000000000000" count="one">¤00tn</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">¤ 00tn</pattern>
+					<pattern type="10000000000000" count="other">¤00tn</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00tn</pattern>
+					<pattern type="100000000000000" count="one">¤000tn</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">¤ 000tn</pattern>
+					<pattern type="100000000000000" count="other">¤000tn</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000tn</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
 	<personNames>
 		<initialPattern type="initial">{0}</initialPattern>
 	</personNames>

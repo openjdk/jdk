@@ -2104,6 +2104,12 @@ bool Compile::inline_incrementally_one() {
     bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node());
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+      if (should_stress_inlining()) {
+        // randomly add repeated inline attempt if stress-inlining
+        cg->call_node()->set_generator(cg);
+        C->igvn_worklist()->push(cg->call_node());
+        continue;
+      }
       cg->do_late_inline();
       assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
       if (failing()) {
@@ -5372,3 +5378,158 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
 void Compile::record_method_not_compilable_oom() {
   record_method_not_compilable(CompilationMemoryStatistic::failure_reason_memlimit());
 }
+
+#ifndef PRODUCT
+// Collects all the control inputs from nodes on the worklist and from their data dependencies
+static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Node_List& candidates) {
+  // Follow non-control edges until we reach CFG nodes
+  for (uint i = 0; i < worklist.size(); i++) {
+    const Node* n = worklist.at(i);
+    for (uint j = 0; j < n->req(); j++) {
+      Node* in = n->in(j);
+      if (in == nullptr || in->is_Root()) {
+        continue;
+      }
+      if (in->is_CFG()) {
+        if (in->is_Call()) {
+          // The return value of a call is only available if the call did not result in an exception
+          Node* control_proj_use = in->as_Call()->proj_out(TypeFunc::Control)->unique_out();
+          if (control_proj_use->is_Catch()) {
+            Node* fall_through = control_proj_use->as_Catch()->proj_out(CatchProjNode::fall_through_index);
+            candidates.push(fall_through);
+            continue;
+          }
+        }
+
+        if (in->is_Multi()) {
+          // We got here by following data inputs so we should only have one control use
+          // (no IfNode, etc)
+          assert(!n->is_MultiBranch(), "unexpected node type: %s", n->Name());
+          candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
+        } else {
+          candidates.push(in);
+        }
+      } else {
+        worklist.push(in);
+      }
+    }
+  }
+}
+
+// Returns the candidate node that is a descendant to all the other candidates
+static Node* pick_control(Unique_Node_List& candidates) {
+  Unique_Node_List worklist;
+  worklist.copy(candidates);
+
+  // Traverse backwards through the CFG
+  for (uint i = 0; i < worklist.size(); i++) {
+    const Node* n = worklist.at(i);
+    if (n->is_Root()) {
+      continue;
+    }
+    for (uint j = 0; j < n->req(); j++) {
+      // Skip backedge of loops to avoid cycles
+      if (n->is_Loop() && j == LoopNode::LoopBackControl) {
+        continue;
+      }
+
+      Node* pred = n->in(j);
+      if (pred != nullptr && pred != n && pred->is_CFG()) {
+        worklist.push(pred);
+        // if pred is an ancestor of n, then pred is an ancestor to at least one candidate
+        candidates.remove(pred);
+      }
+    }
+  }
+
+  assert(candidates.size() == 1, "unexpected control flow");
+  return candidates.at(0);
+}
+
+// Initialize a parameter input for a debug print call, using a placeholder for jlong and jdouble
+static void debug_print_init_parm(Node* call, Node* parm, Node* half, int* pos) {
+  call->init_req((*pos)++, parm);
+  const BasicType bt = parm->bottom_type()->basic_type();
+  if (bt == T_LONG || bt == T_DOUBLE) {
+    call->init_req((*pos)++, half);
+  }
+}
+
+Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0, Node* parm1,
+                              Node* parm2, Node* parm3,
+                              Node* parm4, Node* parm5,
+                              Node* parm6) const {
+  Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
+  const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+
+  // find the most suitable control input
+  Unique_Node_List worklist, candidates;
+  if (parm0 != nullptr) { worklist.push(parm0);
+  if (parm1 != nullptr) { worklist.push(parm1);
+  if (parm2 != nullptr) { worklist.push(parm2);
+  if (parm3 != nullptr) { worklist.push(parm3);
+  if (parm4 != nullptr) { worklist.push(parm4);
+  if (parm5 != nullptr) { worklist.push(parm5);
+  if (parm6 != nullptr) { worklist.push(parm6);
+  /* close each nested if ===> */  } } } } } } }
+  find_candidate_control_inputs(worklist, candidates);
+  Node* control = nullptr;
+  if (candidates.size() == 0) {
+    control = C->start()->proj_out(TypeFunc::Control);
+  } else {
+    control = pick_control(candidates);
+  }
+
+  // find all the previous users of the control we picked
+  GrowableArray<Node*> users_of_control;
+  for (DUIterator_Fast kmax, i = control->fast_outs(kmax); i < kmax; i++) {
+    Node* use = control->fast_out(i);
+    if (use->is_CFG() && use != control) {
+      users_of_control.push(use);
+    }
+  }
+
+  // we do not actually care about IO and memory as it uses neither
+  call->init_req(TypeFunc::Control,   control);
+  call->init_req(TypeFunc::I_O,       top());
+  call->init_req(TypeFunc::Memory,    top());
+  call->init_req(TypeFunc::FramePtr,  C->start()->proj_out(TypeFunc::FramePtr));
+  call->init_req(TypeFunc::ReturnAdr, top());
+
+  int pos = TypeFunc::Parms;
+  call->init_req(pos++, str_node);
+  if (parm0 != nullptr) { debug_print_init_parm(call, parm0, top(), &pos);
+  if (parm1 != nullptr) { debug_print_init_parm(call, parm1, top(), &pos);
+  if (parm2 != nullptr) { debug_print_init_parm(call, parm2, top(), &pos);
+  if (parm3 != nullptr) { debug_print_init_parm(call, parm3, top(), &pos);
+  if (parm4 != nullptr) { debug_print_init_parm(call, parm4, top(), &pos);
+  if (parm5 != nullptr) { debug_print_init_parm(call, parm5, top(), &pos);
+  if (parm6 != nullptr) { debug_print_init_parm(call, parm6, top(), &pos);
+  /* close each nested if ===> */  } } } } } } }
+  assert(call->in(call->req()-1) != nullptr, "must initialize all parms");
+
+  call = gvn->transform(call);
+  Node* call_control_proj = gvn->transform(new ProjNode(call, TypeFunc::Control));
+
+  // rewire previous users to have the new call as control instead
+  PhaseIterGVN* igvn = gvn->is_IterGVN();
+  for (int i = 0; i < users_of_control.length(); i++) {
+    Node* use = users_of_control.at(i);
+    for (uint j = 0; j < use->req(); j++) {
+      if (use->in(j) == control) {
+        if (igvn != nullptr) {
+          igvn->replace_input_of(use, j, call_control_proj);
+        } else {
+          gvn->hash_delete(use);
+          use->set_req(j, call_control_proj);
+          gvn->hash_insert(use);
+        }
+      }
+    }
+  }
+
+  return call;
+}
+#endif // !PRODUCT

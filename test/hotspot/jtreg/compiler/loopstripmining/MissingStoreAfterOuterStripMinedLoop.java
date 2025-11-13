@@ -29,7 +29,8 @@
  *          leading to wrong results.
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation
- *      -Xcomp -XX:-UseLoopPredicate -XX:-UseAutoVectorizationPredicate
+ *      -Xcomp -XX:-UseLoopPredicate
+ *      -XX:+UnlockDiagnosticVMOptions -XX:-UseAutoVectorizationPredicate
  *      -XX:CompileCommand=compileonly,compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop::test*
  *      compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop
  * @run main compiler.loopstripmining.MissingStoreAfterOuterStripMinedLoop

@@ -36,6 +36,7 @@
 
 #include <windows.h>
 #include <winbase.h>
+#include <wchar.h>
 #include <errno.h>
 
 /* We should also include jdk_util.h here, for the prototype of JDK_Canonicalize.
@@ -82,9 +83,9 @@ wnextsep(WCHAR *start)
 
 /* Tell whether the given string contains any wildcard characters */
 static int
-wwild(WCHAR *start)
+wwild(const WCHAR *start)
 {
-    WCHAR *p = start;
+    WCHAR *p = (WCHAR*)start;
     int c;
     while (c = *p) {
         if ((c == L'*') || (c == L'?'))
@@ -146,12 +147,59 @@ lastErrorReportable()
     return 1;
 }
 
-/* Convert a pathname to canonical form.  The input orig_path is assumed to
-   have been converted to native form already, via JVM_NativePath().  This is
-   necessary because _fullpath() rejects duplicate separator characters on
-   Win95, though it accepts them on NT. */
-int
-wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
+//
+// Return the final path of 'path'. If 'finalPath' is long enough, the final
+// path is placed in it. If not, a new character array is allocated for the
+// return value. If the return value does not equal the original 'finalPath'
+// value, then the calling code might need to free the memory of the
+// parameter. Non-NULL is returned on success, NULL on error.
+//
+WCHAR* getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
+{
+    HANDLE h = CreateFileW(path,
+                           FILE_READ_ATTRIBUTES,
+                           FILE_SHARE_DELETE |
+                           FILE_SHARE_READ | FILE_SHARE_WRITE,
+                           NULL,
+                           OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS,
+                           NULL);
+
+    if (h != INVALID_HANDLE_VALUE) {
+        DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
+        if (len >= size) {
+            if ((finalPath = (WCHAR*)malloc(len * sizeof(WCHAR))) == NULL)
+                return NULL;
+            len = GetFinalPathNameByHandleW(h, finalPath, len, 0);
+        }
+        CloseHandle(h);
+        if (len != 0) {
+            if (finalPath[0] == L'\\' && finalPath[1] == L'\\' &&
+                finalPath[2] == L'?' && finalPath[3] == L'\\')
+            {
+                // Strip prefix (should be \\?\ or \\?\UNC)
+                int isUnc = (finalPath[4] == L'U' &&
+                             finalPath[5] == L'N' &&
+                             finalPath[6] == L'C');
+                int prefixLen = (isUnc) ? 7 : 4;
+                // the amount to copy includes terminator
+                int amountToCopy = len - prefixLen + 1;
+                wmemmove(finalPath, finalPath + prefixLen, amountToCopy);
+            }
+
+            return finalPath;
+        }
+    }
+
+    return NULL;
+}
+
+/* Convert a pathname to canonical form.  If a reparse point is encountered
+   while traversing the path, then the final path is derived from the full path
+   and returned as the canonical pathname.
+ */
+WCHAR*
+wcanonicalize(const WCHAR *orig_path, WCHAR *result, int size)
 {
     WIN32_FIND_DATAW fd;
     HANDLE h;
@@ -161,11 +209,11 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     /* Reject paths that contain wildcards */
     if (wwild(orig_path)) {
         errno = EINVAL;
-        return -1;
+        return NULL;
     }
 
     if ((path = (WCHAR*)malloc(size * sizeof(WCHAR))) == NULL)
-        return -1;
+        return NULL;
 
     /* Collapse instances of "foo\.." and ensure absoluteness.  Note that
        contrary to the documentation, the _fullpath procedure does not require
@@ -237,6 +285,18 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
         if (h != INVALID_HANDLE_VALUE) {
             /* Lookup succeeded; append true name to result and continue */
             FindClose(h);
+
+            // If a reparse point is encountered, get the final path.
+            if ((fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+                // Do not fail if the final path cannot be obtained as the
+                // canonicalization may still be otherwise correct
+                WCHAR* fp = NULL;
+                if ((fp = getFinalPath(path, result, size)) != NULL) {
+                    free(path);
+                    return fp;
+                }
+            }
+
             if (!(dst = wcp(dst, dend, L'\\', fd.cFileName,
                             fd.cFileName + wcslen(fd.cFileName)))){
                 goto err;
@@ -261,69 +321,11 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     }
     *dst = L'\0';
     free(path);
-    return 0;
+    return result;
 
  err:
     free(path);
-    return -1;
-}
-
-/* Convert a pathname to canonical form.  The input prefix is assumed
-   to be in canonical form already, and the trailing filename must not
-   contain any wildcard, dot/double dot, or other "tricky" characters
-   that are rejected by the canonicalize() routine above.  This
-   routine is present to allow the canonicalization prefix cache to be
-   used while still returning canonical names with the correct
-   capitalization. */
-int
-wcanonicalizeWithPrefix(WCHAR *canonicalPrefix, WCHAR *pathWithCanonicalPrefix, WCHAR *result, int size)
-{
-    WIN32_FIND_DATAW fd;
-    HANDLE h;
-    WCHAR *src, *dst, *dend;
-    WCHAR *pathbuf;
-    int pathlen;
-
-    src = pathWithCanonicalPrefix;
-    dst = result;        /* Place results here */
-    dend = dst + size;   /* Don't go to or past here */
-
-
-    if ((pathlen=(int)wcslen(pathWithCanonicalPrefix)) > MAX_PATH - 1) {
-        pathbuf = getPrefixed(pathWithCanonicalPrefix, pathlen);
-        h = FindFirstFileW(pathbuf, &fd);    /* Look up prefix */
-        free(pathbuf);
-    } else
-        h = FindFirstFileW(pathWithCanonicalPrefix, &fd);    /* Look up prefix */
-    if (h != INVALID_HANDLE_VALUE) {
-        /* Lookup succeeded; append true name to result and continue */
-        FindClose(h);
-        if (!(dst = wcp(dst, dend, L'\0',
-                        canonicalPrefix,
-                        canonicalPrefix + wcslen(canonicalPrefix)))) {
-            return -1;
-        }
-        if (!(dst = wcp(dst, dend, L'\\',
-                        fd.cFileName,
-                        fd.cFileName + wcslen(fd.cFileName)))) {
-            return -1;
-        }
-    } else {
-        if (!lastErrorReportable()) {
-            if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))) {
-                return -1;
-            }
-        } else {
-            return -1;
-        }
-    }
-
-    if (dst >= dend) {
-        errno = ENAMETOOLONG;
-        return -1;
-    }
-    *dst = L'\0';
-    return 0;
+    return NULL;
 }
 
 /* Non-Wide character version of canonicalize.
@@ -332,6 +334,7 @@ JNIEXPORT int
 JDK_Canonicalize(const char *orig, char *out, int len) {
     wchar_t* wpath = NULL;
     wchar_t* wresult = NULL;
+    wchar_t* wcanon = NULL;
     int wpath_len;
     int ret = -1;
 
@@ -355,12 +358,12 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
         goto finish;
     }
 
-    if (wcanonicalize(wpath, wresult, len) != 0) {
+    if ((wcanon = wcanonicalize(wpath, wresult, len)) == NULL) {
         goto finish;
     }
 
     if (WideCharToMultiByte(CP_ACP, 0,
-                            wresult, -1, out, len, NULL, NULL) == 0) {
+                            wcanon, -1, out, len, NULL, NULL) == 0) {
         goto finish;
     }
 
@@ -368,8 +371,12 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
     ret = 0;
 
  finish:
-    free(wresult);
-    free(wpath);
+    if (wcanon != NULL && wcanon != wresult)
+        free(wcanon);
+    if (wresult != NULL)
+        free(wresult);
+    if (wpath != NULL)
+        free(wpath);
 
     return ret;
 }
