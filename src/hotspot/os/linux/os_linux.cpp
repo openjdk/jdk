@@ -3241,11 +3241,12 @@ void os::Linux::build_numa_affinity_masks() {
     struct bitmask* affinity_mask = _numa_allocate_cpumask();
     _numa_node_to_cpus_v2(i, affinity_mask);
 
-    // Make sure that the affinity mask are consistent with the original
-    // affinity mask that the process was started with. For example, if the user
-    // runs the JVM with "numactl -C 0,1,2,3,4" on a machine with the following
-    // NUMA setup, we expect to get the following affinity masks:
+    // Make sure we respect any user configuration by removing the CPUs we're
+    // not allowed to run on from the affinity mask. For example, if the user
+    // runs the JVM with "numactl -C 0-1,4-5" on a machine with the following
+    // NUMA setup:
     // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
+    // We expect to get the following affinity masks:
     // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
     for (unsigned j = 0; j < num_cpus; j++) {
       if (_numa_bitmask_isbitset(affinity_mask, j) &&
