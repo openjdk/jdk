@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,19 +51,40 @@ class LinuxFileSystemProvider extends UnixFileSystemProvider {
         return new LinuxFileStore(path);
     }
 
+    private static boolean supportsDosFileAttributeView(UnixPath file) {
+        try {
+            FileStore store = new LinuxFileStore(file);
+            return store.supportsFileAttributeView(DosFileAttributeView.class);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean supportsUserDefinedFileAttributeView(UnixPath file) {
+        try {
+            FileStore store = new LinuxFileStore(file);
+            return store.supportsFileAttributeView(UserDefinedFileAttributeView.class);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V getFileAttributeView(Path obj,
                                                                 Class<V> type,
                                                                 LinkOption... options)
     {
+        UnixPath file = UnixPath.toUnixPath(obj);
         if (type == DosFileAttributeView.class) {
-            return (V) new LinuxDosFileAttributeView(UnixPath.toUnixPath(obj),
-                                                     Util.followLinks(options));
+            return supportsDosFileAttributeView(file) ?
+                (V) new LinuxDosFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         if (type == UserDefinedFileAttributeView.class) {
-            return (V) new LinuxUserDefinedFileAttributeView(UnixPath.toUnixPath(obj),
-                                                             Util.followLinks(options));
+            return supportsUserDefinedFileAttributeView(file) ?
+                (V) new LinuxUserDefinedFileAttributeView(file, Util.followLinks(options))
+                : null;
         }
         return super.getFileAttributeView(obj, type, options);
     }
