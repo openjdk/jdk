@@ -37,6 +37,10 @@ cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
     fatal(jni, "Can't find upCall method.");
   }
   jni->CallStaticObjectMethod(clz, mid);
+  if (jni->ExceptionOccurred()) {
+    jni->ExceptionDescribe();
+    fatal(jni, "Unexpected exception occured in cbVMDeath.");
+  }
 }
 
 JNIEXPORT jint JNICALL
