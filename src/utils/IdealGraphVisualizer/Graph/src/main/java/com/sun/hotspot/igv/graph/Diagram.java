@@ -25,8 +25,10 @@ package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
-import java.awt.Font;
+
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  *
@@ -50,6 +52,7 @@ public class Diagram {
     // control-flow graph view.
     private boolean cfg;
     private final Set<BlockConnection> blockConnections;
+    private final Set<BlockConnection> blockDominatorConnections;
 
     public boolean isCFG() {
         return cfg;
@@ -71,6 +74,7 @@ public class Diagram {
         this.blocks = new LinkedHashMap<>(8);
         this.liveRangeSegments = new ArrayList<>();
         this.blockConnections = new HashSet<>();
+        this.blockDominatorConnections = new HashSet<>();
         this.inputGraph = graph;
         this.cfg = false;
         int curId = 0;
@@ -127,9 +131,22 @@ public class Diagram {
         }
 
         for (InputBlockEdge e : graph.getBlockEdges()) {
-            Block p = getBlock(e.getFrom());
-            Block s = getBlock(e.getTo());
-            blockConnections.add(new BlockConnection(p, s, e.getLabel()));
+            BlockConnection c = createBlockConnection(e);
+            blockConnections.add(c);
+        }
+
+        Collection<InputBlockEdge> dominatorEdges = graph.getBlockDominatorEdges();
+        for (InputBlockEdge e : dominatorEdges) {
+            BlockConnection c = createBlockConnection(e);
+            if (e.getState() == InputBlockEdge.State.NEW) {
+                c.setStyle(Connection.ConnectionStyle.BOLD);
+            } else if (e.getState() == InputBlockEdge.State.DELETED) {
+                c.setStyle(Connection.ConnectionStyle.DASHED);
+            }
+            if (graph.isScheduled()) {
+                c.setColor(Color.RED);
+            }
+            blockDominatorConnections.add(c);
         }
 
         Hashtable<Integer, InputLiveRange> liveRangeHash = new Hashtable<>();
@@ -239,6 +256,18 @@ public class Diagram {
             }
             blocks.get(inputBlock).setLiveRangeIds(liveRangeSegmentIds);
         }
+    }
+
+    private BlockConnection createBlockConnection(InputBlockEdge e) {
+        Block p = getBlock(e.getFrom());
+        Block s = getBlock(e.getTo());
+        BlockConnection c = new BlockConnection(p, s, e.getLabel());
+        if (e.getState() == InputBlockEdge.State.NEW) {
+            c.setStyle(Connection.ConnectionStyle.BOLD);
+        } else if (e.getState() == InputBlockEdge.State.DELETED) {
+            c.setStyle(Connection.ConnectionStyle.DASHED);
+        }
+        return c;
     }
 
     public InputGraph getInputGraph() {
@@ -359,6 +388,17 @@ public class Diagram {
         for (BlockConnection bc : blockConnections) {
             if (blocks.containsKey(bc.getFromCluster().getInputBlock()) &&
                 blocks.containsKey(bc.getToCluster().getInputBlock())) {
+                connections.add(bc);
+            }
+        }
+        return connections;
+    }
+
+    public Set<BlockConnection> getBlockDominatorConnections() {
+        Set<BlockConnection> connections = new HashSet<>();
+        for (BlockConnection bc : blockDominatorConnections) {
+            if (blocks.containsKey(bc.getFromCluster().getInputBlock()) &&
+                    blocks.containsKey(bc.getToCluster().getInputBlock())) {
                 connections.add(bc);
             }
         }

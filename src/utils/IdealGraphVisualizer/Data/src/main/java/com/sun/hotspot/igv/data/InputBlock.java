@@ -33,6 +33,7 @@ public class InputBlock {
 
     private List<InputNode> nodes;
     private final String name;
+    private final String iDom;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
     private Set<Integer> liveOut;
@@ -83,9 +84,10 @@ public class InputBlock {
         return true;
     }
 
-    InputBlock(InputGraph graph, String name) {
+    InputBlock(InputGraph graph, String name, String iDom) {
         this.graph = graph;
         this.name = name;
+        this.iDom = iDom;
         nodes = new ArrayList<>();
         successors = new LinkedHashSet<>(2);
         liveOut = new HashSet<Integer>(0);
@@ -95,6 +97,7 @@ public class InputBlock {
     public String getName() {
         return name;
     }
+    public String getIDom() { return iDom; }
 
     public List<InputNode> getNodes() {
         return Collections.unmodifiableList(nodes);

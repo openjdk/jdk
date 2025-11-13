@@ -1079,7 +1079,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections, List<LiveRangeSegment> segments) {
         layoutMover = null;
-        HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager(getVisibleBlockConnections(), getVisibleBlocks());
+        Set<Connection> visibleBlockConnections = getVisibleBlockConnections();
+        HierarchicalCFGLayoutManager cfgLayoutManager =
+                new HierarchicalCFGLayoutManager(visibleBlockConnections, getVisibleBlocks());
         cfgLayoutManager.setCutEdges(model.getCutEdges());
         cfgLayoutManager.setSegments(new ArrayList<>(segments));
         cfgLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
@@ -1325,6 +1327,29 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
+    private void processBlockDominatorConnection(BlockConnection blockDominatorConnection) {
+        boolean isDashed = blockDominatorConnection.getStyle() == Connection.ConnectionStyle.DASHED;
+        boolean isBold = blockDominatorConnection.getStyle() == Connection.ConnectionStyle.BOLD;
+        boolean isVisible = blockDominatorConnection.getStyle() != Connection.ConnectionStyle.INVISIBLE;
+        Point lastPoint = null;
+        LineWidget predecessor = null;
+        for (Point currentPoint : blockDominatorConnection.getControlPoints()) {
+            if (currentPoint == null) { // Long connection, has been cut vertically.
+                currentPoint = specialNullPoint;
+            } else if (lastPoint != specialNullPoint && lastPoint != null) {
+                List<BlockConnection> connectionList = Collections.singletonList(blockDominatorConnection);
+                Point src = new Point(lastPoint);
+                Point dest = new Point(currentPoint);
+                predecessor = new LineWidget(this, null, connectionList, src, dest, predecessor, isBold, isDashed);
+                predecessor.setVisible(isVisible);
+                connectionLayer.addChild(predecessor);
+                addObject(new ConnectionSet(connectionList), predecessor);
+                predecessor.getActions().addAction(hoverAction);
+            }
+            lastPoint = currentPoint;
+        }
+    }
+
     @Override
     public void setInteractionMode(InteractionMode mode) {
         panAction.setEnabled(mode == InteractionMode.PANNING);
@@ -1551,9 +1576,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
 
         if (getModel().getShowCFG()) {
-            for (BlockConnection blockConnection : getModel().getDiagram().getBlockConnections()) {
+            Set<BlockConnection> connections = getModel().getShowDominatorTree() ? getModel().getDiagram().getBlockDominatorConnections() : getModel().getDiagram().getBlockConnections();
+            for (BlockConnection blockConnection : connections) {
                 if (isVisibleBlockConnection(blockConnection)) {
-                    processBlockConnection(blockConnection);
+                    processBlockDominatorConnection(blockConnection);
                 }
             }
         }
@@ -1779,7 +1805,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private Set<Connection> getVisibleBlockConnections() {
         Set<Connection> clusterLinks = new HashSet<>();
-        for (BlockConnection c : getModel().getDiagram().getBlockConnections()) {
+        DiagramViewModel model = getModel();
+        Diagram diagram = model.getDiagram();
+        Set<BlockConnection> connections = model.getShowDominatorTree() ?
+                diagram.getBlockDominatorConnections() :
+                diagram.getBlockConnections();
+        for (BlockConnection c : connections) {
             if (isVisibleBlockConnection(c)) {
                 clusterLinks.add(c);
             }

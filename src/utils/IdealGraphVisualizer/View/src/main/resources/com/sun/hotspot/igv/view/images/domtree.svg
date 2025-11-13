@@ -1,0 +1,10 @@
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0000FF" stroke-width="0.75"
+     stroke-linecap="round" stroke-linejoin="round" role="img" aria-labelledby="title desc">
+    <path d="M12 5.5 L12 8.5 M12 5.5 L20.9 8.5 M12 12.5 L3.1 18 M12 12.5 L12 18 M20.9 12.5 L20.9 18" />
+    <rect x="10.4" y="1.5" width="3.2" height="4.0" fill="#D0D0FF" />
+    <rect x="10.4" y="8.5" width="3.2" height="4.0" fill="#D0D0FF" />
+    <rect x="19.3" y="8.5" width="3.2" height="4.0" fill="#D0D0FF" />
+    <rect x="1.5" y="18.0" width="3.2" height="4.0" fill="#D0D0FF" />
+    <rect x="10.4" y="18.0" width="3.2" height="4.0" fill="#D0D0FF" />
+    <rect x="19.3" y="18.0" width="3.2" height="4.0" fill="#D0D0FF" />
+</svg>

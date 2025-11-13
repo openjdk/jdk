@@ -663,6 +663,9 @@ public class ServerCompilerScheduler implements Scheduler {
                 idom = root;
             }
             dominatorMap.put(b, idom);
+            if (idom != null) {
+                graph.addDominatorBlockEdge(idom, b);
+            }
         }
     }
 

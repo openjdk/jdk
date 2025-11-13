@@ -83,7 +83,8 @@ const char *IdealGraphPrinter::DIFFERENCE_VALUE_PROPERTY = "value";
 const char *IdealGraphPrinter::VISIBLE_NODES_ELEMENT = "visibleNodes";
 const char *IdealGraphPrinter::ALL_PROPERTY = "all";
 const char *IdealGraphPrinter::BLOCK_NAME_PROPERTY = "name";
-const char *IdealGraphPrinter::BLOCK_DOMINATOR_PROPERTY = "dom";
+const char *IdealGraphPrinter::BLOCK_IMMEDIATE_DOMINATOR_PROPERTY = "idom";
+const char *IdealGraphPrinter::BLOCK_DOMINATOR_DEPTH_PROPERTY = "domDepth";
 const char *IdealGraphPrinter::BLOCK_ELEMENT = "block";
 const char *IdealGraphPrinter::SUCCESSORS_ELEMENT = "successors";
 const char *IdealGraphPrinter::SUCCESSOR_ELEMENT = "successor";
@@ -469,10 +470,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
-        if (node == block->head()) {
-          if (block->_idom != nullptr) {
-            print_prop("idom", block->_idom->_pre_order);
-          }
+        if (block->_idom != nullptr) {
+          print_prop("idom", block->_idom->_pre_order);
           print_prop("dom_depth", block->_dom_depth);
         }
         // Print estimated execution frequency, normalized within a [0,1] range.
@@ -1041,6 +1040,10 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       Block* block = C->cfg()->get_block(i);
       begin_head(BLOCK_ELEMENT);
       print_attr(BLOCK_NAME_PROPERTY, block->_pre_order);
+      if (block->_idom != nullptr) {
+        print_attr(BLOCK_IMMEDIATE_DOMINATOR_PROPERTY, block->_idom->_pre_order);
+      }
+      print_attr(BLOCK_DOMINATOR_DEPTH_PROPERTY, block->_dom_depth);
       end_head();
 
       head(SUCCESSORS_ELEMENT);

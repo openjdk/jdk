@@ -152,7 +152,11 @@ public class Printer {
 
         writer.startTag(Parser.CONTROL_FLOW_ELEMENT);
         for (InputBlock b : graph.getBlocks()) {
-            writer.startTag(Parser.BLOCK_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, b.getName()));
+            Properties properties = new Properties(Parser.BLOCK_NAME_PROPERTY, b.getName());
+            if (b.getIDom() != null) {
+                properties.setProperty(Parser.BLOCK_DOMINATOR_PROPERTY, b.getIDom());
+            }
+            writer.startTag(Parser.BLOCK_ELEMENT, properties);
 
             if (!b.getSuccessors().isEmpty()) {
                 writer.startTag(Parser.SUCCESSORS_ELEMENT);
