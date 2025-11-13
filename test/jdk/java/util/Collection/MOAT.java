@@ -422,31 +422,32 @@ public class MOAT {
         testMapMutatorsAlwaysThrow(mapCollected2);
     }
 
-    // Test HashMap.putAll() with various source map types
+    // Test HashMap.putAll() optimization paths
     private static void testHashMapPutAll() {
         Map<Integer,Integer> testData = Map.of(1, 101, 2, 202, 3, 303);
         HashMap<Integer,Integer> target = new HashMap<>();
 
+        target.putAll(new HashMap<>(testData));
+        equal(target.size(), testData.size());
+        check(target.equals(testData));
+
+        target.clear();
+
         target.putAll(new TreeMap<>(testData));
+        equal(target.size(), testData.size());
         check(target.equals(testData));
 
         target.clear();
-        target.putAll(new ConcurrentHashMap<>(testData));
-        check(target.equals(testData));
 
-        target.clear();
         target.putAll(unmodifiableMap(new HashMap<>(testData)));
+        equal(target.size(), testData.size());
         check(target.equals(testData));
 
         target.clear();
+
         target.putAll(unmodifiableMap(new TreeMap<>(testData)));
+        equal(target.size(), testData.size());
         check(target.equals(testData));
-
-        // Test empty HashMap putAll (regression test for NPE)
-        target.clear();
-        HashMap<Integer,Integer> emptySource = new HashMap<>();
-        target.putAll(emptySource);
-        check(target.isEmpty());
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {

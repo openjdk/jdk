@@ -7,13 +7,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Benchmark demonstrating performance impact of polymorphic call sites on HashMap.<init>(Map).
+ * Benchmark comparing HashMap constructor performance against manual iteration.
  *
- * This test shows that manual inlining of HashMap construction can significantly outperform
- * the built-in HashMap(Map) constructor when the constructor call site becomes polymorphic.
+ * Tests HashMap.<init>(Map) performance across different source map types, with and without
+ * call site poisoning to simulate real-world megamorphic conditions.
  *
- * The setup ensures polymorphic call sites by using HashMap, TreeMap, and LinkedHashMap
- * in both the constructor and manual iteration patterns before benchmarking begins.
+ * The setup poisons polymorphic call sites by using five different map types
+ * in both the constructor and manual iteration patterns to ensure megamorphic behavior.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 public class HashMapConstructorBenchmark {
 
     private static final int POISON_ITERATIONS = 40000;
-    private static final double CAPACITY_FACTOR = 1.35; // Account for 0.75 load factor
 
     @Param({"0", "5", "25"})
     private int mapSize;
@@ -40,7 +39,6 @@ public class HashMapConstructorBenchmark {
     private LinkedHashMap<String, Integer> inputLinkedHashMap;
     private ConcurrentHashMap<String, Integer> inputConcurrentHashMap;
     private WeakHashMap<String, Integer> inputWeakHashMap;
-    private Map<String, Integer> inputSynchronizedMap;
     private Map<String, Integer> inputUnmodifiableMap;
     private Map<String, Integer> inputUnmodifiableTreeMap;
 
@@ -66,7 +64,6 @@ public class HashMapConstructorBenchmark {
         }
 
         // Create wrapper maps for poisoning
-        inputSynchronizedMap = Collections.synchronizedMap(new HashMap<>(inputHashMap));
         inputUnmodifiableMap = Collections.unmodifiableMap(new HashMap<>(inputHashMap));
         inputUnmodifiableTreeMap = Collections.unmodifiableMap(new TreeMap<>(inputTreeMap));
 
@@ -138,7 +135,7 @@ public class HashMapConstructorBenchmark {
 
     /**
      * Benchmark using HashMap's built-in constructor that takes a Map parameter.
-     * This approach suffers from polymorphic call site overhead.
+     * Performance varies based on source map type and call site polymorphism.
      */
     @Benchmark
     public HashMap<String, Integer> hashMapConstructor() {
@@ -149,7 +146,6 @@ public class HashMapConstructorBenchmark {
      * Benchmark using manual iteration over entrySet with individual put() calls.
      * This approach bypasses bulk operations and their polymorphic call sites.
      */
-    /*
     @Benchmark
     public HashMap<String, Integer> manualEntrySetLoop() {
         HashMap<String, Integer> result = new HashMap<>();
@@ -158,5 +154,4 @@ public class HashMapConstructorBenchmark {
         }
         return result;
     }
-    */
 }
