@@ -756,7 +756,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("lrg", lrg_id);
     }
 
-    if (_congraph && node->_idx < _congraph->nodes_size()) {
+    if (_congraph != nullptr && node->_idx < _congraph->nodes_size()) {
       PointsToNode* ptn = _congraph->ptnode_adr(node->_idx);
       if (ptn != nullptr) {
         stringStream node_head;
