@@ -1583,12 +1583,6 @@ void ShenandoahHeap::print_tracing_info() const {
     ResourceMark rm;
     LogStream ls(lt);
 
-    if (ShenandoahEvacTracking) {
-      evac_tracker()->print_global_on(&ls);
-      ls.cr();
-      ls.cr();
-    }
-
     phase_timings()->print_global_on(&ls);
 
     ls.cr();
@@ -1598,6 +1592,10 @@ void ShenandoahHeap::print_tracing_info() const {
 
     ls.cr();
     ls.cr();
+
+    if (ShenandoahEvacTracking) {
+      evac_tracker()->print_global_on(&ls);
+    }
   }
 }
 
