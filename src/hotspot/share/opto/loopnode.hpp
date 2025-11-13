@@ -1376,7 +1376,7 @@ public:
   Node* exact_limit( IdealLoopTree *loop );
 
   // Return a post-walked LoopNode
-  IdealLoopTree *get_loop(const Node* n) const {
+  IdealLoopTree* get_loop(const Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
