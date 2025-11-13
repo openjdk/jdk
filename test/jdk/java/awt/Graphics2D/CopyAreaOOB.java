@@ -182,19 +182,12 @@ public class CopyAreaOOB extends Canvas {
     }
 
     private static boolean compareColor(Color expected, Color actual) {
-        if (expected.equals(Color.RED)) {
-            return Math.abs(expected.getRed() - actual.getRed()) < PRIMARY_TOLERANCE
-                   && Math.abs(expected.getGreen() - actual.getGreen()) < TOLERANCE
-                   && Math.abs(expected.getBlue() - actual.getBlue()) < TOLERANCE;
-        } else if (expected.equals(Color.BLUE)) {
-            return Math.abs(expected.getBlue() - actual.getBlue()) < PRIMARY_TOLERANCE
-                   && Math.abs(expected.getGreen() - actual.getGreen()) < TOLERANCE
-                   && Math.abs(expected.getRed() - actual.getRed()) < TOLERANCE;
-        } else if (expected.equals(Color.GREEN)) {
-            return Math.abs(expected.getGreen() - actual.getGreen()) < PRIMARY_TOLERANCE
-                   && Math.abs(expected.getRed() - actual.getRed()) < TOLERANCE
-                   && Math.abs(expected.getBlue() - actual.getBlue()) < TOLERANCE;
-        }
-        return false;
+            return Math.abs(expected.getRed() - actual.getRed())
+                   < (expected.equals(Color.RED) ? PRIMARY_TOLERANCE : TOLERANCE)
+                   && Math.abs(expected.getGreen() - actual.getGreen())
+                      < (expected.equals(Color.GREEN) ? PRIMARY_TOLERANCE : TOLERANCE)
+                   && Math.abs(expected.getBlue() - actual.getBlue())
+                      < (expected.equals(Color.BLUE) ? PRIMARY_TOLERANCE : TOLERANCE);
     }
 }
+
