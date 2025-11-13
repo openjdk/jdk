@@ -1079,9 +1079,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections, List<LiveRangeSegment> segments) {
         layoutMover = null;
-        Set<Connection> visibleBlockConnections = getVisibleBlockConnections();
-        HierarchicalCFGLayoutManager cfgLayoutManager =
-                new HierarchicalCFGLayoutManager(visibleBlockConnections, getVisibleBlocks());
+        HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager(getVisibleBlockConnections(), getVisibleBlocks());
         cfgLayoutManager.setCutEdges(model.getCutEdges());
         cfgLayoutManager.setSegments(new ArrayList<>(segments));
         cfgLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
