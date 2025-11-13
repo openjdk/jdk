@@ -790,55 +790,56 @@ class Field extends AccessibleObject implements Member {
      * the underlying field is inaccessible, the method throws an
      * {@code IllegalAccessException}.
      *
-     * <p>If the underlying field is final, this {@code Field} object has
-     * <em>write</em> access if and only if the following conditions are met:
+     * <p>If the underlying field is final, this {@code Field} object has <em>write</em>
+     * access if and only if all the following conditions are true, where {@code D} is
+     * the field's {@linkplain #getDeclaringClass() declaring class}:
+     *
      * <ul>
      * <li>{@link #setAccessible(boolean) setAccessible(true)} has succeeded for this
-     *     {@code Field} object; and</li>
+     *     {@code Field} object.</li>
      * <li><a href="doc-files/MutationMethods.html">final field mutation is enabled</a>
-     *     for the caller's module; and</li>
-     * <li> at least one of the following holds:
-     *     <ul>
-     *     <li> the field's {@linkplain #getDeclaringClass() declaring class} {@code D}
-     *     and the caller class are in the same module, or </li>
-     *     <li> the field is {@code public} and {@code D} is {@code public} in a
-     *     package that the module containing {@code D} exports to at least the caller's
-     *     module (This condition is not met if the module containing {@code D} has
-     *     been updated with {@linkplain Module#addExports(String, Module) addExports} to
-     *     export the package to the caller's module.), or </li>
+     *     for the caller's module.</li>
+     * <li> At least one of the following conditions holds:
+     *     <ol type="a">
+     *     <li> {@code D} and the caller class are in the same module.</li>
+     *     <li> The field is {@code public} and {@code D} is {@code public} in a package
+     *     that the module containing {@code D} exports to at least the caller's module. </li>
      *     <li> {@code D} is in a package that is {@linkplain Module#isOpen(String, Module)
-     *     open} to the caller's module (This condition is not met if the module containing
-     *     {@code D} has been updated with {@linkplain Module#addOpens(String, Module)
-     *     addOpens} to open the package to the caller module.); and </li>
-     *     </ul>
+     *     open} to the caller's module.</li>
+     *     </ol>
      * </li>
-     * <li>the field's declaring class is not a {@linkplain Class#isRecord()
-     *     record class}; and </li>
-     * <li>the field's declaring class is not a {@linkplain Class#isHidden()
-     *     hidden class}; and </li>
-     * <li>the field is non-static. </li>
+     * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
+     * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
+     * <li>The field is non-static. </li>
      * </ul>
      *
-     * <p> These conditions are more restrictive than the conditions specified by {@link
+     * <p>If any of the above conditions is not met, this method throws an
+     * {@code IllegalAccessException}.
+     *
+     * <p>These conditions are more restrictive than the conditions specified by {@link
      * #setAccessible(boolean)} to suppress access checks. In particular, updating a
-     * {@link Module} to {@linkplain Module#addExports(String, Module) export} or
-     * {@linkplain Module#addOpens(String, Module) open} a package cannot be used to
-     * allow <em>write</em> access to final fields. If any of the above conditions is not
-     * met, this method throws an {@code IllegalAccessException}.
+     * module to export or open a package cannot be used to allow <em>write</em> access
+     * to final fields with the {@code set} methods defined by {@code Field}.
+     * Condition (b) is not met if the module containing {@code D} has been updated with
+     * {@linkplain Module#addExports(String, Module) addExports} to export the package to
+     * the caller's module. Condition (c) is not met if the module containing {@code D}
+     * has been updated with {@linkplain Module#addOpens(String, Module) addOpens} to open
+     * the package to the caller's module.
      *
      * <p>This method may be called by <a href="{@docRoot}/../specs/jni/index.html">
      * JNI code</a> with no caller class on the stack. In that case, and when the
      * underlying field is final, this {@code Field} object has <em>write</em> access
-     * if and only if the following conditions are met:
+     * if and only if the following conditions are true, where {@code D} is the field's
+     * {@linkplain #getDeclaringClass() declaring class}:
+     *
      * <ul>
-     * <li>{@code setAccessible(true)} has succeeded for this {@code Field} object; and</li>
-     * <li>final field mutation is enabled for the unnamed module; and</li>
-     * <li>the field is declared {@code public} and its declaring class is {@code
-     *     public} in a package that is {@linkplain Module#isExported(String) exported}
-     *     to all modules; and</li>
-     * <li>the field's declaring class is not a record class; and </li>
-     * <li>the field's declaring class is not a hidden class; and </li>
-     * <li>the field is non-static. </li>
+     * <li>{@code setAccessible(true)} has succeeded for this {@code Field} object.</li>
+     * <li>final field mutation is enabled for the unnamed module.</li>
+     * <li>The field is {@code public} and {@code D} is a package that is
+     *     {@linkplain Module#isExported(String) exported} to all modules.</li>
+     * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
+     * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
+     * <li>The field is non-static. </li>
      * </ul>
      *
      * <p>If any of the above conditions is not met, this method throws an
