@@ -104,12 +104,44 @@ public class DiagnosticCommandMBeanTest {
 class DiagnosticCommandMBeanApp {
     public static void main(String[] args) {
         System.out.println("Hello Leyden " + args[0]);
+       /*
+        * The following code is based on: docs/api/jdk.management/com/sun/management/DiagnosticCommandMBean.html
+        *
+        * Copied from the documentation for reference:
+        *
+        * ... The DiagnosticCommandMBean is generated at runtime and is subject to modifications during the lifetime of
+        * the Java virtual machine. A diagnostic command is represented as an operation of the DiagnosticCommandMBean
+        * interface. Each diagnostic command has:
+        *
+        *    - the diagnostic command name which is the name being referenced in the HotSpot Virtual Machine
+        *    - the MBean operation name which is the name generated for the diagnostic command operation invocation. The
+        *      MBean operation name is implementation dependent
+        *
+        * The recommended way to transform a diagnostic command name into a MBean operation name is as follows:
+        *
+        *    - All characters from the first one to the first dot are set to be lower-case characters
+        *    - Every dot or underline character is removed and the following character is set to be an upper-case character
+        *    - All other characters are copied without modification
+        *
+        * A diagnostic command may or may not support options or arguments. All the operations return String and
+        * either take no parameter for operations that do not support any option or argument, or take a String[]
+        * parameter for operations that support at least one option or argument. Each option or argument must be stored in
+        * a single String.
+        */
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
             ObjectName diagName = new ObjectName("com.sun.management:type=DiagnosticCommand");
+
+            // The DiagnosticCommand MBean operations expect a String array parameter for command arguments
+            // Even though AOT.end_recording doesn't need any arguments, you still need to pass an empty String array
+            // The MBean framework requires you to specify both the parameters and their types (signatures)
             Object[] params = { new String[0] };
             String[] signature = { "[Ljava.lang.String;" };
+
+            // The JCmd AOT.end_recording is invoked using 'aotEndRecording'
             String result = (String) server.invoke(diagName, "aotEndRecording", params, signature);
+
+            // The result is the string output from the command
             System.out.println("AOT.end_recording invoked successfully");
             if (result.contains("Recording ended successfully")) {
                 System.out.println("Successfully stopped recording");
