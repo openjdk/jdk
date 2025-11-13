@@ -75,7 +75,7 @@ public enum CompilePhase {
     EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS( "EA: 6. After reduce_phi_on_safepoints"),
     EA_BEFORE_PHI_REDUCTION(           "EA: 5. Before Phi Reduction"),
     EA_AFTER_PHI_CASTPP_REDUCTION(     "EA: 5. Phi -> CastPP Reduction"),
-    EA_AFTER_PHI_ADDP_REDUCTION(      "EA: 5. Phi -> AddP Reduction"),
+    EA_AFTER_PHI_ADDP_REDUCTION(       "EA: 5. Phi -> AddP Reduction"),
     EA_AFTER_PHI_CMP_REDUCTION(        "EA: 5. Phi -> Cmp Reduction"),
     AFTER_EA(                       "After Escape Analysis"),
     ITER_GVN_AFTER_EA(              "Iter GVN after EA"),
