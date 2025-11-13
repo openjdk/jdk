@@ -2846,8 +2846,8 @@ void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
 // Some nodes can refine their types due to type change somewhere deep
 // in the graph. We will need to revisit them before claiming convergence.
 // Add nodes here if particular *Node::Value is doing deep graph traversals
-// not handled by push_more_uses.
-bool PhaseCCP::needs_revisit(Node *n) const {
+// not handled by PhaseCCP::push_more_uses().
+bool PhaseCCP::needs_revisit(Node* n) const {
   // LoadNode performs deep traversals. Load is not notified for changes far away.
   if (n->is_Load()) {
     return true;
@@ -2872,7 +2872,7 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist
   // in PhaseCCP::push_child_nodes_to_worklist() to update their type in the same round,
-  // or that they are added in PhaseCCP::maybe_needs_revisit() so that analysis revisits
+  // or that they are added in PhaseCCP::needs_revisit() so that analysis revisits
   // them at the end of the round.
   assert(!failure, "PhaseCCP not at fixpoint: analysis result may be unsound.");
 }
