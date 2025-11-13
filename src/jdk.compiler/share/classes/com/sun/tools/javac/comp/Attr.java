@@ -394,11 +394,6 @@ public class Attr extends JCTree.Visitor {
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
                 return rs.findIdent(null, env, (Name)node.getName(), KindSelector.TYP_PCK);
             }
-
-            @Override
-            public Symbol visitParameterizedType(ParameterizedTypeTree node, Env<AttrContext> env) {
-                return visit(node.getType(), env);
-            }
         }
 
     public Type coerce(Type etype, Type ttype) {

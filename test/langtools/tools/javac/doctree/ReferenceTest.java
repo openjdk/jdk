@@ -100,15 +100,15 @@ import javax.tools.Diagnostic.Kind;
  * {@link Map<String, String>.Entry<String, String>#getKey Method}
  * {@link Map<String, String>.Entry<String, String>#setValue(Object) Method}
  *
- * {@link java.base/java.util.List<String> Interface}
+ * {@link java.base/java.util.List<String> Bad}
  * {@link java.base/java.util.List<String>.add Bad}
- * {@link java.base/java.util.List<String>#add Method}
- * {@link java.base/java.util.List<String>#add(Object) Method}
- * {@link java.base/java.util.Map<String, String>.Entry Interface}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String> Interface}
+ * {@link java.base/java.util.List<String>#add Bad}
+ * {@link java.base/java.util.List<String>#add(Object) Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String> Bad}
  * {@link java.base/java.util.Map<String, String>.Entry<String, String>.getKey Bad}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Method}
- * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Method}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#getKey Bad}
+ * {@link java.base/java.util.Map<String, String>.Entry<String, String>#setValue(Object) Bad}
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
