@@ -203,8 +203,4 @@
     return false;
   }
 
-  static bool supports_vector_different_use_def_size() {
-    return false;
-  }
-
 #endif // CPU_PPC_MATCHER_PPC_HPP

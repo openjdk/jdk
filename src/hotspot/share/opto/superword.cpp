@@ -2307,17 +2307,8 @@ bool SuperWord::is_velt_basic_type_compatible_use_def(Node* use, Node* def) cons
            type2aelembytes(use_bt) == 4;
   }
 
-  // Input size of use equals output size of def
-  if (type2aelembytes(use_bt) == type2aelembytes(def_bt)) {
-    return true;
-  }
-
-  // Allow CMove to have different type for comparision and moving.
-  if (VectorNode::is_different_use_def_size_supported() && use->is_CMove() && def->is_Bool()) {
-    return true;
-  }
-
-  return false;
+  // Default case: input size of use equals output size of def.
+  return type2aelembytes(use_bt) == type2aelembytes(def_bt);
 }
 
 // Return nullptr if success, else failure message

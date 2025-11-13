@@ -196,8 +196,4 @@
     return false;
   }
 
-  static bool supports_vector_different_use_def_size() {
-    return false;
-  }
-
 #endif // CPU_S390_MATCHER_S390_HPP

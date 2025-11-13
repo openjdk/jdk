@@ -236,8 +236,4 @@
     }
   }
 
-  static bool supports_vector_different_use_def_size() {
-    return false;
-  }
-
 #endif // CPU_X86_MATCHER_X86_HPP

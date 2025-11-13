@@ -406,10 +406,6 @@ bool VectorNode::is_populate_index_supported(BasicType bt) {
   return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
 }
 
-bool VectorNode::is_different_use_def_size_supported() {
-  return Matcher::supports_vector_different_use_def_size();
-}
-
 bool VectorNode::is_shift_opcode(int opc) {
   switch (opc) {
   case Op_LShiftI:
@@ -2313,7 +2309,6 @@ static bool is_replicate_uint_constant(const Node* n) {
          n->in(1)->bottom_type()->isa_long() &&
          n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
 }
-
 static bool has_vector_elements_fit_uint(Node* n) {
   auto is_lower_doubleword_mask_pattern = [](const Node* n) {
     return n->Opcode() == Op_AndV &&

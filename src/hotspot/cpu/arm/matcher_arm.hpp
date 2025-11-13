@@ -193,8 +193,4 @@
     return false;
   }
 
-  static bool supports_vector_different_use_def_size() {
-    return false;
-  }
-
 #endif // CPU_ARM_MATCHER_ARM_HPP
