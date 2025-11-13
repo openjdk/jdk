@@ -450,7 +450,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal native access in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning
         message is issued for the first illegal native access found in a module.
@@ -479,7 +479,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal final field mutation in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning message is
         issued for the first illegal final field mutation performaed in a module.
