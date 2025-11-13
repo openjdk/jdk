@@ -181,7 +181,6 @@ public:
 };
 
 //-------------------------------MulHiLNode------------------------------------
-const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 
 // Upper 64 bits of a 64 bit by 64 bit multiply
 class MulHiLNode : public Node {
@@ -191,7 +190,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 };
 
 // Upper 64 bits of a 64 bit by 64 bit unsigned multiply
@@ -202,7 +200,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  friend const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot);
 };
 
 //------------------------------AndINode---------------------------------------

@@ -22,14 +22,16 @@
  *
  */
 
-#include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "opto/type.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -591,43 +593,56 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type* MulHiLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  const Type *bot = bottom_type();
-  return MulHiValue(t1, t2, bot);
-}
+const Type* MulHiLNode::Value(PhaseGVN *phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
 
-const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  const Type *bot = bottom_type();
-  return MulHiValue(t1, t2, bot);
-}
-
-// A common routine used by UMulHiLNode and MulHiLNode
-const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
   // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  // Either input is ZERO, the result always ZERO
+  if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
+    return TypeLong::ZERO;
+  }
 
-  // If the both inputs are constants
-  const TypeLong *longType1 = t1->is_long();
-  const TypeLong *longType2 = t2->is_long();
-  if(longType1 != nullptr && longType2 != nullptr && longType1->is_con() && longType2->is_con()){
-    // Compute the high part of the multiplication
+  const TypeLong* longType1 = t1->is_long();
+  const TypeLong* longType2 = t2->is_long();
+
+  // Both are constant, directly computed the result
+  if (longType1->is_con() && longType2->is_con()) {
     jlong highResult = multiply_high_signed(longType1->get_con(), longType2->get_con());
-
     return TypeLong::make(highResult);
   }
 
-  // It is not worth trying to constant fold this stuff!
-  return TypeLong::LONG;
+  return bottom_type();
+}
+
+const Type *UMulHiLNode::Value(PhaseGVN *phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+
+  // Either input is TOP ==> the result is TOP
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // Either input is ZERO, the result always ZERO
+  if (t1 == TypeLong::ZERO || t2 == TypeLong::ZERO) {
+    return TypeLong::ZERO;
+  }
+
+  const TypeLong* longType1 = t1->is_long();
+  const TypeLong* longType2 = t2->is_long();
+
+  // Both are constant, directly computed the result
+  if (longType1->is_con() && longType2->is_con()) {
+    jlong highResult = multiply_high_unsigned(longType1->get_con(), longType2->get_con());
+    return TypeLong::make(highResult);
+  }
+
+  return bottom_type();
 }
 
 template<typename IntegerType>
