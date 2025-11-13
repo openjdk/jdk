@@ -163,7 +163,7 @@ public class RawChannelTest {
                         chan.registerEvent(this);
                         writeStall.countDown(); // signal send buffer is full
                     } catch (IOException e) {
-                        print("OP_RIGHT failed: " + e);
+                        print("OP_WRITE failed: " + e);
                         outputCompleted.completeExceptionally(e);
                         closeChannel(chan);
                         throw new UncheckedIOException(e);
