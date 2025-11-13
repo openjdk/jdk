@@ -2794,53 +2794,53 @@ void PhaseCCP::analyze() {
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
 
-  // Pull from worklist; compute new value; push changes out.
-  // This loop is the meat of CCP.
-  bool first_round = true;
+  // This is the meat of CCP: pull from worklist; compute new value; push changes out.
+
+  // Do the first round.
+  while (worklist.size() != 0) {
+    Node* n = fetch_next_node(worklist);
+    DEBUG_ONLY(worklist_verify.push(n);)
+    if (needs_revisit(n)) {
+      worklist_revisit.push(n);
+    }
+    if (n->is_SafePoint()) {
+      // Make sure safepoints are processed by PhaseCCP::transform even if they are
+      // not reachable from the bottom. Otherwise, infinite loops would be removed.
+      _root_and_safepoints.push(n);
+    }
+    analyze_step(worklist, n);
+  }
+
+  // More rounds to catch updates in revisited nodes.
+  // Revisit nodes that might be able to refine their types at the end of the round.
+  // If so, process these nodes. If there is remaining work, start another round.
   do {
-    // Start the CCP round.
     while (worklist.size() != 0) {
       Node* n = fetch_next_node(worklist);
-      if (first_round) {
-        DEBUG_ONLY(worklist_verify.push(n);)
-        if (needs_revisit(n)) {
-          worklist_revisit.push(n);
-        }
-        if (n->is_SafePoint()) {
-          // Make sure safepoints are processed by PhaseCCP::transform even if they are
-          // not reachable from the bottom. Otherwise, infinite loops would be removed.
-          _root_and_safepoints.push(n);
-        }
-      }
-      const Type* new_type = n->Value(this);
-      if (new_type != type(n)) {
-        DEBUG_ONLY(verify_type(n, new_type, type(n));)
-        dump_type_and_node(n, new_type);
-        set_type(n, new_type);
-        push_child_nodes_to_worklist(worklist, n);
-      }
-      if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
-        // Keep track of Type nodes to kill CFG paths that use Type
-        // nodes that become dead.
-        _maybe_top_type_nodes.push(n);
-      }
+      analyze_step(worklist, n);
     }
-
-    // Check if any nodes slated for revisit are able to refine their types at the end of the round.
-    // If so, push them to worklist to start another round and process them.
     for (uint t = 0; t < worklist_revisit.size(); t++) {
       Node* n = worklist_revisit.at(t);
-      const Type* new_type = n->Value(this);
-      if (new_type != type(n)) {
-        worklist.push(n);
-      }
+      analyze_step(worklist, n);
     }
-
-    // First round is done.
-    first_round = false;
   } while (worklist.size() != 0);
 
   DEBUG_ONLY(verify_analyze(worklist_verify);)
+}
+
+void PhaseCCP::analyze_step(Unique_Node_List& worklist, Node* n) {
+  const Type* new_type = n->Value(this);
+  if (new_type != type(n)) {
+    DEBUG_ONLY(verify_type(n, new_type, type(n));)
+    dump_type_and_node(n, new_type);
+    set_type(n, new_type);
+    push_child_nodes_to_worklist(worklist, n);
+  }
+  if (KillPathsReachableByDeadTypeNode && n->is_Type() && new_type == Type::TOP) {
+    // Keep track of Type nodes to kill CFG paths that use Type
+    // nodes that become dead.
+    _maybe_top_type_nodes.push(n);
+  }
 }
 
 // Some nodes can refine their types due to type change somewhere deep
