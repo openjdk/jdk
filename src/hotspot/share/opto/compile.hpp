@@ -322,7 +322,16 @@ class Compile : public Phase {
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  int                   _major_progress;        // Count of something big happening
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization.
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop opts phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -583,16 +592,16 @@ public:
   // Control of this compilation.
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
-  int               major_progress() const      { return _major_progress; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
-  void          set_major_progress()            { _major_progress++; }
-  void          restore_major_progress(int progress) { _major_progress += progress; }
-  void        clear_major_progress()            { _major_progress = 0; }
+  bool              major_progress() const      { return _major_progress; }
+  void          set_major_progress()            { _major_progress = true; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
+  void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }

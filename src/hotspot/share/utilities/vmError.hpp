@@ -251,4 +251,52 @@ public:
   ~VMErrorCallbackMark();
 };
 
+// Convenient construction for creating ad-hoc VMErrorCallback which automatically
+// calls the provided invocable f if a VM crash occurs within its lifetime.
+// Can be used to instrument a build for more detailed contextual information
+// gathering. Especially useful when hunting down intermittent bugs, or issues
+// only reproducible in environments where access to a debugger is not readily
+// available. Example use:
+/*
+  {
+    // Note the lambda is invoked after an error occurs within this thread,
+    // and during on_error's lifetime. If state prior to the crash is required,
+    // capture a copy of it first.
+    auto important_value = get_the_value();
+
+    OnVMError on_error([&](outputStream* st) {
+      // Dump the important bits.
+      st->print("Prior value: ");
+      important_value.print_on(st);
+      st->print("During crash: ")
+      get_the_value().print_on(st);
+      // Dump whole the whole state.
+      this->print_on(st);
+    });
+
+    // When VM crashes, the above lambda will be invoked and print relevant info.
+    might_cause_vm_crash();
+  }
+*/
+template <typename CallableType>
+class OnVMError : public VMErrorCallback {
+  CallableType _callable;
+  VMErrorCallbackMark _mark;
+
+  void call(outputStream* st) final { _callable(st); }
+
+public:
+  template <typename Callable>
+  OnVMError(Callable&& callable) : VMErrorCallback(), _callable(static_cast<Callable&&>(callable)), _mark(this) {}
+};
+
+// This deduction rule enables creating a type with out using auto, decltype
+// and/or helping construction functions. It enables the generic template type
+// to be deduced in the following code:
+//   OnVMError on_error([&](outputStream* st) { ... })
+// Rather than having to something along the lines of:
+//   auto f = [&](outputStream* st) { ... };
+//   OnVMError<decltype(f)> on_error(f);
+template <typename CallableType> OnVMError(CallableType) -> OnVMError<CallableType>;
+
 #endif // SHARE_UTILITIES_VMERROR_HPP
