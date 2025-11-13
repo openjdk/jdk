@@ -65,13 +65,18 @@ class TestMain {
                 .collect(Collectors.partitioningBy(m -> testModule.isExported(fieldHoldersPackage,
                                                                               m.getClass().getModule()),
                         Collectors.toList()));
-        assertTrue(exportedToMutators.get(Boolean.TRUE).size() >= 2);
 
         // mutators that test.fieldholders is open to
         openToMutators = allMutators.stream()
                 .collect(Collectors.partitioningBy(m -> testModule.isOpen(fieldHoldersPackage,
                                                                           m.getClass().getModule()),
                         Collectors.toList()));
+
+
+        // exported to at least test, m1 and m2
+        assertTrue(exportedToMutators.get(Boolean.TRUE).size() >= 3);
+
+        // open to at least test and m1
         assertTrue(openToMutators.get(Boolean.TRUE).size() >= 2);
     }
 
@@ -475,6 +480,11 @@ class TestMain {
         testModule.addExports(fieldHoldersPackage, mutator.getClass().getModule());
         assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
         assertTrue(obj.objectValue() == oldValue);
+
+        // open package to mutator module, should have no effect on set method
+        testModule.addOpens(fieldHoldersPackage, mutator.getClass().getModule());
+        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        assertTrue(obj.objectValue() == oldValue);
     }
 
     @ParameterizedTest
@@ -487,6 +497,10 @@ class TestMain {
 
         // export package to mutator module, should have no effect on unreflectSetter method
         testModule.addExports(fieldHoldersPackage, mutator.getClass().getModule());
+        assertThrows(IllegalAccessException.class, () -> mutator.unreflectSetter(f));
+
+        // open package to mutator module, should have no effect on unreflectSetter method
+        testModule.addOpens(fieldHoldersPackage, mutator.getClass().getModule());
         assertThrows(IllegalAccessException.class, () -> mutator.unreflectSetter(f));
     }
 
@@ -518,7 +532,7 @@ class TestMain {
         f.setAccessible(true);
         assertThrows(IllegalAccessException.class, () -> mutator.unreflectSetter(f));
 
-        // oipen package to mutator module, should have no effect on unreflectSetter method
+        // open package to mutator module, should have no effect on unreflectSetter method
         testModule.addOpens(fieldHoldersPackage, mutator.getClass().getModule());
         assertThrows(IllegalAccessException.class, () -> mutator.unreflectSetter(f));
     }
