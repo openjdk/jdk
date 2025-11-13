@@ -163,35 +163,39 @@ public:
 
 };
 
-class Fubarbaz_base : public CompilationResourceObj {
+class AbstractProfileCounterStub : public CompilationResourceObj {
 public:
   virtual void operator() (LIR_Assembler* ce) = 0;
 };
 
 template<typename T>
-struct Fubarbaz : public Fubarbaz_base {
+struct ProfileCounterStub : public AbstractProfileCounterStub {
   T _lambda;
-  LIR_OpProfileCall* _op;
+  LIR_Op* _op;
 
-  Fubarbaz(T lambda, LIR_OpProfileCall* op) : _lambda(lambda), _op(op) {
+  ProfileCounterStub(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) {
   }
   virtual void operator() (LIR_Assembler* ce) {
     _lambda(ce, _op);
   }
 };
 
-class EmitProfileCallStub: public CodeStub {
+class EmitProfileStub: public CodeStub {
 private:
-  Fubarbaz_base *_doit;
+  AbstractProfileCounterStub *_doit;
+  const char* _name;
 
 public:
-  EmitProfileCallStub() {}
-  void set_doit(Fubarbaz_base *doit) { _doit = doit; }
+  EmitProfileStub() {
+    _name = "EmitProfileStub";
+  }
+  void set_doit(AbstractProfileCounterStub *doit) { _doit = doit; }
+  void set_name(const char* name) { _name = name; }
   virtual void emit_code(LIR_Assembler* ce) {
     (*_doit)(ce);
   }
 #ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("EmitProfileCallStub"); }
+  virtual void print_name(outputStream* out) const { out->print("%s", _name); }
 #endif // PRODUCT
   virtual void visit(LIR_OpVisitState* visitor) { }
 };

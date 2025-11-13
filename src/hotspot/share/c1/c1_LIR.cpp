@@ -895,7 +895,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       LIR_OpProfileType* opProfileType = (LIR_OpProfileType*)op;
 
       do_input(opProfileType->_mdp); do_temp(opProfileType->_mdp);
-      do_input(opProfileType->_obj);
+      do_input(opProfileType->_obj); do_temp(opProfileType->_obj);
       do_temp(opProfileType->_tmp);
       break;
     }
