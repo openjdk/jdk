@@ -2060,6 +2060,16 @@ public class IRNode {
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
     }
 
+    public static final String VECTOR_LOAD_MASK = PREFIX + "VECTOR_LOAD_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_LOAD_MASK, "VectorLoadMask");
+    }
+
+    public static final String VECTOR_STORE_MASK = PREFIX + "VECTOR_STORE_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_STORE_MASK, "VectorStoreMask");
+    }
+
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
     static {
         beforeMatchingNameRegex(SUB, "Sub(I|L|F|D|HF)");

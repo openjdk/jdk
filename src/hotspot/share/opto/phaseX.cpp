@@ -2550,11 +2550,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // If changed AndI/AndL inputs, check RShift users for "(x & mask) >> shift" optimization opportunity
+  // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   if (use_op == Op_AndI || use_op == Op_AndL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL) {
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
         worklist.push(u);
       }
     }
@@ -2566,13 +2567,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvI2F->ConvF2I->ConvI2F
   // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
   // are the only ones that are known to trigger missed optimizations otherwise
-  if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
-      (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
-      (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
-      (n->Opcode() == Op_ConvI2F && use_op == Op_ConvF2I)) {
+  if (use_op == Op_ConvL2D ||
+      use_op == Op_ConvI2F ||
+      use_op == Op_ConvL2F ||
+      use_op == Op_ConvF2I) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == n->Opcode()) {
+      if ((use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
+          (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
+          (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
+          (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F)) {
         worklist.push(u);
       }
     }
@@ -2588,6 +2592,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       if (u->is_Mem()) {
         worklist.push(u);
       } else if (offset_changed && u->is_AddP() && u->in(AddPNode::Offset)->is_Con()) {
+        worklist.push(u);
+      }
+    }
+  }
+  // Check for "abs(0-x)" into "abs(x)" conversion
+  if (use->is_Sub()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
+          u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI) {
         worklist.push(u);
       }
     }

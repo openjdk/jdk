@@ -127,36 +127,6 @@ public:
 
 };
 
-class ConversionStub: public CodeStub {
- private:
-  Bytecodes::Code _bytecode;
-  LIR_Opr         _input;
-  LIR_Opr         _result;
-
-  static float float_zero;
-  static double double_zero;
- public:
-  ConversionStub(Bytecodes::Code bytecode, LIR_Opr input, LIR_Opr result)
-    : _bytecode(bytecode), _input(input), _result(result) {
-    ShouldNotReachHere();
-  }
-
-  Bytecodes::Code bytecode() { return _bytecode; }
-  LIR_Opr         input()    { return _input; }
-  LIR_Opr         result()   { return _result; }
-
-  virtual void emit_code(LIR_Assembler* e);
-  virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_slow_case();
-    visitor->do_input(_input);
-    visitor->do_output(_result);
-  }
-#ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("ConversionStub"); }
-#endif // PRODUCT
-};
-
-
 // Throws ArrayIndexOutOfBoundsException by default but can be
 // configured to throw IndexOutOfBoundsException in constructor
 class RangeCheckStub: public CodeStub {

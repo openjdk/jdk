@@ -1235,26 +1235,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is only supported on Linux with GNU C Library (glibc).
 
-`-XX:+NeverActAsServerClassMachine`
-:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
-    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
-    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
-    The string "emulated-client" is added to the JVM version string.
-
-    By default the flag is set to `true` only on Windows in 32-bit mode and
-    `false` in all other cases.
-
-    The "Client VM emulation" mode will not be enabled if any of the following
-    flags are used on the command line:
-
-    ```
-    -XX:{+|-}TieredCompilation
-    -XX:CompilationMode=mode
-    -XX:TieredStopAtLevel=n
-    -XX:{+|-}EnableJVMCI
-    -XX:{+|-}UseJVMCICompiler
-    ```
-
 `-XX:ObjectAlignmentInBytes=`*alignment*
 :   Sets the memory alignment of Java objects (in bytes). By default, the value
     is set to 8 bytes. The specified value should be a power of 2, and must be
@@ -2309,12 +2289,6 @@ perform extensive debugging.
 These `java` options control how garbage collection (GC) is performed by the
 Java HotSpot VM.
 
-`-XX:+AggressiveHeap`
-:   Enables Java heap optimization. This sets various parameters to be
-    optimal for long-running jobs with intensive memory allocation, based on
-    the configuration of the computer (RAM and CPU). By default, the option
-    is disabled and the heap sizes are configured less aggressively.
-
 `-XX:+AlwaysPreTouch`
 :   Requests the VM to touch every page on the Java heap after requesting it from
     the operating system and before handing memory out to the application.
@@ -2950,6 +2924,32 @@ they're used.
     memory for sizing the Java heap to 2 GB:
 
     >   `-XX:MaxRAM=2G`
+
+`-XX:+AggressiveHeap`
+:   Enables Java heap optimization. This sets various parameters to be
+    optimal for long-running jobs with intensive memory allocation, based on
+    the configuration of the computer (RAM and CPU). By default, the option
+    is disabled and the heap sizes are configured less aggressively.
+
+`-XX:+NeverActAsServerClassMachine`
+:   Enable the "Client VM emulation" mode which only uses the C1 JIT compiler,
+    a 32Mb CodeCache and the Serial GC. The maximum amount of memory that the
+    JVM may use (controlled by the `-XX:MaxRAM=n` flag) is set to 1GB by default.
+    The string "emulated-client" is added to the JVM version string.
+
+    By default the flag is set to `true` only on Windows in 32-bit mode and
+    `false` in all other cases.
+
+    The "Client VM emulation" mode will not be enabled if any of the following
+    flags are used on the command line:
+
+    ```
+    -XX:{+|-}TieredCompilation
+    -XX:CompilationMode=mode
+    -XX:TieredStopAtLevel=n
+    -XX:{+|-}EnableJVMCI
+    -XX:{+|-}UseJVMCICompiler
+    ```
 
 ## Obsolete Java Options
 
