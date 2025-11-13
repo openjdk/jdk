@@ -230,7 +230,6 @@ instruct vstoremask(vReg dst, vRegMask_V0 v0, immI size) %{
 
 instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_CHAR ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
@@ -248,7 +247,6 @@ instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
 
 instruct vmaskcmp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask_V0 v0) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
-            Matcher::vector_element_basic_type(n) == T_CHAR ||
             Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
