@@ -3971,7 +3971,7 @@ public class Types {
      * Return the minimum types of a closure, suitable for computing
      * compoundMin or glb.
      */
-    private List<Type> closureMin(List<Type> cl) {
+    public List<Type> closureMin(List<Type> cl) {
         ListBuffer<Type> classes = new ListBuffer<>();
         ListBuffer<Type> interfaces = new ListBuffer<>();
         Set<Type> toSkip = new HashSet<>();
