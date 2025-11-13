@@ -1040,9 +1040,6 @@ public:
   // old GC alloc region.
   bool is_old_gc_alloc_region(G1HeapRegion* hr);
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
   void collect(GCCause::Cause cause) override;
 
   // Try to perform a collection of the heap with the given cause to allocate allocation_word_size
