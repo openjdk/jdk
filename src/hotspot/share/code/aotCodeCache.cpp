@@ -1753,9 +1753,6 @@ void AOTCodeAddressTable::init_extrs() {
   {
     // Required by initial stubs
     SET_ADDRESS(_extrs, SharedRuntime::exception_handler_for_return_address); // used by forward_exception
-#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
-    SET_ADDRESS(_extrs, MacroAssembler::debug64);  // used by many eg forward_exception, call_stub
-#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
 #if defined(AMD64)
     SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_std()); // used by call_stub
     SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_rz()); // used by libmFmod
@@ -1818,8 +1815,6 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, &JvmtiExport::_should_notify_object_alloc);
 #endif /* INCLUDE_JVMTI */
 
-  SET_ADDRESS(_extrs, SafepointSynchronize::handle_polling_page_exception);
-
   SET_ADDRESS(_extrs, ThreadIdentifier::unsafe_offset());
   SET_ADDRESS(_extrs, Thread::current);
 
@@ -1833,17 +1828,11 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, &JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events);
 #endif /* INCLUDE_JVMTI */
   SET_ADDRESS(_extrs, StubRoutines::crc_table_addr());
-#if defined(AARCH64)
-  SET_ADDRESS(_extrs, JavaThread::aarch64_get_thread_helper);
-#endif
 #ifndef PRODUCT
   SET_ADDRESS(_extrs, &SharedRuntime::_partial_subtype_ctr);
   SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
 #endif
 
-#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
-  SET_ADDRESS(_extrs, MacroAssembler::debug64);
-#endif
 #if defined(AMD64)
   SET_ADDRESS(_extrs, StubRoutines::x86::arrays_hashcode_powers_of_31());
 #endif
@@ -1869,7 +1858,6 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, SharedRuntime::resolve_opt_virtual_call_C);
     SET_ADDRESS(_extrs, SharedRuntime::resolve_virtual_call_C);
     SET_ADDRESS(_extrs, SharedRuntime::resolve_static_call_C);
-    SET_ADDRESS(_extrs, SharedRuntime::throw_StackOverflowError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_delayed_StackOverflowError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_AbstractMethodError);
     SET_ADDRESS(_extrs, SharedRuntime::throw_IncompatibleClassChangeError);
@@ -1880,7 +1868,6 @@ void AOTCodeAddressTable::init_extrs() {
   {
     // Required by C1 blobs
     SET_ADDRESS(_extrs, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc));
-    SET_ADDRESS(_extrs, SharedRuntime::exception_handler_for_return_address);
     SET_ADDRESS(_extrs, SharedRuntime::register_finalizer);
     SET_ADDRESS(_extrs, Runtime1::is_instance_of);
     SET_ADDRESS(_extrs, Runtime1::exception_handler_for_pc);
@@ -1897,7 +1884,6 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, Runtime1::throw_array_store_exception);
     SET_ADDRESS(_extrs, Runtime1::throw_class_cast_exception);
     SET_ADDRESS(_extrs, Runtime1::throw_incompatible_class_change_error);
-    SET_ADDRESS(_extrs, Runtime1::is_instance_of);
     SET_ADDRESS(_extrs, Runtime1::monitorenter);
     SET_ADDRESS(_extrs, Runtime1::monitorexit);
     SET_ADDRESS(_extrs, Runtime1::deoptimize);
@@ -1909,9 +1895,6 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, Runtime1::unimplemented_entry);
     SET_ADDRESS(_extrs, Thread::current);
     SET_ADDRESS(_extrs, CompressedKlassPointers::base_addr());
-#ifndef PRODUCT
-    SET_ADDRESS(_extrs, os::breakpoint);
-#endif
   }
 #endif
 
@@ -1940,9 +1923,6 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
-#if defined(AARCH64)
-    SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
-#endif // AARCH64
   }
 #endif // COMPILER2
 
