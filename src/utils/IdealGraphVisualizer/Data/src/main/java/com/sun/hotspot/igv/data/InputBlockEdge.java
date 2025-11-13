@@ -83,14 +83,4 @@ public class InputBlockEdge {
         hash = 59 * hash + to.hashCode();
         return hash;
     }
-
-    @Override
-    public String toString() {
-        return "InputBlockEdge{" +
-                "from=" + from +
-                ", to=" + to +
-                ", state=" + state +
-                ", label='" + label + '\'' +
-                '}';
-    }
 }
