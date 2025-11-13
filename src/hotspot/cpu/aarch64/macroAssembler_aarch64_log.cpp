@@ -262,8 +262,8 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
   const int64_t INF_OR_NAN_PREFIX = 0x7FF0;
   const int64_t MINF_OR_MNAN_PREFIX = 0xFFF0;
   const int64_t ONE_PREFIX = 0x3FF0;
-    const int64_t MNAN_PREFIX = 0x7FF8;
-  
+  const int64_t MNAN_PREFIX = 0x7FF8;
+
     movz(tmp2, ONE_PREFIX, 48);
     movz(tmp4, 0x0010, 48);
     fmovd(rscratch1, v0); // rscratch1 = AS_LONG_BITS(X)
@@ -336,7 +336,7 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
   block_comment("if (AS_LONG_BITS(hiWord) > 0x8000)"); {
     bind(SMALL_VALUE);
       mov(tmp5, 0x47F0);
-      movz(tmp2, 0x47F0, 48);      
+      movz(tmp2, 0x47F0, 48);
       fmovd(vtmp1, tmp2);
       fmuld(vtmp0, vtmp1, v0);
       fmovd(vtmp1, vtmp0);
