@@ -57,7 +57,7 @@ public class DeoptimizeRelocatedNMethod {
         // Verify not initially compiled
         CompilerWhiteBoxTest.checkNotCompiled(method, false);
 
-        // Enqueue method for compilation and wait until it is done
+        // Enqueue method for compilation. This will block since background compilation is disabled
         WHITE_BOX.enqueueMethodForCompilation(method, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
         // Verify now compiled
