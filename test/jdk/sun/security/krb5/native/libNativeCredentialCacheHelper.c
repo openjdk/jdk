@@ -85,8 +85,8 @@ static void print_krb5_error(const char *operation, krb5_error_code code) {
 }
 
 /**
- * Creates an in-memory credential cache, copies credentials from a file cache,
- * and sets it as the default cache in one atomic operation.
+ * Creates an in-memory credential ccache, copies credentials from a file ccache,
+ * and sets KRB5CCNAME to the in-memory ccache.
  */
 JNIEXPORT jboolean JNICALL Java_NativeCredentialCacheHelper_createInMemoryCacheFromFileCache
   (JNIEnv *env, jclass cls, jstring inMemoryCacheName, jstring fileCacheName)

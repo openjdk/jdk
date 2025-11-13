@@ -23,8 +23,8 @@
 
 /**
  * JNI wrapper for native Kerberos credential cache operations.
- * Provides native methods to create MEMORY: credential caches and copy
- * real Kerberos credentials to them for testing JAAS access.
+ * Provides native methods to create in-memory credential caches and copy
+ * Kerberos credentials from file credential caches for testing JAAS access.
  */
 public class NativeCredentialCacheHelper {
 
@@ -38,16 +38,11 @@ public class NativeCredentialCacheHelper {
     }
 
     /**
-     * Creates an in-memory credential cache, copies credentials from a file cache,
-     * and sets it as the default cache in one atomic operation.
+     * Creates an in-memory credential ccache, copies credentials from a file ccache,
+     * and sets KRB5CCNAME to the in-memory ccache.
      *
-     * This method performs all three operations required to set up an in-memory cache:
-     * 1. Creates the in-memory cache using native krb5 API
-     * 2. Copies real Kerberos credentials from the file cache to the in-memory cache
-     * 3. Sets KRB5CCNAME so that JAAS will use the in-memory cache
-     *
-     * @param inMemoryCacheName The name for the in-memory cache (e.g., "MEMORY:test123")
-     * @param fileCacheName The file cache name to copy from (e.g., "FILE:/path/to/cache")
+     * @param inMemoryCacheName The name for the MEMORY: ccache (e.g., "MEMORY:test123")
+     * @param fileCacheName The FILE: ccache name to copy from (e.g., "FILE:/path/to/cache")
      * @return true if all operations succeeded, false if any operation failed
      */
     public static native boolean createInMemoryCacheFromFileCache(String inMemoryCacheName, String fileCacheName);
