@@ -1202,13 +1202,7 @@ public class TestVectorConditionalMove {
 
     //     I fo D
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1219,13 +1213,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1236,13 +1224,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1253,13 +1235,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1270,13 +1246,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1287,13 +1257,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1439,13 +1403,7 @@ public class TestVectorConditionalMove {
 
     //     L fo F
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1456,13 +1414,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1473,13 +1425,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1490,13 +1436,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1507,13 +1447,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1524,13 +1458,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveLLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -1877,13 +1805,7 @@ public class TestVectorConditionalMove {
 
     //     I fo D
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUIEQforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1894,13 +1816,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUINEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1911,13 +1827,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUIGTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1928,13 +1838,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUIGEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1945,13 +1849,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUILTforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -1962,13 +1860,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.LOAD_VECTOR_D,     IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_MASK_CMP_I, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.VECTOR_BLEND_D,    IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveUILEforD(int[] a, int[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2114,13 +2006,7 @@ public class TestVectorConditionalMove {
 
     //     L fo F
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULEQforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2131,13 +2017,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULNEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2148,13 +2028,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULGTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2165,13 +2039,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULGEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2182,13 +2050,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULLTforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2199,13 +2061,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_F,     IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_L, IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_F,    IRNode.VECTOR_SIZE + "min(max_long, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveULLEforF(long[] a, long[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
@@ -2356,13 +2212,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
-                  IRNode.LOAD_VECTOR_D, ">0",
-                  IRNode.VECTOR_MASK_CMP_F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
-                  IRNode.VECTOR_BLEND_D, ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveFGTforD(float[] a, float[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
@@ -2395,13 +2245,7 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_D, ">0",
-                  IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
-                  IRNode.VECTOR_MASK_CMP_D, ">0",
-                  IRNode.VECTOR_BLEND_F, IRNode.VECTOR_SIZE + "min(max_double, max_float)", ">0",
-                  IRNode.STORE_VECTOR, ">0"},
-        applyIfCPUFeatureOr = {"rvv", "true"})
-    @IR(failOn = {IRNode.STORE_VECTOR}, applyIfCPUFeatureOr = {"rvv", "false"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
     private static void testCMoveDGTforF(double[] a, double[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
