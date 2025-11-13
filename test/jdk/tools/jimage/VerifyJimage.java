@@ -308,7 +308,6 @@ public abstract class VerifyJimage implements Runnable {
 
         private void loadClass(String cn, ClassLoader loader) {
             try {
-                System.out.println("Loading " + cn);
                 Class.forName(cn, false, loader);
                 verifiedCount.incrementAndGet();
             } catch (VerifyError ve) {
