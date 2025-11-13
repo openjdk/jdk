@@ -206,7 +206,6 @@ public:
 
   HeapWord* satisfy_failed_allocation(size_t size, bool is_tlab);
 
-  // Support for System.gc()
   void collect(GCCause::Cause cause) override;
 
   void collect_at_safepoint(bool full);
