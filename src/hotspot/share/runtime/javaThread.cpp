@@ -121,7 +121,7 @@ size_t      JavaThread::_stack_size_at_create = 0;
   #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
   #define DTRACE_THREAD_PROBE(probe, javathread)                           \
-    {                                                                      \
+    if (!javathread->is_aot_thread()) {                                    \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
       const char* name = (javathread)->name();                             \
@@ -494,6 +494,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _preempt_alternate_return(nullptr),
   _preemption_cancelled(false),
   _pending_interrupted_exception(false),
+  _at_preemptable_init(false),
+  DEBUG_ONLY(_preempt_init_klass(nullptr) COMMA)
+  DEBUG_ONLY(_interp_at_preemptable_vmcall_cnt(0) COMMA)
+  DEBUG_ONLY(_interp_redoing_vm_call(false) COMMA)
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
@@ -759,7 +763,7 @@ void JavaThread::run() {
 
 void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
-  assert(_threadObj.peek() != nullptr, "just checking");
+  assert(_threadObj.peek() != nullptr || is_aot_thread(), "just checking");
 
   // Execute thread entry point unless this thread has a pending exception.
   // Note: Due to JVMTI StopThread we can have pending exceptions already!
@@ -1405,7 +1409,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
     entry = entry->parent();
   }
 
-  // Due to lightweight locking
+  // Due to fast locking
   lock_stack().oops_do(f);
 }
 
