@@ -1071,14 +1071,6 @@ void PhaseIterGVN::optimize() {
 }
 
 #ifdef ASSERT
-static void check_verify_failure(bool failure) {
-  // If we get this assert, check why the reported nodes were not processed again in IGVN.
-  // We should either make sure that these nodes are properly added back to the IGVN worklist
-  // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
-  // in the verification code above if that is not possible for some reason (like Load nodes).
-  assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
-}
-
 void PhaseIterGVN::verify_optimize() {
   assert(_worklist.size() == 0, "igvn worklist must be empty before verify");
 
@@ -1091,10 +1083,22 @@ void PhaseIterGVN::verify_optimize() {
     worklist.push(C->root());
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
-      if (is_verify_Value())    { check_verify_failure(verify_Value_for(n)); }
-      if (is_verify_Ideal())    { check_verify_failure(verify_Ideal_for(n, false)); }
-      if (is_verify_Ideal())    { check_verify_failure(verify_Ideal_for(n, true)); }
-      if (is_verify_Identity()) { check_verify_failure(verify_Identity_for(n)); }
+      // If we get an assert here, check why the reported node was not processed again in IGVN.
+      // We should either make sure that this node is properly added back to the IGVN worklist
+      // in PhaseIterGVN::add_users_to_worklist to update it again or add an exception
+      // in the verification code above if that is not possible for some reason (like Load nodes).
+      if (is_verify_Value()) {
+        bool failure = verify_Value_for(n);
+        assert(!failure, "Missed Value optimization opportunity in PhaseIterGVN for %s", n->Name());
+      }
+      if (is_verify_Ideal()) {
+        bool failure = verify_Ideal_for(n, false) || verify_Ideal_for(n, true);
+        assert(!failure, "Missed Ideal optimization opportunity in PhaseIterGVN for %s", n->Name());
+      }
+      if (is_verify_Identity()) {
+        bool failure = verify_Identity_for(n);
+        assert(!failure, "Missed Identity optimization opportunity in PhaseIterGVN for %s", n->Name());
+      }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
