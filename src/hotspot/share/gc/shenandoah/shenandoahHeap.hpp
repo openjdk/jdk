@@ -270,6 +270,7 @@ private:
 public:
 
   inline HeapWord* base() const { return _heap_region.start(); }
+  inline HeapWord* end()  const { return _heap_region.end(); }
 
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
