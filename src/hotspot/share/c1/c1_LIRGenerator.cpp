@@ -930,17 +930,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     LIR_Opr tmp = new_register(T_INT);
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
-    if (ProfileCaptureRatio == 1) {
-      __ increment_profile_ctr(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
-    } else {
-      CodeStub *overflow = new ExtendedCounterOverflowStub
-        (/*info*/nullptr, -1, LIR_OprFact::illegalOpr,
-         step, data_addr, LIR_OprFact::intConst(0), tmp, LIR_OprFact::illegalOpr, /*notify*/false);
-
-      __ increment_profile_ctr(step, data_addr, data_reg, tmp,
-                               LIR_OprFact::illegalOpr, step, overflow, /*info*/nullptr);
-      // __ increment_profile_ctr(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
-    }
+    __ increment_profile_ctr(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
   }
 }
 
@@ -2384,7 +2374,7 @@ void LIRGenerator::do_Goto(Goto* x) {
 
     LIR_Address *counter_addr = new LIR_Address(md_reg, offset,
                                            NOT_LP64(T_INT) LP64_ONLY(T_LONG));
-    if (ProfileCaptureRatio == 1) {
+    if (true || ProfileCaptureRatio == 1) {
       increment_counter(counter_addr, DataLayout::counter_increment);
     } else {
       // LIR_Address *counter_addr = new LIR_Address(md_reg, offset, T_INT);
@@ -3208,7 +3198,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
       // detect overflows.
       >> exact_log2(ProfileCaptureRatio) << exact_log2(ProfileCaptureRatio)
       << InvocationCounter::count_shift;
-    overflow = (ProfileCaptureRatio > 1
+    overflow = (ProfileCaptureRatio > 1 && false
                 ? (new ExtendedCounterOverflowStub
                    (info, bci, meth,
                     step, counter, result, tmp, LIR_OprFact::intConst(freq), /*notify*/true))
@@ -3219,7 +3209,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                              LIR_OprFact::intConst(freq), step, overflow, info);
 
   } else {
-    overflow = (ProfileCaptureRatio > 1
+    overflow = (ProfileCaptureRatio > 1 && false
                 ? (new ExtendedCounterOverflowStub
                    (info, bci, LIR_OprFact::illegalOpr,
                     step, counter, result, tmp, LIR_OprFact::illegalOpr, /*notify*/false))

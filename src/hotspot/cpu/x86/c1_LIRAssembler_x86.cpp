@@ -2854,7 +2854,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                           LIR_Opr freq_op, LIR_Opr step_op,
-                                          CodeStub* stub) {
+                                          CodeStub* overflow_stub) {
   // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   // RegisterOrConstant dest_adr = addr->is_address() ? as_Address(addr->as_address_ptr())
@@ -2878,50 +2878,36 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   // __ mov64(temp, (uintptr_t)&ploopy);
   // __ addl(Address(temp, 0), 1);
 
-  if (profile_capture_ratio > 1) {
-    __ step_random(r_profile_rng, temp);
-  }
+  EmitProfileStub *counter_stub
+    = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
 
-  Label dont;
-  Label *skip = stub ? stub->continuation() : &dont;
+  auto lambda = [counter_stub, overflow_stub, freq_op, ratio_shift, incr,
+                 dest, dest_adr, temp] (LIR_Assembler* ce, LIR_Op* op) {
 
-  if (profile_capture_ratio > 1 && stub) {
-    __ cmpl(r_profile_rng, threshold);
-    if (! getenv("APH_DISABLE")) {
-      __ jcc(Assembler::below, *stub->entry());
-    }
-  } else {
-    __ block_comment("increment_profile_ctrX" " {");
+#undef __
+#define __ masm->
+
+    auto masm = ce->masm();
+
+    if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
+
     if (incr->is_register()) {
       Register inc = incr->as_register();
-      if (profile_capture_ratio > 1) {
-        __ cmpl(r_profile_rng, threshold);
-        if (! getenv("APH_DISABLE")) {
-          __ jccb(Assembler::aboveEqual, *skip);
-        }
-      }
       __ movl(temp, dest_adr);
-      if (profile_capture_ratio > 1) {
+      if (ProfileCaptureRatio > 1) {
         __ shll(inc, ratio_shift);
       }
       __ addl(temp, inc);
       __ movl(dest_adr, temp);
       __ movl(dest->as_register(), temp);
-      if (profile_capture_ratio > 1) {
+      if (ProfileCaptureRatio > 1) {
         __ shrl(inc, ratio_shift);
       }
     } else {
       jint inc = incr->as_constant_ptr()->as_jint_bits();
       switch (dest->type()) {
         case T_INT: {
-          // if (dest->is_register())  __ movl(dest->as_register(), inc);
-          if (profile_capture_ratio > 1) {
-            __ cmpl(r_profile_rng, threshold);
-            if (! getenv("APH_DISABLE")) {
-              __ jccb(Assembler::aboveEqual, *skip);
-            }
-          }
-          inc *= profile_capture_ratio;
+          inc *= ProfileCaptureRatio;
           if (dest->is_register()) {
             __ movl(temp, dest_adr);
             __ addl(temp, inc);
@@ -2934,14 +2920,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
           break;
         }
         case T_LONG: {
-          // if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
-          if (profile_capture_ratio > 1) {
-            __ cmpl(r_profile_rng, threshold);
-            if (! getenv("APH_DISABLE")) {
-              __ jccb(Assembler::aboveEqual, *skip);
-            }
-          }
-          inc *= profile_capture_ratio;
+          inc *= ProfileCaptureRatio;
           if (dest->is_register()) {
             __ movq(temp, dest_adr);
             __ addq(temp, inc);
@@ -2957,13 +2936,14 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
           ShouldNotReachHere();
       }
 
-      if (incr->is_valid() && stub) {
+      if (incr->is_valid() && overflow_stub) {
         if (!freq_op->is_valid()) {
           if (!incr->is_constant()) {
             __ cmpl(incr->as_register(), 0);
-            __ jcc(Assembler::notEqual, *(stub->entry()));
+            __ jcc(Assembler::equal, *overflow_stub->entry());
           } else {
-            __ jmp(*(stub->entry()));
+            __ jmp(*overflow_stub->entry());
+            goto exit;
           }
         } else {
           Register result =
@@ -2974,23 +2954,46 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
             // If step is 0, make sure the stub check below always fails
             __ cmpl(incr->as_register(), 0);
             __ movl(temp, InvocationCounter::count_increment * ProfileCaptureRatio);
-            __ cmovl(Assembler::notEqual, result, temp);
+            __ cmovl(Assembler::equal, result, temp);
           }
           __ andl(result, freq_op->as_jint());
-          __ jcc(Assembler::equal, *stub->entry());
+          __ jcc(Assembler::equal, *overflow_stub->entry());
         }
       }
     }
+
+    if (counter_stub != nullptr) {
+      __ jmp(*counter_stub->continuation());
+    }
+
+  exit: { }
+
+#undef __
+#define __ _masm->
+  };
+
+  if (counter_stub != nullptr) {
+    __ step_random(r_profile_rng, temp);
+    __ cmpl(r_profile_rng, threshold);
+    __ jcc(Assembler::below, *counter_stub->entry());
+    __ bind(*counter_stub->continuation());
+
+    counter_stub->set_doit(new ProfileCounterStub(lambda, nullptr));
+    counter_stub->set_name("IncrementProfileCtr");
+    append_code_stub(counter_stub);
+  } else {
+    lambda(this, nullptr);
   }
-  __ bind(*skip);
+
+  if (overflow_stub != nullptr) {
+    __ bind(*overflow_stub->continuation());
+  }
 
 #ifndef PRODUCT
   if (CommentedAssembly) {
-    __ block_comment("} " "increment_profile_ctr");
+    __ block_comment("} increment_profile_ctr");
   }
 #endif
-
-  __ bind(dont);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
