@@ -23,10 +23,7 @@
  *
  */
 
-#include "shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
-
-#include "shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -112,7 +109,7 @@ HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, 
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
       // TODO double check if race condition here could cause problem?
-      r->set_update_watermark(r->top());
+      region->set_update_watermark(region->top());
     }
   }
   return obj;
