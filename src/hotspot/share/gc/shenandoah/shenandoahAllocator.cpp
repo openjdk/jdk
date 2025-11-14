@@ -116,7 +116,7 @@ HeapWord* ShenandoahAllocator::new_alloc_regions_and_allocate(ShenandoahAllocReq
   assert(new_alloc_start_index == _alloc_region_count, "Must be.");
   GrowableArray<ShenandoahAllocRegion*> ready_for_refresh_alloc_regions;
   uint start_index = alloc_start_index();
-  size_t min_alloc_size = req != nullptr ? req->is_lab_alloc() ? req->min_size() : req->size() : SIZE_T_MAX;;
+  size_t min_alloc_size = req != nullptr ? req->is_lab_alloc() ? req->min_size() : req->size() : SIZE_MAX;;
   // Step 1: find out the alloc regions which are ready to refresh.
   for (uint i = 0; i < _alloc_region_count; i++) {
     uint idx = (start_index + i) % _alloc_region_count;
