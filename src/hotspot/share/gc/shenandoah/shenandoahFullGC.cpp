@@ -219,7 +219,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
   {
     ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->release_all_alloc_regions();
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
   }
 
   OrderAccess::fence();
@@ -1142,4 +1142,6 @@ void ShenandoahFullGC::phase5_epilog() {
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
+
+  heap->free_set()->mutator_allocator()->reserve_alloc_regions();
 }

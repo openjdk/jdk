@@ -995,20 +995,7 @@ HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& re
   assert(req.is_mutator_alloc(), "Sanity");
   assert(!req.is_old(), "Sanity");
   shenandoah_assert_not_heaplocked();
-  ShenandoahFreeSet* free_set = ShenandoahHeap::free_set();
-  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
-    in_new_region = true;
-    if (req.type() == ShenandoahAllocRequest::_alloc_cds) {
-      return free_set->allocate_contiguous_cds(req);
-    } else {
-      return free_set->allocate_humongous(req);
-    }
-  }
-  if (req.is_lab_alloc()) {
-    return free_set->try_allocate_single_for_mutator<true>(req, in_new_region);
-  } else {
-    return free_set->try_allocate_single_for_mutator<false>(req, in_new_region);
-  }
+  return _free_set->mutator_allocator()->allocate(req, in_new_region);
 }
 
 inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {

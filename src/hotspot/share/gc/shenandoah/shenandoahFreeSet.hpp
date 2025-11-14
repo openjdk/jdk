@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
+#include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
@@ -311,7 +312,7 @@ public:
   inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
 
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
-  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline size_t get_used(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "Partition must be valid");
     return _used[int(which_partition)];
@@ -440,10 +441,6 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
-struct ShenandoahAllocRegion {
-  ShenandoahHeapRegion* volatile _address = nullptr;
-};
-
 class ShenandoahHeapRegionIterationClosure : public StackObj {
 public:
   // Return true to break the iteration loop.
@@ -457,8 +454,7 @@ using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  PaddedEnd<ShenandoahAllocRegion>* _mutator_alloc_regions;
-  static THREAD_LOCAL uint _mutator_alloc_region_index;
+  ShenandoahMutatorAllocator* _mutator_allocator;
 
   size_t _total_humongous_waste;
 
@@ -580,13 +576,6 @@ private:
   // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
-  // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous
-  // object.  No other objects are packed into these regions.
-  //
-  // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
-
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
@@ -652,41 +641,6 @@ private:
 
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
-
-  template<bool IS_TLAB>
-  HeapWord* cas_allocate_single_for_mutator(
-    uint start_index, ShenandoahAllocRequest &req, bool &in_new_region);
-
-  template<bool IS_TLAB>
-  HeapWord* cas_allocate_in_for_mutator(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
-
-  // Try to allocate and refresh directly allocatable regions with heap lock held.
-  // It may allocate the object in the region before checking the free bytes of the region, so it may end up
-  // allocating the object in region which has sufficient space for the alloc reqeust, but won't reserve the region for
-  // CAS alloc because there is not more enough space left.
-  // return true if any region is reserved for CAS alloc, which also implies the obj should have been allocated.
-  // return false if no new region is reserved for CAS alloc, in this case there some specific scenarios we need to consider:
-  //  1. the obj may have been allocated in a region with only sufficient space for the alloc req.
-  //  2. there is no regions can be reserved for CAS alloc, but there is existing directly allocatable region with enough space, this happens
-  //     when there is other mutator thread contending the lock to refresh the regions.
-  //     In this scenario, the new_start_index will be set the index of the directly allocatable region.
-  bool try_allocate_directly_allocatable_regions(uint start_index,
-                                                 ShenandoahAllocRequest &req,
-                                                 HeapWord* &obj,
-                                                 bool &in_new_region,
-                                                 uint& new_start_index);
-  template<bool IS_MUTATOR, bool IS_OLD>
-  uint iterate_regions_for_alloc(ShenandoahHeapRegionIterationClosure* cl, bool use_empty);
-
-  template<typename Iter>
-  uint iterate_regions_for_alloc(Iter& iterator, ShenandoahHeapRegionIterationClosure* cl);
-
-  static uint alloc_region_index() {
-    if (_mutator_alloc_region_index == UINT_MAX) {
-      _mutator_alloc_region_index = abs(os::random()) % ShenandoahMutatorAllocRegionCount;
-    }
-    return _mutator_alloc_region_index;
-  }
 
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
@@ -843,19 +797,28 @@ public:
 
   void decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion* r, size_t waste);
 
+  // Get the mutator allocator.
+  inline ShenandoahMutatorAllocator* mutator_allocator() {
+    return _mutator_allocator;
+  }
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
+  // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous
+  // object.  No other objects are packed into these regions.
+  //
+  // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
+  HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
 
   HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
 
   HeapWord* allocate_contiguous_cds(ShenandoahAllocRequest &req);
+  // Reserve number of alloc regions from given partition of FreeSets,
+  // it ensures at least one region with sufficient capacity will be reserved.
+  HeapWord* reserve_alloc_regions_and_allocate(ShenandoahFreeSetPartitionId partition, int num_regions, GrowableArray<ShenandoahHeapRegion*> &alloc_regions, ShenandoahAllocRequest* req, bool* in_new_region);
 
-  void release_all_alloc_regions();
-
-  void release_alloc_region(ShenandoahHeapRegion *region);
-
-  template<bool IS_TLAB>
-  HeapWord* try_allocate_single_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
-
+  template<typename Iter>
+  HeapWord* reserve_alloc_regions_and_allocate_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int num_regions, GrowableArray<ShenandoahHeapRegion*> &alloc_regions, ShenandoahAllocRequest* req, bool* in_new_region);
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
    *
