@@ -181,12 +181,16 @@ HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest
     HeapWord* obj = top();
     size_t free_words;
     if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
-      free_words = align_down(ShenandoahFreeSet::get_usable_free_words(free()), CardTable::card_size_in_words());
+      free_words = ShenandoahFreeSet::get_usable_free_words(byte_size(obj, end()));
+      if (adjusted_size > free_words) {
+        adjusted_size = free_words;
+      }
+      adjusted_size = align_down(adjusted_size, CardTable::card_size_in_words());
     } else {
-      free_words = align_down(free() >> LogHeapWordSize, MinObjAlignment);
-    }
-    if (adjusted_size > free_words) {
-      adjusted_size = free_words;
+      free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
+      if (adjusted_size > free_words) {
+        adjusted_size = free_words;
+      }
     }
     if (adjusted_size >= req.min_size()) {
       if (try_allocate(obj, adjusted_size)) {
