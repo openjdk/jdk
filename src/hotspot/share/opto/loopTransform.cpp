@@ -107,7 +107,7 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
   cl->set_nonexact_trip_count();
 
   // Loop's test should be part of loop.
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue))))
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue)))
     return; // Infinite loop
 
 #ifdef ASSERT
@@ -611,7 +611,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
       if (test_cond != nullptr && // Test?
           !test_cond->is_Con() && // And not already obvious?
           // And condition is not a member of this loop?
-          !loop->is_member(get_loop(get_ctrl(test_cond)))) {
+          !ctrl_is_member(loop, test_cond)) {
         // Walk loop body looking for instances of this test
         for (uint i = 0; i < loop->_body.size(); i++) {
           Node* n = loop->_body.at(i);
@@ -1682,7 +1682,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
     for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
       Node* use = last->fast_out(l);
       if (use->is_Store() && use->in(MemNode::Memory) == last) {
-        if (is_member(outer_loop, get_ctrl(use))) {
+        if (ctrl_is_member(outer_loop, use)) {
           assert(unique_next == last, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
@@ -1795,7 +1795,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       // as this is when we would normally expect a Phi as input. If the memory input
       // is in the loop body as well, then we can safely assume it is still correct as the entire
       // body was cloned as a unit
-      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
+      if (!ctrl_is_member(outer_loop, store->in(MemNode::Memory))) {
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
         store_new->set_req(MemNode::Memory, mem_out);
@@ -3285,7 +3285,7 @@ bool IdealLoopTree::empty_loop_candidate(PhaseIdealLoop* phase) const {
   if (!cl->is_valid_counted_loop(T_INT)) {
     return false;   // Malformed loop
   }
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
+  if (!phase->ctrl_is_member(this, cl->loopexit()->in(CountedLoopEndNode::TestValue))) {
     return false;   // Infinite loop
   }
   return true;
@@ -3376,7 +3376,7 @@ bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase)
     return false;
   }
 
-  if (phase->is_member(this, phase->get_ctrl(cl->limit()))) {
+  if (phase->ctrl_is_member(this, cl->limit())) {
     return false;
   }
   return true;
