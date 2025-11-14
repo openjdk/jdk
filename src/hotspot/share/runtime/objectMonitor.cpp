@@ -313,21 +313,17 @@ oop ObjectMonitor::object() const {
   return _object.resolve();
 }
 
-ObjectMonitor::SetObjectStrongFunctor::SetObjectStrongFunctor(OopHandle* object_strong, WeakHandle const* object) : _object_strong(object_strong), _object(object){}
-
-void ObjectMonitor::SetObjectStrongFunctor::operator()() {
-  if (_object_strong->is_empty()) {
-    assert(_object->resolve() != nullptr, "");
-    *_object_strong = OopHandle(JavaThread::thread_oop_storage(), _object->resolve());
-  }
-}
-
 // Keep object protected during ObjectLocker preemption.
 void ObjectMonitor::set_object_strong() {
   check_object_context();
   if (_object_strong.is_empty()) {
-    SetObjectStrongFunctor F(&_object_strong, &_object);
-    SpinSingleSection sss(&_object_strong_lock, F);
+    auto setObjectStrongLambda = [&](OopHandle& object_strong, const WeakHandle& object) {
+      if (_object_strong.is_empty()) {
+        assert(_object.resolve() != nullptr, "");
+        object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
+      }
+    };
+    SpinSingleSection<decltype(setObjectStrongLambda), OopHandle, WeakHandle> sss(&_object_strong_lock, setObjectStrongLambda, _object_strong, _object);
   }
 }
 

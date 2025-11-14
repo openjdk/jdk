@@ -29,12 +29,13 @@
 
 class SpinCriticalSectionHelper {
   friend class SpinCriticalSection;
+  template<class Lambda, class...Args>
   friend class SpinSingleSection;
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
-  static void SpinAcquire(volatile int* Lock);
-  static void SpinRelease(volatile int* Lock);
-  static bool TrySpinAcquire(volatile int* Lock);
+  static void spin_acquire(volatile int* Lock);
+  static void spin_release(volatile int* Lock);
+  static bool try_spin_acquire(volatile int* Lock);
 };
 
 // Short critical section. To be used when having a
@@ -44,28 +45,23 @@ private:
   volatile int* const _lock;
 public:
   SpinCriticalSection(volatile int* lock) : _lock(lock) {
-    SpinCriticalSectionHelper::SpinAcquire(_lock);
+    SpinCriticalSectionHelper::spin_acquire(_lock);
   }
   ~SpinCriticalSection() {
-    SpinCriticalSectionHelper::SpinRelease(_lock);
+    SpinCriticalSectionHelper::spin_release(_lock);
   }
 };
 
-// A short section which is to be executed by only one thread.
-// The payload code is to be put into an object inherited from the Functor class.
+template<class Lambda, class...Args>
 class SpinSingleSection {
 private:
   volatile int* const _lock;
   Thread* _lock_owner;
 public:
-  class Functor {
-  public:
-    virtual void operator()() = 0;
-  };
-  SpinSingleSection(volatile int* lock, Functor& F) : _lock(lock), _lock_owner(nullptr) {
-    if (SpinCriticalSectionHelper::TrySpinAcquire(_lock)) {
+  SpinSingleSection(volatile int* lock, Lambda& F, Args&... args) : _lock(lock), _lock_owner(nullptr) {
+    if (SpinCriticalSectionHelper::try_spin_acquire(_lock)) {
       _lock_owner = Thread::current();
-      F();
+      F(args...);
     }
   }
   ~SpinSingleSection() {
@@ -74,7 +70,7 @@ public:
     // succeeded in locking the lock. Comparison will fail in both
     // cases if it is not a succeeded thread.
     if (_lock_owner == Thread::current()) {
-      SpinCriticalSectionHelper::SpinRelease(_lock);
+      SpinCriticalSectionHelper::spin_release(_lock);
     }
   }
 };

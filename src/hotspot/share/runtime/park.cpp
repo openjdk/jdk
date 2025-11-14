@@ -92,10 +92,8 @@ void ParkEvent::Release (ParkEvent * ev) {
   // when reattaching we could trim the list.
   {
     SpinCriticalSection scs(&ListLock);
-    {
-      ev->FreeNext = FreeList;
-      FreeList = ev;
-    }
+    ev->FreeNext = FreeList;
+    FreeList = ev;
   }
 }
 

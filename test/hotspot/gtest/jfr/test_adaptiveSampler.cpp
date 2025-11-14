@@ -40,7 +40,6 @@
 #include "logging/log.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/spinCriticalSection.hpp"
 #include "unittest.hpp"
 
 #include <cmath>
