@@ -44,7 +44,6 @@
 
 // Bsd_OS defines the interface to Bsd operating systems
 
-// Shared constant for mmap file descriptor used across BSD OS implementations
 static constexpr int bsd_mmap_fd =
 #if APPLE_MEMORY_TAGGING_AVAILABLE
   VM_MAKE_TAG(VM_MEMORY_JAVA);

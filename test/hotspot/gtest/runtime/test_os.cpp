@@ -1201,16 +1201,13 @@ TEST_VM(os, dll_load_null_error_buf) {
 TEST_VM(os, memory_tagging_validation) {
   const size_t size = 1 * M;
 
-  // Reserve and commit memory through standard JVM allocation path
   char* memory = os::reserve_memory(size, mtTest);
   ASSERT_NOT_NULL(memory);
   ASSERT_TRUE(os::commit_memory(memory, size, false));
 
-  // Verify the memory is tagged with VM_MEMORY_JAVA
   EXPECT_TRUE(GtestUtils::is_memory_tagged_as_java(memory, size))
     << "JVM memory should be tagged with VM_MEMORY_JAVA on macOS";
 
-  // Clean up
   os::release_memory(memory, size);
 }
 #endif // APPLE_MEMORY_TAGGING_AVAILABLE
