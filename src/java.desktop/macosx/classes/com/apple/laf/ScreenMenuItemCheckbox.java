@@ -61,6 +61,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
 
     ScreenMenuPropertyListener fPropertyListener;
 
+    @Override
     public void addNotify() {
         super.addNotify();
 
@@ -104,6 +105,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
         }
     }
 
+    @Override
     public void removeNotify() {
         fMenuItem.removeComponentListener(this);
         fMenuItem.removePropertyChangeListener(fPropertyListener);
@@ -125,6 +127,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
         ScreenMenuItem.syncLabelAndKS(this, fMenuItem.getText(), ks);
     }
 
+    @Override
     public void actionPerformed(final ActionEvent e) {
         fMenuItem.doClick(0); // This takes care of all the different events
     }
@@ -132,11 +135,13 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
     /**
      * Invoked when the component's size changes.
      */
+    @Override
     public void componentResized(final ComponentEvent e) {}
 
     /**
      * Invoked when the component's position changes.
      */
+    @Override
     public void componentMoved(final ComponentEvent e) {}
 
     /**
@@ -144,6 +149,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
      * See componentHidden - we should still have a MenuItem
      * it just isn't inserted
      */
+    @Override
     public void componentShown(final ComponentEvent e) {
         setVisible(true);
     }
@@ -154,10 +160,12 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
      * so we remove the ScreenMenuItem from the ScreenMenu
      * but leave it in fItems
      */
+    @Override
     public void componentHidden(final ComponentEvent e) {
         setVisible(false);
     }
 
+    @Override
     public void setToolTipText(final String text) {
         Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
@@ -165,6 +173,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
         ((CMenuItem)peer).setToolTipText(text);
     }
 
+    @Override
     public void setIcon(final Icon i) {
         Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (!(peer instanceof CMenuItem)) return;
@@ -188,11 +197,13 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
     }
 
     // we have no children
+    @Override
     public void setChildVisible(final JMenuItem child, final boolean b) {}
 
     /**
      * Invoked when an item's state has been changed.
      */
+    @Override
     public void itemStateChanged(final ItemEvent e) {
         if (e.getSource() == this) {
             fMenuItem.doClick(0);
@@ -209,6 +220,7 @@ final class ScreenMenuItemCheckbox extends CheckboxMenuItem
             }
         }
 
+    @Override
     public void setIndeterminate(final boolean indeterminate) {
         Object peer = AWTAccessor.getMenuComponentAccessor().getPeer(this);
         if (peer instanceof CCheckboxMenuItem) {

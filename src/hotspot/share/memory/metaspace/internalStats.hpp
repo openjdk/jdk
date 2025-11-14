@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define SHARE_MEMORY_METASPACE_INTERNALSTATS_HPP
 
 #include "memory/allStatic.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -108,7 +108,7 @@ public:
 
 // incrementors
 #define INCREMENTOR(name)           static void inc_##name() { _##name++; }
-#define INCREMENTOR_ATOMIC(name)    static void inc_##name() { Atomic::inc(&_##name); }
+#define INCREMENTOR_ATOMIC(name)    static void inc_##name() { AtomicAccess::inc(&_##name); }
   ALL_MY_COUNTERS(INCREMENTOR, INCREMENTOR_ATOMIC)
 #undef INCREMENTOR
 #undef INCREMENTOR_ATOMIC

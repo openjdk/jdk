@@ -52,7 +52,7 @@ extern BOOL g_bUserHasChangedInputLang;
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL
-Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jobject self)
+Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jclass cls)
 {
     TRY;
 
@@ -69,7 +69,7 @@ Java_sun_awt_windows_WInputMethod_createNativeContext(JNIEnv *env, jobject self)
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WInputMethod_destroyNativeContext(JNIEnv *env, jobject self, jint context)
+Java_sun_awt_windows_WInputMethod_destroyNativeContext(JNIEnv *env, jclass cls, jint context)
 {
     TRY_NO_VERIFY;
 

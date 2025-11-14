@@ -71,6 +71,10 @@
 #define HWCAP_SVE (1 << 22)
 #endif
 
+#ifndef HWCAP_SB
+#define HWCAP_SB (1 << 29)
+#endif
+
 #ifndef HWCAP_PACA
 #define HWCAP_PACA (1 << 30)
 #endif
@@ -113,22 +117,22 @@ void VM_Version::get_os_cpu_info() {
   uint64_t auxv = getauxval(AT_HWCAP);
   uint64_t auxv2 = getauxval(AT_HWCAP2);
 
-  static_assert(CPU_FP      == HWCAP_FP,      "Flag CPU_FP must follow Linux HWCAP");
-  static_assert(CPU_ASIMD   == HWCAP_ASIMD,   "Flag CPU_ASIMD must follow Linux HWCAP");
-  static_assert(CPU_EVTSTRM == HWCAP_EVTSTRM, "Flag CPU_EVTSTRM must follow Linux HWCAP");
-  static_assert(CPU_AES     == HWCAP_AES,     "Flag CPU_AES must follow Linux HWCAP");
-  static_assert(CPU_PMULL   == HWCAP_PMULL,   "Flag CPU_PMULL must follow Linux HWCAP");
-  static_assert(CPU_SHA1    == HWCAP_SHA1,    "Flag CPU_SHA1 must follow Linux HWCAP");
-  static_assert(CPU_SHA2    == HWCAP_SHA2,    "Flag CPU_SHA2 must follow Linux HWCAP");
-  static_assert(CPU_CRC32   == HWCAP_CRC32,   "Flag CPU_CRC32 must follow Linux HWCAP");
-  static_assert(CPU_LSE     == HWCAP_ATOMICS, "Flag CPU_LSE must follow Linux HWCAP");
-  static_assert(CPU_DCPOP   == HWCAP_DCPOP,   "Flag CPU_DCPOP must follow Linux HWCAP");
-  static_assert(CPU_SHA3    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
-  static_assert(CPU_SHA512  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
-  static_assert(CPU_SVE     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
-  static_assert(CPU_PACA    == HWCAP_PACA,    "Flag CPU_PACA must follow Linux HWCAP");
-  static_assert(CPU_FPHP    == HWCAP_FPHP,    "Flag CPU_FPHP must follow Linux HWCAP");
-  static_assert(CPU_ASIMDHP == HWCAP_ASIMDHP, "Flag CPU_ASIMDHP must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_FP)      == HWCAP_FP,      "Flag CPU_FP must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_ASIMD)   == HWCAP_ASIMD,   "Flag CPU_ASIMD must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_EVTSTRM) == HWCAP_EVTSTRM, "Flag CPU_EVTSTRM must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_AES)     == HWCAP_AES,     "Flag CPU_AES must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_PMULL)   == HWCAP_PMULL,   "Flag CPU_PMULL must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_SHA1)    == HWCAP_SHA1,    "Flag CPU_SHA1 must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_SHA2)    == HWCAP_SHA2,    "Flag CPU_SHA2 must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_CRC32)   == HWCAP_CRC32,   "Flag CPU_CRC32 must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_LSE)     == HWCAP_ATOMICS, "Flag CPU_LSE must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_DCPOP)   == HWCAP_DCPOP,   "Flag CPU_DCPOP must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_SHA3)    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_SHA512)  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_SVE)     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_PACA)    == HWCAP_PACA,    "Flag CPU_PACA must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_FPHP)    == HWCAP_FPHP,    "Flag CPU_FPHP must follow Linux HWCAP");
+  static_assert(BIT_MASK(CPU_ASIMDHP) == HWCAP_ASIMDHP, "Flag CPU_ASIMDHP must follow Linux HWCAP");
   _features = auxv & (
       HWCAP_FP      |
       HWCAP_ASIMD   |
@@ -143,12 +147,17 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_SHA3    |
       HWCAP_SHA512  |
       HWCAP_SVE     |
+      HWCAP_SB      |
       HWCAP_PACA    |
       HWCAP_FPHP    |
       HWCAP_ASIMDHP);
 
-  if (auxv2 & HWCAP2_SVE2) _features |= CPU_SVE2;
-  if (auxv2 & HWCAP2_SVEBITPERM) _features |= CPU_SVEBITPERM;
+  if (auxv2 & HWCAP2_SVE2) {
+    set_feature(CPU_SVE2);
+  }
+  if (auxv2 & HWCAP2_SVEBITPERM) {
+    set_feature(CPU_SVEBITPERM);
+  }
 
   uint64_t ctr_el0;
   uint64_t dczid_el0;
@@ -182,7 +191,7 @@ void VM_Version::get_os_cpu_info() {
           _revision = v;
         } else if (strncmp(buf, "flags", sizeof("flags") - 1) == 0) {
           if (strstr(p+1, "dcpop")) {
-            guarantee(_features & CPU_DCPOP, "dcpop availability should be consistent");
+            guarantee(supports_feature(CPU_DCPOP), "dcpop availability should be consistent");
           }
         }
       }

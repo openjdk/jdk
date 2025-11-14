@@ -29,14 +29,12 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
@@ -146,29 +144,19 @@ class ShenandoahHeap : public CollectedHeap {
 private:
   ShenandoahHeapLock _lock;
 
-  // Indicates the generation whose collection is in
-  // progress. Mutator threads aren't allowed to read
-  // this field.
-  ShenandoahGeneration* _gc_generation;
-
   // This is set and cleared by only the VMThread
-  // at each STW pause (safepoint) to the value seen in
-  // _gc_generation. This allows the value to be always consistently
+  // at each STW pause (safepoint) to the value given to the VM operation.
+  // This allows the value to be always consistently
   // seen by all mutators as well as all GC worker threads.
-  // In that sense, it's a stable snapshot of _gc_generation that is
-  // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
+
+protected:
+  void print_tracing_info() const override;
+  void stop() override;
 
 public:
   ShenandoahHeapLock* lock() {
     return &_lock;
-  }
-
-  ShenandoahGeneration* gc_generation() const {
-    // We don't want this field read by a mutator thread
-    assert(!Thread::current()->is_Java_thread(), "Not allowed");
-    // value of _gc_generation field, see above
-    return _gc_generation;
   }
 
   ShenandoahGeneration* active_generation() const {
@@ -176,13 +164,8 @@ public:
     return _active_generation;
   }
 
-  // Set the _gc_generation field
-  void set_gc_generation(ShenandoahGeneration* generation);
-
-  // Copy the value in the _gc_generation field into
-  // the _active_generation field: can only be called at
-  // a safepoint by the VMThread.
-  void set_active_generation();
+  // Update the _active_generation field: can only be called at a safepoint by the VMThread.
+  void set_active_generation(ShenandoahGeneration* generation);
 
   ShenandoahHeuristics* heuristics();
 
@@ -199,15 +182,16 @@ public:
   void post_initialize() override;
   void initialize_mode();
   virtual void initialize_heuristics();
+  virtual void post_initialize_heuristics();
   virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
   void print_heap_on(outputStream* st)         const override;
-  void print_gc_on(outputStream *st)           const override;
-  void print_tracing_info()                    const override;
+  void print_gc_on(outputStream* st)           const override;
   void print_heap_regions_on(outputStream* st) const;
 
-  void stop() override;
+  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
+  void process_gc_stats() const;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
@@ -228,14 +212,7 @@ private:
   volatile size_t _committed;
   shenandoah_padding(1);
 
-  void increase_used(const ShenandoahAllocRequest& req);
-
 public:
-  void increase_used(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_used(ShenandoahGeneration* generation, size_t bytes);
-  void increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
 
@@ -293,6 +270,7 @@ private:
 public:
 
   inline HeapWord* base() const { return _heap_region.start(); }
+  inline HeapWord* end()  const { return _heap_region.end(); }
 
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
@@ -453,9 +431,12 @@ public:
   // This indicates the reason the last GC cycle was cancelled.
   inline GCCause::Cause cancelled_cause() const;
 
-  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
-  // old mark does _not_ touch the oom handler).
-  inline void clear_cancelled_gc(bool clear_oom_handler = true);
+  // Clears the cancellation cause and resets the oom handler
+  inline void clear_cancelled_gc();
+
+  // Clears the cancellation cause iff the current cancellation reason equals the given
+  // expected cancellation cause. Does not reset the oom handler.
+  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
 
   void cancel_concurrent_mark();
 
@@ -472,9 +453,11 @@ protected:
   ShenandoahRegionIterator _update_refs_iterator;
 
 private:
+  inline void reset_cancellation_time();
+
   // GC support
   // Evacuation
-  virtual void evacuate_collection_set(bool concurrent);
+  virtual void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
@@ -489,7 +472,7 @@ private:
   // Turn off weak roots flag, purge old satb buffers in generational mode
   void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
 
-  virtual void update_heap_references(bool concurrent);
+  virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
   virtual void final_update_refs_update_region_states();
@@ -541,7 +524,7 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
+    assert(ShenandoahCardBarrier, "Card mark barrier should be on");
     return _old_generation;
   }
 
@@ -555,6 +538,10 @@ public:
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
 
   ShenandoahEvacOOMHandler*  oom_evac_handler()        { return &_oom_evac_handler; }
+
+  ShenandoahEvacuationTracker* evac_tracker() const {
+    return _evac_tracker;
+  }
 
   void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
@@ -593,12 +580,12 @@ public:
   bool unload_classes() const;
 
   // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(bool full_gc);
+  void parallel_cleaning(ShenandoahGeneration* generation, bool full_gc);
 
 private:
   void stw_unload_classes(bool full_gc);
   void stw_process_weak_roots(bool full_gc);
-  void stw_weak_refs(bool full_gc);
+  void stw_weak_refs(ShenandoahGeneration* generation, bool full_gc);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);
@@ -676,11 +663,12 @@ public:
   void unpin_object(JavaThread* thread, oop obj) override;
 
   void sync_pinned_region_status();
-  void assert_pinned_region_status() NOT_DEBUG_RETURN;
+  void assert_pinned_region_status() const NOT_DEBUG_RETURN;
+  void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return !ShenandoahCardBarrier; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 
@@ -699,18 +687,16 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
-  HeapWord* mem_allocate(size_t size, bool* what) override;
+  HeapWord* mem_allocate(size_t size) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
 
-  void notify_mutator_alloc_words(size_t words, size_t waste);
-
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
-  size_t tlab_capacity(Thread *thr) const override;
-  size_t unsafe_max_tlab_alloc(Thread *thread) const override;
+  size_t tlab_capacity() const override;
+  size_t unsafe_max_tlab_alloc() const override;
   size_t max_tlab_size() const override;
-  size_t tlab_used(Thread* ignored) const override;
+  size_t tlab_used() const override;
 
   void ensure_parsability(bool retire_labs) override;
 
@@ -756,8 +742,9 @@ public:
   inline bool requires_marking(const void* entry) const;
 
   // Support for bitmap uncommits
-  bool commit_bitmap_slice(ShenandoahHeapRegion *r);
-  bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  void commit_bitmap_slice(ShenandoahHeapRegion *r);
+  void uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  bool is_bitmap_region_special() { return _bitmap_region_special; }
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
   // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
@@ -787,6 +774,10 @@ private:
   ShenandoahEvacOOMHandler _oom_evac_handler;
 
   oop try_evacuate_object(oop src, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+protected:
+  // Used primarily to look for failed evacuation attempts.
+  ShenandoahEvacuationTracker*  _evac_tracker;
 
 public:
   static address in_cset_fast_test_addr();
@@ -828,7 +819,7 @@ public:
   static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
   static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
-  size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
+  size_t trash_humongous_region_at(ShenandoahHeapRegion *r) const;
 
   static inline void increase_object_age(oop obj, uint additional_age);
 

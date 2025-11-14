@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,7 +26,7 @@ import jdk.xml.internal.Utils;
  * Exception constants.
  *
  * @since 6.0 (intended to replace the InstructionConstant interface)
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public final class ExceptionConst {
 
@@ -52,7 +52,6 @@ public final class ExceptionConst {
      * Super class of any linking exception (aka Linkage Error)
      */
     public static final Class<LinkageError> LINKING_EXCEPTION = LinkageError.class;
-
     /**
      * Linking Exceptions
      */
@@ -67,10 +66,10 @@ public final class ExceptionConst {
     public static final Class<NoSuchMethodError> NO_SUCH_METHOD_ERROR = NoSuchMethodError.class;
     public static final Class<NoClassDefFoundError> NO_CLASS_DEF_FOUND_ERROR = NoClassDefFoundError.class;
     public static final Class<UnsatisfiedLinkError> UNSATISFIED_LINK_ERROR = UnsatisfiedLinkError.class;
+
     public static final Class<VerifyError> VERIFY_ERROR = VerifyError.class;
     /* UnsupportedClassVersionError is new in JDK 1.2 */
 //    public static final Class UnsupportedClassVersionError = UnsupportedClassVersionError.class;
-
     /**
      * Run-Time Exceptions
      */

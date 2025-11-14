@@ -26,14 +26,14 @@
  * @bug 8356870
  * @summary Test HotSpotDiagnosticMXBean.dumpThreads with a thread owning a monitor for
  *     an object that is scalar replaced
- * @requires !vm.debug & (vm.compMode != "Xcomp")
+ * @requires vm.compMode != "Xcomp"
  * @requires (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @modules jdk.management
  * @library /test/lib
- * @run main/othervm DumpThreadsWithEliminatedLock plain platform
- * @run main/othervm DumpThreadsWithEliminatedLock plain virtual
- * @run main/othervm DumpThreadsWithEliminatedLock json platform
- * @run main/othervm DumpThreadsWithEliminatedLock json virtual
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/String*.* DumpThreadsWithEliminatedLock plain platform
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/String*.* DumpThreadsWithEliminatedLock plain virtual
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/String*.* DumpThreadsWithEliminatedLock json platform
+ * @run main/othervm -XX:CompileCommand=inline,java/lang/String*.* DumpThreadsWithEliminatedLock json virtual
  */
 
 import java.io.IOException;

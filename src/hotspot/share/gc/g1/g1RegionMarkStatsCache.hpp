@@ -103,6 +103,8 @@ public:
   // to have a very low cache miss rate.
   static const uint RegionMarkStatsCacheSize = 1024;
 
+  // Initialize cache. Does not reset the cache immediately to avoid the cost
+  // during startup.
   G1RegionMarkStatsCache(G1RegionMarkStats* target, uint num_cache_entries);
 
   ~G1RegionMarkStatsCache();

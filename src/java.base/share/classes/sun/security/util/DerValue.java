@@ -860,6 +860,22 @@ public class DerValue {
     }
 
     /**
+     * Checks that the BMPString does not contain any surrogate characters,
+     * which are outside the Basic Multilingual Plane.
+     *
+     * @throws IOException if illegal characters are detected
+     */
+    public void validateBMPString() throws IOException {
+        String bmpString = getBMPString();
+        for (int i = 0; i < bmpString.length(); i++) {
+            if (Character.isSurrogate(bmpString.charAt(i))) {
+                throw new IOException(
+                    "Illegal character in BMPString, index: " + i);
+            }
+         }
+     }
+
+    /**
      * Reads the ASN.1 NULL value
      */
     public void getNull() throws IOException {

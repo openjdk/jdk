@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,13 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     private final boolean isDefault;
 
     /**
+     * Specifies whether HotSpot should profile deoptimizations for the {@code nmethod} associated
+     * with this object. This is particularly useful for whitebox testing scenarios that involve
+     * deoptimization.
+     */
+    private final boolean profileDeopt;
+
+    /**
      * Determines whether this object is in the oops table of the nmethod.
      * <p>
      * If this object is in the oops table, the VM uses the oops table entry to update this object's
@@ -83,10 +90,11 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     private int invalidationReason;
 
-    HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, long compileId) {
+    HotSpotNmethod(HotSpotResolvedJavaMethodImpl method, String name, boolean isDefault, boolean profileDeopt, long compileId) {
         super(name);
         this.method = method;
         this.isDefault = isDefault;
+        this.profileDeopt = profileDeopt;
         boolean inOopsTable = !IS_IN_NATIVE_IMAGE && !isDefault;
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
         this.invalidationReason = -1;
@@ -103,12 +111,13 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     /**
      * The speculation log containing speculations embedded in the nmethod.
-     *
+     * <p>
      * If {@code speculationLog.managesFailedSpeculations() == true}, this field ensures the failed
      * speculation list lives at least as long as this object. This prevents deoptimization from
      * appending to an already freed list.
      */
-    @SuppressWarnings("unused") private HotSpotSpeculationLog speculationLog;
+    @SuppressWarnings("unused")
+    private HotSpotSpeculationLog speculationLog;
 
     /**
      * Determines if the nmethod associated with this object is the compiled entry point for
@@ -116,6 +125,14 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
      */
     public boolean isDefault() {
         return isDefault;
+    }
+
+    /**
+     * Determines if HotSpot should profile deoptimization for the {@code nmethod} associated
+     * with this object.
+     */
+    public boolean profileDeopt() {
+        return profileDeopt;
     }
 
     @Override
@@ -133,7 +150,8 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     /**
      * Invalidate this nmethod using the reason specified in {@code invalidationReason} and
      * optionally deoptimize the method if {@code deoptimize} is set.
-     * @param deoptimize whether or not to deoptimize the method.
+     *
+     * @param deoptimize         whether or not to deoptimize the method.
      * @param invalidationReason invalidation reason code.
      */
     public void invalidate(boolean deoptimize, int invalidationReason) {
@@ -164,7 +182,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     @Override
     public String toString() {
         return String.format("HotSpotNmethod[method=%s, codeBlob=0x%x, isDefault=%b, name=%s, inOopsTable=%s]",
-                        method, getAddress(), isDefault, name, inOopsTable());
+                method, getAddress(), isDefault, name, inOopsTable());
     }
 
     private boolean checkArgs(Object... args) {
@@ -183,7 +201,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * It's possible for the HotSpot runtime to sweep nmethods at any point in time. As a result,
      * there is no guarantee that calling this method will execute the wrapped nmethod. Instead, it
      * may end up executing the bytecode of the associated {@link #getMethod() Java method}. Only if

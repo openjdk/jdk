@@ -28,14 +28,14 @@
 #include "memory/reservedSpace.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memBaseline.hpp"
-#include "nmt/nmtCommon.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "utilities/deferred.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)
@@ -171,6 +171,13 @@ class MemTracker : AllStatic {
       NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
+  }
+
+  static inline bool walk_virtual_memory(VirtualMemoryWalker* walker) {
+    assert_post_init();
+    if (!enabled()) return false;
+    MemTracker::NmtVirtualMemoryLocker nvml;
+    return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
   }
 
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
@@ -319,7 +326,7 @@ class MemTracker : AllStatic {
   // Tracking level
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
-  static Deferred<MemBaseline>      _baseline;
+  static DeferredStatic<MemBaseline> _baseline;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

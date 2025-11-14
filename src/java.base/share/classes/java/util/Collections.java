@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -82,6 +83,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
+@AOTSafeClassInitializer
 public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {
@@ -4942,6 +4944,11 @@ public final class Collections {
         }
 
         @Override
+        public List<E> reversed() {
+            return this;
+        }
+
+        @Override
         public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
 
         // Preserves singleton property
@@ -5308,6 +5315,18 @@ public final class Collections {
         public void sort(Comparator<? super E> c) {
         }
         @Override
+        public List<E> reversed() {
+            return this;
+        }
+        @Override
+        public E getFirst() {
+            return element;
+        }
+        @Override
+        public E getLast() {
+            return element;
+        }
+        @Override
         public Spliterator<E> spliterator() {
             return singletonSpliterator(element);
         }
@@ -5548,6 +5567,11 @@ public final class Collections {
                     a[n] = null;
             }
             return a;
+        }
+
+        @Override
+        public List<E> reversed() {
+            return this;
         }
 
         public List<E> subList(int fromIndex, int toIndex) {

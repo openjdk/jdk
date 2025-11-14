@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHASSERTS_HPP
 
 #include "memory/iterator.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/formatBuffer.hpp"
 
@@ -64,6 +65,9 @@ public:
   static void assert_marked(void* interior_loc, oop obj, const char* file, int line);
   static void assert_marked_weak(void* interior_loc, oop obj, const char* file, int line);
   static void assert_marked_strong(void* interior_loc, oop obj, const char* file, int line);
+
+  // Assert that marking is complete for the generation where this obj resides
+  static void assert_mark_complete(HeapWord* obj, const char* file, int line);
   static void assert_in_cset(void* interior_loc, oop obj, const char* file, int line);
   static void assert_not_in_cset(void* interior_loc, oop obj, const char* file, int line);
   static void assert_not_in_cset_loc(void* interior_loc, const char* file, int line);
@@ -75,7 +79,11 @@ public:
   static void assert_heaplocked_or_safepoint(const char* file, int line);
   static void assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line);
   static void assert_generational(const char* file, int line);
-  static void assert_generations_reconciled(const char* file, int line);
+
+  // Given a possibly invalid oop, extract narrowKlass (if UCCP) and Klass*
+  // from it safely.
+  // Note: For -UCCP, returned nk is always 0.
+  static bool extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap_bounds(interior_loc, obj) \
@@ -126,6 +134,9 @@ public:
   if (!(exception)) ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
 #define shenandoah_assert_marked_strong(interior_loc, obj) \
                     ShenandoahAsserts::assert_marked_strong(interior_loc, obj, __FILE__, __LINE__)
+
+#define shenandoah_assert_mark_complete(obj) \
+                    ShenandoahAsserts::assert_mark_complete(obj, __FILE__, __LINE__)
 
 #define shenandoah_assert_in_cset_if(interior_loc, obj, condition) \
   if (condition)    ShenandoahAsserts::assert_in_cset(interior_loc, obj, __FILE__, __LINE__)
@@ -178,10 +189,6 @@ public:
 #define shenandoah_assert_generational() \
                     ShenandoahAsserts::assert_generational(__FILE__, __LINE__)
 
-// Some limited sanity checking of the _gc_generation and _active_generation fields of ShenandoahHeap
-#define shenandoah_assert_generations_reconciled()                                                             \
-                    ShenandoahAsserts::assert_generations_reconciled(__FILE__, __LINE__)
-
 #else
 #define shenandoah_assert_in_heap_bounds(interior_loc, obj)
 #define shenandoah_assert_in_heap_bounds_or_null(interior_loc, obj)
@@ -211,6 +218,8 @@ public:
 #define shenandoah_assert_marked_strong_except(interior_loc, obj, exception)
 #define shenandoah_assert_marked_strong(interior_loc, obj)
 
+#define shenandoah_assert_mark_complete(obj)
+
 #define shenandoah_assert_in_cset_if(interior_loc, obj, condition)
 #define shenandoah_assert_in_cset_except(interior_loc, obj, exception)
 #define shenandoah_assert_in_cset(interior_loc, obj)
@@ -235,7 +244,6 @@ public:
 #define shenandoah_assert_control_or_vm_thread()
 #define shenandoah_assert_control_or_vm_thread_at_safepoint()
 #define shenandoah_assert_generational()
-#define shenandoah_assert_generations_reconciled()
 
 #endif
 

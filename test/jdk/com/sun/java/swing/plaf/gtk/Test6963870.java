@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,28 @@
  * questions.
  */
 
-/* @test
-   @bug 6963870
-   @key headful
-   @summary Tests that GTKPainter.ListTableFocusBorder.getBorderInsets()
-            doesn't return null
-   @author Peter Zhelezniakov
-   @run main Test6963870
-*/
+/*
+ * @test
+ * @bug 6963870
+ * @key headful
+ * @summary Tests that GTKPainter.ListTableFocusBorder.getBorderInsets()
+ *          doesn't return null
+ * @requires (os.family != "windows" & os.family != "mac")
+ * @library /test/lib
+ * @build jtreg.SkippedException
+ * @run main Test6963870
+ */
 
 import java.awt.Insets;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
+import jtreg.SkippedException;
+
 public class Test6963870 implements Runnable {
 
-    final static String[] UI_NAMES = {
+    static final String[] UI_NAMES = {
         "List.focusCellHighlightBorder",
         "List.focusSelectedCellHighlightBorder",
         "List.noFocusBorder",
@@ -45,6 +50,7 @@ public class Test6963870 implements Runnable {
         "Table.focusSelectedCellHighlightBorder",
     };
 
+    @Override
     public void run() {
         for (String uiName: UI_NAMES) {
             test(uiName);
@@ -63,11 +69,9 @@ public class Test6963870 implements Runnable {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         } catch (Exception e) {
-            System.out.println("GTKLookAndFeel cannot be set, skipping this test");
-            return;
+            throw new SkippedException("GTKLookAndFeel isn't supported", e);
         }
 
         SwingUtilities.invokeAndWait(new Test6963870());
     }
 }
-

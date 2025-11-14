@@ -34,14 +34,14 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/deferred.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS
@@ -50,7 +50,7 @@
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
-Deferred<MemBaseline> MemTracker::_baseline;
+DeferredStatic<MemBaseline> MemTracker::_baseline;
 
 bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
 
@@ -116,7 +116,7 @@ void MemTracker::final_report(outputStream* output) {
   // printing the final report during normal VM exit, it should not print
   // the final report again. In addition, it should be guarded from
   // recursive calls in case NMT reporting itself crashes.
-  if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
+  if (enabled() && AtomicAccess::cmpxchg(&g_final_report_did_run, false, true) == false) {
     report(tracking_level() == NMT_summary, output, 1);
   }
 }

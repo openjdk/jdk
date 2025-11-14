@@ -1,0 +1,139 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <!--
+     Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+     DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+     This code is free software; you can redistribute it and/or modify it
+     under the terms of the GNU General Public License version 2 only, as
+     published by the Free Software Foundation.
+
+     This code is distributed in the hope that it will be useful, but WITHOUT
+     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+     version 2 for more details (a copy is included in the LICENSE file that
+     accompanied this code).
+
+     You should have received a copy of the GNU General Public License version
+     2 along with this work; if not, write to the Free Software Foundation,
+     Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+     Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+     or visit www.oracle.com if you need additional information or have any
+     questions.
+    -->
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.openjdk</groupId>
+    <artifactId>micros-javac</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-SNAPSHOT</version>
+    <name>OpenJDK Microbenchmark of Java Compile</name>
+    <properties>
+        <javac.benchmark.openjdk.zip.download.url>https://download.java.net/openjdk/jdk11/ri/openjdk-11+28_windows-x64_bin.zip</javac.benchmark.openjdk.zip.download.url>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jmh.version>1.36</jmh.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.openjdk.jmh.Main</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/BenchmarkList</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/CompilerHints</resource>
+                                </transformer>
+                            </transformers>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.openjdk.jmh</groupId>
+                            <artifactId>jmh-generator-annprocess</artifactId>
+                            <version>${jmh.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.1.1</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.4</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.outputDirectory}"/>
+                                <get src="${javac.benchmark.openjdk.zip.download.url}" dest="${project.build.directory}/jdk-bin.zip" skipexisting="true" verbose="true"/>
+                                <unzip src="${project.build.directory}/jdk-bin.zip" dest="${project.build.outputDirectory}">
+                                    <patternset>
+                                        <include name="*/lib/src.zip"/>
+                                        <include name="*/release"/>
+                                    </patternset>
+                                    <mapper type="flatten"/>
+                                </unzip>
+                                <loadfile srcFile="${project.build.outputDirectory}/release" property="release.info"/>
+                                <echo>
+-------------------------------------------------
+Bundling JDK sources with following release info:
+-------------------------------------------------
+${release.info}
+-------------------------------------------------
+                                </echo>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

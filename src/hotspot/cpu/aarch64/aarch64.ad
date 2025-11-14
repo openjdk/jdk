@@ -881,6 +881,46 @@ reg_class vectorx_reg(
     V31, V31_H, V31_J, V31_K
 );
 
+// Class for vector register V10
+reg_class v10_veca_reg(
+    V10, V10_H, V10_J, V10_K
+);
+
+// Class for vector register V11
+reg_class v11_veca_reg(
+    V11, V11_H, V11_J, V11_K
+);
+
+// Class for vector register V12
+reg_class v12_veca_reg(
+    V12, V12_H, V12_J, V12_K
+);
+
+// Class for vector register V13
+reg_class v13_veca_reg(
+    V13, V13_H, V13_J, V13_K
+);
+
+// Class for vector register V17
+reg_class v17_veca_reg(
+    V17, V17_H, V17_J, V17_K
+);
+
+// Class for vector register V18
+reg_class v18_veca_reg(
+    V18, V18_H, V18_J, V18_K
+);
+
+// Class for vector register V23
+reg_class v23_veca_reg(
+    V23, V23_H, V23_J, V23_K
+);
+
+// Class for vector register V24
+reg_class v24_veca_reg(
+    V24, V24_H, V24_J, V24_K
+);
+
 // Class for 128 bit register v0
 reg_class v0_reg(
     V0, V0_H
@@ -1226,39 +1266,39 @@ source %{
     // adlc register classes to make AArch64 rheapbase (r27) and rfp (r29)
     // registers conditionally reserved.
 
-    _ANY_REG32_mask = _ALL_REG32_mask;
-    _ANY_REG32_mask.Remove(OptoReg::as_OptoReg(r31_sp->as_VMReg()));
+    _ANY_REG32_mask.assignFrom(_ALL_REG32_mask);
+    _ANY_REG32_mask.remove(OptoReg::as_OptoReg(r31_sp->as_VMReg()));
 
-    _ANY_REG_mask = _ALL_REG_mask;
+    _ANY_REG_mask.assignFrom(_ALL_REG_mask);
 
-    _PTR_REG_mask = _ALL_REG_mask;
+    _PTR_REG_mask.assignFrom(_ALL_REG_mask);
 
-    _NO_SPECIAL_REG32_mask = _ALL_REG32_mask;
-    _NO_SPECIAL_REG32_mask.SUBTRACT(_NON_ALLOCATABLE_REG32_mask);
+    _NO_SPECIAL_REG32_mask.assignFrom(_ALL_REG32_mask);
+    _NO_SPECIAL_REG32_mask.subtract(_NON_ALLOCATABLE_REG32_mask);
 
-    _NO_SPECIAL_REG_mask = _ALL_REG_mask;
-    _NO_SPECIAL_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+    _NO_SPECIAL_REG_mask.assignFrom(_ALL_REG_mask);
+    _NO_SPECIAL_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
-    _NO_SPECIAL_PTR_REG_mask = _ALL_REG_mask;
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_NON_ALLOCATABLE_REG_mask);
+    _NO_SPECIAL_PTR_REG_mask.assignFrom(_ALL_REG_mask);
+    _NO_SPECIAL_PTR_REG_mask.subtract(_NON_ALLOCATABLE_REG_mask);
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
     if (UseCompressedOops && (CompressedOops::base() != nullptr)) {
-      _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
-      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
-      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(r27->as_VMReg()));
     }
 
     // r29 is not allocatable when PreserveFramePointer is on
     if (PreserveFramePointer) {
-      _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
-      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
-      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_REG32_mask.remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_REG_mask.remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.remove(OptoReg::as_OptoReg(r29->as_VMReg()));
     }
 
-    _NO_SPECIAL_NO_RFP_PTR_REG_mask = _NO_SPECIAL_PTR_REG_mask;
-    _NO_SPECIAL_NO_RFP_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+    _NO_SPECIAL_NO_RFP_PTR_REG_mask.assignFrom(_NO_SPECIAL_PTR_REG_mask);
+    _NO_SPECIAL_NO_RFP_PTR_REG_mask.remove(OptoReg::as_OptoReg(r29->as_VMReg()));
   }
 
   // Optimizaton of volatile gets and puts
@@ -1694,7 +1734,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 
 //=============================================================================
-const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::EMPTY;
 
 int ConstantTable::calculate_table_base_offset() const {
   return 0;  // absolute addressing, no offset
@@ -1764,10 +1804,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   // n.b. frame size includes space for return pc and rfp
   const int framesize = C->output()->frame_size_in_bytes();
-
-  // insert a nop at the start of the prolog so we can patch in a
-  // branch if we need to invalidate the method later
-  __ nop();
 
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
@@ -2366,17 +2402,34 @@ int Matcher::max_vector_size(const BasicType bt) {
 }
 
 int Matcher::min_vector_size(const BasicType bt) {
-  int max_size = max_vector_size(bt);
-  // Limit the min vector size to 8 bytes.
-  int size = 8 / type2aelembytes(bt);
-  if (bt == T_BYTE) {
-    // To support vector api shuffle/rearrange.
-    size = 4;
-  } else if (bt == T_BOOLEAN) {
-    // To support vector api load/store mask.
-    size = 2;
+  // Usually, the shortest vector length supported by AArch64 ISA and
+  // Vector API species is 64 bits. However, we allow 32-bit or 16-bit
+  // vectors in a few special cases.
+  int size;
+  switch(bt) {
+    case T_BOOLEAN:
+      // Load/store a vector mask with only 2 elements for vector types
+      // such as "2I/2F/2L/2D".
+      size = 2;
+      break;
+    case T_BYTE:
+      // Generate a "4B" vector, to support vector cast between "8B/16B"
+      // and "4S/4I/4L/4F/4D".
+      size = 4;
+      break;
+    case T_SHORT:
+      // Generate a "2S" vector, to support vector cast between "4S/8S"
+      // and "2I/2L/2F/2D".
+      size = 2;
+      break;
+    default:
+      // Limit the min vector length to 64-bit.
+      size = 8 / type2aelembytes(bt);
+      // The number of elements in a vector should be at least 2.
+      size = MAX2(size, 2);
   }
-  if (size < 2) size = 2;
+
+  int max_size = max_vector_size(bt);
   return MIN2(size, max_size);
 }
 
@@ -2467,10 +2520,10 @@ uint Matcher::int_pressure_limit()
   // as a spilled LRG. Spilling heuristics(Spill-USE) explicitly skip
   // derived pointers and lastly fail to spill after reaching maximum
   // number of iterations. Lowering the default pressure threshold to
-  // (_NO_SPECIAL_REG32_mask.Size() minus 1) forces CallNode to become
+  // (_NO_SPECIAL_REG32_mask.size() minus 1) forces CallNode to become
   // a high register pressure area of the code so that split_DEF can
   // generate DefinitionSpillCopy for the derived pointer.
-  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.Size() - 1;
+  uint default_int_pressure_threshold = _NO_SPECIAL_REG32_mask.size() - 1;
   if (!PreserveFramePointer) {
     // When PreserveFramePointer is off, frame pointer is allocatable,
     // but different from other SOC registers, it is excluded from
@@ -2485,38 +2538,34 @@ uint Matcher::int_pressure_limit()
 uint Matcher::float_pressure_limit()
 {
   // _FLOAT_REG_mask is generated by adlc from the float_reg register class.
-  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.Size() : FLOATPRESSURE;
+  return (FLOATPRESSURE == -1) ? _FLOAT_REG_mask.size() : FLOATPRESSURE;
 }
 
 bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
   return false;
 }
 
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI.
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL.
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL.
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
+  return RegMask::EMPTY;
 }
 
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
@@ -3454,10 +3503,6 @@ encode %{
     __ mov(dst_reg, (uint64_t)1);
   %}
 
-  enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
-    __ load_byte_map_base($dst$$Register);
-  %}
-
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
@@ -4363,10 +4408,9 @@ operand immI8()
 %}
 
 // 8 bit signed value (simm8), or #simm8 LSL 8.
-operand immI8_shift8()
+operand immIDupV()
 %{
-  predicate((n->get_int() <= 127 && n->get_int() >= -128) ||
-            (n->get_int() <= 32512 && n->get_int() >= -32768 && (n->get_int() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4375,11 +4419,21 @@ operand immI8_shift8()
 %}
 
 // 8 bit signed value (simm8), or #simm8 LSL 8.
-operand immL8_shift8()
+operand immLDupV()
 %{
-  predicate((n->get_long() <= 127 && n->get_long() >= -128) ||
-            (n->get_long() <= 32512 && n->get_long() >= -32768 && (n->get_long() & 0xff) == 0));
+  predicate(Assembler::operand_valid_for_sve_dup_immediate(n->get_long()));
   match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 8 bit signed value (simm8), or #simm8 LSL 8.
+operand immHDupV()
+%{
+  predicate(Assembler::operand_valid_for_sve_dup_immediate((int64_t)n->geth()));
+  match(ConH);
 
   op_cost(0);
   format %{ %}
@@ -4551,20 +4605,6 @@ operand immP0()
 operand immP_1()
 %{
   predicate(n->get_ptr() == 1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Card Table Byte Map Base
-operand immByteMapBase()
-%{
-  // Get base of card map
-  predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
-            SHENANDOAHGC_ONLY(!BarrierSet::barrier_set()->is_a(BarrierSet::ShenandoahBarrierSet) &&)
-            (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
   match(ConP);
 
   op_cost(0);
@@ -4968,6 +5008,86 @@ operand vReg()
   match(VecA);
   match(VecD);
   match(VecX);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V17()
+%{
+  constraint(ALLOC_IN_RC(v17_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V18()
+%{
+  constraint(ALLOC_IN_RC(v18_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V23()
+%{
+  constraint(ALLOC_IN_RC(v23_veca_reg));
+  match(vReg);
+
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V24()
+%{
+  constraint(ALLOC_IN_RC(v24_veca_reg));
+  match(vReg);
 
   op_cost(0);
   format %{ %}
@@ -5841,9 +5961,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 64 bytes
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources
@@ -6858,20 +6975,6 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   ins_pipe(ialu_imm);
 %}
 
-// Load Byte Map Base Constant
-
-instruct loadByteMapBase(iRegPNoSp dst, immByteMapBase con)
-%{
-  match(Set dst con);
-
-  ins_cost(INSN_COST);
-  format %{ "adr  $dst, $con\t# Byte Map Base" %}
-
-  ins_encode(aarch64_enc_mov_byte_map_base(dst, con));
-
-  ins_pipe(ialu_imm);
-%}
-
 // Load Narrow Pointer Constant
 
 instruct loadConN(iRegNNoSp dst, immN con)
@@ -6976,18 +7079,16 @@ instruct loadConD(vRegD dst, immD con) %{
 %}
 
 // Load Half Float Constant
-// The "ldr" instruction loads a 32-bit word from the constant pool into a
-// 32-bit register but only the bottom half will be populated and the top
-// 16 bits are zero.
 instruct loadConH(vRegF dst, immH con) %{
   match(Set dst con);
-  format %{
-    "ldrs $dst, [$constantaddress]\t# load from constant table: half float=$con\n\t"
-  %}
+  format %{ "mov    rscratch1, $con\n\t"
+            "fmov   $dst, rscratch1"
+         %}
   ins_encode %{
-    __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
+    __ movw(rscratch1, (uint32_t)$con$$constant);
+    __ fmovs($dst$$FloatRegister, rscratch1);
   %}
-  ins_pipe(fp_load_constant_s);
+  ins_pipe(pipe_class_default);
 %}
 
 // Store Instructions
@@ -16182,7 +16283,6 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
 
 instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
 
@@ -16196,41 +16296,8 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegP
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
+instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
-  predicate(LockingMode != LM_LIGHTWEIGHT);
-  match(Set cr (FastUnlock object box));
-  effect(TEMP tmp, TEMP tmp2);
-
-  ins_cost(5 * INSN_COST);
-  format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2" %}
-
-  ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
-%{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
-
-  ins_cost(5 * INSN_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
-
-  ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
-%{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
 
@@ -16238,7 +16305,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2, $tmp3" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
