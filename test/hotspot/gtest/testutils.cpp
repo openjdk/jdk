@@ -29,7 +29,6 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
-#include "os_bsd.hpp"
 #include <string.h>
 
 // Note: these could be made more suitable for covering large ranges (e.g. just mark one byte per page).
