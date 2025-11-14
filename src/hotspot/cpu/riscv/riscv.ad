@@ -10600,7 +10600,7 @@ instruct cmovF_cmpN(fRegF dst, fRegF src, iRegN op1, iRegN op2, cmpOp cop) %{
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovF_cmpP(fRegF dst, fRegF src, iRegN op1, iRegN op2, cmpOp cop) %{
+instruct cmovF_cmpP(fRegF dst, fRegF src, iRegP op1, iRegP op2, cmpOp cop) %{
   match(Set dst (CMoveF (Binary cop (CmpP op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
@@ -10740,7 +10740,7 @@ instruct cmovD_cmpN(fRegD dst, fRegD src, iRegN op1, iRegN op2, cmpOp cop) %{
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmovD_cmpP(fRegD dst, fRegD src, iRegN op1, iRegN op2, cmpOp cop) %{
+instruct cmovD_cmpP(fRegD dst, fRegD src, iRegP op1, iRegP op2, cmpOp cop) %{
   match(Set dst (CMoveD (Binary cop (CmpP op1 op2)) (Binary dst src)));
   ins_cost(ALU_COST + BRANCH_COST);
 
