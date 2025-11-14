@@ -391,7 +391,6 @@ GetJavaProperties(JNIEnv *env)
         int ret = sysinfo(SI_ISALIST, list, sizeof(list));
         if (ret == 0) {
             sprops.cpu_isalist = strdup(list);
-            list[sizeof(list) - 1] = '\0';
         } else {
             sprops.cpu_isalist = NULL;
         }
