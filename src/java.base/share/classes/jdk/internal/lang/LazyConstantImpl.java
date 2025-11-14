@@ -44,7 +44,7 @@ import java.util.function.Supplier;
 public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     // Unsafe allows `LazyConstant` instances to be used early in the boot sequence
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe offset for access of the `constant` field
     private static final long CONSTANT_OFFSET =
