@@ -600,19 +600,15 @@ public class JlinkTask {
      * Checks the release information of the java.base used for target image
      * for compatibility with the java.base used by jlink.
      *
-     * @throws IllegalArgumentException This jlink cannot be used to create
-     * the target runtime image.
+     * @throws IllegalArgumentException  If  the `java.base` module reference `target`
+     * is not compatible with this jlink.
      */
     private static void checkJavaBaseVersion(ModuleReference target) {
         String currentRelease = getCurrentRuntimeVersion();
 
-        Optional<String> releaseInfo = getReleaseInfo(target);
-        if (releaseInfo.isEmpty()) {
-            throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.missing",
-                    currentRelease));
-        }
+        String targetRelease = getReleaseInfo(target).orElseThrow(() -> new IllegalArgumentException(
+                taskHelper.getMessage("err.jlink.version.missing", currentRelease)));
 
-        var targetRelease = releaseInfo.get();
         if (!currentRelease.equals(targetRelease)) {
             // Current runtime image and the target runtime image are not compatible build
             throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
