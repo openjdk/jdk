@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@
 import java.io.PrintStream;
 
 //
+// doWork1 algorithm:
 // main               waiter              resumer
 // =================  ==================  ===================
 // launch waiter
@@ -75,6 +76,81 @@ import java.io.PrintStream;
 // <join returns>     :                   resumer exits
 // join waiter        :
 // <join returns>     waiter exits
+//
+
+//
+// doWork2 algorithm:
+//
+// main               waiter              resumer
+// =================  ==================  ===================
+// launch waiter
+// <launch returns>   waiter running
+// launch resumer     enter threadLock
+// <launch returns>   threadLock.wait()   resumer running
+// enter threadLock   :                   wait for notify
+// threadLock.notify  wait finishes       :
+// :                  reenter blocks      :
+// suspend waiter     <suspended>         :
+// <ready to test>    :                   :
+// :                  :                   :
+// notify resumer     :                   wait finishes
+// delay 1-second     :                   :
+// exit threadLock    :                   :
+// join resumer       :                   enter threadLock
+// :                  <resumed>           resume waiter
+// :                  :                   exit threadLock
+// :                  reenter threadLock  :
+// <join returns>     :                   resumer exits
+// join waiter        :
+// <join returns>     waiter exits
+//
+// Note: The sleep(1-second) in main along with the delayed exit
+//       of threadLock in main forces the resumer thread to reach
+//       "enter threadLock" and block. This difference from doWork1
+//       forces the resumer thread to be contending for threadLock
+//       while the waiter thread is in threadLock.wait() increasing
+//       stress on the monitor sub-system.
+//
+
+//
+// doWork3 algorithm:
+//
+// main                 waiter                  resumer
+// ===================  ======================  ===================
+// launch waiter
+// <launch returns>     waiter running
+// launch resumer       enter threadLock
+// <launch returns>     while !READY_TO_NOTIFY  resumer running
+// delay 1-second         threadLock.wait(1)    wait for notify
+// enter threadLock     :                       :
+// set READY_TO_NOTIFY  :
+// threadLock.notify    wait finishes           :
+// :                    reenter blocks          :
+// suspend waiter       <suspended>             :
+// <ready to test>      :                       :
+// :                    :                       :
+// notify resumer       :                       wait finishes
+// delay 1-second       :                       :
+// exit threadLock      :                       :
+// join resumer         :                       enter threadLock
+// :                    <resumed>               resume waiter
+// :                    :                       exit threadLock
+// :                    reenter threadLock      :
+// <join returns>       :                       resumer exits
+// join waiter          :
+// <join returns>       waiter exits
+//
+// Note: The sleep(1-second) in main along with the delayed exit
+//       of threadLock in main forces the resumer thread to reach
+//       "enter threadLock" and block. This difference from doWork1
+//       forces the resumer thread to be contending for threadLock
+//       while the waiter thread is in the threadLock.wait(1) tight
+//       loop increasing stress on the monitor sub-system.
+//
+// Note: The first sleep(1-second) in main and the wait(1) in the waiter
+//       thread allows the waiter thread to loop tightly here:
+//         while !READY_TO_NOTIFY
+//           threadLock.wait(1)
 //
 
 public class SuspendWithObjectMonitorWait {
@@ -107,7 +183,12 @@ public class SuspendWithObjectMonitorWait {
     native static int wait4ContendedEnter(SuspendWithObjectMonitorWaitWorker thr);
 
     public static void main(String[] args) throws Exception {
-        int test = Integer.parseInt(args[0]);
+        if (args.length == 0) {
+            System.err.println("Invalid number of arguments, there should be at least a test case given.");
+            usage();
+        }
+
+        int test = Integer.parseUnsignedInt(args[0]);
         try {
             System.loadLibrary(AGENT_LIB);
             log("Loaded library: " + AGENT_LIB);
@@ -118,14 +199,14 @@ public class SuspendWithObjectMonitorWait {
         }
 
         int timeMax = 0;
-        if (args.length == 0) {
+        if (args.length == 1) {
             timeMax = DEF_TIME_MAX;
         } else {
-            int argIndex = 0;
-            int argsLeft = args.length;
-            if (args[0].equals("-p")) {
+            int argIndex = 1;
+            int argsLeft = args.length-argIndex;
+            if (args[argIndex].equals("-p")) {
                 printDebug = true;
-                argIndex = 1;
+                argIndex = 2;
                 argsLeft--;
             }
             if (argsLeft == 0) {
@@ -153,8 +234,9 @@ public class SuspendWithObjectMonitorWait {
     }
 
     public static void usage() {
-        System.err.println("Usage: " + AGENT_LIB + " [-p][time_max]");
+        System.err.println("Usage: " + AGENT_LIB + " [N][-p][time_max]");
         System.err.println("where:");
+        System.err.println("    N        ::= test case");
         System.err.println("    -p       ::= print debug info");
         System.err.println("    time_max ::= max looping time in seconds");
         System.err.println("                 (default is " + DEF_TIME_MAX +
@@ -294,7 +376,7 @@ public class SuspendWithObjectMonitorWait {
         return 0;
     }
 
-    // Notify the resumer while holding the threadLock
+    // Notify the resumer while holding the threadLock.
     public int doWork2(int timeMax, PrintStream out) {
         SuspendWithObjectMonitorWaitWorker waiter;    // waiter thread
         SuspendWithObjectMonitorWaitWorker resumer;    // resumer thread
@@ -367,7 +449,8 @@ public class SuspendWithObjectMonitorWait {
                 // and we can get to meat of the test:
                 //
                 // - suspended threadLock waiter (trying to reenter)
-                // - a threadLock enter in the resumer thread
+                // - a blocked threadLock enter in the resumer thread while the
+                //   threadLock is held by the main thread.
                 // - resumption of the waiter thread
                 // - a threadLock enter in the freshly resumed waiter thread
                 //
@@ -425,7 +508,7 @@ public class SuspendWithObjectMonitorWait {
 
             // launch the waiter thread
             synchronized (barrierLaunch) {
-                waiter = new SuspendWithObjectMonitorWaitWorker("waiter", 1);
+                waiter = new SuspendWithObjectMonitorWaitWorker("waiter", 100);
                 waiter.start();
 
                 while (testState != TS_WAITER_RUNNING) {
@@ -449,10 +532,6 @@ public class SuspendWithObjectMonitorWait {
                 }
             }
 
-            try {
-                Thread.sleep(1000);
-            } catch(Exception e) {}
-
             checkTestState(TS_RESUMER_RUNNING);
 
             // The waiter thread was synchronized on threadLock before it
@@ -463,6 +542,10 @@ public class SuspendWithObjectMonitorWait {
                 // notify waiter thread so it can try to reenter threadLock
                 testState = TS_READY_TO_NOTIFY;
                 threadLock.notify();
+
+                try {
+                    Thread.sleep(200);
+                } catch(Exception e) {}
 
                 // wait for the waiter thread to block
                 logDebug("before contended enter wait");
@@ -488,7 +571,8 @@ public class SuspendWithObjectMonitorWait {
                 // and we can get to meat of the test:
                 //
                 // - suspended threadLock waiter (trying to reenter)
-                // - a threadLock enter in the resumer thread
+                // - a blocked threadLock enter in the resumer thread while the
+                //   threadLock is held by the main thread.
                 // - resumption of the waiter thread
                 // - a threadLock enter in the freshly resumed waiter thread
                 //
@@ -602,7 +686,7 @@ class SuspendWithObjectMonitorWaitWorker extends Thread {
         }
         //
         // Launch the resumer thread:
-        // - tries to grab the threadLock (should not block!)
+        // - tries to grab the threadLock (should not block with doWork1!)
         // - grabs threadLock
         // - resumes the waiter thread
         // - releases threadLock
