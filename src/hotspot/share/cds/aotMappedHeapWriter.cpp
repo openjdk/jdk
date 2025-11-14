@@ -97,21 +97,16 @@ void AOTMappedHeapWriter::init() {
 
     guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
 
-    if (CDSConfig::old_cds_flags_used() && !CDSConfig::is_dumping_aot_linked_classes() && UseG1GC) {
-      // In general, the contents of AOT caches (or CDS archives) are not deterministic: all
-      // Java programs are multi-threaded (the JDK spawns internal threads), so two training runs
-      // will collect two profiles that differ due to timing and execution order.
+    if (CDSConfig::old_cds_flags_used()) {
+      // With the old CDS workflow, we can guatantee determninistic output: given
+      // the same classlist file, we can generate the same static CDS archive.
+      // To ensure determinism, we always use the same compressed oop encoding
+      // (zero-based, no shift). See set_requested_address_range().
       //
-      // Therefore, we don't try to make the archived heap contents deterministic. There's only
-      // one exception -- we want JDK builds to be reproducible, so we need to make the
-      // lib/server/classes*.jsa files deterministic. Here we check for the options
-      // that are used by make/Images.gmk to generate these files:
-      //
-      //     * "old" cds flag (-Xshare:dump) is used
-      //     * -XX:+AOTClassLinking is *not* used
-      //     * -XX:+UseG1GC is used.
-      //
-      // The logics here must match make/Images.gmk.
+      // Determninistic output is not supported by the new AOT workflow. Future AOT
+      // optimizations such as AOT compiled code require the same compressed oop
+      // encoding to be used in the assembly phase and production run, so we cannot
+      // force (zero-based, no shift) encoding.
       _is_writing_deterministic_heap = true;
     }
   }
@@ -611,26 +606,29 @@ void AOTMappedHeapWriter::set_requested_address_range(ArchiveMappedHeapInfo* inf
   assert(heap_region_byte_size > 0, "must archived at least one object!");
 
   if (UseCompressedOops) {
-    if (UseG1GC) {
-      // For G1, pick the range at the top of the current heap. If the exact same heap sizes
-      // are used in the production run, it's likely that we can map the archived objects
-      // at the requested location to avoid relocation.
-      size_t alignment = MAX2(G1HeapRegion::GrainBytes, (size_t)MIN_GC_REGION_ALIGNMENT);
-      address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-      if (is_writing_deterministic_heap()) {
-        // This ensures that all requested addresses can be encoded with zero shifts. Also,
-        // If the production run uses a small heap (e.g., -Xmx256m), it's likely that
-        // we can map the archived objects at the requested location to avoid relocation.
-        heap_end = (address)0x100000000;
-      }
-      heap_end = align_up(heap_end, alignment);
-
-      log_info(aot, heap)("Heap end = %p", heap_end);
+    if (is_writing_deterministic_heap()) {
+      // Pick a heap range so that requested addresses can be encoded with zero-base/no shift.
+      // We align the requested bottom to at least 1 MB: if the production run uses G1 with a small
+      // heap (e.g., -Xmx256m), it's likely that we can map the archived objects at the
+      // requested location to avoid relocation.
+      //
+      // For other collectors or larger heaps, relocation is unavoidable, but is usually
+      // quite cheap. If you really want to avoid relocation, use the AOT workflow instead.
+      address heap_end = (address)0x100000000;
+      size_t alignment = MAX2(MIN_GC_REGION_ALIGNMENT, 1024 * 1024);
       if (align_up(heap_region_byte_size, alignment) >= (size_t)heap_end) {
         log_error(aot, heap)("cached heap space is too large: %zu bytes", heap_region_byte_size);
         AOTMetaspace::unrecoverable_writing_error();
       }
       _requested_bottom = align_down(heap_end - heap_region_byte_size, alignment);
+    } else if (UseG1GC) {
+      // For G1, pick the range at the top of the current heap. If the exact same heap sizes
+      // are used in the production run, it's likely that we can map the archived objects
+      // at the requested location to avoid relocation.
+      address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+      log_info(aot, heap)("Heap end = %p", heap_end);
+      _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+      _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
       assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
     } else {
       _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
