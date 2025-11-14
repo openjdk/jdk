@@ -1205,6 +1205,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
 {
   clear_internal();
   _mutator_allocator = new ShenandoahMutatorAllocator(this);
+  _collector_allocator = new ShenandoahCollectorAllocator(this);
 }
 
 // was pip_pad_bytes
@@ -1523,6 +1524,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       r->end_preemptible_coalesce_and_fill();
       _heap->old_generation()->clear_cards_for(r);
     }
+
 #ifdef ASSERT
     ShenandoahMarkingContext* const ctx = _heap->marking_context();
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
@@ -3400,16 +3402,43 @@ HeapWord* ShenandoahFreeSet::reserve_alloc_regions_and_allocate_internal(Iter it
     }
   }
   if (alloc_regions.length() > 0 || affiliation_changed) {
-    // TODO Fix for cllector alloc
-    recompute_total_used</* UsedByMutatorChanged */ true,
-                         /* UsedByCollectorChanged */ false,
-                         /* UsedByOldCollectorChanged */ false>();
-    if (affiliation_changed) {
-      recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                           /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                           /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                           /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                           /* UnaffiliatedChangesAreYoungNeutral */ false>();
+    switch (partition) {
+      case ShenandoahFreeSetPartitionId::Mutator:
+        recompute_total_used</* UsedByMutatorChanged */ true,
+                             /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
+        if (affiliation_changed) {
+          recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
+                                     /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                     /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                     /* UnaffiliatedChangesAreYoungNeutral */ false>();
+        }
+        break;
+      case ShenandoahFreeSetPartitionId::Collector:
+        recompute_total_used</* UsedByMutatorChanged */ false,
+                             /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
+        if (affiliation_changed) {
+          recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
+                                     /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
+                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                     /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                     /* UnaffiliatedChangesAreYoungNeutral */ false>();
+        }
+        break;
+      case ShenandoahFreeSetPartitionId::OldCollector:
+        recompute_total_used</* UsedByMutatorChanged */ false,
+                             /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+        if (affiliation_changed) {
+          recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
+                                     /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
+                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
+                                     /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                     /* UnaffiliatedChangesAreYoungNeutral */ true>();
+        }
+        break;
+      case ShenandoahFreeSetPartitionId::NotFree:
+      default:
+        assert(false, "won't happen");
     }
   }
   return obj;

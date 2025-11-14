@@ -23,11 +23,15 @@
  *
  */
 
+#include "shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
+
+#include "shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -214,4 +218,32 @@ uint ShenandoahMutatorAllocator::alloc_start_index() {
 void ShenandoahMutatorAllocator::verify(ShenandoahAllocRequest& req) {
   assert(req.is_mutator_alloc(), "Must be mutator alloc request.");
 }
+
+void ShenandoahCollectorAllocator::verify(ShenandoahAllocRequest& req) {
+  assert(req.is_gc_alloc() && req.affiliation() == YOUNG_GENERATION, "Must be gc alloc request in young gen.");
+}
+
+
+void ShenandoahOldCollectorAllocator::verify(ShenandoahAllocRequest& req) {
+  assert(req.is_gc_alloc() && req.affiliation() == OLD_GENERATION, "Must be gc alloc request in young gen.");
+}
 #endif // ASSERT
+
+
+ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set) :
+  ShenandoahAllocator((uint) ParallelGCThreads, free_set, ShenandoahFreeSetPartitionId::Collector) {
+  _yield_to_safepoint = false;
+}
+
+uint ShenandoahCollectorAllocator::alloc_start_index() {
+  return Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() % _alloc_region_count : 0u;
+}
+
+ShenandoahOldCollectorAllocator::ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set) :
+  ShenandoahAllocator((uint) ParallelGCThreads, free_set, ShenandoahFreeSetPartitionId::OldCollector) {
+  _yield_to_safepoint = false;
+}
+
+uint ShenandoahOldCollectorAllocator::alloc_start_index() {
+  return Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() % _alloc_region_count : 0u;
+}

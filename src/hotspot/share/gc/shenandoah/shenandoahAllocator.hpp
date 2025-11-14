@@ -93,4 +93,23 @@ public:
   ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set);
 };
 
+class ShenandoahCollectorAllocator : public ShenandoahAllocator {
+  uint alloc_start_index() override;
+#ifdef ASSERT
+  void verify(ShenandoahAllocRequest& req) override;
+#endif // ASSERT
+public:
+  ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
+};
+
+class ShenandoahOldCollectorAllocator : public ShenandoahAllocator {
+  uint alloc_start_index() override;
+#ifdef ASSERT
+  void verify(ShenandoahAllocRequest& req) override;
+#endif // ASSERT
+
+public:
+  ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
+};
+
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP

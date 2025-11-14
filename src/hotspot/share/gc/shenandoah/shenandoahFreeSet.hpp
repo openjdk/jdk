@@ -455,6 +455,7 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
   ShenandoahMutatorAllocator* _mutator_allocator;
+  ShenandoahCollectorAllocator* _collector_allocator;
 
   size_t _total_humongous_waste;
 
@@ -800,6 +801,11 @@ public:
   // Get the mutator allocator.
   inline ShenandoahMutatorAllocator* mutator_allocator() {
     return _mutator_allocator;
+  }
+
+  // Get the cllector allocator.
+  inline ShenandoahCollectorAllocator* collector_allocator() {
+    return _collector_allocator;
   }
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
