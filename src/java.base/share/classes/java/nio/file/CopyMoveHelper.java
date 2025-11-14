@@ -109,20 +109,20 @@ class CopyMoveHelper {
         LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
+        // determine whether the source supports posix attributes
+        boolean sourceSupportsPosixAttributes = Files.getFileAttributeView
+            (source, PosixFileAttributeView.class) != null;
+
         // attributes of source file
-        boolean sourceSupportsPosixAttributes = false;
         BasicFileAttributes sourceAttrs = null;
-        try {
+        if (sourceSupportsPosixAttributes)
             sourceAttrs = Files.readAttributes(source,
                                                PosixFileAttributes.class,
                                                linkOptions);
-            sourceSupportsPosixAttributes = true;
-        } catch (UnsupportedOperationException x) {
-            // posix attributes not supported
+        if (sourceAttrs == null)
             sourceAttrs = Files.readAttributes(source,
                                                BasicFileAttributes.class,
                                                linkOptions);
-        }
 
         assert sourceAttrs != null;
 
