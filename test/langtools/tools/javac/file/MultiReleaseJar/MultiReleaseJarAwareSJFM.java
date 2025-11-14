@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,9 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox
- * @run testng MultiReleaseJarAwareSJFM
+ * @run junit MultiReleaseJarAwareSJFM
  */
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -50,11 +45,18 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiReleaseJarAwareSJFM {
     private static final int CURRENT_VERSION = Runtime.version().major();
 
@@ -113,7 +115,7 @@ public class MultiReleaseJarAwareSJFM {
         }
     };
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         tb.createDirectories("classes",
                 "classes/META-INF/versions/9",
@@ -140,7 +142,7 @@ public class MultiReleaseJarAwareSJFM {
                 .run();
     }
 
-    @AfterClass
+    @AfterAll
     public void teardown() throws Exception {
         tb.deleteFiles(
                 "classes/META-INF/versions/" + CURRENT_VERSION + "/version/Version.class",
@@ -159,7 +161,6 @@ public class MultiReleaseJarAwareSJFM {
         );
     }
 
-    @DataProvider(name = "versions")
     public Object[][] data() {
         return new Object[][] {
                 {"", 8},
@@ -169,7 +170,8 @@ public class MultiReleaseJarAwareSJFM {
         };
     }
 
-    @Test(dataProvider = "versions")
+    @ParameterizedTest
+    @MethodSource("data")
     public void test(String version, int expected) throws Throwable {
         StandardJavaFileManager jfm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null);
         jfm.setLocation(jloc, List.of(new File("multi-release.jar")));
@@ -183,7 +185,7 @@ public class MultiReleaseJarAwareSJFM {
         MethodType mt = MethodType.methodType(int.class);
         MethodHandle mh = MethodHandles.lookup().findVirtual(versionClass, "getVersion", mt);
         int v = (int)mh.invoke(versionClass.newInstance());
-        Assert.assertEquals(v, expected);
+        Assertions.assertEquals(expected, v);
 
         jfm.close();
     }

@@ -904,7 +904,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     b(slow_case, ne);
   }
 
-  lightweight_lock(Robj, R0 /* t1 */, Rmark /* t2 */, Rtemp /* t3 */, 0 /* savemask */, slow_case);
+  fast_lock(Robj, R0 /* t1 */, Rmark /* t2 */, Rtemp /* t3 */, 0 /* savemask */, slow_case);
   b(done);
 
   bind(slow_case);
@@ -945,8 +945,8 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
   cmpoop(Rtemp, Robj);
   b(slow_case, ne);
 
-  lightweight_unlock(Robj /* obj */, Rlock /* t1 */, Rmark /* t2 */, Rtemp /* t3 */,
-                     1 /* savemask (save t1) */, slow_case);
+  fast_unlock(Robj /* obj */, Rlock /* t1 */, Rmark /* t2 */, Rtemp /* t3 */,
+              1 /* savemask (save t1) */, slow_case);
   b(done);
 
   bind(slow_case);

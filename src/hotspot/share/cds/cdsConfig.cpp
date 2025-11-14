@@ -24,11 +24,10 @@
 
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "code/aotCodeCache.hpp"
@@ -67,7 +66,8 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
-  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+  return (is_dumping_aot_linked_classes()   ? IS_DUMPING_AOT_LINKED_CLASSES : 0) |
+         (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
          (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
@@ -892,11 +892,6 @@ static const char* check_options_incompatible_with_dumping_heap() {
     return "UseCompressedClassPointers must be true";
   }
 
-  // Almost all GCs support heap region dump, except ZGC (so far).
-  if (UseZGC) {
-    return "ZGC is not supported";
-  }
-
   return nullptr;
 #else
   return "JVM not configured for writing Java heap objects";
@@ -942,8 +937,9 @@ bool CDSConfig::is_preserving_verification_constraints() {
     return AOTClassLinking;
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
+  } else if (is_dumping_classic_static_archive()) {
+    return is_dumping_aot_linked_classes();
   } else {
-    // For simplicity, we don't support this optimization with the old CDS workflow.
     return false;
   }
 }
@@ -967,7 +963,7 @@ bool CDSConfig::is_dumping_heap() {
 }
 
 bool CDSConfig::is_loading_heap() {
-  return ArchiveHeapLoader::is_in_use();
+  return HeapShared::is_archived_heap_in_use();
 }
 
 bool CDSConfig::is_using_full_module_graph() {
@@ -979,7 +975,7 @@ bool CDSConfig::is_using_full_module_graph() {
     return false;
   }
 
-  if (is_using_archive() && ArchiveHeapLoader::can_use()) {
+  if (is_using_archive() && HeapShared::can_use_archived_heap()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");

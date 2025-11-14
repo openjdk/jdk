@@ -154,13 +154,12 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-size_t os::Linux::_physical_memory = 0;
+physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = nullptr;
-int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = nullptr;
 pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
@@ -214,32 +213,19 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::Linux::available_memory_in_container() {
-  julong avail_mem = static_cast<julong>(-1L);
-  if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-    }
-    if (mem_limit > 0 && mem_usage > 0) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-    }
+bool os::available_memory(physical_memory_size_type& value) {
+  julong avail_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(avail_mem)) {
+    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+    value = static_cast<physical_memory_size_type>(avail_mem);
+    return true;
   }
-  return avail_mem;
-}
 
-bool os::available_memory(size_t& value) {
   return Linux::available_memory(value);
 }
 
-bool os::Linux::available_memory(size_t& value) {
-  julong avail_mem = available_memory_in_container();
-  if (avail_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    value = static_cast<size_t>(avail_mem);
-    return true;
-  }
+bool os::Linux::available_memory(physical_memory_size_type& value) {
+  julong avail_mem = static_cast<julong>(-1L);
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp != nullptr) {
@@ -253,47 +239,48 @@ bool os::Linux::available_memory(size_t& value) {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    size_t free_mem = 0;
+    physical_memory_size_type free_mem = 0;
     if (!free_memory(free_mem)) {
       return false;
     }
     avail_mem = static_cast<julong>(free_mem);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  value = static_cast<size_t>(avail_mem);
+  value = static_cast<physical_memory_size_type>(avail_mem);
   return true;
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
+  julong free_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(free_mem)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    value = static_cast<physical_memory_size_type>(free_mem);
+    return true;
+  }
+
   return Linux::free_memory(value);
 }
 
-bool os::Linux::free_memory(size_t& value) {
+bool os::Linux::free_memory(physical_memory_size_type& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem = available_memory_in_container();
-  if (free_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<size_t>(free_mem);
-    return true;
-  }
 
   int ret = sysinfo(&si);
   if (ret != 0) {
     return false;
   }
-  free_mem = (julong)si.freeram * si.mem_unit;
+  julong free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  value = static_cast<size_t>(free_mem);
+  value = static_cast<physical_memory_size_type>(free_mem);
   return true;
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   if (OSContainer::is_containerized()) {
     jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
     jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
     if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
-      value = static_cast<size_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
+      value = static_cast<physical_memory_size_type>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
     }
   } // fallback to the host swap space if the container did return the unbound value of -1
@@ -303,30 +290,30 @@ bool os::total_swap_space(size_t& value) {
     assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<size_t>(si.totalswap * si.mem_unit);
+  value = static_cast<physical_memory_size_type>(si.totalswap) * si.mem_unit;
   return true;
 }
 
-static bool host_free_swap_f(size_t& value) {
+static bool host_free_swap_f(physical_memory_size_type& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
     assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<size_t>(si.freeswap * si.mem_unit);
+  value = static_cast<physical_memory_size_type>(si.freeswap) * si.mem_unit;
   return true;
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  size_t total_swap_space = 0;
-  size_t host_free_swap = 0;
+  physical_memory_size_type total_swap_space = 0;
+  physical_memory_size_type host_free_swap = 0;
   if (!os::total_swap_space(total_swap_space) || !host_free_swap_f(host_free_swap)) {
     return false;
   }
-  size_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
+  physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -342,31 +329,31 @@ bool os::free_swap_space(size_t& value) {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          value = free_swap >= 0 ? static_cast<size_t>(free_swap) : 0;
+          value = free_swap >= 0 ? static_cast<physical_memory_size_type>(free_swap) : 0;
           return true;
         }
       }
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: %zu",
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " PHYS_MEM_TYPE_FORMAT,
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
   value = host_free_swap_val;
   return true;
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return static_cast<size_t>(mem_limit);
+      return static_cast<physical_memory_size_type>(mem_limit);
     }
   }
 
-  size_t phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: %zu", phys_mem);
+  physical_memory_size_type phys_mem = Linux::physical_memory();
+  log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
 }
 
@@ -499,13 +486,11 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 }
 
 #ifndef SYS_gettid
-// i386: 224, amd64: 186, sparc: 143
+// i386: 224, amd64: 186
   #if defined(__i386__)
     #define SYS_gettid 224
   #elif defined(__amd64__)
     #define SYS_gettid 186
-  #elif defined(__sparc__)
-    #define SYS_gettid 143
   #else
     #error "Define SYS_gettid for this architecture"
   #endif
@@ -550,7 +535,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = static_cast<size_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<size_t>(sysconf(_SC_PAGESIZE));
+  _physical_memory = static_cast<physical_memory_size_type>(sysconf(_SC_PHYS_PAGES)) * static_cast<physical_memory_size_type>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
@@ -859,12 +844,6 @@ static void *thread_native_entry(Thread *thread) {
 
   osthread->set_thread_id(checked_cast<pid_t>(os::current_thread_id()));
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
   // initialize signal mask for this thread
   PosixSignals::hotspot_sigmask(thread);
 
@@ -1189,13 +1168,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   if (os::is_primordial_thread()) {
     // If current thread is primordial thread, its stack is mapped on demand,
@@ -1813,9 +1785,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
-#if  (defined IA32)
-  static  Elf32_Half running_arch_code=EM_386;
-#elif   (defined AMD64) || (defined X32)
+#if    (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
 #elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
@@ -1849,7 +1819,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, IA32, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1911,7 +1881,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
-#ifndef IA32
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1934,14 +1903,9 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
 
-  // This workaround is ineffective on IA32 systems because the MXCSR
-  // register (which controls flush-to-zero mode) is not stored in the
-  // legacy fenv.
-
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetenv must succeed");
-#endif // IA32
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
@@ -1961,7 +1925,6 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
-#ifndef IA32
     // Quickly test to make sure subnormals are correctly handled.
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point flags.
@@ -1987,7 +1950,6 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
         assert(false, "fesetenv didn't work");
       }
     }
-#endif // IA32
   }
   return result;
 }
@@ -2609,12 +2571,12 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   sysinfo(&si);
-  size_t phys_mem = physical_memory();
-  st->print(", physical %zuk",
+  physical_memory_size_type phys_mem = physical_memory();
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
-  size_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(%zuk free)",
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);
@@ -2631,7 +2593,7 @@ void os::print_memory_info(outputStream* st) {
 // before "flags" so if we find a second "model name", then the
 // "flags" field is considered missing.
 static bool print_model_name_and_flags(outputStream* st, char* buf, size_t buflen) {
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   // Other platforms have less repetitive cpuinfo files
   FILE *fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
@@ -2690,7 +2652,7 @@ static void print_sys_devices_cpu_info(outputStream* st) {
   }
 
   // we miss the cpufreq entries on Power and s390x
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   _print_ascii_file_h("BIOS frequency limitation", "/sys/devices/system/cpu/cpu0/cpufreq/bios_limit", st);
   _print_ascii_file_h("Frequency switch latency (ns)", "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_transition_latency", st);
   _print_ascii_file_h("Available cpu frequencies", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies", st);
@@ -2743,7 +2705,7 @@ void os::jfr_report_memory_info() {
 
 #endif // INCLUDE_JFR
 
-#if defined(AMD64) || defined(IA32) || defined(X32)
+#if defined(AMD64)
 const char* search_string = "model name";
 #elif defined(M68K)
 const char* search_string = "CPU";
@@ -2751,8 +2713,6 @@ const char* search_string = "CPU";
 const char* search_string = "cpu";
 #elif defined(S390)
 const char* search_string = "machine =";
-#elif defined(SPARC)
-const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
 #endif
@@ -2796,16 +2756,12 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, "x86_64", length);
 #elif defined(ARM)  // Order wrt. AARCH64 is relevant!
   strncpy(cpuinfo, "ARM", length);
-#elif defined(IA32)
-  strncpy(cpuinfo, "x86_32", length);
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
 #elif defined(RISCV)
   strncpy(cpuinfo, LP64_ONLY("RISCV64") NOT_LP64("RISCV32"), length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
-#elif defined(SPARC)
-  strncpy(cpuinfo, "sparcv9", length);
 #elif defined(ZERO_LIBARCH)
   strncpy(cpuinfo, ZERO_LIBARCH, length);
 #else
@@ -3097,14 +3053,9 @@ int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;
   long retval = -1;
 
-#if defined(IA32)
-  #ifndef SYS_getcpu
-    #define SYS_getcpu 318
-  #endif
-  retval = syscall(SYS_getcpu, &cpu, nullptr, nullptr);
-#elif defined(AMD64)
-// Unfortunately we have to bring all these macros here from vsyscall.h
-// to be able to compile on old linuxes.
+#if defined(AMD64)
+  // Unfortunately we have to bring all these macros here from vsyscall.h
+  // to be able to compile on old linuxes.
   #define __NR_vgetcpu 2
   #define VSYSCALL_START (-10UL << 20)
   #define VSYSCALL_SIZE 1024
@@ -4376,10 +4327,6 @@ void os::init(void) {
   // _main_thread points to the thread that created/loaded the JVM.
   Linux::_main_thread = pthread_self();
 
-  // retrieve entry point for pthread_setname_np
-  Linux::_pthread_setname_np =
-    (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
-
   check_pax();
 
   // Check the availability of MADV_POPULATE_WRITE.
@@ -4481,87 +4428,6 @@ void os::Linux::disable_numa(const char* reason, bool warning) {
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
 }
 
-#if defined(IA32) && !defined(ZERO)
-/*
- * Work-around (execute code at a high address) for broken NX emulation using CS limit,
- * Red Hat patch "Exec-Shield" (IA32 only).
- *
- * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
- * invalidation.Further code generation by the JVM will no longer cause CS limit
- * updates.
- *
- * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
- * @see JDK-8023956
- */
-static void workaround_expand_exec_shield_cs_limit() {
-  assert(os::Linux::initial_thread_stack_bottom() != nullptr, "sanity");
-  size_t page_size = os::vm_page_size();
-
-  /*
-   * JDK-8197429
-   *
-   * Expand the stack mapping to the end of the initial stack before
-   * attempting to install the codebuf.  This is needed because newer
-   * Linux kernels impose a distance of a megabyte between stack
-   * memory and other memory regions.  If we try to install the
-   * codebuf before expanding the stack the installation will appear
-   * to succeed but we'll get a segfault later if we expand the stack
-   * in Java code.
-   *
-   */
-  if (os::is_primordial_thread()) {
-    address limit = os::Linux::initial_thread_stack_bottom();
-    if (! DisablePrimordialThreadGuardPages) {
-      limit += StackOverflow::stack_red_zone_size() +
-               StackOverflow::stack_yellow_zone_size();
-    }
-    os::Linux::expand_stack_to(limit);
-  }
-
-  /*
-   * Take the highest VA the OS will give us and exec
-   *
-   * Although using -(pagesz) as mmap hint works on newer kernel as you would
-   * think, older variants affected by this work-around don't (search forward only).
-   *
-   * On the affected distributions, we understand the memory layout to be:
-   *
-   *   TASK_LIMIT= 3G, main stack base close to TASK_LIMT.
-   *
-   * A few pages south main stack will do it.
-   *
-   * If we are embedded in an app other than launcher (initial != main stack),
-   * we don't have much control or understanding of the address space, just let it slide.
-   */
-  char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
-                       (StackOverflow::stack_guard_zone_size() + page_size));
-  char* codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
-
-  if (codebuf == nullptr) {
-    // JDK-8197429: There may be a stack gap of one megabyte between
-    // the limit of the stack and the nearest memory region: this is a
-    // Linux kernel workaround for CVE-2017-1000364.  If we failed to
-    // map our codebuf, try again at an address one megabyte lower.
-    hint -= 1 * M;
-    codebuf = os::attempt_reserve_memory_at(hint, page_size, mtThread);
-  }
-
-  if ((codebuf == nullptr) || (!os::commit_memory(codebuf, page_size, true))) {
-    return; // No matter, we tried, best effort.
-  }
-
-  log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
-
-  // Some code to exec: the 'ret' instruction
-  codebuf[0] = 0xC3;
-
-  // Call the code in the codebuf
-  __asm__ volatile("call *%0" : : "r"(codebuf));
-
-  // keep the page mapped so CS limit isn't reduced.
-}
-#endif // defined(IA32) && !defined(ZERO)
-
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
@@ -4582,17 +4448,10 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-#if defined(IA32) && !defined(ZERO)
-  // Need to ensure we've determined the process's initial stack to
-  // perform the workaround
-  Linux::capture_initial_stack(JavaThread::stack_size_at_create());
-  workaround_expand_exec_shield_cs_limit();
-#else
   suppress_primordial_thread_resolution = Arguments::created_by_java_launcher();
   if (!suppress_primordial_thread_resolution) {
     Linux::capture_initial_stack(JavaThread::stack_size_at_create());
   }
-#endif
 
   Linux::libpthread_init();
   Linux::sched_getcpu_init();
@@ -4856,14 +4715,24 @@ uint os::processor_id() {
 }
 
 void os::set_native_thread_name(const char *name) {
-  if (Linux::_pthread_setname_np) {
-    char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
-    (void) os::snprintf(buf, sizeof(buf), "%s", name);
-    buf[sizeof(buf) - 1] = '\0';
-    const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
-    // ERANGE should not happen; all other errors should just be ignored.
-    assert(rc != ERANGE, "pthread_setname_np failed");
+  char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
+  // We may need to truncate the thread name. Since a common pattern
+  // for thread names is to be both longer than 15 chars and have a
+  // trailing number ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc),
+  // we preserve the end of the thread name by truncating the middle
+  // (e.g. "Dispatc..read21").
+  const size_t len = strlen(name);
+  if (len < sizeof(buf)) {
+    strcpy(buf, name);
+  } else {
+    (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
   }
+  // Note: we use the system call here instead of calling pthread_setname_np
+  // since this is the only way to make ASAN aware of our thread names. Even
+  // though ASAN intercepts both prctl and pthread_setname_np, it only processes
+  // the thread name given to the former.
+  int rc = prctl(PR_SET_NAME, buf);
+  assert(rc == 0, "prctl(PR_SET_NAME) failed");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5455,7 +5324,7 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      os::snprintf_checked(ebuf, ebuflen - 1, "%s", error_report);
+      os::snprintf_checked(ebuf, ebuflen, "%s", error_report);
     }
   }
 

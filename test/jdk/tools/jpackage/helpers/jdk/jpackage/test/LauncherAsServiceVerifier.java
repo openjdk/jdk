@@ -22,20 +22,19 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.WINDOWS;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,8 +43,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
-import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 import jdk.jpackage.test.LauncherVerifier.Action;
 
 public final class LauncherAsServiceVerifier {
@@ -67,26 +66,56 @@ public final class LauncherAsServiceVerifier {
             return this;
         }
 
+        public Builder setAppOutputFileNamePrefix(String v) {
+            appOutputFileNamePrefix = v;
+            return this;
+        }
+
+        public Builder appendAppOutputFileNamePrefix(String v) {
+            return setAppOutputFileNamePrefix(appOutputFileNamePrefix() + Objects.requireNonNull(v));
+        }
+
+        public Builder setAppOutputFileNamePrefixToAppName() {
+            return setAppOutputFileNamePrefix(TKit.getCurrentDefaultAppName());
+        }
+
         public Builder setAdditionalLauncherCallback(Consumer<AdditionalLauncher> v) {
             additionalLauncherCallback = v;
             return this;
         }
 
-        public LauncherAsServiceVerifier create() {
-            Objects.requireNonNull(expectedValue);
-            return new LauncherAsServiceVerifier(launcherName, appOutputFileName,
-                    expectedValue,
-                    launcherName != null ? additionalLauncherCallback : null);
+        public Builder mutate(Consumer<Builder> mutator) {
+            mutator.accept(this);
+            return this;
         }
 
-        public Builder applyTo(PackageTest pkg) {
-            create().applyTo(pkg);
+        public LauncherAsServiceVerifier create() {
+            Objects.requireNonNull(expectedValue);
+            return new LauncherAsServiceVerifier(
+                    launcherName,
+                    appOutputFileNamePrefix()
+                            + Optional.ofNullable(appOutputFileName).orElse("launcher-as-service.txt"),
+                    expectedValue,
+                    Optional.ofNullable(additionalLauncherCallback));
+        }
+
+        public Builder applyTo(PackageTest test) {
+            return applyTo(new ConfigurationTarget(test));
+        }
+
+        public Builder applyTo(ConfigurationTarget target) {
+            create().applyTo(target);
             return this;
+        }
+
+        private String appOutputFileNamePrefix() {
+            return Optional.ofNullable(appOutputFileNamePrefix).orElse("");
         }
 
         private String launcherName;
         private String expectedValue;
-        private String appOutputFileName = "launcher-as-service.txt";
+        private String appOutputFileName;
+        private String appOutputFileNamePrefix;
         private Consumer<AdditionalLauncher> additionalLauncherCallback;
     }
 
@@ -97,41 +126,50 @@ public final class LauncherAsServiceVerifier {
     private LauncherAsServiceVerifier(String launcherName,
             String appOutputFileName,
             String expectedArgValue,
-            Consumer<AdditionalLauncher> additionalLauncherCallback) {
-        this.expectedValue = expectedArgValue;
+            Optional<Consumer<AdditionalLauncher>> additionalLauncherCallback) {
+
+        if (launcherName == null && additionalLauncherCallback.isPresent()) {
+            throw new UnsupportedOperationException();
+        }
+
+        this.expectedValue = Objects.requireNonNull(expectedArgValue);
         this.launcherName = launcherName;
         this.appOutputFileName = Path.of(appOutputFileName);
         this.additionalLauncherCallback = additionalLauncherCallback;
     }
 
-    public void applyTo(PackageTest pkg) {
+    public void applyTo(ConfigurationTarget target) {
         if (launcherName == null) {
-            pkg.forTypes(WINDOWS, () -> {
-                pkg.addInitializer(cmd -> {
-                    // Remove parameter added to jpackage command line in HelloApp.addTo()
-                    cmd.removeArgument("--win-console");
-                });
+            target.addInitializer(cmd -> {
+                // Remove parameter added to jpackage command line in HelloApp.addTo()
+                cmd.removeArgument("--win-console");
             });
-            applyToMainLauncher(pkg);
+            applyToMainLauncher(target);
         } else {
-            applyToAdditionalLauncher(pkg);
+            applyToAdditionalLauncher(target);
         }
-        pkg.addInstallVerifier(this::verifyLauncherExecuted);
+        target.test().ifPresent(pkg -> {
+            pkg.addInstallVerifier(this::verifyLauncherExecuted);
+        });
     }
 
     static void verify(JPackageCommand cmd) {
         cmd.verifyIsOfType(SUPPORTED_PACKAGES);
 
-        var launcherNames = getLaunchersAsServices(cmd);
+        var partitionedLauncherNames = partitionLaunchers(cmd);
 
-        launcherNames.forEach(toConsumer(launcherName -> {
-            verify(cmd, launcherName);
-        }));
+        var launcherAsServiceNames = partitionedLauncherNames.get(true);
+
+        for (var launcherAsService : List.of(true, false)) {
+            partitionedLauncherNames.get(launcherAsService).forEach(launcherName -> {
+                verify(cmd, launcherName, launcherAsService);
+            });
+        }
 
         if (WINDOWS.contains(cmd.packageType()) && !cmd.isRuntime()) {
             Path serviceInstallerPath = cmd.appLayout().launchersDirectory().resolve(
                     "service-installer.exe");
-            if (launcherNames.isEmpty()) {
+            if (launcherAsServiceNames.isEmpty()) {
                 TKit.assertPathExists(serviceInstallerPath, false);
             } else {
                 TKit.assertFileExists(serviceInstallerPath);
@@ -146,16 +184,16 @@ public final class LauncherAsServiceVerifier {
 
             if (cmd.isPackageUnpacked()) {
                 servicesSpecificFolders.add(MacHelper.getServicePlistFilePath(
-                        cmd, null).getParent());
+                        cmd, "foo").getParent());
             }
         } else if (LINUX.contains(cmd.packageType())) {
             if (cmd.isPackageUnpacked()) {
                 servicesSpecificFolders.add(LinuxHelper.getServiceUnitFilePath(
-                        cmd, null).getParent());
+                        cmd, "foo").getParent());
             }
         }
 
-        if (launcherNames.isEmpty() || cmd.isRuntime()) {
+        if (launcherAsServiceNames.isEmpty() || cmd.isRuntime()) {
             servicesSpecificFiles.forEach(path -> TKit.assertPathExists(path,
                     false));
             servicesSpecificFolders.forEach(path -> TKit.assertPathExists(path,
@@ -187,22 +225,46 @@ public final class LauncherAsServiceVerifier {
     }
 
     static List<String> getLaunchersAsServices(JPackageCommand cmd) {
-        List<String> launcherNames = new ArrayList<>();
-
-        if (cmd.hasArgument("--launcher-as-service")) {
-            launcherNames.add(null);
-        }
-
-        forEachAdditionalLauncher(cmd, toBiConsumer((launcherName, propFilePath) -> {
-            if (new PropertyFile(propFilePath).findBooleanProperty("launcher-as-service").orElse(false)) {
-                launcherNames.add(launcherName);
-            }
-        }));
-
-        return launcherNames;
+        return Objects.requireNonNull(partitionLaunchers(cmd).get(true));
     }
 
-    private boolean canVerifyInstall(JPackageCommand cmd) throws IOException {
+    private static Map<Boolean, List<String>> partitionLaunchers(JPackageCommand cmd) {
+        if (cmd.isRuntime()) {
+            return Map.of(true, List.of(), false, List.of());
+        } else {
+            return cmd.launcherNames(true).stream().collect(Collectors.partitioningBy(launcherName -> {
+                return launcherAsService(cmd, launcherName);
+            }));
+        }
+    }
+
+    static boolean launcherAsService(JPackageCommand cmd, String launcherName) {
+        if (cmd.isMainLauncher(launcherName)) {
+            return PropertyFinder.findLauncherProperty(cmd, null,
+                    PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
+                    PropertyFinder.nop(),
+                    PropertyFinder.nop()
+            ).map(Boolean::parseBoolean).orElse(false);
+        } else {
+            var mainLauncherValue = PropertyFinder.findLauncherProperty(cmd, null,
+                    PropertyFinder.cmdlineBooleanOption("--launcher-as-service"),
+                    PropertyFinder.nop(),
+                    PropertyFinder.nop()
+            ).map(Boolean::parseBoolean).orElse(false);
+
+            var value = PropertyFinder.findLauncherProperty(cmd, launcherName,
+                    PropertyFinder.nop(),
+                    PropertyFinder.launcherPropertyFile("launcher-as-service"),
+                    PropertyFinder.appImageFileLauncher(cmd, launcherName, "service").defaultValue(Boolean.FALSE.toString())
+            ).map(Boolean::parseBoolean);
+
+            return value.orElse(mainLauncherValue);
+        }
+    }
+
+    private boolean canVerifyInstall(JPackageCommand cmd) {
+        cmd.verifyIsOfType(SUPPORTED_PACKAGES);
+
         String msg = String.format(
                 "Not verifying contents of test output file [%s] for %s launcher",
                 appOutputFilePathInitialize(),
@@ -221,8 +283,8 @@ public final class LauncherAsServiceVerifier {
         return true;
     }
 
-    private void applyToMainLauncher(PackageTest pkg) {
-        pkg.addInitializer(cmd -> {
+    private void applyToMainLauncher(ConfigurationTarget target) {
+        target.addInitializer(cmd -> {
             cmd.addArgument("--launcher-as-service");
             cmd.addArguments("--arguments",
                     JPackageCommand.escapeAndJoin(expectedValue));
@@ -232,7 +294,7 @@ public final class LauncherAsServiceVerifier {
         });
     }
 
-    private void applyToAdditionalLauncher(PackageTest pkg) {
+    private void applyToAdditionalLauncher(ConfigurationTarget target) {
         var al = new AdditionalLauncher(launcherName)
                 .setProperty("launcher-as-service", true)
                 .addJavaOptions("-Djpackage.test.appOutput=" + appOutputFilePathInitialize().toString())
@@ -240,16 +302,16 @@ public final class LauncherAsServiceVerifier {
                 .addDefaultArguments(expectedValue)
                 .withoutVerifyActions(Action.EXECUTE_LAUNCHER);
 
-        Optional.ofNullable(additionalLauncherCallback).ifPresent(v -> v.accept(al));
+        additionalLauncherCallback.ifPresent(v -> v.accept(al));
 
-        al.applyTo(pkg);
+        target.add(al);
     }
 
-    private void verifyLauncherExecuted(JPackageCommand cmd) throws IOException {
+    public void verifyLauncherExecuted(JPackageCommand cmd) {
         if (canVerifyInstall(cmd)) {
             delayInstallVerify();
             Path outputFilePath = appOutputFilePathVerify(cmd);
-            HelloApp.assertApp(cmd.appLauncherPath())
+            HelloApp.assertApp(cmd.appLauncherPath(launcherName))
                     .addParam("jpackage.test.appOutput", outputFilePath.toString())
                     .addDefaultArguments(expectedValue)
                     .verifyOutput();
@@ -257,31 +319,41 @@ public final class LauncherAsServiceVerifier {
         }
     }
 
-    private static void deleteOutputFile(Path file) throws IOException {
+    private static void deleteOutputFile(Path file) {
         try {
             TKit.deleteIfExists(file);
         } catch (FileSystemException ex) {
             if (TKit.isLinux() || TKit.isOSX()) {
                 // Probably "Operation no permitted" error. Try with "sudo" as the
                 // file is created by a launcher started under root account.
-                Executor.of("sudo", "rm", "-f").addArgument(file.toString()).
-                        execute();
+                Executor.of("sudo", "rm", "-f").addArgument(file.toString()).execute();
             } else {
-                throw ex;
+                throw new UncheckedIOException(ex);
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static void verify(JPackageCommand cmd, String launcherName, boolean launcherAsService) {
+        if (LINUX.contains(cmd.packageType())) {
+            if (launcherAsService) {
+                verifyLinuxUnitFile(cmd, launcherName);
+            } else {
+                var serviceUnitFile = LinuxHelper.getServiceUnitFilePath(cmd, launcherName);
+                TKit.assertPathExists(serviceUnitFile, false);
+            }
+        } else if (MAC_PKG.equals(cmd.packageType())) {
+            if (launcherAsService) {
+                verifyMacDaemonPlistFile(cmd, launcherName);
+            } else {
+                var servicePlistFile = MacHelper.getServicePlistFilePath(cmd, launcherName);
+                TKit.assertPathExists(servicePlistFile, false);
             }
         }
     }
 
-    private static void verify(JPackageCommand cmd, String launcherName) throws IOException {
-        if (LINUX.contains(cmd.packageType())) {
-            verifyLinuxUnitFile(cmd, launcherName);
-        } else if (MAC_PKG.equals(cmd.packageType())) {
-            verifyMacDaemonPlistFile(cmd, launcherName);
-        }
-    }
-
-    private static void verifyLinuxUnitFile(JPackageCommand cmd,
-            String launcherName) throws IOException {
+    private static void verifyLinuxUnitFile(JPackageCommand cmd, String launcherName) {
 
         var serviceUnitFile = LinuxHelper.getServiceUnitFilePath(cmd, launcherName);
 
@@ -296,11 +368,10 @@ public final class LauncherAsServiceVerifier {
         TKit.assertTextStream("ExecStart=" + execStartValue)
                 .label("unit file")
                 .predicate(String::equals)
-                .apply(Files.readAllLines(serviceUnitFile));
+                .apply(ThrowingFunction.<Path, List<String>>toFunction(Files::readAllLines).apply(serviceUnitFile));
     }
 
-    private static void verifyMacDaemonPlistFile(JPackageCommand cmd,
-            String launcherName) throws IOException {
+    private static void verifyMacDaemonPlistFile(JPackageCommand cmd, String launcherName) {
 
         var servicePlistFile = MacHelper.getServicePlistFilePath(cmd, launcherName);
 
@@ -311,7 +382,7 @@ public final class LauncherAsServiceVerifier {
 
         var servicePlist = MacHelper.readPList(servicePlistFile);
 
-        var args = servicePlist.queryArrayValue("ProgramArguments");
+        var args = servicePlist.queryStringArrayValue("ProgramArguments");
         TKit.assertEquals(1, args.size(),
                 "Check number of array elements in 'ProgramArguments' property in the property file");
         TKit.assertEquals(installedLauncherPath.toString(), args.get(0),
@@ -348,7 +419,7 @@ public final class LauncherAsServiceVerifier {
     private final String expectedValue;
     private final String launcherName;
     private final Path appOutputFileName;
-    private final Consumer<AdditionalLauncher> additionalLauncherCallback;
+    private final Optional<Consumer<AdditionalLauncher>> additionalLauncherCallback;
 
     static final Set<PackageType> SUPPORTED_PACKAGES = Stream.of(
             LINUX,
