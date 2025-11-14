@@ -32,6 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
@@ -383,10 +384,6 @@ class SharedRuntime: AllStatic {
   // deopt blob
   static void generate_deopt_blob(void);
 
-  static bool handle_ic_miss_helper_internal(Handle receiver, nmethod* caller_nm, const frame& caller_frame,
-                                             methodHandle callee_method, Bytecodes::Code bc, CallInfo& call_info,
-                                             bool& needs_ic_stub_refill, TRAPS);
-
  public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
@@ -403,9 +400,6 @@ class SharedRuntime: AllStatic {
   static void monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThread* thread);
 
   static void monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current);
-
-  // Issue UL warning for unlocked JNI monitor on virtual thread termination
-  static void log_jni_monitor_still_held();
 
  private:
   static Handle find_callee_info(Bytecodes::Code& bc, CallInfo& callinfo, TRAPS);
@@ -551,7 +545,6 @@ class SharedRuntime: AllStatic {
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);
-  static bool should_fixup_call_destination(address destination, address entry_point, address caller_pc, Method* moop, CodeBlob* cb);
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
@@ -637,6 +630,39 @@ class SharedRuntime: AllStatic {
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_ic_miss_histogram();
+
+#ifdef COMPILER2
+  // Runtime methods for printf-style debug nodes
+  static void debug_print_value(jboolean x);
+  static void debug_print_value(jbyte x);
+  static void debug_print_value(jshort x);
+  static void debug_print_value(jchar x);
+  static void debug_print_value(jint x);
+  static void debug_print_value(jlong x);
+  static void debug_print_value(jfloat x);
+  static void debug_print_value(jdouble x);
+  static void debug_print_value(oopDesc* x);
+
+  template <typename T, typename... Rest>
+  static void debug_print_rec(T arg, Rest... args) {
+    debug_print_value(arg);
+    debug_print_rec(args...);
+  }
+
+  static void debug_print_rec() {}
+
+  // template is required here as we need to know the exact signature at compile-time
+  template <typename... TT>
+  static void debug_print(const char *str, TT... args) {
+    // these three lines are the manual expansion of JRT_LEAF ... JRT_END, does not work well with templates
+    DEBUG_ONLY(NoHandleMark __hm;)
+    os::verify_stack_alignment();
+    DEBUG_ONLY(NoSafepointVerifier __nsv;)
+
+    tty->print_cr("%s", str);
+    debug_print_rec(args...);
+  }
+#endif // COMPILER2
 
 #endif // PRODUCT
 
@@ -840,7 +866,6 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
-  static bool contains(const CodeBlob* b);
   static const char* name(AdapterHandlerEntry* handler);
   static uint32_t id(AdapterHandlerEntry* handler);
 #ifndef PRODUCT

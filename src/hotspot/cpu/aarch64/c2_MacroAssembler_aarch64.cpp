@@ -147,8 +147,8 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   return pc();
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
-                                              Register t2, Register t3) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
+                                  Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -173,7 +173,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   const Register t1_mark = t1;
   const Register t3_t = t3;
 
-  { // Lightweight locking
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST branch to with flag == EQ
     Label push;
@@ -303,8 +303,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
-                                                Register t2, Register t3) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
+                                    Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.
@@ -318,7 +318,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   const Register t2_top = t2;
   const Register t3_t = t3;
 
-  { // Lightweight unlock
+  { // Fast unlock
 
     Label push_and_slow_path;
 
@@ -1399,137 +1399,125 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
   andr(dst, dst, 0xff);                   // dst = 0x8D
 }
 
-// Pack the lowest-numbered bit of each mask element in src into a long value
-// in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1, if UseSVE=1 or the hardware doesn't support FEAT_BITPERM.
-void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2) {
+// Pack the value of each mask element in "src" into a long value in "dst", at most
+// the first 64 lane elements. The input "src" is a vector of boolean represented as
+// bytes with 0x00/0x01 as element values. Each lane value from "src" is packed into
+// one bit in "dst".
+//
+// Example:   src = 0x0001010000010001 0100000001010001, lane_cnt = 16
+// Expected:  dst = 0x658D
+//
+// Clobbers: rscratch1
+void C2_MacroAssembler::sve_vmask_tolong(Register dst, FloatRegister src,
+                                         FloatRegister vtmp, int lane_cnt) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
   assert_different_registers(dst, rscratch1);
-  assert_different_registers(vtmp1, vtmp2);
+  assert_different_registers(src, vtmp);
+  assert(UseSVE > 0, "must be");
 
-  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-  // Example:   src = 0b01100101 10001101, bt = T_BYTE, lane_cnt = 16
-  // Expected:  dst = 0x658D
+  // Compress the lowest 8 bytes.
+  fmovd(dst, src);
+  bytemask_compress(dst);
+  if (lane_cnt <= 8) return;
 
-  // Convert the mask into vector with sequential bytes.
-  // vtmp1 = 0x00010100 0x00010001 0x01000000 0x01010001
-  sve_cpy(vtmp1, size, src, 1, false);
-  if (bt != T_BYTE) {
-    sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
-  }
-
-  if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
-    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
-    // is to compress each significant bit of the byte in a cross-lane way. Due
-    // to the lack of a cross-lane bit-compress instruction, we use BEXT
-    // (bit-compress in each lane) with the biggest lane size (T = D) then
-    // concatenate the results.
-
-    // The second source input of BEXT, initialized with 0x01 in each byte.
-    // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
-    sve_dup(vtmp2, B, 1);
-
-    // BEXT vtmp1.D, vtmp1.D, vtmp2.D
-    // vtmp1 = 0x0001010000010001 | 0x0100000001010001
-    // vtmp2 = 0x0101010101010101 | 0x0101010101010101
-    //         ---------------------------------------
-    // vtmp1 = 0x0000000000000065 | 0x000000000000008D
-    sve_bext(vtmp1, D, vtmp1, vtmp2);
-
-    // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
-    // result to dst.
-    // vtmp1 = 0x0000000000000000 | 0x000000000000658D
-    // dst   = 0x658D
-    if (lane_cnt <= 8) {
-      // No need to concatenate.
-      umov(dst, vtmp1, B, 0);
-    } else if (lane_cnt <= 16) {
-      ins(vtmp1, B, vtmp1, 1, 8);
-      umov(dst, vtmp1, H, 0);
-    } else {
-      // As the lane count is 64 at most, the final expected value must be in
-      // the lowest 64 bits after narrowing vtmp1 from D to B.
-      sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
-      umov(dst, vtmp1, D, 0);
-    }
-  } else if (UseSVE > 0) {
-    // Compress the lowest 8 bytes.
-    fmovd(dst, vtmp1);
-    bytemask_compress(dst);
-    if (lane_cnt <= 8) return;
-
-    // Repeat on higher bytes and join the results.
-    // Compress 8 bytes in each iteration.
-    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
-      bytemask_compress(rscratch1);
-      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
-    }
-  } else {
-    assert(false, "unsupported");
-    ShouldNotReachHere();
+  // Repeat on higher bytes and join the results.
+  // Compress 8 bytes in each iteration.
+  for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+    sve_extract_integral(rscratch1, T_LONG, src, idx, vtmp);
+    bytemask_compress(rscratch1);
+    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
   }
 }
 
-// Unpack the mask, a long value in src, into predicate register dst based on the
-// corresponding data type. Note that dst can support at most 64 lanes.
-// Below example gives the expected dst predicate register in different types, with
-// a valid src(0x658D) on a 1024-bit vector size machine.
-// BYTE:  dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 00 00 65 8D
-// SHORT: dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 14 11 40 51
-// INT:   dst = 0x00 00 00 00 00 00 00 00 01 10 01 01 10 00 11 01
-// LONG:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
-//
-// The number of significant bits of src must be equal to lane_cnt. E.g., 0xFF658D which
-// has 24 significant bits would be an invalid input if dst predicate register refers to
-// a LONG type 1024-bit vector, which has at most 16 lanes.
-void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
-                                           FloatRegister vtmp1, FloatRegister vtmp2) {
-  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
-         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
-  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
-  // Example:   src = 0x658D, bt = T_BYTE, size = B, lane_cnt = 16
-  // Expected:  dst = 0b01101001 10001101
+// The function is same as above "sve_vmask_tolong", but it uses SVE2's BEXT
+// instruction which requires the FEAT_BITPERM feature.
+void C2_MacroAssembler::sve2_vmask_tolong(Register dst, FloatRegister src,
+                                          FloatRegister vtmp1, FloatRegister vtmp2,
+                                          int lane_cnt) {
+  assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
+  assert_different_registers(src, vtmp1, vtmp2);
+  assert(UseSVE > 1 && VM_Version::supports_svebitperm(), "must be");
 
-  // Put long value from general purpose register into the first lane of vector.
-  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
-  sve_dup(vtmp1, B, 0);
-  mov(vtmp1, D, 0, src);
+  // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
+  // is to compress each significant bit of the byte in a cross-lane way. Due
+  // to the lack of a cross-lane bit-compress instruction, we use BEXT
+  // (bit-compress in each lane) with the biggest lane size (T = D) then
+  // concatenate the results.
 
-  // As sve_cmp generates mask value with the minimum unit in byte, we should
-  // transform the value in the first lane which is mask in bit now to the
-  // mask in byte, which can be done by SVE2's BDEP instruction.
-
-  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
-  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
-  if (lane_cnt <= 8) {
-    // Nothing. As only one byte exsits.
-  } else if (lane_cnt <= 16) {
-    ins(vtmp1, B, vtmp1, 8, 1);
-    mov(vtmp1, B, 1, zr);
-  } else {
-    sve_vector_extend(vtmp1, D, vtmp1, B);
-  }
-
-  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // The second source input of BEXT, initialized with 0x01 in each byte.
   // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
   sve_dup(vtmp2, B, 1);
 
-  // BDEP vtmp1.D, vtmp1.D, vtmp2.D
-  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  // BEXT vtmp1.D, src.D, vtmp2.D
+  // src   = 0x0001010000010001 | 0x0100000001010001
   // vtmp2 = 0x0101010101010101 | 0x0101010101010101
   //         ---------------------------------------
-  // vtmp1 = 0x0001010000010001 | 0x0100000001010001
-  sve_bdep(vtmp1, D, vtmp1, vtmp2);
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  sve_bext(vtmp1, D, src, vtmp2);
 
-  if (bt != T_BYTE) {
-    sve_vector_extend(vtmp1, size, vtmp1, B);
+  // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
+  // result to dst.
+  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+  // dst   = 0x658D
+  if (lane_cnt <= 8) {
+    // No need to concatenate.
+    umov(dst, vtmp1, B, 0);
+  } else if (lane_cnt <= 16) {
+    ins(vtmp1, B, vtmp1, 1, 8);
+    umov(dst, vtmp1, H, 0);
+  } else {
+    // As the lane count is 64 at most, the final expected value must be in
+    // the lowest 64 bits after narrowing vtmp1 from D to B.
+    sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
+    umov(dst, vtmp1, D, 0);
   }
-  // Generate mask according to the given vector, in which the elements have been
-  // extended to expected type.
-  // dst = 0b01101001 10001101
-  sve_cmp(Assembler::NE, dst, size, ptrue, vtmp1, 0);
+}
+
+// Unpack the mask, a long value in "src", into a vector register of boolean
+// represented as bytes with 0x00/0x01 as element values in "dst".  Each bit in
+// "src" is unpacked into one byte lane in "dst". Note that "dst" can support at
+// most 64 lanes.
+//
+// Below example gives the expected dst vector register, with a valid src(0x658D)
+// on a 128-bit vector size machine.
+// dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+void C2_MacroAssembler::sve_vmask_fromlong(FloatRegister dst, Register src,
+                                           FloatRegister vtmp, int lane_cnt) {
+  assert_different_registers(dst, vtmp);
+  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
+         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
+
+  // Example:   src = 0x658D, lane_cnt = 16
+  // Expected:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+
+  // Put long value from general purpose register into the first lane of vector.
+  // vtmp = 0x0000000000000000 | 0x000000000000658D
+  sve_dup(vtmp, B, 0);
+  mov(vtmp, D, 0, src);
+
+  // Transform the value in the first lane which is mask in bit now to the mask in
+  // byte, which can be done by SVE2's BDEP instruction.
+
+  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
+  // vtmp = 0x0000000000000065 | 0x000000000000008D
+  if (lane_cnt <= 8) {
+    // Nothing. As only one byte exsits.
+  } else if (lane_cnt <= 16) {
+    ins(vtmp, B, vtmp, 8, 1);
+  } else {
+    sve_vector_extend(vtmp, D, vtmp, B);
+  }
+
+  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // dst = 0x01010101 0x01010101 0x01010101 0x01010101
+  sve_dup(dst, B, 1);
+
+  // BDEP dst.D, vtmp.D, dst.D
+  // vtmp = 0x0000000000000065 | 0x000000000000008D
+  // dst  = 0x0101010101010101 | 0x0101010101010101
+  //        ---------------------------------------
+  // dst  = 0x0001010000010001 | 0x0100000001010001
+  sve_bdep(dst, D, vtmp, dst);
 }
 
 // Clobbers: rflags
@@ -2203,114 +2191,117 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
 // Any remaining elements of dst will be filled with zero.
 // Clobbers: rscratch1
-// Preserves: src, mask
+// Preserves: mask, vzr
 void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                                           FloatRegister vtmp1, FloatRegister vtmp2,
-                                           PRegister pgtmp) {
+                                           FloatRegister vzr, FloatRegister vtmp,
+                                           PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2);
+  // When called by sve_compress_byte, src and vtmp may be the same register.
+  assert_different_registers(dst, src, vzr);
+  assert_different_registers(dst, vtmp, vzr);
   assert_different_registers(mask, pgtmp);
-
-  // Example input:   src   = 8888 7777 6666 5555 4444 3333 2222 1111
-  //                  mask  = 0001 0000 0000 0001 0001 0000 0001 0001
-  // Expected result: dst   = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_dup(vtmp2, H, 0);
+  // high <-- low
+  // Example input:   src   = hh gg ff ee dd cc bb aa, one character is 8 bits.
+  //                  mask  = 01 00 00 01 01 00 01 01, one character is 1 bit.
+  // Expected result: dst   = 00 00 00 hh ee dd bb aa
 
   // Extend lowest half to type INT.
-  // dst = 00004444 00003333 00002222 00001111
+  // dst   =  00dd  00cc  00bb  00aa
   sve_uunpklo(dst, S, src);
-  // pgtmp = 00000001 00000000 00000001 00000001
+  // pgtmp =  0001  0000  0001  0001
   sve_punpklo(pgtmp, mask);
   // Pack the active elements in size of type INT to the right,
   // and fill the remainings with zero.
-  // dst = 00000000 00004444 00002222 00001111
+  // dst   =  0000  00dd  00bb  00aa
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
-  // dst = 0000 0000 0000 0000 0000 4444 2222 1111
-  sve_uzp1(dst, H, dst, vtmp2);
+  // dst   = 00 00 00 00 00 dd bb aa
+  sve_uzp1(dst, H, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
+
   // Count the active elements of lowest half.
   // rscratch1 = 3
   sve_cntp(rscratch1, S, ptrue, pgtmp);
 
   // Repeat to the highest half.
-  // pgtmp = 00000001 00000000 00000000 00000001
+  // pgtmp =  0001  0000  0000  0001
   sve_punpkhi(pgtmp, mask);
-  // vtmp1 = 00008888 00007777 00006666 00005555
-  sve_uunpkhi(vtmp1, S, src);
-  // vtmp1 = 00000000 00000000 00008888 00005555
-  sve_compact(vtmp1, S, vtmp1, pgtmp);
-  // vtmp1 = 0000 0000 0000 0000 0000 0000 8888 5555
-  sve_uzp1(vtmp1, H, vtmp1, vtmp2);
+  // vtmp  =  00hh  00gg  00ff  00ee
+  sve_uunpkhi(vtmp, S, src);
+  // vtmp  =  0000  0000  00hh  00ee
+  sve_compact(vtmp, S, vtmp, pgtmp);
+  // vtmp  = 00 00 00 00 00 00 hh ee
+  sve_uzp1(vtmp, H, vtmp, vzr);
 
-  // Compressed low:   dst   = 0000 0000 0000 0000 0000 4444 2222 1111
-  // Compressed high:  vtmp1 = 0000 0000 0000 0000 0000 0000 8888  5555
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch1, rscratch1);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, H, rscratch1, 1);
-  // vtmp1 = 0000 0000 0000 8888 5555 0000 0000 0000
-  sve_tbl(vtmp1, H, vtmp1, vtmp2);
-
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 0000 0000 0000 8888 5555 4444 2222 1111
-  sve_orr(dst, dst, vtmp1);
+  // pgtmp = 00 00 00 00 00 01 01 01
+  sve_whilelt(pgtmp, H, zr, rscratch1);
+  // Compressed low:  dst  = 00 00 00 00 00 dd bb aa
+  // Compressed high: vtmp = 00 00 00 00 00 00 hh ee
+  // Combine the compressed low with the compressed high:
+  //                  dst  = 00 00 00 hh ee dd bb aa
+  sve_splice(dst, H, pgtmp, vtmp);
 }
 
 // Clobbers: rscratch1, rscratch2
 // Preserves: src, mask
 void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                                          FloatRegister vtmp1, FloatRegister vtmp2,
-                                          FloatRegister vtmp3, FloatRegister vtmp4,
-                                          PRegister ptmp, PRegister pgtmp) {
+                                          FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                                          PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
-  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
+  assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3);
   assert_different_registers(mask, ptmp, pgtmp);
-  // Example input:   src   = 88 77 66 55 44 33 22 11
-  //                  mask  = 01 00 00 01 01 00 01 01
-  // Expected result: dst   = 00 00 00 88 55 44 22 11
+  // high <-- low
+  // Example input:   src   = q p n m l k j i h g f e d c b a, one character is 8 bits.
+  //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
+  // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  FloatRegister vzr = vtmp3;
+  sve_dup(vzr, B, 0);
 
-  sve_dup(vtmp4, B, 0);
   // Extend lowest half to type SHORT.
-  // vtmp1 = 0044 0033 0022 0011
+  // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
   sve_uunpklo(vtmp1, H, src);
-  // ptmp = 0001 0000 0001 0001
+  // ptmp  =  00  01  00  00  00  01  00  01
   sve_punpklo(ptmp, mask);
+  // Pack the active elements in size of type SHORT to the right,
+  // and fill the remainings with zero.
+  // dst   =  00  00  00  00  00  0g  0c  0a
+  unsigned extended_size = vector_length_in_bytes << 1;
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  // Narrow the result back to type BYTE.
+  // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  sve_uzp1(dst, B, dst, vzr);
+
+  // Return if the vector length is no more than MaxVectorSize/2, since the
+  // highest half is invalid.
+  if (vector_length_in_bytes <= (MaxVectorSize >> 1)) {
+    return;
+  }
   // Count the active elements of lowest half.
   // rscratch2 = 3
   sve_cntp(rscratch2, H, ptrue, ptmp);
-  // Pack the active elements in size of type SHORT to the right,
-  // and fill the remainings with zero.
-  // dst = 0000 0044 0022 0011
-  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp);
-  // Narrow the result back to type BYTE.
-  // dst = 00 00 00 00 00 44 22 11
-  sve_uzp1(dst, B, dst, vtmp4);
 
   // Repeat to the highest half.
-  // ptmp = 0001 0000 0000 0001
+  // ptmp  =  00  01  00  00  00  00  00  01
   sve_punpkhi(ptmp, mask);
-  // vtmp1 = 0088 0077 0066 0055
+  // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
-  // vtmp1 = 0000 0000 0088 0055
-  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp3, vtmp4, pgtmp);
+  // vtmp1 =  00  00  00  00  00  00  0p  0i
+  sve_compress_short(vtmp1, vtmp2, ptmp, vzr, vtmp2, pgtmp, extended_size - MaxVectorSize);
+  // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  sve_uzp1(vtmp1, B, vtmp1, vzr);
 
-  sve_dup(vtmp4, B, 0);
-  // vtmp1 = 00 00 00 00 00 00 88 55
-  sve_uzp1(vtmp1, B, vtmp1, vtmp4);
-
-  // Compressed low:   dst   = 00 00 00 00 00 44 22 11
-  // Compressed high:  vtmp1 = 00 00 00 00 00 00 88 55
-  // Left shift(cross lane) compressed high with TRUE_CNT lanes,
-  // TRUE_CNT is the number of active elements in the compressed low.
-  neg(rscratch2, rscratch2);
-  // vtmp2 = {4 3 2 1 0 -1 -2 -3}
-  sve_index(vtmp2, B, rscratch2, 1);
-  // vtmp1 = 00 00 00 88 55 00 00 00
-  sve_tbl(vtmp1, B, vtmp1, vtmp2);
-  // Combine the compressed high(after shifted) with the compressed low.
-  // dst = 00 00 00 88 55 44 22 11
-  sve_orr(dst, dst, vtmp1);
+  // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
+  sve_whilelt(ptmp, B, zr, rscratch2);
+  // Compressed low:  dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
+  // Compressed high: vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
+  // Combine the compressed low with the compressed high:
+  //                  dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
+  sve_splice(dst, B, ptmp, vtmp1);
 }
 
 void C2_MacroAssembler::neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ) {
@@ -2719,9 +2710,8 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
   assert_different_registers(dst, src1, src2, index, tmp);
 
   // The cases that can reach this method are -
-  // - UseSVE = 0, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 1, vector_length_in_bytes = 8 or 16
-  // - UseSVE = 2, vector_length_in_bytes >= 8
+  // - UseSVE = 0/1, vector_length_in_bytes = 8 or 16, excluding double and long types
+  // - UseSVE = 2, vector_length_in_bytes >= 8, for all types
   //
   // SVE/SVE2 tbl instructions are generated when UseSVE = 1 with vector_length_in_bytes = 8
   // and UseSVE = 2 with vector_length_in_bytes >= 8

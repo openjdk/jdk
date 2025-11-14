@@ -333,6 +333,12 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Identify if a vector mask operation prefers the input/output mask to be
+  // saved with a predicate type or not.
+  // - Return true if it prefers a predicate type (i.e. TypeVectMask).
+  // - Return false if it prefers a general vector type (i.e. TypeVectA to TypeVectZ).
+  static bool mask_op_prefers_predicate(int opcode, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
@@ -408,14 +414,14 @@ public:
   static int            inline_cache_reg_encode();
 
   // Register for DIVI projection of divmodI
-  static RegMask divI_proj_mask();
+  static const RegMask& divI_proj_mask();
   // Register for MODI projection of divmodI
-  static RegMask modI_proj_mask();
+  static const RegMask& modI_proj_mask();
 
   // Register for DIVL projection of divmodL
-  static RegMask divL_proj_mask();
+  static const RegMask& divL_proj_mask();
   // Register for MODL projection of divmodL
-  static RegMask modL_proj_mask();
+  static const RegMask& modL_proj_mask();
 
   // Use hardware DIV instruction when it is faster than
   // a code which use multiply for division by constant.

@@ -322,7 +322,16 @@ class Compile : public Phase {
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  int                   _major_progress;        // Count of something big happening
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization.
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop opts phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -583,16 +592,16 @@ public:
   // Control of this compilation.
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
-  int               major_progress() const      { return _major_progress; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
   int               inlining_incrementally() const { return _inlining_incrementally; }
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
-  void          set_major_progress()            { _major_progress++; }
-  void          restore_major_progress(int progress) { _major_progress += progress; }
-  void        clear_major_progress()            { _major_progress = 0; }
+  bool              major_progress() const      { return _major_progress; }
+  void          set_major_progress()            { _major_progress = true; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
+  void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
@@ -1094,7 +1103,8 @@ public:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
+  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
@@ -1315,6 +1325,28 @@ public:
                             BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
+
+#ifndef PRODUCT
+private:
+  // getting rid of the template makes things easier
+  Node* make_debug_print_call(const char* str, address call_addr, PhaseGVN* gvn,
+                              Node* parm0 = nullptr, Node* parm1 = nullptr,
+                              Node* parm2 = nullptr, Node* parm3 = nullptr,
+                              Node* parm4 = nullptr, Node* parm5 = nullptr,
+                              Node* parm6 = nullptr) const;
+
+public:
+  // Creates a CallLeafNode for a runtime call that prints a static string and the values of the
+  // nodes passed as arguments.
+  // This function also takes care of doing the necessary wiring, including finding a suitable control
+  // based on the nodes that need to be printed. Note that passing nodes that have incompatible controls
+  // is undefined behavior.
+  template <typename... TT, typename... NN>
+  Node* make_debug_print(const char* str, PhaseGVN* gvn, NN... in) {
+    address call_addr = CAST_FROM_FN_PTR(address, SharedRuntime::debug_print<TT...>);
+    return make_debug_print_call(str, call_addr, gvn, in...);
+  }
+#endif
 };
 
 #endif // SHARE_OPTO_COMPILE_HPP
