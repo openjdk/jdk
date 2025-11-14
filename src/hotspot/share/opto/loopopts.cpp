@@ -4186,6 +4186,32 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   return true;
 }
 
+#ifdef ASSERT
+
+// Clone Template Assertion Predicates to a target loop. The target loop is the original, not-cloned loop.
+// This is currently only used for StressDuplicateLoopBackedge.
+class CloneAssertionPredicatesVisitor : public PredicateVisitor {
+  ClonePredicateToTargetLoop _clone_predicate_to_loop;
+  PhaseIdealLoop* const _phase;
+
+public:
+  CloneAssertionPredicatesVisitor(LoopNode* target_loop_head,
+                                 const NodeInSingleLoopBody &node_in_loop_body,
+                                 PhaseIdealLoop* phase)
+    : _clone_predicate_to_loop(target_loop_head, node_in_loop_body, phase),
+      _phase(phase) {
+  }
+  NONCOPYABLE(CloneAssertionPredicatesVisitor);
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    template_assertion_predicate.kill(_phase->igvn());
+  }
+};
+
+#endif // ASSERT
 // Transform:
 //
 // loop<-----------------+
@@ -4254,6 +4280,7 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   IfNode* exit_test = nullptr;
   uint inner;
   float f;
+#ifdef ASSERT
   if (StressDuplicateBackedge) {
     if (head->is_strip_mined()) {
       return false;
@@ -4272,7 +4299,9 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     }
 
     inner = 1;
-  } else {
+  } else
+#endif //ASSERT
+  {
     // Is the shape of the loop that of a counted loop...
     Node* back_control = loop_exit_control(head, loop);
     if (back_control == nullptr) {
@@ -4462,6 +4491,17 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
       old_new[exit_test->_idx]->as_If()->_fcnt = cnt * (1 - f);
     }
   }
+
+#ifdef ASSERT
+  if (StressDuplicateBackedge && head->is_CountedLoop()) {
+    // The Template Assertion Predicates from the old counted loop are now at the new outer loop - clone them to
+    // the inner counted loop and kill the old ones.
+    PredicateIterator predicate_iterator(outer_head->in(LoopNode::EntryControl));
+    NodeInSingleLoopBody node_in_body(this, loop);
+    CloneAssertionPredicatesVisitor clone_assertion_predicates_visitor(head, node_in_body, this);
+    predicate_iterator.for_each(clone_assertion_predicates_visitor);
+  }
+#endif // ASSERT
 
   C->set_major_progress();
 
