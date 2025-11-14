@@ -205,7 +205,7 @@ ShenandoahMutatorAllocator::ShenandoahMutatorAllocator(ShenandoahFreeSet* free_s
 uint ShenandoahMutatorAllocator::alloc_start_index() {
   if (_alloc_start_index == UINT_MAX) {
     _alloc_start_index = abs(os::random()) % _alloc_region_count;
-    assert(_alloc_start_index >= 0 && _alloc_start_index < _alloc_region_count, "alloc_start_index out of range");
+    assert(_alloc_start_index < _alloc_region_count, "alloc_start_index out of range");
   }
   return _alloc_start_index;
 }
