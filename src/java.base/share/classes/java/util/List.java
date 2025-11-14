@@ -1207,7 +1207,7 @@ public interface List<E> extends SequencedCollection<E> {
      * The provided computing function is guaranteed to be successfully
      * invoked at most once per list index, even in a multi-threaded environment.
      * Competing threads accessing an element already under computation will block until
-     * an element is computed or an exception is thrown by the computing thread.
+     * an element is computed or the computing function completes abnormally
      * <p>
      * If invoking the provided computing function throws an exception, it is rethrown
      * to the initial caller and no value for the element is recorded.
@@ -1218,8 +1218,8 @@ public interface List<E> extends SequencedCollection<E> {
      * cannot contain {@code null} elements. Clients that want to use nullable elements
      * can wrap elements into an {@linkplain Optional} holder.
      * <p>
-     * Any {@link List#subList(int, int) subList()} or {@link List#reversed()} views
-     * of the returned list are also lazily computed.
+     * The elements of any {@link List#subList(int, int) subList()} or
+     * {@link List#reversed()} views of the returned list are also lazily computed.
      * <p>
      * The returned list and its {@link List#subList(int, int) subList()} or
      * {@link List#reversed()} views implement the {@link RandomAccess} interface.

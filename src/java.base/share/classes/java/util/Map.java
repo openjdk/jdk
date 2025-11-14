@@ -1762,7 +1762,7 @@ public interface Map<K, V> {
      * The provided computing function is guaranteed to be successfully invoked
      * at most once per key, even in a multi-threaded environment. Competing
      * threads accessing a value already under computation will block until an element
-     * is computed or an exception is thrown by the computing thread.
+     * is computed or the computing function completes abnormally.
      * <p>
      * If invoking the provided computing function throws an exception, it
      * is rethrown to the initial caller and no value associated with the provided key
@@ -1774,8 +1774,8 @@ public interface Map<K, V> {
      * cannot contain {@code null} values. Clients that want to use nullable values can
      * wrap values into an {@linkplain Optional} holder.
      * <p>
-     * Any {@link Map#values()} or {@link Map#entrySet()} views of the returned map are
-     * also lazily computed.
+     * The values of any {@link Map#values()} or {@link Map#entrySet()} views of
+     * the returned map are also lazily computed.
      * <p>
      * If the provided computing function recursively calls itself or
      * the returned lazy map for the same key, an {@linkplain IllegalStateException}
