@@ -37,6 +37,7 @@
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
+#include "os_bsd.hpp"
 
 using testing::HasSubstr;
 
@@ -1196,9 +1197,7 @@ TEST_VM(os, dll_load_null_error_buf) {
   ASSERT_NULL(lib);
 }
 
-#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
-// Test that JVM-allocated memory is properly tagged with VM_MEMORY_JAVA on macOS
-// for proper memory accounting and debugging capabilities.
+#if APPLE_MEMORY_TAGGING_AVAILABLE
 TEST_VM(os, memory_tagging_validation) {
   const size_t size = 1 * M;
 
@@ -1214,4 +1213,4 @@ TEST_VM(os, memory_tagging_validation) {
   // Clean up
   os::release_memory(memory, size);
 }
-#endif // defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+#endif // APPLE_MEMORY_TAGGING_AVAILABLE

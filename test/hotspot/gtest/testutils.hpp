@@ -51,7 +51,6 @@ public:
 
 #ifdef __APPLE__
   // Check if a memory region is tagged with VM_MEMORY_JAVA on macOS
-  // This function is used by multiple test files to validate BSD memory tagging
   static bool is_memory_tagged_as_java(void* addr, size_t size);
 #endif
 

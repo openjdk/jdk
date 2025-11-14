@@ -29,6 +29,8 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
+#include "os_bsd.hpp"
+
 #include <string.h>
 
 // Note: these could be made more suitable for covering large ranges (e.g. just mark one byte per page).
@@ -67,7 +69,7 @@ bool GtestUtils::is_range_marked(const void* p, size_t s, uint8_t expected) {
   return first_wrong == nullptr;
 }
 
-#ifdef __APPLE__
+#if APPLE_MEMORY_TAGGING_AVAILABLE
 bool GtestUtils::is_memory_tagged_as_java(void* addr, size_t size) {
   // Use mach_vm_region with extended info to get the user_tag
   mach_vm_address_t address = (mach_vm_address_t)addr;
@@ -91,10 +93,9 @@ bool GtestUtils::is_memory_tagged_as_java(void* addr, size_t size) {
   // Check if the memory region covers our allocation and has the correct tag
   if (address <= (mach_vm_address_t)addr &&
       (address + region_size) >= ((mach_vm_address_t)addr + size)) {
-    // Check if the user_tag matches VM_MEMORY_JAVA
     return extended_info.user_tag == VM_MEMORY_JAVA;
   }
 
   return false;
 }
-#endif
+#endif // APPLE_MEMORY_TAGGING_AVAILABLE

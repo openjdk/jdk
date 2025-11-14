@@ -31,11 +31,22 @@
 #include <mach/vm_statistics.h>
 #endif
 
+// Macro to check if Apple memory tagging is available
+#ifdef __APPLE__
+#if defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+#define APPLE_MEMORY_TAGGING_AVAILABLE 1
+#else
+#define APPLE_MEMORY_TAGGING_AVAILABLE 0
+#endif
+#else
+#define APPLE_MEMORY_TAGGING_AVAILABLE 0
+#endif
+
 // Bsd_OS defines the interface to Bsd operating systems
 
 // Shared constant for mmap file descriptor used across BSD OS implementations
 static constexpr int bsd_mmap_fd =
-#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+#if APPLE_MEMORY_TAGGING_AVAILABLE
   VM_MAKE_TAG(VM_MEMORY_JAVA);
 #else
   -1;
