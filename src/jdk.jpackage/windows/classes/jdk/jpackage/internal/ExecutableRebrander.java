@@ -143,7 +143,7 @@ final class ExecutableRebrander {
             } else {
                 resourceUnlockedSuccess = unlockResource(resourceLock);
                 if (shortTargetPath.isPresent()) {
-                    // Windows will rename the excutable in the unlock operation.
+                    // Windows will rename the executable in the unlock operation.
                     // Should restore executable's name.
                     var tmpPath = target.getParent().resolve(
                             target.getFileName().toString() + ".restore");
