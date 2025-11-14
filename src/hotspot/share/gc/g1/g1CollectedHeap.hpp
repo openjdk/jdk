@@ -1032,17 +1032,15 @@ public:
   inline void old_set_add(G1HeapRegion* hr);
   inline void old_set_remove(G1HeapRegion* hr);
 
-  size_t non_young_capacity_bytes() {
-    return (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes;
-  }
+  // Returns how much memory there is assigned to non-young heap that can not be
+  // allocated into any more without garbage collection after a hypothetical
+  // allocation of allocation_word_size.
+  size_t non_young_occupancy_after_allocation(size_t allocation_word_size);
 
   // Determine whether the given region is one that we are using as an
   // old GC alloc region.
   bool is_old_gc_alloc_region(G1HeapRegion* hr);
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
   void collect(GCCause::Cause cause) override;
 
   // Try to perform a collection of the heap with the given cause to allocate allocation_word_size
@@ -1228,6 +1226,10 @@ public:
   // Returns the number of regions the humongous object of the given word size
   // requires.
   static size_t humongous_obj_size_in_regions(size_t word_size);
+
+  // Returns how much space in bytes an allocation of word_size will use up in the
+  // heap.
+  static size_t allocation_used_bytes(size_t word_size);
 
   // Print the maximum heap capacity.
   size_t max_capacity() const override;
