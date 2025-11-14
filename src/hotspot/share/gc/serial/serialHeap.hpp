@@ -139,9 +139,6 @@ public:
   // Callback from VM_SerialGCCollect.
   void collect_at_safepoint(bool full);
 
-  // Perform a full collection of the heap; intended for use in implementing
-  // "System.gc". This implies as full a collection as the CollectedHeap
-  // supports. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause) override;
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
