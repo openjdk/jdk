@@ -119,7 +119,7 @@ class CopyMoveHelper {
             sourceAttrs = Files.readAttributes(source,
                                                PosixFileAttributes.class,
                                                linkOptions);
-        if (sourceAttrs == null)
+        else
             sourceAttrs = Files.readAttributes(source,
                                                BasicFileAttributes.class,
                                                linkOptions);
