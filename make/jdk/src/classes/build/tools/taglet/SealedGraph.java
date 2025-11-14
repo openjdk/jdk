@@ -220,6 +220,8 @@ public final class SealedGraph implements Taglet {
             private String relativeLink(TypeElement node) {
                 var util = SealedGraph.this.docletEnvironment.getElementUtils();
                 var nodePackage = util.getPackageOf(node);
+                // Note: SVG files for nested types use the simple names of containing types as parent directories.
+                // We therefore need to convert all dots in the qualified name to "../" below.
                 var backNavigator = rootNode.getQualifiedName().toString().chars()
                         .filter(c -> c == '.')
                         .mapToObj(c -> "../")
