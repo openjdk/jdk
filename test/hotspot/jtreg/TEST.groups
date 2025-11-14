@@ -36,6 +36,7 @@ hotspot_all_no_apps = \
 # Component test groups
 
 hotspot_compiler = \
+  applications/ctw/modules \
   compiler
 
 hotspot_compiler_resourcehogs = \
