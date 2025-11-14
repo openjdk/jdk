@@ -37,42 +37,6 @@
 
 #define __ ce->masm()->
 
-Address CodeStub::as_Address(LIR_Assembler* ce, LIR_Address* addr, Register tmp) {
-  if (addr->base()->is_illegal()) {
-    assert(addr->index()->is_illegal(), "must be illegal too");
-    AddressLiteral laddr((address)addr->disp(), relocInfo::none);
-    if (! __ reachable(laddr)) {
-      __ movptr(tmp, laddr.addr());
-      Address res(tmp, 0);
-      return res;
-    } else {
-      return __ as_Address(laddr);
-    }
-  }
-
-  Register base = addr->base()->as_pointer_register();
-
-  if (addr->index()->is_illegal()) {
-    return Address( base, addr->disp());
-  } else if (addr->index()->is_cpu_register()) {
-    Register index = addr->index()->as_pointer_register();
-    return Address(base, index, (Address::ScaleFactor) addr->scale(), addr->disp());
-  } else if (addr->index()->is_constant()) {
-    intptr_t addr_offset = (addr->index()->as_constant_ptr()->as_jint() << addr->scale()) + addr->disp();
-    assert(Assembler::is_simm32(addr_offset), "must be");
-
-    return Address(base, addr_offset);
-  } else {
-    Unimplemented();
-    return Address();
-  }
-}
-
-Address CodeStub::as_Address(LIR_Assembler* ce, LIR_Address* addr) {
-  return as_Address(ce, addr, rscratch1);
-}
-
-
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(ce->masm()->pc() - ce->masm()->offset() + safepoint_offset());

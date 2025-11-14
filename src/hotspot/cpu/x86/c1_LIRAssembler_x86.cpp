@@ -1340,8 +1340,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ jmp(*obj_is_null);
     __ bind(not_null);
 
-    EmitProfileStub *stub
-      = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
+    ProfileStub *stub
+      = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
     auto lambda = [stub, md, mdo, data, k_RInfo, obj, tmp_load_klass] (LIR_Assembler* ce, LIR_Op* base_op) {
 
@@ -1383,6 +1383,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
+
   if (!k->is_loaded()) {
     klass2reg_with_patching(k_RInfo, op->info_for_patch());
   } else {
@@ -1483,17 +1484,17 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       auto threshold = (1ull << 32) >> ratio_shift;
       assert(threshold > 0, "must be");
 
-      EmitProfileStub *profiling_stub
-        = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
+      ProfileStub *profile_stub
+        = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
-      auto lambda = [profiling_stub, md, data, value,
+      auto lambda = [profile_stub, md, data, value,
                      k_RInfo, klass_RInfo, tmp_load_klass, success_target] (LIR_Assembler* ce, LIR_Op*) {
 #undef __
 #define __ masm->
 
       auto masm = ce->masm();
 
-      if (profiling_stub != nullptr)  __ bind(*profiling_stub->entry());
+      if (profile_stub != nullptr)  __ bind(*profile_stub->entry());
 
       __ testptr(value, value);
 
@@ -1506,8 +1507,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
       int header_bits = BitData::null_seen_byte_constant();
       __ orb(data_addr, header_bits);
-      if (profiling_stub != nullptr) {
-        __ jmp(*profiling_stub->continuation());
+      if (profile_stub != nullptr) {
+        __ jmp(*profile_stub->continuation());
       } else {
         __ jmp(*success_target);
       }
@@ -1527,23 +1528,23 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ addptr(counter_addr, DataLayout::counter_increment);
       __ bind(update_done);
 
-      if (profiling_stub != nullptr)  __ jmp(*profiling_stub->continuation());
+      if (profile_stub != nullptr)  __ jmp(*profile_stub->continuation());
 
 #undef __
 #define __ _masm->
       };
 
-      if (profiling_stub != nullptr) {
+      if (profile_stub != nullptr) {
         __ step_random(r_profile_rng, rscratch1);
         __ cmpl(r_profile_rng, threshold);
-        __ jcc(Assembler::below, *profiling_stub->entry());
-        __ bind(*profiling_stub->continuation());
+        __ jcc(Assembler::below, *profile_stub->entry());
+        __ bind(*profile_stub->continuation());
         __ testptr(value, value);
         __ jcc(Assembler::equal, done);
 
-        profiling_stub->set_doit(new ProfileCounterStub(lambda, op));
-        profiling_stub->set_name("Typecheck profile stub");
-        append_code_stub(profiling_stub);
+        profile_stub->set_doit(new ProfileCounterStub(lambda, op));
+        profile_stub->set_name("Typecheck profile stub");
+        append_code_stub(profile_stub);
       } else {
         lambda(this, op);
       }
@@ -2873,8 +2874,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   assert(threshold > 0, "must be");
 
-  EmitProfileStub *counter_stub
-    = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
+  ProfileStub *counter_stub
+    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
   auto lambda = [counter_stub, overflow_stub, freq_op, ratio_shift, incr,
                  dest, dest_adr, temp] (LIR_Assembler* ce, LIR_Op* op) {
@@ -3000,8 +3001,8 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   auto threshold = (1ull << 32) >> ratio_shift;
   assert(threshold > 0, "must be");
 
-  EmitProfileStub *stub
-    = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
+  ProfileStub *stub
+    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
   auto lambda = [op, stub] (LIR_Assembler* ce, LIR_Op* base_op) {
 #undef __
@@ -3048,8 +3049,8 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
-          goto exit;
+          __ addptr(data_addr, DataLayout::counter_increment);
+          return;
         }
       }
 
@@ -3127,8 +3128,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   auto threshold = (1ull << 32) >> ratio_shift;
   assert(threshold > 0, "must be");
 
-  EmitProfileStub *stub
-    = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;
+  ProfileStub *stub
+    = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
   auto lambda = [stub, mdo_addr, not_null, exact_klass, current_klass,
                  obj, tmp, tmp_load_klass, no_conflict] (LIR_Assembler* ce, LIR_Op*) {
@@ -3145,8 +3146,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
-  if (stub != nullptr)  __ bind(*stub->entry());
+  __ verify_oop(obj);
 
+#ifdef ASSERT
+  assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+#endif
   if (do_null) {
     __ testptr(obj, obj);
     __ jccb(Assembler::notZero, update);

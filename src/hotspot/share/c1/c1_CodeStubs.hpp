@@ -140,21 +140,20 @@ struct ProfileCounterStub : public AbstractProfileCounterStub {
   T _lambda;
   LIR_Op* _op;
 
-  ProfileCounterStub(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) {
-  }
+  ProfileCounterStub(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) { }
   virtual void operator() (LIR_Assembler* ce) {
     _lambda(ce, _op);
   }
 };
 
-class EmitProfileStub: public CodeStub {
+class ProfileStub: public CodeStub {
 private:
   AbstractProfileCounterStub *_doit;
   const char* _name;
 
 public:
-  EmitProfileStub() {
-    _name = "EmitProfileStub";
+  ProfileStub() {
+    _name = "ProfileStub";
   }
   void set_doit(AbstractProfileCounterStub *doit) { _doit = doit; }
   void set_name(const char* name) { _name = name; }

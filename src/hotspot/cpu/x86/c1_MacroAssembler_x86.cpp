@@ -343,31 +343,6 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
 
 }
 
-void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &skip) {
-  if (ProfileCaptureRatio != 1) {
-#ifndef PRODUCT
-    if (CommentedAssembly) {
-      block_comment("step_profile_rng" " {");
-    }
-#endif
-    step_random(state, temp);
-
-    int ratio_shift = exact_log2(ProfileCaptureRatio);
-    int threshold = (1ull << 32) >> ratio_shift;
-
-    cmpl(state, threshold);
-    if (! getenv("APH_DISABLE")) {
-      jcc(Assembler::aboveEqual, skip);
-    }
-
-#ifndef PRODUCT
-    if (CommentedAssembly) {
-      block_comment("} " "step_profile_rng");
-    }
-#endif
-  }
-}
-
 void C1_MacroAssembler::save_profile_rng() {
   if (ProfileCaptureRatio != 1) {
     movl(Address(r15_thread, JavaThread::profile_rng_offset()), r_profile_rng);
