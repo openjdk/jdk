@@ -273,6 +273,12 @@ class java_lang_Class : AllStatic {
   static void initialize_mirror_fields(InstanceKlass* ik, Handle mirror, Handle protection_domain,
                                        Handle classData, TRAPS);
   static void set_mirror_module_field(JavaThread* current, Klass* K, Handle mirror, Handle module);
+
+  static void set_modifiers(oop java_class, u2 value);
+  static void set_raw_access_flags(oop java_class, u2 value);
+  static void set_is_primitive(oop java_class);
+  static void release_set_array_klass(oop java_class, Klass* klass);
+
  public:
   static void allocate_fixup_lists();
   static void compute_offsets();
@@ -307,12 +313,10 @@ class java_lang_Class : AllStatic {
   static bool is_instance(oop obj);
 
   static bool is_primitive(oop java_class);
-  static void set_is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
   static oop primitive_mirror(BasicType t);
-  // JVM_NewArray support
   static Klass* array_klass_acquire(oop java_class);
-  static void release_set_array_klass(oop java_class, Klass* klass);
+
   // compiler support for class operations
   static int klass_offset()                { CHECK_INIT(_klass_offset); }
   static int array_klass_offset()          { CHECK_INIT(_array_klass_offset); }
@@ -331,7 +335,6 @@ class java_lang_Class : AllStatic {
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
-  static void set_reflection_data(oop java_class, oop reflection_data);
   static int reflection_data_offset() { return _reflectionData_offset; }
 
   static oop class_loader(oop java_class);
@@ -344,10 +347,6 @@ class java_lang_Class : AllStatic {
   static void set_source_file(oop java_class, oop source_file);
 
   static int modifiers(oop java_class);
-  static void set_modifiers(oop java_class, u2 value);
-
-  static int raw_access_flags(oop java_class);
-  static void set_raw_access_flags(oop java_class, u2 value);
 
   static size_t oop_size(oop java_class);
   static void set_oop_size(HeapWord* java_class, size_t size);
