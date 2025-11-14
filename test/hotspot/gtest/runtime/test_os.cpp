@@ -37,7 +37,6 @@
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
-#include "os_bsd.hpp"
 
 using testing::HasSubstr;
 

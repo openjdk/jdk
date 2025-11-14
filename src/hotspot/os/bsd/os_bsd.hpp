@@ -32,12 +32,8 @@
 #endif
 
 // Macro to check if Apple memory tagging is available
-#ifdef __APPLE__
-#if defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
+#if defined(__APPLE__) && defined(VM_MAKE_TAG) && defined(VM_MEMORY_JAVA)
 #define APPLE_MEMORY_TAGGING_AVAILABLE 1
-#else
-#define APPLE_MEMORY_TAGGING_AVAILABLE 0
-#endif
 #else
 #define APPLE_MEMORY_TAGGING_AVAILABLE 0
 #endif
