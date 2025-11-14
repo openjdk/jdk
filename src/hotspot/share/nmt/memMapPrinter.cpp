@@ -129,7 +129,7 @@ public:
   }
 
   // Given a vma [from, to), find all regions that intersect with this vma and
-  // return their collective flags.
+  // fill out their collective flags into bm.
   void lookup(const void* from, const void* to, ResourceBitMap& bm) const {
     assert(from <= to, "Sanity");
     // We optimize for sequential lookups. Since this class is used when a list
