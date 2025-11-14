@@ -65,6 +65,7 @@ class VM_Version : public Abstract_VM_Version {
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
     virtual void log_enabled() = 0;
+    virtual void log_disabled() = 0;
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -89,11 +90,9 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          log_disabled();                                                                                   \
         }                                                                                                   \
       } else {                                                                                              \
         /* Sync CPU features with flags */                                                                  \
@@ -101,11 +100,9 @@ class VM_Version : public Abstract_VM_Version {
           disable_feature();                                                                                \
         } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          log_disabled();                                                                                   \
         }                                                                                                   \
       }                                                                                                     \
   }                                                                                                         \
@@ -136,6 +133,7 @@ class VM_Version : public Abstract_VM_Version {
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
     void log_enabled();
+    void log_disabled();
 
    protected:
     bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
@@ -151,19 +149,6 @@ class VM_Version : public Abstract_VM_Version {
       }
       va_end(va);
       return enabled;
-    }
-
-    void deps_string(stringStream& ss, RVExtFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
-
-      va_list va;
-      va_start(va, dep0);
-      RVExtFeatureValue* next = nullptr;
-      while ((next = va_arg(va, RVExtFeatureValue*)) != nullptr) {
-        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
-      }
-      va_end(va);
     }
 
 #ifdef ASSERT
@@ -206,6 +191,7 @@ class VM_Version : public Abstract_VM_Version {
     void disable_feature() { _value = DEFAULT_VALUE; }
     int64_t value() { return _value; }
     void log_enabled();
+    void log_disabled();
   };
 
  public:
