@@ -165,8 +165,8 @@ import java.util.function.Supplier;
  * @apiNote Once a lazy constant is initialized, its contents cannot ever be removed.
  *          This can be a source of an unintended memory leak. More specifically,
  *          a lazy constant {@linkplain java.lang.ref##reachability strongly references}
- *          it contents. Hence, a lazy constant will hold its contents until
- *          the lazy constant itself is collected (if ever).
+ *          it contents. Hence, the contents of a lazy constant will be reachable as long
+ *          as the lazy constant itself is reachable.
  *          <p>
  *          While it's possible to store an array inside a lazy constant, doing so will
  *          not result in improved access performance of the array elements. Instead, a
