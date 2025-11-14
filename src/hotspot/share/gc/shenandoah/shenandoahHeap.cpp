@@ -1010,42 +1010,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   // block again.
   if (req.is_young()) {
     return free_set()->collector_allocator()->allocate(req, in_new_region);
-  } else {
-    if (!old_generation()->can_allocate(req)) {
-      return nullptr;
-    }
-    HeapWord* obj = free_set()->old_collector_allocator()->allocate(req, in_new_region);
-    if (obj != nullptr) {
-      old_generation()->configure_plab_for_current_thread(req);
-      if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
-        // Register the newly allocated object while we're holding the global lock since there's no synchronization
-        // built in to the implementation of register_object().  There are potential races when multiple independent
-        // threads are allocating objects, some of which might span the same card region.  For example, consider
-        // a card table's memory region within which three objects are being allocated by three different threads:
-        //
-        // objects being "concurrently" allocated:
-        //    [-----a------][-----b-----][--------------c------------------]
-        //            [---- card table memory range --------------]
-        //
-        // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-        // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-        // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-        // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-        // card region.
-        //
-        // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-        // last-start representing object b while first-start represents object c.  This is why we need to require all
-        // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-        {
-          ShenandoahHeapLocker locker(lock(), false);
-          old_generation()->card_scan()->register_object(obj);
-        }
-      }
-    }
-    return obj;
   }
-
-  ShouldNotReachHere();
 
   ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
 

@@ -1213,9 +1213,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->collector_allocator()->release_alloc_regions();
-    if (heap->mode()->is_generational()) {
-      heap->free_set()->old_collector_allocator()->release_alloc_regions();
-    }
   }
   heap->rebuild_free_set(true /*concurrent*/);
 

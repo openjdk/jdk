@@ -1206,7 +1206,6 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
   _mutator_allocator = new ShenandoahMutatorAllocator(this);
   _collector_allocator = new ShenandoahCollectorAllocator(this);
-  _old_collector_allocator = new ShenandoahOldCollectorAllocator(this);
 }
 
 // was pip_pad_bytes

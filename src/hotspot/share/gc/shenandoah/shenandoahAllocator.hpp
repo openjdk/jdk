@@ -102,12 +102,12 @@ public:
   ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
 };
 
+// TODO ShenandoahOldCollectorAllocator doesn't handle plab alloc property yet because of
 class ShenandoahOldCollectorAllocator : public ShenandoahAllocator {
   uint alloc_start_index() override;
 #ifdef ASSERT
   void verify(ShenandoahAllocRequest& req) override;
 #endif // ASSERT
-
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
 };

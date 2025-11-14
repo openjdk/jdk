@@ -221,9 +221,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->mutator_allocator()->release_alloc_regions();
     heap->free_set()->collector_allocator()->release_alloc_regions();
-    if (heap->mode()->is_generational()) {
-      heap->free_set()->old_collector_allocator()->release_alloc_regions();
-    }
   }
 
   OrderAccess::fence();

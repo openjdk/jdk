@@ -170,27 +170,18 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
 
 HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
   DirectAllocMutatorCounter c(&_direct_alloc_mutators);
-  assert(req.is_lab_alloc(), "Only lab alloc");
+  assert(req.is_lab_alloc() && req.type() != ShenandoahAllocRequest::_alloc_plab, "Only tlab/gclab alloc");
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
-  size_t adjusted_size = req.size();
   for (;;) {
     if (!is_active_alloc_region()) {
       return nullptr;
     }
+    size_t adjusted_size = req.size();
     HeapWord* obj = top();
-    size_t free_words;
-    if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
-      free_words = ShenandoahFreeSet::get_usable_free_words(byte_size(obj, end()));
-      if (adjusted_size > free_words) {
-        adjusted_size = free_words;
-      }
-      adjusted_size = align_down(adjusted_size, CardTable::card_size_in_words());
-    } else {
-      free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
-      if (adjusted_size > free_words) {
-        adjusted_size = free_words;
-      }
+    size_t free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > free_words) {
+      adjusted_size = free_words;
     }
     if (adjusted_size >= req.min_size()) {
       if (try_allocate(obj, adjusted_size)) {

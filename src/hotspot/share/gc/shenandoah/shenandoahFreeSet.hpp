@@ -456,7 +456,6 @@ private:
   ShenandoahRegionPartitions _partitions;
   ShenandoahMutatorAllocator* _mutator_allocator;
   ShenandoahCollectorAllocator* _collector_allocator;
-  ShenandoahOldCollectorAllocator* _old_collector_allocator;
 
   size_t _total_humongous_waste;
 
@@ -808,10 +807,6 @@ public:
     return _collector_allocator;
   }
 
-  // Get the old cllector allocator.
-  inline ShenandoahOldCollectorAllocator* old_collector_allocator() {
-    return _old_collector_allocator;
-  }
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that

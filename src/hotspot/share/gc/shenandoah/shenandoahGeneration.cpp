@@ -786,9 +786,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       // Release all alloc regions before choose cset and rebuild free-set
       heap->free_set()->mutator_allocator()->release_alloc_regions();
       heap->free_set()->collector_allocator()->release_alloc_regions();
-      if (heap->mode()->is_generational()) {
-        heap->free_set()->old_collector_allocator()->release_alloc_regions();
-      }
 
       // Choose the collection set, including the regions preselected above for
       // promotion into the old generation.
@@ -814,9 +811,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       // Release all alloc regions before choose cset and rebuild free-set
       heap->free_set()->mutator_allocator()->release_alloc_regions();
       heap->free_set()->collector_allocator()->release_alloc_regions();
-      if (heap->mode()->is_generational()) {
-        heap->free_set()->old_collector_allocator()->release_alloc_regions();
-      }
       _heuristics->choose_collection_set(collection_set);
     }
   }
