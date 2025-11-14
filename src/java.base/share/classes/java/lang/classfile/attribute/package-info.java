@@ -99,4 +99,3 @@ import java.lang.classfile.CompoundElement;
 import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.MethodElement;
-import java.lang.classfile.constantpool.Utf8Entry;

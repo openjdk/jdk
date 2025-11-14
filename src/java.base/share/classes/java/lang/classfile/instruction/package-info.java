@@ -66,5 +66,4 @@ package java.lang.classfile.instruction;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.Utf8Entry;
 

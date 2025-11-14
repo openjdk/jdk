@@ -271,13 +271,13 @@
  * class} file structures are representable in the {@code class} file format.
  * An argument value that cannot be representable by its data type is rejected
  * with an {@link IllegalArgumentException}.  For example, an {@code int} value
- * cannot be out of the range of its data type; a {@code List} cannot exceed
- * the maximum representable size of its table data type, or contain an
- * unrepresentable element.  Restrictions based on underlying data type, such as
- * the {@code int} and {@code List} ones before, are specified on the
- * corresponding APIs.  Unless otherwise noted, in all structures, a {@code
- * String} cannot exceed {@code 65535} bytes when represented in modified UTF-8
- * format.
+ * cannot be out of the range of its {@linkplain java.lang.classfile##data-types
+ * data type}; a {@code List} cannot exceed the maximum representable size of
+ * its table data type, or contain an unrepresentable element.  Restrictions
+ * based on underlying data type, such as the {@code int} and {@code List} ones
+ * before, are specified on the corresponding APIs.  Unless otherwise noted, in
+ * all structures, a {@code String} cannot exceed {@code 65535} bytes when
+ * represented in modified UTF-8 format.
  * <p>
  * Unless otherwise noted, passing null or an array or collection that contains
  * null as an element to a constructor or method of any Class-File API class or
