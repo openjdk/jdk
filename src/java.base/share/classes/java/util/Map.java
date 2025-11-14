@@ -1814,7 +1814,8 @@ public interface Map<K, V> {
         // Also, implicit null check of `keys` and all its elements
         final Set<K> keyCopies = Set.copyOf(keys);
         Objects.requireNonNull(computingFunction);
-        if (keys instanceof EnumSet<?> && !keys.isEmpty()) {
+        // We need to check the instance type using the original `keys` parameter.
+        if (keys instanceof EnumSet<?> && !keyCopies.isEmpty()) {
             @SuppressWarnings("unchecked")
             var enumMap = (Map<K, V>) LazyCollections.ofLazyMapWithEnumKeys(keyCopies, computingFunction);
             return enumMap;
