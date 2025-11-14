@@ -2861,8 +2861,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   Address dest_adr = as_Address(addr->as_address_ptr());
 
-  // assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
-
 #ifndef PRODUCT
   if (CommentedAssembly) {
     __ block_comment("increment_profile_ctr" " {");
@@ -2871,12 +2869,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
 
   int profile_capture_ratio = ProfileCaptureRatio;
   int ratio_shift = exact_log2(profile_capture_ratio);
-  auto threshold = (1ull << 32) >> ratio_shift;
+  auto threshold = (UCONST64(1) << 32) >> ratio_shift;
 
   assert(threshold > 0, "must be");
-
-  // __ mov64(temp, (uintptr_t)&ploopy);
-  // __ addl(Address(temp, 0), 1);
 
   EmitProfileStub *counter_stub
     = profile_capture_ratio > 1 ? new EmitProfileStub() : nullptr;

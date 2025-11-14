@@ -129,39 +129,6 @@ public:
 
 };
 
-class ExtendedCounterOverflowStub: public CounterOverflowStub {
- private:
-  LIR_Opr _incr;
-  LIR_Opr _addr;
-  LIR_Opr _dest;
-  LIR_Opr _temp_op;
-  LIR_Opr _freq_op;
-  bool    _notify;
-
-public:
-  ExtendedCounterOverflowStub(CodeEmitInfo* info, int bci, LIR_Opr method,
-                              LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
-                              LIR_Opr freq_op, bool notify)
-    : CounterOverflowStub(info, bci, method),
-      _incr(incr), _addr(addr), _dest(dest), _temp_op(temp_op), _freq_op(freq_op),
-      _notify(notify) { }
-
-  virtual void emit_code(LIR_Assembler* e);
-
-  virtual void visit(LIR_OpVisitState* visitor) {
-    CounterOverflowStub::visit(visitor);
-    visitor->do_input(_incr);
-    visitor->do_input(_addr);
-    if (_dest->is_valid())  visitor->do_output(_dest);
-    visitor->do_temp(_temp_op);
-    if (_freq_op->is_valid()) visitor->do_input(_freq_op);
-  }
-
-#ifndef PRODUCT
-  virtual void print_name(outputStream* out) const { out->print("ExtendedCounterOverflowStub"); }
-#endif // PRODUCT
-
-};
 
 class AbstractProfileCounterStub : public CompilationResourceObj {
 public:

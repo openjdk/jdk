@@ -927,7 +927,6 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     // MDO cells are intptr_t, so the data_reg width is arch-dependent.
     LIR_Opr data_reg = new_pointer_register();
     LIR_Address* data_addr = new LIR_Address(md_reg, data_offset_reg, data_reg->type());
-    LIR_Address* fake_incr_value = new LIR_Address(data_reg, DataLayout::counter_increment, T_INT);
     LIR_Opr tmp = new_register(T_INT);
     LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
     __ increment_profile_ctr(step, data_addr, LIR_OprFact::intConst(0), tmp, nullptr);
@@ -2374,20 +2373,10 @@ void LIRGenerator::do_Goto(Goto* x) {
 
     LIR_Address *counter_addr = new LIR_Address(md_reg, offset,
                                            NOT_LP64(T_INT) LP64_ONLY(T_LONG));
-    if (true || ProfileCaptureRatio == 1) {
-      increment_counter(counter_addr, DataLayout::counter_increment);
-    } else {
-      // LIR_Address *counter_addr = new LIR_Address(md_reg, offset, T_INT);
-      LIR_Opr tmp = new_register(T_INT);
-      // LIR_Opr dummy = new_register(T_INT);
-      LIR_Opr dummy = LIR_OprFact::intConst(0);
-      LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
-      LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
-      CodeStub *overflow = new ExtendedCounterOverflowStub
-        (/*info*/nullptr, -1, LIR_OprFact::illegalOpr,
-         step, counter_addr, dummy, tmp, LIR_OprFact::illegalOpr, /*notify*/false);
-      __ increment_profile_ctr(inc, counter_addr, dummy, tmp, overflow);
-    }
+    LIR_Opr tmp = new_register(T_INT);
+    LIR_Opr dummy = LIR_OprFact::intConst(0);
+    LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
+    __ increment_profile_ctr(inc, counter_addr, dummy, tmp, nullptr);
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -3198,23 +3187,10 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
       // detect overflows.
       >> exact_log2(ProfileCaptureRatio) << exact_log2(ProfileCaptureRatio)
       << InvocationCounter::count_shift;
-    overflow = (ProfileCaptureRatio > 1 && false
-                ? (new ExtendedCounterOverflowStub
-                   (info, bci, meth,
-                    step, counter, result, tmp, LIR_OprFact::intConst(freq), /*notify*/true))
-                : (new CounterOverflowStub
-                   (info, bci, meth)));
-
+    overflow = new CounterOverflowStub (info, bci, meth);
     __ increment_profile_ctr(step, counter, result, tmp,
                              LIR_OprFact::intConst(freq), step, overflow, info);
-
   } else {
-    overflow = (ProfileCaptureRatio > 1 && false
-                ? (new ExtendedCounterOverflowStub
-                   (info, bci, LIR_OprFact::illegalOpr,
-                    step, counter, result, tmp, LIR_OprFact::illegalOpr, /*notify*/false))
-                : nullptr);
-
     __ increment_profile_ctr(step, counter, result, tmp,
                              LIR_OprFact::illegalOpr, step, overflow, info);
   }

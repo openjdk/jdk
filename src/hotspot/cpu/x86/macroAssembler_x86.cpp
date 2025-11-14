@@ -9823,8 +9823,3 @@ void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
     movzbl(dst, dst);
   }
 }
-// <<<<<<< HEAD
-
-// #endif
-// =======
-// >>>>>>> master
