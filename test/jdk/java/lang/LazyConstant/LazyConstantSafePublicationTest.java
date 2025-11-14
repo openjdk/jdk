@@ -49,16 +49,6 @@ final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final AtomicReference<LazyConstant<Holder>[]> CONSTANTS = new AtomicReference<>();
-
-    static LazyConstant<Holder>[] constants() {
-        @SuppressWarnings("unchecked")
-        LazyConstant<Holder>[] constants = (LazyConstant<Holder>[]) new LazyConstant[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            constants[i] = LazyConstant.of(Holder::new);
-        }
-        return constants;
-    }
 
     static final class Holder {
         // These are non-final fields but should be seen
@@ -72,9 +62,13 @@ final class LazyConstantSafePublicationTest {
 
     static final class Consumer implements Runnable {
 
+        final LazyConstant<Holder>[] constants;
         final int[] observations = new int[SIZE];
-        final LazyConstant<Holder>[] constants = CONSTANTS.get();
         int i = 0;
+
+        public Consumer(LazyConstant<Holder>[] constants) {
+            this.constants = constants;
+        }
 
         @Override
         public void run() {
@@ -95,7 +89,11 @@ final class LazyConstantSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final LazyConstant<Holder>[] constants = CONSTANTS.get();
+        final LazyConstant<Holder>[] constants;
+
+        public Producer(LazyConstant<Holder>[] constants) {
+            this.constants = constants;
+        }
 
         @Override
         public void run() {
@@ -114,10 +112,9 @@ final class LazyConstantSafePublicationTest {
 
     @Test
     void mainTest() {
-        CONSTANTS.set(constants());
-
+        final LazyConstant<Holder>[] constants = constants();
         List<Consumer> consumers = IntStream.range(0, THREADS)
-                .mapToObj(_ -> new Consumer())
+                .mapToObj(_ -> new Consumer(constants))
                 .toList();
 
         List<Thread> consumersThreads = IntStream.range(0, THREADS)
@@ -126,14 +123,14 @@ final class LazyConstantSafePublicationTest {
                         .start(consumers.get(i)))
                 .toList();
 
-        Producer producer = new Producer();
+        Producer producer = new Producer(constants);
 
         Thread producerThread = Thread.ofPlatform()
                 .name("Producer Thread")
                 .start(producer);
 
-        join(consumers, producerThread);
-        join(consumers, consumersThreads.toArray(Thread[]::new));
+        join(constants, consumers, producerThread);
+        join(constants, consumers, consumersThreads.toArray(Thread[]::new));
 
         int[] histogram = new int[64];
         for (Consumer consumer : consumers) {
@@ -151,7 +148,7 @@ final class LazyConstantSafePublicationTest {
         assertEquals(THREADS * SIZE, histogram[63]);
     }
 
-    static void join(List<Consumer> consumers, Thread... threads) {
+    static void join(final LazyConstant<Holder>[] constants, List<Consumer> consumers, Thread... threads) {
         try {
             for (Thread t:threads) {
                 long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
@@ -168,7 +165,7 @@ final class LazyConstantSafePublicationTest {
                     }
                     if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
-                                Stream.of(CONSTANTS.get())
+                                Arrays.stream(constants)
                                         .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
@@ -180,4 +177,14 @@ final class LazyConstantSafePublicationTest {
             fail(ie);
         }
     }
+
+    static LazyConstant<Holder>[] constants() {
+        @SuppressWarnings("unchecked")
+        LazyConstant<Holder>[] constants = (LazyConstant<Holder>[]) new LazyConstant[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            constants[i] = LazyConstant.of(Holder::new);
+        }
+        return constants;
+    }
+
 }
