@@ -277,7 +277,7 @@ public final class BufWriterImpl implements BufWriter {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         long utflenLong = utfLen(str, countNonZeroAscii);
-        // Utf8Entry should have already validated the utflenLong
+        // Utf8Entry should always be writable
         assert ExactConversionsSupport.isLongToCharExact(utflenLong) : utflenLong;
         int utflen = (int) utflenLong;
         reserveSpace(utflen + 3);

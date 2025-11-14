@@ -155,9 +155,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
-            // Validate the after-write length eagerly - an earlier stack trace
-            // better helps users debug where overflow happens, and prevents
-            // invalid entries from circulation
+            // Prevent creation of unwritable entries
             if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
                 throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
             }
