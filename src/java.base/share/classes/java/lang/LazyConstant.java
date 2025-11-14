@@ -255,7 +255,7 @@ public sealed interface LazyConstant<T>
     int hashCode();
 
     /**
-     * {@return a non-initializing string suitable for debugging}
+     * {@return a string suitable for debugging}
      * <p>
      * This method never triggers initialization of this lazy constant and will observe
      * initialization by other threads atomically (i.e., it observes the
@@ -272,7 +272,7 @@ public sealed interface LazyConstant<T>
     // Factory
 
     /**
-     * {@return a lazy constant to be computed later via the provided
+     * {@return a lazy constant whose contents is to be computed later via the provided
      *          {@code computingFunction}}
      * <p>
      * The returned lazy constant strongly references the provided
