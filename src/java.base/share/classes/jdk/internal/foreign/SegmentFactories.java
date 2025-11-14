@@ -48,6 +48,10 @@ import java.util.Objects;
  */
 public class SegmentFactories {
 
+    // The maximum alignment supported by malloc - typically 16 bytes on
+    // 64-bit platforms and 8 bytes on 32-bit platforms.
+    private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
+
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
@@ -199,9 +203,8 @@ public class SegmentFactories {
         long allocationSize;
         long allocationBase;
         long result;
-        long defaultAlignment = alignmentForSize(alignedSize);
-        if (byteAlignment > defaultAlignment) {
-            allocationSize = alignedSize + byteAlignment - defaultAlignment;
+        if (byteAlignment > MAX_MALLOC_ALIGN || alignedSize % byteAlignment != 0) {
+            allocationSize = alignedSize + byteAlignment - MAX_MALLOC_ALIGN;
             if (shouldReserve) {
                 AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
             }
@@ -244,16 +247,6 @@ public class SegmentFactories {
             return UNSAFE.allocateMemory(size);
         } catch (IllegalArgumentException ex) {
             throw new OutOfMemoryError();
-        }
-    }
-
-    private static final boolean IS_FREEBSD = System.getProperty("os.name").equals("FreeBSD");
-
-    private static long alignmentForSize(long size) {
-        if (IS_FREEBSD && size <= Double.BYTES) {
-            return Double.BYTES;
-        } else {
-            return Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
         }
     }
 
