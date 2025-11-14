@@ -3352,49 +3352,42 @@ HeapWord* ShenandoahFreeSet::reserve_alloc_regions_and_allocate_internal(Iter it
       continue;
     }
     if (alloc_regions.length() < num_regions) {
-      if (r->is_trash() || r->is_empty()) {
-        r->try_recycle_under_lock();
-        assert(r->affiliation() == FREE, "Empty region must be free");
-        r->set_affiliation(affiliation);
-        r->make_regular_allocation(affiliation);
-        partitions()->one_region_is_no_longer_empty(partition);
-        affiliation_changed = true;
-      }
       size_t ac = alloc_capacity(r);
-      if (ac >= PLAB::min_size_bytes()) {
-        if (req != nullptr && obj == nullptr && ac >= min_alloc_byte_size) {
-          obj = try_allocate_in(r, *req, *in_new_region);
-          if (obj != nullptr) {
-            ac = alloc_capacity(r);
-            if (ac >= PLAB::min_size_bytes()) {
-              // The region still have capacity for at least one
-              size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
-              increase_bytes_allocated(reserved_bytes);
-              r->set_active_alloc_region();
-              alloc_regions.append(r);
-            }
-          }
-        } else {
-          // The region is reserved for alloc, retire it region from partition
-          size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
-          increase_bytes_allocated(reserved_bytes);
-          r->set_active_alloc_region();
-          alloc_regions.append(r);
+      if (req != nullptr && obj == nullptr && ac >= min_alloc_byte_size) {
+        obj = try_allocate_in(r, *req, *in_new_region);
+        if (obj != nullptr) {
+          ac = alloc_capacity(r);
         }
       }
+      if (ac >= PLAB::min_size_bytes()) {
+        if (r->is_trash() || r->is_empty()) {
+          r->try_recycle_under_lock();
+          assert(r->affiliation() == FREE, "Empty region must be free");
+          r->set_affiliation(affiliation);
+          r->make_regular_allocation(affiliation);
+          partitions()->one_region_is_no_longer_empty(partition);
+          affiliation_changed = true;
+          if (affiliation == OLD_GENERATION) {
+            // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
+            // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
+            // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
+            // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
+            // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
+            // coalesce-and-fill processing.
+            r->end_preemptible_coalesce_and_fill();
+            _heap->old_generation()->clear_cards_for(r);
+          }
+        }
+        // The region still have capacity for at least one lab alloc
+        size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
+        if (partition == ShenandoahFreeSetPartitionId::Mutator) {
+          increase_bytes_allocated(reserved_bytes);
+        }
+        r->set_active_alloc_region();
+        alloc_regions.append(r);
+      }
     } else if (req != nullptr && obj == nullptr) {
-      if (r->is_trash() || r->is_empty()) {
-        r->try_recycle_under_lock();
-        assert(r->affiliation() == FREE, "Empty region must be free");
-        r->set_affiliation(affiliation);
-        r->make_regular_allocation(affiliation);
-        partitions()->one_region_is_no_longer_empty(partition);
-        affiliation_changed = true;
-      }
-      size_t ac = alloc_capacity(r);
-      if (ac >= min_alloc_byte_size) {
-        obj = try_allocate_in(r, *req, *in_new_region);
-      }
+      obj = try_allocate_in(r, *req, *in_new_region);
     }
 
     if (alloc_regions.length() == num_regions && (req == nullptr || obj != nullptr)) {

@@ -423,6 +423,10 @@ void ShenandoahDegenGC::op_update_roots() {
     Universe::verify();
   }
 
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
   heap->rebuild_free_set(false /*concurrent*/);
 }
 
