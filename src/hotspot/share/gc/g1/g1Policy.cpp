@@ -1026,15 +1026,12 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
 
 G1IHOPControl* G1Policy::create_ihop_control(const G1OldGenAllocationTracker* old_gen_alloc_tracker,
                                              const G1Predictions* predictor) {
-  if (G1UseAdaptiveIHOP) {
-    return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
-                                     old_gen_alloc_tracker,
-                                     predictor,
-                                     G1ReservePercent,
-                                     G1HeapWastePercent);
-  } else {
-    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent, old_gen_alloc_tracker);
-  }
+  return new G1IHOPControl(InitiatingHeapOccupancyPercent,
+                           old_gen_alloc_tracker,
+                           G1UseAdaptiveIHOP,
+                           predictor,
+                           G1ReservePercent,
+                           G1HeapWastePercent);
 }
 
 bool G1Policy::update_ihop_prediction(double mutator_time_s,
