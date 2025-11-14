@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ class GetThreadStateTest {
             int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
             check(thread, expected);
 
-            // re-test with interrupt status set
+            // re-test with interrupted status set
             thread.interrupt();
             check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
         } finally {
@@ -143,7 +143,7 @@ class GetThreadStateTest {
                 int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
                 await(thread, expected);
 
-                // re-test with interrupt status set
+                // re-test with interrupted status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }
@@ -192,7 +192,7 @@ class GetThreadStateTest {
                 expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
                 check(thread, expected);
 
-                // re-test with interrupt status set
+                // re-test with interrupted status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }
@@ -244,7 +244,7 @@ class GetThreadStateTest {
                 expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
                 check(thread, expected);
 
-                // re-test with interrupt status set
+                // re-test with interrupted status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }

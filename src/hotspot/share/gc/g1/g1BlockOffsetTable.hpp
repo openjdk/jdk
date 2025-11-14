@@ -35,9 +35,7 @@
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
 // start of the chunk that includes the first word of the subregion.
-class G1BlockOffsetTable: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
+class G1BlockOffsetTable : public CHeapObj<mtGC> {
 private:
   // The reserved region covered by the table.
   MemRegion _reserved;

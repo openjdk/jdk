@@ -33,11 +33,6 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 
 
 vmTestbase/nsk/jvmti/CompiledMethodUnload/compmethunload001/TestDescription.java 8300711 generic-all
 
-####
-## Tests for functionality which currently is not supported for virtual threads
-
-vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java 8348844 generic-all
-vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime001/TestDescription.java 8348844 generic-all
 
 ####
 ## Test fails because it expects to find vthreads in GetAllThreads
@@ -82,14 +77,3 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 # to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
 
-##########
-## Tests incompatible with  with virtual test thread factory.
-## There is no goal to run all test with virtual test thread factory.
-## So any test migth be added as incompatible, the bug is not required.
-
-gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
-gc/g1/TestSkipRebuildRemsetPhase.java 0000000 generic-all
-runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
-runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
-runtime/Thread/StopAtExit.java 0000000 generic-all
-runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all

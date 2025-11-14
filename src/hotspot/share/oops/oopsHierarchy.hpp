@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_OOPSHIERARCHY_HPP
 #define SHARE_OOPS_OOPSHIERARCHY_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include <type_traits>
 
 // OBJECT hierarchy
 // This hierarchy is a representation hierarchy, i.e. if A is a superclass

@@ -88,6 +88,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_F2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -103,6 +104,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_F2L, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_F2L, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_F2L_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -118,6 +120,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_F2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -133,6 +136,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_F2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -148,6 +152,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_D2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -163,6 +168,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_D2L, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_D2L, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_D2L_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -178,6 +184,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_D2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
@@ -193,6 +200,7 @@ public class ScalarFPtoIntCastTest {
     @Test
     @IR(counts = {IRNode.CONV_D2I, "> 0"})
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
+        applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
     @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})

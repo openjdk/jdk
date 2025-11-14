@@ -38,8 +38,9 @@ class NoSafepointVerifier : public StackObj {
 
  private:
   Thread *_thread;
+  bool _active;
  public:
-  NoSafepointVerifier()  NOT_DEBUG_RETURN;
+  explicit NoSafepointVerifier(bool active = true)  NOT_DEBUG_RETURN;
   ~NoSafepointVerifier() NOT_DEBUG_RETURN;
 };
 

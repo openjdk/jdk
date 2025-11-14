@@ -2323,7 +2323,7 @@ private:
     if (strcmp(rep_var,"$Register") == 0)      return "as_Register";
     if (strcmp(rep_var,"$KRegister") == 0)     return "as_KRegister";
     if (strcmp(rep_var,"$FloatRegister") == 0) return "as_FloatRegister";
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
     if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
@@ -2837,7 +2837,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       if (strcmp(first_reg_class, "stack_slots") == 0) {
         fprintf(fp,"  return &(Compile::current()->FIRST_STACK_mask());\n");
       } else if (strcmp(first_reg_class, "dynamic") == 0) {
-        fprintf(fp,"  return &RegMask::Empty;\n");
+        fprintf(fp, "  return &RegMask::EMPTY;\n");
       } else {
         const char* first_reg_class_to_upper = toUpper(first_reg_class);
         fprintf(fp,"  return &%s_mask();\n", first_reg_class_to_upper);

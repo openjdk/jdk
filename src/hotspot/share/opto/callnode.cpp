@@ -72,7 +72,7 @@ void StartNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint
 
 //------------------------------Registers--------------------------------------
 const RegMask &StartNode::in_RegMask(uint) const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------match------------------------------------------
@@ -82,7 +82,7 @@ Node *StartNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this,proj->_con,RegMask::EMPTY,MachProjNode::unmatched_proj);
   case TypeFunc::FramePtr:
     return new MachProjNode(this,proj->_con,Matcher::c_frame_ptr_mask, Op_RegP);
   case TypeFunc::ReturnAdr:
@@ -777,12 +777,12 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
   case TypeFunc::Control:
   case TypeFunc::I_O:
   case TypeFunc::Memory:
-    return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
+    return new MachProjNode(this,proj->_con,RegMask::EMPTY,MachProjNode::unmatched_proj);
 
   case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
     assert(tf()->range()->field_at(TypeFunc::Parms+1) == Type::HALF, "");
     // 2nd half of doubles and longs
-    return new MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
+    return new MachProjNode(this,proj->_con, RegMask::EMPTY, (uint)OptoReg::Bad);
 
   case TypeFunc::Parms: {       // Normal returns
     uint ideal_reg = tf()->range()->field_at(TypeFunc::Parms)->ideal_reg();
@@ -798,14 +798,14 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
       if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
-            rm.Insert(r);
+            rm.insert(r);
           }
         }
       }
     }
 
     if( OptoReg::is_valid(regs.second()) )
-      rm.Insert( regs.second() );
+      rm.insert(regs.second());
     return new MachProjNode(this,proj->_con,rm,ideal_reg);
   }
 
@@ -1228,33 +1228,37 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       assert(IncrementalInlineVirtual, "required");
       assert(cg->call_node() == this, "mismatch");
 
-      // Recover symbolic info for method resolution.
-      ciMethod* caller = jvms()->method();
-      ciBytecodeStream iter(caller);
-      iter.force_bci(jvms()->bci());
+      if (cg->callee_method() == nullptr) {
+        // Recover symbolic info for method resolution.
+        ciMethod* caller = jvms()->method();
+        ciBytecodeStream iter(caller);
+        iter.force_bci(jvms()->bci());
 
-      bool             not_used1;
-      ciSignature*     not_used2;
-      ciMethod*        orig_callee  = iter.get_method(not_used1, &not_used2);  // callee in the bytecode
-      ciKlass*         holder       = iter.get_declared_method_holder();
-      if (orig_callee->is_method_handle_intrinsic()) {
-        assert(_override_symbolic_info, "required");
-        orig_callee = method();
-        holder = method()->holder();
+        bool             not_used1;
+        ciSignature*     not_used2;
+        ciMethod*        orig_callee  = iter.get_method(not_used1, &not_used2);  // callee in the bytecode
+        ciKlass*         holder       = iter.get_declared_method_holder();
+        if (orig_callee->is_method_handle_intrinsic()) {
+          assert(_override_symbolic_info, "required");
+          orig_callee = method();
+          holder = method()->holder();
+        }
+
+        ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
+
+        Node* receiver_node = in(TypeFunc::Parms);
+        const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
+
+        int  not_used3;
+        bool call_does_dispatch;
+        ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
+                                                           call_does_dispatch, not_used3);  // out-parameters
+        if (!call_does_dispatch) {
+          cg->set_callee_method(callee);
+        }
       }
-
-      ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
-
-      Node* receiver_node = in(TypeFunc::Parms);
-      const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
-
-      int  not_used3;
-      bool call_does_dispatch;
-      ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
-                                                         call_does_dispatch, not_used3);  // out-parameters
-      if (!call_does_dispatch) {
+      if (cg->callee_method() != nullptr) {
         // Register for late inlining.
-        cg->set_callee_method(callee);
         register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {
@@ -1488,12 +1492,14 @@ void SafePointNode::dump_spec(outputStream *st) const {
 #endif
 
 const RegMask &SafePointNode::in_RegMask(uint idx) const {
-  if( idx < TypeFunc::Parms ) return RegMask::Empty;
+  if (idx < TypeFunc::Parms) {
+    return RegMask::EMPTY;
+  }
   // Values outside the domain represent debug info
   return *(Compile::current()->matcher()->idealreg2debugmask[in(idx)->ideal_reg()]);
 }
 const RegMask &SafePointNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 
@@ -1604,7 +1610,7 @@ const RegMask &SafePointScalarObjectNode::in_RegMask(uint idx) const {
 }
 
 const RegMask &SafePointScalarObjectNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 uint SafePointScalarObjectNode::match_edge(uint idx) const {
@@ -1655,7 +1661,7 @@ const RegMask &SafePointScalarMergeNode::in_RegMask(uint idx) const {
 }
 
 const RegMask &SafePointScalarMergeNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 uint SafePointScalarMergeNode::match_edge(uint idx) const {
