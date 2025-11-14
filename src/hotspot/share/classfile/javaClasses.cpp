@@ -1241,10 +1241,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
-
-    // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
-    set_init_lock(mirror(), r);
+    assert(init_lock(mirror()) != nullptr, "allocated during AOT assembly");
 
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
