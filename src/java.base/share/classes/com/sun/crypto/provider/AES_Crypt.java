@@ -54,9 +54,9 @@ final class AES_Crypt extends SymmetricCipher {
     private int rounds;
     private byte[] prevKey = null;
 
-    // Following attribute is specific to Intrinsics where the unprocessed
-    // key is used for PPC64, S390, and RISCV64 architectures, whereas K is
-    // used for everything else.
+    // Following attributes (sessionKe and K) are specific to Intrinsics, where
+    // sessionKe is the unprocessed key that is used for PPC64, S390 and
+    // RISCV64 architectures, whereas K is used for everything else.
     private int[] sessionKe = null; // key for encryption
     private int[] sessionKd = null; // preprocessed key for decryption
     private int[] K = null; // preprocessed key in case of decryption

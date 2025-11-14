@@ -7475,15 +7475,16 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
 
 //------------------------------get_key_start_from_aescrypt_object-----------------------
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
-#if defined(PPC64) || defined(S390) || defined(RISCV64)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
   // Intel's extension is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64, s390 and riscv64 stubs of encryption and decryption use the same round keys.
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "sessionKe", "[I");
+#if defined(PPC64) || defined(S390) || defined(RISCV64)
+  const char* key_name = "sessionKe";
 #else
-  Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
+  const char* key_name = "K";
 #endif // PPC64
+  Node* objAESCryptKey = load_field_from_object(aescrypt_object, key_name, "[I");
   assert (objAESCryptKey != nullptr, "wrong version of com.sun.crypto.provider.AES_Crypt");
   if (objAESCryptKey == nullptr) return (Node *) nullptr;
 
