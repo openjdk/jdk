@@ -246,7 +246,8 @@ public sealed interface LazyConstant<T>
     boolean equals(Object obj);
 
     /**
-     * {@return the {@linkplain System#identityHashCode(Object)} for this lazy constant}
+     * {@return the {@linkplain System#identityHashCode(Object) identity hash code} for
+     *          this lazy constant
      *
      * This method never triggers initialization of this lazy constant.
      */
