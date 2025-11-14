@@ -24,6 +24,7 @@
 
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
+#include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
 #include "opto/machnode.hpp"
 #include "opto/parse.hpp"
@@ -161,6 +162,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
+  _congraph = nullptr;
   _parse = nullptr;
 
   if (file_name != nullptr) {
@@ -637,6 +639,29 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("is_block_start", "true");
     }
 
+    // Dump escape analysis state for relevant nodes.
+    if (node->is_Allocate()) {
+      AllocateNode* alloc = node->as_Allocate();
+      if (alloc->_is_scalar_replaceable) {
+        print_prop("is_scalar_replaceable", "true");
+      }
+      if (alloc->_is_non_escaping) {
+        print_prop("is_non_escaping", "true");
+      }
+      if (alloc->does_not_escape_thread()) {
+        print_prop("does_not_escape_thread", "true");
+      }
+    }
+    if (node->is_SafePoint() && node->as_SafePoint()->has_ea_local_in_scope()) {
+      print_prop("has_ea_local_in_scope", "true");
+    }
+    if (node->is_CallJava() && node->as_CallJava()->arg_escape()) {
+      print_prop("arg_escape", "true");
+    }
+    if (node->is_Initialize() && node->as_Initialize()->does_not_escape()) {
+      print_prop("does_not_escape", "true");
+    }
+
     const char *short_name = "short_name";
     if (strcmp(node->Name(), "Parm") == 0 && node->as_Proj()->_con >= TypeFunc::Parms) {
       int index = node->as_Proj()->_con - TypeFunc::Parms;
@@ -729,6 +754,19 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         lrg_id = _chaitin->_lrg_map.live_range_id(node);
       }
       print_prop("lrg", lrg_id);
+    }
+
+    if (_congraph != nullptr && node->_idx < _congraph->nodes_size()) {
+      PointsToNode* ptn = _congraph->ptnode_adr(node->_idx);
+      if (ptn != nullptr) {
+        stringStream node_head;
+        ptn->dump_header(false, &node_head);
+        print_prop("ea_node", node_head.freeze());
+        print_prop("escape_state", ptn->esc_name());
+        if (ptn->scalar_replaceable()) {
+          print_prop("scalar_replaceable", "true");
+        }
+      }
     }
 
     if (node->is_MachSafePoint()) {
