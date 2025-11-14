@@ -27,7 +27,6 @@ package java.nio.file;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.nio.file.FileStore;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
@@ -110,29 +109,28 @@ class CopyMoveHelper {
         LinkOption[] linkOptions = (opts.followLinks) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
-        FileSystemProvider provider = source.getFileSystem().provider();
-
-        // retrieve whether source posix view is supported
-        FileStore fileStore = provider.getFileStore(source);
-        boolean sourceSupportsPosixFileAttributeView =
-            fileStore.supportsFileAttributeView(PosixFileAttributeView.class);
-
         // attributes of source file
+        boolean sourceSupportsPosixAttributes = false;
         BasicFileAttributes sourceAttrs = null;
-        if (sourceSupportsPosixFileAttributeView)
+        try {
             sourceAttrs = Files.readAttributes(source,
                                                PosixFileAttributes.class,
                                                linkOptions);
-        if (sourceAttrs == null)
+            sourceSupportsPosixAttributes = true;
+        } catch (UnsupportedOperationException x) {
+            // posix attributes not supported
             sourceAttrs = Files.readAttributes(source,
                                                BasicFileAttributes.class,
                                                linkOptions);
+        }
+
         assert sourceAttrs != null;
 
         if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
         // ensure source can be copied
+        FileSystemProvider provider = source.getFileSystem().provider();
         provider.checkAccess(source, AccessMode.READ);
 
         // delete target if it exists and REPLACE_EXISTING is specified
@@ -153,7 +151,7 @@ class CopyMoveHelper {
         // copy basic and, if supported, POSIX attributes to target
         if (opts.copyAttributes) {
             BasicFileAttributeView targetView = null;
-            if (sourceSupportsPosixFileAttributeView) {
+            if (sourceSupportsPosixAttributes) {
                 targetView = Files.getFileAttributeView(target,
                                                      PosixFileAttributeView.class);
             }
