@@ -47,7 +47,7 @@ import java.security.spec.X509EncodedKeySpec;
  * @see EncryptedPrivateKeyInfo
  * @see X509Certificate
  * @see X509CRL
- * @see PEMRecord
+ * @see PEM
  *
  * @since 25
  */
@@ -55,5 +55,5 @@ import java.security.spec.X509EncodedKeySpec;
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public sealed interface DEREncodable permits AsymmetricKey, KeyPair,
     PKCS8EncodedKeySpec, X509EncodedKeySpec, EncryptedPrivateKeyInfo,
-    X509Certificate, X509CRL, PEMRecord {
+    X509Certificate, X509CRL, PEM {
 }
