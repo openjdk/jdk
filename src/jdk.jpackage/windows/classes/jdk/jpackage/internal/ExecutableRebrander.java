@@ -120,46 +120,41 @@ final class ExecutableRebrander {
             List<UpdateResourceAction> actions) throws IOException {
         Objects.requireNonNull(actions);
         actions.forEach(Objects::requireNonNull);
+
+        String tempDirectory = env.buildRoot().toAbsolutePath().toString();
+        if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(tempDirectory)) {
+            Log.verbose(I18N.format("message.potential.windows.defender.issue", tempDirectory));
+        }
+
+        var shortTargetPath = ShortPathUtils.toShortPath(target);
+        long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
+        if (resourceLock == 0) {
+            throw I18N.buildException().message("error.lock-resource", shortTargetPath.orElse(target)).create(RuntimeException::new);
+        }
+
+        final boolean resourceUnlockedSuccess;
         try {
-            String tempDirectory = env.buildRoot().toAbsolutePath().toString();
-            if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(tempDirectory)) {
-                Log.verbose(I18N.format("message.potential.windows.defender.issue", tempDirectory));
-            }
-
-            target.toFile().setWritable(true, true);
-
-            var shortTargetPath = ShortPathUtils.toShortPath(target);
-            long resourceLock = lockResource(shortTargetPath.orElse(target).toString());
-            if (resourceLock == 0) {
-                throw I18N.buildException().message("error.lock-resource", shortTargetPath.orElse(target)).create(RuntimeException::new);
-            }
-
-            final boolean resourceUnlockedSuccess;
-            try {
-                for (var action : actions) {
-                    action.editResource(resourceLock);
-                }
-            } finally {
-                if (resourceLock == 0) {
-                    resourceUnlockedSuccess = true;
-                } else {
-                    resourceUnlockedSuccess = unlockResource(resourceLock);
-                    if (shortTargetPath.isPresent()) {
-                        // Windows will rename the excuatble in the unlock operation.
-                        // Should restore executable's name.
-                        var tmpPath = target.getParent().resolve(
-                                target.getFileName().toString() + ".restore");
-                        Files.move(shortTargetPath.get(), tmpPath);
-                        Files.move(tmpPath, target);
-                    }
-                }
-            }
-
-            if (!resourceUnlockedSuccess) {
-                throw I18N.buildException().message("error.unlock-resource", target).create(RuntimeException::new);
+            for (var action : actions) {
+                action.editResource(resourceLock);
             }
         } finally {
-            target.toFile().setReadOnly();
+            if (resourceLock == 0) {
+                resourceUnlockedSuccess = true;
+            } else {
+                resourceUnlockedSuccess = unlockResource(resourceLock);
+                if (shortTargetPath.isPresent()) {
+                    // Windows will rename the executable in the unlock operation.
+                    // Should restore executable's name.
+                    var tmpPath = target.getParent().resolve(
+                            target.getFileName().toString() + ".restore");
+                    Files.move(shortTargetPath.get(), tmpPath);
+                    Files.move(tmpPath, target);
+                }
+            }
+        }
+
+        if (!resourceUnlockedSuccess) {
+            throw I18N.buildException().message("error.unlock-resource", target).create(RuntimeException::new);
         }
     }
 
