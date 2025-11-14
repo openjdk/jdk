@@ -552,16 +552,20 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
     // compute new_hi depending on whether divisor or dividend is non-constant.
     // i2 is purely in the negative domain here (as i2_hi is -1)
     // which means the maximum value this division can yield is either
-    // a) max_val           for non-constant dividend or
-    // b) (max_val / 2) + 1 for constant dividend and non-constant divisor or
-    // c) min_val           for constant dividend and constant divisor
     if (!i1->is_con()) {
+      // a) non-constant dividend: i1 could be min_val + 1.
+      // -> i1 / i2 = (min_val + 1) / -1 = max_val is possible.
       new_hi = max_val;
       assert((min_val + 1) / -1 == new_hi, "new_hi should be max_val");
     } else if (i2_lo != i2_hi) {
+      // b) i1 is constant min_val, i2 is non-constant.
+      //    if i2 = -1 -> i1 / i2 =  min_val / -1 = min_val
+      //    if i2 < -1 -> i1 / i2 <= min_val / -2 = (max_val / 2) + 1
       new_hi = (max_val / 2) + 1;
       assert(min_val / -2 == new_hi, "new_hi should be (max_val / 2) + 1)");
     } else {
+      // c) i1 is constant min_val, i2 is constant -1.
+      //    -> i1 / i2 = min_val / -1 = min_val
       new_hi = min_val;
     }
 

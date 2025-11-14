@@ -52,29 +52,28 @@ public class IntegerDivValueTests {
     private static final int INT_CONST_2 = INTS.next();
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public int testIntConstantFolding() {
         // All constants available during parsing
         return INT_CONST_1 / INT_CONST_2;
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public int testIntConstantFoldingSpecialCase() {
         // All constants available during parsing
         return getIntConstant(Integer.MIN_VALUE) / getIntConstant(-1);
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
-
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public int testIntRange(int in) {
         int a = (in & 7) + 16;
         return a / 12; // [16, 23] / 12 is constant 1
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testIntRange2(int in) {
         int a = (in & 7) + 16;
         return a / 4 > 3; // [16, 23] / 4 => [4, 5]
@@ -89,7 +88,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testIntRange4(int in, int in2) {
         int a = (in & 15); // [0, 15]
         int b = (in2 & 3) + 1; // [1, 4]
@@ -97,7 +96,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testIntRange5(int in, int in2) {
         int a = (in & 15) + 5; // [5, 20]
         int b = (in2 & 3) + 1; // [1, 4]
@@ -105,7 +104,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testIntRange6(int in, int in2) {
         int a = (in & 15) + 5; // [5, 20]
         int b = (in2 & 7) - 1; // [-1, 5]
@@ -123,7 +122,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public int testIntRange8(int in, int in2) {
         int a = (in & 31) + 128; // [128, 159]
         int b = (in2 & 15) + 100; // [100, 115]
@@ -279,7 +278,7 @@ public class IntegerDivValueTests {
     private static final long LONG_CONST_2 = LONGS.next();
 
     @Test
-    //@IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    //@IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     // This results in a series of nodes due to DivLNode::Ideal and in particular transform_long_divide, which operates on non-constant divisors.
     // transform_long_divide splits up the division into multiple other nodes, such as MulHiLNode, which does not have a good Value() implemantion.
     // When JDK-8366815 is fixed, these rules should be reenabled
@@ -290,25 +289,26 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public long testLongConstantFoldingSpecialCase() {
         // All constants available during parsing
         return getLongConstant(Long.MIN_VALUE) / getLongConstant(-1L);
     }
 
     @Test
-    //@IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    //@IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     // This results in a series of nodes due to DivLNode::Ideal and in particular transform_long_divide, which operates on non-constant divisors.
     // transform_long_divide splits up the division into multiple other nodes, such as MulHiLNode, which does not have a good Value() implemantion.
     // When JDK-8366815 is fixed, these rules should be reenabled
     // Alternatively, a better MulHiLNode::Value() implemantion should also lead to constant folding
+    @IR(counts = {IRNode.RSHIFT_L, "> 0", IRNode.ADD_L, "> 0", IRNode.AND_L, "> 0"}, failOn = {IRNode.DIV})
     public long testLongRange(long in) {
         long a = (in & 7L) + 16L;
         return a / 12L; // [16, 23] / 12 is constant 1
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testLongRange2(long in) {
         long a = (in & 7L) + 16L;
         return a / 4L > 3L; // [16, 23] / 4 => [4, 5]
@@ -323,7 +323,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
 
     public boolean testLongRange4(long in, long in2) {
         long a = (in & 15L); // [0, 15]
@@ -332,7 +332,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testLongRange5(long in, long in2) {
         long a = (in & 15L) + 5L; // [5, 20]
         long b = (in2 & 3L) + 1L; // [1, 4]
@@ -340,7 +340,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public boolean testLongRange6(long in, long in2) {
         long a = (in & 15L) + 5L; // [5, 20]
         long b = (in2 & 7L) - 1L; // [-1, 5]
@@ -358,7 +358,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L, IRNode.URSHIFT_I, IRNode.URSHIFT_L, IRNode.RSHIFT_I, IRNode.RSHIFT_L, IRNode.MUL_I, IRNode.MUL_L, IRNode.ADD_I, IRNode.ADD_L, IRNode.SUB_I, IRNode.SUB_L, IRNode.AND_I, IRNode.AND_L})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public long testLongRange8(long in, long in2) {
         long a = (in & 31L) + 128L; // [128, 159]
         long b = (in2 & 15L) + 100L; // [100, 115]
