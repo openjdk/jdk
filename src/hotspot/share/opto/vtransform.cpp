@@ -1266,7 +1266,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         if (current_red != nullptr) {
           current_red->print();
         } else {
-          tty->print(" nullptr");
+          tty->print("nullptr");
         }
       )
       return false; // not compatible
