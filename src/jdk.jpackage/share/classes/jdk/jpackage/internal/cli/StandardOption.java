@@ -325,7 +325,6 @@ public final class StandardOption {
 
     public static final OptionValue<List<Path>> MAC_DMG_CONTENT = pathOption("mac-dmg-content")
             .valuePattern("additional content path")
-            //.toArray(pathSeparator())
             .tokenizer(",")
             .createArray(toList());
 
@@ -539,7 +538,6 @@ public final class StandardOption {
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-//            .converterExceptionFormatString("error.parameter-not-launcher-shortcut-dir")
             .converterExceptionFormatString("error.invalid-option-value")
             .converter(mainLauncherShortcutConv())
             .defaultOptionalValue(new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT))
@@ -639,8 +637,6 @@ public final class StandardOption {
                 .converterExceptionFactory((optionName, optionValue, formatString, cause) -> {
                     final var theCause = cause.orElseThrow();
                     if (theCause instanceof AddLauncherSyntaxException) {
-//                        return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName,
-//                                optionValue, "error.parameter-add-launcher-malformed", cause);
                         return ERROR_WITHOUT_CONTEXT.create(optionName,
                                 optionValue, "ERR_NoAddLauncherName", cause);
                     } else {
