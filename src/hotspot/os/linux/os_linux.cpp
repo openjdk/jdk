@@ -510,7 +510,11 @@ pid_t os::Linux::gettid() {
 // This can change at any time.
 julong os::Linux::host_swap() {
   struct sysinfo si;
-  sysinfo(&si);
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    assert(false, "sysinfo failed in host_swap(): %s", os::strerror(errno));
+    return 0;
+  }
   return (julong)(si.totalswap * si.mem_unit);
 }
 
@@ -2447,6 +2451,8 @@ void os::Linux::print_uptime_info(outputStream* st) {
   int ret = sysinfo(&sinfo);
   if (ret == 0) {
     os::print_dhm(st, "OS uptime:", (long) sinfo.uptime);
+  } else {
+    st->print_cr("OS uptime could not be retrieved.");
   }
 }
 
@@ -2570,7 +2576,7 @@ void os::print_memory_info(outputStream* st) {
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  sysinfo(&si);
+  int ret = sysinfo(&si);
   physical_memory_size_type phys_mem = physical_memory();
   st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
@@ -2578,10 +2584,14 @@ void os::print_memory_info(outputStream* st) {
   (void)os::available_memory(avail_mem);
   st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
-  st->print(", swap " UINT64_FORMAT "k",
-            ((jlong)si.totalswap * si.mem_unit) >> 10);
-  st->print("(" UINT64_FORMAT "k free)",
-            ((jlong)si.freeswap * si.mem_unit) >> 10);
+  if (ret == 0) {
+    st->print(", swap " UINT64_FORMAT "k",
+              ((jlong)si.totalswap * si.mem_unit) >> 10);
+    st->print("(" UINT64_FORMAT "k free)",
+              ((jlong)si.freeswap * si.mem_unit) >> 10);
+  } else {
+    st->print(", swap could not be determined");
+  }
   st->cr();
   st->print("Page Sizes: ");
   _page_sizes.print_on(st);
