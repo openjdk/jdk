@@ -117,9 +117,37 @@ import sun.nio.cs.UTF_8;
  * Unicode code points (i.e., characters), in addition to those for
  * dealing with Unicode code units (i.e., {@code char} values).
  *
- * <p>Unless otherwise noted, methods for comparing Strings do not take locale
- * into account.  The {@link java.text.Collator} class provides methods for
- * finer-grain, locale-sensitive String comparison.
+ * <p><b>String comparison and case-insensitive matching</b>
+ *
+ * <p>There are several related ways to compare {@code String} values; choose
+ * the one whose semantics fit your purpose:
+ *
+ * <ul>
+ *   <li><b>Exact content equality</b> — {@link #equals(Object)} checks that two
+ *       strings contain the identical char sequence of UTF-16 code units. This is
+ *       a strict, case-sensitive comparison suitable for exact matching, hashing
+ *       and any situation that requires bit-for-bit stability.</li>
+ *
+ *   <li><b>Simple case-insensitive equality</b> — {@link #equalsIgnoreCase(String)}
+ *       (and the corresponding {@link #compareToIgnoreCase(String)} and {@link #CASE_INSENSITIVE_ORDER})
+ *       performs a per-code-point, locale-independent comparison using
+ *       {@link Character#toUpperCase(int)} and {@link Character#toLowerCase(int)}.
+ *       It is convenient for many common case-insensitive checks.</li>
+ *
+ *   <li><b>Unicode case-folded equivalence</b> — {@link #equalsFoldCase(String)}
+ *       (and the corresponding {@link #compareToFoldCase(String)} and {@link #UNICODE_CASEFOLD_ORDER})
+ *       implement the Unicode <em>{@index "full case folding"}</em> rules defined in
+ *       <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">Unicode CaseFolding.txt</a>.
+ *       Case folding is locale-independent and language-neutral and may map a single code
+ *       point to multiple code points (1:M mappings). For example, the German sharp
+ *       s ({@code U+00DF}) is folded to the sequence {@code "ss"}.
+ *       Use these methods when you need Unicode-compliant caseless matching,
+ *       searching, or ordering.</li>
+ * </ul>
+ *
+ * <p>Unless otherwise noted, methods for comparing Strings do not take locale into
+ * account. The {@link java.text.Collator} class provides methods for finer-grain,
+ * locale-sensitive String comparison.
  *
  * @implNote The implementation of the string concatenation operator is left to
  * the discretion of a Java compiler, as long as the compiler ultimately conforms

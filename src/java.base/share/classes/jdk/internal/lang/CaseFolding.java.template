@@ -104,7 +104,7 @@ public final class CaseFolding {
     * back-refs, string slice (sequences), single, family(char-property) and class range. Single and
     * family may appears independently or within a class.
     * <p>
-    * For loose/case-insensitive matching, the back-refs, slices and singles apply {code toUpperCase} and
+    * For loose/case-insensitive matching, the back-refs, slices and singles apply {@code toUpperCase} and
     * {@code toLowerCase} to both the pattern and the input string. This effectively 'close' the class for
     * matching.
     * <p>

@@ -26,9 +26,8 @@
  * @summary tests unicode case-folding based String comparison and equality
  * @bug 4397357
  * @library /lib/testlibrary/java/lang
- * @compile --add-exports java.base/jdk.internal.lang=ALL-UNNAMED
- * UnicodeCaseFoldingTest.java
- * @run junit/othervm --add-exports java.base/jdk.internal.lang=ALL-UNNAMED
+ * @modules java.base/jdk.internal.lang:+open
+ * @run junit/othervm
  * UnicodeCaseFoldingTest
  */
 
