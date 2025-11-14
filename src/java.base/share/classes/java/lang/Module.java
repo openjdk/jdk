@@ -951,7 +951,7 @@ public final class Module implements AnnotatedElement {
             if (caller != this) {
                 throw new IllegalCallerException(caller + " != " + this);
             }
-            implAddReflectivelyExports(pn, other);
+            implAddExports(pn, other);
         }
 
         return this;
@@ -1010,7 +1010,7 @@ public final class Module implements AnnotatedElement {
             Module caller = getCallerModule(Reflection.getCallerClass());
             if (caller != this && (caller == null || !isOpen(pn, caller)))
                 throw new IllegalCallerException(pn + " is not open to " + caller);
-            implAddReflectivelyOpens(pn, other);
+            implAddOpens(pn, other);
         }
 
         return this;
@@ -1029,7 +1029,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Updates this module to export a package to another module.
      *
-     * @apiNote Used by Instrumentation::redefineModule and --add-exports
+     * @apiNote Used addExports, Instrumentation::redefineModule, and --add-exports
      */
     void implAddExports(String pn, Module other) {
         implAddExportsOrOpens(pn, other, false, VM.isBooted(), true);
@@ -1077,7 +1077,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Updates this module to open a package to another module.
      *
-     * @apiNote Used by Instrumentation::redefineModule and --add-opens
+     * @apiNote Used by addOpens, Instrumentation::redefineModule, and --add-opens
      */
     void implAddOpens(String pn, Module other) {
         implAddExportsOrOpens(pn, other, true, VM.isBooted(), true);
@@ -1091,14 +1091,6 @@ public final class Module implements AnnotatedElement {
      */
     void implAddOpensToAllUnnamed(String pn) {
         implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, true, false, true);
-    }
-
-    private void implAddReflectivelyExports(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, false, true, true);
-    }
-
-    private void implAddReflectivelyOpens(String pn, Module other) {
-        implAddExportsOrOpens(pn, other, true, true, true);
     }
 
     /**

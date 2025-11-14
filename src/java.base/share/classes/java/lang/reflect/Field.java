@@ -803,14 +803,14 @@ class Field extends AccessibleObject implements Member {
      *     <ol type="a">
      *     <li> {@code D} and the caller class are in the same module.</li>
      *     <li> The field is {@code public} and {@code D} is {@code public} in a package
-     *     that the module containing {@code D} exports to at least the caller's module. </li>
+     *     that the module containing {@code D} exports to at least the caller's module.</li>
      *     <li> {@code D} is in a package that is {@linkplain Module#isOpen(String, Module)
      *     open} to the caller's module.</li>
      *     </ol>
      * </li>
      * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
      * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
-     * <li>The field is non-static. </li>
+     * <li>The field is non-static.</li>
      * </ul>
      *
      * <p>If any of the above conditions is not met, this method throws an
@@ -839,7 +839,7 @@ class Field extends AccessibleObject implements Member {
      *     {@linkplain Module#isExported(String) exported} to all modules.</li>
      * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
      * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
-     * <li>The field is non-static. </li>
+     * <li>The field is non-static.</li>
      * </ul>
      *
      * <p>If any of the above conditions is not met, this method throws an
@@ -1484,10 +1484,10 @@ class Field extends AccessibleObject implements Member {
         assert isFinalInstanceInNormalClass();
 
         if (caller != null) {
-            // declaring class in package that is statically opened to caller, or
-            // public field and declaring class is public in package statically exported to caller
-            if (!isFinalStaticallyDeeplyAccessible(caller)) {
-                throw new IllegalAccessException(notOpenToCallerMessage(caller, unreflect));
+            // check if declaring class in package that is open to caller, or public field
+            // and declaring class is public in package exported to caller
+            if (!isFinalDeeplyAccessible(caller)) {
+                throw new IllegalAccessException(notAccessibleToCallerMessage(caller, unreflect));
             }
         } else {
             // no java caller, only allowed if field is public in exported package
@@ -1542,11 +1542,15 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
-     * Returns true if this field's declaring class is in a module that is opened
-     * to the given caller's module, or the field is public in a declaring class
-     * that is public in a package exported statically to the given caller's module.
+     * Returns true if this final field is "deeply accessible" to the caller.
+     * The field is deeply accessible if declaring class is in a package that is open
+     * to the caller's module, or the field is public in a public class that is exported
+     * to the caller's module.
+     *
+     * Updates to the module of the declaring class at runtime with {@code Module.addExports}
+     * or {@code Module.addOpens} have no impact on the result of this method.
      */
-    private boolean isFinalStaticallyDeeplyAccessible(Class<?> caller) {
+    private boolean isFinalDeeplyAccessible(Class<?> caller) {
         assert isFinalInstanceInNormalClass();
 
         // all fields in unnamed modules are deeply accessible
@@ -1609,12 +1613,16 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * Returns the message for an IllegalAccessException when a final field cannot be
-     * mutated because the declaring class is in a package that is not open to caller.
+     * mutated because the declaring class is in a package that is not "deeply accessible"
+     * to the caller.
      */
-    private String notOpenToCallerMessage(Class<?> caller, boolean unreflect) {
-        return String.format("%s, %s does not explicitly open package %s to %s",
+    private String notAccessibleToCallerMessage(Class<?> caller, boolean unreflect) {
+        String exportOrOpen = Modifier.isPublic(modifiers)
+                && Modifier.isPublic(clazz.getModifiers()) ? "exports" : "open";
+        return String.format("%s, %s does not explicitly %s package %s to %s",
                 cannotSetFieldMessage(caller, unreflect),
                 clazz.getModule(),
+                exportOrOpen,
                 clazz.getPackageName(),
                 caller.getModule());
     }
