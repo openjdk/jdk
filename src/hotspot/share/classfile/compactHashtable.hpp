@@ -294,6 +294,7 @@ public:
     return nullptr;
   }
 
+  // Iterate through the values in the table, stopping when do_value() returns false.
   template <class ITER>
   inline void iterate(ITER* iter) const { iterate([&](V v) { iter->do_value(v); }); }
 
@@ -302,6 +303,7 @@ public:
     iterate(const_cast<Function&>(function));
   }
 
+  // Iterate through the values in the table, stopping when the lambda returns false.
   template<typename Function>
   inline void iterate(Function& function) const { // lambda enabled API
     for (u4 i = 0; i < _bucket_count; i++) {
@@ -311,15 +313,33 @@ public:
       u4* entry = _entries + bucket_offset;
 
       if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
-        function(decode(entry[0]));
+        if (!function(decode(entry[0]))) {
+          return;
+        }
       } else {
         u4* entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
         while (entry < entry_max) {
-          function(decode(entry[1]));
+          if (!function(decode(entry[1]))) {
+            return;
+          }
           entry += 2;
         }
       }
     }
+  }
+
+  // Unconditionally iterate through all the values in the table
+  template <class ITER>
+  inline void iterate_all(ITER* iter) const { iterate_all([&](V v) { iter->do_value(v); }); }
+
+  // Unconditionally iterate through all the values in the table using lambda
+  template<typename Function>
+  void iterate_all(Function function) const { // lambda enabled API
+    auto wrapper = [&] (V v) {
+      function(v);
+      return true;
+    };
+    iterate(wrapper);
   }
 
   void print_table_statistics(outputStream* st, const char* name) {
