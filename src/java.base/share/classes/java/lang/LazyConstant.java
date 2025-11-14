@@ -247,7 +247,7 @@ public sealed interface LazyConstant<T>
 
     /**
      * {@return the {@linkplain System#identityHashCode(Object) identity hash code} for
-     *          this lazy constant
+     *          this lazy constant}
      *
      * This method never triggers initialization of this lazy constant.
      */

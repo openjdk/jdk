@@ -436,9 +436,8 @@ class ImmutableCollections {
         }
     }
 
-    static sealed class SubList<E> extends AbstractImmutableList<E>
-            implements RandomAccess
-            permits LazyCollections.LazyList.LazySubList {
+    static final class SubList<E> extends AbstractImmutableList<E>
+            implements RandomAccess {
 
         @Stable
         final AbstractImmutableList<E> root;

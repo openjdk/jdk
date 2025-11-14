@@ -52,7 +52,7 @@ final class LazyCollections {
     private LazyCollections() { }
 
     // Unsafe allows LazyCollection classes to be used early in the boot sequence
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @jdk.internal.ValueBased
     static final class LazyList<E>
@@ -135,70 +135,12 @@ final class LazyCollections {
             return (T[]) a;
         }
 
-        @Override
-        public List<E> reversed() {
-            return new ReverseOrderLazyListView<>(this);
-        }
-
-        @Override
-        public List<E> subList(int fromIndex, int toIndex) {
-            subListRangeCheck(fromIndex, toIndex, size());
-            return LazySubList.fromLazyList(this, fromIndex, toIndex);
-        }
-
         @SuppressWarnings("unchecked")
         @ForceInline
         private E contentsAcquire(long offset) {
             return (E) UNSAFE.getReferenceAcquire(elements, offset);
         }
 
-        // @ValueBased cannot be used here as ImmutableCollections.SubList declares fields
-        static final class LazySubList<E> extends ImmutableCollections.SubList<E> {
-
-            private LazySubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
-                super(root, offset, size);
-            }
-
-            @Override
-            public List<E> reversed() {
-                return new ReverseOrderLazyListView<>(this);
-            }
-
-            @Override
-            public List<E> subList(int fromIndex, int toIndex) {
-                subListRangeCheck(fromIndex, toIndex, size());
-                return LazySubList.fromLazySubList(this, fromIndex, toIndex);
-            }
-
-            @Override
-            boolean allowNulls() {
-                return false;
-            }
-
-            static <E> ImmutableCollections.SubList<E> fromLazyList(LazyList<E> list, int fromIndex, int toIndex) {
-                return new LazySubList<>(list, fromIndex, toIndex - fromIndex);
-            }
-
-            static <E> ImmutableCollections.SubList<E> fromLazySubList(LazySubList<E> parent, int fromIndex, int toIndex) {
-                return new LazySubList<>(parent.root, parent.offset + fromIndex, toIndex - fromIndex);
-            }
-
-        }
-
-        private static final class ReverseOrderLazyListView<E>
-                extends ReverseOrderListView.Rand<E> {
-
-            private ReverseOrderLazyListView(List<E> base) {
-                super(base, false);
-            }
-
-            @Override
-            public List<E> subList(int fromIndex, int toIndex) {
-                final int size = base.size();
-                subListRangeCheck(fromIndex, toIndex, size);
-                return new ReverseOrderLazyListView<>(base.subList(size - toIndex, size - fromIndex));
-            }
-        }
     }
 
     static final class LazyEnumMap<K extends Enum<K>, V>
