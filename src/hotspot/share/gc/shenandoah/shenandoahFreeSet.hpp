@@ -106,9 +106,6 @@ private:
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
 
-  // Measured in bytes.
-  size_t _allocated_since_gc_start[UIntNumPartitions];
-
   // Some notes:
   //  total_region_counts[p] is _capacity[p] / region_size_bytes
   //  retired_regions[p] is total_region_counts[p] - _region_counts[p]
