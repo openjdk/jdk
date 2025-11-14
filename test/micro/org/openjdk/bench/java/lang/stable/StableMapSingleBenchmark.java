@@ -63,11 +63,9 @@ public class StableMapSingleBenchmark {
     private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
     private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
     private static final Map<MyEnum, Optional<Integer>> MAP_ENUM_OPTIONAL = Map.ofLazy(EnumSet.allOf(MyEnum.class), e -> Optional.of(e.ordinal()));
-    private static final Function<Integer, Integer> FUNCTION = MAP::get;
 
     private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
     private final Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
-    private final Function<Integer, Integer> function = map::get;
 
     @Benchmark
     public int map() {
@@ -77,11 +75,6 @@ public class StableMapSingleBenchmark {
     @Benchmark
     public int mapEnum() {
         return mapEnum.get(MyEnum.BAR);
-    }
-
-    @Benchmark
-    public int function() {
-        return function.apply(1);
     }
 
     @Benchmark
@@ -97,11 +90,6 @@ public class StableMapSingleBenchmark {
     @Benchmark
     public int staticMapEnumOptional() {
         return MAP_ENUM_OPTIONAL.get(MyEnum.BAR).orElseThrow();
-    }
-
-    @Benchmark
-    public int staticIntFunction() {
-        return FUNCTION.apply(1);
     }
 
     private enum MyEnum {FOO, BAR}
