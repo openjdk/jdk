@@ -31,12 +31,48 @@
  */
 
 /*
+ * @test id=Serial
+ * @requires vm.gc.Serial
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseSerialGC TestGetTotalGcCpuTime
+ */
+
+/*
+ * @test id=Parallel
+ * @requires vm.gc.Parallel
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseParallelGC TestGetTotalGcCpuTime
+ */
+
+/*
  * @test id=G1
  * @requires vm.gc.G1
  * @bug     8368527
  * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
  * @library /test/lib
  * @run main/othervm -XX:+UseG1GC TestGetTotalGcCpuTime
+ */
+
+/*
+ * @test id=ZGC
+ * @requires vm.gc.Z
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC TestGetTotalGcCpuTime
+ */
+
+/*
+ * @test id=Shenandoah
+ * @requires vm.gc.Shenandoah
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC TestGetTotalGcCpuTime
  */
 
 import java.lang.management.ManagementFactory;
