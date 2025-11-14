@@ -161,6 +161,11 @@ import compiler.lib.ir_framework.TestFramework;
  * <strong>hashtag replacements</strong> in the {@link String}s: the Template argument names are captured, and
  * the argument values automatically replace any {@code "#name"} in the {@link String}s. See the different overloads
  * of {@link #make} for examples. Additional hashtag replacements can be defined with {@link #let}.
+ * We have decided to keep hashtag replacements constrained to the scope of one Template. They
+ * do not escape to outer or inner Template uses. If one needs to pass values to inner Templates,
+ * this can be done with Template arguments. Keeping hashtag replacements local to Templates
+ * has the benefit that there is no conflict in recursive templates, where outer and inner Templates
+ * define the same hashtag replacement.
  *
  * <p>
  * When using nested Templates, there can be collisions with identifiers (e.g. variable names and method names).
@@ -855,6 +860,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * for anything that follows it, until the the end of the next outer scope
      * that is non-transparent for hashtag replacements. Additionally, hashtag
      * replacements are limited to the template they were defined in.
+     * If you want to pass values from an outer to an inner template, this cannot
+     * be done with hashtags directly. Instead, one has to pass the values via
+     * template arguments.
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.

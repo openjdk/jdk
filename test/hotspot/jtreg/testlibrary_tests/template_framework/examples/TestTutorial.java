@@ -214,6 +214,8 @@ public class TestTutorial {
     //            are only there to facilitate string templating within the limited
     //            scope of a template. You may consider it like a "local variable"
     //            for code generation purposes only.
+    //            If you need to pass some value to a nested Template, consider using
+    //            a Template argument, and capturing that Template argument.
     public static String generateWithHashtagAndDollarReplacements() {
         var template1 = Template.make("x", (Integer x) -> scope(
             // We have the "#x" hashtag replacement from the argument capture above.
