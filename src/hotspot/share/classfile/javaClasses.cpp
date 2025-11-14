@@ -1336,11 +1336,6 @@ void java_lang_Class::set_class_data(oop java_class, oop class_data) {
   java_class->obj_field_put(_classData_offset, class_data);
 }
 
-void java_lang_Class::set_reflection_data(oop java_class, oop reflection_data) {
-  assert(_reflectionData_offset != 0, "must be set");
-  java_class->obj_field_put(_reflectionData_offset, reflection_data);
-}
-
 void java_lang_Class::set_class_loader(oop java_class, oop loader) {
   assert(_class_loader_offset != 0, "offsets should have been initialized");
   java_class->obj_field_put(_class_loader_offset, loader);
@@ -1483,7 +1478,6 @@ Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   return k;
 }
 
-
 void java_lang_Class::release_set_array_klass(oop java_class, Klass* klass) {
   assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->release_metadata_field_put(_array_klass_offset, klass);
@@ -1587,11 +1581,6 @@ int java_lang_Class::modifiers(oop the_class_mirror) {
 void java_lang_Class::set_modifiers(oop the_class_mirror, u2 value) {
   assert(_modifiers_offset != 0, "offsets should have been initialized");
   the_class_mirror->char_field_put(_modifiers_offset, value);
-}
-
-int java_lang_Class::raw_access_flags(oop the_class_mirror) {
-  assert(_raw_access_flags_offset != 0, "offsets should have been initialized");
-  return the_class_mirror->char_field(_raw_access_flags_offset);
 }
 
 void java_lang_Class::set_raw_access_flags(oop the_class_mirror, u2 value) {
