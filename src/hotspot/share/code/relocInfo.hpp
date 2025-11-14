@@ -569,6 +569,8 @@ class RelocIterator : public StackObj {
   short*          _data;    // pointer to the relocation's data
   short           _datalen; // number of halfwords in _data
 
+  AARCH64_ONLY(bool _deferred_icache_invalidation;)
+
   // Base addresses needed to compute targets of section_word_type relocs.
   address _section_start[SECT_LIMIT];
   address _section_end  [SECT_LIMIT];
@@ -638,6 +640,11 @@ class RelocIterator : public StackObj {
   int          datalen()      const { return _datalen; }
   bool     has_current()      const { return _datalen >= 0; }
   bool   addr_in_const()      const;
+
+#ifdef AARCH64
+  bool deferred_icache_invalidation() const { return _deferred_icache_invalidation;  }
+  void set_deferred_icache_invalidation(bool b) { _deferred_icache_invalidation = b; }
+#endif
 
   address section_start(int n) const {
     assert(_section_start[n], "section %d must be initialized", n);

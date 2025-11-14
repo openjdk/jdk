@@ -60,6 +60,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -753,10 +754,6 @@ public:
     if (_bs_nm->is_armed(nm)) {
       const uintptr_t prev_color = ZNMethod::color(nm);
 
-      // Heal oops
-      ZUncoloredRootMarkYoungOopClosure cl(prev_color);
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
-
       // Disarm only the young marking, not any potential old marking cycle
 
       const uintptr_t old_marked_mask = ZPointerMarkedMask ^ (ZPointerMarkedYoung0 | ZPointerMarkedYoung1);
@@ -767,9 +764,17 @@ public:
       // Check if disarming for young mark, completely disarms the nmethod entry barrier
       const bool complete_disarm = ZPointer::is_store_good(new_disarm_value_ptr);
 
-      if (complete_disarm) {
-        // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
-        ZNMethod::nmethod_patch_barriers(nm);
+      {
+        ICacheInvalidationContext icic(nm);
+
+        if (complete_disarm) {
+          // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming
+          ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
+        }
+
+        // Heal oops
+        ZUncoloredRootMarkYoungOopClosure cl(prev_color);
+        ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
       }
 
       _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));

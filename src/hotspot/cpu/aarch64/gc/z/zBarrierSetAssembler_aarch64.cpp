@@ -862,7 +862,7 @@ static void change_immediate(uint32_t& instr, uint32_t imm, uint32_t start, uint
   instr |= imm << start;
 }
 
-void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
+void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format, bool defer_icache_invalidation) {
   const uint16_t value = patch_barrier_relocation_value(format);
   uint32_t* const patch_addr = (uint32_t*)addr;
 
@@ -877,6 +877,12 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     break;
   default:
     ShouldNotReachHere();
+  }
+
+  if (defer_icache_invalidation) {
+    // Instruction cache invalidation per barrier can be expensive, e.g. on Neoverse N1 having erratum 1542419.
+    // Defer the ICache invalidation to a later point where multiple patches can be handled together.
+    return;
   }
 
   OrderAccess::fence();

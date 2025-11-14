@@ -2032,9 +2032,10 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates, bool defer_icache_invalidation) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this, begin, end);
+  AARCH64_ONLY(iter.set_deferred_icache_invalidation(defer_icache_invalidation);)
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();

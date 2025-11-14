@@ -641,6 +641,17 @@ void VM_Version::initialize() {
     clear_feature(CPU_SVE);
   }
 
+  // Neoverse N1: 0xd0c
+  if (_cpu == CPU_ARM && model_is(0xd0c) && FLAG_IS_DEFAULT(NeoverseN1Errata1542419)) {
+    const int major_rev_num = cpu_variant();
+    const int minor_rev_num = cpu_revision();
+    if (!(major_rev_num >= 4 && minor_rev_num >= 1)) {
+      // As Neoverse N1 r4p1 and later are not affected by the erratum,
+      // enable the workaround by default for earlier revisions.
+      FLAG_SET_DEFAULT(NeoverseN1Errata1542419, true);
+    }
+  }
+
   // Construct the "features" string
   stringStream ss(512);
   ss.print("0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
