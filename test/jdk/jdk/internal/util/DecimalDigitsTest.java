@@ -23,8 +23,8 @@
 
 package test.jdk.internal.util;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jdk.internal.util.DecimalDigits;
 
@@ -33,7 +33,7 @@ import jdk.internal.util.DecimalDigits;
  * @bug 8366224
  * @summary Test DecimalDigits.appendPair method with LATIN1 and UTF16 encoding
  * @modules java.base/jdk.internal.util
- * @run testng test.jdk.internal.util.DecimalDigitsTest
+ * @run junit test.jdk.internal.util.DecimalDigitsTest
  */
 public class DecimalDigitsTest {
 
