@@ -146,7 +146,7 @@ public final class LocalDate
 
     /**
      * For backward compatibility of the serialized {@code LocalDate.class} object,
-     * explicitly declare the types of the serialized fields as defined in JDK 1.8.
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
      * Instances of {@code LocalDate} are serialized using the dedicated
      * serialized form by {@code writeReplace}.
      * @serialField year int The year.

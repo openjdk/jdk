@@ -138,7 +138,7 @@ public final class MonthDay
 
     /**
      * For backward compatibility of the serialized {@code MonthDay.class} object,
-     * explicitly declare the types of the serialized fields as defined in JDK 1.8.
+     * explicitly declare the types of the serialized fields as defined in Java SE 8.
      * Instances of {@code MonthDay} are serialized using the dedicated
      * serialized form by {@code writeReplace}.
      * @serialField month int The month-of-year.
