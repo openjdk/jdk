@@ -41,11 +41,11 @@ import java.util.function.Supplier;
  * {@linkplain LazyConstant#of(Supplier) LazyConstant.of({@code <computing function>})}.
  * When created, the lazy constant is <em>not initialized</em>, meaning it has no contents.
  * The lazy constant (of type {@code T}) can then be <em>initialized</em>
- * (and its contents retrieved) by calling {@linkplain #get()}. The first time
- * {@linkplain #get()} is called, the underlying <em>computing function</em>
+ * (and its contents retrieved) by calling {@linkplain #get() get()}. The first time
+ * {@linkplain #get() get()} is called, the underlying <em>computing function</em>
  * (provided at construction) will be invoked and the result will be used to initialize
  * the constant. Once a lazy constant is initialized, its contents can <em>never change</em>
- * and will be retrieved over and over again upon subsequent {@linkplain #get() get}
+ * and will be retrieved over and over again upon subsequent {@linkplain #get() get()}
  * invocations.
  * <p>
  * Consider the following example where a lazy constant field "{@code logger}" holds
@@ -68,11 +68,11 @@ import java.util.function.Supplier;
  * <p>
  * Initially, the lazy constant is <em>not initialized</em>. When {@code logger.get()}
  * is first invoked, it evaluates the computing function and initializes the constant to
- * the result; the result is then returned to the client. Hence, {@linkplain #get()}
+ * the result; the result is then returned to the client. Hence, {@linkplain #get() get()}
  * guarantees that the constant is <em>initialized</em> before it returns, barring
  * any exceptions.
  * <p>
- * Furthermore, {@linkplain #get()} guarantees that, out of several threads trying to
+ * Furthermore, {@linkplain #get() get()} guarantees that, out of several threads trying to
  * invoke the computing function simultaneously, {@linkplain ##thread-safety only one is
  * ever selected} for computation. This property is crucial as evaluation of the computing
  * function may have side effects, for example, the call above to {@code Logger.create()}
