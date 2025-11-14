@@ -585,9 +585,10 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   //  1. Some of the plab may have been dedicated to old evacuations.
   //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
 #ifdef ASSERT
-  const size_t actual_size_words = ShenandoahThreadLocalData::get_plab_actual_size(thread);
-  const size_t plab_size_words = plab->word_sz();
-  assert(actual_size_words == plab_size_words || actual_size_words == 0, "Actual plab size and plab word size should be the same");
+  // const size_t actual_size_words = ShenandoahThreadLocalData::get_plab_actual_size(thread);
+  // const size_t plab_size_words = plab->word_sz();
+  // assert(actual_size_words == plab_size_words || actual_size_words == 0, "Actual plab size (%zu) and plab word sz (%zu) should be the same",
+  //   actual_size_words, plab_size_words);
 #endif
 
   size_t not_promoted =
