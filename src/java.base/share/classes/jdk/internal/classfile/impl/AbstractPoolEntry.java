@@ -142,7 +142,7 @@ public abstract sealed class AbstractPoolEntry {
         @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
-                          byte[] rawBytes, int offset, int rawLen) {
+                      byte[] rawBytes, int offset, int rawLen) {
             super(cpm, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
@@ -155,6 +155,9 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
+            // Validate the after-write length eagerly - an earlier stack trace
+            // better helps users debug where overflow happens, and prevents
+            // invalid entries from circulation
             if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
                 throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
             }

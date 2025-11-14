@@ -107,8 +107,6 @@ public sealed interface SignatureAttribute
      * {@return a {@code Signature} attribute for a class}
      *
      * @param classSignature the class signature
-     * @throws IllegalArgumentException if the raw signature string is not
-     *         representable by a {@link Utf8Entry}
      */
     static SignatureAttribute of(ClassSignature classSignature) {
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(classSignature.signatureString()));
@@ -118,8 +116,6 @@ public sealed interface SignatureAttribute
      * {@return a {@code Signature} attribute for a method}
      *
      * @param methodSignature the method signature
-     * @throws IllegalArgumentException if the raw signature string is not
-     *         representable by a {@link Utf8Entry}
      */
     static SignatureAttribute of(MethodSignature methodSignature) {
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(methodSignature.signatureString()));
@@ -129,8 +125,6 @@ public sealed interface SignatureAttribute
      * {@return a {@code Signature} attribute for a field or a record component}
      *
      * @param signature the Java type signature
-     * @throws IllegalArgumentException if the raw signature string is not
-     *         representable by a {@link Utf8Entry}
      */
     static SignatureAttribute of(Signature signature) {
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(signature.signatureString()));

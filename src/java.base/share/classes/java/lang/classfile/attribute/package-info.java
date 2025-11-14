@@ -32,11 +32,8 @@
  * including {@link Attribute}, {@link AttributedElement}, {@link AttributeMapper}, and {@link CustomAttribute}, which
  * do not reside in this package.
  * <p>
- * Unless otherwise noted, passing null or an array or collection that contains null as an element to a constructor or
- * method of any Class-File API class or interface will cause a {@link NullPointerException} to be thrown; passing any
- * string or nominal descriptor that cannot be represented in classfile, or an array or collection that contains such a
- * string or nominal descriptor as an element to a constructor or method of any Class-File API class or interface will
- * cause an {@link IllegalArgumentException} to be thrown.
+ * APIs in this package perform {@linkplain java.lang.classfile##checks null and unrepresentable argument checks},
+ * unless otherwise noted.
  *
  * <h2 id="reading">Reading Attributes</h2>
  * The general way to obtain attributes is through {@link AttributedElement}.  In addition to that, many attributes

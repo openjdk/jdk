@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,16 +93,6 @@
  * and  {@link PackageDesc}. They represent module and package
  * info structures, suitable for describing modules and their content in bytecode
  * reading and writing APIs.
- * <p>
- * Nominal descriptors may represent entities not possible at run-time due to
- * restrictions of the Java Virtual Machine.  For example, the {@linkplain
- * java.io.DataInput##modified-utf-8 Modified UTF-8} representation of a class
- * name must not have a length over 65535, and method arguments can use at most
- * 255 slots.  These restrictions do not exist for {@link ClassDesc} or {@link
- * MethodTypeDesc}, and their resolution through {@code resolveConstantDesc}
- * may result in errors.  Consumers of nominal descriptors, such as bytecode
- * reading and writing APIs, should define the behaviors when such descriptors
- * are passed.
  *
  * @jvms 4.4 The Constant Pool
  *

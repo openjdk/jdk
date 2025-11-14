@@ -25,7 +25,6 @@
 package java.lang.classfile;
 
 import java.lang.classfile.attribute.SignatureAttribute;
-import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.List;
 
 import jdk.internal.classfile.impl.SignaturesImpl;
@@ -35,11 +34,6 @@ import static java.util.Objects.requireNonNull;
 /**
  * Models the generic signature of a class or interface, as defined by JVMS
  * {@jvms 4.7.9.1}.
- * <p>
- * Similar to nominal descriptors from {@link java.lang.constant}, {@code
- * ClassSignature} can represent generic signatures that cannot be represented in
- * classfile.  There is no classfile representation checks for string or nominal
- * descriptor arguments passed to static factory methods in this class.
  *
  * @see Class
  * @see SignatureAttribute
@@ -110,7 +104,6 @@ public sealed interface ClassSignature
 
     /**
      * Parses a raw class signature string into a {@linkplain Signature}.
-     * The string may be unrepresentable by a {@link Utf8Entry}.
      *
      * @param classSignature the raw class signature string
      * @return class signature

@@ -30,11 +30,8 @@
  * {@code class} file format.  Constant pool entries are low-level models to faithfully represent the exact structure
  * of a {@code class} file.
  * <p>
- * Unless otherwise noted, passing null or an array or collection that contains null as an element to a constructor or
- * method of any Class-File API class or interface will cause a {@link NullPointerException} to be thrown; passing any
- * string or nominal descriptor that cannot be represented in classfile, or an array or collection that contains such a
- * string or nominal descriptor as an element to a constructor or method of any Class-File API class or interface will
- * cause an {@link IllegalArgumentException} to be thrown.
+ * APIs in this package perform {@linkplain java.lang.classfile##checks null and unrepresentable argument checks},
+ * unless otherwise noted.
  *
  * <h2 id="reading">Reading the constant pool entries</h2>
  * When read from {@code class} files, the pool entries are lazily inflated; the contents of these entries, besides the

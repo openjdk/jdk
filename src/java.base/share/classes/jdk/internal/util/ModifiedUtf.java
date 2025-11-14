@@ -38,6 +38,7 @@ public final class ModifiedUtf {
     private ModifiedUtf() {
     }
 
+    /// Writes a char to the pre-sized modified UTF buffer.
     @ForceInline
     public static int putChar(byte[] buf, int offset, char c) {
         if (c != 0 && c < 0x80) {

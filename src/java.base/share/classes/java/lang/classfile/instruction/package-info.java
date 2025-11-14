@@ -29,11 +29,8 @@
  * The {@code java.lang.classfile.instruction} package contains interfaces describing code instructions.
  * Implementations of these interfaces are immutable.
  * <p>
- * Unless otherwise noted, passing null or an array or collection that contains null as an element to a constructor or
- * method of any Class-File API class or interface will cause a {@link NullPointerException} to be thrown; passing any
- * string or nominal descriptor that cannot be represented in classfile, or an array or collection that contains such a
- * string or nominal descriptor as an element to a constructor or method of any Class-File API class or interface will
- * cause an {@link IllegalArgumentException} to be thrown.
+ * APIs in this package perform {@linkplain java.lang.classfile##checks null and unrepresentable argument checks},
+ * unless otherwise noted.
  *
  * <h2 id="reading">Reading of instructions</h2>
  * Instructions and pseudo-instructions are usually accessed from a {@link CodeModel}, such as {@link CodeModel#forEach

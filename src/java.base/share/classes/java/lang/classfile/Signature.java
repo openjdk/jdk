@@ -26,7 +26,6 @@ package java.lang.classfile;
 
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
@@ -49,11 +48,6 @@ import static java.util.Objects.requireNonNull;
  * not be empty and must not contain any of the ASCII characters {@code
  * . ; [ / < > :}.  Top-level class and interface names are denoted by
  * slash-separated identifiers.
- * <p>
- * Similar to nominal descriptors from {@link java.lang.constant}, {@code
- * Signature} can represent type signatures that cannot be represented in
- * classfile.  There is no classfile representation checks for string or nominal
- * descriptor arguments passed to static factory methods in this class.
  *
  * @see Type
  * @see SignatureAttribute
@@ -68,8 +62,7 @@ public sealed interface Signature {
     String signatureString();
 
     /**
-     * Parses a Java type signature from a raw string.  The string may be
-     * unrepresentable by a {@link Utf8Entry}.
+     * Parses a Java type signature from a raw string.
      *
      * @param javaTypeSignature raw Java type signature string
      * @return a Java type signature
