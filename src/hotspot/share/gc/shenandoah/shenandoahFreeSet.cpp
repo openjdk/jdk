@@ -1458,7 +1458,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_from_mutator(ShenandoahAllocRequest& r
 // at the start of the free space.
 //
 // This is merely a helper method to use for the purpose of such a calculation.
-size_t ShenandoahFreeSet::get_usable_free_words(size_t free_bytes) const {
+size_t ShenandoahFreeSet::get_usable_free_words(size_t free_bytes) {
   // e.g. card_size is 512, card_shift is 9, min_fill_size() is 8
   //      free is 514
   //      usable_free is 512, which is decreased to 0

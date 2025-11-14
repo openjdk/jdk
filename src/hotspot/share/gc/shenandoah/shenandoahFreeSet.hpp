@@ -639,7 +639,6 @@ private:
 
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
-  size_t get_usable_free_words(size_t free_bytes) const;
 
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
@@ -893,6 +892,8 @@ public:
   // of regions reserved of young evacuations.
   void compute_young_and_old_reserves(size_t young_cset_regions, size_t old_cset_regions, bool have_evacuation_reserves,
                                       size_t &young_reserve_result, size_t &old_reserve_result) const;
+
+  static size_t get_usable_free_words(size_t free_bytes);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP

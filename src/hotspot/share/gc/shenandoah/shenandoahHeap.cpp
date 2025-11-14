@@ -1036,7 +1036,10 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
         // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
         // last-start representing object b while first-start represents object c.  This is why we need to require all
         // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-        old_generation()->card_scan()->register_object(obj);
+        {
+          ShenandoahHeapLocker locker(lock(), false);
+          old_generation()->card_scan()->register_object(obj);
+        }
       }
     }
     return obj;
