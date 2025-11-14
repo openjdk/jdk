@@ -2964,8 +2964,8 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
-bool os::numa_set_thread_affinity(Thread* thread, int node) {
-  return Linux::numa_set_thread_affinity(thread->osthread()->thread_id(), node);
+void os::numa_set_thread_affinity(Thread* thread, int node) {
+  Linux::numa_set_thread_affinity(thread->osthread()->thread_id(), node);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -3234,22 +3234,27 @@ void os::Linux::build_numa_affinity_masks() {
     return;
   }
 
+  // It's important that we respect any user configuration by removing the
+  // CPUs we're not allowed to run on from the affinity mask. For example,
+  // if the user runs the JVM with "numactl -C 0-1,4-5" on a machine with
+  // the following NUMA setup:
+  // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
+  // We expect to get the following affinity masks:
+  // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+
   const int num_nodes = get_existing_num_nodes();
   const unsigned num_cpus = (unsigned)os::processor_count();
 
   for (int i = 0; i < num_nodes; i++) {
     struct bitmask* affinity_mask = _numa_allocate_cpumask();
+
+    // Fill the affinity mask with all CPUs belonging to NUMA node i
     _numa_node_to_cpus_v2(i, affinity_mask);
 
-    // Make sure that the affinity mask are consistent with the original
-    // affinity mask that the process was started with. For example, if the user
-    // runs the JVM with "numactl -C 0,1,2,3,4" on a machine with the following
-    // NUMA setup, we expect to get the following affinity masks:
-    // NUMA 0: CPUs 0-3, NUMA 1: CPUs 4-7
-    // Affinity masks: idx 0 = (0, 1), idx 1 = (4, 5)
+    // Clear the bits of all CPUs that the process is not allowed to
+    // execute tasks on
     for (unsigned j = 0; j < num_cpus; j++) {
-      if (_numa_bitmask_isbitset(affinity_mask, j) &&
-          !_numa_bitmask_isbitset(_numa_all_cpus_ptr, j)) {
+      if (!_numa_bitmask_isbitset(_numa_all_cpus_ptr, j)) {
         _numa_bitmask_clearbit(affinity_mask, j);
       }
     }
@@ -3373,23 +3378,23 @@ int os::Linux::numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen)
   return -1;
 }
 
-bool os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
+void os::Linux::numa_set_thread_affinity(pid_t tid, int node) {
   // We only set affinity if running libnuma v2 (_numa_sched_setaffinity
   // is available) and we have all affinity mask
   if (_numa_sched_setaffinity == nullptr ||
       _numa_all_cpus_ptr == nullptr ||
       _numa_affinity_masks->is_empty()) {
-    return false;
+    return;
   }
 
-  // If the node is -1, the affinity is reverted to the original affinity
-  // of the thread when the VM was started
   if (node == -1) {
-    return _numa_sched_setaffinity(tid, _numa_all_cpus_ptr) == 0;
+    // If the node is -1, the affinity is reverted to the original affinity
+    // of the thread when the VM was started
+    _numa_sched_setaffinity(tid, _numa_all_cpus_ptr);
+  } else {
+    // Normal case, set the affinity to the corresponding affinity mask
+    _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node));
   }
-
-  // Normal case, set the affinity to the corresponding affinity mask
-  return _numa_sched_setaffinity(tid, _numa_affinity_masks->at(node)) == 0;
 }
 
 int os::Linux::get_node_by_cpu(int cpu_id) {

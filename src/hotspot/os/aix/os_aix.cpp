@@ -1747,8 +1747,7 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
 }
 
-bool os::numa_set_thread_affinity(Thread *thread, int node) {
-  return false;
+void os::numa_set_thread_affinity(Thread *thread, int node) {
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {

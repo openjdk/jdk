@@ -309,7 +309,7 @@ class os::Linux {
   static NumaAllocationPolicy _current_numa_policy;
 
  public:
-  static bool numa_set_thread_affinity(pid_t tid, int node);
+  static void numa_set_thread_affinity(pid_t tid, int node);
 
   static int sched_getcpu()  { return _sched_getcpu != nullptr ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen);
