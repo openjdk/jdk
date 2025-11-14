@@ -381,11 +381,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
 #ifdef ASSERT
-#define WALK_FORWARD_IN_BLOCK_START true
-#else
-#define WALK_FORWARD_IN_BLOCK_START false
-#endif // ASSERT
-  while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
+  while (p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
@@ -393,7 +389,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     // Check assumptions in previous block comment if this assert fires
     guarantee(false, "Should never need forward walk in block start");
   }
-#undef WALK_FORWARD_IN_BLOCK_START
+#endif // ASSERT
   assert(p <= left, "p should start at or before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
   return p;
