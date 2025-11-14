@@ -105,13 +105,13 @@ public class SegmentBulkHash {
 
             var s = switch (SegmentType.valueOf(segmentType)) {
                     case HEAP   -> heapSegment;
-                    case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, heapSegment, JAVA_LONG, 0L, baseArray.length);
+                    case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, baseArray);
             };
             s = switch (Alignment.valueOf(alignment)) {
                 case ALIGNED   -> s.asSlice(0, size);
                 case UNALIGNED -> s.asSlice(1, size);
             };
-            
+
             segment = (AbstractMemorySegmentImpl) s;
         }
 

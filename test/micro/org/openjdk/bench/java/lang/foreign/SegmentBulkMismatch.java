@@ -107,8 +107,8 @@ public class SegmentBulkMismatch {
                 }
                 case NATIVE -> {
                     var s = MemorySegment.ofArray(baseArray);
-                    srcSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, s, JAVA_LONG, 0L, baseArray.length);
-                    dstSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, s, JAVA_LONG, 0L, baseArray.length);
+                    srcSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, baseArray);
+                    dstSegment = Arena.ofAuto().allocateFrom(JAVA_LONG, baseArray);
                 }
             }
             switch (Alignment.valueOf(alignment)) {

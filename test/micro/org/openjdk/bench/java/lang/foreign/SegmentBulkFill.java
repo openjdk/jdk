@@ -111,7 +111,7 @@ public class SegmentBulkFill {
 
             segment = switch (SegmentType.valueOf(segmentType)) {
                 case HEAP   -> heapSegment;
-                case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, heapSegment, JAVA_LONG, 0L, baseArray.length);
+                case NATIVE -> Arena.ofAuto().allocateFrom(JAVA_LONG, baseArray);
             };
             segment = switch (Alignment.valueOf(alignment)) {
                 case ALIGNED   -> segment.asSlice(0, size);
