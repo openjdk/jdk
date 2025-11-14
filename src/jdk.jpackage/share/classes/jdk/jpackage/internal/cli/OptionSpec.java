@@ -123,7 +123,7 @@ record OptionSpec<T>(
      * Returns a stream of copy option spec objects, each having a single name.
      * <p>
      * If the option has three names "a", "b", and "c", the stream will have three
-     * option spec objects each with a single name. The firt will have name "a", the
+     * option spec objects each with a single name. The first will have name "a", the
      * second - "b", and the third "c".
      *
      * @return the stream of copy option spec objects each having a single name
