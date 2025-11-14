@@ -43,7 +43,6 @@ final class HelpFormatter {
     private HelpFormatter(List<OptionGroup> optionGroups, OptionGroupFormatter formatter) {
         this.optionGroups = Objects.requireNonNull(optionGroups);
         this.formatter = Objects.requireNonNull(formatter);
-
     }
 
     void format(Consumer<CharSequence> sink) {

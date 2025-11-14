@@ -181,6 +181,8 @@ final class JOptSimpleOptionsBuilder {
         JOptSimpleErrorType(Runnable initializer) {
             try {
                 initializer.run();
+                // Should never get to this point as the above line is expected to throw 
+                // an exception of type `jdk.internal.joptsimple.OptionException`.
                 throw new AssertionError();
             } catch (jdk.internal.joptsimple.OptionException ex) {
                 type = ex.getClass();

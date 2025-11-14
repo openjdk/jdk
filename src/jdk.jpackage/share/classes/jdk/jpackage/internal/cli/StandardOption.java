@@ -215,7 +215,7 @@ public final class StandardOption {
     public static final OptionValue<Path> TEMP_ROOT = directoryOption("temp")
             .validatorExceptionFactory((optionName, optionValue, formatString, cause) -> {
                 if (cause.orElseThrow() instanceof StandardValidator.DirectoryListingIOException) {
-                    formatString = "error.path-paramater-ioexception";
+                    formatString = "error.path-parameter-ioexception";
                     return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName, optionValue, formatString, cause);
                 } else {
                     return ERROR_WITH_VALUE.create(optionName, optionValue, formatString, cause);
@@ -331,9 +331,7 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> MAC_SIGN = booleanOption("mac-sign").scope(MAC_SIGNING).addAliases("s").create();
 
-    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store")
-            //.scope(MAC_SIGNING) // TODO: --mac-app-store should be applicable to app image signing operation because it redefines signing key
-            .create();
+    public static final OptionValue<Boolean> MAC_APP_STORE = booleanOption("mac-app-store").create();
 
     public static final OptionValue<String> MAC_APP_CATEGORY = stringOption("mac-app-category").create();
 
@@ -489,11 +487,11 @@ public final class StandardOption {
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 context.asFileSource().ifPresent(propertyFile -> {
                     b.converterExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
-                    b.converterExceptionFormatString("error.properties-paramater-not-path");
+                    b.converterExceptionFormatString("error.properties-parameter-not-path");
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .converterExceptionFormatString("error.paramater-not-path");
+            .converterExceptionFormatString("error.parameter-not-path");
         };
     }
 
@@ -503,12 +501,12 @@ public final class StandardOption {
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 context.asFileSource().ifPresent(propertyFile -> {
                     b.validatorExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
-                    b.validatorExceptionFormatString("error.properties-paramater-not-file");
+                    b.validatorExceptionFormatString("error.properties-parameter-not-file");
                 });
             }))
             .validator(StandardValidator.IS_EXISTENT_NOT_DIRECTORY)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .validatorExceptionFormatString("error.paramater-not-file");
+            .validatorExceptionFormatString("error.parameter-not-file");
         };
     }
 
@@ -517,7 +515,7 @@ public final class StandardOption {
             builder.mutate(pathOptionMutator())
             .validator(StandardValidator.IS_DIRECTORY)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .validatorExceptionFormatString("error.paramater-not-directory");
+            .validatorExceptionFormatString("error.parameter-not-directory");
         };
     }
 
@@ -537,11 +535,11 @@ public final class StandardOption {
                 context.asFileSource().ifPresent(propertyFile -> {
                     b.converter(addLauncherShortcutConv()).defaultOptionalValue(null);
                     b.converterExceptionFactory(forMessageWithOptionValueAndName(propertyFile));
-                    b.converterExceptionFormatString("error.properties-paramater-not-launcher-shortcut-dir");
+                    b.converterExceptionFormatString("error.properties-parameter-not-launcher-shortcut-dir");
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-//            .converterExceptionFormatString("error.paramater-not-launcher-shortcut-dir")
+//            .converterExceptionFormatString("error.parameter-not-launcher-shortcut-dir")
             .converterExceptionFormatString("error.invalid-option-value")
             .converter(mainLauncherShortcutConv())
             .defaultOptionalValue(new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT))
@@ -570,7 +568,7 @@ public final class StandardOption {
         return option(name, UUID.class)
                 .converter(uuidConv())
                 .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-                .converterExceptionFormatString("error.paramater-not-uuid");
+                .converterExceptionFormatString("error.parameter-not-uuid");
     }
 
     private static OptionSpecBuilder<Path> pathOption(String name) {
@@ -594,7 +592,7 @@ public final class StandardOption {
                 .valuePattern("url")
                 .validator(StandardValidator.IS_URL)
                 .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-                .validatorExceptionFormatString("error.paramater-not-url");
+                .validatorExceptionFormatString("error.parameter-not-url");
     }
 
     private static OptionSpecBuilder<Boolean> booleanOption(String name) {
@@ -642,7 +640,7 @@ public final class StandardOption {
                     final var theCause = cause.orElseThrow();
                     if (theCause instanceof AddLauncherSyntaxException) {
 //                        return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName,
-//                                optionValue, "error.paramater-add-launcher-malformed", cause);
+//                                optionValue, "error.parameter-add-launcher-malformed", cause);
                         return ERROR_WITHOUT_CONTEXT.create(optionName,
                                 optionValue, "ERR_NoAddLauncherName", cause);
                     } else {
@@ -666,7 +664,7 @@ public final class StandardOption {
                                 StringToken.of(value, components[1])).orElseThrow();
                     } catch (JPackageException ex) {
                         throw new AddLauncherInvalidPropertyFileException(I18N.format(
-                                "error.paramater-add-launcher-not-file", components[1], launcherName));
+                                "error.parameter-add-launcher-not-file", components[1], launcherName));
                     }
 
                     return new AdditionalLauncher(launcherName, propertyFile);

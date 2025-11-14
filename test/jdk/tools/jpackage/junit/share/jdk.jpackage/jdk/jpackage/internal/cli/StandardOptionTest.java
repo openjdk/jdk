@@ -123,7 +123,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
-        assertEquals(I18N.format("error.paramater-not-file", workDir, "--icon"), ex.getMessage());
+        assertEquals(I18N.format("error.parameter-not-file", workDir, "--icon"), ex.getMessage());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
-        assertEquals(I18N.format("error.properties-paramater-not-file", workDir, "icon", propertyFile), ex.getMessage());
+        assertEquals(I18N.format("error.properties-parameter-not-file", workDir, "icon", propertyFile), ex.getMessage());
     }
 
     @ParameterizedTest
@@ -400,11 +400,6 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 return this;
             }
 
-//            Builder expectMalformedError(String v) {
-//                Objects.requireNonNull(v);
-//                return optionValue(v).expectErrors(I18N.format("error.paramater-add-launcher-malformed", v, "--add-launcher"));
-//            }
-
             Builder optionValue(String v) {
                 optionValue = v;
                 return this;
@@ -425,14 +420,14 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 buildAddLauncherTest().optionValue("some").expectErrors(I18N.format("ERR_NoAddLauncherName")),
                 buildAddLauncherTest().optionValue("").expectErrors(I18N.format("ERR_NoAddLauncherName")),
                 buildAddLauncherTest().optionValue("=").expectErrors(I18N.format("ERR_InvalidSLName", "")),
-                buildAddLauncherTest().optionValue("a=").expectErrors(I18N.format("error.paramater-add-launcher-not-file", "", "a")),
+                buildAddLauncherTest().optionValue("a=").expectErrors(I18N.format("error.parameter-add-launcher-not-file", "", "a")),
                 buildAddLauncherTest().optionValue("=a").expectErrors(I18N.format("ERR_InvalidSLName", "")),
                 // Not a path
-                buildAddLauncherTest().optionValue("foo=*").expectErrors(I18N.format("error.paramater-add-launcher-not-file", "*", "foo")),
+                buildAddLauncherTest().optionValue("foo=*").expectErrors(I18N.format("error.parameter-add-launcher-not-file", "*", "foo")),
                 // The path is a directory
-                buildAddLauncherTest().optionValue("foo=.").expectErrors(I18N.format("error.paramater-add-launcher-not-file", ".", "foo")),
+                buildAddLauncherTest().optionValue("foo=.").expectErrors(I18N.format("error.parameter-add-launcher-not-file", ".", "foo")),
                 // The path doesn't exist
-                buildAddLauncherTest().optionValue("Foo=foo/bar/buz/111.z").expectErrors(I18N.format("error.paramater-add-launcher-not-file", "foo/bar/buz/111.z", "Foo"))
+                buildAddLauncherTest().optionValue("Foo=foo/bar/buz/111.z").expectErrors(I18N.format("error.parameter-add-launcher-not-file", "foo/bar/buz/111.z", "Foo"))
         ).map(AddLauncherTestSpec.Builder::create).toList();
     }
 
@@ -483,7 +478,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                             return List.<String>of();
                         }).orElseGet(() -> {
                             if (propertyFile) {
-                                return List.of(I18N.format("error.properties-paramater-not-launcher-shortcut-dir",
+                                return List.of(I18N.format("error.properties-parameter-not-launcher-shortcut-dir",
                                         optionValue, option.getSpec().name().name(), DUMMY_PROPERTY_FILE));
                             } else {
                                 return List.of(I18N.format("error.invalid-option-value", optionValue, option.getSpec().name().formatForCommandLine()));
@@ -541,10 +536,8 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 buildLauncherShortcutTest().optionValue(LauncherShortcutStartupDirectory.DEFAULT.asStringValue()),
                 buildLauncherShortcutTest().optionValue("false"),
                 buildLauncherShortcutTest().optionValue(""),
-//                buildLauncherShortcutTest().optionValue("").propertyFile(true),
                 buildLauncherShortcutTest().expect(new LauncherShortcut()).optionValue("").propertyFile(true),
                 buildLauncherShortcutTest().optionValue("bar"),
-//                buildLauncherShortcutTest().optionValue("bar").propertyFile(true)
                 buildLauncherShortcutTest().expect(new LauncherShortcut()).optionValue("bar").propertyFile(true)
         ).map(builder -> {
             return Stream.of(

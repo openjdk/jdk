@@ -51,7 +51,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror AsyncTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1080 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AsyncTest
  */
 public class AsyncTest {
@@ -205,6 +205,6 @@ public class AsyncTest {
     }
 
 
-    private static final int JOB_COUNT = 10;
+    private static final int JOB_COUNT = 30;
     private static final TKit.State DEFAULT_STATE = TKit.state();
 }

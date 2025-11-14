@@ -79,9 +79,9 @@ public class OptionValueExceptionFactoryTest {
 
         var factory = buildTestFactory().create();
 
-        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.paramater-not-file", Optional.empty());
+        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.parameter-not-file", Optional.empty());
 
-        assertExceptionEquals(new Exception(I18N.format("error.paramater-not-file", "--foo", "str")), ex);
+        assertExceptionEquals(new Exception(I18N.format("error.parameter-not-file", "--foo", "str")), ex);
     }
 
     @Test
@@ -89,9 +89,9 @@ public class OptionValueExceptionFactoryTest {
 
         var factory = buildTestFactory().formatArgumentsTransformer(StandardArgumentsMapper.VALUE_AND_NAME).create();
 
-        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.paramater-not-file", Optional.empty());
+        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.parameter-not-file", Optional.empty());
 
-        assertExceptionEquals(new Exception(I18N.format("error.paramater-not-file", "str", "--foo")), ex);
+        assertExceptionEquals(new Exception(I18N.format("error.parameter-not-file", "str", "--foo")), ex);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class OptionValueExceptionFactoryTest {
 
         var factory = buildTestFactory().printOptionPrefix(printOptionPrefix).create();
 
-        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.paramater-not-file", Optional.empty());
+        var ex = factory.create(TEST_OPTION_NAME, TEST_OPTION_VALUE, "error.parameter-not-file", Optional.empty());
 
         String formattedOptionName;
         if (printOptionPrefix) {
@@ -118,7 +118,7 @@ public class OptionValueExceptionFactoryTest {
         } else {
             formattedOptionName = "foo";
         }
-        assertExceptionEquals(new Exception(I18N.format("error.paramater-not-file", formattedOptionName, "str")), ex);
+        assertExceptionEquals(new Exception(I18N.format("error.parameter-not-file", formattedOptionName, "str")), ex);
     }
 
     @Test

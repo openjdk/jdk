@@ -401,16 +401,16 @@ public final class ErrorTest {
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
             // non-existent runtime
             testSpec().addArgs("--runtime-image", "non-existent.runtime")
-                    .error("error.paramater-not-directory", "non-existent.runtime", "--runtime-image"),
+                    .error("error.parameter-not-directory", "non-existent.runtime", "--runtime-image"),
             // non-existent app image
             testSpec().noAppDesc().nativeType().addArgs("--name", "foo", "--app-image", "non-existent.appimage")
                     .error("ERR_AppImageNotExist", "non-existent.appimage"),
             // non-existent resource-dir
             testSpec().addArgs("--resource-dir", "non-existent.dir")
-                    .error("error.paramater-not-directory", "non-existent.dir", "--resource-dir"),
+                    .error("error.parameter-not-directory", "non-existent.dir", "--resource-dir"),
             // non-existent icon
             testSpec().addArgs("--icon", "non-existent.icon")
-                    .error("error.paramater-not-file", "non-existent.icon", "--icon"),
+                    .error("error.parameter-not-file", "non-existent.icon", "--icon"),
             // non-existent license file
             testSpec().nativeType().addArgs("--license-file", "non-existent.license")
                     .error("ERR_LicenseFileNotExit"),

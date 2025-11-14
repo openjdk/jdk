@@ -297,7 +297,7 @@ public class OptionsProcessorTest {
     public void testMultipleOptionValueConverterErrors(@TempDir Path workDir) {
         build().createAppImageByDefault().expectValidationErrors(
                 // --i
-                new JPackageException(I18N.format("error.paramater-not-directory", workDir.resolve("non-existent"), "-i")),
+                new JPackageException(I18N.format("error.parameter-not-directory", workDir.resolve("non-existent"), "-i")),
                 // --name
                 new JPackageException(I18N.format("ERR_InvalidAppName", "He/llo"))
         )
@@ -307,7 +307,7 @@ public class OptionsProcessorTest {
                 // --name
                 new JPackageException(I18N.format("ERR_InvalidAppName", "He/llo")),
                 // --i
-                new JPackageException(I18N.format("error.paramater-not-directory", workDir.resolve("non-existent"), "-i"))
+                new JPackageException(I18N.format("error.parameter-not-directory", workDir.resolve("non-existent"), "-i"))
         )
         .create("--main-jar=foo.jar", "--name=He/llo", "-i", workDir.resolve("non-existent")).validate();
     }
@@ -333,8 +333,8 @@ public class OptionsProcessorTest {
                 new UnsupportedOperationException("Ops"),
                 new Exception("Yikes"),
                 new NoSuchElementException("Goofy"),
-                new JPackageException(I18N.format("error.properties-paramater-not-file", workDir, "icon", invalidPropertyFile)),
-                new JPackageException(I18N.format("error.paramater-not-directory", workDir.resolve("non-existent"), "-i")),
+                new JPackageException(I18N.format("error.properties-parameter-not-file", workDir, "icon", invalidPropertyFile)),
+                new JPackageException(I18N.format("error.parameter-not-directory", workDir.resolve("non-existent"), "-i")),
                 new JPackageException(I18N.format("error.launcher-duplicate-name", "a"))
         )
         .withMockupMainJar(workDir).create("--add-launcher=a=" + invalidPropertyFile, "--name=a", "-i", workDir.resolve("non-existent")).validate();
@@ -461,19 +461,19 @@ public class OptionsProcessorTest {
                     new JPackageException(I18N.format("ERR_InvalidAppName", "Hello*")),
 
                     // --i "non-existent"
-                    new JPackageException(I18N.format("error.paramater-not-directory", workDir.resolve("non-existent"), "-i")),
+                    new JPackageException(I18N.format("error.parameter-not-directory", workDir.resolve("non-existent"), "-i")),
 
                     // --main-jar=?.jar
-                    new JPackageException(I18N.format("error.paramater-not-path", "?.jar", "--main-jar"), new IllegalArgumentException()),
+                    new JPackageException(I18N.format("error.parameter-not-path", "?.jar", "--main-jar"), new IllegalArgumentException()),
 
                     // icon=*.png in "invalid.properties"
-                    new JPackageException(I18N.format("error.properties-paramater-not-path", "*.png", "icon", invalidPropertyFile), new IllegalArgumentException()),
+                    new JPackageException(I18N.format("error.properties-parameter-not-path", "*.png", "icon", invalidPropertyFile), new IllegalArgumentException()),
 
                     // "locked.properties"
                     lockedException,
 
                     // "non-existent.properties"
-                    new AddLauncherInvalidPropertyFileException(I18N.format("error.paramater-add-launcher-not-file", nonExistentPropertyFile, "b")),
+                    new AddLauncherInvalidPropertyFileException(I18N.format("error.parameter-add-launcher-not-file", nonExistentPropertyFile, "b")),
 
                     new JPackageException(I18N.format("error.launcher-duplicate-name", "b"))
             )
