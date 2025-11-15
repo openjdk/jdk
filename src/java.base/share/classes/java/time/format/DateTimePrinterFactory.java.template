@@ -29,6 +29,15 @@ final class DateTimePrinterFactory {
     private DateTimePrinterFactory() {
     }
 
+    /**
+     * Creates a DateTimePrinter based on the number of printer parsers.
+     * This method efficiently creates specialized formatters for different numbers of printer parsers,
+     * optimizing performance by avoiding loops for small numbers of parsers.
+     * The manual expansion of cases (rather than using a loop) is designed to allow the TypeProfile optimizer to be effective.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to format
+     * @return a DateTimePrinter that formats according to the provided printer parsers
+     */
     static DateTimeFormatterBuilder.DateTimePrinter createFormatter(DateTimeFormatterBuilder.DateTimePrinterParser[] printerParsers) {
         int length = printerParsers.length;
         return switch (length) {
@@ -45,6 +54,15 @@ final class DateTimePrinterFactory {
         };
     }
 
+    /**
+     * Creates a default DateTimePrinter that iterates through all printer parsers.
+     * This method is used when there are more than the optimized number of printer parsers.
+     * It sequentially applies each printer parser, returning false if any fails to format.
+     * The manual expansion of cases is designed to allow the TypeProfile optimizer to be effective.
+     *
+     * @param printerParsers an array of DateTimePrinterParser instances to format
+     * @return a DateTimePrinter that formats according to the provided printer parsers
+     */
     static DateTimeFormatterBuilder.DateTimePrinter createDefaultDateTimePrinter(DateTimeFormatterBuilder.DateTimePrinterParser[] printerParsers) {
         return (context, buf, optional) -> {
             for (DateTimeFormatterBuilder.DateTimePrinterParser pp : printerParsers) {
