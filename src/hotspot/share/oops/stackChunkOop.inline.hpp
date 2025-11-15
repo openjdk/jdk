@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,18 @@ inline void stackChunkOopDesc::set_preempted(bool value) {
   set_flag(FLAG_PREEMPTED, value);
 }
 
+inline bool stackChunkOopDesc::at_klass_init() const { return jdk_internal_vm_StackChunk::atKlassInit(as_oop()); }
+inline void stackChunkOopDesc::set_at_klass_init(bool value) {
+  assert(at_klass_init() != value, "");
+  jdk_internal_vm_StackChunk::set_atKlassInit(this, value);
+}
+
+inline bool stackChunkOopDesc::has_args_at_top() const { return jdk_internal_vm_StackChunk::hasArgsAtTop(as_oop()); }
+inline void stackChunkOopDesc::set_has_args_at_top(bool value) {
+  assert(has_args_at_top() != value, "");
+  jdk_internal_vm_StackChunk::set_hasArgsAtTop(this, value);
+}
+
 inline bool stackChunkOopDesc::has_lockstack() const         { return is_flag(FLAG_HAS_LOCKSTACK); }
 inline void stackChunkOopDesc::set_has_lockstack(bool value) { set_flag(FLAG_HAS_LOCKSTACK, value); }
 
@@ -195,7 +207,6 @@ void stackChunkOopDesc::do_barriers(const StackChunkFrameStream<frame_kind>& f, 
 
 template <typename OopT, class StackChunkLockStackClosureType>
 inline void stackChunkOopDesc::iterate_lockstack(StackChunkLockStackClosureType* closure) {
-  assert(LockingMode == LM_LIGHTWEIGHT, "");
   int cnt = lockstack_size();
   intptr_t* lockstart_addr = start_address();
   for (int i = 0; i < cnt; i++) {
@@ -211,7 +222,7 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
 
 template <ChunkFrames frame_kind, class StackChunkFrameClosureType>
 inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure) {
-  const SmallRegisterMap* map = SmallRegisterMap::instance();
+  const auto* map = SmallRegisterMap::instance_no_args();
   assert(!map->in_cont(), "");
 
   StackChunkFrameStream<frame_kind> f(this);
@@ -230,6 +241,9 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
     assert(f.is_compiled(), "");
 
     should_continue = closure->do_frame(f, &full_map);
+    f.next(map);
+  } else if (frame_kind == ChunkFrames::Mixed && f.is_interpreted() && has_args_at_top()) {
+    should_continue = closure->do_frame(f, SmallRegisterMap::instance_with_args());
     f.next(map);
   }
   assert(!f.is_stub(), "");

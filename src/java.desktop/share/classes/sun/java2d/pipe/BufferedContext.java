@@ -100,11 +100,11 @@ public abstract class BufferedContext {
      */
     protected static BufferedContext currentContext;
 
-    private Reference<AccelSurface> validSrcDataRef = new WeakReference<>(null);
-    private Reference<AccelSurface> validDstDataRef = new WeakReference<>(null);
-    private Reference<Region> validClipRef = new WeakReference<>(null);
-    private Reference<Composite> validCompRef = new WeakReference<>(null);
-    private Reference<Paint> validPaintRef = new WeakReference<>(null);
+    private Reference<AccelSurface> validSrcDataRef = null;
+    private Reference<AccelSurface> validDstDataRef = null;
+    private Reference<Region> validClipRef = null;
+    private Reference<Composite> validCompRef = null;
+    private Reference<Paint> validPaintRef = null;
     // renamed from isValidatedPaintAColor as part of a work around for 6764257
     private boolean         isValidatedPaintJustAColor;
     private int             validatedRGB;
@@ -213,20 +213,18 @@ public abstract class BufferedContext {
                 updatePaint = true;
                 isValidatedPaintJustAColor = true;
             }
-        } else if (validPaintRef.get() != paint) {
+        } else if (stateChanged(validPaintRef, paint)) {
             updatePaint = true;
             // this should be set when we are switching from paint to color
             // in which case this condition will be true
             isValidatedPaintJustAColor = false;
         }
 
-        final AccelSurface validatedSrcData = validSrcDataRef.get();
-        final AccelSurface validatedDstData = validDstDataRef.get();
-        if ((currentContext != this) ||
-            (srcData != validatedSrcData) ||
-            (dstData != validatedDstData))
+        final boolean srcChanged = stateChanged(validSrcDataRef, srcData);
+        final boolean dstChanged = stateChanged(validDstDataRef, dstData);
+        if ((currentContext != this) || srcChanged || dstChanged)
         {
-            if (dstData != validatedDstData) {
+            if (dstChanged) {
                 // the clip is dependent on the destination surface, so we
                 // need to update it if we have a new destination surface
                 updateClip = true;
@@ -243,13 +241,13 @@ public abstract class BufferedContext {
             setSurfaces(srcData, dstData);
 
             currentContext = this;
-            validSrcDataRef = new WeakReference<>(srcData);
-            validDstDataRef = new WeakReference<>(dstData);
+            validSrcDataRef = wrapState(srcData);
+            validDstDataRef = wrapState(dstData);
         }
 
         // validate clip
-        final Region validatedClip = validClipRef.get();
-        if ((clip != validatedClip) || updateClip) {
+        final Region validatedClip = validClipRef == null ? null : validClipRef.get();
+        if (stateChanged(validClipRef, clip) || updateClip) {
             if (clip != null) {
                 if (updateClip ||
                     validatedClip == null ||
@@ -264,13 +262,13 @@ public abstract class BufferedContext {
             } else {
                 resetClip();
             }
-            validClipRef = new WeakReference<>(clip);
+            validClipRef = wrapState(clip);
         }
 
         // validate composite (note that a change in the context flags
         // may require us to update the composite state, even if the
         // composite has not changed)
-        if ((comp != validCompRef.get()) || (flags != validatedFlags)) {
+        if (stateChanged(validCompRef, comp) || (flags != validatedFlags)) {
             if (comp != null) {
                 setComposite(comp, flags);
             } else {
@@ -279,7 +277,7 @@ public abstract class BufferedContext {
             // the paint state is dependent on the composite state, so make
             // sure we update the color below
             updatePaint = true;
-            validCompRef = new WeakReference<>(comp);
+            validCompRef = wrapState(comp);
             validatedFlags = flags;
         }
 
@@ -313,12 +311,24 @@ public abstract class BufferedContext {
             } else {
                 BufferedPaints.resetPaint(rq);
             }
-            validPaintRef = new WeakReference<>(paint);
+            validPaintRef = wrapState(paint);
         }
 
         // mark dstData dirty
         // REMIND: is this really needed now? we do it in SunGraphics2D..
         dstData.markDirty();
+    }
+
+    private static <T> boolean stateChanged(Reference<T> ref, T obj) {
+        // null ref means "true" null object
+        if (ref == null) return obj != null;
+        T old = ref.get();
+        // null ref value means the object was GC'ed, return true in that case
+        return old == null || old != obj;
+    }
+
+    private static <T> Reference<T> wrapState(T obj) {
+        return obj == null ? null : new WeakReference<>(obj);
     }
 
     private void setSurfaces(AccelSurface srcData,
@@ -434,11 +444,11 @@ public abstract class BufferedContext {
         resetComposite();
         resetClip();
         BufferedPaints.resetPaint(rq);
-        validSrcDataRef.clear();
-        validDstDataRef.clear();
-        validCompRef.clear();
-        validClipRef.clear();
-        validPaintRef.clear();
+        validSrcDataRef = null;
+        validDstDataRef = null;
+        validCompRef = null;
+        validClipRef = null;
+        validPaintRef = null;
         isValidatedPaintJustAColor = false;
         xformInUse = false;
     }

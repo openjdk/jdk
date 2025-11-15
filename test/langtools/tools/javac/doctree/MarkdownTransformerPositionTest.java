@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8332858
+ * @bug 8332858 8356411
  * @summary test case for Markdown positions
  * @run main/othervm --limit-modules jdk.compiler MarkdownTransformerPositionTest
  * @run main MarkdownTransformerPositionTest links
@@ -53,6 +53,7 @@ public class MarkdownTransformerPositionTest {
 
         t.simpleTest();
         t.testWithReplacements();
+        t.testSeeTags();
 
         if (args.length > 0 && "links".equals(args[0])) {
             t.linkWithEscapes();
@@ -81,6 +82,19 @@ public class MarkdownTransformerPositionTest {
                 """,
                 "Markdown \uFFFC test \uFFFC with \uFFFC replacements.",
                 "testAuthor");
+    }
+
+    private void testSeeTags() throws Exception {
+        // @see "Text" does not produce a Markdown text
+        runTest("""
+                /// @see Ref label
+                /// @see <a href="..">link<a>
+                /// @see "Text"
+                public class Test {
+                }
+                """,
+                "label",
+                "<a href=\"..\">link<a>");
     }
 
     private void linkWithEscapes() throws Exception {

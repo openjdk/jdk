@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 #ifndef SHARE_OOPS_OBJARRAYOOP_HPP
 #define SHARE_OOPS_OBJARRAYOOP_HPP
 
+#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
-
-#include <type_traits>
 
 class Klass;
 
@@ -36,7 +35,7 @@ class Klass;
 // Evaluating "String arg[10]" will create an objArrayOop.
 
 class objArrayOopDesc : public arrayOopDesc {
-  friend class ArchiveHeapWriter;
+  friend class AOTMappedHeapWriter;
   friend class ObjArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
@@ -44,6 +43,7 @@ class objArrayOopDesc : public arrayOopDesc {
   friend class Continuation;
   template <typename T>
   friend class RawOopWriter;
+  friend class AOTMapLogger;
 
   template <class T> T* obj_at_addr(int index) const;
 

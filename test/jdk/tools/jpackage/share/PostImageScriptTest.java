@@ -52,7 +52,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror PostImageScriptTest.java
- * @run main/othervm/timeout=720 -Xmx512m
+ * @run main/othervm/timeout=2880 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=PostImageScriptTest
  */
@@ -107,10 +107,7 @@ public class PostImageScriptTest {
                     });
                 }
                 case EXTERNAL_APP_IMAGE -> {
-                    test.addInitializer(cmd -> {
-                        cmd.removeArgumentWithValue("--input");
-                        cmd.addArguments("--app-image", appImageCmd.outputBundle());
-                    });
+                    test.usePredefinedAppImage(appImageCmd);
                 }
             }
 

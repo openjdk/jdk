@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +84,6 @@ import java.util.Objects;
  * <p>
  * This class provides a single wrapper to items used in the format.
  *
- * @implSpec
- * This class is a mutable context intended for use from a single thread.
- * Usage of the class is thread-safe within standard printing as the framework creates
- * a new instance of the class for each format and printing is single-threaded.
- *
  * @since 1.8
  */
 final class DateTimePrintContext {
@@ -150,11 +146,11 @@ final class DateTimePrintContext {
      * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
      * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
      *
+     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
+     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      * @param temporal  the temporal object to adjust, not null
      * @param formatter the formatter providing potential chronology and time-zone overrides
      * @return the adjusted temporal, or the original if no overrides are present in the formatter
-     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
-     *           by avoiding unnecessary processing. Most formatters have null for these properties.
      */
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first (early return is an optimization)
@@ -164,8 +160,7 @@ final class DateTimePrintContext {
             return temporal;
         }
 
-        // The chronology and zone fields of Formatter are usually null,
-        // so the non-null processing code is placed in a separate method
+        // Placing the non-null cases in a separate method allows more flexible code optimizations
         return adjustWithOverride(temporal, overrideChrono, overrideZone);
     }
 
@@ -256,12 +251,8 @@ final class DateTimePrintContext {
      */
     private static TemporalAccessor adjustSlow(
             TemporalAccessor temporal,
-            ZoneId overrideZone,
-            ZoneId temporalZone,
-            Chronology overrideChrono,
-            Chronology effectiveChrono,
-            Chronology temporalChrono
-    ) {
+            ZoneId overrideZone, ZoneId temporalZone,
+            Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
         if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
@@ -380,6 +371,7 @@ final class DateTimePrintContext {
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
+     * @param optional  whether the query is optional, true if the query may be missing
      * @return the result, null if not found and optional is true
      * @throws DateTimeException if the type is not available and the section is not optional
      */

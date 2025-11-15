@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,9 +27,6 @@
 
 package jdk.jfr.internal.settings;
 
-import static jdk.jfr.internal.util.TimespanUnit.SECONDS;
-import static jdk.jfr.internal.util.TimespanUnit.MILLISECONDS;
-
 import java.util.Objects;
 import java.util.Set;
 
@@ -41,7 +38,6 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.TimespanRate;
-import jdk.jfr.internal.util.Utils;
 
 @MetadataDefinition
 @Label("CPUThrottleSetting")

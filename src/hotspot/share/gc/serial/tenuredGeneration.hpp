@@ -126,21 +126,14 @@ public:
   // Allocate and returns a block of the requested size, or returns "null".
   // Assumes the caller has done any necessary locking.
   inline HeapWord* allocate(size_t word_size);
+  // Multi-threaded version.
+  inline HeapWord* par_allocate(size_t word_size);
 
   // Expand the old-gen then invoke allocate above.
   HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();
-
-  bool should_allocate(size_t word_size, bool is_tlab) {
-    bool result = false;
-    size_t overflow_limit = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
-    if (!is_tlab) {
-      result = (word_size > 0) && (word_size < overflow_limit);
-    }
-    return result;
-  }
 
   // Performance Counter support
   void update_counters();

@@ -49,7 +49,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     private static EnumSet<AArch64.CPUFeature> computeFeatures(AArch64HotSpotVMConfig config) {
         // Configure the feature set using the HotSpot flag settings.
         Map<String, Long> constants = config.getStore().getConstants();
-        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, config.vmVersionFeatures, emptyMap());
+        return HotSpotJVMCIBackendFactory.convertFeatures(CPUFeature.class, constants, idx -> 1L << idx, _ -> config.vmVersionFeatures, emptyMap());
     }
 
     private static TargetDescription createTarget(AArch64HotSpotVMConfig config) {

@@ -28,7 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 class ReservedSpace;
@@ -70,7 +70,6 @@ class HeapBlock {
 };
 
 class FreeBlock: public HeapBlock {
-  friend class VMStructs;
  protected:
   FreeBlock* _link;
 
@@ -213,7 +212,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   int         adapter_count()                    { return _adapter_count; }
   void    set_adapter_count(int count)           {        _adapter_count = count; }
   int         full_count()                       { return _full_count; }
-  int         report_full()                      { return Atomic::add(&_full_count, 1); }
+  int         report_full()                      { return AtomicAccess::add(&_full_count, 1); }
 
 private:
   size_t heap_unallocated_capacity() const;
