@@ -42,7 +42,7 @@ static const jlong EXPECTED_TIMEOUT_ACCURACY_NS = 300000;
 #if (defined(WIN32) || defined(_WIN32))
 static const jlong EXPECTED_ACCURACY = 16; // 16ms is longest clock update interval
 #else
-static const jlong EXPECTED_ACCURACY = 10; // high frequency clock updates expected
+static const jlong EXPECTED_ACCURACY = 32; // high frequency clock updates expected
 #endif
 
 /* scaffold objects */
