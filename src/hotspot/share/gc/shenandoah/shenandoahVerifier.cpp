@@ -465,20 +465,6 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t generation_used = generation->used();
     size_t generation_used_regions = generation->used_regions();
-#ifdef KELVIN_DEPRECATE_FROM_HEAD
-    // this code is replaced with the following three lines from MASTER
-    size_t generation_max_capacity = generation->max_capacity();
-    if (adjust_for_padding && (generation->is_young() || generation->is_global())) {
-      size_t pad = heap->old_generation()->get_pad_for_promote_in_place();
-      generation_used += pad;
-    }
-
-    guarantee(stats.non_trashed_committed() <= generation_max_capacity,
-              "%s: generation (%s) non_trashed_committed: " PROPERFMT " must not exceed generation capacity: " PROPERFMT,
-              label, generation->name(), PROPERFMTARGS(stats.non_trashed_committed()), PROPERFMTARGS(generation_max_capacity));
-
-    guarantee(stats.used() == generation_used,
-#endif
 
     size_t stats_used = adjust_for_trash? stats.used_after_recycle(): stats.used();
     guarantee(stats_used == generation_used,

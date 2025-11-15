@@ -783,13 +783,6 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
   old_generation()->set_promoted_reserve(reserve_for_promo);
 }
 
-void ShenandoahGenerationalHeap::reset_generation_reserves() {
-  ShenandoahHeapLocker locker(lock());
-  young_generation()->set_evacuation_reserve(0);
-  old_generation()->set_evacuation_reserve(0);
-  old_generation()->set_promoted_reserve(0);
-}
-
 void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) {
   class ShenandoahGlobalCoalesceAndFill : public WorkerTask {
   private:
@@ -1128,10 +1121,6 @@ void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
 
 void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
-  // In case degeneration interrupted concurrent evacuation or update references, we need to clean up
-  // transient state. Otherwise, these actions have no effect.
-  reset_generation_reserves();
-
   if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
     coalesce_and_fill_old_regions(false);
@@ -1149,7 +1138,6 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     // throw off the heuristics.
     entry_global_coalesce_and_fill();
   }
-  reset_generation_reserves();
 }
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
