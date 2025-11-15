@@ -127,6 +127,7 @@ public class CLDRConverter {
     static int copyrightYear;
     static String jdkHeaderTemplate;
     private static String zoneNameTempFile;
+    private static String dateTimePrinterFactoryTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
 
@@ -242,6 +243,10 @@ public class CLDRConverter {
                         zoneNameTempFile = args[++i];
                         break;
 
+                    case "-dtpftempfile":
+                        dateTimePrinterFactoryTempFile = args[++i];
+                        break;
+
                     case "-tzdatadir":
                         tzDataDir = args[++i];
                         break;
@@ -310,6 +315,9 @@ public class CLDRConverter {
             // Generate java.time.format.ZoneName.java
             generateZoneName();
 
+            // Generate java.time.format.DateTimePrinterFactory.java
+            generateDateTimePrinterFactory();
+
             // Generate Windows tzmappings
             generateWindowsTZMappings();
         }
@@ -327,6 +335,7 @@ public class CLDRConverter {
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
                 + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
+                + "\t-dtpftempfile  template file for java.time.format.DateTimePrinterFactory.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n"
                 + "\t-jdk-header-template <file>%n"
@@ -1212,6 +1221,57 @@ public class CLDRConverter {
                 })
                 .collect(Collectors.toList()),
             StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    private static void generateDateTimePrinterFactory() throws Exception {
+        if (dateTimePrinterFactoryTempFile != null) {
+            Files.createDirectories(Paths.get(DESTINATION_DIR, "java", "time", "format"));
+            Files.write(Paths.get(DESTINATION_DIR, "java", "time", "format", "DateTimePrinterFactory.java"),
+                Files.lines(Paths.get(dateTimePrinterFactoryTempFile))
+                    .flatMap(l -> {
+                        if (l.startsWith("%%%%CASES:")) {
+                            return generateDateTimePrinterCases(l);
+                        } else {
+                            return Stream.of(l);
+                        }
+                    })
+                    .collect(Collectors.toList()),
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        }
+    }
+
+    private static Stream<String> generateDateTimePrinterCases(String line) {
+        // Parse the range, defaulting to 1-17 if no range is specified
+        int start = 1;
+        int end = 17;
+
+        if (line != null && line.startsWith("%%%%CASES:")) {
+            String rangePart = line.substring("%%%%CASES:".length(), line.length() - 4); // Remove trailing%%%%
+            String[] parts = rangePart.split("-");
+            if (parts.length == 2) {
+                try {
+                    start = Integer.parseInt(parts[0]);
+                    end = Integer.parseInt(parts[1]);
+                } catch (NumberFormatException e) {
+                    // Use defaults if parsing fails
+                }
+            }
+        }
+
+        return IntStream.rangeClosed(start, end)
+            .mapToObj(i -> {
+                StringBuilder sb = new StringBuilder();
+                sb.append("            case ").append(i).append(" -> (context, buf, optional)\n");
+                sb.append("                    -> ");
+                for (int j = 0; j < i; j++) {
+                    sb.append("printerParsers[").append(j).append("].format(context, buf, optional)");
+                    if (j < i - 1) {
+                        sb.append("\n                    && ");
+                    }
+                }
+                sb.append(";");
+                return sb.toString();
+            });
     }
 
     // This method assumes handlerMetaZones is already initialized

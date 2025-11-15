@@ -46,6 +46,7 @@ GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
 ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
+DTPFACTORY_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/DateTimePrinterFactory.java.template
 
 # The `-utf8` option is used even for US English, as some names
 # may contain non-ASCII characters, such as “Türkiye”.
@@ -54,6 +55,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/supplemental/*.xml) \
     $(wildcard $(TZ_DATA_DIR)/*) \
     $(ZONENAME_TEMPLATE) \
+    $(DTPFACTORY_TEMPLATE) \
     $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(GENSRC_DIR))
 	$(call LogInfo, Processing CLDR data for java.base)
@@ -64,6 +66,7 @@ $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
 	    -basemodule \
 	    -year $(COPYRIGHT_YEAR) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
+	    -dtpftempfile $(DTPFACTORY_TEMPLATE) \
 	    -tzdatadir $(TZ_DATA_DIR) \
 	    -utf8)
 	$(TOUCH) $@
