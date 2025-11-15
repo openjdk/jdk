@@ -76,7 +76,7 @@ public class Basic {
         // A FileSystemProvider may support many views but some of these attributes
         // in these views may not supported on all FileStores.
         // So we only do this check on AIX added by JDK-8360887/8361183
-        if(Platform.isAix()) {
+        if (Platform.isAix()) {
             boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
             assertTrue(haveView == supported);
         }
