@@ -777,7 +777,9 @@ void FileMapInfo::open_as_output() {
   }
   _fd = fd;
   _file_open = true;
+}
 
+void FileMapInfo::prepare_for_writing() {
   // Seek past the header. We will write the header after all regions are written
   // and their CRCs computed.
   size_t header_bytes = header()->header_size();
