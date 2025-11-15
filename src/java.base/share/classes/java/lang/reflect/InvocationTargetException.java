@@ -74,7 +74,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
      * and a detail message.
      *
      * @param target the target exception
-     * @param s      the detail message
+     * @param s      the detail message, may be {@code null}
      */
     public InvocationTargetException(Throwable target, String s) {
         super(s, null);  // Disallow initCause

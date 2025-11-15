@@ -65,7 +65,7 @@ public class MalformedParametersException extends RuntimeException {
     /**
      * Create a {@code MalformedParametersException}.
      *
-     * @param reason The reason for the exception.
+     * @param reason The reason for the exception, may be {@code null}
      */
     public MalformedParametersException(String reason) {
         super(reason);

@@ -98,8 +98,8 @@ class Array {
      * @param dimensions an array of {@code int} representing the dimensions of
      * the new array
      * @return the new array
-     * @throws    NullPointerException if the specified
-     * {@code componentType} argument is null
+     * @throws    NullPointerException if any of the specified
+     * {@code componentType} or {@code dimensions} arguments is null
      * @throws    IllegalArgumentException if the specified {@code dimensions}
      * argument is a zero-dimensional array, if componentType is {@link
      * Void#TYPE}, or if the number of dimensions of the requested array
@@ -117,6 +117,7 @@ class Array {
      *
      * @param array the array
      * @return the length of the array
+     * @throws NullPointerException if {@code array} is {@code null}
      * @throws    IllegalArgumentException if the object argument is not
      * an array
      */

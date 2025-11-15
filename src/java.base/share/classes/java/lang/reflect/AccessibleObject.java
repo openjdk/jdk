@@ -97,6 +97,7 @@ public class AccessibleObject implements AnnotatedElement {
      *         objects in the array
      * @throws SecurityException if an element in the array is a constructor for {@code
      *         java.lang.Class}
+     * @throws NullPointerException if {@code array} is {@code null}
      */
     @CallerSensitive
     public static void setAccessible(AccessibleObject[] array, boolean flag) {

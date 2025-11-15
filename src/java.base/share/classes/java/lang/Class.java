@@ -451,6 +451,7 @@ public final class Class<T> implements java.io.Serializable,
      * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
      * @throws    ClassNotFoundException if the class cannot be located
+     * @throws    NullPointerException if {@code name} is {@code null}
      *
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
@@ -529,7 +530,8 @@ public final class Class<T> implements java.io.Serializable,
      *                   (which implies linking). See Section {@jls
      *                   12.4} of <cite>The Java Language
      *                   Specification</cite>.
-     * @param loader     class loader from which the class must be loaded
+     * @param loader     class loader from which the class must be loaded,
+     *                   may be {@code null}
      * @return           class object representing the desired class
      *
      * @throws    LinkageError if the linkage fails
@@ -537,6 +539,7 @@ public final class Class<T> implements java.io.Serializable,
      *            by this method fails
      * @throws    ClassNotFoundException if the class cannot be located by
      *            the specified class loader
+     * @throws    NullPointerException if {@code name} is {@code null}
      *
      * @see       java.lang.Class#forName(String)
      * @see       java.lang.ClassLoader
@@ -756,7 +759,7 @@ public final class Class<T> implements java.io.Serializable,
      * this {@code Class} object represents a primitive type, this method
      * returns {@code false}.
      *
-     * @param   obj the object to check
+     * @param   obj the object to check, may be {@code null}
      * @return  true if {@code obj} is an instance of this class
      *
      * @since 1.1
@@ -2142,7 +2145,7 @@ public final class Class<T> implements java.io.Serializable,
      * overriding method as it would have a more specific return type.
      *
      * @param name the name of the method
-     * @param parameterTypes the list of parameters
+     * @param parameterTypes the list of parameters, may be or contain {@code null}
      * @return the {@code Method} object that matches the specified
      *         {@code name} and {@code parameterTypes}
      * @throws NoSuchMethodException if a matching method is not found
@@ -2179,7 +2182,7 @@ public final class Class<T> implements java.io.Serializable,
      * represented by this {@code Class} object whose formal parameter
      * types match those specified by {@code parameterTypes}.
      *
-     * @param parameterTypes the parameter array
+     * @param parameterTypes the parameter array, may be or contain {@code null}
      * @return the {@code Constructor} object of the public constructor that
      *         matches the specified {@code parameterTypes}
      * @throws NoSuchMethodException if a matching constructor is not found,
@@ -2400,7 +2403,7 @@ public final class Class<T> implements java.io.Serializable,
      * method does not find the {@code clone()} method.
      *
      * @param name the name of the method
-     * @param parameterTypes the parameter array
+     * @param parameterTypes the parameter array, may be or contain {@code null}
      * @return  the {@code Method} object for the method of this class
      *          matching the specified name and parameters
      * @throws  NoSuchMethodException if a matching method is not found.
@@ -2471,7 +2474,7 @@ public final class Class<T> implements java.io.Serializable,
      * declared in a non-static context, the formal parameter types
      * include the explicit enclosing instance as the first parameter.
      *
-     * @param parameterTypes the parameter array
+     * @param parameterTypes the parameter array, may be or contain {@code null}
      * @return  The {@code Constructor} object for the constructor with the
      *          specified parameter list
      * @throws  NoSuchMethodException if a matching constructor is not found,
@@ -3473,7 +3476,7 @@ public final class Class<T> implements java.io.Serializable,
      * Casts an object to the class or interface represented
      * by this {@code Class} object.
      *
-     * @param obj the object to be cast
+     * @param obj the object to be cast, may be {@code null}
      * @return the object after casting, or null if obj is null
      *
      * @throws ClassCastException if the object is not
@@ -3513,6 +3516,7 @@ public final class Class<T> implements java.io.Serializable,
      * @throws ClassCastException if this {@code Class} object does not
      *    represent a subclass of the specified class (here "subclass" includes
      *    the class itself).
+     * @throws NullPointerException if {@code clazz} is {@code null}
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
@@ -3827,10 +3831,12 @@ public final class Class<T> implements java.io.Serializable,
      * @param c the class to check
      * @return {@code true} if this class and {@code c} are members of
      * the same nest; and {@code false} otherwise.
+     * @throws NullPointerException if {@code c} is {@code null}
      *
      * @since 11
      */
     public boolean isNestmateOf(Class<?> c) {
+        Objects.requireNonNull(c);
         if (this == c) {
             return true;
         }

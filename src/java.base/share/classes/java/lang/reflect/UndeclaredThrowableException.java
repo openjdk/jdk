@@ -73,7 +73,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      *
      * @param   undeclaredThrowable the undeclared checked exception
      *          that was thrown
-     * @param   s the detail message
+     * @param   s the detail message, may be {@code null}
      */
     public UndeclaredThrowableException(Throwable undeclaredThrowable,
                                         String s)

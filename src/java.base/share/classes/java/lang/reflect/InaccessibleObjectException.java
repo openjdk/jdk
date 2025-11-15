@@ -47,7 +47,7 @@ public class InaccessibleObjectException extends RuntimeException {
      * message.
      *
      * @param msg
-     *        The detail message
+     *        The detail message, may be {@code null}
      */
     public InaccessibleObjectException(String msg) {
         super(msg);
