@@ -3220,12 +3220,6 @@ public final class DateTimeFormatterBuilder {
             return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, subsequentWidth);
         }
 
-        static void appendFixWidth4NotNegative(StringBuilder buf, int value) {
-            int value2 = value / 100;
-            DecimalDigits.appendPair(buf, value2);
-            DecimalDigits.appendPair(buf, value - value2 * 100);
-        }
-
         static abstract class FixWidth4ExceedsPad extends NumberPrinterParser {
             FixWidth4ExceedsPad(ChronoField field) {
                 super(field, 4, 4, SignStyle.EXCEEDS_PAD);
@@ -3244,7 +3238,7 @@ public final class DateTimeFormatterBuilder {
                     buf.append('-');
                     value = -value;
                 }
-                appendFixWidth4NotNegative(buf, value);
+                DecimalDigits.appendQuad(buf, value);
                 return true;
             }
 
@@ -3281,7 +3275,7 @@ public final class DateTimeFormatterBuilder {
                     value = -value;
                 }
                 if (value < 10000) {
-                    appendFixWidth4NotNegative(buf, value);
+                    DecimalDigits.appendQuad(buf, value);
                 } else {
                     buf.append(value);
                 }
