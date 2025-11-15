@@ -94,7 +94,7 @@ private:
   bool coalesce_and_fill();
 
 public:
-  ShenandoahOldGeneration(uint max_queues, size_t max_capacity);
+  ShenandoahOldGeneration(uint max_queues);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
@@ -145,7 +145,9 @@ public:
   void configure_plab_for_current_thread(const ShenandoahAllocRequest &req);
 
   // See description in field declaration
-  void set_region_balance(ssize_t balance) { _region_balance = balance; }
+  void set_region_balance(ssize_t balance) {
+    _region_balance = balance;
+  }
   ssize_t get_region_balance() const { return _region_balance; }
 
   // See description in field declaration
@@ -226,26 +228,27 @@ public:
   // Cancels old gc and transitions to the idle state
   void cancel_gc();
 
-  // We leave the SATB barrier on for the entirety of the old generation
-  // marking phase. In some cases, this can cause a write to a perfectly
-  // reachable oop to enqueue a pointer that later becomes garbage (because
-  // it points at an object that is later chosen for the collection set). There are
-  // also cases where the referent of a weak reference ends up in the SATB
-  // and is later collected. In these cases the oop in the SATB buffer becomes
-  // invalid and the _next_ cycle will crash during its marking phase. To
-  // avoid this problem, we "purge" the SATB buffers during the final update
-  // references phase if (and only if) an old generation mark is in progress.
-  // At this stage we can safely determine if any of the oops in the SATB
-  // buffer belong to trashed regions (before they are recycled). As it
-  // happens, flushing a SATB queue also filters out oops which have already
-  // been marked - which is the case for anything that is being evacuated
-  // from the collection set.
+  // The SATB barrier will be "enabled" until old marking completes. This means it is
+  // possible for an entire young collection cycle to execute while the SATB barrier is enabled.
+  // Consider a situation like this, where we have a pointer 'B' at an object 'A' which is in
+  // the young collection set:
   //
-  // Alternatively, we could inspect the state of the heap and the age of the
-  // object at the barrier, but we reject this approach because it is likely
-  // the performance impact would be too severe.
+  //      +--Young, CSet------+     +--Young, Regular----+
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      |       A <--------------------+ B             |
+  //      |                   |     |                    |
+  //      |                   |     |                    |
+  //      +-------------------+     +--------------------+
+  //
+  // If a mutator thread overwrites pointer B, the SATB barrier will dutifully enqueue
+  // object A. However, this object will be trashed when the young cycle completes. We must,
+  // therefore, filter this object from the SATB buffer before any old mark threads see it.
+  // We do this with a handshake before final-update-refs (see shenandoahConcurrentGC.cpp).
+  //
+  // This method is here only for degenerated cycles. A concurrent cycle may be cancelled before
+  // we have a chance to execute the handshake to flush the SATB in final-update-refs.
   void transfer_pointers_from_satb() const;
-  void concurrent_transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
   bool has_unprocessed_collection_candidates();
@@ -331,6 +334,14 @@ public:
 
   static const char* state_name(State state);
 
+  size_t bytes_allocated_since_gc_start() const override;
+  size_t used() const override;
+  size_t used_regions() const override;
+  size_t used_regions_size() const override;
+  size_t get_humongous_waste() const override;
+  size_t free_unaffiliated_regions() const override;
+  size_t get_affiliated_region_count() const override;
+  size_t max_capacity() const override;
 };
 
 

@@ -1337,21 +1337,19 @@ void JvmtiExport::at_single_stepping_point(JavaThread *thread, Method* method, a
 }
 
 
-void JvmtiExport::expose_single_stepping(JavaThread *thread) {
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-  if (state != nullptr) {
-    state->clear_hide_single_stepping();
-  }
+void JvmtiExport::expose_single_stepping(JvmtiThreadState* state) {
+  assert(state != nullptr, "must be non-null");
+  state->clear_hide_single_stepping();
 }
 
 
-bool JvmtiExport::hide_single_stepping(JavaThread *thread) {
+JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   JvmtiThreadState *state = get_jvmti_thread_state(thread);
   if (state != nullptr && state->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
     state->set_hide_single_stepping();
-    return true;
+    return state;
   } else {
-    return false;
+    return nullptr;
   }
 }
 
@@ -1776,7 +1774,7 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects)
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
   JvmtiThreadEventMark jem(javaThread);
-  JvmtiJavaThreadEventTransition jet(javaThread);
+  JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(javaThread)
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != nullptr) {
     for (int index = 0; index < objects->length(); index++) {
