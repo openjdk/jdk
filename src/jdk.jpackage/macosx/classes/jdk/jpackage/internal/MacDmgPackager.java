@@ -238,14 +238,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         Log.verbose(MessageFormat.format(I18N.getString(
                 "message.creating-dmg-file"), finalDMG.toAbsolutePath()));
 
-        try {
-            Files.deleteIfExists(finalDMG);
-        } catch (IOException ex) {
-            throw new IOException(MessageFormat.format(I18N.getString(
-                    "message.dmg-cannot-be-overwritten"),
-                    finalDMG.toAbsolutePath()));
-        }
-
         Files.createDirectories(protoDMG.getParent());
         Files.createDirectories(finalDMG.getParent());
 

@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.model.AppImageLayout.toPathGroup;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.pipeline.DirectedEdge;
 import jdk.jpackage.internal.pipeline.FixedDAG;
@@ -127,6 +129,7 @@ final class PackagingPipeline {
     enum PackageTaskID implements TaskID {
         RUN_POST_IMAGE_USER_SCRIPT,
         CREATE_CONFIG_FILES,
+        DELETE_OLD_PACKAGE_FILE,
         CREATE_PACKAGE_FILE
     }
 
@@ -423,6 +426,17 @@ final class PackagingPipeline {
                 .setScriptNameSuffix("post-image")
                 .setEnvironmentVariable("JpAppImageDir", appImageDir.toAbsolutePath().toString())
                 .run(env.env(), env.pkg().app().name());
+    }
+
+    static void deleteOutputBundle(PackageBuildEnv<Package, AppImageLayout> env) throws IOException {
+
+        var outputBundle = env.outputDir().resolve(env.pkg().packageFileNameWithSuffix());
+
+        try {
+            Files.deleteIfExists(outputBundle);
+        } catch (IOException ex) {
+            throw new JPackageException(I18N.format("error.output-bundle-cannot-be-overwritten", outputBundle.toAbsolutePath()), ex);
+        }
     }
 
     private PackagingPipeline(FixedDAG<TaskID> taskGraph, Map<TaskID, TaskConfig> taskConfig,
