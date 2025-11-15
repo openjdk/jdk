@@ -384,7 +384,7 @@ public interface JavaLangAccess {
     void uncheckedPutCharUTF16(byte[] bytes, int index, int ch);
 
     /**
-     * Encode the given string into a sequence of bytes using utf8.
+     * {@return the sequence of bytes obtained by encoding the given string in UTF-8}
      *
      * @param s the string to encode
      * @throws NullPointerException If {@code s} is null
