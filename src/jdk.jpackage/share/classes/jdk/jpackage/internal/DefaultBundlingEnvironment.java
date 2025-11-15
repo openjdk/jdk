@@ -50,6 +50,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.Result;
 
 class DefaultBundlingEnvironment implements CliBundlingEnvironment {
@@ -131,7 +132,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         Objects.requireNonNull(app);
         Objects.requireNonNull(pipelineBuilder);
 
-        final var outputDir = OptionUtils.outputDir(options).resolve(app.appImageDirName());
+        final var outputDir = PathUtils.normalizedAbsolutePath(OptionUtils.outputDir(options).resolve(app.appImageDirName()));
+
+        Log.verbose(I18N.getString("message.create-app-image"));
 
         IOUtils.writableOutputDir(outputDir.getParent());
 
@@ -139,14 +142,14 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
                 .predefinedAppImageLayout(app.asApplicationLayout().orElseThrow())
                 .create(options, app);
 
-        Log.verbose(I18N.format("message.creating-app-bundle", outputDir.getFileName(), outputDir.toAbsolutePath().getParent()));
-
         if (Files.exists(outputDir)) {
-            throw new JPackageException(I18N.format("error.root-exists", outputDir.toAbsolutePath()));
+            throw new JPackageException(I18N.format("error.root-exists", outputDir));
         }
 
         pipelineBuilder.excludeDirFromCopying(outputDir.getParent())
                 .create().execute(BuildEnv.withAppImageDir(env, outputDir), app);
+
+        Log.verbose(I18N.getString("message.app-image-created"));
     }
 
     static <T extends Package> void createNativePackage(Options options,
@@ -201,10 +204,6 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
                 permanentWorkDirectory = Optional.of(tempDir.path());
             }
             bundler.accept(tempDir.options());
-
-            var bundleType = OptionUtils.bundlingOperation(cmdline).bundleType();
-
-            Log.verbose(I18N.format("message.bundle-created", bundleType.label()));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } finally {

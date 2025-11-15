@@ -315,7 +315,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
     private void buildPackage() throws IOException {
         final var msiOut = outputDir.resolve(pkg.packageFileNameWithSuffix());
-        Log.verbose(I18N.format("message.generating-msi", msiOut.toAbsolutePath()));
         wixPipeline.buildMsi(msiOut.toAbsolutePath());
     }
 

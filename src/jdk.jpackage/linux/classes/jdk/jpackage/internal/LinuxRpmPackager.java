@@ -133,8 +133,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
 
         Path rpmFile = outputPackageFile();
 
-        Log.verbose(I18N.format("message.outputting-bundle-location", rpmFile.getParent()));
-
         //run rpmbuild
         Executor.of(sysEnv.rpmbuild().toString(),
                 "-bb", specFile().toAbsolutePath().toString(),
@@ -147,8 +145,6 @@ final class LinuxRpmPackager extends LinuxPackager<LinuxRpmPackage> {
                         env.buildRoot().toAbsolutePath()),
                 "--define", String.format("%%_rpmfilename %s", rpmFile.getFileName())
         ).executeExpectSuccess();
-
-        Log.verbose(I18N.format("message.output-bundle-location", rpmFile.getParent()));
     }
 
     private Path installPrefix() {
