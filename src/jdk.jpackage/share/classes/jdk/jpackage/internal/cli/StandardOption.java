@@ -113,9 +113,9 @@ public final class StandardOption {
                     return bundlingOperation.packageTypeValue().equals(str);
                 }).map(StandardBundlingOperation::packageType).findFirst().orElseThrow(IllegalArgumentException::new);
             })
-            .description("main.option.type" + resourceKeySuffix(OperatingSystem.current()))
+            .description("help.option.type" + resourceKeySuffix(OperatingSystem.current()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
-                b.description("main.option.type" + resourceKeySuffix(context.os()));
+                b.description("help.option.type" + resourceKeySuffix(context.os()));
             })).create();
 
     public static final OptionValue<Path> INPUT = directoryOption("input").addAliases("i")
@@ -200,7 +200,7 @@ public final class StandardOption {
             .outOfScope(NOT_BUILDING_APP_IMAGE)
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
-                    b.description("main.option.app-content" + resourceKeySuffix(context.os()));
+                    b.description("help.option.app-content" + resourceKeySuffix(context.os()));
                 }
             }))
             .createArray(toList());
@@ -229,7 +229,7 @@ public final class StandardOption {
             .valuePattern("directory path")
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.WINDOWS) {
-                    b.description("main.option.install-dir" + resourceKeySuffix(context.os()));
+                    b.description("help.option.install-dir" + resourceKeySuffix(context.os()));
                 }
             }))
             .create();
@@ -240,7 +240,7 @@ public final class StandardOption {
             .validatorExceptionFormatString("ERR_AppImageNotExist")
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.MACOS) {
-                    b.description("main.option.app-image" + resourceKeySuffix(context.os()));
+                    b.description("help.option.app-image" + resourceKeySuffix(context.os()));
                 }
             }))
             .create();
@@ -251,7 +251,7 @@ public final class StandardOption {
 
     static final OptionSpec<Path> RUNTIME_INSTALLER_RUNTIME_IMAGE = directoryOption("runtime-image")
             .outOfScope(BundlingOperationModifier.BUNDLE_PREDEFINED_APP_IMAGE)
-            .description("main.option.installer-runtime-image")
+            .description("help.option.installer-runtime-image")
             .createOptionSpec();
 
     public static final OptionValue<Path> MAIN_JAR = pathOption("main-jar")
@@ -276,7 +276,7 @@ public final class StandardOption {
             .outOfScope(NOT_BUILDING_APP_IMAGE)
             .mutate(createOptionSpecBuilderMutator((b, context) -> {
                 if (context.os() == OperatingSystem.WINDOWS) {
-                    b.description("main.option.module-path" + resourceKeySuffix(context.os()));
+                    b.description("help.option.module-path" + resourceKeySuffix(context.os()));
                 }
             }))
             .createArray(toList());
@@ -548,7 +548,7 @@ public final class StandardOption {
     private static <T> OptionSpecBuilder<T> option(String name, Class<? extends T> valueType) {
         return OptionSpecBuilder.<T>create(valueType)
                 .name(Objects.requireNonNull(name))
-                .description("main.option." + name)
+                .description("help.option." + name)
                 .scope(fromOptionName(name))
                 .scope(scope -> {
                     return SetBuilder.build(OptionScope.class)
@@ -628,9 +628,9 @@ public final class StandardOption {
 
         return option(name, AdditionalLauncher.class)
                 .valuePattern("<launcher name>=<file path>")
-                .description("main.option.add-launcher" + resourceKeySuffix(OperatingSystem.current()))
+                .description("help.option.add-launcher" + resourceKeySuffix(OperatingSystem.current()))
                 .mutate(createOptionSpecBuilderMutator((b, context) -> {
-                    b.description("main.option.add-launcher" + resourceKeySuffix(context.os()));
+                    b.description("help.option.add-launcher" + resourceKeySuffix(context.os()));
                 }))
                 .outOfScope(NOT_BUILDING_APP_IMAGE)
                 .converterExceptionFormatString("")

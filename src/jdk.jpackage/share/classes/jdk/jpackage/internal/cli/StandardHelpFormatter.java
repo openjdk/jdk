@@ -283,7 +283,7 @@ final class StandardHelpFormatter {
         public void format(HelpFormatter.OptionGroup group, Consumer<CharSequence> sink) {
             formatHeader(group.name(), sink);
             if (group.name().equals(OptionGroupID.GENERIC_OPTIONS.groupName())) {
-                optionSpecFormatter.format("@<filename>", Optional.empty(), I18N.getString("main.option.argument-file"), sink);
+                optionSpecFormatter.format("@<filename>", Optional.empty(), I18N.getString("help.option.argument-file"), sink);
             }
             formatBody(group.options(), sink);
         }
