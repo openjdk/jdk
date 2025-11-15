@@ -50,6 +50,23 @@
   flags(ITER_GVN_AFTER_VECTOR,          "Iter GVN after Vector Box Elimination") \
   flags(BEFORE_LOOP_OPTS,               "Before Loop Optimizations") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
+  flags(EA_AFTER_INITIAL_CONGRAPH,          "EA: 1. Intial Connection Graph") \
+  flags(EA_CONNECTION_GRAPH_PROPAGATE_ITER, "EA: 2. Connection Graph Propagate Iter") \
+  flags(EA_COMPLETE_CONNECTION_GRAPH_ITER,  "EA: 2. Complete Connection Graph Iter") \
+  flags(EA_AFTER_COMPLETE_CONGRAPH,         "EA: 2. Complete Connection Graph") \
+  flags(EA_ADJUST_SCALAR_REPLACEABLE_ITER,  "EA: 3. Adjust scalar_replaceable State Iter") \
+  flags(EA_PROPAGATE_NSR_ITER,              "EA: 3. Propagate NSR Iter") \
+  flags(EA_AFTER_PROPAGATE_NSR,             "EA: 3. Propagate NSR") \
+  flags(EA_AFTER_GRAPH_OPTIMIZATION,        "EA: 4. After Graph Optimization") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_1,      "EA: 5. After split_unique_types Phase 1") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_3,      "EA: 5. After split_unique_types Phase 3") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES_4,      "EA: 5. After split_unique_types Phase 4") \
+  flags(EA_AFTER_SPLIT_UNIQUE_TYPES,        "EA: 5. After split_unique_types") \
+  flags(EA_AFTER_REDUCE_PHI_ON_SAFEPOINTS,  "EA: 6. After reduce_phi_on_safepoints") \
+  flags(EA_BEFORE_PHI_REDUCTION,            "EA: 5. Before Phi Reduction") \
+  flags(EA_AFTER_PHI_CASTPP_REDUCTION,      "EA: 5. Phi -> CastPP Reduction") \
+  flags(EA_AFTER_PHI_ADDP_REDUCTION,        "EA: 5. Phi -> AddP Reduction") \
+  flags(EA_AFTER_PHI_CMP_REDUCTION,         "EA: 5. Phi -> Cmp Reduction") \
   flags(AFTER_EA,                       "After Escape Analysis") \
   flags(ITER_GVN_AFTER_EA,              "Iter GVN after EA") \
   flags(BEFORE_BEAUTIFY_LOOPS,          "Before Beautify Loops") \

@@ -185,10 +185,13 @@ G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
   G1HeapRegion* res = _hrm.allocate_free_region(type, node_index);
 
   if (res == nullptr && do_expand) {
-    // Currently, only attempts to allocate GC alloc regions set
-    // do_expand to true. So, we should only reach here during a
-    // safepoint.
-    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+    // There are two situations where do_expand is set to true:
+    //  - for mutator regions during initialization
+    //  - for GC alloc regions during a safepoint
+    // Make sure we only reach here before initialization is complete
+    // or during a safepoint.
+    assert(!is_init_completed() ||
+           SafepointSynchronize::is_at_safepoint() , "invariant");
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: %zuB",
                               word_size * HeapWordSize);
@@ -348,6 +351,14 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(G1HeapRegion* first_h
 size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
   assert(is_humongous(word_size), "Object of size %zu must be humongous here", word_size);
   return align_up(word_size, G1HeapRegion::GrainWords) / G1HeapRegion::GrainWords;
+}
+
+size_t G1CollectedHeap::allocation_used_bytes(size_t allocation_word_size) {
+  if (is_humongous(allocation_word_size)) {
+    return humongous_obj_size_in_regions(allocation_word_size) * G1HeapRegion::GrainBytes;
+  } else {
+    return allocation_word_size * HeapWordSize;
+  }
 }
 
 // If could fit into free regions w/o expansion, try.
@@ -2268,11 +2279,11 @@ bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
   return hr->block_is_obj(addr, hr->parsable_bottom_acquire());
 }
 
-size_t G1CollectedHeap::tlab_capacity(Thread* ignored) const {
+size_t G1CollectedHeap::tlab_capacity() const {
   return eden_target_length() * G1HeapRegion::GrainBytes;
 }
 
-size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
+size_t G1CollectedHeap::tlab_used() const {
   return _eden.length() * G1HeapRegion::GrainBytes;
 }
 
@@ -2282,7 +2293,7 @@ size_t G1CollectedHeap::max_tlab_size() const {
   return align_down(_humongous_object_threshold_in_words, MinObjAlignment);
 }
 
-size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
+size_t G1CollectedHeap::unsafe_max_tlab_alloc() const {
   return _allocator->unsafe_max_tlab_alloc();
 }
 
@@ -2563,10 +2574,12 @@ void G1CollectedHeap::verify_region_attr_is_remset_tracked() {
   public:
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      const bool is_remset_tracked = g1h->region_attr(r->bottom()).is_remset_tracked();
-      assert(r->rem_set()->is_tracked() == is_remset_tracked,
-             "Region %u remset tracking status (%s) different to region attribute (%s)",
-             r->hrm_index(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
+      G1HeapRegionAttr attr = g1h->region_attr(r->bottom());
+      bool const is_remset_tracked = attr.is_remset_tracked();
+      assert((r->rem_set()->is_tracked() == is_remset_tracked) ||
+             (attr.is_new_survivor() && is_remset_tracked),
+             "Region %u (%s) remset tracking status (%s) different to region attribute (%s)",
+             r->hrm_index(), r->get_type_str(), BOOL_TO_STR(r->rem_set()->is_tracked()), BOOL_TO_STR(is_remset_tracked));
       return false;
     }
   } cl;
@@ -2950,6 +2963,15 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set()->abandon();
 }
 
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
+                               _allocator->free_bytes_in_retained_old_region();
+  // Humongous allocations will always be assigned to non-young heap, so consider
+  // that allocation in the result as well. Otherwise the allocation will always
+  // be in young gen, so there is no need to account it here.
+  return cur_occupancy + (is_humongous(allocation_word_size) ? allocation_used_bytes(allocation_word_size) : 0);
+}
+
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
   return _allocator->is_retained_old_region(hr);
 }
@@ -3099,15 +3121,14 @@ G1HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   if (should_allocate) {
     G1HeapRegion* new_alloc_region = new_region(word_size,
                                                 G1HeapRegionType::Eden,
-                                                false /* do_expand */,
+                                                policy()->should_expand_on_mutator_allocation() /* do_expand */,
                                                 node_index);
     if (new_alloc_region != nullptr) {
       new_alloc_region->set_eden();
       _eden.add(new_alloc_region);
       _policy->set_region_eden(new_alloc_region);
-      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
-      // Install the group cardset.
-      young_regions_cset_group()->add(new_alloc_region);
+
+      collection_set()->add_eden_region(new_alloc_region);
       G1HeapRegionPrinter::alloc(new_alloc_region);
       return new_alloc_region;
     }
@@ -3120,7 +3141,6 @@ void G1CollectedHeap::retire_mutator_alloc_region(G1HeapRegion* alloc_region,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
-  collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _eden.add_used_bytes(allocated_bytes);
   G1HeapRegionPrinter::retire(alloc_region);
@@ -3164,14 +3184,20 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
     if (type.is_survivor()) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
+      // The remembered set/group cardset for this region will be installed at the
+      // end of GC. Cannot do that right now because we still need the current young
+      // gen cardset group.
+      // However, register with the attribute table to collect remembered set entries
+      // immediately as it is the only source for determining the need for remembered
+      // set tracking during GC.
       register_new_survivor_region_with_region_attr(new_alloc_region);
-      // Install the group cardset.
-      young_regions_cset_group()->add(new_alloc_region);
     } else {
       new_alloc_region->set_old();
+      // Update remembered set/cardset.
+      _policy->remset_tracker()->update_at_allocate(new_alloc_region);
+      // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
     }
-    _policy->remset_tracker()->update_at_allocate(new_alloc_region);
     G1HeapRegionPrinter::alloc(new_alloc_region);
     return new_alloc_region;
   }

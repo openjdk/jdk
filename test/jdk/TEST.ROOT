@@ -100,6 +100,8 @@ requires.properties= \
     vm.compiler2.enabled \
     vm.cds \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.musl \
     vm.asan \
