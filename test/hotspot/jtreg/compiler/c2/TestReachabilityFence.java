@@ -25,15 +25,19 @@ package compiler.c2;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-
 import jdk.internal.misc.Unsafe;
+
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
  * @bug 8290892
  * @summary Tests to ensure that reachabilityFence() correctly keeps objects from being collected prematurely.
  * @modules java.base/jdk.internal.misc
+ * @library /test/lib /
  * @run main/othervm -Xbatch compiler.c2.TestReachabilityFence
  */
 public class TestReachabilityFence {
@@ -52,7 +56,7 @@ public class TestReachabilityFence {
         private final int id;
 
         public MyBufferOnHeap() {
-            // Get a unique id, allocate memory and save the address in the payload array
+            // Get a unique id, allocate memory, and save the address in the payload array.
             id = current++;
             payload[id] = new byte[SIZE];
 
@@ -61,7 +65,7 @@ public class TestReachabilityFence {
                 put(i, (byte) 42);
             }
 
-            // Register a cleaner to free the memory when the buffer is garbage collected
+            // Register a cleaner to free the memory when the buffer is garbage collected.
             int lid = id; // Capture current value
             Cleaner.create().register(this, () -> { free(lid); });
 
@@ -103,7 +107,7 @@ public class TestReachabilityFence {
         private final int id;
 
         public MyBufferOffHeap() {
-            // Get a unique id, allocate memory and save the address in the payload array
+            // Get a unique id, allocate memory, and save the address in the payload array.
             id = current++;
             payload[id] = UNSAFE.allocateMemory(SIZE);
 
@@ -146,102 +150,155 @@ public class TestReachabilityFence {
         }
     }
 
-    static MyBuffer bufferOff = new MyBufferOffHeap();
-    static MyBuffer bufferOn = new MyBufferOnHeap();
+    static MyBufferOffHeap bufferOff = new MyBufferOffHeap();
+    static MyBufferOnHeap bufferOn = new MyBufferOnHeap();
 
-    static long counter1 = 0;
-    static long counter2 = 0;
+    static long[] counters = new long[4];
 
-    // Off-heap version.
-    static long testOffHeap(int limit) {
+    static boolean test(MyBuffer buf) {
+        if (buf == null) {
+            return false;
+        }
+        for (int i = 0; i < SIZE; i++) {
+            // The access is split into base address load (payload[id]), offset computation, and data load.
+            // While offset is loop-variant, payload[id] is not and can be hoisted.
+            // If bufferOff and payload[id] loads are hoisted outside outermost loop, it eliminates all usages of
+            // myBuffer oop inside the loop and bufferOff can be GCed at the safepoint on outermost loop back branch.
+            byte b = buf.get(i); // inlined
+            if (b != 42) {
+                String msg = "Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!";
+                throw new AssertionError(msg);
+            }
+        }
+        return true;
+    }
+
+    /* ===================================== Off-heap versions ===================================== */
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.AFTER_LOOP_OPTS)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "0"}, phase = CompilePhase.EXPAND_REACHABILITY_FENCES)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testOffHeap1(int limit) {
         for (long j = 0; j < limit; j++) {
-            MyBuffer myBuffer = bufferOff; // local
-            if (myBuffer == null) {
+            MyBufferOffHeap myBuffer = bufferOff; // local
+            if (!test(myBuffer)) {
                 return j;
             }
-            for (int i = 0; i < SIZE; i++) {
-                // The access is split into base address load (payload[id]), offset computation, and data load.
-                // While offset is loop-variant, payload[id] is not and can be hoisted.
-                // If bufferOff and payload[id] loads are hoisted outside outermost loop, it eliminates all usages of
-                // myBuffer oop inside the loop and bufferOff can be GCed at the safepoint on outermost loop back branch.
-                byte b = myBuffer.get(i); // inlined
-                if (b != 42) {
-                    String msg = "Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!";
-                    throw new AssertionError(msg);
-                }
-            }
-            counter1 = j;
-            // Keep the buffer live while we read from it
-            Reference.reachabilityFence(myBuffer);
+            counters[0] = j;
         } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
         return limit;
     }
 
-    // On-heap version.
-    static long testOnHeap(int limit) {
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "2"}, phase = CompilePhase.AFTER_LOOP_OPTS)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "0"}, phase = CompilePhase.EXPAND_REACHABILITY_FENCES)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testOffHeap2(int limit) {
         for (long j = 0; j < limit; j++) {
-            MyBuffer myBuffer = bufferOn;
-            if (myBuffer == null) {
-                return j;
-            }
-            for (int i = 0; i < SIZE; i++) {
-                byte b = myBuffer.get(i);
-                if (b != 42) {
-                    String msg = "Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!";
-                    throw new AssertionError(msg);
+            MyBufferOffHeap myBuffer = bufferOff; // local
+            try {
+                if (!test(myBuffer)) {
+                    return j;
                 }
+                counters[1] = j;
+            } finally {
+                Reference.reachabilityFence(myBuffer);
             }
-            counter2 = j;
-            // Keep the buffer live while we read from it
-            Reference.reachabilityFence(myBuffer);
-        }
+        } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
         return limit;
     }
 
-    public static void main(String[] args) throws Throwable {
-        // Warmup to trigger compilation
+    /* ===================================== On-heap versions ===================================== */
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.AFTER_LOOP_OPTS)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "0"}, phase = CompilePhase.EXPAND_REACHABILITY_FENCES)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testOnHeap1(int limit) {
+        for (long j = 0; j < limit; j++) {
+            MyBufferOnHeap myBuffer = bufferOn; // local
+            if (!test(myBuffer)) {
+                return j;
+            }
+            counters[2] = j;
+        } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
+        return limit;
+    }
+
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "2"}, phase = CompilePhase.AFTER_PARSING)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "2"}, phase = CompilePhase.AFTER_LOOP_OPTS)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "0"}, phase = CompilePhase.EXPAND_REACHABILITY_FENCES)
+    @IR(counts = {IRNode.REACHABILITY_FENCE, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testOnHeap2(int limit) {
+        for (long j = 0; j < limit; j++) {
+            MyBufferOnHeap myBuffer = bufferOn; // local
+            try {
+                if (!test(myBuffer)) {
+                    return j;
+                }
+                counters[3] = j;
+            } finally {
+                Reference.reachabilityFence(myBuffer);
+            }
+        } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
+        return limit;
+    }
+
+    static void runJavaTestCases() throws Throwable {
+        // Warmup to trigger compilations.
         for (int i = 0; i < 10_000; i++) {
-            testOffHeap(10);
-            testOnHeap(10);
+            testOffHeap1(10);
+            testOffHeap2(10);
+            testOnHeap1(10);
+            testOnHeap2(10);
         }
 
-        CountDownLatch latch = new CountDownLatch(3);
-        final Throwable[] result = new Throwable[2];
+        @SuppressWarnings("unchecked")
+        Callable<Long>[] tasks = new Callable[] {
+                () -> testOffHeap1(100_000_000),
+                () -> testOffHeap2(100_000_000),
+                () -> testOnHeap1(100_000_000),
+                () -> testOnHeap2(100_000_000),
+        };
+        int taskCount = tasks.length;
+        CountDownLatch latch = new CountDownLatch(taskCount + 1);
+        final Thread[] workers = new Thread[taskCount];
+        final Throwable[] result = new Throwable[taskCount];
 
-        Thread compThread1 = new Thread(() -> {
-            latch.countDown(); // synchronize with main thread
-            try {
-                System.out.printf("Computation thread #1 has started\n");
-                long cnt = testOffHeap(100_000_000);
-                System.out.printf("#1 Finished after %d iterations\n", cnt);
-            } catch (Throwable e) {
-                System.out.printf("#1 Finished with an exception %s\n", e);
-                result[0] = e;
-            }
-        });
+        for (int i = 0; i < taskCount; i++) {
+            final int id = i;
+            workers[id] = new Thread(() -> {
+                latch.countDown(); // synchronize with main thread
+                try {
+                    System.out.printf("Computation thread #%d has started\n", id);
+                    long cnt = tasks[id].call();
+                    System.out.printf("#%d Finished after %d iterations\n", id, cnt);
+                } catch (Throwable e) {
+                    System.out.printf("#%d Finished with an exception %s\n", id, e);
+                    result[id] = e;
+                }
+            });
+        }
 
-        Thread compThread2 = new Thread(() -> {
-            latch.countDown(); // synchronize with main thread
-            try {
-                System.out.printf("Computation thread #2 has started\n");
-                long cnt = testOnHeap(100_000_000);
-                System.out.printf("#2 Finished after %d iterations\n", cnt);
-            } catch (Throwable e) {
-                System.out.printf("#2 Finished with an exception %s\n", e);
-                result[1] = e;
-            }
-        });
+        for (Thread worker : workers) {
+            worker.start();
+        }
 
-        compThread1.start();
-        compThread2.start();
+        latch.countDown(); // synchronize with worker threads
 
-        latch.countDown(); // synchronize with comp thread
+        Thread.sleep(100); // let workers proceed
 
-        Thread.sleep(100); // let compThread proceed
-
-        // Clear reference to 'buffer' and make sure it's garbage collected
-        System.out.printf("Buffer set to null. Waiting for garbage collection. (counter1 = %d; counter2 = %d)\n",
-                          counter1, counter2);
+        // Clear references to buffers and make sure it's garbage collected.
+        System.out.printf("Buffers set to null. Waiting for garbage collection. (counters = %s)\n", Arrays.toString(counters));
         bufferOn = null;
         bufferOff = null;
 
@@ -249,27 +306,43 @@ public class TestReachabilityFence {
 
         synchronized (STATUS) {
             do {
-                if (STATUS[0] && STATUS[1] ) {
+                if (STATUS[0] && STATUS[1]) {
                     break;
                 } else {
-                    System.out.printf("Waiting for cleanup... (counter1 = %d; counter2 = %d)\n", counter1, counter2);
+                    System.out.printf("Waiting for cleanup... (counters = %s)\n", Arrays.toString(counters));
                     System.gc();
                     STATUS.wait(100);
                 }
             } while (true);
         }
 
-        compThread1.join();
-        compThread2.join();
-        if (result[0] != null) {
-            System.out.println("TEST FAILED");
-            throw result[0];
-        }
-        if (result[1] != null) {
-            System.out.println("TEST FAILED");
-            throw result[0];
+        for (Thread worker : workers) {
+            worker.join();
         }
 
-        System.out.println("TEST PASSED");
+        System.out.printf("Results: %s\n", Arrays.deepToString(result));
+
+        for (Throwable e : result) {
+            if (e != null) {
+                throw e;
+            }
+        }
+    }
+
+    static void runIRTestCases() {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        framework.start();
+    }
+
+    public static void main(String[] args) throws Throwable {
+        try {
+            runIRTestCases();
+            runJavaTestCases();
+            System.out.println("TEST PASSED");
+        } catch (Throwable e) {
+            System.out.println("TEST FAILED");
+            throw e;
+        }
     }
 }
