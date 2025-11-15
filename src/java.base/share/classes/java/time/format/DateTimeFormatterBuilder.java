@@ -2534,9 +2534,6 @@ public final class DateTimeFormatterBuilder {
         }
 
         static DateTimePrinter createFormatter(DateTimePrinterParser[] printerParsers) {
-            if (!MANUAL_UNROLLING_PRINTERS) {
-                return createDefaultDateTimePrinter(printerParsers);
-            }
             int length = printerParsers.length;
             return switch (length) {
                 case 1 -> printerParsers[0]::format;
@@ -2739,11 +2736,18 @@ public final class DateTimeFormatterBuilder {
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
-            optional |= this.optional;
-            boolean result = formatter.format(context, buf, optional);
-            if (!result) {
-                buf.setLength(length);  // reset buffer
-                return true;
+            boolean effectiveOptional = optional | this.optional;
+            if (!MANUAL_UNROLLING_PRINTERS) {
+                for (DateTimePrinterParser pp : printerParsers) {
+                    if (!pp.format(context, buf, effectiveOptional)) {
+                        buf.setLength(length);  // reset buffer
+                        return true;
+                    }
+                }
+            } else {
+                if (!formatter.format(context, buf, effectiveOptional)) {
+                    buf.setLength(length);  // reset buffer
+                }
             }
             return true;
         }
