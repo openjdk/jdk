@@ -365,6 +365,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *         not supported by any provider, or if an error occurs during
      *         encryption.
      *
+     * @since 25
+     * @throws NullPointerException if {@code de}, {@code password}, or
+     *         {@code algorithm} is {@code null}
+     * @throws IllegalArgumentException if {@code de} is an unsupported
+     *         {@code DEREncodable}, if an error occurs while generating the
+     *         PBE key, if {@code algorithm} or {@code params} are
+     *         not supported by any provider, or if an error occurs during
+     *         encryption.
+     *
      * @since 26
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)

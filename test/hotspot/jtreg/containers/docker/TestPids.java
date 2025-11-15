@@ -47,7 +47,7 @@ import jdk.test.lib.Utils;
 
 public class TestPids {
     private static final String imageName = Common.imageName("pids");
-    private static final boolean IS_PODMAN = Container.ENGINE_COMMAND.contains("podman");
+    private static final boolean IS_PODMAN = DockerTestUtils.isPodman();
     private static final int UNLIMITED_PIDS_PODMAN = 0;
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 

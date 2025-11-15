@@ -26,6 +26,8 @@
 #include "cgroupUtil_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
 
+#include <math.h>
+
 // Constructor
 CgroupV2Controller::CgroupV2Controller(char* mount_path,
                                        char *cgroup_path,
@@ -61,22 +63,39 @@ int CgroupV2CpuController::cpu_shares() {
     log_debug(os, container)("CPU Shares is: %d", -1);
     return -1;
   }
+  // cg v2 values must be in range [1-10000]
+  assert(shares_int >= 1 && shares_int <= 10000, "invariant");
 
   // CPU shares (OCI) value needs to get translated into
   // a proper Cgroups v2 value. See:
-  // https://github.com/containers/crun/blob/master/crun.1.md#cpu-controller
+  // https://github.com/containers/crun/blob/1.24/crun.1.md#cpu-controller
   //
   // Use the inverse of (x == OCI value, y == cgroupsv2 value):
-  // ((262142 * y - 1)/9999) + 2 = x
+  // y = 10^(log2(x)^2/612 + 125/612 * log2(x) - 7.0/34.0)
   //
-  int x = 262142 * shares_int - 1;
-  double frac = x/9999.0;
-  x = ((int)frac) + 2;
+  // By re-arranging it to the standard quadratic form:
+  // log2(x)^2 + 125 * log2(x) - (126 + 612 * log_10(y)) = 0
+  //
+  // Therefore, log2(x) = (-125 + sqrt( 125^2 - 4 * (-(126 + 612 * log_10(y)))))/2
+  //
+  // As a result we have the inverse (we can discount substraction of the
+  // square root value since those values result in very small numbers and the
+  // cpu shares values - OCI - are in range [2,262144]):
+  //
+  // x = 2^((-125 + sqrt(16129 + 2448* log10(y)))/2)
+  //
+  double log_multiplicand = log10(shares_int);
+  double discriminant = 16129 + 2448 * log_multiplicand;
+  double square_root = sqrt(discriminant);
+  double exponent = (-125 + square_root)/2;
+  double scaled_val = pow(2, exponent);
+  int x = (int) scaled_val;
   log_trace(os, container)("Scaled CPU shares value is: %d", x);
   // Since the scaled value is not precise, return the closest
   // multiple of PER_CPU_SHARES for a more conservative mapping
   if ( x <= PER_CPU_SHARES ) {
-     // will always map to 1 CPU
+     // Don't do the multiples of PER_CPU_SHARES mapping since we
+     // have a value <= PER_CPU_SHARES
      log_debug(os, container)("CPU Shares is: %d", x);
      return x;
   }
