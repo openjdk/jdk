@@ -92,7 +92,7 @@ public class ImportPassKeyAlg {
         // 0034:0004  [1011]                 INTEGER 10000
         // 0038:0003  [1012]                 INTEGER 16
         // 003B:000E  [1013]                 SEQUENCE
-        // 003D:000A  [10130]                     OID 1.2.840.113549.2.7 (HmacSHA1)
+        // 003D:000A  [10130]                     OID 1.2.840.113549.2.9 (HmacSHA256)
         // 0047:0002  [10131]                     NULL
         // 0049:001F  [11]         SEQUENCE
         // 004B:000B  [110]             OID 2.16.840.1.101.3.4.1.2 (AES_128/CBC/NoPadding)
