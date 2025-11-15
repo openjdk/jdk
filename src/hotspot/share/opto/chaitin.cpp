@@ -1473,22 +1473,23 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
 
 OptoReg::Name PhaseChaitin::select_bias_lrg_color(LRG& lrg, uint bias_lrg) {
   if (bias_lrg != 0) {
-    // If bias lrg has a color.
-    if(!_ifg->_yanked->test(bias_lrg)) {
+    // If bias_lrg has a color
+    if (!_ifg->_yanked->test(bias_lrg)) {
       OptoReg::Name reg = lrgs(bias_lrg).reg();
-      //  And it is legal for you,
+      //  And it is legal for lrg
       if (is_legal_reg(lrg, reg)) {
         return reg;
       }
     } else if (!lrg.mask().is_offset()) {
-      // Choose a color which is legal for him
+      // Choose a color which is legal for bias_lrg
       ResourceMark rm(C->regmask_arena());
       RegMask tempmask(lrg.mask(), C->regmask_arena());
       tempmask.and_with(lrgs(bias_lrg).mask());
       tempmask.clear_to_sets(lrg.num_regs());
       OptoReg::Name reg = find_first_set(lrg, tempmask);
-      if (OptoReg::is_valid(reg))
+      if (OptoReg::is_valid(reg)) {
         return reg;
+      }
     }
   }
   return OptoReg::Bad;
@@ -1657,13 +1658,12 @@ uint PhaseChaitin::Select( ) {
       }
     }
 
-    uint lrg_in1 = 0;
     Node* def = lrg->_def;
     MachNode* mdef = lrg->is_singledef() && !lrg->_is_bound && def->is_Mach() ? def->as_Mach() : nullptr;
     if (Matcher::should_attempt_register_biasing(mdef, 1)) {
       Node* in1 = mdef->in(mdef->operand_index(1));
       if (in1 != nullptr) {
-        lrg_in1 = _lrg_map.find(in1);
+        uint lrg_in1 = _lrg_map.find(in1);
         // Complex memory operand covers multiple incoming
         // edges needed for address computation, biasing def
         // towards any address component will not result into
