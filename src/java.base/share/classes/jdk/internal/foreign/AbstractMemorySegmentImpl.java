@@ -399,12 +399,12 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @ForceInline
     void checkSliceBounds(long offset, long length) {
-        Preconditions.checkFromIndexSize(offset, length, this.length, this::sliceOutOfBoundException);
+        Preconditions.checkFromIndexSize(offset, length, this.length, new BoundsCheckHandler(this, BoundPolicy.SLICE));
     }
 
     @ForceInline
     void checkAccessBounds(long offset, long length) {
-        Preconditions.checkFromIndexSize(offset, length, this.length, this::accessOutOfBoundException);
+        Preconditions.checkFromIndexSize(offset, length, this.length, new BoundsCheckHandler(this, BoundPolicy.ACCESS));
     }
 
     @Override
@@ -420,30 +420,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     public final MemorySessionImpl sessionImpl() {
         return scope;
-    }
-
-    private IndexOutOfBoundsException sliceOutOfBoundException(String s, List<Number> numbers) {
-        return outOfBoundException(BoundPolicy.SLICE, numbers);
-    }
-
-    private IndexOutOfBoundsException accessOutOfBoundException(String s, List<Number> numbers) {
-        return outOfBoundException(BoundPolicy.ACCESS, numbers);
-    }
-
-    private IndexOutOfBoundsException outOfBoundException(BoundPolicy policy, List<Number> numbers) {
-        long offset = numbers.get(0).longValue();
-        long length = numbers.get(1).longValue();
-        long totalLength = numbers.get(2).longValue();
-
-        String msg = switch (policy) {
-            case BoundPolicy.SLICE  -> "attempting to get slice of length";
-            case BoundPolicy.ACCESS -> "attempting to access an element of length";
-        };
-
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; " +
-                        "%s %d at offset %d " +
-                        "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
-                this, msg, length, offset, totalLength));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
@@ -521,7 +497,48 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private enum BoundPolicy {
-        SLICE, ACCESS
+        SLICE {
+            @Override
+            String format(AbstractMemorySegmentImpl segment, long offset, long size, long length) {
+                return String.format(
+                        "Out of bound access on segment %s; attempting to get slice of length %d at offset %d " +
+                                "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                        segment, size, offset, length
+                );
+            }
+        },
+        ACCESS {
+            @Override
+            String format(AbstractMemorySegmentImpl segment, long offset, long size, long length) {
+                return String.format(
+                        "Out of bound access on segment %s; attempting to access an element of length %d at offset %d " +
+                                "which is outside the valid range 0 <= offset+length < byteSize (=%d)",
+                        segment, size, offset, length
+                );
+            }
+        };
+
+        abstract String format(AbstractMemorySegmentImpl segment, long offset, long size, long length);
+    }
+
+    private static final class BoundsCheckHandler implements BiFunction<String, List<Number>, IndexOutOfBoundsException> {
+        final AbstractMemorySegmentImpl segment;
+        final BoundPolicy policy;
+
+        BoundsCheckHandler(AbstractMemorySegmentImpl segment, BoundPolicy policy) {
+            this.segment = segment;
+            this.policy = policy;
+        }
+
+        @Override
+        public IndexOutOfBoundsException apply(String s, List<Number> args) {
+            long offset = args.get(0).longValue();
+            long size   = args.get(1).longValue();
+            long length = args.get(2).longValue();
+
+            String msg = policy.format(segment, offset, size, length);
+            return new IndexOutOfBoundsException(msg);
+        }
     }
 
     // Object methods
