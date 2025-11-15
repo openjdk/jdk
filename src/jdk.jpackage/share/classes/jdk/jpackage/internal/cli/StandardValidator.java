@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
+import jdk.jpackage.internal.util.FileUtils;
 
 final public class StandardValidator {
 
@@ -45,8 +46,18 @@ final public class StandardValidator {
 
     public static final Predicate<Path> IS_DIRECTORY = Files::isDirectory;
 
-    public static final Predicate<Path> IS_EXISTENT_NOT_DIRECTORY = path -> {
-        return Files.exists(path) && !Files.isDirectory(path);
+    public static final Predicate<Path> IS_FILE_OR_SYMLINK = path -> {
+        if (Files.isRegularFile(path)) {
+            return true;
+        } else if (Files.isSymbolicLink(path)) {
+            try {
+                return Files.isRegularFile(FileUtils.readSymlinkTargetRecursive(path));
+            } catch (IOException ex) {
+                return false;
+            }
+        } else {
+            return false;
+        }
     };
 
     public static final Predicate<Path> IS_DIRECTORY_OR_NON_EXISTENT = path -> {

@@ -41,6 +41,8 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.Validator.ValidatingConsumerException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -67,9 +69,9 @@ public class StandardValidatorTest {
     }
 
     @Test
-    public void test_IS_EXISTENT_NOT_DIRECTORY(@TempDir Path tempDir) throws IOException {
+    public void test_IS_FILE_OR_SYMLINK(@TempDir Path tempDir) throws IOException {
 
-        final var testee = StandardValidator.IS_EXISTENT_NOT_DIRECTORY;
+        final var testee = StandardValidator.IS_FILE_OR_SYMLINK;
 
         assertFalse(testee.test(tempDir));
         assertFalse(testee.test(tempDir.resolve("foo")));
@@ -81,6 +83,36 @@ public class StandardValidatorTest {
         assertFalse(testee.test(tempDir));
 
         assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void test_IS_FILE_OR_SYMLINK_symlink_file(@TempDir Path tempDir) throws IOException {
+
+        final var file = tempDir.resolve("foo");
+        Files.writeString(file, "foo");
+
+        final var symlink = Files.createSymbolicLink(tempDir.resolve("foo-symlink"), file);
+
+        assertTrue(StandardValidator.IS_FILE_OR_SYMLINK.test(symlink));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void test_IS_FILE_OR_SYMLINK_symlink_dir(@TempDir Path tempDir) throws IOException {
+
+        final var symlink = Files.createSymbolicLink(tempDir.resolve("foo-symlink"), tempDir);
+
+        assertFalse(StandardValidator.IS_FILE_OR_SYMLINK.test(symlink));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void test_IS_FILE_OR_SYMLINK_symlink_invalid(@TempDir Path tempDir) throws IOException {
+
+        final var symlink = Files.createSymbolicLink(tempDir.resolve("foo-symlink"), tempDir.resolve("foo"));
+
+        assertFalse(StandardValidator.IS_FILE_OR_SYMLINK.test(symlink));
     }
 
     @Test

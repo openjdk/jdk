@@ -166,7 +166,7 @@ public final class StandardOption {
                 @Override
                 public boolean test(Path path) {
                     if (!path.toString().isEmpty()) {
-                        return StandardValidator.IS_EXISTENT_NOT_DIRECTORY.test(path);
+                        return StandardValidator.IS_FILE_OR_SYMLINK.test(path);
                     } else {
                         return true;
                     }
@@ -503,7 +503,7 @@ public final class StandardOption {
                     b.validatorExceptionFormatString("error.properties-parameter-not-file");
                 });
             }))
-            .validator(StandardValidator.IS_EXISTENT_NOT_DIRECTORY)
+            .validator(StandardValidator.IS_FILE_OR_SYMLINK)
             .validatorExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
             .validatorExceptionFormatString("error.parameter-not-file");
         };
