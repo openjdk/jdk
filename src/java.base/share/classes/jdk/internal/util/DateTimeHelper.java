@@ -49,16 +49,13 @@ public final class DateTimeHelper {
      * Requires extra capacity of 10 to avoid StringBuilder reallocation.
      */
     public static void formatTo(StringBuilder buf, LocalDate date) {
-        int year  = date.getYear(),
-            month = date.getMonthValue(),
-            day   = date.getDayOfMonth();
-        int absYear = Math.abs(year);
-        if (absYear < 1000) {
+        int year    = date.getYear(),
+            absYear = Math.abs(year);
+        if (absYear < 10000) {
             if (year < 0) {
                 buf.append('-');
             }
-            DecimalDigits.appendPair(buf, absYear / 100);
-            DecimalDigits.appendPair(buf, absYear % 100);
+            DecimalDigits.appendQuad(buf, absYear);
         } else {
             if (year > 9999) {
                 buf.append('+');
@@ -66,9 +63,9 @@ public final class DateTimeHelper {
             buf.append(year);
         }
         buf.append('-');
-        DecimalDigits.appendPair(buf, month);
+        DecimalDigits.appendPair(buf, date.getMonthValue());
         buf.append('-');
-        DecimalDigits.appendPair(buf, day);
+        DecimalDigits.appendPair(buf, date.getDayOfMonth());
     }
 
     /**
@@ -76,11 +73,11 @@ public final class DateTimeHelper {
      * Requires extra capacity of 18 to avoid StringBuilder reallocation.
      */
     public static void formatTo(StringBuilder buf, LocalTime time) {
-        int second = time.getSecond(),
-            nano   = time.getNano();
         DecimalDigits.appendPair(buf, time.getHour());
         buf.append(':');
         DecimalDigits.appendPair(buf, time.getMinute());
+        int second = time.getSecond(),
+            nano   = time.getNano();
         if ((second | nano) > 0) {
             buf.append(':');
             DecimalDigits.appendPair(buf, second);

@@ -29,7 +29,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
-
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
@@ -448,14 +447,54 @@ public final class DecimalDigits {
     }
 
     /**
-     * Appends the 2 width string representation of the {@code int}
-     * argument to this sequence.
+     * Appends the two-digit string representation of the {@code int}
+     * argument to the given {@code StringBuilder}.
+     * <p>
+     * The integer {@code v} is formatted as two decimal digits.
+     * Values from 0 to 9 are formatted with a leading zero (e.g., 5 becomes "05"),
+     * and values from 10 to 99 are formatted as regular two-digit numbers.
+     * If the value is outside the range 0-99, the behavior is unspecified.
      *
-     * @param   buf   target buffer.
-     * @param   v   an {@code int}.
-     * @return  a reference to this object.
+     * @param buf the {@code StringBuilder} to append to.
+     * @param v the {@code int} value (should be between 0 and 99 inclusive).
      */
     public static void appendPair(StringBuilder buf, int v) {
-        JLA.appendPair(buf, v);
+        // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
+        // which allows the JIT compiler to eliminate array bounds checks for performance.
+        int packed = DIGITS[v & 0x7f];
+        // The temporary String and byte[] objects created here are typically eliminated
+        // by the JVM's escape analysis and scalar replacement optimizations during
+        // runtime compilation, avoiding actual heap allocations in optimized code.
+        buf.append(
+                JLA.uncheckedNewStringWithLatin1Bytes(
+                        new byte[] {(byte) packed, (byte) (packed >> 8)}));
+    }
+
+    /**
+     * Appends the four-digit string representation of the {@code int}
+     * argument to the given {@code StringBuilder}.
+     * <p>
+     * The integer {@code v} is formatted as four decimal digits.
+     * Values from 0 to 9 are formatted with leading zeros (e.g., 5 becomes "0005"),
+     * values from 10 to 99 become three leading zeros (e.g., 25 becomes "0025"),
+     * values from 100 to 999 become two leading zeros (e.g., 123 becomes "0123"),
+     * and values from 1000 to 9999 become one leading zero or no leading zeros.
+     * If the value is outside the range 0-9999, the behavior is unspecified.
+     *
+     * @param buf the {@code StringBuilder} to append to.
+     * @param v the {@code int} value (should be between 0 and 9999 inclusive).
+     */
+    public static void appendQuad(StringBuilder buf, int v) {
+        // The & 0x7f operation keeps the index within the safe range [0, 127] for the DIGITS array,
+        // which allows the JIT compiler to eliminate array bounds checks for performance.
+        int packedHigh = DIGITS[(v / 100) & 0x7f];
+        int packedLow  = DIGITS[(v % 100) & 0x7f];
+        // The temporary String and byte[] objects created here are typically eliminated
+        // by the JVM's escape analysis and scalar replacement optimizations during
+        // runtime compilation, avoiding actual heap allocations in optimized code.
+        buf.append(
+                JLA.uncheckedNewStringWithLatin1Bytes(
+                        new byte[] {(byte) packedHigh, (byte) (packedHigh >> 8),
+                                    (byte) packedLow,  (byte) (packedLow  >> 8)}));
     }
 }
