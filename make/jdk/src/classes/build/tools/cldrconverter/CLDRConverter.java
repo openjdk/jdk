@@ -1241,9 +1241,9 @@ public class CLDRConverter {
     }
 
     private static Stream<String> generateDateTimePrinterCases(String line) {
-        // Parse the range, defaulting to 1-17 if no range is specified
+        // Parse the range, defaulting to 1-16 if no range is specified
         int start = 1;
-        int end = 17;
+        int end = 16;
 
         if (line != null && line.startsWith("%%%%CASES:")) {
             String rangePart = line.substring("%%%%CASES:".length(), line.length() - 4); // Remove trailing%%%%
@@ -1260,17 +1260,16 @@ public class CLDRConverter {
 
         return IntStream.rangeClosed(start, end)
             .mapToObj(i -> {
-                StringBuilder sb = new StringBuilder();
-                sb.append("            case ").append(i).append(" -> (context, buf, optional)\n");
-                sb.append("                    -> ");
+                StringBuilder sb = new StringBuilder()
+                        .append("            case ").append(i).append(" -> (context, buf, optional)\n")
+                        .append("                    -> ");
                 for (int j = 0; j < i; j++) {
                     sb.append("printerParsers[").append(j).append("].format(context, buf, optional)");
                     if (j < i - 1) {
                         sb.append("\n                    && ");
                     }
                 }
-                sb.append(";");
-                return sb.toString();
+                return sb.append(";").toString();
             });
     }
 
