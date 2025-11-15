@@ -61,7 +61,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      * specified {@code Throwable}.
      *
      * @param   undeclaredThrowable the undeclared checked exception
-     *          that was thrown
+     *          that was thrown, may be {@code null}
      */
     public UndeclaredThrowableException(Throwable undeclaredThrowable) {
         super(null, undeclaredThrowable);  // Disallow initCause
@@ -72,7 +72,7 @@ public class UndeclaredThrowableException extends RuntimeException {
      * specified {@code Throwable} and a detail message.
      *
      * @param   undeclaredThrowable the undeclared checked exception
-     *          that was thrown
+     *          that was thrown, may be {@code null}
      * @param   s the detail message, may be {@code null}
      */
     public UndeclaredThrowableException(Throwable undeclaredThrowable,

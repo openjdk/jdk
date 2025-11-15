@@ -449,9 +449,9 @@ public final class Constructor<T> extends Executable {
      * created and initialized instance.
      *
      * @param initargs array of objects to be passed as arguments to
-     * the constructor call; values of primitive types are wrapped in
-     * a wrapper object of the appropriate type (e.g. a {@code float}
-     * in a {@link java.lang.Float Float})
+     * the constructor call, may be {@code null}; values of primitive
+     * types are wrapped in a wrapper object of the appropriate type
+     * (e.g. a {@code float} in a {@link Float})
      *
      * @return a new object created by calling the constructor
      * this object represents

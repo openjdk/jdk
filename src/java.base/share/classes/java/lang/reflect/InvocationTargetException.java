@@ -62,7 +62,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
     /**
      * Constructs a InvocationTargetException with a target exception.
      *
-     * @param target the target exception
+     * @param target the target exception, may be {@code null}
      */
     public InvocationTargetException(Throwable target) {
         super((Throwable)null);  // Disallow initCause
@@ -73,7 +73,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
      * Constructs a InvocationTargetException with a target exception
      * and a detail message.
      *
-     * @param target the target exception
+     * @param target the target exception, may be {@code null}
      * @param s      the detail message, may be {@code null}
      */
     public InvocationTargetException(Throwable target, String s) {
