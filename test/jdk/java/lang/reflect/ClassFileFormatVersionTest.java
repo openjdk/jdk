@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary General tests for ClassFileFormatVersion.
  * @run junit ClassFileFormatVersionTest
  */

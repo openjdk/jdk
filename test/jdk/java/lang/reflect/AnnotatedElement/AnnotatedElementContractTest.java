@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary General API contracts for AnnotatedElement.
- * @run junit AccessibleObjectContractTest
+ * @run junit AnnotatedElementContractTest
  */
 
 import java.lang.reflect.AnnotatedArrayType;
@@ -73,7 +73,7 @@ class AnnotatedElementContractTest {
                 // AnnotatedWildcardType
                 annotatedParameterizedType.getAnnotatedActualTypeArguments()[0],
                 Rec.class.getRecordComponents()[0],
-                Object.class.getMethod("equals").getParameters()[0],
+                Object.class.getMethod("equals", Object.class).getParameters()[0],
                 Object.class.getModule(),
         };
     }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary General API contracts for Array.
  * @run junit ArrayContractTest
  */
@@ -34,27 +34,25 @@ import java.lang.reflect.Array;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ArrayContractTest {
-    private static int[] makeDimensionSequence(int a) {
-        return new int[] { 3, a, 5 };
-    }
-
     @Test
     void newArrayChecks() throws ReflectiveOperationException {
         // Single newInstance
+        assertDoesNotThrow(() -> Array.newInstance(Object.class, 0));
         assertThrows(NullPointerException.class, () -> Array.newInstance(null, 0));
         assertThrows(NegativeArraySizeException.class, () -> Array.newInstance(Object.class, -1));
-        assertThrows(IllegalArgumentException.class, () -> Array.newInstance(Object.class, 256));
         assertThrows(IllegalArgumentException.class, () -> Array.newInstance(void.class, 0));
         var object255ArrayType = ConstantDescs.CD_Object.arrayType(255).resolveConstantDesc(MethodHandles.publicLookup());
         assertThrows(IllegalArgumentException.class, () -> Array.newInstance(object255ArrayType, 0));
         // Multi-level newInstance
+        assertDoesNotThrow(() -> Array.newInstance(Object.class, 0));
         assertThrows(NullPointerException.class, () -> Array.newInstance(null, new int[1]));
         assertThrows(NullPointerException.class, () -> Array.newInstance(Object.class, (int[]) null));
-        assertThrows(NegativeArraySizeException.class, () -> Array.newInstance(Object.class, makeDimensionSequence(-1)));
-        assertThrows(IllegalArgumentException.class, () -> Array.newInstance(Object.class, makeDimensionSequence(256)));
+        assertThrows(NegativeArraySizeException.class, () -> Array.newInstance(Object.class, new int[]{3, -1, 5}));
+        assertThrows(IllegalArgumentException.class, () -> Array.newInstance(Object.class));
         var object254ArrayType = ConstantDescs.CD_Object.arrayType(254).resolveConstantDesc(MethodHandles.publicLookup());
         assertThrows(IllegalArgumentException.class, () -> Array.newInstance(object254ArrayType, new int[] {2, 3}));
     }

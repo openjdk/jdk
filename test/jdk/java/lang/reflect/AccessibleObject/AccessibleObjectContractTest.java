@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary General API contracts for AccessibleObject.
  * @run junit AccessibleObjectContractTest
  */

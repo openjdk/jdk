@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary General tests for exception classes in java.lang.reflect package.
  * @run junit ExceptionClassesTest
  */

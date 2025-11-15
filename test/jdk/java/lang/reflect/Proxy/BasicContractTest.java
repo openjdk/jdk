@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8xxxxxx
+ * @bug 8371953
  * @summary Basic API contracts for Proxy.
  * @run junit BasicContractTest
  */
