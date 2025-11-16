@@ -156,12 +156,6 @@ import static java.time.temporal.ChronoField.*;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
-    private static final boolean MANUAL_UNROLLING_PRINTERS;
-    static {
-        String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.ManualUnrollingPrinters");
-        MANUAL_UNROLLING_PRINTERS = property == null || Boolean.parseBoolean(property);
-    }
-
     /**
      * Query for a time-zone that is region-only.
      */
@@ -2552,17 +2546,8 @@ public final class DateTimeFormatterBuilder {
         public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
             int length = buf.length();
             boolean effectiveOptional = optional | this.optional;
-            if (!MANUAL_UNROLLING_PRINTERS) {
-                for (DateTimePrinterParser pp : printerParsers) {
-                    if (!pp.format(context, buf, effectiveOptional)) {
-                        buf.setLength(length);  // reset buffer
-                        return true;
-                    }
-                }
-            } else {
-                if (!formatter.format(context, buf, effectiveOptional)) {
-                    buf.setLength(length);  // reset buffer
-                }
+            if (!formatter.format(context, buf, effectiveOptional)) {
+                buf.setLength(length);  // reset buffer
             }
             return true;
         }
