@@ -448,15 +448,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _do_not_unlock_if_synchronized(false),
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
-  _is_in_VTMS_transition(false),
   _is_disable_suspend(false),
   _is_in_java_upcall(false),
-  _VTMS_transition_mark(false),
   _on_monitor_waited_event(false),
   _contended_entered_monitor(nullptr),
-#ifdef ASSERT
-  _is_VTMS_transition_disabler(false),
-#endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
   _is_in_internal_oome_mark(false),
@@ -501,6 +496,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
+
+  _is_in_VTMS_transition(false),
+  DEBUG_ONLY(_is_VTMS_transition_disabler(false) COMMA)
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -1149,17 +1147,19 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handshake::execute(&iaeh, target);
 }
 
-#if INCLUDE_JVMTI
+bool JavaThread::is_in_VTMS_transition() const {
+  return AtomicAccess::load(&_is_in_VTMS_transition);
+}
+
 void JavaThread::set_is_in_VTMS_transition(bool val) {
   assert(is_in_VTMS_transition() != val, "already %s transition", val ? "inside" : "outside");
-  _is_in_VTMS_transition = val;
+  AtomicAccess::store(&_is_in_VTMS_transition, val);
 }
 
 #ifdef ASSERT
 void JavaThread::set_is_VTMS_transition_disabler(bool val) {
   _is_VTMS_transition_disabler = val;
 }
-#endif
 #endif
 
 // External suspension mechanism.
@@ -1171,7 +1171,6 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 bool JavaThread::java_suspend(bool register_vthread_SR) {
 #if INCLUDE_JVMTI
   // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
-  assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
   assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
 #endif
 

@@ -1106,10 +1106,10 @@ JNIEXPORT void JNICALL
 JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadStartTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadEndTransition(JNIEnv* env, jobject vthread, jboolean is_mount);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);

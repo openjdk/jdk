@@ -1,0 +1,430 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "classfile/javaClasses.inline.hpp"
+#include "prims/jvmtiEventController.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
+#include "runtime/threadSMR.hpp"
+
+volatile int MountUnmountDisabler::_global_start_transition_disable_count = 0;
+volatile int MountUnmountDisabler::_active_disablers = 0;
+bool MountUnmountDisabler::_exclusive_operation_ongoing = false;
+bool MountUnmountDisabler::_notify_jvmti_events = false;
+
+#if INCLUDE_JVMTI
+class JVMTIStartTransition : public StackObj {
+  JavaThread* _current;
+  Handle _vthread;
+  bool _is_mount;
+  bool _is_thread_end;
+ public:
+  JVMTIStartTransition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_end) :
+    _current(current), _vthread(current, vthread), _is_mount(is_mount), _is_thread_end(is_thread_end) {
+    if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
+      // post VirtualThreadUnmount event before VirtualThreadEnd
+      if (!_is_mount && JvmtiExport::should_post_vthread_unmount()) {
+        JvmtiExport::post_vthread_unmount((jthread)_vthread.raw_value());
+      }
+      if (_is_thread_end && JvmtiExport::should_post_vthread_end()) {
+        JvmtiExport::post_vthread_end((jthread)_vthread.raw_value());
+      }
+    }
+  }
+  ~JVMTIStartTransition() {
+    if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
+      if (_is_thread_end && _current->jvmti_thread_state() != nullptr) {
+        JvmtiExport::cleanup_thread(_current);
+        assert(_current->jvmti_thread_state() == nullptr, "should be null");
+        assert(java_lang_Thread::jvmti_thread_state(_vthread()) == nullptr, "should be null");
+      }
+      _current->rebind_to_jvmti_thread_state_of(_is_mount ? _vthread() : _current->threadObj());
+    }
+  }
+};
+
+class JVMTIEndTransition : public StackObj {
+  JavaThread* _current;
+  Handle _vthread;
+  bool _is_mount;
+  bool _is_thread_start;
+ public:
+  JVMTIEndTransition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_start) :
+    _current(current), _vthread(current, vthread), _is_mount(is_mount), _is_thread_start(is_thread_start) {
+    if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
+      bool is_virtual = java_lang_VirtualThread::is_instance(_current->jvmti_vthread());
+      bool should_rebind = (_is_mount && !is_virtual) || (!_is_mount && is_virtual);
+      if (should_rebind) {
+        // We rebinded on start_transition but the mount/unmount operation
+        // failed so now we need to rebind to the original state.
+        _current->rebind_to_jvmti_thread_state_of(_is_mount ? _vthread() : _current->threadObj());
+        OrderAccess::fence();  // dont reorder with clear of transition flags
+      }
+    }
+  }
+  ~JVMTIEndTransition() {
+    if (DoJVMTIVirtualThreadTransitions && MountUnmountDisabler::notify_jvmti_events()) {
+      if (!_is_mount && _current->is_carrier_thread_suspended()) {
+        MonitorLocker ml(VTMSTransition_lock);
+        while (_current->is_carrier_thread_suspended()) {
+          ml.wait(200);
+        }
+      }
+
+      if (_is_thread_start) {
+        // If interp_only_mode has been enabled then we must eagerly create JvmtiThreadState
+        // objects for globally enabled virtual thread filtered events. Otherwise,
+        // it is an important optimization to create JvmtiThreadState objects lazily.
+        // This optimization is disabled when watchpoint capabilities are present. It is to
+        // work around a bug with virtual thread frames which can be not deoptimized in time.
+        if (JvmtiThreadState::seen_interp_only_mode() ||
+            JvmtiExport::should_post_field_access() ||
+            JvmtiExport::should_post_field_modification()){
+          JvmtiEventController::thread_started(_current);
+        }
+        if (JvmtiExport::should_post_vthread_start()) {
+          JvmtiExport::post_vthread_start((jthread)_vthread.raw_value());
+        }
+      }
+      if (_is_mount && JvmtiExport::should_post_vthread_mount()) {
+        JvmtiExport::post_vthread_mount((jthread)_vthread.raw_value());
+      }
+    }
+  }
+};
+#endif // INCLUDE_JVMTI
+
+bool MountUnmountDisabler::is_start_transition_disabled(JavaThread* thread, oop vthread) {
+  int base_disable_count = notify_jvmti_events() ? 1 : 0;
+  return java_lang_Thread::VTMS_transition_disable_count(vthread) > 0
+         || global_start_transition_disable_count() > base_disable_count
+         JVMTI_ONLY(|| (JvmtiVTSuspender::is_vthread_suspended(java_lang_Thread::thread_id(vthread)) || thread->is_suspended()));
+}
+
+void MountUnmountDisabler::start_transition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_end) {
+  assert(!java_lang_Thread::is_in_VTMS_transition(vthread), "");
+  assert(!current->is_in_VTMS_transition(), "");
+  Handle vth = Handle(current, vthread);
+  JVMTI_ONLY(JVMTIStartTransition jst(current, vthread, is_mount, is_thread_end);)
+
+  java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
+  current->set_is_in_VTMS_transition(true);
+
+  // Prevent loads of disable conditions from floating up.
+  OrderAccess::storeload();
+
+  while (is_start_transition_disabled(current, vth())) {
+    java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
+    current->set_is_in_VTMS_transition(false);
+    {
+      // Block while transitions are disabled
+      MonitorLocker ml(VTMSTransition_lock);
+      while (is_start_transition_disabled(current, vth())) {
+        ml.wait(200);
+      }
+    }
+
+    // Try to start transition again...
+    java_lang_Thread::set_is_in_VTMS_transition(vth(), true);
+    current->set_is_in_VTMS_transition(true);
+    OrderAccess::storeload();
+  }
+
+  // Start of the critical section. We need an acquire fence to prevent future memory
+  // operations to be ordered before we read the disabled conditions. But if this is
+  // a mount, this is already guaranteed by the fences in VirtualThread.mount which will
+  // be executed once we go back to Java. If this is an unmount, the handshake that the
+  // disabler executed against this carrier thread already provided the needed synchronization.
+  // This matches the release fence in xx_enable_for_one()/xx_enable_for_all().
+}
+
+void MountUnmountDisabler::end_transition(JavaThread* current, oop vthread, bool is_mount, bool is_thread_start) {
+  assert(java_lang_Thread::is_in_VTMS_transition(vthread), "");
+  assert(current->is_in_VTMS_transition(), "");
+  Handle vth = Handle(current, vthread);
+  JVMTI_ONLY(JVMTIEndTransition jst(current, vthread, is_mount, is_thread_start);)
+
+  // End of the critical section. We need a release fence here to prevent previous memory
+  // operations to be ordered after we mark the thread as outside transition. But if this
+  // is an unmount, this is already guaranteed by the fences previously executed in
+  // VirtualThread.unmount. If this is a mount, the only thing that needs to be ordered is
+  // the setting of carrierThread, since the handshake that the disabler will execute against
+  // the carrier thread will already provide the needed synchronization. This order is already
+  // guaranteed by the fences in VirtualThread.mount.
+  // This matches the acquire fence in xx_disable_for_one()/xx_disable_for_all().
+
+  java_lang_Thread::set_is_in_VTMS_transition(vth(), false);
+  current->set_is_in_VTMS_transition(false);
+
+  // Unblock waiting transition disablers.
+  if (active_disablers() > 0) {
+    MonitorLocker ml(VTMSTransition_lock);
+    ml.notify_all();
+  }
+}
+
+// disable VTMS transitions for one virtual thread
+// disable VTMS transitions for all threads if thread is nullptr or a platform thread
+MountUnmountDisabler::MountUnmountDisabler(oop thread_oop)
+  : _is_exclusive(false),
+    _is_self(false)
+{
+  if (!Continuations::enabled()) {
+    return; // MountUnmountDisabler is no-op without virtual threads
+  }
+  if (Thread::current_or_null() == nullptr) {
+    return;  // Detached thread, can be a call from Agent_OnLoad.
+  }
+  JavaThread* current = JavaThread::current();
+  assert(!current->is_in_VTMS_transition(), "");
+
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+  if (thread_oop == nullptr ||
+      (!is_virtual && thread_oop == current->threadObj()) ||
+      (is_virtual && thread_oop == current->vthread())) {
+    _is_self = true;
+    return; // no need for current thread to disable and enable transitions for itself
+  }
+
+  // Target can be virtual or platform thread.
+  // If target is a platform thread then we have to disable VTMS transitions for all threads.
+  // It is by several reasons:
+  // - carrier threads can mount virtual threads which may cause incorrect behavior
+  // - there is no mechanism to disable transitions for a specific carrier thread yet
+  if (is_virtual) {
+    _vthread = Handle(current, thread_oop);
+    VTMS_transition_disable_for_one(); // disable VTMS transitions for one virtual thread
+  } else {
+    VTMS_transition_disable_for_all(); // disable VTMS transitions for all virtual threads
+  }
+}
+
+// disable VTMS transitions for all virtual threads
+MountUnmountDisabler::MountUnmountDisabler(bool exclusive)
+  : _is_exclusive(exclusive),
+    _is_self(false)
+{
+  if (!Continuations::enabled()) {
+    return; // MountUnmountDisabler is no-op without virtual threads
+  }
+  if (Thread::current_or_null() == nullptr) {
+    return;  // Detached thread, can be a call from Agent_OnLoad.
+  }
+  assert(!JavaThread::current()->is_in_VTMS_transition(), "");
+  VTMS_transition_disable_for_all();
+}
+
+MountUnmountDisabler::~MountUnmountDisabler() {
+  if (!Continuations::enabled()) {
+    return; // MountUnmountDisabler is a no-op without virtual threads
+  }
+  if (Thread::current_or_null() == nullptr) {
+    return;  // Detached thread, can be a call from Agent_OnLoad.
+  }
+  if (_is_self) {
+    return; // no need for current thread to disable and enable transitions for itself
+  }
+  if (_vthread() != nullptr) {
+    VTMS_transition_enable_for_one(); // enable VTMS transitions for one virtual thread
+  } else {
+    VTMS_transition_enable_for_all(); // enable VTMS transitions for all virtual threads
+  }
+}
+
+// disable VTMS transitions for one virtual thread
+void
+MountUnmountDisabler::VTMS_transition_disable_for_one() {
+  MonitorLocker ml(VTMSTransition_lock);
+  while (exclusive_operation_ongoing()) {
+    ml.wait(10);
+  }
+
+  inc_active_disablers();
+  java_lang_Thread::inc_VTMS_transition_disable_count(_vthread());
+
+  // Prevent load of transition flag from floating up.
+  OrderAccess::storeload();
+
+  while (java_lang_Thread::is_in_VTMS_transition(_vthread())) {
+    ml.wait(10); // wait while the virtual thread is in transition
+  }
+
+  // Start of the critical region. Prevent future memory
+  // operations to be ordered before we read the transition flag.
+  // This matches the release fence in end_transition().
+  OrderAccess::acquire();
+  DEBUG_ONLY(JavaThread::current()->set_is_VTMS_transition_disabler(true);)
+}
+
+// disable VTMS transitions for all virtual threads
+void
+MountUnmountDisabler::VTMS_transition_disable_for_all() {
+  JavaThread* thread = JavaThread::current();
+
+  MonitorLocker ml(VTMSTransition_lock);
+  while (exclusive_operation_ongoing()) {
+    ml.wait(10);
+  }
+  if (_is_exclusive) {
+    set_exclusive_operation_ongoing(true);
+    while (active_disablers() > 0) {
+      ml.wait(10);
+    }
+  }
+  inc_active_disablers();
+  inc_global_start_transition_disable_count();
+
+  // Prevent loads of transition flag from floating up. Technically not
+  // required since JavaThreadIteratorWithHandle includes full fence.
+  OrderAccess::storeload();
+
+  // Block while some mount/unmount transitions are in progress.
+  // Debug version fails and prints diagnostic information.
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    while (jt->is_in_VTMS_transition()) {
+      ml.wait(10);
+    }
+  }
+
+  // Start of the critical region. Prevent future memory
+  // operations to be ordered before we read the transition flags.
+  // This matches the release fence in end_transition().
+  OrderAccess::acquire();
+  DEBUG_ONLY(thread->set_is_VTMS_transition_disabler(true);)
+}
+
+// enable VTMS transitions for one virtual thread
+void
+MountUnmountDisabler::VTMS_transition_enable_for_one() {
+  assert(java_lang_VirtualThread::is_instance(_vthread()), "");
+
+  // End of the critical section. Prevent previous memory operations to
+  // be ordered after we clear the clear the disable transition flag.
+  // This matches the equivalent acquire fence in start_transition().
+  OrderAccess::release();
+
+  MonitorLocker ml(VTMSTransition_lock);
+  dec_active_disablers();
+  java_lang_Thread::dec_VTMS_transition_disable_count(_vthread());
+  if (java_lang_Thread::VTMS_transition_disable_count(_vthread()) == 0) {
+    ml.notify_all();
+  }
+  DEBUG_ONLY(JavaThread::current()->set_is_VTMS_transition_disabler(false);)
+}
+
+// enable VTMS transitions for all virtual threads
+void
+MountUnmountDisabler::VTMS_transition_enable_for_all() {
+  JavaThread* thread = JavaThread::current();
+
+  // End of the critical section. Prevent previous memory operations to
+  // be ordered after we clear the clear the disable transition flag.
+  // This matches the equivalent acquire fence in start_transition().
+  OrderAccess::release();
+
+  MonitorLocker ml(VTMSTransition_lock);
+  if (exclusive_operation_ongoing()) {
+    set_exclusive_operation_ongoing(false);
+  }
+  dec_active_disablers();
+  dec_global_start_transition_disable_count();
+  int base_disable_count = notify_jvmti_events() ? 1 : 0;
+  if (global_start_transition_disable_count() == base_disable_count || _is_exclusive) {
+    ml.notify_all();
+  }
+  DEBUG_ONLY(thread->set_is_VTMS_transition_disabler(false);)
+}
+
+int MountUnmountDisabler::global_start_transition_disable_count() {
+  assert(_global_start_transition_disable_count >= 0, "");
+  return AtomicAccess::load(&_global_start_transition_disable_count);
+}
+
+void MountUnmountDisabler::inc_global_start_transition_disable_count() {
+  assert(VTMSTransition_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint(), "Must be locked");
+  assert(_global_start_transition_disable_count >= 0, "");
+  AtomicAccess::store(&_global_start_transition_disable_count, _global_start_transition_disable_count + 1);
+}
+
+void MountUnmountDisabler::dec_global_start_transition_disable_count() {
+  assert(VTMSTransition_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint(), "Must be locked");
+  assert(_global_start_transition_disable_count > 0, "");
+  AtomicAccess::store(&_global_start_transition_disable_count, _global_start_transition_disable_count - 1);
+}
+
+bool MountUnmountDisabler::exclusive_operation_ongoing() {
+  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
+  return _exclusive_operation_ongoing;
+}
+
+void MountUnmountDisabler::set_exclusive_operation_ongoing(bool val) {
+  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
+  assert(_exclusive_operation_ongoing != val, "");
+  _exclusive_operation_ongoing = val;
+}
+
+int MountUnmountDisabler::active_disablers() {
+  assert(_active_disablers >= 0, "");
+  return AtomicAccess::load(&_active_disablers);
+}
+
+void MountUnmountDisabler::inc_active_disablers() {
+  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
+  assert(_active_disablers >= 0, "");
+  _active_disablers++;
+}
+
+void MountUnmountDisabler::dec_active_disablers() {
+  assert(VTMSTransition_lock->owned_by_self(), "Must be locked");
+  assert(_active_disablers > 0, "");
+  _active_disablers--;
+}
+
+bool MountUnmountDisabler::notify_jvmti_events() {
+  return _notify_jvmti_events;
+}
+
+void MountUnmountDisabler::set_notify_jvmti_events(bool val, bool is_onload) {
+  if (val == _notify_jvmti_events || !DoJVMTIVirtualThreadTransitions) return;
+
+  // Force slow path on start/end vthread transitions for JVMTI bookkeeping.
+  // 'val' is always true except with WhiteBox methods for testing purposes.
+  if (is_onload) {
+    // Skip existing increment methods since asserts will fail.
+    assert(val && _global_start_transition_disable_count == 0, "");
+    AtomicAccess::inc(&_global_start_transition_disable_count);
+  } else {
+    assert(SafepointSynchronize::is_at_safepoint(), "");
+    if (val) {
+      inc_global_start_transition_disable_count();
+    } else {
+      dec_global_start_transition_disable_count();
+    }
+  }
+  log_trace(continuations,tracking)("%s _notify_jvmti_events, _global_start_transition_disable_count=%d", val ? "enabling" : "disabling", _global_start_transition_disable_count);
+  _notify_jvmti_events = val;
+}

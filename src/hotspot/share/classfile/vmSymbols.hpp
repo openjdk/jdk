@@ -395,10 +395,10 @@ class SerializeClosure;
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
-  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
-  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
-  template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
-  template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
+  template(startTransition_name,                      "startTransition")                          \
+  template(endTransition_name,                        "endTransition")                            \
+  template(startFinalTransition_name,                 "startFinalTransition")                     \
+  template(endFirstTransition_name,                   "endFirstTransition")                       \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
@@ -497,8 +497,8 @@ class SerializeClosure;
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
-  template(jvmti_VTMS_transition_disable_count_name,  "jvmti_VTMS_transition_disable_count")      \
-  template(jvmti_is_in_VTMS_transition_name,          "jvmti_is_in_VTMS_transition")              \
+  template(VTMS_transition_disable_count_name,        "VTMS_transition_disable_count")            \
+  template(is_in_VTMS_transition_name,                "is_in_VTMS_transition")                    \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \

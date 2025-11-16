@@ -246,11 +246,11 @@ final class VirtualThread extends BaseVirtualThread {
                 @Hidden
                 @JvmtiHideEvents
                 public void run() {
-                    vthread.notifyJvmtiStart(); // notify JVMTI
+                    vthread.endFirstTransition();
                     try {
                         vthread.run(task);
                     } finally {
-                        vthread.notifyJvmtiEnd(); // notify JVMTI
+                        vthread.startFinalTransition();
                     }
                 }
             };
@@ -479,8 +479,7 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void mount() {
-        // notify JVMTI before mount
-        notifyJvmtiMount(/*hide*/true);
+        startTransition(/*is_mount*/true);
 
         // sets the carrier thread
         Thread carrier = Thread.currentCarrierThread();
@@ -521,8 +520,7 @@ final class VirtualThread extends BaseVirtualThread {
         }
         carrier.clearInterrupt();
 
-        // notify JVMTI after unmount
-        notifyJvmtiUnmount(/*hide*/false);
+        endTransition(/*is_mount*/false);
     }
 
     /**
@@ -531,11 +529,11 @@ final class VirtualThread extends BaseVirtualThread {
      */
     @Hidden
     private boolean yieldContinuation() {
-        notifyJvmtiUnmount(/*hide*/true);
+        startTransition(/*is_mount*/false);
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            notifyJvmtiMount(/*hide*/false);
+            endTransition(/*is_mount*/true);
         }
     }
 
@@ -1393,19 +1391,19 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiStart();
+    private native void endFirstTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiEnd();
+    private native void startFinalTransition();
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiMount(boolean hide);
+    private native void startTransition(boolean is_mount);
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiUnmount(boolean hide);
+    private native void endTransition(boolean is_mount);
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);

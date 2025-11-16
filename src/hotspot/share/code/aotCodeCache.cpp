@@ -1346,18 +1346,16 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray4_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarray5_C);
     SET_ADDRESS(_extrs, OptoRuntime::multianewarrayN_C);
-#if INCLUDE_JVMTI
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_start);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_end);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_mount);
-    SET_ADDRESS(_extrs, SharedRuntime::notify_jvmti_vthread_unmount);
-#endif
     SET_ADDRESS(_extrs, OptoRuntime::complete_monitor_locking_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notify_C);
     SET_ADDRESS(_extrs, OptoRuntime::monitor_notifyAll_C);
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_transition_C);
 #if defined(AARCH64)
     SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64
