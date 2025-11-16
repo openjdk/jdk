@@ -451,12 +451,12 @@ public class DivideTests {
         int failures = 0;
 
         BigDecimal[][] testCases = {
-                {   
+                {
                     BigDecimal.valueOf(21L, -3),
                     BigDecimal.valueOf(140L, -6),
                     BigDecimal.valueOf(15L, 5)
                 },
-                {   
+                {
                     BigDecimal.valueOf(91L, -5),
                     BigDecimal.valueOf(65L, -3),
                     BigDecimal.valueOf(14L, -1)
