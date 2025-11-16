@@ -25,9 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
-#include "shenandoahBarrierSetC2.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
-#include "utilities/growableArray.hpp"
+#include "shenandoahBarrierSetC2.hpp"
 
 static const uint8_t ShenandoahBarrierStrong          = 1 << 0;
 static const uint8_t ShenandoahBarrierWeak            = 1 << 1;
