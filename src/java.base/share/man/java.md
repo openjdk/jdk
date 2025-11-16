@@ -466,15 +466,16 @@ the JVM.
     options.
 
 `--enable-final-field-mutation` *module*\[,*module*...\]
-:   This option allows code in the specified modules to mutate final instance
-    fields when the field's declaring class is in a package that is open to the
-    module mutating the field.
+:   Mutation of final fields is possible with the reflection API of the Java Platform.
+    _However, it compromises safety and performance in all programs.
+    This option allows code_ in the specified modules to mutate final fields by reflection.
+    Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
 
-    *module* can the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
     code on the class path.
 
 -`--illegal-final-field-mutation=`*parameter*
-:   This option specifies the mode for how illegal final field mutation is handled:
+:   This option specifies a mode for how _illegal_ final field mutation is handled:
 
     > **Note:** This option will be removed in a future release.
 

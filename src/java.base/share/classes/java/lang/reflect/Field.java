@@ -791,7 +791,7 @@ class Field extends AccessibleObject implements Member {
      * {@code IllegalAccessException}.
      *
      * <p>If the underlying field is final, this {@code Field} object has <em>write</em>
-     * access if and only if all the following conditions are true, where {@code D} is
+     * access if and only if all following conditions are true, where {@code D} is
      * the field's {@linkplain #getDeclaringClass() declaring class}:
      *
      * <ul>
@@ -829,14 +829,14 @@ class Field extends AccessibleObject implements Member {
      * <p>This method may be called by <a href="{@docRoot}/../specs/jni/index.html">
      * JNI code</a> with no caller class on the stack. In that case, and when the
      * underlying field is final, this {@code Field} object has <em>write</em> access
-     * if and only if the following conditions are true, where {@code D} is the field's
+     * if and only if all following conditions are true, where {@code D} is the field's
      * {@linkplain #getDeclaringClass() declaring class}:
      *
      * <ul>
      * <li>{@code setAccessible(true)} has succeeded for this {@code Field} object.</li>
      * <li>final field mutation is enabled for the unnamed module.</li>
-     * <li>The field is {@code public} and {@code D} is a package that is
-     *     {@linkplain Module#isExported(String) exported} to all modules.</li>
+     * <li>The field is {@code public} and {@code D} is {@code public} in a package that
+     *     is {@linkplain Module#isExported(String) exported} to all modules.</li>
      * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
      * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
      * <li>The field is non-static.</li>
@@ -1617,12 +1617,12 @@ class Field extends AccessibleObject implements Member {
      * to the caller.
      */
     private String notAccessibleToCallerMessage(Class<?> caller, boolean unreflect) {
-        String exportOrOpen = Modifier.isPublic(modifiers)
-                && Modifier.isPublic(clazz.getModifiers()) ? "exports" : "open";
-        return String.format("%s, %s does not explicitly %s package %s to %s",
+        String exportsOrOpens = Modifier.isPublic(modifiers)
+                && Modifier.isPublic(clazz.getModifiers()) ? "exports" : "opens";
+        return String.format("%s, %s does not explicitly \"%s\" package %s to %s",
                 cannotSetFieldMessage(caller, unreflect),
                 clazz.getModule(),
-                exportOrOpen,
+                exportsOrOpens,
                 clazz.getPackageName(),
                 caller.getModule());
     }

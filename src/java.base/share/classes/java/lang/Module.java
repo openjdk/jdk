@@ -1029,7 +1029,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Updates this module to export a package to another module.
      *
-     * @apiNote Used addExports, Instrumentation::redefineModule, and --add-exports
+     * @apiNote Used by addExports, Instrumentation::redefineModule, and --add-exports
      */
     void implAddExports(String pn, Module other) {
         implAddExportsOrOpens(pn, other, false, VM.isBooted(), true);

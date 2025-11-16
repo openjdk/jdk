@@ -473,17 +473,26 @@ class TestMain {
         Object newValue = new Object();
 
         f.setAccessible(true);
-        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        var e1 = assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        Module mutatorModule = mutator.getClass().getModule();
+        if (mutatorModule != testModule) {
+            assertTrue(e1.getMessage().contains("module " + testModule.getName()
+                    + " does not explicitly \"exports\" package "
+                    + f.getDeclaringClass().getPackageName()
+                    + " to module " + mutatorModule.getName()));
+        }
         assertTrue(obj.objectValue() == oldValue);
 
         // export package to mutator module, should have no effect on set method
         testModule.addExports(fieldHoldersPackage, mutator.getClass().getModule());
-        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        var e2 = assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        assertEquals(e1.getMessage(), e2.getMessage());
         assertTrue(obj.objectValue() == oldValue);
 
         // open package to mutator module, should have no effect on set method
         testModule.addOpens(fieldHoldersPackage, mutator.getClass().getModule());
-        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        var e3 = assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        assertEquals(e1.getMessage(), e3.getMessage());
         assertTrue(obj.objectValue() == oldValue);
     }
 
@@ -515,12 +524,20 @@ class TestMain {
         Object newValue = new Object();
 
         f.setAccessible(true);
-        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        var e1 = assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        Module mutatorModule = mutator.getClass().getModule();
+        if (mutatorModule != testModule) {
+            assertTrue(e1.getMessage().contains("module " + testModule.getName()
+                    + " does not explicitly \"opens\" package "
+                    + f.getDeclaringClass().getPackageName()
+                    + " to module " + mutatorModule.getName()));
+        }
         assertTrue(obj.objectValue() == oldValue);
 
         // open package to mutator module, should have no effect on set method
         testModule.addOpens(fieldHoldersPackage, mutator.getClass().getModule());
-        assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        var e2 = assertThrows(IllegalAccessException.class, () -> mutator.set(f, obj, newValue));
+        assertEquals(e2.getMessage(), e2.getMessage());
         assertTrue(obj.objectValue() == oldValue);
     }
 
