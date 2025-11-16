@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,16 +129,17 @@ public class PipedOutputStream extends OutputStream {
     /**
      * Writes {@code len} bytes from the specified byte array
      * starting at offset {@code off} to this piped output stream.
-     * This method blocks until all the bytes are written to the output
-     * stream.
+     * If {@code len} is not zero, this method blocks until all the
+     * bytes are written to the output stream.
      *
      * @param   b     {@inheritDoc}
      * @param   off   {@inheritDoc}
      * @param   len   {@inheritDoc}
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      * @throws  IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
-     *          closed, or if an I/O error occurs.
-     * @throws  IndexOutOfBoundsException {@inheritDoc}
+     *          closed and {@code len} is greater than zero,
+     *          or if an I/O error occurs.
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {

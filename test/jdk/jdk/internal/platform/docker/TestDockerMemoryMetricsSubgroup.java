@@ -52,19 +52,6 @@ public class TestDockerMemoryMetricsSubgroup {
             DockerfileConfig.getBaseImageName() + ":" +
             DockerfileConfig.getBaseImageVersion();
 
-    static String getEngineInfo(String format) throws Exception {
-        return DockerTestUtils.execute(Container.ENGINE_COMMAND, "info", "-f", format)
-                .getStdout();
-    }
-
-    static boolean isRootless() throws Exception {
-        // Docker and Podman have different INFO structures.
-        // The node path for Podman is .Host.Security.Rootless, that also holds for
-        // Podman emulating Docker CLI. The node path for Docker is .SecurityOptions.
-        return (getEngineInfo("{{.Host.Security.Rootless}}").contains("true") ||
-                getEngineInfo("{{.SecurityOptions}}").contains("name=rootless"));
-    }
-
     public static void main(String[] args) throws Exception {
         Metrics metrics = Metrics.systemMetrics();
         if (metrics == null) {
@@ -78,7 +65,7 @@ public class TestDockerMemoryMetricsSubgroup {
 
         ContainerRuntimeVersionTestUtils.checkContainerVersionSupported();
 
-        if (isRootless()) {
+        if (DockerTestUtils.isRootless()) {
             throw new SkippedException("Test skipped in rootless mode");
         }
 

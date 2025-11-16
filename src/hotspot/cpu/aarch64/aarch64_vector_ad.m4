@@ -119,18 +119,24 @@ source %{
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
-      // NEON instructions support them. But the match rule support for them is profitable for
-      // Vector API intrinsics.
+      // NEON instructions support them. They use multiple instructions which is more
+      // expensive in almost all cases where we would auto vectorize.
+      // But the match rule support for them is profitable for Vector API intrinsics.
       if ((opcode == Op_VectorCastD2X && (bt == T_INT || bt == T_SHORT)) ||
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
+          opcode == Op_MulVL ||
           // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
           // They are not suitable for auto-vectorization because the result would not conform
           // to the JLS, Section Evaluation Order.
+          // Note: we could implement sequential reductions for these reduction operators, but
+          //       this will still almost never lead to speedups, because the sequential
+          //       reductions are latency limited along the reduction chain, and not
+          //       throughput limited. This is unlike unordered reductions (associative op)
+          //       and element-wise ops which are usually throughput limited.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
-          opcode == Op_MulVL) {
+          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
         return false;
       }
     }
@@ -375,6 +381,32 @@ source %{
 
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
+  }
+
+  bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
+    // Only SVE supports the predicate feature.
+    if (UseSVE == 0) {
+      // On architectures that do not support predicate, masks are stored in
+      // general vector registers (TypeVect) with sizes ranging from TypeVectA
+      // to TypeVectX based on the vector size in bytes.
+      assert(vt->isa_vectmask() == nullptr, "mask type is not matched");
+      return false;
+    }
+
+    assert(vt->isa_vectmask() != nullptr, "expected TypeVectMask on SVE");
+    switch (opcode) {
+      case Op_VectorMaskToLong:
+      case Op_VectorLongToMask:
+        // These operations lack native SVE predicate instructions and are
+        // implemented using general vector instructions instead. Use vector
+        // registers rather than predicate registers to save the mask for
+        // better performance.
+        return false;
+      default:
+        // By default, the mask operations are implemented with predicate
+        // instructions with a predicate input/output.
+        return true;
+    }
   }
 
   // Assert that the given node is not a variable shift.
@@ -4297,31 +4329,44 @@ instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_tolong_sve(iRegLNoSp dst, pReg src, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0);
+instruct vmask_tolong_sve(iRegLNoSp dst, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 && !VM_Version::supports_svebitperm());
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP tmp);
+  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                        $tmp$$FloatRegister, Matcher::vector_length(this, $src));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong_sve2(iRegLNoSp dst, vReg src, vReg tmp1, vReg tmp2) %{
+  predicate(VM_Version::supports_svebitperm());
   match(Set dst (VectorMaskToLong src));
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp1, $tmp2" %}
+  format %{ "vmask_tolong_sve2 $dst, $src\t# KILL $tmp1, $tmp2" %}
   ins_encode %{
-    __ sve_vmask_tolong($dst$$Register, $src$$PRegister,
-                        Matcher::vector_element_basic_type(this, $src),
-                        Matcher::vector_length(this, $src),
-                        $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve2_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                         Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}
 
 // fromlong
 
-instruct vmask_fromlong(pReg dst, iRegL src, vReg tmp1, vReg tmp2) %{
+instruct vmask_fromlong(vReg dst, iRegL src, vReg tmp) %{
   match(Set dst (VectorLongToMask src));
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp1, $tmp2" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp" %}
   ins_encode %{
-    __ sve_vmask_fromlong($dst$$PRegister, $src$$Register,
-                          Matcher::vector_element_basic_type(this),
-                          Matcher::vector_length(this),
-                          $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    __ sve_vmask_fromlong($dst$$FloatRegister, $src$$Register,
+                          $tmp$$FloatRegister, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

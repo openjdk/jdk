@@ -209,6 +209,14 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }
 
+  bool is_trace_cost() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
+  }
+
+  bool is_trace_cost_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST_VERBOSE);
+  }
+
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
@@ -584,6 +592,32 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Mark all nodes from the loop that are part of any VPointer expression.
+class PointerExpressionNodes : public MemPointerParserCallback {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+  VectorSet        _in_pointer_expression;
+
+public:
+  PointerExpressionNodes(Arena* arena,
+                         const VLoop& vloop,
+                         const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _in_pointer_expression(arena) {}
+
+  virtual void callback(Node* n) override {
+    if (!_vloop.in_bb(n)) { return; }
+    _in_pointer_expression.set(_body.bb_idx(n));
+  }
+
+  bool contains(const Node* n) const {
+    if (!_vloop.in_bb(n)) { return false; }
+    return _in_pointer_expression.test(_body.bb_idx(n));
+  }
+};
+
 // Submodule of VLoopAnalyzer.
 // We compute and cache the VPointer for every load and store.
 class VLoopVPointers : public StackObj {
@@ -599,6 +633,9 @@ private:
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;
 
+  // Mark all nodes that are part of any pointers expression.
+  PointerExpressionNodes _pointer_expression_nodes;
+
 public:
   VLoopVPointers(Arena* arena,
                  const VLoop& vloop,
@@ -610,12 +647,17 @@ public:
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
-                        -1) {}
+                        -1),
+    _pointer_expression_nodes(arena, _vloop, _body) {}
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+  bool is_in_pointer_expression(const Node* n) const {
+    return _pointer_expression_nodes.contains(n);
+  }
 
 private:
   void count_vpointers();
@@ -809,6 +851,15 @@ public:
   const VLoopTypes& types()                      const { return _types; }
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+
+  // Compute the cost of the (scalar) body.
+  float cost_for_scalar_loop() const;
+  bool has_zero_cost(Node* n) const;
+
+  // Cost-modeling with tracing.
+  float cost_for_scalar_node(int opcode) const;
+  float cost_for_vector_node(int opcode, int vlen, BasicType bt) const;
+  float cost_for_vector_reduction_node(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
 
 private:
   bool setup_submodules();
