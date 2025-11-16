@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.test;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,9 +121,8 @@ public enum PackageType {
     public static final Set<PackageType> LINUX = orderedSet(LINUX_DEB, LINUX_RPM);
     public static final Set<PackageType> WINDOWS = orderedSet(WIN_MSI, WIN_EXE);
     public static final Set<PackageType> MAC = orderedSet(MAC_DMG, MAC_PKG);
-    public static final Set<PackageType> NATIVE = Stream.concat(
-            Stream.concat(LINUX.stream(), WINDOWS.stream()),
-            MAC.stream()).collect(Collectors.toUnmodifiableSet());
+    public static final Set<PackageType> NATIVE = Stream.of(LINUX, WINDOWS, MAC)
+            .flatMap(Collection::stream).collect(Collectors.toUnmodifiableSet());
 
     private static final class Inner {
         private static final Set<String> DISABLED_PACKAGERS = Optional.ofNullable(
