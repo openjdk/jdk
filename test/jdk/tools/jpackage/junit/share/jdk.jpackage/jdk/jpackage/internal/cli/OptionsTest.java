@@ -35,7 +35,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class OptionsTest {
 
@@ -108,8 +111,9 @@ public class OptionsTest {
         assertEquals(a.toMap(), b.toMap());
     }
 
-    @Test
-    public void test_copyWithDefaultValue() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_copyWithDefaultValue(boolean supplier) {
         var fooID = createIdentifier();
         var barOV = OptionValue.build().spec(dummyOptionSpec("bar")).create();
 
@@ -119,13 +123,18 @@ public class OptionsTest {
         expected.apply(options);
         assertFalse(options.contains(barOV.getSpec().name()));
 
-        options = options.copyWithDefaultValue(barOV, 89);
+        if (supplier) {
+            options = options.copyWithDefaultValue(barOV, () -> 89);
+        } else {
+            options = options.copyWithDefaultValue(barOV, 89);
+        }
         expected.add(barOV, 89).apply(options);
 
     }
 
-    @Test
-    public void test_copyWithDefaultValue_nop() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void test_copyWithDefaultValue_nop(boolean supplier) {
         var fooID = createIdentifier();
         var barOV = OptionValue.build().spec(dummyOptionSpec("bar")).create();
 
@@ -133,7 +142,14 @@ public class OptionsTest {
         var expected = expectOptions().add(fooID, "Hello").add(barOV, 89);
 
         expected.apply(options);
-        options = options.copyWithDefaultValue(barOV, 75);
+        if (supplier) {
+            options = options.copyWithDefaultValue(barOV, () -> {
+                Assertions.fail("Should not be called");
+                return null;
+            });
+        } else {
+            options = options.copyWithDefaultValue(barOV, 75);
+        }
         expected.apply(options);
     }
 

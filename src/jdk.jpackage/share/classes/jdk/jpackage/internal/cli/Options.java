@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -65,12 +66,17 @@ public sealed interface Options permits
     }
 
     default Options copyWithDefaultValue(WithOptionIdentifier withId, Object value) {
-        Objects.requireNonNull(withId);
         Objects.requireNonNull(value);
+        return copyWithDefaultValue(withId, () -> value);
+    }
+
+    default Options copyWithDefaultValue(WithOptionIdentifier withId, Supplier<Object> valueSupplier) {
+        Objects.requireNonNull(withId);
+        Objects.requireNonNull(valueSupplier);
         if (contains(withId)) {
             return this;
         } else {
-            return copyWithParent(of(Map.of(withId, value)));
+            return copyWithParent(of(Map.of(withId, valueSupplier.get())));
         }
     }
 
