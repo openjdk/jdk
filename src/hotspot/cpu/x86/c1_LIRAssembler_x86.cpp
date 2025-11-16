@@ -3050,7 +3050,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
           __ addptr(data_addr, DataLayout::counter_increment);
-          return;
+          goto exit;
         }
       }
 
