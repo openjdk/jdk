@@ -46,12 +46,12 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.CliBundlingEnvironment;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
-import jdk.jpackage.internal.model.AppImagePackageType;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.Result;
 
@@ -196,9 +196,9 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
             }
             bundler.accept(tempDir.options());
 
-            var packageType = OptionUtils.bundlingOperation(cmdline).packageType();
+            var bundleType = OptionUtils.bundlingOperation(cmdline).bundleType();
 
-            Log.verbose(I18N.format("message.bundle-created", I18N.getString(bundleTypeDescription(packageType, op.os()))));
+            Log.verbose(I18N.format("message.bundle-created", I18N.getString(bundleTypeDescription(bundleType, op.os()))));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } finally {
@@ -219,7 +219,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
         });
     }
 
-    private String bundleTypeDescription(PackageType type, OperatingSystem os) {
+    private String bundleTypeDescription(BundleType type, OperatingSystem os) {
         switch (type) {
             case StandardPackageType stdType -> {
                 switch (stdType) {
@@ -246,7 +246,7 @@ class DefaultBundlingEnvironment implements CliBundlingEnvironment {
                     }
                 }
             }
-            case AppImagePackageType appImageType -> {
+            case AppImageBundleType appImageType -> {
                 switch (os) {
                     case WINDOWS -> {
                         return "bundle-type.win-app";

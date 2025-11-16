@@ -55,11 +55,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.util.SetBuilder;
 
 /**
@@ -103,14 +103,14 @@ public final class StandardOption {
 
     public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
 
-    public static final OptionValue<PackageType> TYPE = option("type", PackageType.class).addAliases("t")
+    public static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
             .converterExceptionFactory(ERROR_WITH_VALUE).converterExceptionFormatString("ERR_InvalidInstallerType")
             .converter(str -> {
                 Objects.requireNonNull(str);
                 return Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
                     return bundlingOperation.packageTypeValue().equals(str);
-                }).map(StandardBundlingOperation::packageType).findFirst().orElseThrow(IllegalArgumentException::new);
+                }).map(StandardBundlingOperation::bundleType).findFirst().orElseThrow(IllegalArgumentException::new);
             })
             .description("help.option.type" + resourceKeySuffix(OperatingSystem.current()))
             .mutate(createOptionSpecBuilderMutator((b, context) -> {

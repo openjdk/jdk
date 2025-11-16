@@ -41,7 +41,7 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.StandardBundlingOperation;
-import jdk.jpackage.internal.model.AppImagePackageType;
+import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -121,7 +121,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
         final var type = op.packageTypeValue();
         final int iterationCount;
-        if (op.packageType() instanceof AppImagePackageType) {
+        if (op.bundleType() instanceof AppImageBundleType) {
             iterationCount = 1;
         } else {
             iterationCount = 2;
@@ -165,7 +165,7 @@ public class DefaultBundlingEnvironmentTest extends JUnitAdapter {
 
     private static Script createMockScript(StandardBundlingOperation op) {
 
-        if (op.packageType() instanceof AppImagePackageType) {
+        if (op.bundleType() instanceof AppImageBundleType) {
             return Script.build().createSequence();
         }
 

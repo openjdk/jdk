@@ -25,17 +25,10 @@
 package jdk.jpackage.internal.model;
 
 /**
- * App image packaging type.
+ * App image bundle type.
  *
  * @see StandardPackageType
  */
-public final class AppImagePackageType implements PackageType {
-
-    private AppImagePackageType() {
-    }
-
-    /**
-     * Singleton
-     */
-    public static final AppImagePackageType APP_IMAGE = new AppImagePackageType();
+public enum AppImageBundleType implements BundleType {
+    APP_IMAGE
 }

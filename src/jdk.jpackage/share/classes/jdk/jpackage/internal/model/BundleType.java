@@ -27,8 +27,6 @@ package jdk.jpackage.internal.model;
 
 
 /**
- * Native package type. E.g.: dmg, rpm, msi are all package types.
- *
- * @see jdk.jpackage.internal.model.Package
+ * Generic bundle type. E.g.: application image, rpm, msi are all bundle types.
  */
-public non-sealed interface PackageType extends BundleType {}
+public sealed interface BundleType permits PackageType, AppImageBundleType {}

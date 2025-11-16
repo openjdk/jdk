@@ -183,7 +183,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         Stream.of(StandardBundlingOperation.values()).forEach(bundlingOperation -> {
             var pkgTypeStr = bundlingOperation.packageTypeValue();
             var pkgType = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(pkgTypeStr)).orElseThrow();
-            assertSame(bundlingOperation.packageType(), pkgType);
+            assertSame(bundlingOperation.bundleType(), pkgType);
         });
     }
 

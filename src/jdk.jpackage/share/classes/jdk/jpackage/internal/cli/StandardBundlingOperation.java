@@ -24,7 +24,7 @@
  */
 package jdk.jpackage.internal.cli;
 
-import static jdk.jpackage.internal.model.AppImagePackageType.APP_IMAGE;
+import static jdk.jpackage.internal.model.AppImageBundleType.APP_IMAGE;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.BundlingOperationDescriptor;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
@@ -78,19 +79,19 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
         private final String value;
     }
 
-    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os, Verb descriptorVerb) {
-        this.packageType = Objects.requireNonNull(packageType);
+    StandardBundlingOperation(BundleType bundleType, String optionNameRegexp, OperatingSystem os, Verb descriptorVerb) {
+        this.bundleType = Objects.requireNonNull(bundleType);
         optionNamePredicate = Pattern.compile(optionNameRegexp).asPredicate();
         this.os = Objects.requireNonNull(os);
         this.descriptorVerb = Objects.requireNonNull(descriptorVerb);
     }
 
-    StandardBundlingOperation(PackageType packageType, String optionNameRegexp, OperatingSystem os) {
-        this(packageType, optionNameRegexp, os, Verb.CREATE);
+    StandardBundlingOperation(BundleType bundleType, String optionNameRegexp, OperatingSystem os) {
+        this(bundleType, optionNameRegexp, os, Verb.CREATE);
     }
 
-    StandardBundlingOperation(PackageType packageType, OperatingSystem os, Verb descriptorVerb) {
-        this.packageType = Objects.requireNonNull(packageType);
+    StandardBundlingOperation(BundleType bundleType, OperatingSystem os, Verb descriptorVerb) {
+        this.bundleType = Objects.requireNonNull(bundleType);
         optionNamePredicate = v -> false;
         this.os = Objects.requireNonNull(os);
         this.descriptorVerb = Objects.requireNonNull(descriptorVerb);
@@ -101,15 +102,19 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
     }
 
     public String packageTypeValue() {
-        if (packageType.equals(APP_IMAGE)) {
+        if (bundleType.equals(APP_IMAGE)) {
             return "app-image";
         } else {
-            return ((StandardPackageType)packageType).suffix().substring(1);
+            return ((StandardPackageType)bundleType).suffix().substring(1);
         }
     }
 
+    public BundleType bundleType() {
+        return bundleType;
+    }
+
     public PackageType packageType() {
-        return packageType;
+        return (PackageType)bundleType();
     }
 
     /**
@@ -199,6 +204,6 @@ public enum StandardBundlingOperation implements BundlingOperationOptionScope {
 
     private final Predicate<String> optionNamePredicate;
     private final OperatingSystem os;
-    private final PackageType packageType;
+    private final BundleType bundleType;
     private final Verb descriptorVerb;
 }
