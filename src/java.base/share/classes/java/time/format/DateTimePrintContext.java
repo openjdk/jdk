@@ -392,7 +392,7 @@ final class DateTimePrintContext {
      * @return the value
      * @throws DateTimeException if the field is not available and the section is not optional
      */
-    public long getLong(TemporalField field) {
+    long getLong(TemporalField field) {
         return temporal.getLong(field);
     }
 
@@ -404,7 +404,7 @@ final class DateTimePrintContext {
      * @return the value
      * @throws DateTimeException if the field is not available and the section is not optional
      */
-    public int get(TemporalField field) {
+    int get(TemporalField field) {
         return temporal.get(field);
     }
 
