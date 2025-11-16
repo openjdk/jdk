@@ -2145,10 +2145,11 @@ public final class Class<T> implements java.io.Serializable,
      * overriding method as it would have a more specific return type.
      *
      * @param name the name of the method
-     * @param parameterTypes the list of parameters, may be or contain {@code null}
+     * @param parameterTypes the list of parameters, may be {@code null}
      * @return the {@code Method} object that matches the specified
      *         {@code name} and {@code parameterTypes}
-     * @throws NoSuchMethodException if a matching method is not found
+     * @throws NoSuchMethodException if a matching method is not found, such as
+     *         when {@code parameterTypes} contains {@code null},
      *         or if the name is {@value ConstantDescs#INIT_NAME} or
      *         {@value ConstantDescs#CLASS_INIT_NAME}.
      * @throws NullPointerException if {@code name} is {@code null}
@@ -2182,12 +2183,13 @@ public final class Class<T> implements java.io.Serializable,
      * represented by this {@code Class} object whose formal parameter
      * types match those specified by {@code parameterTypes}.
      *
-     * @param parameterTypes the parameter array, may be or contain {@code null}
+     * @param parameterTypes the parameter array, may be {@code null}
      * @return the {@code Constructor} object of the public constructor that
      *         matches the specified {@code parameterTypes}
      * @throws NoSuchMethodException if a matching constructor is not found,
      *         including when this {@code Class} object represents
-     *         an interface, a primitive type, an array class, or void.
+     *         an interface, a primitive type, an array class, or void, and
+     *         when {@code parameterTypes} contains {@code null}
      *
      * @see #getDeclaredConstructor(Class[])
      * @since 1.1
@@ -2403,10 +2405,11 @@ public final class Class<T> implements java.io.Serializable,
      * method does not find the {@code clone()} method.
      *
      * @param name the name of the method
-     * @param parameterTypes the parameter array, may be or contain {@code null}
+     * @param parameterTypes the parameter array, may be {@code null}
      * @return  the {@code Method} object for the method of this class
      *          matching the specified name and parameters
-     * @throws  NoSuchMethodException if a matching method is not found.
+     * @throws  NoSuchMethodException if a matching method is not found, such as
+     *          when {@code parameterTypes} contains {@code null}
      * @throws  NullPointerException if {@code name} is {@code null}
      *
      * @jls 8.2 Class Members
@@ -2474,12 +2477,13 @@ public final class Class<T> implements java.io.Serializable,
      * declared in a non-static context, the formal parameter types
      * include the explicit enclosing instance as the first parameter.
      *
-     * @param parameterTypes the parameter array, may be or contain {@code null}
+     * @param parameterTypes the parameter array, may be {@code null}
      * @return  The {@code Constructor} object for the constructor with the
      *          specified parameter list
      * @throws  NoSuchMethodException if a matching constructor is not found,
      *          including when this {@code Class} object represents
-     *          an interface, a primitive type, an array class, or void.
+     *          an interface, a primitive type, an array class, or void, and
+     *          when {@code parameterTypes} contains {@code null}
      *
      * @see #getConstructor(Class[])
      * @since 1.1
