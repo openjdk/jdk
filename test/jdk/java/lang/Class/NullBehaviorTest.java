@@ -24,15 +24,15 @@
 /*
  * @test
  * @bug 8371953
- * @summary Basic API contracts for java.lang.Class.
- * @run junit APIContractTest
+ * @summary Check null argument behaviors for java.lang.Class APIs.
+ * @run junit NullBehaviorTest
  */
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class APIContractTest {
+class NullBehaviorTest {
     @Test
     void nullChecks() {
         assertThrows(NullPointerException.class, () -> Class.forName(null));

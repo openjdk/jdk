@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8371953
- * @summary Basic API contracts for Proxy.
- * @run junit BasicContractTest
+ * @summary Basic API null checks for Proxy.
+ * @run junit ProxyNullCheckTest
  */
 
 import java.lang.reflect.InvocationHandler;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BasicContractTest {
+class ProxyNullCheckTest {
     @SuppressWarnings("deprecation")
     @Test
     void nullChecks() throws ReflectiveOperationException {

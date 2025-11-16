@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8371953
- * @summary General API contracts for AccessibleObject.
- * @run junit AccessibleObjectContractTest
+ * @summary API null checks for AccessibleObject.
+ * @run junit AccessibleObjectNullCheckTest
  */
 
 import java.lang.reflect.AccessibleObject;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class AccessibleObjectContractTest {
+class AccessibleObjectNullCheckTest {
     @Test
     void nullChecks() throws ReflectiveOperationException {
         assertThrows(NullPointerException.class, () -> AccessibleObject.setAccessible(null, false));

@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8371953
- * @summary General API contracts for AccessFlag and Location.
- * @run junit AccessFlagContractTest
+ * @summary Null checks for AccessFlag and Location.
+ * @run junit AccessFlagNullCheckTest
  */
 
 import java.lang.reflect.AccessFlag;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class AccessFlagContractTest {
+class AccessFlagNullCheckTest {
     @Test
     void accessFlagNullChecks() {
         assertThrows(NullPointerException.class, () -> AccessFlag.valueOf(null));

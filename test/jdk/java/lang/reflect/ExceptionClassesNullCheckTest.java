@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8371953
- * @summary General tests for exception classes in java.lang.reflect package.
- * @run junit ExceptionClassesTest
+ * @summary Null arguments for exception classes in java.lang.reflect package.
+ * @run junit ExceptionClassesNullCheckTest
  */
 
 import java.lang.reflect.GenericSignatureFormatError;
@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-class ExceptionClassesTest {
+class ExceptionClassesNullCheckTest {
     @Test
     void argumentChecks() {
         // Add casts to preserve compilation if they add new constructor overloads

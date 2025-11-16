@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8371953
- * @summary General API contracts for Array.
- * @run junit ArrayContractTest
+ * @summary General argument checks for Array APIs.
+ * @run junit ArrayArgumentCheckTest
  */
 
 import java.lang.constant.ConstantDescs;
@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ArrayContractTest {
+class ArrayArgumentCheckTest {
     @Test
     void newArrayChecks() throws ReflectiveOperationException {
         // Single newInstance
