@@ -192,6 +192,9 @@ final class DateTimePrintContext {
         if (Objects.equals(overrideChrono, temporalChrono)) {
             overrideChrono = null;
         }
+        if (Objects.equals(overrideZone, temporalZone)) {
+            overrideZone = null;
+        }
         if (overrideChrono == null && overrideZone == null) {
             return temporal;
         }
