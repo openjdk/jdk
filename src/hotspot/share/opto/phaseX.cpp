@@ -776,7 +776,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump_bfs(100,nullptr,"#");
+    if (!no_dead_loop) { n->dump_bfs(100, nullptr, ""); }
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -1666,6 +1666,7 @@ bool PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape) {
     // Found (linux x64 only?) with:
     //   serviceability/sa/ClhsdbThreadContext.java
     //   -XX:+UnlockExperimentalVMOptions -XX:LockingMode=1 -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
+    //   Note: The -XX:LockingMode option is not available anymore.
     case Op_StrEquals:
       return false;
 
@@ -2543,11 +2544,12 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
-  // If changed AndI/AndL inputs, check RShift users for "(x & mask) >> shift" optimization opportunity
+  // If changed AndI/AndL inputs, check RShift/URShift users for "(x & mask) >> shift" optimization opportunity
   if (use_op == Op_AndI || use_op == Op_AndL) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL) {
+      if (u->Opcode() == Op_RShiftI || u->Opcode() == Op_RShiftL ||
+          u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL) {
         worklist.push(u);
       }
     }
@@ -2559,13 +2561,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // ConvI2F->ConvF2I->ConvI2F
   // Note: there may be other 3-nodes conversion chains that would require to be added here, but these
   // are the only ones that are known to trigger missed optimizations otherwise
-  if ((n->Opcode() == Op_ConvD2L && use_op == Op_ConvL2D) ||
-      (n->Opcode() == Op_ConvF2I && use_op == Op_ConvI2F) ||
-      (n->Opcode() == Op_ConvF2L && use_op == Op_ConvL2F) ||
-      (n->Opcode() == Op_ConvI2F && use_op == Op_ConvF2I)) {
+  if (use_op == Op_ConvL2D ||
+      use_op == Op_ConvI2F ||
+      use_op == Op_ConvL2F ||
+      use_op == Op_ConvF2I) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
-      if (u->Opcode() == n->Opcode()) {
+      if ((use_op == Op_ConvL2D && u->Opcode() == Op_ConvD2L) ||
+          (use_op == Op_ConvI2F && u->Opcode() == Op_ConvF2I) ||
+          (use_op == Op_ConvL2F && u->Opcode() == Op_ConvF2L) ||
+          (use_op == Op_ConvF2I && u->Opcode() == Op_ConvI2F)) {
         worklist.push(u);
       }
     }
@@ -2585,12 +2590,24 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       }
     }
   }
+  // Check for "abs(0-x)" into "abs(x)" conversion
+  if (use->is_Sub()) {
+    for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* u = use->fast_out(i2);
+      if (u->Opcode() == Op_AbsD || u->Opcode() == Op_AbsF ||
+          u->Opcode() == Op_AbsL || u->Opcode() == Op_AbsI) {
+        worklist.push(u);
+      }
+    }
+  }
+  auto enqueue_init_mem_projs = [&](ProjNode* proj) {
+    add_users_to_worklist0(proj, worklist);
+  };
   // If changed initialization activity, check dependent Stores
   if (use_op == Op_Allocate || use_op == Op_AllocateArray) {
     InitializeNode* init = use->as_Allocate()->initialization();
     if (init != nullptr) {
-      Node* imem = init->proj_out_or_null(TypeFunc::Memory);
-      if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+      init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
     }
   }
   // If the ValidLengthTest input changes then the fallthrough path out of the AllocateArray may have become dead.
@@ -2604,8 +2621,8 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   }
 
   if (use_op == Op_Initialize) {
-    Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
-    if (imem != nullptr) add_users_to_worklist0(imem, worklist);
+    InitializeNode* init = use->as_Initialize();
+    init->for_each_proj(enqueue_init_mem_projs, TypeFunc::Memory);
   }
   // Loading the java mirror from a Klass requires two loads and the type
   // of the mirror load depends on the type of 'n'. See LoadNode::Value().
@@ -2626,7 +2643,11 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       worklist.push(cmp);
     }
   }
-  if (use->Opcode() == Op_AddX) {
+
+  // From CastX2PNode::Ideal
+  // CastX2P(AddX(x, y))
+  // CastX2P(SubX(x, y))
+  if (use->Opcode() == Op_AddX || use->Opcode() == Op_SubX) {
     for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
       Node* u = use->fast_out(i2);
       if (u->Opcode() == Op_CastX2P) {

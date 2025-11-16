@@ -255,7 +255,7 @@
  * or method of any Class-File API class or interface will cause a {@link
  * NullPointerException} to be thrown. Additionally,
  * invoking a method with an array or collection containing a {@code null} element
- * will cause a {@code NullPointerException}, unless otherwise specified. </p>
+ * will cause a {@code NullPointerException}, unless otherwise specified.
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
@@ -273,13 +273,22 @@
  * accepting constant pool entries.
  *
  * <h3>Consistency checks, syntax checks and verification</h3>
+ * The Class-File API performs checks to ensure arguments are representable in
+ * the {@code class} file format.  A value that is lost when it is built to a
+ * {@code class} file and re-parsed to a model is rejected with an {@link
+ * IllegalArgumentException}.  For example, a negative value or a value over
+ * {@code 65535} is lost when built to a {@link ##u2 u2} item, with
+ * the range {@code [0, 65535]}.  In particular, any variable-sized table
+ * exceeding its maximum representable size is rejected.
+ * <p>
  * No consistency checks are performed while building or transforming classfiles
- * (except for null arguments checks). All builders and classfile elements factory
- * methods accepts the provided information without implicit validation.
- * However, fatal inconsistencies (like for example invalid code sequence or
+ * (except for null and representable arguments checks). All builders and
+ * classfile elements factory methods accepts the provided information without
+ * implicit validation, as long as they are representable in the {@code class}
+ * file format.  However, fatal inconsistencies (like invalid code sequence or
  * unresolved labels) affects internal tools and may cause exceptions later in
  * the classfile building process.  These fatal exceptions are thrown as
- * {@link IllegalArgumentException}.
+ * {@code IllegalArgumentException}.
  * <p>
  * Using nominal descriptors assures the right serial form is applied by the
  * ClassFile API library based on the actual context. Also these nominal
@@ -294,9 +303,9 @@
  * <p>
  * On the other hand it is possible to use builders methods and factories accepting
  * constant pool entries directly. Constant pool entries can be constructed also
- * directly from raw values, with no additional conversions or validations.
- * Following example uses intentionally wrong class name form and it is applied
- * without any validation or conversion.
+ * directly from raw values, with no additional conversions or validations, as
+ * long as they are representable.  Following example uses intentionally wrong
+ * class name form, which is applied without any validation or conversion.
  * {@snippet lang=java :
  * var invalidClassEntry = constantPoolBuilder.classEntry(
  *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
@@ -450,6 +459,29 @@
  * ClassEntry}.) Factories and builders also
  * accept nominal descriptors from {@link java.lang.constant} (e.g., {@link
  * ClassDesc}.)
+ *
+ * <h3 id="data-types">Conventional data types</h3>
+ * Chapter {@jvms 4} of the <cite>Java Virtual Machine Specification</cite>
+ * defines a few conventional data types in the {@code class} file format.
+ * They are consistently represented as {@code int} in the API model.
+ * Out-of-bound values provided for these data types to the API result in {@link
+ * IllegalArgumentException}.
+ * <dl>
+ * <dt id="u1">{@code u1}</dt>
+ * <dd>One-byte {@linkplain Byte#toUnsignedInt(byte) unsigned} integer, in the
+ * range {@code [0, 255]}.
+ * <br>See {@link java.io.DataInput#readUnsignedByte()}.</dd>
+ * <dt id="u2">{@code u2}</dt>
+ * <dd>Two-byte {@linkplain Short#toUnsignedInt(short) unsigned} integer, in the
+ * range {@code [0, 65535]}.
+ * <br>Equivalent to a Java {@link Character char}.  Frequently used for flag
+ * fields and indices and sizes of list structures.
+ * <br>See {@link java.io.DataInput#readUnsignedShort()}.</dd>
+ * <dt id="u4">{@code u4}</dt>
+ * <dd>Four-byte {@linkplain Integer#toUnsignedLong(int) unsigned} integer, in
+ * the range {@code [0, 4294967295]}.
+ * <br>See {@link java.io.DataInput#readInt()}.</dd>
+ * </dl>
  *
  * <h2><a id="data_model"></a>Data model</h2>
  * We define each kind of element by its name, an optional arity indicator (zero

@@ -28,7 +28,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.hpp"
 
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef VM_LITTLE_ENDIAN
@@ -106,7 +106,7 @@ inline void set_cas_form(uint8_t bits, uint8_t volatile* dest) {
   do {
     const uint8_t current = *dest;
     const uint8_t new_value = op(bits, current);
-    if (current == new_value || Atomic::cmpxchg(dest, current, new_value) == current) {
+    if (current == new_value || AtomicAccess::cmpxchg(dest, current, new_value) == current) {
       return;
     }
   } while (true);

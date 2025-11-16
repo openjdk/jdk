@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,10 +223,13 @@ void VM_Version::initialize() {
   // Neoverse
   //   N1: 0xd0c
   //   N2: 0xd49
+  //   N3: 0xd8e
   //   V1: 0xd40
   //   V2: 0xd4f
+  //   V3: 0xd84
   if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
-                          model_is(0xd40) || model_is(0xd4f))) {
+                          model_is(0xd40) || model_is(0xd4f) ||
+                          model_is(0xd8e) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -260,7 +264,9 @@ void VM_Version::initialize() {
   // Neoverse
   //   V1: 0xd40
   //   V2: 0xd4f
-  if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
+  //   V3: 0xd84
+  if (_cpu == CPU_ARM &&
+      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
@@ -372,8 +378,8 @@ void VM_Version::initialize() {
   if (UseSHA && VM_Version::supports_sha3()) {
     // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
     // Note that the evaluation of UseSHA3Intrinsics shows better performance
-    // on Apple silicon but worse performance on Neoverse V1 and N2.
-    if (_cpu == CPU_APPLE) {  // Apple silicon
+    // on Apple and Qualcomm silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE || _cpu == CPU_QUALCOMM) {  // Apple or Qualcomm silicon
       if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
         FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
       }
@@ -721,12 +727,12 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "AArch64");
 
-  int desc_len = snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
+  int desc_len = os::snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "AArch64 ");
   get_compatible_board(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len);
   desc_len = (int)strlen(_cpu_desc);
-  snprintf(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
+  os::snprintf_checked(_cpu_desc + desc_len, CPU_DETAILED_DESC_BUF_SIZE - desc_len, " %s", _cpu_info_string);
 
   _initialized = true;
 }

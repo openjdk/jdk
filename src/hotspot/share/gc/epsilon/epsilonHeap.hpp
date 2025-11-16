@@ -29,7 +29,6 @@
 #include "gc/epsilon/epsilonBarrierSet.hpp"
 #include "gc/epsilon/epsilonMonitoringSupport.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "memory/virtualspace.hpp"
 #include "services/memoryManager.hpp"
@@ -85,16 +84,16 @@ public:
 
   // Allocation
   HeapWord* allocate_work(size_t size, bool verbose = true);
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
 
   // TLAB allocation
-  size_t tlab_capacity(Thread* thr)         const override { return capacity();     }
-  size_t tlab_used(Thread* thr)             const override { return used();         }
-  size_t max_tlab_size()                    const override { return _max_tlab_size; }
-  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
+  size_t tlab_capacity()         const override { return capacity();     }
+  size_t tlab_used()             const override { return used();         }
+  size_t max_tlab_size()         const override { return _max_tlab_size; }
+  size_t unsafe_max_tlab_alloc() const override;
 
   void collect(GCCause::Cause cause) override;
   void do_full_collection(bool clear_all_soft_refs) override;

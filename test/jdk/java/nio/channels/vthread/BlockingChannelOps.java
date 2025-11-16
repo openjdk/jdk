@@ -26,22 +26,22 @@
  * @bug 8284161
  * @summary Test virtual threads doing blocking I/O on NIO channels
  * @library /test/lib
- * @run junit BlockingChannelOps
+ * @run junit/timeout=480 BlockingChannelOps
  */
 
 /*
  * @test id=poller-modes
  * @requires (os.family == "linux") | (os.family == "mac")
  * @library /test/lib
- * @run junit/othervm -Djdk.pollerMode=1 BlockingChannelOps
- * @run junit/othervm -Djdk.pollerMode=2 BlockingChannelOps
+ * @run junit/othervm/timeout=480 -Djdk.pollerMode=1 BlockingChannelOps
+ * @run junit/othervm/timeout=480 -Djdk.pollerMode=2 BlockingChannelOps
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
+ * @run junit/othervm/timeout=480 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */
 
 import java.io.Closeable;
