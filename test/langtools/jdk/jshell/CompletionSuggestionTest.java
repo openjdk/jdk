@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
@@ -901,7 +902,7 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     @Test
     public void testAnnotation() {
-        assertCompletion("@Deprec|", "Deprecated");
+        assertCompletion("@Deprec|", "@Deprecated(");
         assertCompletion("@Deprecated(|", "forRemoval = ", "since = ");
         assertCompletion("@Deprecated(forRemoval = |", true, "false", "true");
         assertCompletion("@Deprecated(forRemoval = true, |", "since = ");
@@ -950,5 +951,17 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("String s() { return \"\"; } import java.ut| ", true, "util.");
         assertCompletion("class S { public int length() { return 0; } } new S().len|", true, "length()");
         assertSignature("void f() { } f(|", "void f()");
+    }
+
+    static {
+        try {
+            //disable reading of paramater names, to improve stability:
+            Class<?> analysisClass = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
+            Field params = analysisClass.getDeclaredField("COMPLETION_EXTRA_PARAMETERS");
+            params.setAccessible(true);
+            params.set(null, List.of());
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }
