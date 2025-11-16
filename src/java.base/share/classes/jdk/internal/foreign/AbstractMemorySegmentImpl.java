@@ -399,12 +399,21 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @ForceInline
     void checkSliceBounds(long offset, long length) {
-        Preconditions.checkFromIndexSize(offset, length, this.length, new BoundsCheckHandler(this, BoundPolicy.SLICE));
+        checkBounds(offset, length, BoundPolicy.SLICE);
     }
 
     @ForceInline
     void checkAccessBounds(long offset, long length) {
-        Preconditions.checkFromIndexSize(offset, length, this.length, new BoundsCheckHandler(this, BoundPolicy.ACCESS));
+        checkBounds(offset, length, BoundPolicy.ACCESS);
+    }
+
+    @ForceInline
+    private void checkBounds(long offset, long length, BoundPolicy policy) {
+        if (length > 0) {
+            Preconditions.checkIndex(offset, this.length - length + 1, new BoundsCheckHandler(this, policy));
+        } else if (length < 0 || offset < 0 || offset > this.length - length) {
+            throw policy.outOfBoundException(this, offset, length, this.length);
+        }
     }
 
     @Override
@@ -518,6 +527,11 @@ public abstract sealed class AbstractMemorySegmentImpl
             }
         };
 
+        private IndexOutOfBoundsException outOfBoundException(AbstractMemorySegmentImpl segment, long offset, long size,
+                                                              long length) {
+            return new IndexOutOfBoundsException(format(segment, offset, size, length));
+        }
+
         abstract String format(AbstractMemorySegmentImpl segment, long offset, long size, long length);
     }
 
@@ -531,13 +545,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
 
         @Override
-        public IndexOutOfBoundsException apply(String s, List<Number> args) {
-            long offset = args.get(0).longValue();
-            long size   = args.get(1).longValue();
-            long length = args.get(2).longValue();
+        public IndexOutOfBoundsException apply(String s, List<Number> numbers) {
+            long offset = numbers.get(0).longValue();
+            long length = segment.byteSize() - numbers.get(1).longValue() + 1;
 
-            String msg = policy.format(segment, offset, size, length);
-            return new IndexOutOfBoundsException(msg);
+            return policy.outOfBoundException(segment, offset, length, segment.byteSize());
         }
     }
 
