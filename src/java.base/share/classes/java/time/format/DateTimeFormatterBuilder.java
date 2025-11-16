@@ -111,7 +111,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.internal.misc.VM;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
