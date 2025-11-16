@@ -144,6 +144,11 @@ public class FileServerHandlerTest {
                         1000L, "bytes=100-199,300-399,150-350",
                         new FileServerHandler.RangeEntry(100,399)
                 },
+                {
+                        1000L, "bytes=0-99,200-399,0-99,400-499,200-499",
+                        new FileServerHandler.RangeEntry(0,99),
+                        new FileServerHandler.RangeEntry(200,499)
+                },
         };
     }
 
