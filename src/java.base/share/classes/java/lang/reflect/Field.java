@@ -791,7 +791,7 @@ class Field extends AccessibleObject implements Member {
      * {@code IllegalAccessException}.
      *
      * <p>If the underlying field is final, this {@code Field} object has <em>write</em>
-     * access if and only if all following conditions are true, where {@code D} is
+     * access if and only if all of the following conditions are true, where {@code D} is
      * the field's {@linkplain #getDeclaringClass() declaring class}:
      *
      * <ul>
@@ -829,8 +829,8 @@ class Field extends AccessibleObject implements Member {
      * <p>This method may be called by <a href="{@docRoot}/../specs/jni/index.html">
      * JNI code</a> with no caller class on the stack. In that case, and when the
      * underlying field is final, this {@code Field} object has <em>write</em> access
-     * if and only if all following conditions are true, where {@code D} is the field's
-     * {@linkplain #getDeclaringClass() declaring class}:
+     * if and only if all of the following conditions are true, where {@code D} is the
+     * field's {@linkplain #getDeclaringClass() declaring class}:
      *
      * <ul>
      * <li>{@code setAccessible(true)} has succeeded for this {@code Field} object.</li>
