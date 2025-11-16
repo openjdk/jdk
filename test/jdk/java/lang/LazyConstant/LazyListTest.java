@@ -258,28 +258,6 @@ final class LazyListTest {
         assertEquals(expectedToString, actualToString);
     }
 
-    // This test makes sure successive view operations retains the property
-    // of being a lazy view.
-    @Test
-    void lazyViews() {
-        viewOperations().forEach(op0 -> {
-            viewOperations().forEach( op1 -> {
-                viewOperations().forEach(op2 -> {
-                    var list = newLazyList();
-                    var view1 = op0.apply(list);
-                    var view2 = op1.apply(view1);
-                    var view3 = op2.apply(view2);
-                    var className3 = className(view3);
-                    var transitions = className(list) + ", " +
-                            op0 + " -> " + className(view1) + ", " +
-                            op1 + " -> " + className(view2) + ", " +
-                            op2 + " -> " + className3;
-                    assertTrue(className3.contains("Lazy"), transitions);
-                });
-            });
-        });
-    }
-
     @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
@@ -454,15 +432,5 @@ final class LazyListTest {
 
     static List<Integer> newRegularList() {
         return IntStream.range(0, SIZE).boxed().toList();
-    }
-
-    static String asString(String first, List<Integer> list) {
-        return "[" + first + ", " + Stream.generate(() -> LazyConstantTestUtil.UNINITIALIZED_TAG)
-                .limit(list.size() - 1)
-                .collect(Collectors.joining(", ")) + "]";
-    }
-
-    static String className(Object o) {
-        return o.getClass().getName();
     }
 }

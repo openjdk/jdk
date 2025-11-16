@@ -202,6 +202,8 @@ final class LazyCollections {
     static final class LazyMap<K, V>
             extends AbstractLazyMap<K, V> {
 
+        // Use an unmodifiable map with known entries that are @Stable. Lookups through this map can be folded because
+        // it is created using Map.ofEntrie. This allows us to avoid creating a separate hashing function.
         @Stable
         private final Map<K, Integer> indexMapper;
 
@@ -294,11 +296,6 @@ final class LazyCollections {
             return orElseComputeSlowPath(values, index, mutexes, key, functionHolder);
         }
 
-        @SuppressWarnings("unchecked")
-        final V getAcquire(K key) {
-            return (V) UNSAFE.getReferenceAcquire(values, offsetFor(indexFor(key)));
-        }
-
         @jdk.internal.ValueBased
         static final class LazyMapEntrySet<K, V> extends ImmutableCollections.AbstractImmutableSet<Entry<K, V>> {
 
@@ -370,13 +367,7 @@ final class LazyCollections {
                                        FunctionHolder<Function<? super K, ? extends V>> functionHolder) implements Entry<K, V> {
 
             @Override public V      setValue(V value) { throw ImmutableCollections.uoe(); }
-            @Override public V      getValue() {
-                final int index = map.indexFor(getKey);
-                final V v = map.getAcquire(getKey);
-                return v != null
-                        ? v
-                        : orElseComputeSlowPath(map.values, index, map.mutexes, getKey, functionHolder);
-            }
+            @Override public V      getValue() { return map.orElseCompute(getKey, map.indexFor(getKey)); }
             @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
             @Override public String toString() { return getKey() + "=" + getValue(); }
 
@@ -427,7 +418,7 @@ final class LazyCollections {
 
     static final class Mutexes {
 
-        static final Object TOMB_STONE = new Object();
+        private static final Object TOMB_STONE = new Object();
 
         // Filled on demand and then discarded once it is not needed anymore.
         // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
@@ -448,13 +439,14 @@ final class LazyCollections {
             if (mutex != null) {
                 return mutex;
             }
-            // Protect against racy stores of mutexe candidates
+            // Protect against racy stores of mutex candidates
             final Object candidate = new Object();
             final Object witness = UNSAFE.compareAndExchangeReference(mutexes, offset, null, candidate);
             return witness == null ? candidate : witness;
         }
 
         private void releaseMutex(long offset) {
+            // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReference(mutexes, offset, TOMB_STONE);
             if (counter != null && counter.decrementAndGet() == 0) {
                 mutexes = null;
@@ -517,7 +509,6 @@ final class LazyCollections {
             final T t = array[index];  // Plain semantics suffice here
             if (t == null) {
                 final T newValue = switch (functionHolder.function()) {
-                    case Supplier<?> sup     -> (T) sup.get();
                     case IntFunction<?> iFun -> (T) iFun.apply((int) input);
                     case Function<?, ?> fun  ->  ((Function<Object, T>) fun).apply(input);
                     default -> throw new InternalError("cannot reach here");
@@ -546,6 +537,7 @@ final class LazyCollections {
     static <T> void set(T[] array, int index, Object mutex, T newValue) {
         assert Thread.holdsLock(mutex) : index + "didn't hold " + mutex;
         // We know we hold the monitor here so plain semantic is enough
+        // This is an extra safety net to emulate a CAS op.
         if (array[index] == null) {
             UNSAFE.putReferenceRelease(array, Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index, newValue);
         }
