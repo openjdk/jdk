@@ -1528,6 +1528,16 @@ public class IRNode {
         superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
     }
 
+    public static final String MUL_HI_L = PREFIX + "MUL_HI_L" + POSTFIX;
+    static {
+        superWordNodes(MUL_HI_L, "MulHiL");
+    }
+
+    public static final String UMUL_HI_L = PREFIX + "UMUL_HI_L" + POSTFIX;
+    static {
+        superWordNodes(UMUL_HI_L, "UMulHiL");
+    }
+
     public static final String MIN_REDUCTION_V = PREFIX + "MIN_REDUCTION_V" + POSTFIX;
     static {
         superWordNodes(MIN_REDUCTION_V, "MinReductionV");
