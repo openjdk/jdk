@@ -76,7 +76,8 @@ public class TestVectorSpilling {
 
     @Test
     @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY_TYPE, "vectorx", "> 0"},
-        phase = {CompilePhase.FINAL_CODE})
+        phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature= {"rvv", "false"})
     static long test16ByteSpilling(long l1, long l2, long l3, long l4, long l5, long l6, long l7, long l8,
                                    long l9 /* odd stack arg */) {
         // To be scalar replaced and spilled to stack
