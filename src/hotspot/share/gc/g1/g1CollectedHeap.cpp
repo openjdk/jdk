@@ -353,6 +353,14 @@ size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
   return align_up(word_size, G1HeapRegion::GrainWords) / G1HeapRegion::GrainWords;
 }
 
+size_t G1CollectedHeap::allocation_used_bytes(size_t allocation_word_size) {
+  if (is_humongous(allocation_word_size)) {
+    return humongous_obj_size_in_regions(allocation_word_size) * G1HeapRegion::GrainBytes;
+  } else {
+    return allocation_word_size * HeapWordSize;
+  }
+}
+
 // If could fit into free regions w/o expansion, try.
 // Otherwise, if can expand, do so.
 // Otherwise, if using ex regions might help, try with ex given back.
@@ -2953,6 +2961,15 @@ void G1CollectedHeap::abandon_collection_set() {
   collection_set_iterate_all(&cl);
 
   collection_set()->abandon();
+}
+
+size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) {
+  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
+                               _allocator->free_bytes_in_retained_old_region();
+  // Humongous allocations will always be assigned to non-young heap, so consider
+  // that allocation in the result as well. Otherwise the allocation will always
+  // be in young gen, so there is no need to account it here.
+  return cur_occupancy + (is_humongous(allocation_word_size) ? allocation_used_bytes(allocation_word_size) : 0);
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
