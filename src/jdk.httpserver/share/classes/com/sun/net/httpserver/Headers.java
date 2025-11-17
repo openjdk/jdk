@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,48 +109,67 @@ public class Headers implements Map<String,List<String>> {
     }
 
     /**
-     * Normalize the key by converting to following form.
-     * First {@code char} upper case, rest lower case.
-     * key is presumed to be {@code ASCII}.
+     * {@return the normalized header name of the following form: the first
+     * character in upper-case, the rest in lower-case}
+     * The input header name is assumed to be encoded in ASCII.
+     *
+     * @implSpec
+     * This method is performance-sensitive; update with care.
+     *
+     * @param key an ASCII-encoded header name
+     * @throws NullPointerException on null {@code key}
+     * @throws IllegalArgumentException if {@code key} contains {@code \r} or {@code \n}
      */
-    private String normalize(String key) {
+    private static String normalize(String key) {
+
+        // Fast path for the empty key
         Objects.requireNonNull(key);
-        int len = key.length();
-        if (len == 0) {
+        int l = key.length();
+        if (l == 0) {
             return key;
         }
+
+        // Find the first non-normalized `char`
         int i = 0;
         char c = key.charAt(i);
-        if (c == '\r' || c == '\n')
-            throw new IllegalArgumentException("illegal character in key");
-        if (c >= 'a' && c <= 'z') {
-            // start with lowercase
-        } else {
+        if (c >= 'A' && c <= 'Z') {
             i++;
-            for (; i < len; i++) {
+            for (; i < l; i++) {
                 c = key.charAt(i);
-                if (c == '\r' || c == '\n')
-                    throw new IllegalArgumentException("illegal character in key");
-                else if (c >= 'A' && c <='Z') {
+                if (c == '\r' || c == '\n' || (c >= 'A' && c <= 'Z')) {
                     break;
                 }
             }
         }
-        if (i == len) return key;
 
-        char[] b = key.toCharArray();
+        // Fast path for the already normalized key
+        if (i == l) {
+            return key;
+        }
+
+        // Normalize the first `char`
+        char[] cs = key.toCharArray();
+        int o = 'a' - 'A';
         if (i == 0) {
-            b[0] = (char)(b[0] - ('a' - 'A'));
+            if (c == '\r' || c == '\n') {
+                throw new IllegalArgumentException("illegal character in key at index " + i);
+            }
+            cs[0] = (char) (c - o);
             i++;
         }
-        for (; i < len; i++) {
-            c = b[i];
+
+        // Normalize the secondary `char`s
+        for (; i < l; i++) {
+            c = cs[i];
             if (c >= 'A' && c <= 'Z') {
-                b[i] = (char) (c + ('a'-'A'));
-            } else if (c == '\r' || c == '\n')
-                throw new IllegalArgumentException("illegal character in key");
+                cs[i] = (char) (c + o);
+            } else if (c == '\r' || c == '\n') {
+                throw new IllegalArgumentException("illegal character in key at index " + i);
+            }
         }
-        return new String(b);
+
+        return new String(cs);
+
     }
 
     @Override

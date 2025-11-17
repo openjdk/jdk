@@ -288,9 +288,14 @@ public class HeadersTest {
         final var list = new ArrayList<String>();
         list.add(null);
         assertThrows(NPE, () -> h0.putAll(Map.of("a", list)));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("\r"))));
         assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("\n"))));
-        assertThrows(IAE, () -> h0.putAll(Map.of("AbC\n", List.of("hey"))));
-        assertThrows(IAE, () -> h0.putAll(Map.of("Ab\n", List.of("hi"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("a\r"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a", List.of("a\n"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("\r", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("\n", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a\r", List.of("a"))));
+        assertThrows(IAE, () -> h0.putAll(Map.of("a\n", List.of("a"))));
 
         final var h1 = new Headers();
         h1.put("a", List.of("1"));
