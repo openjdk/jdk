@@ -378,20 +378,20 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   //    evacuation phase) of young collections. This is never called
   //    during global collections during marking or update refs..
   // 4. Every allocation under TAMS updates the object start array.
+#ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-#ifdef ASSERT
   while (p + obj->size() < left) {
     p += obj->size();
     obj = cast_to_oop(p);
     assert(oopDesc::is_oop(obj), "Should be an object");
     assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
     // Check assumptions in previous block comment if this assert fires
-    guarantee(false, "Should never need forward walk in block start");
+    fatal("Should never need forward walk in block start");
   }
-#endif // ASSERT
   assert(p <= left, "p should start at or before left end of card");
   assert(p + obj->size() > left, "obj should end after left end of card");
+#endif // ASSERT
   return p;
 }
 
