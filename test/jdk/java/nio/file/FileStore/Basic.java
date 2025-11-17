@@ -38,6 +38,7 @@ import java.io.IOException;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
+import jdk.test.lib.Asserts;
 
 public class Basic {
 
@@ -74,7 +75,7 @@ public class Basic {
         boolean supported = store.supportsFileAttributeView(viewClass);
         assertTrue(store.supportsFileAttributeView(viewName) == supported);
         if (supported) {
-            assertNotNull(Files.getFileAttributeView(file, viewClass));
+            Asserts.assertNotNull(Files.getFileAttributeView(file, viewClass));
         }
     }
 
