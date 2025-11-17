@@ -1374,7 +1374,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ bind(*stub->continuation());
     __ step_random(r_profile_rng, rscratch1);
 
-    stub->set_doit(new LambdaWrapper(lambda, op));
+    stub->set_action(lambda, op);
     stub->set_name("Typecheck stub");
     append_code_stub(stub);
   } else {
@@ -1542,7 +1542,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ testptr(value, value);
         __ jcc(Assembler::equal, done);
 
-        profile_stub->set_doit(new LambdaWrapper(lambda, op));
+        profile_stub->set_action(lambda, op);
         profile_stub->set_name("Typecheck profile stub");
         append_code_stub(profile_stub);
       } else {
@@ -2236,7 +2236,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
-  // We do this here in order not affect call site alignment.
+  // We do this here in order not to affect call site alignment.
   __ save_profile_rng();
   // make sure that the displacement word of the call ends up word aligned
   int offset = __ offset();
@@ -2856,12 +2856,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op,
                                           LIR_Opr freq_op, LIR_Opr step_op,
                                           CodeStub* overflow_stub) {
-  // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
-  Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
-  // RegisterOrConstant dest_adr = addr->is_address() ? as_Address(addr->as_address_ptr())
-
-  Address dest_adr = as_Address(addr->as_address_ptr());
-
 #ifndef PRODUCT
   if (CommentedAssembly) {
     __ block_comment("increment_profile_ctr" " {");
@@ -2877,8 +2871,11 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   ProfileStub *counter_stub
     = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
+  Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
+  Address dest_adr = as_Address(addr->as_address_ptr());
+
   auto lambda = [counter_stub, overflow_stub, freq_op, ratio_shift, incr,
-                 dest, dest_adr, temp] (LIR_Assembler* ce, LIR_Op* op) {
+                 temp, dest, dest_adr] (LIR_Assembler* ce, LIR_Op* op) {
 
 #undef __
 #define __ masm->
@@ -2974,7 +2971,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
     __ bind(*counter_stub->continuation());
     __ step_random(r_profile_rng, temp);
 
-    counter_stub->set_doit(new LambdaWrapper(lambda, nullptr));
+    counter_stub->set_action(lambda, nullptr);
     counter_stub->set_name("IncrementProfileCtr");
     append_code_stub(counter_stub);
   } else {
@@ -3008,84 +3005,84 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 #undef __
 #define __ masm->
 
-  auto masm = ce->masm();
-  LIR_OpProfileCall* op = base_op->as_OpProfileCall();
-  ciMethod* method = op->profiled_method();
-  int bci          = op->profiled_bci();
-  ciMethod* callee = op->profiled_callee();
-  Register tmp_load_klass = rscratch1;
+    auto masm = ce->masm();
+    LIR_OpProfileCall* op = base_op->as_OpProfileCall();
+    ciMethod* method = op->profiled_method();
+    int bci          = op->profiled_bci();
+    ciMethod* callee = op->profiled_callee();
+    Register tmp_load_klass = rscratch1;
 
-  Register temp = op->tmp1()->as_register_lo();
+    Register temp = op->tmp1()->as_register_lo();
 
-  if (stub != nullptr)  __ bind(*stub->entry());
+    if (stub != nullptr)  __ bind(*stub->entry());
 
-  // Update counter for all call types
-  ciMethodData* md = method->method_data_or_null();
-  assert(md != nullptr, "Sanity");
-  ciProfileData* data = md->bci_to_data(bci);
-  assert(data != nullptr && data->is_CounterData(), "need CounterData for calls");
-  assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
-  Register mdo  = op->mdo()->as_register();
-  __ mov_metadata(mdo, md->constant_encoding());
-  Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  // Perform additional virtual call profiling for invokevirtual and
-  // invokeinterface bytecodes
-  if (op->should_profile_receiver_type()) {
-    assert(op->recv()->is_single_cpu(), "recv must be allocated");
-    Register recv = op->recv()->as_register();
-    assert_different_registers(mdo, recv);
-    assert(data->is_VirtualCallData(), "need VirtualCallData for virtual calls");
-    ciKlass* known_klass = op->known_holder();
-    if (C1OptimizeVirtualCallProfiling && known_klass != nullptr) {
-      // We know the type that will be seen at this call site; we can
-      // statically update the MethodData* rather than needing to do
-      // dynamic tests on the receiver type
+    // Update counter for all call types
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != nullptr, "Sanity");
+    ciProfileData* data = md->bci_to_data(bci);
+    assert(data != nullptr && data->is_CounterData(), "need CounterData for calls");
+    assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
+    Register mdo  = op->mdo()->as_register();
+    __ mov_metadata(mdo, md->constant_encoding());
+    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    // Perform additional virtual call profiling for invokevirtual and
+    // invokeinterface bytecodes
+    if (op->should_profile_receiver_type()) {
+      assert(op->recv()->is_single_cpu(), "recv must be allocated");
+      Register recv = op->recv()->as_register();
+      assert_different_registers(mdo, recv);
+      assert(data->is_VirtualCallData(), "need VirtualCallData for virtual calls");
+      ciKlass* known_klass = op->known_holder();
+      if (C1OptimizeVirtualCallProfiling && known_klass != nullptr) {
+        // We know the type that will be seen at this call site; we can
+        // statically update the MethodData* rather than needing to do
+        // dynamic tests on the receiver type
 
-      // NOTE: we should probably put a lock around this search to
-      // avoid collisions by concurrent compilations
-      ciVirtualCallData* vc_data = (ciVirtualCallData*) data;
-      uint i;
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        ciKlass* receiver = vc_data->receiver(i);
-        if (known_klass->equals(receiver)) {
-          Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment);
-          goto exit;
+        // NOTE: we should probably put a lock around this search to
+        // avoid collisions by concurrent compilations
+        ciVirtualCallData* vc_data = (ciVirtualCallData*) data;
+        uint i;
+        for (i = 0; i < VirtualCallData::row_limit(); i++) {
+          ciKlass* receiver = vc_data->receiver(i);
+          if (known_klass->equals(receiver)) {
+            Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
+            __ addptr(data_addr, DataLayout::counter_increment);
+            goto exit;
+          }
         }
-      }
 
-      // Receiver type not found in profile data; select an empty slot
+        // Receiver type not found in profile data; select an empty slot
 
-      // Note that this is less efficient than it should be because it
-      // always does a write to the receiver part of the
-      // VirtualCallData rather than just the first time
-      for (i = 0; i < VirtualCallData::row_limit(); i++) {
-        ciKlass* receiver = vc_data->receiver(i);
-        if (receiver == nullptr) {
-          Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
-          __ mov_metadata(recv_addr, known_klass->constant_encoding(), rscratch1);
-          Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
-          goto exit;
+        // Note that this is less efficient than it should be because it
+        // always does a write to the receiver part of the
+        // VirtualCallData rather than just the first time
+        for (i = 0; i < VirtualCallData::row_limit(); i++) {
+          ciKlass* receiver = vc_data->receiver(i);
+          if (receiver == nullptr) {
+            Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
+            __ mov_metadata(recv_addr, known_klass->constant_encoding(), rscratch1);
+            Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
+            __ addptr(data_addr, DataLayout::counter_increment * ProfileCaptureRatio);
+            goto exit;
+          }
         }
+      } else {
+        __ load_klass(recv, recv, tmp_load_klass);
+        Label update_done;
+        ce->type_profile_helper(mdo, md, data, recv, &update_done);
+        // Receiver did not match any saved receiver and there is no empty row for it.
+        // Increment total counter to indicate polymorphic case.
+        __ addptr(counter_addr, DataLayout::counter_increment * ProfileCaptureRatio);
+
+        __ bind(update_done);
       }
+    exit: {}
     } else {
-      __ load_klass(recv, recv, tmp_load_klass);
-      Label update_done;
-      ce->type_profile_helper(mdo, md, data, recv, &update_done);
-      // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polymorphic case.
+      // Static call
       __ addptr(counter_addr, DataLayout::counter_increment * ProfileCaptureRatio);
-
-      __ bind(update_done);
     }
-  exit: {}
-  } else {
-    // Static call
-    __ addptr(counter_addr, DataLayout::counter_increment * ProfileCaptureRatio);
-  }
 
-  if (stub != nullptr)  __ jmp(*stub->continuation());
+    if (stub != nullptr)  __ jmp(*stub->continuation());
 
 #undef __
 #define __ _masm->
@@ -3097,7 +3094,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ bind(*stub->continuation());
     __ step_random(r_profile_rng, temp);
 
-    stub->set_doit(new LambdaWrapper(lambda, op));
+    stub->set_action(lambda, op);
     stub->set_name("ProfileCallStub");
     append_code_stub(stub);
   } else {
@@ -3305,7 +3302,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     __ bind(*stub->continuation());
     __ step_random(r_profile_rng, tmp);
 
-    stub->set_doit(new LambdaWrapper(lambda, op));
+    stub->set_action(lambda, op);
     stub->set_name("ProfileTypeStub");
     append_code_stub(stub);
   } else {

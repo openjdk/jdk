@@ -317,9 +317,9 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
 
   if (VM_Version::supports_sse4_2()) {
     /* CRC used as a psuedo-random-number generator */
-    // From a theoretical point of view a CRC is a poor RNG because
-    // it's linear. But it's unbeatably fast, and plenty good enough
-    // for what we need.
+    // In effect, the CRC instruction is being used here for its
+    // linear feedback shift register. It's unbeatably fast, and
+    // plenty good enough for what we need.
     movl(temp, 1);
     crc32(state, temp, /*sizeInBytes*/2);
   } else {

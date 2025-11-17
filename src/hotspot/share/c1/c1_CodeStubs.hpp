@@ -105,7 +105,7 @@ class C1SafepointPollStub: public CodeStub {
 };
 
 class CounterOverflowStub: public CodeStub {
- protected:
+ private:
   CodeEmitInfo* _info;
   int           _bci;
   LIR_Opr       _method;
@@ -119,8 +119,8 @@ public:
   virtual void emit_code(LIR_Assembler* e);
 
   virtual void visit(LIR_OpVisitState* visitor) {
-    if (_info) visitor->do_slow_case(_info);
-    if (_method->is_valid()) visitor->do_input(_method);
+    visitor->do_slow_case(_info);
+    visitor->do_input(_method);
   }
 
 #ifndef PRODUCT
@@ -148,17 +148,18 @@ struct LambdaWrapper : public AbstractLambdaWrapper {
 
 class ProfileStub: public CodeStub {
 private:
-  AbstractLambdaWrapper *_doit;
+  AbstractLambdaWrapper *_action;
   const char* _name;
 
 public:
   ProfileStub() {
     _name = "ProfileStub";
   }
-  void set_doit(AbstractLambdaWrapper *doit) { _doit = doit; }
+  template<typename U>
+  void set_action(U action, LIR_Op *op) { _action = new LambdaWrapper(action, op); }
   void set_name(const char* name) { _name = name; }
   virtual void emit_code(LIR_Assembler* ce) {
-    (*_doit)(ce);
+    (*_action)(ce);
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("%s", _name); }
