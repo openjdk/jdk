@@ -593,7 +593,7 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type* MulHiLNode::Value(PhaseGVN *phase) const {
+const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
 
@@ -619,7 +619,7 @@ const Type* MulHiLNode::Value(PhaseGVN *phase) const {
   return bottom_type();
 }
 
-const Type *UMulHiLNode::Value(PhaseGVN *phase) const {
+const Type* UMulHiLNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
 
