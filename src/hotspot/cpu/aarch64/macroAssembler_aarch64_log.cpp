@@ -64,7 +64,7 @@
 
 // Table with p(r) polynomial coefficients
 // and table representation of logarithm values (hi and low parts)
-ATTRIBUTE_ALIGNED(64) juint _L_tbl[] =
+ATTRIBUTE_ALIGNED(64) juint _L_tbl[] = // Lookup table: polynomial coefficients and log hi/lo parts, 64-byte aligned for efficient vector loads
 {
     // coefficients of p(r) polynomial:
     // _coeff[]
@@ -250,9 +250,16 @@ ATTRIBUTE_ALIGNED(64) juint _L_tbl[] =
 // Generate log(X). X passed in register v0. Return log(X) into v0.
 // Generator parameters: 10 temporary FPU registers and  temporary general
 // purpose registers
+// vtmp0: generic temp / hi_part(B) / accumulator
+// vtmp1: mantissa parts, vtmp2: table values
+// vtmp3: hi mantissa part intermediates
+// vtmp4: constant 1.0 / reciprocal estimate ref
+// vtmp5: reciprocal refinement / exponent diff
+// C1..C4: vector registers holding polynomial coeff pairs {C?_0,C?_1}
+// tmp1..tmp5: general purpose scratch registers
 void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
                               FloatRegister vtmp2, FloatRegister vtmp3,
-                              FloatRegister vtmp4, FloatRegister vtmp5,
+                              FloatRegister vtmp4, FloatRegister vtmp5, 
                               FloatRegister C1, FloatRegister C2,
                               FloatRegister C3, FloatRegister C4,
                               Register tmp1, Register tmp2, Register tmp3,
@@ -264,116 +271,116 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
   const int64_t ONE_PREFIX = 0x3FF0;
   const int64_t MNAN_PREFIX = 0x7FF8;
 
-    movz(tmp2, ONE_PREFIX, 48);
-    movz(tmp4, 0x0010, 48);
-    fmovd(rscratch1, v0); // rscratch1 = AS_LONG_BITS(X)
-    lea(rscratch2, ExternalAddress((address)_L_tbl));
-    movz(tmp5, 0x7F);
-    add(tmp1, rscratch1, tmp4);
-    cmp(tmp2, rscratch1);
-    lsr(tmp3, rscratch1, 29);
-    ccmp(tmp1, tmp4, 0b1101 /* LE */, NE);
-    bfm(tmp3, tmp5, 41, 8);
-    fmovs(vtmp5, tmp3);
-    mov(tmp5, 0x3FE0);
+  movz(tmp2, ONE_PREFIX, 48);                 // tmp2 = 0x3FF0<<48 (pattern for exponent=0x3FF == value 1.x)
+  movz(tmp4, 0x0010, 48);                     // tmp4 = 16<<48 (bias added for corner case pre-check)
+  fmovd(rscratch1, v0);                       // rscratch1 = raw bits of input X
+  lea(rscratch2, ExternalAddress((address)_L_tbl)); // rscratch2 points to coefficient/log table
+  movz(tmp5, 0x7F);                            // tmp5 = 0x7F (mask part for building reciprocal index)
+  add(tmp1, rscratch1, tmp4);                  // tmp1 = X_bits + (16<<48) used in combined corner case compare
+  cmp(tmp2, rscratch1);                        // Compare X_bits with ONE_PREFIX pattern (X==1?)
+  lsr(tmp3, rscratch1, 29);                    // tmp3 = high bits used for initial reciprocal seed manipulation
+  ccmp(tmp1, tmp4, 0b1101 /* LE */, NE);       // Conditional compare merging corner case flags (sets NZCV)
+  bfm(tmp3, tmp5, 41, 8);                      // Insert bits from tmp5 (0x7F) into tmp3 field (construct B0 index)
+  fmovs(vtmp5, tmp3);                          // vtmp5 (float) holds seed for reciprocal estimate
+  mov(tmp5, 0x3FE0);                           // tmp5 = exponent bias (0x3FE0) used to compute exponent difference
     // Load coefficients from table. All coefficients are organized to be
     // in specific order, because load below will load it in vectors to be used
     // later in vector instructions. Load will be performed in parallel while
     // branches are taken. C1 will contain vector of {C1_0, C1_1}, C2 =
     // {C2_0, C2_1}, C3 = {C3_0, C3_1}, C4 = {C4_0, C4_1}
-    ld1(C1, C2, C3, C4, T2D, post(rscratch2, 64));
+  ld1(C1, C2, C3, C4, T2D, post(rscratch2, 64)); // Load {C1_0,C1_1},{C2_0,C2_1},{C3_0,C3_1},{C4_0,C4_1} then advance table pointer
     br(LE, CHECK_CORNER_CASES);
   bind(CHECKED_CORNER_CASES);
     // all corner cases are handled
-    frecpe(vtmp4, vtmp5, S);                   // vtmp4 ~= 1/vtmp5
-    frecps(vtmp5, vtmp4, vtmp5, S);    // step1: vtmp5 = 2 - vtmp4*vtmp5
-    fmuls(vtmp5, vtmp5, vtmp4);      // vtmp5 = vtmp5 * vtmp4
+  frecpe(vtmp4, vtmp5, S);                   // vtmp4 = initial reciprocal estimate of vtmp5
+  frecps(vtmp5, vtmp4, vtmp5, S);            // vtmp5 = 2 - vtmp4 * vtmp5 (first refinement step)
+  fmuls(vtmp5, vtmp5, vtmp4);                // vtmp5 = refined reciprocal ~1/vtmp5
     lsr(tmp2, rscratch1, 48);
     movz(tmp4, 0x77f0, 48);
     fmovd(vtmp4, 1.0);
     movz(tmp1, INF_OR_NAN_PREFIX, 48);
-    bfm(tmp4, rscratch1, 0, 51);               // tmp4 = 0x77F0 << 48 | mantissa(X)
+  bfm(tmp4, rscratch1, 0, 51);               // tmp4 = 0x77F0<<48 | mantissa(X) (normalize mantissa to [1,2) range)
     // vtmp1 = AS_DOUBLE_BITS(0x77F0 << 48 | mantissa(X)) == mx
     fmovd(vtmp1, tmp4);
     subw(tmp2, tmp2, 16);
-    subs(zr, tmp2, 0x8000);
+  subs(zr, tmp2, 0x8000);                    // Check exponent threshold for SMALL_VALUE path
     br(GE, SMALL_VALUE);
   bind(MAIN);
-    fmovs(tmp3, vtmp5);                        // int intB0 = AS_INT_BITS(B);
+  fmovs(tmp3, vtmp5);                        // tmp3 = int representation of B0 after refinement
     //mov(tmp5, 0x3FE0);
     uint64_t mask = UCONST64(0xffffe00000000000);
-    mov(rscratch1, mask);
-    andr(tmp2, tmp2, tmp1, LSR, 48);           // hiWord & 0x7FF0
-    sub(tmp2, tmp2, tmp5);                     // tmp2 = hiWord & 0x7FF0 - 0x3FE0
-    scvtfwd(vtmp5, tmp2);                      // vtmp5 = (double)tmp2;
-    addw(tmp3, tmp3, 0x8000);                  // tmp3 = B
-    andr(tmp4, tmp4, rscratch1);               // tmp4 == hi_part(mx)
-    andr(rscratch1, rscratch1, tmp3, LSL, 29); // rscratch1 = hi_part(B)
-    ubfm(tmp3, tmp3, 16, 23);                  // int index = (intB0 >> 16) && 0xFF
-    ldrq(vtmp2, Address(rscratch2, tmp3, Address::lsl(4))); // vtmp2 = _L_tbl[index]
+  mov(rscratch1, mask);                      // rscratch1 = mask for extracting hi parts
+  andr(tmp2, tmp2, tmp1, LSR, 48);           // tmp2 = hiWord & 0x7FF0 (isolate exponent+sign nibble)
+  sub(tmp2, tmp2, tmp5);                     // tmp2 now holds (exponent nibble - bias) -> scaled exponent difference
+  scvtfwd(vtmp5, tmp2);                      // vtmp5 = double(exponent difference) used for log2 scaling
+  addw(tmp3, tmp3, 0x8000);                  // tmp3 += 0x8000 -> quantize reciprocal to 1/128 grid
+  andr(tmp4, tmp4, rscratch1);               // tmp4 = hi_part(mx)
+  andr(rscratch1, rscratch1, tmp3, LSL, 29); // rscratch1 = hi_part(B) (quantized reciprocal high bits)
+  ubfm(tmp3, tmp3, 16, 23);                  // tmp3 = (intB0 >> 16) & 0xFF (table index)
+  ldrq(vtmp2, Address(rscratch2, tmp3, Address::lsl(4))); // vtmp2 loads hi/lo log(B) parts for this index
     // AS_LONG_BITS(vtmp1) & 0xffffe00000000000 // hi_part(mx)
-    fmovd(vtmp3, tmp4);
-    fmovd(vtmp0, rscratch1);                   // vtmp0 = hi_part(B)
-    fsubd(vtmp1, vtmp1, vtmp3);                // vtmp1 -= vtmp3; // low_part(mx)
-    fnmsub(vtmp3, vtmp3, vtmp0, vtmp4);        // vtmp3 = vtmp3*vtmp0 - vtmp4
-    fmlavs(vtmp2, T2D, C4, vtmp5, 0);          // vtmp2 += {C4} * vtmp5
+  fmovd(vtmp3, tmp4);                        // vtmp3 = hi_part(mx)
+  fmovd(vtmp0, rscratch1);                   // vtmp0 = hi_part(B)
+  fsubd(vtmp1, vtmp1, vtmp3);                // vtmp1 = low_part(mx)
+  fnmsub(vtmp3, vtmp3, vtmp0, vtmp4);        // vtmp3 = hi_part(mx)*hi_part(B) - 1.0 (high part of r)
+  fmlavs(vtmp2, T2D, C4, vtmp5, 0);          // Adjust log(B) hi/lo by scaled exponent contribution (log2 term)
     // vtmp1 = r = vtmp1 * vtmp0 + vtmp3 == low_part(mx) * hi_part(B) + (hi_part(mx)*hi_part(B) - 1.0)
-    fmaddd(vtmp1, vtmp1, vtmp0, vtmp3);
-    ins(vtmp5, D, vtmp2, 0, 1);                // vtmp5 = vtmp2[1];
-    faddd(vtmp0, vtmp2, vtmp1);                // vtmp0 = vtmp2 + vtmp1
-    fmlavs(C3, T2D, C2, vtmp1, 0);             // {C3} += {C2}*vtmp1
-    fsubd(vtmp2, vtmp2, vtmp0);                // vtmp2 -= vtmp0
-    fmuld(vtmp3, vtmp1, vtmp1);                // vtmp3 = vtmp1*vtmp1
-    faddd(C4, vtmp1, vtmp2);                   // C4[0] = vtmp1 + vtmp2
-    fmlavs(C3, T2D, C1, vtmp3, 0);             // {C3} += {C1}*vtmp3
-    faddd(C4, C4, vtmp5);                      // C4 += vtmp5
-    fmuld(vtmp4, vtmp3, vtmp1);                // vtmp4 = vtmp3*vtmp1
-    faddd(vtmp0, vtmp0, C4);                   // vtmp0 += C4
-    fmlavs(C3, T2D, vtmp4, C3, 1);             // {C3} += {vtmp4}*C3[1]
-    fmaddd(vtmp0, C3, vtmp3, vtmp0);           // vtmp0 = C3 * vtmp3 + vtmp0
+  fmaddd(vtmp1, vtmp1, vtmp0, vtmp3);        // vtmp1 = r = low_part(mx)*hi_part(B) + (hi_part(mx)*hi_part(B)-1)
+  ins(vtmp5, D, vtmp2, 0, 1);                // vtmp5 = low log(B) part after exponent adjustment
+  faddd(vtmp0, vtmp2, vtmp1);                // vtmp0 = hi_log(B) + r (initial sum)
+  fmlavs(C3, T2D, C2, vtmp1, 0);             // Accumulate polynomial: C3 += C2 * r
+  fsubd(vtmp2, vtmp2, vtmp0);                // vtmp2 = hi_log(B) - (hi_log(B)+r) == -r (hi correction)
+  fmuld(vtmp3, vtmp1, vtmp1);                // vtmp3 = r^2
+  faddd(C4, vtmp1, vtmp2);                   // C4[0] = r + (-r_hi) -> refined small correction term
+  fmlavs(C3, T2D, C1, vtmp3, 0);             // C3 += C1 * r^2 (continue polynomial expansion)
+  faddd(C4, C4, vtmp5);                      // Add low log(B) part into correction accumulator
+  fmuld(vtmp4, vtmp3, vtmp1);                // vtmp4 = r^3 (next power for polynomial terms)
+  faddd(vtmp0, vtmp0, C4);                   // Accumulate (hi_log(B)+r) + corrections
+  fmlavs(C3, T2D, vtmp4, C3, 1);             // Accumulate high-degree terms: C3 += r^3 * (second lane of C3)
+  fmaddd(vtmp0, C3, vtmp3, vtmp0);           // vtmp0 += C3 * r^2 (final polynomial + log assembly)
     ret(lr);
 
   block_comment("if (AS_LONG_BITS(hiWord) > 0x8000)"); {
     bind(SMALL_VALUE);
-      mov(tmp5, 0x47F0);
-      movz(tmp2, 0x47F0, 48);
-      fmovd(vtmp1, tmp2);
-      fmuld(vtmp0, vtmp1, v0);
-      fmovd(vtmp1, vtmp0);
-      umov(tmp2, vtmp1, H, 3);
-      orr(vtmp0, T16B, vtmp0, vtmp4);
-      ushr(vtmp5, T2D, vtmp0, 27);
-      ushr(vtmp5, T4S, vtmp5, 2);
-      frecpe(vtmp4, vtmp5, S); // vtmp4 = initial estimate of vtmp5
-      frecps(vtmp0, vtmp4, vtmp5, S);    // step1: vtmp0 = 2 - vtmp4*vtmp5
-      fmuls(vtmp4, vtmp0, vtmp5);      // vtmp4 = vtmp0 * vtmp4
-      frecps(vtmp0, vtmp5, vtmp4, S);    // step2: vtmp0 = 2 - vtmp5*vtmp4
-      fmuls(vtmp5, vtmp0, vtmp4);      // vtmp5 = vtmp0 * vtmp4
-      shl(vtmp1, T2D, vtmp1, 12);
-      ushr(vtmp1, T2D, vtmp1, 12);
+  mov(tmp5, 0x47F0);                       // tmp5 = exponent adjust constant for small values path
+  movz(tmp2, 0x47F0, 48);                  // tmp2 = 0x47F0<<48 pattern
+  fmovd(vtmp1, tmp2);                      // vtmp1 holds scaled mantissa pattern
+  fmuld(vtmp0, vtmp1, v0);                  // vtmp0 = scaled input
+  fmovd(vtmp1, vtmp0);                      // vtmp1 copy for further bit ops
+  umov(tmp2, vtmp1, H, 3);                  // Extract upper 16 bits into tmp2
+  orr(vtmp0, T16B, vtmp0, vtmp4);           // Merge pattern with reciprocal estimate
+  ushr(vtmp5, T2D, vtmp0, 27);              // Shift for initial reciprocal indexing
+  ushr(vtmp5, T4S, vtmp5, 2);               // Further shift reduction
+  frecpe(vtmp4, vtmp5, S);                  // vtmp4 = initial reciprocal for small value path
+  frecps(vtmp0, vtmp4, vtmp5, S);           // First refinement: vtmp0 = 2 - vtmp4*vtmp5
+  fmuls(vtmp4, vtmp0, vtmp5);               // vtmp4 = updated reciprocal
+  frecps(vtmp0, vtmp5, vtmp4, S);           // Second refinement: vtmp0 = 2 - vtmp5*vtmp4
+  fmuls(vtmp5, vtmp0, vtmp4);               // vtmp5 = refined reciprocal output
+  shl(vtmp1, T2D, vtmp1, 12);               // Shift left to clear lower fraction bits (precision adjust)
+  ushr(vtmp1, T2D, vtmp1, 12);              // Shift right restore alignment, leaving masked mantissa
       b(MAIN);
   }
 
   block_comment("Corner cases"); {
     bind(RETURN_MINF);
-      movz(tmp1, MINF_OR_MNAN_PREFIX, 48);
-      orr(rscratch1, rscratch1, tmp1);
+  movz(tmp1, MINF_OR_MNAN_PREFIX, 48);      // Prepare -INF / -NaN prefix bits
+  orr(rscratch1, rscratch1, tmp1);          // Combine sign/exponent pattern
       fmovd(v0, rscratch1);
       ret(lr);
     bind(RETURN_NAN);
-      movz(tmp1, MNAN_PREFIX, 48);
+  movz(tmp1, MNAN_PREFIX, 48);              // Prepare quiet NaN prefix bits
       orr(rscratch1, rscratch1, tmp1);
       fmovd(v0, rscratch1);
       ret(lr);
     bind(CHECK_CORNER_CASES);
       movz(tmp1, INF_OR_NAN_PREFIX, 48);
       mov(tmp3, rscratch1);
-      andr(tmp3, tmp3, 0x7FFFFFFFFFFFFFFF); // Clear sign bit
+  andr(tmp3, tmp3, 0x7FFFFFFFFFFFFFFF);     // Clear sign: classify magnitude
       cmp(tmp3, zr);
-      br(EQ, RETURN_MINF); // If exponent+mantissa is zero, input is +0.0 or -0.0
+  br(EQ, RETURN_MINF);                     // Zero input -> log(0) = -Infinity
       cmp(rscratch1, zr);
-      br(LT, RETURN_NAN);  // If input < 0, return NaN
-      br(EQ, RETURN_MINF); // If input == 0, return -Infinity
+  br(LT, RETURN_NAN);                      // Negative input -> NaN
+  br(EQ, RETURN_MINF);                     // Redundant safety: re-check zero
       cmp(rscratch1, tmp1);
       br(GE, DONE);
       cmp(rscratch1, tmp2);
