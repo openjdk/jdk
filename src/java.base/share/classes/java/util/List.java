@@ -1228,11 +1228,11 @@ public interface List<E> extends SequencedCollection<E> {
      * lazy list for the same index, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
-     * The returned list's {@linkplain Object#equals(Object) equals()} and
-     * {@linkplain Object#hashCode() hashCode()} methods may trigger initialization of one
-     * or more lazy elements. The returned list's {@linkplain Object#toString() toString()}
-     * method never triggers initialization of elements. Instead, an
-     * implementation-dependent string is returned for uninitialized elements.
+     * The returned list's {@linkplain Object Object methods};
+     * {@linkplain Object#equals(Object) equals()},
+     * {@linkplain Object#hashCode() hashCode()}, and
+     * {@linkplain Object#toString() toString()} methods may trigger initialization of
+     * one or more lazy elements.
      * <p>
      * The returned lazy list strongly references its computing
      * function used to compute elements at least so long as there are uninitialized
