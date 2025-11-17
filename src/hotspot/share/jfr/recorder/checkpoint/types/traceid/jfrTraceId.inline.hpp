@@ -118,7 +118,7 @@ inline traceid JfrTraceId::load_raw(const ClassLoaderData* cld) {
 inline bool JfrTraceId::in_visible_set(const Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "invariant");
-  return (IS_JDK_JFR_EVENT_SUBKLASS(klass) && !klass->is_abstract()) || IS_EVENT_HOST_KLASS(klass);
+  return (IS_JDK_JFR_EVENT_SUBKLASS(klass) && !InstanceKlass::cast(klass)->is_abstract()) || IS_EVENT_HOST_KLASS(klass);
 }
 
 inline bool JfrTraceId::is_jdk_jfr_event(const Klass* k) {

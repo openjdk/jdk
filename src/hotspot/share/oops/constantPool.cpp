@@ -1219,12 +1219,13 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
-      Klass* callee = klass_at_impl(this_cp, callee_index, THREAD);
+      Klass* k = klass_at_impl(this_cp, callee_index, THREAD);
       if (HAS_PENDING_EXCEPTION) {
         save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
       }
 
       // Check constant pool method consistency
+      InstanceKlass* callee = InstanceKlass::cast(k);
       if ((callee->is_interface() && m_tag.is_method()) ||
           (!callee->is_interface() && m_tag.is_interface_method())) {
         ResourceMark rm(THREAD);
