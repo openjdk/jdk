@@ -86,7 +86,7 @@ static address unshufflePermsAddr(int offset) {
 // +-----+-----+-----+-----+-----
 //
 // NOTE: size 0 and 1 are used for initial and final shuffles respectivelly of
-// dilithiumAlmostInverseNtt and dilithiumAlmostNtt. For size 0 and 1, input1[] 
+// dilithiumAlmostInverseNtt and dilithiumAlmostNtt. For size 0 and 1, input1[]
 // and input2[] are modified in-place (and output2 is used as a temporary)
 //
 // Using C++ lambdas for improved readability (to hide parameters that always repeat)
