@@ -164,9 +164,10 @@ public:
 
   static void print_compressed_class_space(outputStream* st) NOT_LP64({});
 
-  // Return TRUE only if USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is True.
+  // Returns true if we use a class space.
   static bool using_class_space() {
-    return NOT_LP64(false) LP64_ONLY(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE);
+    return NOT_LP64(false) // Not needed on 32-bit
+           LP64_ONLY(true);
   }
 
   static bool is_class_space_allocation(MetadataType mdType) {
