@@ -427,8 +427,8 @@ public class SnippetTaglet extends BaseTaglet {
         }
 
         if (inlineSnippet != null && externalSnippet != null) {
-            String inlineStr = inlineSnippet.asCharSequence().toString();
-            String externalStr = externalSnippet.asCharSequence().toString();
+            String inlineStr = stripLineBreaks(inlineSnippet.asCharSequence().toString());
+            String externalStr = stripLineBreaks(externalSnippet.asCharSequence().toString());
             if (!Objects.equals(inlineStr, externalStr)) {
                 throw new BadSnippetException(tag, "doclet.snippet.contents.mismatch", diff(inlineStr, externalStr));
             }
@@ -443,6 +443,23 @@ public class SnippetTaglet extends BaseTaglet {
                 : stringValueOf(idAttr);
 
         return snippetTagOutput(holder, snippetTag, text, id, lang);
+    }
+
+    // Strips leading and trailing newline characters from a string.
+    private static String stripLineBreaks(String str) {
+        int left = 0;
+        int right = str.length();
+        // Line breaks are always encoded as \n
+        while (left < right && str.charAt(left) == '\n') {
+            left++;
+        }
+        if (left == right) {
+            return "";
+        }
+        while (right > left && str.charAt(right - 1) == '\n') {
+            right--;
+        }
+        return str.substring(left, right);
     }
 
     /*

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266666 8275788 8276964 8299080 8276966
+ * @bug 8266666 8275788 8276964 8299080 8276966 8304408
  * @summary Implementation for snippets
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2213,21 +2213,18 @@ public class TestSnippetTag extends SnippetTester {
                 """
                       ----------------- inline -------------------
                       Hello, Snippet! ...more
-                    \s\s
                       ----------------- external -----------------
                       Hello, Snippet!
-                    \s\s
-                      --------------------------------------------""");
+                      --------------------------------------------
+                    """);
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
                         <summary>invalid @snippet</summary>
                         <pre>contents mismatch:
                         ----------------- inline -------------------
                         Hello, Snippet! ...more
-
                         ----------------- external -----------------
                         Hello, Snippet!
-
                         --------------------------------------------
                         </pre>
                         </details>
@@ -2404,6 +2401,68 @@ public class TestSnippetTag extends SnippetTester {
                                ,
                                 Snippet!
                              """
+                )
+                ,
+                new TestCase(newSnippetBuilder()
+                        .body("""
+                                             Hello
+                                             ,
+                                              Snippet!""")
+                        .region("here")
+                        .fileContent(
+                                """
+                                Above the region.
+                                // @start region=here
+                                Hello
+                                ,
+                                 Snippet!
+                                // @end
+                                Below the region.
+                                """)
+                        .build(),
+                        """
+                            Hello
+                            ,
+                             Snippet!"""
+                )
+                ,
+                new TestCase(newSnippetBuilder()
+                        .body("""
+                                             Hello
+                                             ,
+                                              Snippet!""")
+                        .region("here")
+                        .fileContent(
+                                """
+                                Above the region.
+                                // @start region=here
+                                // @replace region substring=Goodbye replacement=Hello
+                                Goodbye
+                                ,
+                                 Snippet!
+                                // @end
+                                // @end
+                                Below the region.
+                                """)
+                        .build(),
+                        """
+                            Hello
+                            ,
+                             Snippet!"""
+                )
+                ,
+                new TestCase(newSnippetBuilder()
+                        .body("\n\n\n")
+                        .region("here")
+                        .fileContent(
+                                """
+                                Above the region.
+                                // @start region=here:
+                                // @end
+                                Below the region.
+                                """)
+                        .build(),
+                        "\n\n\n"
                 )
         );
         Path srcDir = base.resolve("src");
