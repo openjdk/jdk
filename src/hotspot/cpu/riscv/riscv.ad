@@ -1801,13 +1801,8 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    st->print_cr("\tlwu t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tlwu t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
-  } else {
-    st->print_cr("\tld t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tld t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
-  }
+  st->print_cr("\tlwu t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+  st->print_cr("\tlwu t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   st->print_cr("\tbeq t1, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");

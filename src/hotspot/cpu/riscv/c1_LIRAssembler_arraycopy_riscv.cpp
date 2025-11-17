@@ -196,12 +196,9 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     if (UseCompactObjectHeaders) {
       __ load_narrow_klass_compact(tmp, src);
       __ load_narrow_klass_compact(t0, dst);
-    } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+    } else {
       __ lwu(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
       __ lwu(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
-    } else {
-      __ ld(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
-      __ ld(t0, Address(dst, oopDesc::klass_offset_in_bytes()));
     }
     __ bne(tmp, t0, *stub->entry(), /* is_far */ true);
   } else {
@@ -257,9 +254,7 @@ void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, c
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
     __ mov_metadata(tmp, default_type->constant_encoding());
-    if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-      __ encode_klass_not_null(tmp);
-    }
+    __ encode_klass_not_null(tmp);
 
     if (basic_type != T_OBJECT) {
       __ cmp_klass_compressed(dst, tmp, t0, halt, false);
