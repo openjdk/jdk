@@ -43,7 +43,6 @@ class InlineTree;
 class ciMethod;
 class JVMState;
 class LRG;
-class PrintProperties;
 class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
@@ -170,20 +169,6 @@ private:
   void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, const frame* fr = nullptr);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
-};
-
-class PrintProperties
-{
-private:
-  IdealGraphPrinter* _printer;
-
-public:
-  PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
-  void print_node_properties(Node* node, Compile* C);
-  void print_lrg_properties(const LRG &lrg, const char* buffer);
-  void print_property(int flag, const char* name);
-  void print_property(int flag, const char* name, const char* val);
-  void print_property(int flag, const char* name, int val);
 };
 
 #endif
