@@ -134,10 +134,10 @@ public:
 
   static inline ShenandoahAllocRequest for_shared_gc(size_t requested_size, ShenandoahAffiliation affiliation, bool is_promotion = false) {
     if (is_promotion) {
-      assert(affiliation == ShenandoahAffiliation::OLD_GENERATION, "Should only promote to old generation");
+      assert(affiliation == OLD_GENERATION, "Should only promote to old generation");
       return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc_promotion);
     }
-    if (affiliation ==OLD_GENERATION) {
+    if (affiliation == OLD_GENERATION) {
       return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc_old);
     }
     return ShenandoahAllocRequest(0, requested_size, _alloc_shared_gc);

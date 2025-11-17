@@ -1607,18 +1607,10 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   ShenandoahFreeSetPartitionId orig_partition;
   if (req.is_mutator_alloc()) {
-    assert(req.type() == ShenandoahAllocRequest::_alloc_tlab ||
-           req.type() == ShenandoahAllocRequest::_alloc_shared ||
-           req.type() == ShenandoahAllocRequest::_alloc_cds, "Must be one of the mutator alloc types.");
     orig_partition = ShenandoahFreeSetPartitionId::Mutator;
   } else if (req.is_old()) {
-    assert(req.type() == ShenandoahAllocRequest::_alloc_shared_gc_old ||
-           req.type() == ShenandoahAllocRequest::_alloc_shared_gc_promotion ||
-           req.type() == ShenandoahAllocRequest::_alloc_plab, "Must be one of the old alloc types.");
     orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
   } else {
-    assert(req.type() == ShenandoahAllocRequest::_alloc_shared_gc ||
-           req.type() == ShenandoahAllocRequest::_alloc_gclab, "Must be.");
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
@@ -3255,6 +3247,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
   if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:
+      case ShenandoahAllocRequest::_alloc_shared_gc:
         in_new_region = true;
         return allocate_contiguous(req, /* is_humongous = */ true);
       case ShenandoahAllocRequest::_alloc_cds:
