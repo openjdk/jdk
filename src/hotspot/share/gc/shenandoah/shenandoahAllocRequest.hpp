@@ -61,7 +61,7 @@ public:
   static constexpr Type _alloc_shared_gc_old       = bit_gc_alloc | bit_old_alloc;
   static constexpr Type _alloc_shared_gc_promotion = bit_gc_alloc | bit_old_alloc | bit_promotion_alloc;
   static constexpr Type _alloc_gclab               = bit_gc_alloc | bit_lab_alloc;
-  static constexpr Type _alloc_plab                = bit_gc_alloc | bit_plab_alloc | bit_old_alloc;
+  static constexpr Type _alloc_plab                = bit_gc_alloc | bit_lab_alloc | bit_plab_alloc | bit_old_alloc;
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
