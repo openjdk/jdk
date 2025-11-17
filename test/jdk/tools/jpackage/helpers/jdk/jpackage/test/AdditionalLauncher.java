@@ -101,6 +101,11 @@ public final class AdditionalLauncher {
         return this;
     }
 
+    public AdditionalLauncher removeProperty(String name) {
+        rawProperties.remove(Objects.requireNonNull(name));
+        return this;
+    }
+
     public AdditionalLauncher setShortcuts(boolean menu, boolean desktop) {
         if (TKit.isLinux()) {
             setShortcut(LINUX_SHORTCUT, desktop);
@@ -160,7 +165,7 @@ public final class AdditionalLauncher {
 
     public void applyTo(JPackageCommand cmd) {
         cmd.addPrerequisiteAction(this::initialize);
-        cmd.addVerifyAction(createVerifierAsConsumer());
+        cmd.addVerifyAction(createVerifierAsConsumer(), JPackageCommand.ActionRole.LAUNCHER_VERIFIER);
     }
 
     public void applyTo(PackageTest test) {
