@@ -216,9 +216,6 @@ ciField::ciField(fieldDescriptor *fd) :
 static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   if (holder == nullptr)
     return false;
-  if (holder->name() == ciSymbols::java_lang_System())
-    // Never trust strangely unstable finals:  System.out, etc.
-    return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
       holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
@@ -230,14 +227,8 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in all boxed classes
-  if (holder->is_box_klass())
-    return true;
   // Trust final fields in records
   if (holder->is_record())
-    return true;
-  // Trust final fields in String
-  if (holder->name() == ciSymbols::java_lang_String())
     return true;
   // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
   // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
@@ -400,7 +391,7 @@ bool ciField::will_link(ciMethod* accessing_method,
                      _name->get_symbol(), _signature->get_symbol(),
                      methodHandle(THREAD, accessing_method->get_Method()));
   fieldDescriptor result;
-  LinkResolver::resolve_field(result, link_info, bc, false, CHECK_AND_CLEAR_(false));
+  LinkResolver::resolve_field(result, link_info, bc, ClassInitMode::dont_init, CHECK_AND_CLEAR_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_method->holder()->is_shared() || !is_shared()) {

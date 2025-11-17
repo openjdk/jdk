@@ -64,7 +64,7 @@ public interface CFrame {
 
   /** Gets the base pointer in this frame from which local variable
       offsets in the debug info are based. Typically this is the
-      base-of-frame pointer (EBP on x86, FP/I6 on SPARC). */
+      base-of-frame pointer (RBP on amd64, FP/I6 on SPARC). */
   public Address localVariableBase();
 
   /** Visit all local variables in this frame if debug information is
