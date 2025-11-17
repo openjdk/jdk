@@ -30,53 +30,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * @test id=no_coops_no_ccptr_no_coh
+ * @test id=no_coops_no_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
- * @test id=coops_no_ccptr_no_coh
+ * @test id=coops_no_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
- * @test id=no_coops_ccptr_no_coh
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
- */
-
-/*
- * @test id=coops_ccptr_no_coh
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
- */
-
-/*
- * @test id=no_coops_ccptr_coh
+ * @test id=no_coops_coh
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompactObjectHeaders TestOopMapSizeMinimal
+ */
+
+/*
+ * @test id=coops_coh
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 public class TestOopMapSizeMinimal {
@@ -99,10 +89,8 @@ public class TestOopMapSizeMinimal {
         if (is_64_bit) {
             if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
                 HEADER_SIZE_IN_BYTES = 8;
-            } else if (WB.getBooleanVMFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE")) {
-                HEADER_SIZE_IN_BYTES = 12;
             } else {
-                HEADER_SIZE_IN_BYTES = 16;
+                HEADER_SIZE_IN_BYTES = 12;
             }
         } else {
             HEADER_SIZE_IN_BYTES = 8;
