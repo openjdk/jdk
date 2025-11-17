@@ -102,13 +102,17 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
+ *   HttpRequest request = HttpRequest.newBuilder()
+ *       .uri(URI.create("https://foo.com/"))
+ *       .build();
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
  *   System.out.println(response.body());  }
  *
  * <p><b>Asynchronous Example</b>
  * {@snippet :
- *    HttpRequest request = HttpRequest.newBuilder()
+ *   HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
@@ -933,7 +937,7 @@ public abstract class HttpClient implements AutoCloseable {
      * <p> If interrupted while waiting, this method may attempt to stop all
      * operations by calling {@link #shutdownNow()}. It then continues to wait
      * until all actively executing operations have completed.
-     * The interrupt status will be re-asserted before this method returns.
+     * The interrupted status will be re-asserted before this method returns.
      *
      * <p> If already terminated, invoking this method has no effect.
      *

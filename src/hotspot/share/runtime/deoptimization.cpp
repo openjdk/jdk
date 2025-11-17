@@ -74,7 +74,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -85,7 +84,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -1377,6 +1376,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1404,6 +1406,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
@@ -1671,8 +1676,8 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         }
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                              deoptee_thread, thread);
+            ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                           deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
