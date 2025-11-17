@@ -2074,14 +2074,12 @@ class Http2Connection implements Closeable {
 
             if (Log.errors()) {
                 Log.logError("Closing connection due to: {0}", tc);
-            } else {
-                if (debug.on()) {
-                    final String stateStr = "Abnormal close=" + tc.isAbnormalClose() +
-                            ", has active streams=" + isActive() +
-                            ", GOAWAY received=" + goAwayRecvd.get() +
-                            ", GOAWAY sent=" + goAwaySent.get();
-                    debug.log("Closing connection (" + stateStr + ") due to: " + tc);
-                }
+            } else if (debug.on()) {
+                final String stateStr = "Abnormal close=" + tc.isAbnormalClose() +
+                        ", has active streams=" + isActive() +
+                        ", GOAWAY received=" + goAwayRecvd.get() +
+                        ", GOAWAY sent=" + goAwaySent.get();
+                debug.log("Closing connection (" + stateStr + ") due to: " + tc);
             }
             // close the TubeSubscriber
             subscriber.close();
