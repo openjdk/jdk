@@ -53,7 +53,8 @@ enum {
   JMM_VERSION_2   = 0x20020000, // JDK 10
   JMM_VERSION_3   = 0x20030000, // JDK 14
   JMM_VERSION_4   = 0x20040000, // JDK 21
-  JMM_VERSION     = JMM_VERSION_4
+  JMM_VERSION_5   = 0x20050000, // JDK 26
+  JMM_VERSION     = JMM_VERSION_5
 };
 
 typedef struct {
@@ -81,6 +82,7 @@ typedef enum {
   JMM_GC_TIME_MS                     = 9,    /* Total accumulated time spent in collection */
   JMM_GC_COUNT                       = 10,   /* Total number of collections */
   JMM_JVM_UPTIME_MS                  = 11,   /* The JVM uptime in milliseconds */
+  JMM_TOTAL_GC_CPU_TIME              = 12,   /* Total accumulated GC CPU time */
 
   JMM_INTERNAL_ATTRIBUTE_INDEX       = 100,
   JMM_CLASS_LOADED_BYTES             = 101,  /* Number of bytes loaded instance classes */

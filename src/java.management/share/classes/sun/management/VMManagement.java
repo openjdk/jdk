@@ -55,6 +55,7 @@ public interface VMManagement {
     public boolean getVerboseClass();
 
     // Memory Subsystem
+    public long    getTotalGcCpuTime();
     public boolean getVerboseGC();
 
     // Runtime Subsystem

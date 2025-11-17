@@ -36,6 +36,7 @@
 volatile bool CPUTimeUsage::Error::_has_error = false;
 
 static inline jlong thread_cpu_time_or_zero(Thread* thread) {
+  assert(!Universe::is_shutting_down(), "Should not query during shutdown");
   jlong cpu_time = os::thread_cpu_time(thread);
   if (cpu_time == -1) {
     CPUTimeUsage::Error::mark_error();
