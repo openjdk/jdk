@@ -24,12 +24,10 @@
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.quic.QuicServerConnection;
 import jdk.httpclient.test.lib.quic.QuicStandaloneServer;
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import jdk.test.lib.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -46,8 +44,6 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HexFormat;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
@@ -65,6 +61,71 @@ import static org.testng.Assert.*;
  *              -Djdk.internal.httpclient.debug=true
  *              -Djdk.httpclient.HttpClient.log=requests,responses,errors H3MalformedResponseTest
  */
+
+/// Verifies that the HTTP/3 malformed responses are correctly handled.
+///
+/// ### HTTP/3 `HEADERS` frame & QPACK Field Section encoding crash course
+///
+/// Consider an HTTP/3 `HEADERS` frame that carries:
+///
+/// ```
+/// :status: 200
+/// content-length: 2
+/// ```
+///
+/// This will be encoded as the following byte sequence:
+///
+/// ```
+/// 01 06 00 00 D9 54 01 32
+/// ```
+///
+/// Let's start with decoding the HTTP/3 frame:
+///
+/// - `01`: Frame Type (`01` denotes `HEADERS``)
+///
+/// - `06`: Payload length (6 bytes)
+///
+/// Figured this is a `HEADERS` frame containing 6 bytes: `00 00 D9 54 01 32`.
+/// Let's decode the QPACK Field Section
+///
+/// - `00`: Required Insert Count (0)
+///
+/// - `00`: Base (0)
+///
+/// - `D9`:
+///   QPACK has a static table (indexed from 0) and `:status: 200` is at the
+///   static-table index 25.
+///
+///   ```
+///   D9 = <1101 1001>
+///      = <1> (Indexed Field Line)
+///      + <1> (Static Table)
+///      + <01 1001> (entry index = 25)
+///   ```
+///
+/// - `54 01 32`:
+///   `content-length: 2` can be encoded as a *literal field line with name
+///   reference* using the static name `content-length` (static index 4) and
+///   the literal value `2`.
+///
+///   ```
+///   54 01 32 = <0101 0100 0000 0001 0011 0010>
+///            = <0> (Literal Field Line)
+///            + <1> (Name Reference)
+///            + <0100> (entry index = 4)
+///            + <0000 0001> (value length = 1 byte)
+///            + <0011 0010> (value = ASCII "2" = 0x32 = 50)
+///   ```
+///
+/// Note that the `value length` field (i.e., `0000 0001`) follows a variable
+/// coding scheme:
+///
+/// | Prefix                | Total size | Payload size | Max value     |
+/// | --------------------- | ---------- | ------------ | ------------- |
+/// | `00xx xxxx`           | 1 byte     | 6 bits       | 63            |
+/// | `01xx xxxx xxxx xxxx` | 2 bytes    | 14 bits      | 16,383        |
+/// | `10xx xxx…`           | 4 bytes    | 30 bits      | 1,073,741,823 |
+/// | `11xx xxx…`           | 8 bytes    | 62 bits      | 4.61e18       |
 public class H3MalformedResponseTest implements HttpServerAdapters {
 
     private SSLContext sslContext;
@@ -417,10 +478,6 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
                 .version(Version.HTTP_3)
                 .sslContext(sslContext).build();
         return client;
-    }
-
-    private static String toHexString(final Http3Error error) {
-        return error.name() + "(0x" + Long.toHexString(error.code()) + ")";
     }
 
     private static void completeUponTermination(final QuicServerConnection serverConnection,
