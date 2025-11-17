@@ -2633,7 +2633,7 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 #ifdef _LP64
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP) ||
                       (UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN) ||
-                      (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
+                      (check->as_Mach()->ideal_Opcode() == Op_DecodeNKlass) ||
 #endif // _LP64
                       check->as_Mach()->ideal_Opcode() == Op_LoadP ||
                       check->as_Mach()->ideal_Opcode() == Op_LoadKlass))) {
