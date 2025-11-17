@@ -1236,7 +1236,6 @@ void MacroAssembler::load_narrow_oop(Register t, narrowOop a) {
 
 // Load narrow klass constant, compression required.
 void MacroAssembler::load_narrow_klass(Register t, Klass* k) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "must be on to call this method");
   narrowKlass encoded_k = CompressedKlassPointers::encode(k);
   load_const_32to64(t, encoded_k, false /*sign_extend*/);
 }
@@ -1254,7 +1253,6 @@ void MacroAssembler::compare_immediate_narrow_oop(Register oop1, narrowOop oop2)
 
 // Compare narrow oop in reg with narrow oop constant, no decompression.
 void MacroAssembler::compare_immediate_narrow_klass(Register klass1, Klass* klass2) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "must be on to call this method");
   narrowKlass encoded_k = CompressedKlassPointers::encode(klass2);
 
   Assembler::z_clfi(klass1, encoded_k);
@@ -1347,8 +1345,6 @@ int MacroAssembler::patch_load_narrow_oop(address pos, oop o) {
 // Patching the immediate value of CPU version dependent load_narrow_klass sequence.
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_load_narrow_klass(address pos, Klass* k) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Can only patch compressed klass pointers");
-
   narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_load_const_32to64(pos, nk);
 }
@@ -1363,8 +1359,6 @@ int MacroAssembler::patch_compare_immediate_narrow_oop(address pos, oop o) {
 // Patching the immediate value of CPU version dependent compare_immediate_narrow_klass sequence.
 // The passed ptr must NOT be in compressed format!
 int MacroAssembler::patch_compare_immediate_narrow_klass(address pos, Klass* k) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Can only patch compressed klass pointers");
-
   narrowKlass nk = CompressedKlassPointers::encode(k);
   return patch_compare_immediate_32(pos, nk);
 }
@@ -2234,10 +2228,8 @@ int MacroAssembler::ic_check(int end_alignment) {
 
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(R1_scratch, R2_receiver);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
   } else {
-    z_lg(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
+    z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
   }
   z_cg(R1_scratch, Address(R9_data, in_bytes(CompiledICData::speculated_klass_offset())));
   z_bre(success);
@@ -3915,7 +3907,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
   bool     need_zero_extend = base != nullptr;
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
 
@@ -4012,7 +4003,6 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
   address  base    = CompressedKlassPointers::base();
   int shift_size   = CompressedKlassPointers::shift() == 0 ? 0 : 6; /* sllg */
   int addbase_size = 0;
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "only for compressed klass ptrs");
 
   if (base != nullptr) {
     unsigned int base_h = ((unsigned long)base)>>32;
@@ -4042,7 +4032,6 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
   int      beg_off = offset();
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass decoder (const size) {");
 
@@ -4084,7 +4073,6 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   address base  = CompressedKlassPointers::base();
   int     shift = CompressedKlassPointers::shift();
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass decoder {");
 
@@ -4124,13 +4112,9 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 }
 
 void MacroAssembler::load_klass(Register klass, Address mem) {
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    z_llgf(klass, mem);
-    // Attention: no null check here!
-    decode_klass_not_null(klass);
-  } else {
-    z_lg(klass, mem);
-  }
+  z_llgf(klass, mem);
+  // Attention: no null check here!
+  decode_klass_not_null(klass);
 }
 
 // Loads the obj's Klass* into dst.
@@ -4153,10 +4137,8 @@ void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
     assert_different_registers(klass, obj, tmp);
     load_narrow_klass_compact(tmp, obj);
     z_cr(klass, tmp);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    z_c(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
   } else {
-    z_cg(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+    z_c(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
   BLOCK_COMMENT("} cmp_klass");
 }
@@ -4169,12 +4151,9 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2, obj2);
     z_cr(tmp1, tmp2);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  } else {
     z_l(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
     z_c(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
-  } else {
-    z_lg(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    z_cg(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
   }
   BLOCK_COMMENT("} cmp_klasses_from_objects");
 }
@@ -4183,36 +4162,28 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(klass, src_oop);
     decode_klass_not_null(klass);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  } else {
     z_llgf(klass, oopDesc::klass_offset_in_bytes(), src_oop);
     decode_klass_not_null(klass);
-  } else {
-    z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
   }
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    assert_different_registers(dst_oop, klass, Z_R0);
-    if (ck == noreg) ck = klass;
-    encode_klass_not_null(ck, klass);
-    z_st(ck, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
-  } else {
-    z_stg(klass, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
-  }
+  assert_different_registers(dst_oop, klass, Z_R0);
+  if (ck == noreg) ck = klass;
+  encode_klass_not_null(ck, klass);
+  z_st(ck, Address(dst_oop, oopDesc::klass_offset_in_bytes()));
 }
 
 void MacroAssembler::store_klass_gap(Register s, Register d) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    assert(s != d, "not enough registers");
-    // Support s = noreg.
-    if (s != noreg) {
-      z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
-    } else {
-      z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
-    }
+  assert(s != d, "not enough registers");
+  // Support s = noreg.
+  if (s != noreg) {
+    z_st(s, Address(d, oopDesc::klass_gap_offset_in_bytes()));
+  } else {
+    z_mvhi(Address(d, oopDesc::klass_gap_offset_in_bytes()), 0);
   }
 }
 
@@ -4226,67 +4197,64 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
 
   BLOCK_COMMENT("compare klass ptr {");
 
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    const int shift = CompressedKlassPointers::shift();
-    address   base  = CompressedKlassPointers::base();
+  const int shift = CompressedKlassPointers::shift();
+  address   base  = CompressedKlassPointers::base();
 
-    if (UseCompactObjectHeaders) {
-      assert(shift >= 3, "cKlass encoder detected bad shift");
-    } else {
-      assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");
-    }
-    assert_different_registers(Rop1, Z_R0);
-    assert_different_registers(Rop1, Rbase, Z_R1);
-
-    // First encode register oop and then compare with cOop in memory.
-    // This sequence saves an unnecessary cOop load and decode.
-    if (base == nullptr) {
-      if (shift == 0) {
-        z_cl(Rop1, disp, Rbase);     // Unscaled
-      } else {
-        z_srlg(Z_R0, Rop1, shift);   // ZeroBased
-        z_cl(Z_R0, disp, Rbase);
-      }
-    } else {                         // HeapBased
-#ifdef ASSERT
-      bool     used_R0 = true;
-      bool     used_R1 = true;
-#endif
-      Register current = Rop1;
-      Label    done;
-
-      if (maybenull) {       // null pointer must be preserved!
-        z_ltgr(Z_R0, current);
-        z_bre(done);
-        current = Z_R0;
-      }
-
-      unsigned int base_h = ((unsigned long)base)>>32;
-      unsigned int base_l = (unsigned int)((unsigned long)base);
-      if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
-        lgr_if_needed(Z_R0, current);
-        z_aih(Z_R0, -((int)base_h));     // Base has no set bits in lower half.
-      } else if ((base_h == 0) && (base_l != 0)) {
-        lgr_if_needed(Z_R0, current);
-        z_agfi(Z_R0, -(int)base_l);
-      } else {
-        int pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
-        add2reg_with_index(Z_R0, pow2_offset, Z_R1, Rop1); // Subtract base by adding complement.
-      }
-
-      if (shift != 0) {
-        z_srlg(Z_R0, Z_R0, shift);
-      }
-      bind(done);
-      z_cl(Z_R0, disp, Rbase);
-#ifdef ASSERT
-      if (used_R0) preset_reg(Z_R0, 0xb05bUL, 2);
-      if (used_R1) preset_reg(Z_R1, 0xb06bUL, 2);
-#endif
-    }
+  if (UseCompactObjectHeaders) {
+    assert(shift >= 3, "cKlass encoder detected bad shift");
   } else {
-    z_clg(Rop1, disp, Z_R0, Rbase);
+    assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");
   }
+  assert_different_registers(Rop1, Z_R0);
+  assert_different_registers(Rop1, Rbase, Z_R1);
+
+  // First encode register oop and then compare with cOop in memory.
+  // This sequence saves an unnecessary cOop load and decode.
+  if (base == nullptr) {
+    if (shift == 0) {
+      z_cl(Rop1, disp, Rbase);     // Unscaled
+    } else {
+      z_srlg(Z_R0, Rop1, shift);   // ZeroBased
+      z_cl(Z_R0, disp, Rbase);
+    }
+  } else {                         // HeapBased
+#ifdef ASSERT
+    bool     used_R0 = true;
+    bool     used_R1 = true;
+#endif
+    Register current = Rop1;
+    Label    done;
+
+    if (maybenull) {       // null pointer must be preserved!
+      z_ltgr(Z_R0, current);
+      z_bre(done);
+      current = Z_R0;
+    }
+
+    unsigned int base_h = ((unsigned long)base)>>32;
+    unsigned int base_l = (unsigned int)((unsigned long)base);
+    if ((base_h != 0) && (base_l == 0) && VM_Version::has_HighWordInstr()) {
+      lgr_if_needed(Z_R0, current);
+      z_aih(Z_R0, -((int)base_h));     // Base has no set bits in lower half.
+    } else if ((base_h == 0) && (base_l != 0)) {
+      lgr_if_needed(Z_R0, current);
+      z_agfi(Z_R0, -(int)base_l);
+    } else {
+      int pow2_offset = get_oop_base_complement(Z_R1, ((uint64_t)(intptr_t)base));
+      add2reg_with_index(Z_R0, pow2_offset, Z_R1, Rop1); // Subtract base by adding complement.
+    }
+
+    if (shift != 0) {
+      z_srlg(Z_R0, Z_R0, shift);
+    }
+    bind(done);
+    z_cl(Z_R0, disp, Rbase);
+#ifdef ASSERT
+    if (used_R0) preset_reg(Z_R0, 0xb05bUL, 2);
+    if (used_R1) preset_reg(Z_R1, 0xb06bUL, 2);
+#endif
+  }
+
   BLOCK_COMMENT("} compare klass ptr");
 }
 
