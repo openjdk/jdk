@@ -631,9 +631,8 @@ void HeapShared::init_scratch_objects_for_basic_type_mirrors(TRAPS) {
 }
 
 // Given java_mirror that represents a (primitive or reference) type T,
-// return the "scratch" version that represents the same type T.
-// Note that if java_mirror will be returned if it's already a
-// scratch mirror.
+// return the "scratch" version that represents the same type T. Note
+// that java_mirror will be returned if the mirror is already a scratch mirror.
 //
 // See java_lang_Class::create_scratch_mirror() for more info.
 oop HeapShared::scratch_java_mirror(oop java_mirror) {

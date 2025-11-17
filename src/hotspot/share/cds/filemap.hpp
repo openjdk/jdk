@@ -290,7 +290,7 @@ public:
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
-  FileMapInfo(const char* full_apth, bool is_static);
+  FileMapInfo(const char* full_path, bool is_static);
   ~FileMapInfo();
   static void free_current_info();
 
