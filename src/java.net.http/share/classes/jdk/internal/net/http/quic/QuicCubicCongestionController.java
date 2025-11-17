@@ -118,15 +118,13 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
             // target = Wcubic(t + RTT)
             long rttNanos = TimeUnit.MICROSECONDS.toNanos(rttEstimator.state().smoothedRttMicros());
             double dblTargetBytes = wCubicBytes(timeNanos + rttNanos);
-            long targetBytes;
-            // not sure if dblTarget can overflow a long, but 1.5 congestionWindow can not.
-            if (dblTargetBytes > 1.5 * congestionWindow) {
-                targetBytes = (long) (1.5 * congestionWindow);
-            } else {
-                targetBytes = (long)dblTargetBytes;
-            }
+            assert dblTargetBytes > 0 : "Unexpected negative target bytes";
+            long targetBytes = (long) Math.min(dblTargetBytes, 1.5 * congestionWindow);
             if (targetBytes > congestionWindow) {
+                long oldWindow = congestionWindow;
                 congestionWindow += Math.max((targetBytes - congestionWindow) * packetBytes / congestionWindow, 1L);
+                assert congestionWindow > oldWindow :
+                        "Window size decreased: %s to %s".formatted(oldWindow, congestionWindow);
             }
             if (wEstBytes > congestionWindow) {
                 congestionWindow = wEstBytes;
