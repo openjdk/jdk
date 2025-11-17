@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,37 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_NMT_MEMTAGBITMAP_HPP
-#define SHARE_NMT_MEMTAGBITMAP_HPP
+// key: compiler.warn.bit.shift.out.of.range
+// options: -Xlint:lossy-conversions
 
-#include "nmt/memTag.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class MemTagBitmap {
-  uint32_t _v;
-  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_tags);
-
-public:
-  MemTagBitmap(uint32_t v = 0) : _v(v) {}
-  MemTagBitmap(const MemTagBitmap& o) : _v(o._v) {}
-
-  uint32_t raw_value() const { return _v; }
-
-  void set_tag(MemTag mem_tag) {
-    const int bitno = (int)mem_tag;
-    _v |= nth_bit(bitno);
-  }
-
-  bool has_tag(MemTag mem_tag) const {
-    const int bitno = (int)mem_tag;
-    return _v & nth_bit(bitno);
-  }
-
-  bool has_any() const { return _v > 0; }
-};
-
-#endif // SHARE_NMT_MEMTAGBITMAP_HPP
+class BitShiftOutOfRange {
+    int m(int a) {
+        return a << 32;
+    }
+}
