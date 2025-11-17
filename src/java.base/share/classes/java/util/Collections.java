@@ -5261,7 +5261,7 @@ public final class Collections {
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             if (a.length < 1)
-                a = (T[])java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), 1);
+                a = (T[])Array.newInstance(a.getClass().getComponentType(), 1);
             a[0] = (T)element;
             if (a.length > 1)
                 a[1] = null;
