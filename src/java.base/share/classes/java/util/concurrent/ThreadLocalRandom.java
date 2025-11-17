@@ -503,6 +503,14 @@ public final class ThreadLocalRandom extends Random {
      * {@inheritDoc}
      */
     @Override
+    public double nextGaussian() {
+        return RandomSupport.computeNextGaussian(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public float nextFloat() {
         return super.nextFloat();
     }
