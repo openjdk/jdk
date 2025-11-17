@@ -708,7 +708,6 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
-    assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "");
     assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
