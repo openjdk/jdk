@@ -32,11 +32,11 @@ public class TestLogMinValue {
     public static void main(String[] args) {
         double x = Double.MIN_VALUE; // 4.9E-324
         double mathLog = Math.log(x);
-        double strictLog = StrictMath.log(x);        
+        double strictLog = StrictMath.log(x);
         if (Double.isNaN(mathLog) || Double.isNaN(strictLog)) {
             throw new AssertionError("Unexpected NaN for log(Double.MIN_VALUE)");
         }
-        if (mathLog != strictLog) {            
+        if (mathLog != strictLog) {
             throw new AssertionError("Mismatch: Math.log=" + mathLog + " StrictMath.log=" + strictLog);
         }
     }
