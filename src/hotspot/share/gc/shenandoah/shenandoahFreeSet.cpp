@@ -1605,12 +1605,17 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
   }
 
+  size_t ac = alloc_capacity(r);
   ShenandoahFreeSetPartitionId orig_partition;
+  ShenandoahGeneration* request_generation = nullptr;
   if (req.is_mutator_alloc()) {
+    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Mutator;
   } else if (req.is_old()) {
+    request_generation = _heap->old_generation();
     orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
   } else {
+    request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
   if (alloc_capacity(r) < PLAB::min_size() * HeapWordSize) {
