@@ -107,7 +107,7 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
     }
 
 
-    protected boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
+    boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
         boolean isAppLimited = sentTime.isAfter(lastFullWindow);
         if (!isAppLimited) {
             if (wEstBytes < cwndPriorBytes) {
@@ -140,7 +140,7 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
         return (C * maxDatagramSize * Math.pow((timeNanos - kNanos) / 1e9, 3)) + wMaxBytes;
     }
 
-    protected void onCongestionEvent(Deadline sentTime) {
+    void onCongestionEvent(Deadline sentTime) {
         if (inCongestionRecovery(sentTime)) {
             return;
         }

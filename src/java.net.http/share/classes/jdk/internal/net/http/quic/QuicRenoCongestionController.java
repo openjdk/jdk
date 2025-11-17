@@ -42,7 +42,7 @@ final class QuicRenoCongestionController extends QuicBaseCongestionController {
         super(dbgTag, rttEstimator);
     }
 
-    protected boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
+    boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime) {
         boolean isAppLimited = congestionWindow > maxBytesInFlight + 2L * maxDatagramSize;
         if (!isAppLimited) {
             congestionWindow += Math.max((long) maxDatagramSize * packetBytes / congestionWindow, 1L);
@@ -50,7 +50,7 @@ final class QuicRenoCongestionController extends QuicBaseCongestionController {
         return isAppLimited;
     }
 
-    protected void onCongestionEvent(Deadline sentTime) {
+    void onCongestionEvent(Deadline sentTime) {
         if (inCongestionRecovery(sentTime)) {
             return;
         }

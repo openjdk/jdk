@@ -56,39 +56,39 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     private static final int MAX_BYTES_IN_FLIGHT = Math.clamp(
             Utils.getLongProperty("jdk.httpclient.quic.maxBytesInFlight", 1 << 24),
             1 << 14, 1 << 24);
-    protected final TimeLine timeSource;
-    protected final String dbgTag;
-    protected final Lock lock = new ReentrantLock();
-    protected long congestionWindow = INITIAL_WINDOW;
-    protected int maxDatagramSize = QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE;
-    protected int minimumWindow = 2 * maxDatagramSize;
-    protected long bytesInFlight;
+    final TimeLine timeSource;
+    final String dbgTag;
+    final Lock lock = new ReentrantLock();
+    long congestionWindow = INITIAL_WINDOW;
+    int maxDatagramSize = QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE;
+    int minimumWindow = 2 * maxDatagramSize;
+    long bytesInFlight;
     // maximum bytes in flight seen since the last congestion event
-    protected long maxBytesInFlight;
-    protected Deadline congestionRecoveryStartTime;
-    protected long ssThresh = Long.MAX_VALUE;
+    long maxBytesInFlight;
+    Deadline congestionRecoveryStartTime;
+    long ssThresh = Long.MAX_VALUE;
 
     private final QuicPacer pacer;
 
-    protected QuicBaseCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
+    QuicBaseCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
         this.dbgTag = dbgTag;
         this.timeSource = TimeSource.source();
         this.pacer = new QuicPacer(rttEstimator, this);
     }
 
     // for testing
-    protected QuicBaseCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
+    QuicBaseCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
         this.dbgTag = "TEST";
         this.timeSource = source;
         this.pacer = new QuicPacer(rttEstimator, this);
     }
 
-    protected boolean inCongestionRecovery(Deadline sentTime) {
+    boolean inCongestionRecovery(Deadline sentTime) {
         return (congestionRecoveryStartTime != null &&
                 !sentTime.isAfter(congestionRecoveryStartTime));
     }
 
-    protected abstract void onCongestionEvent(Deadline sentTime);
+    abstract void onCongestionEvent(Deadline sentTime);
 
     private static boolean inFlight(QuicPacket packet) {
         // packet is in flight if it contains anything other than a single ACK frame
@@ -181,7 +181,7 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
         }
     }
 
-    protected abstract boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime);
+    abstract boolean congestionAvoidanceAcked(int packetBytes, Deadline sentTime);
 
     @Override
     public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) {
