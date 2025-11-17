@@ -141,7 +141,7 @@ public abstract sealed class Http2TerminationCause {
      * being idle.
      */
     public static Http2TerminationCause idleTimedOut() {
-        return new NoError("HTTP/2 connection idle timed out", "idle timed out");
+        return NoError.IDLE_TIMED_OUT;
     }
 
     /**
@@ -179,24 +179,25 @@ public abstract sealed class Http2TerminationCause {
     private static final class NoError extends Http2TerminationCause {
         private static final IOException NO_ERROR_MARKER =
                 new IOException("HTTP/2 connection closed normally - no error");
+        private static final IOException NO_ERROR_IDLE_TIMED_OUT_MARKER =
+                new IOException("HTTP/2 connection idle timed out - no error");
 
         static {
-            // remove the stacktrace from this marker exception instance
+            // remove the stacktrace from the marker exception instances
             NO_ERROR_MARKER.setStackTrace(new StackTraceElement[0]);
+            NO_ERROR_IDLE_TIMED_OUT_MARKER.setStackTrace(new StackTraceElement[0]);
         }
 
-        private static final NoError INSTANCE = new NoError();
+        private static final NoError INSTANCE = new NoError(false);
+        private static final NoError IDLE_TIMED_OUT = new NoError(true);
 
-        private NoError() {
-            super(ErrorFrame.NO_ERROR, NO_ERROR_MARKER);
-            setPeerVisibleReason("no error");
-        }
+        private final boolean idleTimedOut;
 
-        private NoError(final String loggedAs, final String peerVisibleReason) {
-            super(ErrorFrame.NO_ERROR, loggedAs);
-            if (peerVisibleReason != null) {
-                setPeerVisibleReason(peerVisibleReason);
-            }
+        private NoError(final boolean idleTimedOut) {
+            super(ErrorFrame.NO_ERROR,
+                    idleTimedOut ? NO_ERROR_IDLE_TIMED_OUT_MARKER : NO_ERROR_MARKER);
+            this.idleTimedOut = idleTimedOut;
+            setPeerVisibleReason(idleTimedOut ? "idle timed out" : "no error");
         }
 
         @Override
@@ -206,7 +207,9 @@ public abstract sealed class Http2TerminationCause {
 
         @Override
         public String toString() {
-            return "No error - normal termination";
+            return this.idleTimedOut
+                    ? "No error - idle timed out"
+                    : "No error - normal termination";
         }
     }
 
