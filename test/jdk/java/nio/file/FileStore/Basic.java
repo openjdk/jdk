@@ -73,12 +73,8 @@ public class Basic {
         FileStore store = Files.getFileStore(file);
         boolean supported = store.supportsFileAttributeView(viewClass);
         assertTrue(store.supportsFileAttributeView(viewName) == supported);
-        // A FileSystemProvider may support many views but some of these attributes
-        // in these views may not supported on all FileStores.
-        // So we only do this check on AIX added by JDK-8360887/8361183
-        if (Platform.isAix()) {
-            boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
-            assertTrue(haveView == supported);
+        if (supported) {
+            assertNotNull(Files.getFileAttributeView(file, viewClass));
         }
     }
 
