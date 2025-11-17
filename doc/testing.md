@@ -289,7 +289,7 @@ set. So, for instance, `JTREG="JOBS=1;TIMEOUT_FACTOR=8"` will set the JTReg
 concurrency level to 1 and the timeout factor to 8. This is equivalent to
 setting `JTREG_JOBS=1 JTREG_TIMEOUT_FACTOR=8`, but using the keyword format
 means that the `JTREG` variable is parsed and verified for correctness, so
-`JTREG="OUT_FACTOR=8"` would give an error, while `JTREG_TIMEOUT_FACTOR=8`
+`JTREG="TIMEOUT_FACTOR=8"` would give an error, while `JTREG_TIMEOUT_FACTOR=8`
 would just pass unnoticed.
 
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell

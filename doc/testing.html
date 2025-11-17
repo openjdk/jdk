@@ -372,9 +372,9 @@ to be set. So, for instance,
 concurrency level to 1 and the timeout factor to 8. This is equivalent
 to setting <code>JTREG_JOBS=1 JTREG_TIMEOUT_FACTOR=8</code>, but using
 the keyword format means that the <code>JTREG</code> variable is parsed
-and verified for correctness, so <code>JTREG="OUT_FACTOR=8"</code> would
-give an error, while <code>JTREG_TIMEOUT_FACTOR=8</code> would just pass
-unnoticed.</p>
+and verified for correctness, so <code>JTREG="TIMEOUT_FACTOR=8"</code>
+would give an error, while <code>JTREG_TIMEOUT_FACTOR=8</code> would
+just pass unnoticed.</p>
 <p>To separate multiple keyword=value pairs, use <code>;</code>
 (semicolon). Since the shell normally eats <code>;</code>, the
 recommended usage is to write the assignment inside quotes, e.g.
