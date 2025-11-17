@@ -467,8 +467,8 @@ the JVM.
 
 `--enable-final-field-mutation` *module*\[,*module*...\]
 :   Mutation of final fields is possible with the reflection API of the Java Platform.
-    _However, it compromises safety and performance in all programs.
-    This option allows code_ in the specified modules to mutate final fields by reflection.
+    However, it compromises safety and performance in all programs.
+    This option allows code in the specified modules to mutate final fields by reflection.
     Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
 
     *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
