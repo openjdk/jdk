@@ -658,7 +658,8 @@ void Metaspace::ergo_initialize() {
 
   MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  if (using_class_space()) {
+
     // Let Class Space not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
     // class space : non class space usage is about 1:6. With many small classes,
@@ -724,15 +725,12 @@ void Metaspace::global_initialize() {
     AOTMetaspace::initialize_for_static_dump();
   }
 
-  // If USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE=1, we have two cases:
   // a) if CDS is active (runtime, Xshare=on), it will create the class space
-  //    for us, initialize it and set up CompressedKlassPointers encoding.
-  //    Class space will be reserved above the mapped archives.
+  //    for us. It then will set up encoding.
   // b) if CDS either deactivated (Xshare=off) or a static dump is to be done (Xshare:dump),
   //    we will create the class space on our own. It will be placed above the java heap,
-  //    since we assume it has been placed in low
-  //    address regions. We may rethink this (see JDK-8244943). Failing that,
-  //    it will be placed anywhere.
+  //    since we assume it has been placed in low address regions. Failing that, it will
+  //    be placed anywhere.
 
 #if INCLUDE_CDS
   // case (a)
@@ -835,12 +833,10 @@ void Metaspace::global_initialize() {
   }
 
 #else
-  // +USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE on 32-bit: does not need class space. Klass can live wherever.
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    const address start = (address)os::vm_min_address(); // but not in the zero page
-    const address end = (address)CompressedKlassPointers::max_klass_range_size();
-    CompressedKlassPointers::initialize(start, end - start);
-  }
+  // 32-bit:
+  const address start = (address)os::vm_min_address(); // but not in the zero page
+  const address end = (address)CompressedKlassPointers::max_klass_range_size();
+  CompressedKlassPointers::initialize(start, end - start);
 #endif // __LP64
 
   // Initialize non-class virtual space list, and its chunk manager:
@@ -848,15 +844,12 @@ void Metaspace::global_initialize() {
 
   _tracer = new MetaspaceTracer();
 
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    // Note: "cds" would be a better fit but keep this for backward compatibility.
-    LogTarget(Info, gc, metaspace) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      CDS_ONLY(AOTMetaspace::print_on(&ls);)
-      Metaspace::print_compressed_class_space(&ls);
-      CompressedKlassPointers::print_mode(&ls);
-    }
+  LogTarget(Info, gc, metaspace) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    CDS_ONLY(AOTMetaspace::print_on(&ls);)
+    Metaspace::print_compressed_class_space(&ls);
+    CompressedKlassPointers::print_mode(&ls);
   }
 }
 
