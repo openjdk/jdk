@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @requires vm.flagless
  * @comment Run with the smallest stack possible to limit the execution time.
  *          This is the smallest stack that is supported by all platforms.
- * @run main/othervm -Xss384K -Xint TestStackOverflowDuringInit
+ * @run main/othervm -Xss448K -Xint TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
