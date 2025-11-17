@@ -1369,12 +1369,12 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   };
 
   if (stub != nullptr) {
-    __ step_random(r_profile_rng, rscratch1);
     __ cmpl(r_profile_rng, threshold);
     __ jcc(Assembler::below, *stub->entry());
     __ bind(*stub->continuation());
+    __ step_random(r_profile_rng, rscratch1);
 
-    stub->set_doit(new ProfileCounterStub(lambda, op));
+    stub->set_doit(new LambdaWrapper(lambda, op));
     stub->set_name("Typecheck stub");
     append_code_stub(stub);
   } else {
@@ -1535,14 +1535,14 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       };
 
       if (profile_stub != nullptr) {
-        __ step_random(r_profile_rng, rscratch1);
         __ cmpl(r_profile_rng, threshold);
         __ jcc(Assembler::below, *profile_stub->entry());
         __ bind(*profile_stub->continuation());
+        __ step_random(r_profile_rng, rscratch1);
         __ testptr(value, value);
         __ jcc(Assembler::equal, done);
 
-        profile_stub->set_doit(new ProfileCounterStub(lambda, op));
+        profile_stub->set_doit(new LambdaWrapper(lambda, op));
         profile_stub->set_name("Typecheck profile stub");
         append_code_stub(profile_stub);
       } else {
@@ -2969,12 +2969,12 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
   };
 
   if (counter_stub != nullptr) {
-    __ step_random(r_profile_rng, temp);
     __ cmpl(r_profile_rng, threshold);
     __ jcc(Assembler::below, *counter_stub->entry());
     __ bind(*counter_stub->continuation());
+    __ step_random(r_profile_rng, temp);
 
-    counter_stub->set_doit(new ProfileCounterStub(lambda, nullptr));
+    counter_stub->set_doit(new LambdaWrapper(lambda, nullptr));
     counter_stub->set_name("IncrementProfileCtr");
     append_code_stub(counter_stub);
   } else {
@@ -3092,12 +3092,12 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   };
 
   if (stub != nullptr) {
-    __ step_random(r_profile_rng, temp);
     __ cmpl(r_profile_rng, threshold);
     __ jcc(Assembler::below, *stub->entry());
     __ bind(*stub->continuation());
+    __ step_random(r_profile_rng, temp);
 
-    stub->set_doit(new ProfileCounterStub(lambda, op));
+    stub->set_doit(new LambdaWrapper(lambda, op));
     stub->set_name("ProfileCallStub");
     append_code_stub(stub);
   } else {
@@ -3146,6 +3146,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   assert(do_null || do_update, "why are we here?");
   assert(!TypeEntries::was_null_seen(current_klass) || do_update, "why are we here?");
 
+  if (stub != nullptr)  __ bind(*stub->entry());
   __ verify_oop(obj);
 
 #ifdef ASSERT
@@ -3299,12 +3300,12 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   };
 
   if (stub != nullptr) {
-    __ step_random(r_profile_rng, tmp);
     __ cmpl(r_profile_rng, threshold);
     __ jcc(Assembler::below, *stub->entry());
     __ bind(*stub->continuation());
+    __ step_random(r_profile_rng, tmp);
 
-    stub->set_doit(new ProfileCounterStub(lambda, op));
+    stub->set_doit(new LambdaWrapper(lambda, op));
     stub->set_name("ProfileTypeStub");
     append_code_stub(stub);
   } else {

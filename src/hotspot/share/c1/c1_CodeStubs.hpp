@@ -130,17 +130,17 @@ public:
 };
 
 
-class AbstractProfileCounterStub : public CompilationResourceObj {
+class AbstractLambdaWrapper : public CompilationResourceObj {
 public:
   virtual void operator() (LIR_Assembler* ce) = 0;
 };
 
 template<typename T>
-struct ProfileCounterStub : public AbstractProfileCounterStub {
+struct LambdaWrapper : public AbstractLambdaWrapper {
   T _lambda;
   LIR_Op* _op;
 
-  ProfileCounterStub(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) { }
+  LambdaWrapper(T lambda, LIR_Op* op) : _lambda(lambda), _op(op) { }
   virtual void operator() (LIR_Assembler* ce) {
     _lambda(ce, _op);
   }
@@ -148,14 +148,14 @@ struct ProfileCounterStub : public AbstractProfileCounterStub {
 
 class ProfileStub: public CodeStub {
 private:
-  AbstractProfileCounterStub *_doit;
+  AbstractLambdaWrapper *_doit;
   const char* _name;
 
 public:
   ProfileStub() {
     _name = "ProfileStub";
   }
-  void set_doit(AbstractProfileCounterStub *doit) { _doit = doit; }
+  void set_doit(AbstractLambdaWrapper *doit) { _doit = doit; }
   void set_name(const char* name) { _name = name; }
   virtual void emit_code(LIR_Assembler* ce) {
     (*_doit)(ce);
@@ -165,6 +165,7 @@ public:
 #endif // PRODUCT
   virtual void visit(LIR_OpVisitState* visitor) { }
 };
+
 
 class ConversionStub: public CodeStub {
  private:

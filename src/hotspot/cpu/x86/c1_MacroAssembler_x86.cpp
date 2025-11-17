@@ -315,10 +315,19 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   // sall(temp, 5);
   // xorl(state, temp);
 
-  /* LCG from glibc. */
-  movl(temp, 1103515245);
-  imull(state, temp);
-  addl(state, 12345);
+  if (VM_Version::supports_sse4_2()) {
+    /* CRC used as a psuedo-random-number generator */
+    // From a theoretical point of view a CRC is a poor RNG because
+    // it's linear. But it's unbeatably fast, and plenty good enough
+    // for what we need.
+    movl(temp, 1);
+    crc32(state, temp, /*sizeInBytes*/2);
+  } else {
+    /* LCG from glibc. */
+    movl(temp, 1103515245);
+    imull(state, temp);
+    addl(state, 12345);
+  }
 
   int ratio_shift = exact_log2(ProfileCaptureRatio);
   int threshold = (1ull << 32) >> ratio_shift;
