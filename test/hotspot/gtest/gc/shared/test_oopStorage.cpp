@@ -47,7 +47,7 @@ public:
   typedef OopStorage::ActiveArray ActiveArray;
 
   static ActiveArray& active_array(const OopStorage& storage) {
-    return *storage._active_array.load_acquire();
+    return *storage._active_array.load_relaxed();
   }
 
   static AllocationList& allocation_list(OopStorage& storage) {
