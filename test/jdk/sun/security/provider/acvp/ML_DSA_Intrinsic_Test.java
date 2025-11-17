@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,9 @@
 
 import java.util.Arrays;
 import java.util.Random;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
 import java.util.HexFormat;
 
 /*
@@ -52,6 +49,10 @@ import java.util.HexFormat;
  * @modules java.base/sun.security.provider:+open
  * @run main ML_DSA_Intrinsic_Test
  */
+
+// To run manually: java --add-opens java.base/sun.security.provider=ALL-UNNAMED --add-exports java.base/sun.security.provider=ALL-UNNAMED
+//  -XX:+UnlockDiagnosticVMOptions -XX:+UseDilithiumIntrinsics test/jdk/sun/security/provider/acvp/ML_DSA_Intrinsic_Test.java
+
 public class ML_DSA_Intrinsic_Test {
     public static void main(String[] args) throws Exception {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -107,6 +108,7 @@ public class ML_DSA_Intrinsic_Test {
         m.setAccessible(true);
         MethodHandle inverseNttJava = lookup.unreflect(m);
 
+        // Hint: if test fails, you can hardcode the seed to make the test more reproducible
         Random rnd = new Random();
         long seed = rnd.nextLong();
         rnd.setSeed(seed);
@@ -120,8 +122,8 @@ public class ML_DSA_Intrinsic_Test {
         int[] prod4 = new int[ML_DSA_N];
         try {
             for (int i = 0; i < repeat; i++) {
-                // seed = rnd.nextLong();
-                //rnd.setSeed(seed);
+                // Hint: if test fails, you can hardcode the seed to make the test more reproducible:
+                // rnd.setSeed(seed);
                 testMult(prod1, prod2, coeffs1, coeffs2, mult, multJava, rnd, seed, i);
                 testMultConst(prod1, prod2, multConst, multConstJava, rnd, seed, i);
                 testDecompose(prod1, prod2, prod3, prod4, coeffs1, coeffs2, decompose, decomposeJava, rnd, seed, i);
@@ -214,9 +216,7 @@ public class ML_DSA_Intrinsic_Test {
     public static void testInverseNtt(int[] coeffs1, int[] coeffs2,
         MethodHandle inverseNtt, MethodHandle inverseNttJava, Random rnd,
         long seed, int i) throws Exception, Throwable {
-        int[] coeffs3 = new int[ML_DSA_N];
         for (int j = 0; j<ML_DSA_N; j++) {
-            coeffs3[j] =
             coeffs1[j] = coeffs2[j] = rnd.nextInt();
         }
 
@@ -514,4 +514,3 @@ public class ML_DSA_Intrinsic_Test {
             -554416, 3919660, -48306, -1362209, 3937738, 1400424, -846154, 1976782
     };
 }
-// java --add-opens java.base/sun.security.provider=ALL-UNNAMED  -XX:+UseDilithiumIntrinsics test/jdk/sun/security/provider/acvp/ML_DSA_Intrinsic_Test.java

@@ -78,16 +78,17 @@ static address unshufflePermsAddr(int offset) {
 // The following function swaps elements A<->B, C<->D, and so forth.
 // input1[] is shuffled in place; shuffle of input2[] is copied to output2[].
 // Element size (in bits) is specified by size parameter.
-// size 0 and 1 are used for initial and final shuffles respectivelly of
-// dilithiumAlmostInverseNtt and dilithiumAlmostNtt.
-// NOTE: For size 0 and 1, input1[] and input2[] are modified in-place
-//
 // +-----+-----+-----+-----+-----
 // |     |  A  |     |  C  | ...
 // +-----+-----+-----+-----+-----
 // +-----+-----+-----+-----+-----
 // |  B  |     |  D  |     | ...
 // +-----+-----+-----+-----+-----
+//
+// NOTE: size 0 and 1 are used for initial and final shuffles respectivelly of
+// dilithiumAlmostInverseNtt and dilithiumAlmostNtt. For size 0 and 1, input1[] 
+// and input2[] are modified in-place (and output2 is used as a temporary)
+//
 // Using C++ lambdas for improved readability (to hide parameters that always repeat)
 static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister mergeMask2,
   const XMMRegister unshuffle1, const XMMRegister unshuffle2, int vector_len, MacroAssembler *_masm) {
@@ -131,9 +132,11 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
             __ vpblendd(input1[i], input1[i], input2[i], 0b10101010, vector_len);
           }
           break;
-        case 1:
+        // Special cases
+        case 1: // initial shuffle for dilithiumAlmostInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
           for (int i = 0; i < regCnt; i++) {
-            // 0b-1-2-3-1
+            // 0b-3-1-3-1
             __ vshufps(output2[i], input1[i], input2[i], 0b11011101, vector_len);
           }
           for (int i = 0; i < regCnt; i++) {
@@ -148,7 +151,8 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
             __ vpermq(input1[i], input1[i], 0b11011000, vector_len);
           }
           break;
-        case 0:
+        case 0: // final unshuffle for dilithiumAlmostNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
           for (int i = 0; i < regCnt; i++) {
             __ vpunpckhdq(output2[i], input1[i], input2[i], vector_len);
           }
@@ -209,6 +213,7 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
           break;
         // Special cases
         case 1: // initial shuffle for dilithiumAlmostInverseNtt
+          // shuffle all even 32bit columns to input1, and odd to input2
           for (int i = 0; i < regCnt; i++) {
             __ vmovdqu(output2[i], input2[i], vector_len);
           }
@@ -220,6 +225,7 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
           }
           break;
         case 0: // final unshuffle for dilithiumAlmostNtt
+          // reverse case 1: all even are in input1 and odd in input2, put back
           for (int i = 0; i < regCnt; i++) {
             __ vmovdqu(output2[i], input2[i], vector_len);
           }
@@ -394,7 +400,7 @@ static void storeXmms(Register destination, int offset, const XMMRegister xmmReg
 // zetas (int[128*8]) = c_rarg1
 //
 static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
-                            int vector_len, MacroAssembler *_masm) {
+                                               int vector_len, MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_dilithiumAlmostNtt_id;
   StubCodeMark mark(stubgen, stub_id);
