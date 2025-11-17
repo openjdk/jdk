@@ -37,10 +37,9 @@ import static jdk.test.lib.Asserts.*;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:-UseCompressedOops gc.metaspace.TestMetaspaceMemoryPool
- * @run main/othervm -XX:-UseCompressedOops -XX:MaxMetaspaceSize=60m gc.metaspace.TestMetaspaceMemoryPool
- * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE gc.metaspace.TestMetaspaceMemoryPool
- * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:CompressedClassSpaceSize=60m gc.metaspace.TestMetaspaceMemoryPool
+ * @run main/othervm gc.metaspace.TestMetaspaceMemoryPool
+ * @run main/othervm -XX:MaxMetaspaceSize=60m gc.metaspace.TestMetaspaceMemoryPool
+ * @run main/othervm -XX:CompressedClassSpaceSize=60m gc.metaspace.TestMetaspaceMemoryPool
  */
 
 public class TestMetaspaceMemoryPool {
@@ -51,10 +50,8 @@ public class TestMetaspaceMemoryPool {
         verifyMemoryPool(getMemoryPool("Metaspace"), isMetaspaceMaxDefined);
 
         if (Platform.is64bit()) {
-            if (InputArguments.contains("-XX:+UseCompressedOops")) {
-                MemoryPoolMXBean cksPool = getMemoryPool("Compressed Class Space");
-                verifyMemoryPool(cksPool, true);
-            }
+            MemoryPoolMXBean cksPool = getMemoryPool("Compressed Class Space");
+            verifyMemoryPool(cksPool, true);
         }
     }
 
