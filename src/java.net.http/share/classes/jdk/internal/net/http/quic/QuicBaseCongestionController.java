@@ -71,14 +71,12 @@ abstract class QuicBaseCongestionController implements QuicCongestionController 
     private final QuicPacer pacer;
 
     QuicBaseCongestionController(String dbgTag, QuicRttEstimator rttEstimator) {
-        this.dbgTag = dbgTag;
-        this.timeSource = TimeSource.source();
-        this.pacer = new QuicPacer(rttEstimator, this);
+        this(dbgTag, TimeSource.source(), rttEstimator);
     }
 
-    // for testing
-    QuicBaseCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
-        this.dbgTag = "TEST";
+    // Allows to pass a custom timeline for testing
+    QuicBaseCongestionController(String dbgTag, TimeLine source, QuicRttEstimator rttEstimator) {
+        this.dbgTag = dbgTag;
         this.timeSource = source;
         this.pacer = new QuicPacer(rttEstimator, this);
     }

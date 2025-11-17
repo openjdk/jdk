@@ -64,7 +64,7 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
 
     // for testing
     public QuicCubicCongestionController(TimeLine source, QuicRttEstimator rttEstimator) {
-        super(source, rttEstimator);
+        super("TEST", source, rttEstimator);
         this.rttEstimator = rttEstimator;
     }
 
