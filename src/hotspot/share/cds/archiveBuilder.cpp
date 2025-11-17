@@ -668,12 +668,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
       dump_region->allocate(sizeof(address));
     }
-#ifdef _LP64
-    // More strict alignments needed for USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
-    if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-      alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
-    }
-#endif
+    alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
   } else if (src_info->msotype() == MetaspaceObj::SymbolType) {
     // Symbols may be allocated by using AllocateHeap, so their sizes
     // may be less than size_in_bytes() indicates.
@@ -1147,7 +1142,6 @@ int ArchiveBuilder::precomputed_narrow_klass_shift() {
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
 #endif // _LP64

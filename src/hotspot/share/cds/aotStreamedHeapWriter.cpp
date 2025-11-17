@@ -387,7 +387,6 @@ template <typename T> void AOTStreamedHeapWriter::map_oop_field_in_buffer(oop ob
 }
 
 void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_addr, oop src_obj,  Klass* src_klass) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Archived heap only supported for compressed klasses");
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(src_klass);
 
   markWord mw = markWord::prototype();

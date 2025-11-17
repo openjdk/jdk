@@ -545,7 +545,6 @@ public:
   }
 
   Klass* real_klass() {
-    assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "heap archiving requires USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
     return _data._klass;
   }
 

@@ -225,15 +225,9 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
 #endif
   _compressed_oops = UseCompressedOops;
-  _compressed_class_ptrs = USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE;
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-#ifdef _LP64
-    _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
-    _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
-#endif
-  } else {
-    _narrow_klass_pointer_bits = _narrow_klass_shift = -1;
-  }
+  _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
+  _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+
   // Which JIT compier is used
   _compiler_type = (u1)CompilerConfig::compiler_type();
   _type_profile_level = TypeProfileLevel;
@@ -295,7 +289,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- max_heap_size:                            %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                          %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                          %d", _compressed_oops);
-  st->print_cr("- compressed_class_ptrs:                    %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:                %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:                       %d", _narrow_klass_shift);
   st->print_cr("- cloned_vtables_offset:                    0x%zx", _cloned_vtables_offset);
@@ -1910,11 +1903,11 @@ bool FileMapHeader::validate() {
     _has_platform_or_app_classes = false;
   }
 
-  aot_log_info(aot)("The %s was created with UseCompressedOops = %d, USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE = %d, UseCompactObjectHeaders = %d",
-                          file_type, compressed_oops(), compressed_class_pointers(), compact_headers());
-  if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is "
-                               "different from runtime, CDS will be disabled.", file_type);
+  aot_log_info(aot)("The %s was created with UseCompressedOops = %d, UseCompactObjectHeaders = %d",
+                          file_type, compressed_oops(), compact_headers());
+  if (compressed_oops() != UseCompressedOops) {
+    aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops (%d) is "
+                               "different from runtime (%d), CDS will be disabled.", compressed_oops(), UseCompressedOops, file_type);
     return false;
   }
 
