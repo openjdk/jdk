@@ -33,16 +33,6 @@ import jdk.test.lib.jfr.GCHelper;
  * @run main/othervm -XX:+UseSerialGC jdk.jfr.event.gc.heapsummary.TestHeapSummaryEventDefNewSerial
  */
 
-/**
- * @test
- * @bug 8264008
- * @requires vm.flagless
- * @requires vm.hasJFR & vm.bits == 64
- * @requires vm.gc == "Serial" | vm.gc == null
- * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseSerialGC -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
- *                   jdk.jfr.event.gc.heapsummary.TestHeapSummaryEventDefNewSerial
- */
 public class TestHeapSummaryEventDefNewSerial {
     public static void main(String[] args) throws Exception {
         HeapSummaryEventAllGcs.test(GCHelper.gcDefNew, GCHelper.gcSerialOld);
