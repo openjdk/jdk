@@ -65,10 +65,6 @@ public:
 
   static const char* alloc_type_to_string(Type type) {
     switch (type) {
-      case _alloc_cds:
-        return "CDS";
-      case _alloc_tlab:
-        return "TLAB";
       case _alloc_shared:
         return "Shared";
       case _alloc_shared_gc:
@@ -77,6 +73,10 @@ public:
         return "Shared GC Old";
       case _alloc_shared_gc_promotion:
         return "Shared GC Promotion";
+      case _alloc_cds:
+        return "CDS";
+      case _alloc_tlab:
+        return "TLAB";
       case _alloc_gclab:
         return "GCLAB";
       case _alloc_plab:
