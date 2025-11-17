@@ -2130,6 +2130,7 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       cmov_fp_cmp_fp_le(op1, op2, dst, src, cmp_single, cmov_single);
       break;
     case BoolTest::ge:
+      cmov_fp_cmp_fp_ge(op1, op2, dst, src, cmp_single, cmov_single);
       assert(false, "Should go to BoolTest::le case");
       ShouldNotReachHere();
       break;
@@ -2137,6 +2138,7 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       cmov_fp_cmp_fp_lt(op1, op2, dst, src, cmp_single, cmov_single);
       break;
     case BoolTest::gt:
+      cmov_fp_cmp_fp_gt(op1, op2, dst, src, cmp_single, cmov_single);
       assert(false, "Should go to BoolTest::lt case");
       ShouldNotReachHere();
       break;

@@ -679,7 +679,9 @@ class MacroAssembler: public Assembler {
   void cmov_fp_cmp_fp_eq(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
   void cmov_fp_cmp_fp_ne(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
   void cmov_fp_cmp_fp_le(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_ge(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
   void cmov_fp_cmp_fp_lt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
+  void cmov_fp_cmp_fp_gt(FloatRegister cmp1, FloatRegister cmp2, FloatRegister dst, FloatRegister src, bool cmp_single, bool cmov_single);
 
  public:
   // We try to follow risc-v asm menomics.
