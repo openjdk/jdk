@@ -854,7 +854,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
 
 void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS) {
   if (!method.is_null()) {
-    _parameter_count = method->size_of_parameters();
+    _parameter_count = method->number_of_parameters();
     JVMCI_event_2("installing code for %s", method->name_and_sig_as_C_string());
   } else {
     // Must be a HotSpotCompiledCode for a stub.
