@@ -511,7 +511,6 @@ public:
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
 
-#ifdef _LP64
   // The CDS archive contains pre-computed narrow Klass IDs. It carries them in the headers of
   // archived heap objects. With +UseCompactObjectHeaders, it also carries them in prototypes
   // in Klass.
@@ -531,7 +530,6 @@ public:
   // TinyClassPointer Mode:
   //    We use the highest possible shift value to maximize the encoding range size.
   static int precomputed_narrow_klass_shift();
-#endif // _LP64
 
 };
 

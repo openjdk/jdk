@@ -1132,10 +1132,9 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // Standard Mode:
+  //    We use 32 bits for narrowKlass, which should cover a full 4G Klass range. Shift can be 0.
   // CompactObjectHeader Mode:
   //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
   //    Klass encoding range.
@@ -1144,7 +1143,6 @@ int ArchiveBuilder::precomputed_narrow_klass_shift() {
   // narrow Klass IDs at archive load time.
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {
