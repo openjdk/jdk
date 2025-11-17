@@ -663,8 +663,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(r0);
 
     __ str(r0, Address(rthread, Thread::pending_exception_offset()));
-    __ lea(rscratch1, ExternalAddress((address)__FILE__));
-    AOTCodeCache::add_C_string(__FILE__);
+    // special case -- add file name string to AOT address table
+    address file = (address)AOTCodeCache::add_C_string(__FILE__);
+    __ lea(rscratch1, ExternalAddress(file));
     __ str(rscratch1, Address(rthread, Thread::exception_file_offset()));
     __ movw(rscratch1, (int)__LINE__);
     __ strw(rscratch1, Address(rthread, Thread::exception_line_offset()));
