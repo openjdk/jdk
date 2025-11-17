@@ -1060,14 +1060,9 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-#ifdef ASSERT
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    // Stricter checks for both correct alignment and placement
-    CompressedKlassPointers::check_encodable(this);
-  } else {
-    assert(Metaspace::contains((address)this), "Should be");
-  }
-#endif // ASSERT
+
+  // Stricter checks for both correct alignment and placement
+  DEBUG_ONLY(CompressedKlassPointers::check_encodable(this));
 
   guarantee(this->is_klass(),"should be klass");
 

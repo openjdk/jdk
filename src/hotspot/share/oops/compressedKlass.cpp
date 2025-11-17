@@ -318,24 +318,19 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE %d, UseCompactObjectHeaders %d",
-               USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, UseCompactObjectHeaders);
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    st->print_cr("Narrow klass pointer bits %d, Max shift %d",
-                 _narrow_klass_pointer_bits, _max_shift);
-    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
-                  p2i(base()), shift());
-    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
-    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
-    st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
-                 _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
-    if (_protection_zone_size > 0) {
-      st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
-    } else {
-      st->print_cr("No protection zone.");
-    }
+  st->print_cr("UseCompactObjectHeaders %d", UseCompactObjectHeaders);
+  st->print_cr("Narrow klass pointer bits %d, Max shift %d",
+               _narrow_klass_pointer_bits, _max_shift);
+  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                p2i(base()), shift());
+  st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+  st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+  st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
+               _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+  if (_protection_zone_size > 0) {
+    st->print_cr("Protection zone: " RANGEFMT, RANGEFMTARGS(_base, _protection_zone_size));
   } else {
-    st->print_cr("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE off");
+    st->print_cr("No protection zone.");
   }
 }
 

@@ -32,10 +32,8 @@ inline ObjLayout::Mode ObjLayout::klass_mode() {
   assert(_klass_mode != Undefined, "KlassMode not yet initialized");
   if (UseCompactObjectHeaders) {
     assert(_klass_mode == Compact, "Klass mode does not match flags");
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    assert(_klass_mode == Compressed, "Klass mode does not match flags");
   } else {
-    assert(_klass_mode == Uncompressed, "Klass mode does not match flags");
+    assert(_klass_mode == Compressed, "Klass mode does not match flags");
   }
 #endif
   return _klass_mode;
