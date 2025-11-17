@@ -46,7 +46,7 @@ TEST_VM(objArrayOop, osize) {
 #else
     { 8,          false, false,   4 }, // 12 byte header, 4 byte oops, wordsize 4
 #endif
-    { -1,         false,  false, false,  -1 }
+    { -1,         false, false,  -1 }
   };
   for (int i = 0; x[i].result != -1; i++) {
     if (x[i].objal == (int)ObjectAlignmentInBytes && x[i].coops == UseCompressedOops &&
