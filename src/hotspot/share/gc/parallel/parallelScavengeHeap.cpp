@@ -403,7 +403,16 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
+#ifdef ASSERT
   assert(Heap_lock->is_locked(), "precondition");
+  if (is_init_completed()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+    assert(Thread::current()->is_VM_thread(), "precondition");
+  } else {
+    assert(Thread::current()->is_Java_thread(), "precondition");
+    assert(Heap_lock->owned_by_self(), "precondition");
+  }
+#endif
 
   HeapWord* result = young_gen()->expand_and_allocate(size);
 
