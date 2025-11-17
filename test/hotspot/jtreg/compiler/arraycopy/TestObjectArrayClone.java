@@ -34,10 +34,6 @@
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
  *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
  *                   compiler.arraycopy.TestObjectArrayClone
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -Xmx128m
- *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
- *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
- *                   compiler.arraycopy.TestObjectArrayClone
  * @run main/othervm -Xbatch -XX:-UseTypeProfile
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
  *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
