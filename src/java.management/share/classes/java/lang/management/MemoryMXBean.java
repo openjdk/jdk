@@ -280,7 +280,7 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * available.
      *
      * @apiNote
-     * May be used in conjunction with {@link jdk.management/com.sun.management.OperatingSystemMXBean#getProcessCpuTime()}
+     * May be used in conjunction with {@code jdk.management/com.sun.management.OperatingSystemMXBean#getProcessCpuTime()}
      * for calculating the GC's usage of CPU time as a whole.
      *
      * @implNote The specifics on what constitutes the time spent
@@ -299,7 +299,6 @@ public interface MemoryMXBean extends PlatformManagedObject {
      *
      * @since 26
      */
-    @SuppressWarnings("doclint:reference")
     default public long getTotalGcCpuTime() {
         return -1;
     }
