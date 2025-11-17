@@ -7247,12 +7247,12 @@ instruct loadD(regD dst, memory mem)
 %}
 
 // max = java.lang.Math.max(float a, float b)
-instruct maxF_avx10_reg(regF dst, regF a, regF b) %{
+instruct maxF_reg_avx10_2(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxF a b));
   format %{ "maxF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7283,12 +7283,12 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.max(double a, double b)
-instruct maxD_avx10_reg(regD dst, regD a, regD b) %{
+instruct maxD_reg_avx10_2(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxD a b));
   format %{ "maxD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MAX_COMPARE_SIGN);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MAX_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7319,12 +7319,12 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRe
 %}
 
 // max = java.lang.Math.min(float a, float b)
-instruct minF_avx10_reg(regF dst, regF a, regF b) %{
+instruct minF_reg_avx10_2(regF dst, regF a, regF b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinF a b));
   format %{ "minF $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+    __ eminmaxss($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7355,12 +7355,12 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRe
 %}
 
 // max = java.lang.Math.min(double a, double b)
-instruct minD_avx10_reg(regD dst, regD a, regD b) %{
+instruct minD_reg_avx10_2(regD dst, regD a, regD b) %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinD a b));
   format %{ "minD $dst, $a, $b" %}
   ins_encode %{
-    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_MINMAX_MIN_COMPARE_SIGN);
+    __ eminmaxsd($dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, AVX10_2_MINMAX_MIN_COMPARE_SIGN);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -14521,7 +14521,7 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
+instruct convF2I_reg_reg_avx10_2(rRegI dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I src));
@@ -14532,7 +14532,7 @@ instruct convF2I_reg_reg_avx10(rRegI dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2I_reg_mem_avx10(rRegI dst, memory src)
+instruct convF2I_reg_mem_avx10_2(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2I (LoadF src)));
@@ -14555,7 +14555,7 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
+instruct convF2L_reg_reg_avx10_2(rRegL dst, regF src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L src));
@@ -14566,7 +14566,7 @@ instruct convF2L_reg_reg_avx10(rRegL dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2L_reg_mem_avx10(rRegL dst, memory src)
+instruct convF2L_reg_mem_avx10_2(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvF2L (LoadF src)));
@@ -14589,7 +14589,7 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
+instruct convD2I_reg_reg_avx10_2(rRegI dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I src));
@@ -14600,7 +14600,7 @@ instruct convD2I_reg_reg_avx10(rRegI dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2I_reg_mem_avx10(rRegI dst, memory src)
+instruct convD2I_reg_mem_avx10_2(rRegI dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2I (LoadD src)));
@@ -14623,7 +14623,7 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
+instruct convD2L_reg_reg_avx10_2(rRegL dst, regD src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L src));
@@ -14634,7 +14634,7 @@ instruct convD2L_reg_reg_avx10(rRegL dst, regD src)
   ins_pipe(pipe_slow);
 %}
 
-instruct convD2L_reg_mem_avx10(rRegL dst, memory src)
+instruct convD2L_reg_mem_avx10_2(rRegL dst, memory src)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (ConvD2L (LoadD src)));
@@ -19593,7 +19593,7 @@ instruct minmax_reductionF_av(legRegF dst, legVec src, legVec tmp, legVec atmp, 
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2F_avx10(regF dst, immF src1, vec src2, vec xtmp1) %{
+instruct minmax_reduction2F_avx10_2(regF dst, immF src1, vec src2, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
@@ -19611,7 +19611,7 @@ instruct minmax_reduction2F_avx10(regF dst, immF src1, vec src2, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionF_avx10(regF dst, immF src1, vec src2, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionF_avx10_2(regF dst, immF src1, vec src2, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeF::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeF::NEG_INF)) &&
@@ -19629,7 +19629,7 @@ instruct minmax_reductionF_avx10(regF dst, immF src1, vec src2, vec xtmp1, vec x
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2F_avx10_av(regF dst, vec src, vec xtmp1) %{
+instruct minmax_reduction2F_av_avx10_2(regF dst, vec src, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
@@ -19645,7 +19645,7 @@ instruct minmax_reduction2F_avx10_av(regF dst, vec src, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionF_avx10_av(regF dst, vec src, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionF_av_avx10_2(regF dst, vec src, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_FLOAT &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
@@ -19743,7 +19743,7 @@ instruct minmax_reductionD_av(legRegD dst, legVec src, legVec tmp1, legVec tmp2,
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reduction2D_avx10(regD dst, immD src1, vec src2, vec xtmp1) %{
+instruct minmax_reduction2D_avx10_2(regD dst, immD src1, vec src2, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
@@ -19761,7 +19761,7 @@ instruct minmax_reduction2D_avx10(regD dst, immD src1, vec src2, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD_avx10(regD dst, immD src1, vec src2, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionD_avx10_2(regD dst, immD src1, vec src2, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             ((n->Opcode() == Op_MinReductionV && n->in(1)->bottom_type() == TypeD::POS_INF) ||
              (n->Opcode() == Op_MaxReductionV && n->in(1)->bottom_type() == TypeD::NEG_INF)) &&
@@ -19780,7 +19780,7 @@ instruct minmax_reductionD_avx10(regD dst, immD src1, vec src2, vec xtmp1, vec x
 %}
 
 
-instruct minmax_reduction2D_av_avx10(regD dst, vec src, vec xtmp1) %{
+instruct minmax_reduction2D_av_avx10_2(regD dst, vec src, vec xtmp1) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) == 2);
   match(Set dst (MinReductionV dst src));
@@ -19796,7 +19796,7 @@ instruct minmax_reduction2D_av_avx10(regD dst, vec src, vec xtmp1) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct minmax_reductionD_av_avx10(regD dst, vec src, vec xtmp1, vec xtmp2) %{
+instruct minmax_reductionD_av_avx10_2(regD dst, vec src, vec xtmp1, vec xtmp2) %{
   predicate(VM_Version::supports_avx10_2() && Matcher::vector_element_basic_type(n->in(2)) == T_DOUBLE &&
             Matcher::vector_length(n->in(2)) >= 4);
   match(Set dst (MinReductionV dst src));
@@ -20699,7 +20699,7 @@ instruct vminmaxL_reg_evex(vec dst, vec src1, vec src2) %{
 %}
 
 // Float/Double vector Min/Max
-instruct minmaxFP_avx10_reg(vec dst, vec a, vec b) %{
+instruct minmaxFP_reg_avx10_2(vec dst, vec a, vec b) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_floating_point_type(Matcher::vector_element_basic_type(n))); // T_FLOAT, T_DOUBLE
   match(Set dst (MinV a b));
@@ -22046,29 +22046,29 @@ instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
-instruct castFtoX_reg_avx10(vec dst, vec src) %{
+instruct castFtoX_reg_avx10_2(vec dst, vec src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X src));
-  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_f2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(this, $src);
-    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_castF2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct castFtoX_mem_avx10(vec dst, memory src) %{
+instruct castFtoX_mem_avx10_2(vec dst, memory src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastF2X (LoadVector src)));
-  format %{ "vector_cast_f2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_f2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen = Matcher::vector_length(this);
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = (to_elem_bt == T_LONG) ? vector_length_encoding(this) : vector_length_encoding(vlen * sizeof(jfloat));
-    __ vector_castF2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
+    __ vector_castF2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -22120,29 +22120,29 @@ instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
-instruct castDtoX_reg_avx10(vec dst, vec src) %{
+instruct castDtoX_reg_avx10_2(vec dst, vec src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X src));
-  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_d2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this, $src);
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_castD2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct castDtoX_mem_avx10(vec dst, memory src) %{
+instruct castDtoX_mem_avx10_2(vec dst, memory src) %{
   predicate(VM_Version::supports_avx10_2() &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X (LoadVector src)));
-  format %{ "vector_cast_d2x_avx10 $dst, $src\t!" %}
+  format %{ "vector_cast_d2x_avx10_2 $dst, $src\t!" %}
   ins_encode %{
     int vlen = Matcher::vector_length(this);
     int vlen_enc = vector_length_encoding(vlen * sizeof(jdouble));
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
-    __ vector_castD2X_avx10(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
+    __ vector_castD2X_avx10_2(to_elem_bt, $dst$$XMMRegister, $src$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25114,14 +25114,14 @@ instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_minmax_HF_avx10_reg(regF dst, regF src1, regF src2)
+instruct scalar_minmax_HF_reg_avx10_2(regF dst, regF src1, regF src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MaxHF src1 src2));
   match(Set dst (MinHF src1 src2));
   format %{ "scalar_min_max_fp16 $dst, $src1, $src2" %}
   ins_encode %{
-    int function = this->ideal_Opcode() == Op_MinHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function = this->ideal_Opcode() == Op_MinHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ eminmaxsh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, function);
   %}
   ins_pipe( pipe_slow );
@@ -25229,7 +25229,7 @@ instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_minmax_HF_avx10_mem(vec dst, vec src1, memory src2)
+instruct vector_minmax_HF_mem_avx10_2(vec dst, vec src1, memory src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
@@ -25237,13 +25237,13 @@ instruct vector_minmax_HF_avx10_mem(vec dst, vec src1, memory src2)
   format %{ "vector_min_max_fp16_mem $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$Address, true, function, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
+instruct vector_minmax_HF_reg_avx10_2(vec dst, vec src1, vec src2)
 %{
   predicate(VM_Version::supports_avx10_2());
   match(Set dst (MinVHF src1 src2));
@@ -25251,7 +25251,7 @@ instruct vector_minmax_HF_avx10_reg(vec dst, vec src1, vec src2)
   format %{ "vector_min_max_fp16 $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_MINMAX_MIN_COMPARE_SIGN : AVX10_MINMAX_MAX_COMPARE_SIGN;
+    int function =  this->ideal_Opcode() == Op_MinVHF ? AVX10_2_MINMAX_MIN_COMPARE_SIGN : AVX10_2_MINMAX_MAX_COMPARE_SIGN;
     __ evminmaxph($dst$$XMMRegister, k0, $src1$$XMMRegister, $src2$$XMMRegister, true, function, vlen_enc);
   %}
   ins_pipe( pipe_slow );

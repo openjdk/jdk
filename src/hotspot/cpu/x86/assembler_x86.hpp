@@ -449,8 +449,8 @@ const int FPUStateSizeInWords = 2688 / wordSize;
 // imm8[1:0]                =  00 (min) / 01 (max)
 //
 // [1] https://www.intel.com/content/www/us/en/content-details/856721/intel-advanced-vector-extensions-10-2-intel-avx10-2-architecture-specification.html?wapkw=AVX10
-const int AVX10_MINMAX_MAX_COMPARE_SIGN = 0x5;
-const int AVX10_MINMAX_MIN_COMPARE_SIGN = 0x4;
+const int AVX10_2_MINMAX_MAX_COMPARE_SIGN = 0x5;
+const int AVX10_2_MINMAX_MIN_COMPARE_SIGN = 0x4;
 
 // The Intel x86/Amd64 Assembler: Pure assembler doing NO optimizations on the instruction
 // level (e.g. mov rax, 0 is not translated into xor rax, rax!); i.e., what you write
