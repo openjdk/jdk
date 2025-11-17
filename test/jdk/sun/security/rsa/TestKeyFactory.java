@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,28 @@
  * @bug 4853305 8023980 8254717
  * @summary Test KeyFactory of the new RSA provider
  * @author Andreas Sterbenz
+ * @enablePreview
  */
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.PEM;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
+import java.util.Arrays;
+import java.util.Enumeration;
 
 public class TestKeyFactory {
 
@@ -83,9 +97,9 @@ public class TestKeyFactory {
 
     private static final PrivateKey P1_PRIV;
     private static final PublicKey P1_PUB;
-
     static {
-        byte[] encodedPriv = Base64.getDecoder().decode(PKCS1_PRIV_STR);
+        byte[] encodedPriv =
+                new PEM("PRIVATE KEY", PKCS1_PRIV_STR).decode();
         P1_PRIV = new PrivateKey() {
             @Override
             public String getAlgorithm() {
@@ -100,7 +114,7 @@ public class TestKeyFactory {
                 return encodedPriv.clone();
             }
         };
-        byte[] encodedPub = Base64.getDecoder().decode(PKCS1_PUB_STR);
+        byte[] encodedPub = new PEM("PRIVATE KEY", PKCS1_PUB_STR).decode();
         P1_PUB = new PublicKey() {
             @Override
             public String getAlgorithm() {
@@ -130,15 +144,15 @@ public class TestKeyFactory {
      * equivalent
      */
     private static void testKey(Key key1, Key key2) throws Exception {
-        if (key2.getAlgorithm().equals("RSA") == false) {
+        if (!key2.getAlgorithm().equals("RSA")) {
             throw new Exception("Algorithm not RSA");
         }
         if (key1 instanceof PublicKey) {
-            if (key2.getFormat().equals("X.509") == false) {
+            if (!key2.getFormat().equals("X.509")) {
                 throw new Exception("Format not X.509");
             }
         } else if (key1 instanceof PrivateKey) {
-            if (key2.getFormat().equals("PKCS#8") == false) {
+            if (!key2.getFormat().equals("PKCS#8")) {
                 throw new Exception("Format not PKCS#8: " + key2.getFormat());
             }
         }
@@ -204,18 +218,23 @@ public class TestKeyFactory {
         KeySpec rsaSpec2 = kf.getKeySpec(key, RSAPrivateKeySpec.class);
         PrivateKey key6 = kf.generatePrivate(rsaSpec2);
         testKey(key6, key6);
-        if (key instanceof RSAPrivateCrtKey) {
-            RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
+        if (key instanceof RSAPrivateCrtKey rsaKey) {
             KeySpec rsaSpec3 = new RSAPrivateCrtKeySpec(rsaKey.getModulus(),
-                    rsaKey.getPublicExponent(), rsaKey.getPrivateExponent(), rsaKey.getPrimeP(), rsaKey.getPrimeQ(),
-                    rsaKey.getPrimeExponentP(), rsaKey.getPrimeExponentQ(), rsaKey.getCrtCoefficient(), rsaKey.getParams());
+                    rsaKey.getPublicExponent(),
+                    rsaKey.getPrivateExponent(),
+                    rsaKey.getPrimeP(),
+                    rsaKey.getPrimeQ(),
+                    rsaKey.getPrimeExponentP(),
+                    rsaKey.getPrimeExponentQ(),
+                    rsaKey.getCrtCoefficient(),
+                    rsaKey.getParams());
             PrivateKey key7 = kf.generatePrivate(rsaSpec3);
             testKey(key6, key7);
         }
     }
 
     private static void test(KeyFactory kf, Key key) throws Exception {
-        if (key.getAlgorithm().equals("RSA") == false) {
+        if (!key.getAlgorithm().equals("RSA")) {
             System.out.println("Not an RSA key, ignoring");
         }
         if (key instanceof PublicKey) {

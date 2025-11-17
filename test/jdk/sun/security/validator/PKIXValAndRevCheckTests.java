@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@
  * @summary Stapled OCSPResponses should be added to PKIXRevocationChecker
  *          irrespective of revocationEnabled flag
  * @library /test/lib
+ * @enablePreview
  * @modules java.base/sun.security.validator
  * @build jdk.test.lib.Convert
  * @run main PKIXValAndRevCheckTests
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
+import java.security.PEM;
+import java.security.PEMDecoder;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
@@ -43,7 +44,6 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -349,15 +349,24 @@ public class PKIXValAndRevCheckTests {
     static final Date VALID_DATE = new Date(1566007200000L);
 
     public static void main(String[] args) throws Exception {
-        CertificateFactory certFac = CertificateFactory.getInstance("X.509");
+        CertificateFactory certFac =
+                CertificateFactory.getInstance("X.509");
         CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
-        X509Certificate goodGuyCert = getCert(certFac, GOOD_SERVER_PEM);
-        X509Certificate badGuyCert = getCert(certFac, BAD_SERVER_PEM);
-        X509Certificate intCACert = getCert(certFac, INT_CA_PEM);
-        X509Certificate rootCACert = getCert(certFac, ROOT_CA_PEM);
-        byte[] goodOcspDer = pemToDer(GOOD_GUY_OCSP_PEM);
-        byte[] badOcspDer = pemToDer(BAD_GUY_OCSP_PEM);
-        byte[] intCAOcspDer = pemToDer(INT_CA_OCSP_PEM);
+        final PEMDecoder decoder = PEMDecoder.of();
+        X509Certificate goodGuyCert =
+                decoder.decode(GOOD_SERVER_PEM, X509Certificate.class);
+        X509Certificate badGuyCert =
+                decoder.decode(BAD_SERVER_PEM, X509Certificate.class);
+        X509Certificate intCACert =
+                decoder.decode(INT_CA_PEM, X509Certificate.class);
+        X509Certificate rootCACert =
+                decoder.decode(ROOT_CA_PEM, X509Certificate.class);
+        byte[] goodOcspDer =
+                new PEM("OCSP RESPONSE", GOOD_GUY_OCSP_PEM).decode();
+        byte[] badOcspDer =
+                new PEM("OCSP RESPONSE", BAD_GUY_OCSP_PEM).decode();
+        byte[] intCAOcspDer =
+                new PEM("OCSP RESPONSE",INT_CA_OCSP_PEM).decode();
         Set<TrustAnchor> trustAnchors =
                 Set.of(new TrustAnchor(rootCACert, null));
         PKIXRevocationChecker pkrc;
@@ -478,20 +487,5 @@ public class PKIXValAndRevCheckTests {
                         actual.getReason(), actual);
             }
         }
-    }
-
-    static X509Certificate getCert(CertificateFactory fac, String pemCert) {
-        try {
-            ByteArrayInputStream bais =
-                    new ByteArrayInputStream(pemCert.getBytes("UTF-8"));
-            return (X509Certificate)fac.generateCertificate(bais);
-        } catch (UnsupportedEncodingException | CertificateException exc) {
-            throw new RuntimeException(exc);
-        }
-    }
-
-    static byte[] pemToDer(String pemData) {
-        Base64.Decoder b64Dec = Base64.getMimeDecoder();
-        return b64Dec.decode(pemData);
     }
 }

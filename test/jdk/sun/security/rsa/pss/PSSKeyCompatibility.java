@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,34 @@
  * questions.
  */
 
-import java.io.ByteArrayInputStream;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PEM;
+import java.security.PEMDecoder;
+import java.security.PEMEncoder;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 
 /**
  * @test
  * @bug 8242335
  * @summary OpenSSL generated compatibility test with RSASSA-PSS Java.
+ * @enablePreview
  * @run main PSSKeyCompatibility
  */
+
 public class PSSKeyCompatibility {
 
     private static final String ALGO = "RSASSA-PSS";
@@ -74,26 +76,34 @@ public class PSSKeyCompatibility {
             String type) {
 
         try {
-            KeyFactory kf = KeyFactory.getInstance(algorithm, provider);
-            PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(
-                    Base64.getMimeDecoder().decode(type));
-            PrivateKey priv = kf.generatePrivate(privSpec);
+            final PEMDecoder decoder = PEMDecoder.of()
+                    .withFactory(Security.getProvider(provider));
+            final PrivateKey priv = decoder.decode(
+                    new PEM("PRIVATE KEY", type).toString(),
+                    PrivateKey.class
+            );
 
-            RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey) priv;
-            PrivateKey priv1 = kf.generatePrivate(new RSAPrivateCrtKeySpec(
-                    crtKey.getModulus(),
-                    crtKey.getPublicExponent(),
-                    crtKey.getPrivateExponent(),
-                    crtKey.getPrimeP(),
-                    crtKey.getPrimeQ(),
-                    crtKey.getPrimeExponentP(),
-                    crtKey.getPrimeExponentQ(),
-                    crtKey.getCrtCoefficient(),
-                    crtKey.getParams()
-            ));
-            equals(priv, priv1);
+            if (priv instanceof RSAPrivateCrtKey crtKey) {
+                final KeyFactory kf = KeyFactory.getInstance(algorithm, provider);
+                final PrivateKey priv1 =
+                        kf.generatePrivate(new RSAPrivateCrtKeySpec(
+                                crtKey.getModulus(),
+                                crtKey.getPublicExponent(),
+                                crtKey.getPrivateExponent(),
+                                crtKey.getPrimeP(),
+                                crtKey.getPrimeQ(),
+                                crtKey.getPrimeExponentP(),
+                                crtKey.getPrimeExponentQ(),
+                                crtKey.getCrtCoefficient(),
+                                crtKey.getParams()
+                        ));
+                equals(priv, priv1);
+            } else {
+                throw new RuntimeException(
+                        "Private key is not RSAPrivateCrtKey");
+            }
         } catch (NoSuchAlgorithmException | InvalidKeySpecException
-                | NoSuchProviderException e) {
+                 | NoSuchProviderException e) {
             e.printStackTrace(System.out);
             return false;
         }
@@ -105,22 +115,28 @@ public class PSSKeyCompatibility {
             String type) {
 
         try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            Certificate cert = cf.generateCertificate(
-                    new ByteArrayInputStream(type.getBytes()));
+            final Certificate cert = PEMDecoder.of()
+                    .decode(type, X509Certificate.class);
             System.out.println(cert);
-            KeyFactory kf = KeyFactory.getInstance(algorithm, provider);
-            X509EncodedKeySpec pubSpec = kf.getKeySpec(
-                    cert.getPublicKey(), X509EncodedKeySpec.class);
-            PublicKey pub = kf.generatePublic(pubSpec);
-            PublicKey pub1 = kf.generatePublic(new RSAPublicKeySpec(
-                    ((RSAPublicKey) pub).getModulus(),
-                    ((RSAPublicKey) pub).getPublicExponent(),
-                    ((RSAPublicKey) pub).getParams()));
+
+            final PEMDecoder decoder = PEMDecoder.of()
+                    .withFactory(Security.getProvider(provider));
+            final RSAPublicKey pub = decoder.decode(
+                    PEMEncoder.of().encodeToString(
+                            new X509EncodedKeySpec(
+                                    cert.getPublicKey().getEncoded())
+                    ),
+                    RSAPublicKey.class);
+
+            final KeyFactory kf = KeyFactory.getInstance(algorithm, provider);
+            final PublicKey pub1 = kf.generatePublic(new RSAPublicKeySpec(
+                    pub.getModulus(),
+                    pub.getPublicExponent(),
+                    pub.getParams()));
             equals(cert.getPublicKey(), pub);
             equals(pub, pub1);
-        } catch (CertificateException | NoSuchAlgorithmException
-                | InvalidKeySpecException | NoSuchProviderException e) {
+        } catch (NoSuchAlgorithmException
+                 | InvalidKeySpecException | NoSuchProviderException e) {
             e.printStackTrace(System.out);
             return false;
         }
