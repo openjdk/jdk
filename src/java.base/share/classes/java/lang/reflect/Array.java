@@ -118,8 +118,7 @@ class Array {
      * @param array the array
      * @return the length of the array
      * @throws NullPointerException if {@code array} is {@code null}
-     * @throws    IllegalArgumentException if the object argument is not
-     * an array
+     * @throws IllegalArgumentException if {@code array} is not an array
      */
     @IntrinsicCandidate
     public static native int getLength(Object array)
