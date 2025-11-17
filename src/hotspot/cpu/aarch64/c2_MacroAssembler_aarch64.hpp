@@ -51,9 +51,9 @@
                           FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
                           BasicType eltype);
 
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
-  void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  void fast_lock(Register object, Register box, Register t1, Register t2, Register t3);
+  void fast_unlock(Register object, Register box, Register t1, Register t2, Register t3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -173,13 +173,12 @@
   // lowest-numbered elements of dst. Any remaining elements of dst will
   // be filled with zero.
   void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                         FloatRegister vtmp1, FloatRegister vtmp2,
-                         FloatRegister vtmp3, FloatRegister vtmp4,
-                         PRegister ptmp, PRegister pgtmp);
+                         FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                         PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                          FloatRegister vtmp1, FloatRegister vtmp2,
-                          PRegister pgtmp);
+                          FloatRegister vzr, FloatRegister vtmp,
+                          PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 

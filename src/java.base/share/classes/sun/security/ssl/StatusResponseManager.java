@@ -282,7 +282,7 @@ final class StatusResponseManager {
                     }
                 }
             } catch (InterruptedException intex) {
-                // Log and reset the interrupt state
+                // Log and reset the interrupted state
                 Thread.currentThread().interrupt();
                 if (SSLLogger.logging &&
                         SSLLogger.isOn(SSLLogger.Opt.RESPMGR)) {

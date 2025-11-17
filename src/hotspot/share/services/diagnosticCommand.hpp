@@ -356,7 +356,9 @@ public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
-    return "Print all threads with stacktraces.";
+    return "Print all platform threads, and mounted virtual threads, "
+           "with stack traces. The Thread.dump_to_file command will "
+           "print all threads to a file.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
@@ -768,7 +770,8 @@ public:
     return "Thread.dump_to_file";
   }
   static const char *description() {
-    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+    return "Dump all threads, with stack traces, "
+           "to a file in plain text or JSON format.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";

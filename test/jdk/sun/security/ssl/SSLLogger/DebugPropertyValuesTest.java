@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8350582 8340312 8044609
+ * @bug 8350582 8340312 8369995 8044609
  * @library /test/lib /javax/net/ssl/templates
  * @summary Correct the parsing of the ssl value in javax.net.debug
  * @run junit DebugPropertyValuesTest
@@ -50,31 +50,34 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class DebugPropertyValuesTest extends SSLSocketTemplate {
 
     private static final Path LOG_FILE = Path.of("logging.conf");
-    private static final HashMap<String, List<String>> debugMessages = new HashMap<>();
+    private static final HashMap<String, List<String>> debugMessages =
+            new HashMap<>();
     private static final String DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}";
 
     static {
-
-
         debugMessages.put("handshake",
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
         debugMessages.put("handshake-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
-                        "\"message\".*: \"Produced ClientHello handshake message",
-                        "\"specifics\".*:\\ \\["));
-        debugMessages.put("keymanager", List.of("choosing key:"));
+                        "\"specifics\"   : \\[",
+                        "\"message\".*: \"Produced ClientHello handshake message"));
+        debugMessages.put("keymanager", List.of("Choosing key:"));
         debugMessages.put("packet", List.of("Raw write"));
-        debugMessages.put("plaintext", List.of("Plaintext before ENCRYPTION"));
+        debugMessages.put("plaintext",
+                List.of("Plaintext before ENCRYPTION"));
         debugMessages.put("record", List.of("handshake, length =", "WRITE:"));
         debugMessages.put("record-expand",
                 List.of("\"logger\".*: \"javax.net.ssl\",",
                         "\"message\".*: \"READ: TLSv1.2 application_data"));
         debugMessages.put("session", List.of("Session initialized:"));
-        debugMessages.put("sslctx", List.of("trigger seeding of SecureRandom"));
         debugMessages.put("ssl", List.of("jdk.tls.keyLimits:"));
-        debugMessages.put("trustmanager", List.of("adding as trusted certificates"));
-        debugMessages.put("verbose", List.of("Ignore unsupported cipher suite:"));
+        debugMessages.put("sslctx",
+                List.of("trigger seeding of SecureRandom"));
+        debugMessages.put("trustmanager",
+                List.of("adding as trusted certificates"));
+        debugMessages.put("verbose",
+                List.of("Ignore unsupported cipher suite:"));
         debugMessages.put("help",
                 List.of("print this help message and exit",
                         "verbose handshake message printing"));
@@ -113,7 +116,8 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose")),
                 // allow expand option for more verbose output
-                Arguments.of(List.of("-Djavax.net.debug=ssl,handshake,expand"),
+                Arguments.of(
+                        List.of("-Djavax.net.debug=ssl,handshake,expand"),
                         List.of("handshake", "handshake-expand",
                                 "ssl", "verbose")),
                 // filtering on record option, with expand
@@ -161,7 +165,7 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug",
                         "-Djava.util.logging.config.file=" + LOG_FILE),
                         List.of("handshake", "javax.net.debug.logger",
-                                "keymanager", "packet",  "plaintext",
+                                "keymanager", "packet", "plaintext",
                                 "record", "session", "ssl",
                                 "sslctx", "trustmanager", "verbose"))
         );

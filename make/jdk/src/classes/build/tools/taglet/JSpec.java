@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LiteralTree;
@@ -44,7 +46,7 @@ import jdk.javadoc.doclet.Taglet;
 import static com.sun.source.doctree.DocTree.Kind.*;
 
 /**
- * A base class for block tags to insert a link to an external copy of JLS or JVMS.
+ * A base class for block tags to insert a link to a local copy of JLS or JVMS.
  * The tags can be used as follows:
  *
  * <pre>
@@ -57,30 +59,23 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * &commat;jls 3.4 Line Terminators
  * </pre>
  *
- * will produce the following HTML for a docs build configured for Java SE 12.
+ * will produce the following HTML, depending on the file containing
+ * the tag.
  *
  * <pre>{@code
  * <dt>See <i>Java Language Specification</i>:
- * <dd><a href="https://docs.oracle.com/javase/specs/jls/se12/html/jls-3.html#jls-3.4">3.4 Line terminators</a>
+ * <dd><a href="../../specs/jls/jls-3.html#jls-3.4">3.4 Line terminators</a>
  * }</pre>
  *
- * The version of the spec must be set in the jspec.version system property.
+ * Copies of JLS and JVMS are expected to have been placed in the {@code specs}
+ * folder. These documents are not included in open-source repositories.
  */
 public class JSpec implements Taglet  {
-    static final String SPEC_VERSION;
-
-    static {
-        SPEC_VERSION = System.getProperty("jspec.version");
-        if (SPEC_VERSION == null) {
-            throw new RuntimeException("jspec.version property not set");
-        }
-    }
 
     public static class JLS extends JSpec {
         public JLS() {
             super("jls",
                 "Java Language Specification",
-                "https://docs.oracle.com/javase/specs/jls/se" + SPEC_VERSION + "/html",
                 "jls");
         }
     }
@@ -89,20 +84,17 @@ public class JSpec implements Taglet  {
         public JVMS() {
             super("jvms",
                 "Java Virtual Machine Specification",
-                "https://docs.oracle.com/javase/specs/jvms/se" + SPEC_VERSION + "/html",
                 "jvms");
         }
     }
 
     private String tagName;
     private String specTitle;
-    private String baseURL;
     private String idPrefix;
 
-    JSpec(String tagName, String specTitle, String baseURL, String idPrefix) {
+    JSpec(String tagName, String specTitle, String idPrefix) {
         this.tagName = tagName;
         this.specTitle = specTitle;
-        this.baseURL = baseURL;
         this.idPrefix = idPrefix;
     }
 
@@ -169,8 +161,8 @@ public class JSpec implements Taglet  {
                 String chapter = m.group("chapter");
                 String section = m.group("section");
 
-                String url = String.format("%1$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
-                        baseURL, idPrefix, chapter, section);
+                String url = String.format("%1$s/../specs/%2$s/%2$s-%3$s.html#%2$s-%3$s%4$s",
+                        docRoot(elem), idPrefix, chapter, section);
 
                 sb.append("<a href=\"")
                         .append(url)
@@ -216,4 +208,35 @@ public class JSpec implements Taglet  {
             }
         }).visit(trees, new StringBuilder()).toString();
     }
+
+    private String docRoot(Element elem) {
+        switch (elem.getKind()) {
+            case MODULE:
+                return "..";
+
+            case PACKAGE:
+                PackageElement pe = (PackageElement)elem;
+                String pkgPart = pe.getQualifiedName()
+                        .toString()
+                        .replace('.', '/')
+                        .replaceAll("[^/]+", "..");
+                return pe.getEnclosingElement() != null
+                        ? "../" + pkgPart
+                        : pkgPart;
+
+            case CLASS, ENUM, RECORD, INTERFACE, ANNOTATION_TYPE:
+                TypeElement te = (TypeElement)elem;
+                return te.getQualifiedName()
+                        .toString()
+                        .replace('.', '/')
+                        .replaceAll("[^/]+", "..");
+
+            default:
+                var enclosing = elem.getEnclosingElement();
+                if (enclosing == null)
+                    throw new IllegalArgumentException(elem.getKind().toString());
+                return docRoot(enclosing);
+        }
+    }
+
 }

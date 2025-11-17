@@ -471,7 +471,7 @@ final class TransportContext implements ConnectionContext {
          * default ones.
          */
         if (sslConfig.isClientMode != useClientMode) {
-            if (sslContext.isDefaultProtocolVesions(
+            if (sslContext.isDefaultProtocolVersions(
                     sslConfig.enabledProtocols)) {
                 sslConfig.enabledProtocols =
                         sslContext.getDefaultProtocolVersions(!useClientMode);
