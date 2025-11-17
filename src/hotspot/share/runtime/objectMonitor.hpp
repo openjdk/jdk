@@ -33,7 +33,6 @@
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/spinCriticalSection.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
