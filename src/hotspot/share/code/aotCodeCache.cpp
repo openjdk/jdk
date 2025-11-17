@@ -407,7 +407,7 @@ void AOTCodeCache::Config::record() {
   if (UseCompressedOops) {
     _flags |= compressedOops;
   }
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     _flags |= compressedClassPointers;
   }
   if (UseTLAB) {
@@ -452,8 +452,8 @@ bool AOTCodeCache::Config::verify() const {
     return false;
   }
 
-  if (((_flags & compressedClassPointers) != 0) != UseCompressedClassPointers) {
-    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with UseCompressedClassPointers = %s", UseCompressedClassPointers ? "false" : "true");
+  if (((_flags & compressedClassPointers) != 0) != USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+    log_debug(aot, codecache, init)("AOT Code Cache disabled: it was created with USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE = %s", USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE ? "false" : "true");
     return false;
   }
   if (_compressedKlassShift != (uint)CompressedKlassPointers::shift()) {

@@ -64,7 +64,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestObjectAllocationInNewTLABEvent {
     private final static String EVENT_NAME = EventNames.ObjectAllocationInNewTLAB;
 
-    private static final Boolean COMPRESSED_CLASS_PTRS = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedClassPointers");
+    private static final Boolean COMPRESSED_CLASS_PTRS = WhiteBox.getWhiteBox().getBooleanVMFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
 
     private static final int BYTE_ARRAY_OVERHEAD = (Platform.is64bit() && !COMPRESSED_CLASS_PTRS) ? 24 : 16;
     private static final int OBJECT_SIZE = 128 * 1024;

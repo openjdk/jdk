@@ -105,7 +105,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   } else {
     mov(t1, checked_cast<int32_t>(markWord::prototype().value()));
     str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
-    if (UseCompressedClassPointers) { // Take care not to kill klass
+    if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) { // Take care not to kill klass
       encode_klass_not_null(t1, klass);
       strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
     } else {
@@ -121,7 +121,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       // Clear gap/first 4 bytes following the length field.
       strw(zr, Address(obj, base_offset));
     }
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && !UseCompactObjectHeaders) {
     store_klass_gap(obj, zr);
   }
 }

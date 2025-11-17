@@ -658,7 +658,7 @@ void Metaspace::ergo_initialize() {
 
   MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     // Let Class Space not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
     // class space : non class space usage is about 1:6. With many small classes,
@@ -724,7 +724,7 @@ void Metaspace::global_initialize() {
     AOTMetaspace::initialize_for_static_dump();
   }
 
-  // If UseCompressedClassPointers=1, we have two cases:
+  // If USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE=1, we have two cases:
   // a) if CDS is active (runtime, Xshare=on), it will create the class space
   //    for us, initialize it and set up CompressedKlassPointers encoding.
   //    Class space will be reserved above the mapped archives.
@@ -835,8 +835,8 @@ void Metaspace::global_initialize() {
   }
 
 #else
-  // +UseCompressedClassPointers on 32-bit: does not need class space. Klass can live wherever.
-  if (UseCompressedClassPointers) {
+  // +USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE on 32-bit: does not need class space. Klass can live wherever.
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     const address start = (address)os::vm_min_address(); // but not in the zero page
     const address end = (address)CompressedKlassPointers::max_klass_range_size();
     CompressedKlassPointers::initialize(start, end - start);
@@ -848,7 +848,7 @@ void Metaspace::global_initialize() {
 
   _tracer = new MetaspaceTracer();
 
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     // Note: "cds" would be a better fit but keep this for backward compatibility.
     LogTarget(Info, gc, metaspace) lt;
     if (lt.is_enabled()) {

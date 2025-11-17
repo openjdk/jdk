@@ -2230,7 +2230,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   st->print_cr("# MachUEPNode");
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     st->print_cr("\tldrw rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
     st->print_cr("\tldrw r10, [rscratch2 + CompiledICData::speculated_klass_offset()]\t# compressed klass");
     st->print_cr("\tcmpw rscratch1, r10");

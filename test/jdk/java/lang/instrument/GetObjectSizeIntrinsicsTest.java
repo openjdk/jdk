@@ -314,7 +314,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static final int LARGE_INT_ARRAY_SIZE = 1024*1024*1024 + 1024;
     static final int LARGE_OBJ_ARRAY_SIZE = (4096/(int)REF_SIZE)*1024*1024 + 1024;
 
-    static final boolean CCP = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedClassPointers");
+    static final boolean CCP = WhiteBox.getWhiteBox().getBooleanVMFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
     static final int ARRAY_HEADER_SIZE = CCP ? 16 : (Platform.is64bit() ? 20 : 16);
 
     final String mode;

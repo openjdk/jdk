@@ -30,12 +30,12 @@ import jdk.test.lib.Platform;
  * @test
  * @bug 8015107
  * @summary Tests that VM prints a warning when -XX:CompressedClassSpaceSize
- *          is used together with -XX:-UseCompressedClassPointers
+ *          is used together with -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.opt.CompressedClassSpaceSize == null & vm.opt.UseCompressedClassPointers == null
+ * @requires vm.opt.CompressedClassSpaceSize == null & vm.opt.USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE == null
  * @run driver gc.arguments.TestCompressedClassFlags
  */
 public class TestCompressedClassFlags {
@@ -43,7 +43,7 @@ public class TestCompressedClassFlags {
         if (Platform.is64bit()) {
             OutputAnalyzer output = GCArguments.executeTestJava(
                 "-XX:CompressedClassSpaceSize=1g",
-                "-XX:-UseCompressedClassPointers",
+                "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                 "-version");
             output.shouldContain("warning");
             output.shouldNotContain("error");

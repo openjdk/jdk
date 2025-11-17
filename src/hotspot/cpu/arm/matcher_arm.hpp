@@ -75,7 +75,7 @@
 
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis());
-    assert(UseCompressedClassPointers, "only for compressed klass code");
+    assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "only for compressed klass code");
     return false;
   }
 

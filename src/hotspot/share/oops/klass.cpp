@@ -1061,7 +1061,7 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
 #ifdef ASSERT
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     // Stricter checks for both correct alignment and placement
     CompressedKlassPointers::check_encodable(this);
   } else {

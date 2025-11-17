@@ -29,7 +29,7 @@
 #include "unittest.hpp"
 
 TEST_VM(CompressedKlass, basics) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   ASSERT_LE((address)0, CompressedKlassPointers::base());
@@ -56,7 +56,7 @@ TEST_VM(CompressedKlass, basics) {
 }
 
 TEST_VM(CompressedKlass, ccp_off) {
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   ASSERT_EQ(CompressedKlassPointers::klass_range_start(), (address)nullptr);
@@ -68,7 +68,7 @@ TEST_VM(CompressedKlass, ccp_off) {
 
 
 TEST_VM(CompressedKlass, test_too_low_address) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   address really_low = (address) 32;
@@ -78,7 +78,7 @@ TEST_VM(CompressedKlass, test_too_low_address) {
 }
 
 TEST_VM(CompressedKlass, test_too_high_address) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   address really_high = (address) UINTPTR_MAX;
@@ -88,7 +88,7 @@ TEST_VM(CompressedKlass, test_too_high_address) {
 }
 
 TEST_VM(CompressedKlass, test_unaligned_address) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   const size_t alignment = CompressedKlassPointers::klass_alignment_in_bytes();
@@ -104,7 +104,7 @@ TEST_VM(CompressedKlass, test_unaligned_address) {
 }
 
 TEST_VM(CompressedKlass, test_good_address) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   const size_t alignment = CompressedKlassPointers::klass_alignment_in_bytes();
@@ -115,7 +115,7 @@ TEST_VM(CompressedKlass, test_good_address) {
 }
 
 TEST_VM(CompressedKlass, test_is_valid_narrow_klass) {
-  if (!UseCompressedClassPointers) {
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     return;
   }
   ASSERT_FALSE(CompressedKlassPointers::is_valid_narrow_klass_id(0));

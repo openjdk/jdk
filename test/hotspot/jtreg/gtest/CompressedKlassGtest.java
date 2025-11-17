@@ -44,7 +44,7 @@
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompressedClassPointers -Xlog:metaspace* -Xmx6g -Xms128m
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -Xlog:metaspace* -Xmx6g -Xms128m
  */
 
 /* @test id=use-zero-based-encoding-coh

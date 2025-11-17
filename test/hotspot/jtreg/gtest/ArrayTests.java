@@ -31,26 +31,26 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:+UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UseCompressedOops
  */
 /* @test id=with-coops-no-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:+UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UseCompressedOops
  */
 /* @test id=no-coops-with-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:-UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompressedOops
  */
 /* @test id=no-coops-no-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:-UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompressedOops
  */

@@ -307,7 +307,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       } else {
         const TypePtr* tptr;
         if ((UseCompressedOops && CompressedOops::shift() == 0) ||
-            (UseCompressedClassPointers && CompressedKlassPointers::shift() == 0)) {
+            (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && CompressedKlassPointers::shift() == 0)) {
           // 32-bits narrow oop can be the base of address expressions
           tptr = base->get_ptr_type();
         } else {

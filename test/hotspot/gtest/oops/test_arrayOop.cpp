@@ -97,7 +97,7 @@ TEST_VM(arrayOopDesc, base_offset) {
       EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 16);
       EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  16);
     }
-  } else if (UseCompressedClassPointers) {
+  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_SHORT),   16);

@@ -117,7 +117,7 @@ private:
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _object_streaming_mode;                 // dump was created for object streaming
   bool    _compressed_oops;                       // save the flag UseCompressedOops
-  bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
+  bool    _compressed_class_ptrs;                 // save the flag USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable

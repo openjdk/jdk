@@ -47,7 +47,7 @@
  *          java.xml
  * @requires vm.bits == 64
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-UseCompressedClassPointers
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
  */
 
 /* @test id=UseCompactObjectHeaders

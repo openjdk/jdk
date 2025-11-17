@@ -85,7 +85,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   if (UseCompactObjectHeaders) {
     movptr(t1, Address(klass, Klass::prototype_header_offset()));
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
-  } else if (UseCompressedClassPointers) { // Take care not to kill klass
+  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) { // Take care not to kill klass
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), checked_cast<int32_t>(markWord::prototype().value()));
     movptr(t1, klass);
     encode_klass_not_null(t1, rscratch1);
@@ -104,7 +104,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
       xorl(t1, t1);
       movl(Address(obj, base_offset), t1);
     }
-  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
+  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && !UseCompactObjectHeaders) {
     xorptr(t1, t1);
     store_klass_gap(obj, t1);
   }

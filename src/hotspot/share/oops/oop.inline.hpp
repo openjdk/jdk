@@ -154,7 +154,7 @@ narrowKlass oopDesc::narrow_klass() const {
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     _metadata._compressed_klass = CompressedKlassPointers::encode_not_null(k);
   } else {
     _metadata._klass = k;
@@ -165,7 +165,7 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   assert(Universe::is_bootstrapping() || (k != nullptr && k->is_klass()), "incorrect Klass");
   assert(!UseCompactObjectHeaders, "don't set Klass* with compact headers");
   char* raw_mem = ((char*)mem + klass_offset_in_bytes());
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     AtomicAccess::release_store((narrowKlass*)raw_mem,
                           CompressedKlassPointers::encode_not_null(k));
   } else {

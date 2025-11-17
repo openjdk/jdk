@@ -27,7 +27,7 @@
  * @requires vm.bits == 64
  * @requires vm.flagless
  * @bug 8003424
- * @summary Testing UseCompressedClassPointers with CDS
+ * @summary Testing USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE with CDS
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -43,7 +43,7 @@ public class CDSCompressedKPtrs {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb;
     pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-      "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
+      "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE", "-XX:+UseCompressedOops",
       "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:dump", "-Xlog:cds");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     try {
@@ -51,7 +51,7 @@ public class CDSCompressedKPtrs {
       output.shouldHaveExitValue(0);
 
       pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-        "-XX:+UseCompressedClassPointers", "-XX:+UseCompressedOops",
+        "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE", "-XX:+UseCompressedOops",
         "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./CDSCompressedKPtrs.jsa", "-Xshare:on", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("sharing");

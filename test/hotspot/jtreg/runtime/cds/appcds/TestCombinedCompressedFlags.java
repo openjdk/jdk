@@ -46,7 +46,7 @@ public class TestCombinedCompressedFlags {
 
     static class ConfArg {
         public boolean useCompressedOops;            // UseCompressedOops
-        public boolean useCompressedClassPointers;   // UseCompressedClassPointers
+        public boolean useCompressedClassPointers;   // USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
         public String  msg;
         public int code;
         public ConfArg(boolean useCompressedOops, boolean useCompressedClassPointers, String msg, int code) {
@@ -66,7 +66,7 @@ public class TestCombinedCompressedFlags {
         }
         private void initExecArgs() {
            /* The combinations have four cases.
-            *          UseCompressedOops   UseCompressedClassPointers  Result
+            *          UseCompressedOops   USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE  Result
             *    1.
             *    dump: on                  on
             *    test: on                  on                          Pass
@@ -135,8 +135,8 @@ public class TestCombinedCompressedFlags {
     }
 
     public static String getCompressedClassPointersArg(boolean on) {
-        if (on) return "-XX:+UseCompressedClassPointers";
-        else    return "-XX:-UseCompressedClassPointers";
+        if (on) return "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE";
+        else    return "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE";
     }
 
     public static List<RunArg> runList;

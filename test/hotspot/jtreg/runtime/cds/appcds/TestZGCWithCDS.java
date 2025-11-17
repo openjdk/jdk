@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestZGCWithCDS {
     public final static String HELLO = "Hello World";
     public final static String UNABLE_TO_USE_ARCHIVE = "Unable to use shared archive.";
-    public final static String ERR_MSG = "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
+    public final static String ERR_MSG = "The saved state of UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is different from runtime, CDS will be disabled.";
     public static void main(String... args) throws Exception {
          String compactHeaders = "-XX:+UseCompactObjectHeaders";
          String helloJar = JarBuilder.build("hello", "Hello");
@@ -64,12 +64,12 @@ public class TestZGCWithCDS {
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("2. Run with +UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("2. Run with +UseCompressedOops +USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:-UseZGC",
                          "-XX:+UseCompressedOops",           // in case turned off by vmoptions
-                         "-XX:+UseCompressedClassPointers",  // by jtreg
+                         "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",  // by jtreg
                          compactHeaders,
                          "-Xlog:cds",
                          "Hello");
@@ -77,12 +77,12 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("3. Run with -UseCompressedOops -UseCompressedClassPointers");
+         System.out.println("3. Run with -UseCompressedOops -USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:-UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
+                         "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                          compactHeaders,
                          "-Xlog:cds",
                          "Hello");
@@ -90,24 +90,24 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("4. Run with -UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("4. Run with -UseCompressedOops +USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:-UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
+                         "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                          compactHeaders,
                          "-Xlog:cds",
                          "Hello");
          out.shouldContain(HELLO);
          out.shouldHaveExitValue(0);
 
-         System.out.println("5. Run with +UseCompressedOops -UseCompressedClassPointers");
+         System.out.println("5. Run with +UseCompressedOops -USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:+UseCompressedOops",
-                         "-XX:-UseCompressedClassPointers",
+                         "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                          compactHeaders,
                          "-Xlog:cds",
                          "Hello");
@@ -115,12 +115,12 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("6. Run with +UseCompressedOops +UseCompressedClassPointers");
+         System.out.println("6. Run with +UseCompressedOops +USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .exec(helloJar,
                          "-XX:+UseSerialGC",
                          "-XX:+UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
+                         "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                          compactHeaders,
                          "-Xlog:cds",
                          "Hello");
@@ -128,13 +128,13 @@ public class TestZGCWithCDS {
          out.shouldContain(ERR_MSG);
          out.shouldHaveExitValue(1);
 
-         System.out.println("7. Dump with -UseCompressedOops -UseCompressedClassPointers");
+         System.out.println("7. Dump with -UseCompressedOops -USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
          out = TestCommon
                    .dump(helloJar,
                          new String[] {"Hello"},
                          "-XX:+UseSerialGC",
                          "-XX:-UseCompressedOops",
-                         "-XX:+UseCompressedClassPointers",
+                         "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                          compactHeaders,
                          "-Xlog:cds");
          out.shouldContain("Dumping shared data to file:");

@@ -940,7 +940,7 @@ public class VM {
 
   public boolean isCompressedKlassPointersEnabled() {
     if (compressedKlassPointersEnabled == null) {
-        Flag flag = getCommandLineFlag("UseCompressedClassPointers");
+        Flag flag = getCommandLineFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
         compressedKlassPointersEnabled = (flag == null) ? Boolean.FALSE:
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }

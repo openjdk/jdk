@@ -843,7 +843,7 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register s, Register dst_oop);
   void load_narrow_klass_compact(Register dst, Register src);
   // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // depending on USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE).
   void cmp_klass(Register klass, Register obj, Register tmp);
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
   // Uses tmp1 and tmp2 as temporary registers.
