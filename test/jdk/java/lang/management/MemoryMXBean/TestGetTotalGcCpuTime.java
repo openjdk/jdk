@@ -78,6 +78,7 @@
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 
 public class TestGetTotalGcCpuTime {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
@@ -96,7 +97,15 @@ public class TestGetTotalGcCpuTime {
             return;
         }
 
-        System.gc();
+        // Add some tracing work to ensure OSs with slower update rates would report usage
+        for (int i = 0; i < 200; i++) {
+          ArrayList<Object> objs = new ArrayList<Object>();
+          for (int j = 0; j < 5000; j++) {
+            objs.add(new Object());
+          }
+          System.gc();
+        }
+
         long gcCpuTimeFromThread = mxMemoryBean.getTotalGcCpuTime();
 
         if (usingEpsilonGC) {
