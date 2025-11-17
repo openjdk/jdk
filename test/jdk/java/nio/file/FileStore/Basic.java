@@ -74,9 +74,8 @@ public class Basic {
         FileStore store = Files.getFileStore(file);
         boolean supported = store.supportsFileAttributeView(viewClass);
         assertTrue(store.supportsFileAttributeView(viewName) == supported);
-        // A FileSystemProvider may support many views but some of these attributes
-        // in these views may not supported on all FileStores.
-        // So we only check for non-null view if the store supports the view.
+        // If the view is supported by the FileStore then
+        // Files.getFileAttributeView should return return that view
         if (supported) {
             Asserts.assertNotNull(Files.getFileAttributeView(file, viewClass));
         }
