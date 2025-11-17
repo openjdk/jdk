@@ -57,7 +57,7 @@ public class ObjectCountEventVerifier {
             String className = Events.assertField(event, "objectClass.name").notEmpty().getValue();
             long count = Events.assertField(event, "count").atLeast(0L).getValue();
             long totalSize = Events.assertField(event, "totalSize").atLeast(1L).getValue();
-            System.out.println(className);
+            System.out.printf("%s: count %d totalSize %d%n", className, count, totalSize);
             numInstancesOfClass.put(className, count);
             sizeOfInstances.put(className, totalSize);
         }
@@ -69,10 +69,11 @@ public class ObjectCountEventVerifier {
 
     private static long expectedFooArraySize(long count) {
         boolean runsOn32Bit = System.getProperty("sun.arch.data.model").equals("32");
-        int bytesPerWord = runsOn32Bit ? 4 : 8;
-        int objectHeaderSize = bytesPerWord * 3; // length will be aligned on 64 bits
-        int alignmentInOopArray = runsOn32Bit ? 4 : 0;
+        // Compressed Class Pointers, +COH
+        final int bytesPerWord = runsOn32Bit ? 4 : 8;
+        final int objectHeaderSize = runsOn32Bit ? 12 : 16;
+        final int alignmentGap = runsOn32Bit ? 4 : 0;
         int ptrSize = bytesPerWord;
-        return objectHeaderSize + alignmentInOopArray + count * ptrSize;
+        return objectHeaderSize + alignmentGap + count * ptrSize;
     }
 }
