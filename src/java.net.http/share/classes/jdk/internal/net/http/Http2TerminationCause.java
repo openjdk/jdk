@@ -67,7 +67,7 @@ public abstract sealed class Http2TerminationCause {
 
     /**
      * Returns the IOException that is considered the cause of the connection termination.
-     * Even a normal {@linkplain #isErroneousClose() non-erroneous} termination will have
+     * Even a {@linkplain #isAbnormalClose() normal} termination will have
      * a IOException associated with it, so this method will always return a non-null instance.
      */
     public final IOException getCloseCause() {
@@ -78,10 +78,10 @@ public abstract sealed class Http2TerminationCause {
      * Returns {@code true} if the connection was terminated due to some exception. {@code false}
      * otherwise.
      * A normal connection termination (for example, the connection idle timing out locally)
-     * is not considered as an erroneous termination and this method returns {@code false} for
+     * is not considered as an abnormal termination and this method returns {@code false} for
      * such cases.
      */
-    public abstract boolean isErroneousClose();
+    public abstract boolean isAbnormalClose();
 
     /**
      * Returns the connection termination cause, represented as a string. Unlike the
@@ -115,7 +115,7 @@ public abstract sealed class Http2TerminationCause {
 
     /**
      * Returns a connection termination cause that represents an
-     * {@linkplain #isErroneousClose() erroneous} termination due to the given {@code cause}.
+     * {@linkplain #isAbnormalClose() abnormal} termination due to the given {@code cause}.
      *
      * @param cause the termination cause, cannot be null.
      */
@@ -128,16 +128,16 @@ public abstract sealed class Http2TerminationCause {
     }
 
     /**
-     * Returns a connection termination cause that represents a normal
-     * {@linkplain #isErroneousClose() non-erroneous} termination.
+     * Returns a connection termination cause that represents a
+     * {@linkplain #isAbnormalClose() normal} termination.
      */
     public static Http2TerminationCause noErrorTermination() {
         return NoError.INSTANCE;
     }
 
     /**
-     * Returns a connection termination cause that represents a normal
-     * {@linkplain #isErroneousClose() non-erroneous} termination due to the connection
+     * Returns a connection termination cause that represents a
+     * {@linkplain #isAbnormalClose() normal} termination due to the connection
      * being idle.
      */
     public static Http2TerminationCause idleTimedOut() {
@@ -146,7 +146,7 @@ public abstract sealed class Http2TerminationCause {
 
     /**
      * Returns a connection termination cause that represents an
-     * {@linkplain #isErroneousClose() erroneous} termination due to the given {@code errorCode}.
+     * {@linkplain #isAbnormalClose() abnormal} termination due to the given {@code errorCode}.
      * Although this method does no checks for the {@code errorCode}, it is expected to be one
      * of the error codes specified by the HTTP/2 RFC for the ErrorFrame.
      *
@@ -201,7 +201,7 @@ public abstract sealed class Http2TerminationCause {
         }
 
         @Override
-        public boolean isErroneousClose() {
+        public boolean isAbnormalClose() {
             return false;
         }
 
@@ -225,7 +225,7 @@ public abstract sealed class Http2TerminationCause {
         }
 
         @Override
-        public boolean isErroneousClose() {
+        public boolean isAbnormalClose() {
             return getCloseCode() != ErrorFrame.NO_ERROR;
         }
 
@@ -252,7 +252,7 @@ public abstract sealed class Http2TerminationCause {
         }
 
         @Override
-        public boolean isErroneousClose() {
+        public boolean isAbnormalClose() {
             return true;
         }
 
@@ -268,7 +268,7 @@ public abstract sealed class Http2TerminationCause {
         }
 
         @Override
-        public boolean isErroneousClose() {
+        public boolean isAbnormalClose() {
             return true;
         }
 

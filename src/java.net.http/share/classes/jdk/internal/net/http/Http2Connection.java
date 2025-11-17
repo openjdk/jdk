@@ -2076,7 +2076,7 @@ class Http2Connection implements Closeable {
                 Log.logError("Closing connection due to: {0}", tc);
             } else {
                 if (debug.on()) {
-                    final String stateStr = "Erroneous close=" + tc.isErroneousClose() +
+                    final String stateStr = "Abnormal close=" + tc.isAbnormalClose() +
                             ", has active streams=" + isActive() +
                             ", GOAWAY received=" + goAwayRecvd.get() +
                             ", GOAWAY sent=" + goAwaySent.get();
