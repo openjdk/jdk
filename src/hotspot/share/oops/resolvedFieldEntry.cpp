@@ -26,13 +26,13 @@
 #include "cppstdlib/type_traits.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 
-STATIC_ASSERT(std::is_trivially_copyable_v<ResolvedFieldEntry> == true);
+static_assert(std::is_trivially_copyable_v<ResolvedFieldEntry>);
 
 // Detect inadvertently introduced trailing padding.
 class ResolvedFieldEntryWithExtra : public ResolvedFieldEntry {
   u1 _extra_field;
 };
-STATIC_ASSERT(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
+static_assert(sizeof(ResolvedFieldEntryWithExtra) > sizeof(ResolvedFieldEntry));
 
 void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr("Field Entry:");
