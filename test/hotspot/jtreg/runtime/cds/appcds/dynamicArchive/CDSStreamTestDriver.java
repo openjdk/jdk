@@ -69,7 +69,7 @@ public class CDSStreamTestDriver extends DynamicArchiveTestBase {
            } catch (SkippedException s) {
                if (GC.Z.isSelected() && s.toString().equals(skippedException)) {
                    System.out.println("Got " + s.toString() + " as expected.");
-                   System.out.println("Because the test was run with ZGC with UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE disabled,");
+                   System.out.println("Because the test was run with ZGC with UseCompressedOops disabled,");
                    System.out.println("but the base archive was created with the options enabled");
               } else {
                    throw new RuntimeException("Archive mapping should always succeed after JDK-8231610 (did the machine run out of memory?)");

@@ -66,9 +66,9 @@ public class CommandLineFlagComboNegative {
                 "An error has occurred while processing the shared archive file", 1) );
         }
         testTable.add( new TestVector("-XX:+UseCompressedOops", "-XX:-UseCompressedOops",
-            "The saved state of UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is different from runtime, CDS will be disabled.", 1) );
-        testTable.add( new TestVector("-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
-           "The saved state of UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is different from runtime, CDS will be disabled.", 1) );
+            "The saved state of UseCompressedOops (1) is different from runtime (0), CDS will be disabled.", 1) );
+        testTable.add( new TestVector("-XX:-UseCompressedOops", "-XX:+UseCompressedOops",
+                "The saved state of UseCompressedOops (0) is different from runtime (1), CDS will be disabled.", 1) );
     }
 
     private void runTests() throws Exception
