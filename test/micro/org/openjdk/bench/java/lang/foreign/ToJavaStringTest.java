@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class ToJavaStringTest {
 
     private MemorySegment strSegment;
-    private int lengthBytes;
+    private int length;
 
     @Param({"5", "20", "100", "200", "451"})
     int size;
@@ -67,7 +67,7 @@ public class ToJavaStringTest {
         }
         var s = LOREM.substring(0, size);
         strSegment = arena.allocateFrom(s);
-        lengthBytes = s.getBytes(UTF_8).length;
+        length = s.getBytes(UTF_8).length;
     }
 
     @Benchmark
@@ -77,19 +77,19 @@ public class ToJavaStringTest {
 
     @Benchmark
     public String panama_readStringLength() {
-        return strSegment.getString(0, UTF_8, lengthBytes);
-    }
-
-    @Benchmark
-    public String panama_copyLength() {
-        byte[] bytes = new byte[lengthBytes];
-        MemorySegment.copy(strSegment, JAVA_BYTE, 0, bytes, 0, lengthBytes);
-        return new String(bytes, UTF_8);
+        return strSegment.getString(0, UTF_8, length);
     }
 
     @Benchmark
     public String jni_readString() {
         return readString(strSegment.address());
+    }
+
+    @Benchmark
+    public String panama_copyLength() {
+        byte[] bytes = new byte[length];
+        MemorySegment.copy(strSegment, JAVA_BYTE, 0, bytes, 0, length);
+        return new String(bytes, UTF_8);
     }
 
     static native String readString(long addr);

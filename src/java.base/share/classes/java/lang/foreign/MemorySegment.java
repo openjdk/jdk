@@ -1423,43 +1423,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     void setString(long offset, String str, Charset charset);
 
     /**
-     * Writes the given string into this segment at the given offset, converting it to a
-     * byte sequence using the provided charset.
-     * <p>
-     * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string. The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
-     * <p>
-     * If the given string contains any {@code '\0'} characters, they will be
-     * copied as well. This means that, depending on the method used to read
-     * the string, such as {@link MemorySegment#getString(long)}, the string
-     * will appear truncated when read again.
-     *
-     * @param offset  offset in bytes (relative to this segment address) at which this
-     *                access operation will occur, the final address of this write
-     *                operation can be expressed as {@code address() + offset}
-     * @param str     the Java string to be written into this segment
-     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
-     *                string bytes. The {@code charset} must be a
-     *                {@linkplain StandardCharsets standard charset}
-     * @return the number of bytes written.
-     * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - B}, where:
-     *         {@code B} is the size, in bytes, of the string encoded using the
-     *         provided charset (e.g. {@code str.getBytes(charset).length}).
-     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}
-     * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}
-     * @throws IllegalArgumentException if {@code charset} is not a
-     *         {@linkplain StandardCharsets standard charset}
-     * @throws IllegalArgumentException if this segment is
-     *         {@linkplain #isReadOnly() read-only}
-     */
-    int setStringWithoutNullTerminator(long offset, String str, Charset charset);
-
-    /**
      * Creates a memory segment that is backed by the same region of memory that backs
      * the given {@link Buffer} instance. The segment starts relative to the buffer's
      * position (inclusive) and ends relative to the buffer's limit (exclusive).
