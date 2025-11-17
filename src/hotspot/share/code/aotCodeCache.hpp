@@ -177,12 +177,11 @@ protected:
       none                     = 0,
       debugVM                  = 1,
       compressedOops           = 2,
-      compressedClassPointers  = 4,
-      useTLAB                  = 8,
-      systemClassAssertions    = 16,
-      userClassAssertions      = 32,
-      enableContendedPadding   = 64,
-      restrictContendedPadding = 128
+      useTLAB                  = 4,
+      systemClassAssertions    = 8,
+      userClassAssertions      = 16,
+      enableContendedPadding   = 32,
+      restrictContendedPadding = 64
     };
     uint _flags;
 

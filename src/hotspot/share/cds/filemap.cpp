@@ -1907,7 +1907,8 @@ bool FileMapHeader::validate() {
                           file_type, compressed_oops(), compact_headers());
   if (compressed_oops() != UseCompressedOops) {
     aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops (%d) is "
-                               "different from runtime (%d), CDS will be disabled.", compressed_oops(), UseCompressedOops, file_type);
+                               "different from runtime (%d), CDS will be disabled.", file_type,
+                               compressed_oops(), UseCompressedOops);
     return false;
   }
 

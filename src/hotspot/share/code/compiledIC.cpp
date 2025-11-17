@@ -76,11 +76,7 @@ CompiledICData::CompiledICData()
 // Inline cache callsite info is initialized once the first time it is resolved
 void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
   _speculated_method = call_info->selected_method();
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    _speculated_klass = (uintptr_t)CompressedKlassPointers::encode_not_null(receiver_klass);
-  } else {
-    _speculated_klass = (uintptr_t)receiver_klass;
-  }
+  _speculated_klass = (uintptr_t)CompressedKlassPointers::encode_not_null(receiver_klass);
   if (call_info->call_kind() == CallInfo::itable_call) {
     assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
@@ -133,12 +129,7 @@ Klass* CompiledICData::speculated_klass() const {
   if (is_speculated_klass_unloaded()) {
     return nullptr;
   }
-
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    return CompressedKlassPointers::decode_not_null((narrowKlass)_speculated_klass);
-  } else {
-    return (Klass*)_speculated_klass;
-  }
+  return CompressedKlassPointers::decode_not_null((narrowKlass)_speculated_klass);
 }
 
 //-----------------------------------------------------------------------------
