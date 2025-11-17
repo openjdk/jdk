@@ -189,10 +189,10 @@ final class DateTimePrintContext {
         // ensure minimal change (early return is an optimization)
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
-        if (Objects.equals(overrideChrono, temporalChrono)) {
+        if (overrideChrono != null && overrideChrono.equals(temporalChrono)) {
             overrideChrono = null;
         }
-        if (Objects.equals(overrideZone, temporalZone)) {
+        if (overrideZone != null && overrideZone.equals(temporalZone)) {
             overrideZone = null;
         }
         if (overrideChrono == null && overrideZone == null) {
