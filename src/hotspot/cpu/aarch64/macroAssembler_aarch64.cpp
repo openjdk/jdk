@@ -765,7 +765,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(java_thread == rthread, "unexpected register");
 #ifdef ASSERT
   // TraceBytecodes does not use r12 but saves it over the call, so don't verify
-  // if ((UseCompressedOops || USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) && !TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");
+  // if (!TraceBytecodes) verify_heapbase("call_VM_base: heap base corrupted?");
 #endif // ASSERT
 
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
@@ -1005,14 +1005,10 @@ int MacroAssembler::ic_check(int end_alignment) {
     load_narrow_klass_compact(tmp1, receiver);
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  } else {
     ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
-  } else {
-    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
-    cmp(tmp1, tmp2);
   }
 
   Label dont;
@@ -3128,7 +3124,6 @@ int MacroAssembler::pop_p(unsigned int bitset, Register stack) {
 #ifdef ASSERT
 void MacroAssembler::verify_heapbase(const char* msg) {
 #if 0
-  assert (UseCompressedOops || USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "should be compressed");
   assert (Universe::heap() != nullptr, "java heap should be initialized");
   if (!UseCompressedOops || Universe::ptr_base() == nullptr) {
     // rheapbase is allocated as general register
@@ -4919,11 +4914,9 @@ void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompactObjectHeaders) {
     load_narrow_klass_compact(dst, src);
     decode_klass_not_null(dst);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  } else {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);
-  } else {
-    ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
   }
 }
 
@@ -4976,25 +4969,21 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
 
 void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
   assert_different_registers(obj, klass, tmp);
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    if (UseCompactObjectHeaders) {
-      load_narrow_klass_compact(tmp, obj);
-    } else {
-      ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
-    }
-    if (CompressedKlassPointers::base() == nullptr) {
-      cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
-      return;
-    } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
-               && CompressedKlassPointers::shift() == 0) {
-      // Only the bottom 32 bits matter
-      cmpw(klass, tmp);
-      return;
-    }
-    decode_klass_not_null(tmp);
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, obj);
   } else {
-    ldr(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
+  if (CompressedKlassPointers::base() == nullptr) {
+    cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
+    return;
+  } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
+             && CompressedKlassPointers::shift() == 0) {
+    // Only the bottom 32 bits matter
+    cmpw(klass, tmp);
+    return;
+  }
+  decode_klass_not_null(tmp);
   cmp(klass, tmp);
 }
 
@@ -5003,14 +4992,10 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
     load_narrow_klass_compact(tmp1, obj1);
     load_narrow_klass_compact(tmp2,  obj2);
     cmpw(tmp1, tmp2);
-  } else if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+  } else {
     ldrw(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
     cmpw(tmp1, tmp2);
-  } else {
-    ldr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
-    cmp(tmp1, tmp2);
   }
 }
 
@@ -5018,20 +5003,14 @@ void MacroAssembler::store_klass(Register dst, Register src) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    encode_klass_not_null(src);
-    strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  } else {
-    str(src, Address(dst, oopDesc::klass_offset_in_bytes()));
-  }
+  encode_klass_not_null(src);
+  strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
   assert(!UseCompactObjectHeaders, "not with compact headers");
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
-    // Store to klass gap in destination
-    strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
-  }
+  // Store to klass gap in destination
+  strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
 }
 
 // Algorithm must match CompressedOops::encode.
@@ -5177,8 +5156,6 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 }
 
 MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
-  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "not using compressed class pointers");
-
   // KlassDecodeMode shouldn't be set already.
   assert(_klass_decode_mode == KlassDecodeNone, "set once");
 
@@ -5308,8 +5285,6 @@ void MacroAssembler::decode_klass_not_null_for_aot(Register dst, Register src) {
 }
 
 void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
-  assert (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "should only be used for compressed headers");
-
   if (AOTCodeCache::is_on_for_dump()) {
     decode_klass_not_null_for_aot(dst, src);
     return;
@@ -5376,7 +5351,6 @@ void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
 }
 
 void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
-  assert (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "should only be used for compressed headers");
   assert (oop_recorder() != nullptr, "this assembler needs an OopRecorder");
   int index = oop_recorder()->find_index(k);
   assert(! Universe::heap()->is_in(k), "should not be an oop");
