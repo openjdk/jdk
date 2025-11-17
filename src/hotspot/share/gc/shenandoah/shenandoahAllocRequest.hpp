@@ -31,7 +31,7 @@
 
 class ShenandoahAllocRequest : StackObj {
 public:
-  // Alloc type is encoded bits with scheme:
+  // Alloc type is encoded bits with scheme as:
   // [x|xx|xx|xx]
   //          ^---- Requester:
   //                  00 -- mutator
