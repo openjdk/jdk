@@ -357,33 +357,6 @@ class StubGenerator: public StubCodeGenerator {
     retaddr_off        =   1,
   };
 
-  // Helper used to restore saved ranges and handler addresses.
-  // Expects entries to contain 3 * count addresses beginning at
-  // offset begin which identify start of range, end of range and
-  // address of handler pc. end of range may be nullptr in which case
-  // it defaults to stub_end. hanlder pc may be nullptr in which case
-  // it defaults to default_handler.
-
-  void register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count, address stub_end) {
-    for (int i = 0; i < count; i++) {
-      int offset = begin + 3 * i;
-      address start = entries.at(offset);
-      address end = entries.at(offset + 1);
-      if (end == nullptr) {
-        end = stub_end;
-      }
-      address handler = entries.at(offset + 2);
-      if (handler == nullptr) {
-        handler = UnsafeMemoryAccess::common_exit_stub_pc();
-      }
-      UnsafeMemoryAccess::add_to_table(start, end, handler);
-    }
-  }
-
-  void retrieve_unsafe_access_handlers(address start, address end, GrowableArray<address> &entries) {
-    UnsafeMemoryAccess::collect_entries(start, end, entries);
-  }
-
   address generate_call_stub(address& return_address) {
     assert((int)frame::entry_frame_after_call_words == -(int)sp_after_call_off + 1 &&
            (int)frame::entry_frame_call_wrapper_offset == (int)call_wrapper_off,
@@ -859,7 +832,6 @@ class StubGenerator: public StubCodeGenerator {
 
   // Generate indices for iota vector.
   address generate_iota_indices(StubId stub_id) {
-    __ align(CodeEntryAlignment);
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
     if (find_archive_data(stub_id)) {
@@ -869,6 +841,7 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
 
+    __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     address start = __ pc();
     // B

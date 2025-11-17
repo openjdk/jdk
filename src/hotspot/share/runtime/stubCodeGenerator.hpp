@@ -115,6 +115,9 @@ class StubCodeGenerator: public StackObj {
   AOTStubData* _stub_data;
 
   void setup_code_desc(const char* name, address start, address end, bool loaded_from_cache);
+  // unsafe handler management
+  void register_unsafe_access_handlers(GrowableArray<address> &entries, int begin, int count, address stub_end);
+  void retrieve_unsafe_access_handlers(address start, address end, GrowableArray<address> &entries);
 
  public:
   StubCodeGenerator(CodeBuffer* code, bool print_code = false);
