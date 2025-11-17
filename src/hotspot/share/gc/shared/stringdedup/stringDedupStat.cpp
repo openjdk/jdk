@@ -253,11 +253,9 @@ void StringDedup::Stat::emit_statistics(bool total) const {
     e.set_skippedDead(_skipped_dead);
     e.set_skippedIncomplete(_skipped_incomplete);
     e.set_skippedShared(_skipped_shared);
-    e.set_activeElapsed(_active_elapsed);
-    e.set_processElapsed(_process_elapsed);
-    e.set_idleElapsed(_idle_elapsed);
-    e.set_resizeTableElapsed(_resize_table_elapsed);
-    e.set_cleanupTableElapsed(_cleanup_table_elapsed);
+    e.set_processing(_process_elapsed);
+    e.set_tableResize(_resize_table_elapsed);
+    e.set_tableCleanup(_cleanup_table_elapsed);
     e.commit();
   }
 }

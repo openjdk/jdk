@@ -1297,11 +1297,9 @@
     <Field type="ulong" name="skippedDead" label="Skipped Dead" />
     <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
     <Field type="ulong" name="skippedShared" label="Skipped Shared" />
-    <Field type="Tickspan" name="activeElapsed" label="Active Elapsed" />
-    <Field type="Tickspan" name="processElapsed" label="Process Elapsed" />
-    <Field type="Tickspan" name="idleElapsed" label="Idle Elapsed" />
-    <Field type="Tickspan" name="resizeTableElapsed" label="Resize Table Elapsed" />
-    <Field type="Tickspan" name="cleanupTableElapsed" label="Cleanup Table Elapsed" />
+    <Field type="Tickspan" name="processing" label="Processing" />
+    <Field type="Tickspan" name="tableResize" label="Table Resize" />
+    <Field type="Tickspan" name="tableCleanup" label="Table Cleanup" />
   </Event>
 
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
