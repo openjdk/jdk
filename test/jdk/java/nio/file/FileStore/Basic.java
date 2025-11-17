@@ -77,7 +77,7 @@ public class Basic {
         // If the file attribute view is supported by the FileStore then
         // Files.getFileAttributeView should return that view
         if (supported) {
-            Asserts.assertNotNull(Files.getFileAttributeView(file, viewClass));
+            Asserts.assertTrue(Files.getFileAttributeView(file, viewClass) != null);
         }
     }
 
