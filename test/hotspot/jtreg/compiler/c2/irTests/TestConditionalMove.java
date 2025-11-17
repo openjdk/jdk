@@ -36,10 +36,10 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorConditionalMove
+ * @run driver compiler.c2.irTests.TestConditionalMove
  */
 
-public class TestVectorConditionalMove {
+public class TestConditionalMove {
     final private static int SIZE = 1024;
     private static final Random RANDOM = Utils.getRandomInstance();
 
