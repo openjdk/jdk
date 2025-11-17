@@ -38,7 +38,6 @@ import java.io.IOException;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.util.FileUtils;
-import jdk.test.lib.Asserts;
 
 public class Basic {
 
@@ -77,7 +76,7 @@ public class Basic {
         // If the file attribute view is supported by the FileStore then
         // Files.getFileAttributeView should return that view
         if (supported) {
-            Asserts.assertTrue(Files.getFileAttributeView(file, viewClass) != null);
+            assertTrue(Files.getFileAttributeView(file, viewClass) != null);
         }
     }
 
