@@ -1997,11 +1997,5 @@ public class ThreadPoolExecutorSubclassTest extends JSR166TestCase {
             }
         }
     }
-    public void testFinalizeMethodCallsSuperFinalize() {
-        new CustomTPE(1, 1,
-                      LONG_DELAY_MS, MILLISECONDS,
-                      new LinkedBlockingQueue<Runnable>()) {
-        }.shutdown();
-    }
 
 }
