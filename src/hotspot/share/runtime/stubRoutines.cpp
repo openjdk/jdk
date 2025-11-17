@@ -227,7 +227,6 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
   StubGenerator_generate(&buffer, blob_id, stub_data_p);
   if (code_size == 0) {
     assert(buffer.insts_size() == 0, "should not write into buffer when bob size declared as 0");
-    LogTarget(Info, stubs) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print_cr("%s\t not generated", buffer_name);
@@ -240,7 +239,17 @@ static BufferBlob* initialize_stubs(BlobId blob_id,
          "increase %s, code_size: %d, used: %d, free: %d",
          assert_msg, code_size, buffer.total_content_size(), buffer.insts_remaining());
 
-  if (AOTCodeCache::is_dumping_stub()) {
+  if (stub_data.is_using()) {
+    // we generated some new entries so republish all entries TODO -
+    // ensure we publish collect and publish the preuniverse stubs but
+    // don't try to save them
+    AOTCodeCache::publish_stub_addresses(*stubs_code, blob_id, &stub_data);
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      ls.print_cr("Republished entries for blob '%s'", buffer_name);
+    }
+  } else if (stub_data.is_dumping()) {
+    // save the blob and publihs the entry addresses
     if (stub_data.store_code_blob(*stubs_code, &buffer)) {
       if (lt.is_enabled()) {
         LogStream ls(lt);
