@@ -51,6 +51,22 @@
  * @run main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 3
  */
 
+/*
+ * @test
+ * @summary Test options parser test cases
+ * @requires vm.jvmti
+ * @library /test/lib
+ * @compile SuspendWithObjectMonitorWait.java
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait -p
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 1 -p 5 junk
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait junk
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 1 junk
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait -p 1 junk
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 1 -p junk
+ * @comment main/othervm/native -agentlib:SuspendWithObjectMonitorWait SuspendWithObjectMonitorWait 1 junk -p
+ */
+
 import java.io.PrintStream;
 
 //
@@ -121,11 +137,11 @@ import java.io.PrintStream;
 // <launch returns>     waiter running
 // launch resumer       enter threadLock
 // <launch returns>     while !READY_TO_NOTIFY  resumer running
-// delay 1-second         threadLock.wait(1)    wait for notify
+// :                    threadLock.wait(1)      wait for notify
 // enter threadLock     :                       :
 // set READY_TO_NOTIFY  :
 // threadLock.notify    wait finishes           :
-// :                    reenter blocks          :
+// : delay 200ms        reenter blocks          :
 // suspend waiter       <suspended>             :
 // <ready to test>      :                       :
 // :                    :                       :
@@ -147,10 +163,9 @@ import java.io.PrintStream;
 //       while the waiter thread is in the threadLock.wait(1) tight
 //       loop increasing stress on the monitor sub-system.
 //
-// Note: The first sleep(1-second) in main and the wait(1) in the waiter
-//       thread allows the waiter thread to loop tightly here:
-//         while !READY_TO_NOTIFY
-//           threadLock.wait(1)
+// Note: sleep(200ms) here while holding the threadLock to allow the
+//       waiter thread's timed wait to finish before we attempt to
+//       suspend the waiter thread.
 //
 
 public class SuspendWithObjectMonitorWait {
@@ -184,11 +199,15 @@ public class SuspendWithObjectMonitorWait {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.err.println("Invalid number of arguments, there should be at least a test case given.");
+            System.err.println("Invalid number of arguments, there should be at least a test_case given.");
             usage();
         }
 
-        int test = Integer.parseUnsignedInt(args[0]);
+        if (args.length > 3) {
+            System.err.println("Invalid number of arguments, there are too many arguments.");
+            usage();
+        }
+
         try {
             System.loadLibrary(AGENT_LIB);
             log("Loaded library: " + AGENT_LIB);
@@ -198,33 +217,52 @@ public class SuspendWithObjectMonitorWait {
             throw ule;
         }
 
+        int testCase = 0;
         int timeMax = 0;
-        if (args.length == 1) {
-            timeMax = DEF_TIME_MAX;
-        } else {
-            int argIndex = 1;
-            int argsLeft = args.length-argIndex;
+        for (int argIndex = 0; argIndex < args.length; argIndex++) {
             if (args[argIndex].equals("-p")) {
+                // Handle optional -p arg regardless of position.
                 printDebug = true;
-                argIndex = 2;
-                argsLeft--;
+                continue;
             }
-            if (argsLeft == 0) {
-                timeMax = DEF_TIME_MAX;
-            } else if (argsLeft == 1) {
+
+            if (testCase == 0) {
+                try {
+                    // testCase must be the first non-optional arg.
+                    testCase = Integer.parseUnsignedInt(args[argIndex]);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + args[argIndex] +
+                            "': invalid test_case value.");
+                    usage();
+                }
+                if (testCase < 1 || testCase > 3) {
+                    System.err.println("Invalid test_case value: '" + testCase + "'");
+                    usage();
+                }
+                continue;
+            }
+
+            if (argIndex < args.length) {
+                // timeMax is an optional arg.
                 try {
                     timeMax = Integer.parseUnsignedInt(args[argIndex]);
                 } catch (NumberFormatException nfe) {
                     System.err.println("'" + args[argIndex] +
-                                       "': invalid timeMax value.");
+                            "': invalid time_max value.");
                     usage();
                 }
             } else {
-                usage();
+                timeMax = DEF_TIME_MAX;
             }
         }
 
-        System.exit(run(timeMax, System.out, test) + exit_delta);
+        if (testCase == 0) {
+            // Just -p was given.
+            System.err.println("Invalid number of arguments, no test_case given.");
+            usage();
+        }
+
+        System.exit(run(timeMax, System.out, testCase) + exit_delta);
     }
 
     public static void logDebug(String mesg) {
@@ -234,22 +272,22 @@ public class SuspendWithObjectMonitorWait {
     }
 
     public static void usage() {
-        System.err.println("Usage: " + AGENT_LIB + " [N][-p][time_max]");
+        System.err.println("Usage: " + AGENT_LIB + " test_case [-p] [time_max]");
         System.err.println("where:");
-        System.err.println("    N        ::= test case");
-        System.err.println("    -p       ::= print debug info");
-        System.err.println("    time_max ::= max looping time in seconds");
-        System.err.println("                 (default is " + DEF_TIME_MAX +
-                           " seconds)");
+        System.err.println("    test_case ::= 1 | 2 | 3");
+        System.err.println("    -p        ::= print debug info");
+        System.err.println("    time_max  ::= max looping time in seconds");
+        System.err.println("                  (default is " + DEF_TIME_MAX +
+                " seconds)");
         System.exit(1);
     }
 
-    public static int run(int timeMax, PrintStream out, int test) {
-        switch (test) {
+    public static int run(int timeMax, PrintStream out, int testCase) {
+        switch (testCase) {
             case 1: return (new SuspendWithObjectMonitorWait()).doWork1(timeMax, out);
             case 2: return (new SuspendWithObjectMonitorWait()).doWork2(timeMax, out);
             case 3: return (new SuspendWithObjectMonitorWait()).doWork3(timeMax, out);
-            default: throw new RuntimeException("Unknown test");
+            default: throw new RuntimeException("Unknown test_case: " + testCase);
         }
 
     }
@@ -467,6 +505,8 @@ public class SuspendWithObjectMonitorWait {
                     // waiter thread.
                 }
                 try {
+                    // Delay for 1-second while holding the threadLock to force the
+                    // resumer thread to block on entering the threadLock.
                     Thread.sleep(1000);
                 } catch(Exception e) {}
             }
@@ -545,7 +585,7 @@ public class SuspendWithObjectMonitorWait {
 
                 try {
                     Thread.sleep(200);
-                } catch(Exception e) {}
+                } catch (Exception e) {}
 
                 // wait for the waiter thread to block
                 logDebug("before contended enter wait");
@@ -589,8 +629,10 @@ public class SuspendWithObjectMonitorWait {
                     // waiter thread.
                 }
                 try {
+                    // Delay for 1-second while holding the threadLock to force the
+                    // resumer thread to block on entering the threadLock.
                     Thread.sleep(1000);
-                } catch(Exception e) {}
+                } catch (Exception e) {}
             }
 
             try {
