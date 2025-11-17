@@ -1291,7 +1291,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else if (obj == klass_RInfo) {
     klass_RInfo = dst;
   }
-  if (k->is_loaded() && !UseCompressedClassPointers) {
+  if (k->is_loaded() && !USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     select_different_registers(obj, dst, k_RInfo, klass_RInfo);
   } else {
     Rtmp1 = op->tmp3()->as_register();

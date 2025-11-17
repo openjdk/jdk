@@ -2251,7 +2251,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // but not necessarily exactly of type default_type.
     NearLabel known_ok, halt;
     metadata2reg(default_type->constant_encoding(), tmp);
-    if (UseCompressedClassPointers) {
+    if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
       __ encode_klass_not_null(tmp);
     }
 
@@ -2540,7 +2540,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   // Get object class.
   // Not a safepoint as obj null check happens earlier.
   if (op->fast_check()) {
-    if (UseCompressedClassPointers) {
+    if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
       __ load_klass(klass_RInfo, obj);
       __ compareU64_and_branch(k_RInfo, klass_RInfo, Assembler::bcondNotEqual, *failure_target);
     } else {

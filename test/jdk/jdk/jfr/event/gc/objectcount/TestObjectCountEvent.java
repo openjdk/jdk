@@ -39,7 +39,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @requires vm.gc == "Serial" | vm.gc == null
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseSerialGC -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:MarkSweepDeadRatio=0 -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountEvent
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseSerialGC -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:MarkSweepDeadRatio=0 -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountEvent
  */
 public class TestObjectCountEvent {
     private static final String objectCountEventPath = EventNames.ObjectCount;

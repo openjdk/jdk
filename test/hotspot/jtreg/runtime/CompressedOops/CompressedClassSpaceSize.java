@@ -108,7 +108,7 @@ public class CompressedClassSpaceSize {
                 output.shouldContain("outside the allowed range")
                         .shouldHaveExitValue(1);
 
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-UseCompressedClassPointers",
+                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                         "-XX:CompressedClassSpaceSize=" + minAllowedClassSpaceSize,
                         "-version");
                 output = new OutputAnalyzer(pb.start());

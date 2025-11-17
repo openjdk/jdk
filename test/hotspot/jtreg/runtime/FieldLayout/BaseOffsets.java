@@ -29,7 +29,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=no-coops-with-ccp
@@ -39,7 +39,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=with-coops-no-ccp
@@ -49,7 +49,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=no-coops-no-ccp
@@ -59,7 +59,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders BaseOffsets
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders BaseOffsets
  */
 /*
  * @test id=with-coop--with-coh
@@ -117,7 +117,7 @@ public class BaseOffsets {
             INT_OFFSET = 8;
             INT_ARRAY_OFFSET = 12;
             LONG_ARRAY_OFFSET = 16;
-        } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
+        } else if (WB.getBooleanVMFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE")) {
             INT_OFFSET = 12;
             INT_ARRAY_OFFSET = 16;
             LONG_ARRAY_OFFSET = 16;

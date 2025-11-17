@@ -81,7 +81,7 @@ private:
   // The _length field is not declared in C++.  It is allocated after the
   // mark-word when using compact headers (+UseCompactObjectHeaders), otherwise
   // after the compressed Klass* when running with compressed class-pointers
-  // (+UseCompressedClassPointers), or else after the full Klass*.
+  // (+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE), or else after the full Klass*.
   static int length_offset_in_bytes() {
     return oopDesc::base_offset_in_bytes();
   }

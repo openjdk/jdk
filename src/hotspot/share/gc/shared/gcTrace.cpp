@@ -124,7 +124,7 @@ void GCTracer::report_metaspace_summary(GCWhen::Type when, const MetaspaceSummar
   send_meta_space_summary_event(when, summary);
 
   send_metaspace_chunk_free_list_summary(when, Metaspace::NonClassType, summary.metaspace_chunk_free_list_summary());
-  if (UseCompressedClassPointers) {
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     send_metaspace_chunk_free_list_summary(when, Metaspace::ClassType, summary.class_chunk_free_list_summary());
   }
 }

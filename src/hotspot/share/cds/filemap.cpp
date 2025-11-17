@@ -225,8 +225,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
 #endif
   _compressed_oops = UseCompressedOops;
-  _compressed_class_ptrs = UseCompressedClassPointers;
-  if (UseCompressedClassPointers) {
+  _compressed_class_ptrs = USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE;
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
 #ifdef _LP64
     _narrow_klass_pointer_bits = CompressedKlassPointers::narrow_klass_pointer_bits();
     _narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
@@ -1910,10 +1910,10 @@ bool FileMapHeader::validate() {
     _has_platform_or_app_classes = false;
   }
 
-  aot_log_info(aot)("The %s was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
+  aot_log_info(aot)("The %s was created with UseCompressedOops = %d, USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE = %d, UseCompactObjectHeaders = %d",
                           file_type, compressed_oops(), compressed_class_pointers(), compact_headers());
-  if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
-    aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+  if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+    aot_log_warning(aot)("Unable to use %s.\nThe saved state of UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is "
                                "different from runtime, CDS will be disabled.", file_type);
     return false;
   }

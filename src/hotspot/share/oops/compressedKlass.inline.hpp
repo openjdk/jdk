@@ -75,7 +75,7 @@ inline narrowKlass CompressedKlassPointers::encode(const Klass* v) {
 
 #ifdef ASSERT
 inline void CompressedKlassPointers::check_encodable(const void* addr) {
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
+  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Only call for +UseCCP");
   assert(addr != nullptr, "Null Klass?");
   assert(is_encodable(addr),
          "Address " PTR_FORMAT " is not encodable (Klass range: " RANGEFMT ", klass alignment: %d)",
@@ -84,7 +84,7 @@ inline void CompressedKlassPointers::check_encodable(const void* addr) {
 
 inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk) {
   check_init(_base);
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
+  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Only call for +UseCCP");
   assert(nk > 0, "narrow Klass ID is 0");
   const uint64_t nk_mask = ~right_n_bits(narrow_klass_pointer_bits());
   assert(((uint64_t)nk & nk_mask) == 0, "narrow klass id bit spillover (%u)", nk);

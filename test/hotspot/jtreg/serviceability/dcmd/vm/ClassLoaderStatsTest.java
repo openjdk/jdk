@@ -41,7 +41,7 @@
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:-UseCompressedClassPointers --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
+ * @run testng/othervm -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
  */
 
 import org.testng.annotations.Test;
@@ -110,7 +110,7 @@ public class ClassLoaderStatsTest {
 
                     // Minimum expected sizes: initial capacity is governed by the chunk size of the first chunk, which
                     // depends on the arena growth policy. Since this is a normal class loader, we expect as initial chunk
-                    // size at least 4k (if UseCompressedClassPointers is off).
+                    // size at least 4k (if USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE is off).
                     // Minimum used size is difficult to guess but should be at least 1k.
                     // Maximum expected sizes: We just assume a reasonable maximum. We only loaded one class, so
                     // we should not see values > 64k.

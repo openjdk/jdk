@@ -307,7 +307,7 @@ class DynamicArchiveTestBase {
      * - the VM under test was started with a different options than the ones
      *   when the default CDS archive was built. E.g. the VM was started with
      *   -XX:+UseZGC which implicitly disabled the UseCompressedOoops and the
-     *   UseCompressedClassPointers options. Those "compressed" options were
+     *   USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE options. Those "compressed" options were
      *   enabled when the default CDS archive was built.
      */
     public static boolean isUseSharedSpacesDisabled() {

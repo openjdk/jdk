@@ -36,7 +36,7 @@ import java.util.List;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
@@ -46,7 +46,7 @@ import java.util.List;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
@@ -56,7 +56,7 @@ import java.util.List;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
@@ -66,7 +66,7 @@ import java.util.List;
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:-UseCompactObjectHeaders TestOopMapSizeMinimal
  */
 
 /*
@@ -99,7 +99,7 @@ public class TestOopMapSizeMinimal {
         if (is_64_bit) {
             if (WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
                 HEADER_SIZE_IN_BYTES = 8;
-            } else if (WB.getBooleanVMFlag("UseCompressedClassPointers")) {
+            } else if (WB.getBooleanVMFlag("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE")) {
                 HEADER_SIZE_IN_BYTES = 12;
             } else {
                 HEADER_SIZE_IN_BYTES = 16;
@@ -189,7 +189,7 @@ public class TestOopMapSizeMinimal {
         //           i4
 
         // There are two combinations that have gaps:
-        // -UseCompressedOops + +COH, and -UseCompressedOops + -UseCompressedClassPointers.
+        // -UseCompressedOops + +COH, and -UseCompressedOops + -USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE.
         // In both cases there is a gap following i1, and i2 will therefore nestle into that gap.
         // Otherwise the same logic applies.
 

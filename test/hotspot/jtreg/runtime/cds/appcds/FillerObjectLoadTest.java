@@ -37,14 +37,14 @@ import jdk.test.lib.process.ProcessTools;
 public class FillerObjectLoadTest {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump",
                 "-XX:SharedArchiveFile=" + TestCommon.getNewArchiveName());
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
                 "-XX:TLABSize=2048", "-Xshare:dump",
                 "-XX:SharedArchiveFile=" + TestCommon.getNewArchiveName());
         analyzer = new OutputAnalyzer(pb.start());

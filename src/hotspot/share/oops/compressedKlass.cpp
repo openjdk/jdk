@@ -318,9 +318,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d",
-               UseCompressedClassPointers, UseCompactObjectHeaders);
-  if (UseCompressedClassPointers) {
+  st->print_cr("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE %d, UseCompactObjectHeaders %d",
+               USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, UseCompactObjectHeaders);
+  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     st->print_cr("Narrow klass pointer bits %d, Max shift %d",
                  _narrow_klass_pointer_bits, _max_shift);
     st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
@@ -335,7 +335,7 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
       st->print_cr("No protection zone.");
     }
   } else {
-    st->print_cr("UseCompressedClassPointers off");
+    st->print_cr("USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE off");
   }
 }
 

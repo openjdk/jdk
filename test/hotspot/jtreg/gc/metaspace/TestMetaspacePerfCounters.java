@@ -48,8 +48,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseSerialGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test id=Parallel-64
@@ -63,8 +63,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseParallelGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test id=G1-64
@@ -78,8 +78,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseG1GC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test id=Shenandoah-64
@@ -93,8 +93,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test id=Epsilon-64
@@ -108,8 +108,8 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 /* @test id=Serial-32
@@ -297,6 +297,6 @@ public class TestMetaspacePerfCounters {
     }
 
     private static boolean isUsingCompressedClassPointers() {
-        return Platform.is64bit() && InputArguments.contains("-XX:+UseCompressedClassPointers");
+        return Platform.is64bit() && InputArguments.contains("-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
     }
 }

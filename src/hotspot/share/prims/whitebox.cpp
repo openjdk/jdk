@@ -330,7 +330,7 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(void, WB_DecodeNKlassAndAccessKlass(JNIEnv* env, jobject o, jint nKlass))
-  assert(UseCompressedClassPointers, "Should only call for UseCompressedClassPointers");
+  assert(USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, "Should only call for USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE");
   const narrowKlass nk = (narrowKlass)nKlass;
   const Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nKlass);
   printf("WB_DecodeNKlassAndAccessKlass: nk %u k " PTR_FORMAT "\n", nk, p2i(k));

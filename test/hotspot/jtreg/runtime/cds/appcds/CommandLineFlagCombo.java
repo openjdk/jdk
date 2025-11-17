@@ -55,7 +55,7 @@ public class CommandLineFlagCombo {
     private static final String[] testTable = {
         "-XX:+UseG1GC", "-XX:+UseSerialGC", "-XX:+UseParallelGC",
         "-XX:+UseLargePages", // may only take effect on machines with large-pages
-        "-XX:+UseCompressedClassPointers",
+        "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
         "-XX:+UseCompressedOops",
         "-XX:ObjectAlignmentInBytes=16",
         "-XX:ObjectAlignmentInBytes=32",
@@ -123,7 +123,7 @@ public class CommandLineFlagCombo {
         if (Platform.is32bit())
         {
             if (testEntry.equals("-XX:+UseCompressedOops") ||
-                testEntry.equals("-XX:+UseCompressedClassPointers") ||
+                testEntry.equals("-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE") ||
                 testEntry.contains("ObjectAlignmentInBytes") )
             {
                 System.out.println("Test case not applicable on 32-bit platforms");

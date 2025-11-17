@@ -888,8 +888,8 @@ const char* CDSConfig::type_of_archive_being_written() {
 // If an incompatible VM options is found, return a text message that explains why
 static const char* check_options_incompatible_with_dumping_heap() {
 #if INCLUDE_CDS_JAVA_HEAP
-  if (!UseCompressedClassPointers) {
-    return "UseCompressedClassPointers must be true";
+  if (!USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
+    return "USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE must be true";
   }
 
   return nullptr;

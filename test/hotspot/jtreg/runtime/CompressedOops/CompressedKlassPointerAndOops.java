@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8000968
- * @summary NPG: UseCompressedClassPointers asserts with ObjectAlignmentInBytes=32
+ * @summary NPG: USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE asserts with ObjectAlignmentInBytes=32
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -51,7 +51,7 @@ public class CompressedKlassPointerAndOops {
         OutputAnalyzer output;
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:+UseCompressedClassPointers",
+            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UseCompressedOops",
             "-XX:ObjectAlignmentInBytes=" + alignment,
             "-version");

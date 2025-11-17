@@ -89,7 +89,7 @@ DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 #ifdef ASSERT
 static void check_klass_after_loading(const Klass* k) {
 #ifdef _LP64
-  if (k != nullptr && UseCompressedClassPointers) {
+  if (k != nullptr && USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE) {
     CompressedKlassPointers::check_encodable(k);
   }
 #endif
