@@ -87,7 +87,8 @@ public @interface PreviewFeature {
         STRUCTURED_CONCURRENCY,
         @JEP(number = 502, title = "Stable Values", status = "Preview")
         STABLE_VALUES,
-        @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
+        @JEP(number=524, title="PEM Encodings of Cryptographic Objects",
+            status="Second Preview")
         PEM_API,
         LANGUAGE_MODEL,
         /**
