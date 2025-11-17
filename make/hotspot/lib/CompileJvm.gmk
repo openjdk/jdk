@@ -337,6 +337,30 @@ TARGETS += $(BUILD_LIBJVM)
 # for the associated class.  If the class doesn't provide a more specific
 # declaration (either directly or by inheriting from a class that provides
 # one) then the global definition will be used, triggering this check.
+#
+
+# The HotSpot wrapper for <new> declares as deprecated all the allocation and
+# deallocation functions that use the global allocator. But that blocking
+# isn't a bullet-proof. Some of these functions are implicitly available in
+# every translation unit, without the need to include <new>. So even with that
+# wrapper we still need this link-time check. The implicitly declared
+# functions and their mangled names are - from C++17 6.7.4:
+#
+# void* operator new(size_t)               // _Znwm
+# void* operator new(size_t, align_val_t)  // _ZnwmSt11align_val_t
+#
+# void operator delete(void*) noexcept                      // _ZdlPv
+# void operator delete(void*, size_t) noexcept              // _ZdlPvm
+# void operator delete(void*, align_val_t) noexcept         // _ZdlPvSt11align_val_t
+# void operator delete(void*, size_t, align_val_t) noexcept // _ZdlPvmSt11align_val_t
+#
+# void* operator new[](size_t)               // _Znam
+# void* operator new[](size_t, align_val_t)  // _ZnamSt11align_val_t
+#
+# void operator delete[](void*) noexcept                      // _ZdaPv
+# void operator delete[](void*, size_t) noexcept              // _ZdaPvm
+# void operator delete[](void*, align_val_t) noexcept         // _ZdaPvSt11align_val_t
+# void operator delete[](void*, size_t, align_val_t) noexcept // _ZdaPvmSt11align_val_t
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
@@ -347,10 +371,18 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # so use mangled names when looking for symbols.
     # Save the demangling for when something is actually found.
     MANGLED_SYMS := \
-        _ZdaPv \
-        _ZdlPv \
-        _Znam \
         _Znwm \
+        _ZnwmSt11align_val_t \
+        _ZdlPv \
+        _ZdlPvm \
+        _ZdlPvSt11align_val_t \
+        _ZdlPvmSt11align_val_t \
+        _Znam \
+        _ZnamSt11align_val_t \
+        _ZdaPv \
+        _ZdaPvm \
+        _ZdaPvSt11align_val_t \
+        _ZdaPvmSt11align_val_t \
         #
     UNDEF_PATTERN := ' U '
 
