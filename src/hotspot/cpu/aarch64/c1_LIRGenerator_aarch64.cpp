@@ -839,11 +839,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       }
       break;
     case vmIntrinsics::_dlog10:
-      if (StubRoutines::dlog10() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dlog10(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
-      }
+      __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
       break;
     case vmIntrinsics::_dpow:
       if (StubRoutines::dpow() != nullptr) {
