@@ -23,6 +23,9 @@
  * questions.
  */
 package jdk.jpackage.internal;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.lang.System.Logger.Level;
@@ -30,7 +33,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.ConfigException;
@@ -51,8 +52,8 @@ import jdk.jpackage.internal.util.Slot;
  * WiX tool.
  */
 public enum WixTool {
-    Candle3("candle", DottedVersion.lazy("3.0")),
-    Light3("light", DottedVersion.lazy("3.0")),
+    Candle3("candle", DottedVersion.lazy("3.6")),
+    Light3("light", DottedVersion.lazy("3.6")),
     Wix4("wix", DottedVersion.lazy("4.0.4"));
 
     WixTool(String commandName, DottedVersion minimalVersion) {
@@ -60,12 +61,12 @@ public enum WixTool {
         this.minimalVersion = minimalVersion;
     }
 
-    interface ToolInfo {
+    sealed interface ToolInfo {
         Path path();
         DottedVersion version();
     }
 
-    interface CandleInfo extends ToolInfo {
+    sealed interface CandleInfo extends ToolInfo {
         boolean fips();
     }
 
@@ -78,6 +79,11 @@ public enum WixTool {
         DefaultToolInfo(Path path, String version) {
             this(path, DottedVersion.lazy(version));
         }
+
+        @Override
+        public String toString() {
+            return String.format("%s|ver=%s", path, version);
+        }
     }
 
     private record DefaultCandleInfo(Path path, DottedVersion version, boolean fips) implements CandleInfo {
@@ -89,25 +95,38 @@ public enum WixTool {
         DefaultCandleInfo(ToolInfo info, boolean fips) {
             this(info.path(), info.version(), fips);
         }
+
+        @Override
+        public String toString() {
+            var sb = new StringBuffer();
+            sb.append(path);
+            if (fips) {
+                sb.append("|fips");
+            }
+            sb.append("|ver=").append(version);
+            return sb.toString();
+        }
     }
 
     static WixToolset createToolset() {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
-            return lookupResults.stream().filter(ToolLookupResult::isValid).collect(Collectors.
-                    groupingBy(lookupResult -> {
+            return lookupResults.stream().filter(ToolLookupResult::isValid).collect(groupingBy(lookupResult -> {
                 return lookupResult.info().version().toString();
             })).values().stream().filter(sameVersionLookupResults -> {
-                Set<WixTool> sameVersionTools = sameVersionLookupResults.stream().map(
-                        ToolLookupResult::tool).collect(Collectors.toSet());
-                if (sameVersionTools.equals(Set.of(Candle3)) || sameVersionTools.equals(Set.of(
-                        Light3))) {
+                var sameVersionTools = sameVersionLookupResults.stream()
+                        .map(ToolLookupResult::tool)
+                        .collect(toSet());
+                if (sameVersionTools.equals(Set.of(Candle3)) || sameVersionTools.equals(Set.of(Light3))) {
                     // There is only one tool from WiX v3 toolset of some version available. Discard it.
+                    LOGGER.log(Level.TRACE, "Discard [{0}]: incomplete", sameVersionLookupResults.getFirst().info());
                     return false;
                 } else {
                     return true;
                 }
-            }).flatMap(List::stream).collect(Collectors.toMap(ToolLookupResult::tool,
-                    ToolLookupResult::info, (ToolInfo x, ToolInfo y) -> {
+            }).flatMap(List::stream).collect(toMap(
+                    ToolLookupResult::tool,
+                    ToolLookupResult::info,
+                    (ToolInfo x, ToolInfo y) -> {
                         return Stream.of(x, y).sorted(Comparator.comparing((ToolInfo toolInfo) -> {
                             return toolInfo.version().toComponentsString();
                         }).reversed()).findFirst().get();
@@ -119,7 +138,7 @@ public enum WixTool {
             // Try to build a toolset found in the PATH and in known locations.
             return Stream.of(WixToolsetType.values()).map(toolsetType -> {
                 return WixToolset.create(toolsetType.getTools(), tools);
-            }).filter(Objects::nonNull).findFirst();
+            }).filter(Optional::isPresent).map(Optional::get).findFirst();
         };
 
         var toolsInPath = Stream.of(values()).map(tool -> {
@@ -127,48 +146,49 @@ public enum WixTool {
         }).filter(Optional::isPresent).map(Optional::get).toList();
 
         // Try to build a toolset from tools in the PATH first.
-        var toolset = createToolset.apply(toolsInPath);
-        if (toolset.isPresent()) {
-            return toolset.get();
-        }
+        var toolset = createToolset.apply(toolsInPath).orElseGet(() -> {
+            // Look up for WiX tools in known locations.
+            var toolsInKnownWiXDirs = findWixInstallDirs().stream().map(dir -> {
+                return Stream.of(values()).map(tool -> {
+                    return ToolLookupResult.lookup(tool, Optional.of(dir));
+                }).filter(Optional::isPresent).map(Optional::get);
+            }).flatMap(x -> x).toList();
 
-        // Look up for WiX tools in known locations.
-        var toolsInKnownWiXDirs = findWixInstallDirs().stream().map(dir -> {
-            return Stream.of(values()).map(tool -> {
-                return ToolLookupResult.lookup(tool, Optional.of(dir));
-            });
-        }).flatMap(Function.identity()).filter(Optional::isPresent).map(Optional::get).toList();
+            // Build a toolset found in the PATH and in known locations.
+            var allFoundTools = Stream.of(toolsInPath, toolsInKnownWiXDirs)
+                    .flatMap(List::stream)
+                    .filter(ToolLookupResult::isValid)
+                    .toList();
 
-        // Build a toolset found in the PATH and in known locations.
-        var allFoundTools = Stream.of(toolsInPath, toolsInKnownWiXDirs).flatMap(List::stream).filter(
-                ToolLookupResult::isValid).toList();
-        toolset = createToolset.apply(allFoundTools);
-        if (toolset.isPresent()) {
-            return toolset.get();
-        } else if (allFoundTools.isEmpty()) {
-            throw new ConfigException(I18N.getString("error.no-wix-tools"), I18N.getString(
-                    "error.no-wix-tools.advice"));
-        } else {
-            var toolOldVerErr = allFoundTools.stream().map(lookupResult -> {
-                if (lookupResult.versionTooOld) {
-                    return new ConfigException(MessageFormat.format(I18N.getString(
-                            "message.wrong-tool-version"), lookupResult.info().path(),
-                            lookupResult.info().version(), lookupResult.tool().minimalVersion),
+            return createToolset.apply(allFoundTools).orElseThrow(() -> {
+                return allFoundTools.stream().map(lookupResult -> {
+                    if (lookupResult.versionTooOld()) {
+                        return new ConfigException(
+                                I18N.format("message.wrong-tool-version",
+                                        lookupResult.info().path(),
+                                        lookupResult.info().version(),
+                                        lookupResult.tool().minimalVersion),
+                                I18N.getString("error.no-wix-tools.advice"));
+                    } else {
+                        return null;
+                    }
+                }).filter(Objects::nonNull).findAny().orElseGet(() -> {
+                    return new ConfigException(
+                            I18N.getString("error.no-wix-tools"),
                             I18N.getString("error.no-wix-tools.advice"));
-                } else {
-                    return null;
-                }
-            }).filter(Objects::nonNull).findAny();
-            if (toolOldVerErr.isPresent()) {
-                throw toolOldVerErr.get();
-            } else {
-                throw new ConfigException(I18N.getString("error.no-wix-tools"), I18N.getString(
-                        "error.no-wix-tools.advice"));
-            }
-        }
+                });
+            });
+        });
+
+        LOGGER.log(Level.TRACE, "Using {0} WiX Toolkit v{1}", toolset.getType(), toolset.getVersion());
+        toolset.getType().getTools().stream().sorted().forEach(tool -> {
+            LOGGER.log(Level.TRACE, "{0}: {1}", tool, toolset.getToolPath(tool));
+        });
+
+        return toolset;
     }
 
-    private record ToolLookupResult(WixTool tool, ToolInfo info, boolean versionTooOld) {
+    private record ToolLookupResult(WixTool tool, ToolInfo info) {
 
         ToolLookupResult {
             Objects.requireNonNull(tool);
@@ -179,24 +199,21 @@ public enum WixTool {
             Objects.requireNonNull(tool);
             Objects.requireNonNull(lookupDir);
 
-            final Path toolPath = lookupDir.map(p -> p.resolve(
-                    tool.toolFileName)).orElse(tool.toolFileName);
+            lookupDir.ifPresentOrElse(theLookupDir -> {
+                LOGGER.log(Level.TRACE, "Look up for {0} in [{1}] directory", tool.toolFileName, theLookupDir);
+            }, () -> {
+                LOGGER.log(Level.TRACE, "Look up for {0} in the PATH", tool.toolFileName);
+            });
 
-            final var tooOld = Slot.<Boolean>createEmpty();
-            final var parsedVersion = Slot.<String>createEmpty();
+            final Path toolPath = lookupDir.map(p -> {
+                return p.resolve(tool.toolFileName);
+            }).orElse(tool.toolFileName);
 
-            final var validator = new ToolValidator(toolPath)
-                    .setMinimalVersion(tool.minimalVersion)
-                    .setToolOldVersionErrorHandler((name, version) -> {
-                        tooOld.set(true);
-                        return null;
-                    });
+            final var validator = new ToolValidator(toolPath).setMinimalVersion(tool.minimalVersion);
 
-            final Function<Stream<String>, String> versionParser;
-
-            if (Set.of(Candle3, Light3).contains(tool)) {
-                final String printVersionArg;
-                if (tool == Candle3) {
+            final String printVersionArg;
+            switch (tool) {
+                case Candle3 -> {
                     // Add '-fips' to make "candle.exe" print help message and return
                     // 0 exit code instead of returning error exit code and printing
                     // "error CNDL0308 : The Federal Information Processing Standard (FIPS) appears to be enabled on the machine..."
@@ -204,28 +221,40 @@ public enum WixTool {
                     // If FIPS is disabled, passing '-fips' parameter still makes
                     // "candle.exe" print help message and return 0 exit code.
                     printVersionArg = "-fips";
-                } else {
+                }
+                case Light3 -> {
                     printVersionArg = "-?";
                 }
-                validator.setCommandLine(printVersionArg);
-                versionParser = output -> {
-                    String firstLineOfOutput = output.findFirst().orElse("");
-                    int separatorIdx = firstLineOfOutput.lastIndexOf(' ');
-                    if (separatorIdx == -1) {
-                        return null;
-                    }
-                    return firstLineOfOutput.substring(separatorIdx + 1);
-                };
-            } else {
-                validator.setCommandLine("--version");
-                versionParser = output -> {
-                    return output.findFirst().orElse("");
-                };
+                default -> {
+                    printVersionArg = "--version";
+                }
+            }
+            validator.setCommandLine(printVersionArg);
+
+            final Function<Stream<String>, Optional<String>> versionParser;
+            switch (tool) {
+                case Candle3, Light3 -> {
+                    versionParser = output -> {
+                        return output.findFirst().map(firstLineOfOutput -> {
+                            int separatorIdx = firstLineOfOutput.lastIndexOf(' ');
+                            if (separatorIdx == -1) {
+                                return null;
+                            }
+                            return firstLineOfOutput.substring(separatorIdx + 1);
+                        });
+                    };
+                }
+                default -> {
+                    versionParser = output -> {
+                        return output.findFirst();
+                    };
+                }
             }
 
+            final var parsedVersion = Slot.<String>createEmpty();
             validator.setVersionParser(output -> {
-                parsedVersion.set(versionParser.apply(output));
-                return parsedVersion.get();
+                versionParser.apply(output).ifPresent(parsedVersion::set);
+                return parsedVersion.find().orElse(null);
             });
 
             if (validator.validate() == null) {
@@ -245,19 +274,31 @@ public enum WixTool {
                         }
                     } catch (IOException ex) {
                         LOGGER.log(Level.ERROR, () -> {
-                            return String.format("Failed to execute [%s -?] command to detect FIPS mode. Assume FIPS=false", toolPath);
+                            return String.format("Failed to execute [%s] command with '-?' option to detect FIPS mode. Assume FIPS=false", toolPath);
                         }, ex);
                     }
                     info = new DefaultCandleInfo(info, fips);
                 }
-                return Optional.of(new ToolLookupResult(tool, info, tooOld.get()));
+
+                LOGGER.log(Level.TRACE, "Found [{0}]", info);
+
+                return Optional.of(new ToolLookupResult(tool, info));
             } else {
+                if (parsedVersion.find().isPresent()) {
+                    LOGGER.log(Level.TRACE, () -> {
+                        return String.format("Discard [%s]: failed validation", new DefaultToolInfo(toolPath, parsedVersion.get()));
+                    });
+                }
                 return Optional.empty();
             }
         }
 
+        boolean versionTooOld() {
+            return DottedVersion.compareComponents(info.version(), tool.minimalVersion) < 0;
+        }
+
         boolean isValid() {
-            return !versionTooOld;
+            return !versionTooOld();
         }
     }
 
@@ -312,7 +353,7 @@ public enum WixTool {
                 return paths.toList();
             } catch (IOException ex) {
                 LOGGER.log(Level.ERROR, () -> {
-                    return String.format("Can not get a listing of [%s] path", path);
+                    return String.format("Can not get a listing of [%s] directory", path);
                 }, ex);
                 return List.<Path>of();
             }
