@@ -25,8 +25,7 @@
  * @test
  * @bug 8160591
  * @summary C1-generated code for System.arraycopy() does not throw an ArrayStoreException if 'dst' is no a "proper" array (i.e., it is java.lang.Object)
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:CompileOnly=TestArrayCopyToFromObject::test TestArrayCopyToFromObject
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -XX:CompileOnly=TestArrayCopyToFromObject::test TestArrayCopyToFromObject
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xcomp -XX:CompileOnly=TestArrayCopyToFromObject::test TestArrayCopyToFromObject
  */
 public class TestArrayCopyToFromObject {
 
