@@ -232,7 +232,7 @@ class Http2Connection implements Closeable {
             try {
                 if (cancelled) {
                     if (debug.on()) {
-                        debug.log("Not initiating idle connection close");
+                        debug.log("Idle timeout event already cancelled, not initiating idle connection close");
                     }
                     return;
                 }
