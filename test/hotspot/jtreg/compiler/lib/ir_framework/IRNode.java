@@ -610,6 +610,11 @@ public class IRNode {
         beforeMatchingNameRegex(CMP_P, "CmpP");
     }
 
+    public static final String CMP_N = PREFIX + "CMP_N" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_N, "CmpN");
+    }
+
     public static final String CMP_LT_MASK = PREFIX + "CMP_LT_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_LT_MASK, "CmpLTMask");
