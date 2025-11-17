@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8371864 
+ * @bug 8371864
  * @run main/othervm TestAesGcmIntrinsic
- * @summary Test GaloisCounterMode.implGCMCrypt0 AVX512/AVX2 intrinsics. 
+ * @summary Test GaloisCounterMode.implGCMCrypt0 AVX512/AVX2 intrinsics.
  */
 
 import java.security.SecureRandom;
