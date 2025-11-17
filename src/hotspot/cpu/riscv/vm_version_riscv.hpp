@@ -65,6 +65,7 @@ class VM_Version : public Abstract_VM_Version {
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
     virtual void log_enabled() = 0;
+    virtual void log_disabled(const char* reason = nullptr) = 0;
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -89,11 +90,12 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       } else {                                                                                              \
         /* Sync CPU features with flags */                                                                  \
@@ -101,11 +103,12 @@ class VM_Version : public Abstract_VM_Version {
           disable_feature();                                                                                \
         } else if (!deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
-          stringStream ss;                                                                                  \
-          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
+          stringStream ss;                                                                                  \
+          ss.print("missing dependent extension(s): ");                                                     \
+          deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
+          log_disabled(ss.as_string(true));                                                                 \
         }                                                                                                   \
       }                                                                                                     \
   }                                                                                                         \
@@ -136,6 +139,7 @@ class VM_Version : public Abstract_VM_Version {
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
     void log_enabled();
+    void log_disabled(const char* reason = nullptr);
 
    protected:
     bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
@@ -206,6 +210,7 @@ class VM_Version : public Abstract_VM_Version {
     void disable_feature() { _value = DEFAULT_VALUE; }
     int64_t value() { return _value; }
     void log_enabled();
+    void log_disabled(const char* reason = nullptr);
   };
 
  public:
