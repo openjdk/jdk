@@ -32,7 +32,6 @@
 #include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "nmt/memTag.hpp"
-#include "nmt/memTagBitmap.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -40,6 +39,8 @@
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
@@ -128,8 +129,8 @@ public:
   }
 
   // Given a vma [from, to), find all regions that intersect with this vma and
-  // return their collective flags.
-  MemTagBitmap lookup(const void* from, const void* to) const {
+  // fill out their collective flags into bm.
+  void lookup(const void* from, const void* to, ResourceBitMap& bm) const {
     assert(from <= to, "Sanity");
     // We optimize for sequential lookups. Since this class is used when a list
     // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
@@ -138,16 +139,14 @@ public:
       // the range is to the right of the given section, we need to re-start the search
       _last = 0;
     }
-    MemTagBitmap bm;
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
-        bm.set_tag(_mem_tags[i]);
+        bm.set_bit((BitMap::idx_t)_mem_tags[i]);
       } else if (to <= _ranges[i].from) {
         _last = i;
         break;
       }
     }
-    return bm;
   }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) override {
@@ -247,11 +246,13 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
-    const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
-    if (flags.has_any()) {
+    ResourceMark rm;
+    ResourceBitMap flags(mt_number_of_tags);
+    _nmt_info.lookup(vma_from, vma_to, flags);
+    if (!flags.is_empty()) {
       for (int i = 0; i < mt_number_of_tags; i++) {
         const MemTag mem_tag = (MemTag)i;
-        if (flags.has_tag(mem_tag)) {
+        if (flags.at((BitMap::idx_t)mem_tag)) {
           if (num_printed > 0) {
             _out->put(',');
           }
