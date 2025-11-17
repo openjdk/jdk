@@ -39,14 +39,6 @@
  * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-UseCompactObjectHeaders -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
  */
 
-/* @test id=ccp_off
- * @library /test/lib
- * @requires vm.bits == "64"
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE -Xlog:metaspace* -Xmx6g -Xms128m
- */
-
 /* @test id=use-zero-based-encoding-coh
  * @library /test/lib
  * @requires vm.bits == "64"

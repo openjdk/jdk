@@ -40,15 +40,6 @@
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
 
-/* @test id=no-ccs
- * @summary Run metaspace-related gtests with compressed class pointers off
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.bits == 64
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE
- */
 
 /* @test id=UseCompactObjectHeaders
  * @summary Run metaspace-related gtests with tiny classpointers
