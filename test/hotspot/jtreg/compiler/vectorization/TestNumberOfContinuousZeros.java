@@ -180,7 +180,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
     @Arguments(setup = "setupSpecialLongArray")
     public Object[] testSpecialLongLeadingZeros(long[] longs) {
         int[] res = new int[LEN];
@@ -245,7 +246,8 @@ public class TestNumberOfContinuousZeros {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
+    @IR(applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+        counts = {IRNode.COUNT_LEADING_ZEROS_VL, "> 0"})
     @Arguments(setup = "setupSpecialLongArray")
     public Object[] testLongLeadingZerosVector(long[] longs) {
         long[] res = new long[LEN];
