@@ -241,7 +241,7 @@ public sealed interface LazyConstant<T>
      * {@return if this lazy constant is the same as the provided {@code obj}}
      * <p>
      * In other words, equals compares the identity of this lazy constant and {@code obj}
-     * to determine equality. Hence, two lazy constant with the same contents are
+     * to determine equality. Hence, two lazy constants with the same contents are
      * <em>not</em> equal.
      * <p>
      * This method never triggers initialization of this lazy constant.
