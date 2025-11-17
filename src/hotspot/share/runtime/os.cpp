@@ -1296,7 +1296,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   bool accessible = is_readable_pointer(addr);
 
   // Check if addr points into the narrow Klass protection zone
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && CompressedKlassPointers::is_in_protection_zone(addr)) {
+  if (CompressedKlassPointers::is_in_protection_zone(addr)) {
     st->print_cr(PTR_FORMAT " points into nKlass protection zone", p2i(addr));
     return;
   }
@@ -1350,8 +1350,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Compressed klass needs to be decoded first.
+  // Todo: questionable for COH - can we do this better?
 #ifdef _LP64
-  if (USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE && ((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
+  if (((uintptr_t)addr &~ (uintptr_t)max_juint) == 0) {
     narrowKlass narrow_klass = (narrowKlass)(uintptr_t)addr;
     Klass* k = CompressedKlassPointers::decode_without_asserts(narrow_klass);
 
