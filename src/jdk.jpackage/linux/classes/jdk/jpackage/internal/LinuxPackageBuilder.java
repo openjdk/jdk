@@ -84,9 +84,9 @@ final class LinuxPackageBuilder {
     private LinuxPackage create(Package pkg) throws ConfigException {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
-                Optional.ofNullable(category),
+                category(),
                 Optional.ofNullable(additionalDependencies),
-                Optional.ofNullable(release),
+                release(),
                 pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
     }
 
@@ -192,7 +192,7 @@ final class LinuxPackageBuilder {
 
     private final PackageBuilder pkgBuilder;
 
-    private static final Defaults DEFAULTS = new Defaults(I18N.getString(
-            "param.menu-group.default"));
-
+    // Should be one of https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    // The category is an ID, not a localizable string
+    private static final Defaults DEFAULTS = new Defaults("Utility");
 }
