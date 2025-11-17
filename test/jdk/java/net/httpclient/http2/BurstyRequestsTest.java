@@ -125,7 +125,7 @@ class BurstyRequestsTest {
     }
 
     /*
-     * Issues a burst of 100 HTTP/2 requests to the same server (host/port) and expects all of
+     * Issues a burst of HTTP/2 requests to the same server (host/port) and expects all of
      * them to complete normally.
      * Once these requests have completed, the test then peeks into an internal field of the
      * HttpClientImpl to verify that the client is holding on to at most 1 connection.
