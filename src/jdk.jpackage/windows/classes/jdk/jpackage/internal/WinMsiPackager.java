@@ -24,12 +24,11 @@
  */
 
 package jdk.jpackage.internal;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.io.Writer;
-import java.nio.charset.Charset;
+import java.lang.System.Logger.Level;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +52,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import org.w3c.dom.Document;
@@ -170,19 +170,19 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
 
     private void prepareConfigFiles() throws IOException {
 
-        pkg.licenseFile().ifPresent(licenseFile -> {
+        pkg.licenseFile().ifPresent(toConsumer(licenseFile -> {
             // need to copy license file to the working directory
             // and convert to rtf if needed
             Path destFile = env.configDir().resolve(licenseFile.getFileName());
 
-            try {
-                IOUtils.copyFile(licenseFile, destFile);
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-            destFile.toFile().setWritable(true);
-            ensureByMutationFileIsRTF(destFile);
-        });
+            IOUtils.copyFile(licenseFile, destFile);
+
+            RtfConverter.createSimple(licenseFile).ifPresent(toConsumer(rtfConverter -> {
+                LOGGER.log(Level.TRACE, "Convert a copy of the license file [%s] to RTF", licenseFile);
+                destFile.toFile().setWritable(true);
+                rtfConverter.convert(destFile);
+            }));
+        }));
 
         for (var wixFragment : wixFragments) {
             wixFragment.initFromParams(env, pkg);
@@ -403,74 +403,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
         }
     }
 
-    private static void ensureByMutationFileIsRTF(Path f) {
-        try {
-            boolean existingLicenseIsRTF = false;
-
-            try (InputStream fin = Files.newInputStream(f)) {
-                byte[] firstBits = new byte[7];
-
-                if (fin.read(firstBits) == firstBits.length) {
-                    String header = new String(firstBits);
-                    existingLicenseIsRTF = "{\\rtf1\\".equals(header);
-                }
-            }
-
-            if (!existingLicenseIsRTF) {
-                List<String> oldLicense = Files.readAllLines(f);
-                try (Writer w = Files.newBufferedWriter(
-                        f, Charset.forName("Windows-1252"))) {
-                    w.write("{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033"
-                            + "{\\fonttbl{\\f0\\fnil\\fcharset0 Arial;}}\n"
-                            + "\\viewkind4\\uc1\\pard\\sa200\\sl276"
-                            + "\\slmult1\\lang9\\fs20 ");
-                    oldLicense.forEach(l -> {
-                        try {
-                            for (char c : l.toCharArray()) {
-                                // 0x00 <= ch < 0x20 Escaped (\'hh)
-                                // 0x20 <= ch < 0x80 Raw(non - escaped) char
-                                // 0x80 <= ch <= 0xFF Escaped(\ 'hh)
-                                // 0x5C, 0x7B, 0x7D (special RTF characters
-                                // \,{,})Escaped(\'hh)
-                                // ch > 0xff Escaped (\\ud###?)
-                                if (c < 0x10) {
-                                    w.write("\\'0");
-                                    w.write(Integer.toHexString(c));
-                                } else if (c > 0xff) {
-                                    w.write("\\ud");
-                                    w.write(Integer.toString(c));
-                                    // \\uc1 is in the header and in effect
-                                    // so we trail with a replacement char if
-                                    // the font lacks that character - '?'
-                                    w.write("?");
-                                } else if ((c < 0x20) || (c >= 0x80) ||
-                                        (c == 0x5C) || (c == 0x7B) ||
-                                        (c == 0x7D)) {
-                                    w.write("\\'");
-                                    w.write(Integer.toHexString(c));
-                                } else {
-                                    w.write(c);
-                                }
-                            }
-                            // blank lines are interpreted as paragraph breaks
-                            if (l.length() < 1) {
-                                w.write("\\par");
-                            } else {
-                                w.write(" ");
-                            }
-                            w.write("\r\n");
-                        } catch (IOException e) {
-                            Log.verbose(e);
-                        }
-                    });
-                    w.write("}\r\n");
-                }
-            }
-        } catch (IOException e) {
-            Log.verbose(e);
-        }
-    }
-
     private final WinMsiPackage pkg;
     private final BuildEnv env;
     private final Path outputDir;
@@ -478,4 +410,6 @@ final class WinMsiPackager implements Consumer<PackagingPipeline.Builder> {
     private final List<WixFragmentBuilder> wixFragments;
     private final Path installerIcon;
     private WixPipeline wixPipeline;
+
+    private final static System.Logger LOGGER = Logger.MAIN.get();
 }
