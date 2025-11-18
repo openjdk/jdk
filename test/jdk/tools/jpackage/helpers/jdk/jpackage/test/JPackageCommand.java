@@ -1222,11 +1222,6 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         MAC_RUNTIME_PLIST_JDK_KEY(cmd -> {
             if (TKit.isOSX()) {
                 var appLayout = cmd.appLayout();
-                // Runtime directory may not exist.
-                // For example in AppImagePackageTest.testEmpty() case.
-                if (!Files.isDirectory(appLayout.runtimeDirectory())) {
-                    return;
-                }
                 var plistPath = appLayout.runtimeDirectory().resolve("Contents/Info.plist");
                 var keyName = "JavaVM";
                 var keyValue = MacHelper.readPList(plistPath).findDictValue(keyName);
