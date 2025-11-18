@@ -117,11 +117,11 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
 
     if (obj == nullptr) {
       size_t min_free_words = req.is_lab_alloc() ? req.min_size() : req.size();
-      ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(_alloc_partition_id, min_free_words, req.is_lab_alloc(), in_new_region);
-      // We know there is no region with capacity more than min_free_words in partition,
-      // short-cut here if min_free_words is smaller than PLAB::max_size(), since we only reserve region as alloc region
-      // if the region has at least PLAB::max_size() capacity.
-      if (r == nullptr && min_free_words < PLAB::max_size()) {
+      uint available_regions_for_alloc = 0;
+      ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(_alloc_partition_id, min_free_words, req.is_lab_alloc(), in_new_region, available_regions_for_alloc);
+      // After search the partition, we know there is no region with capacity more than min_free_words in partition, we can short-cut here.
+      // available_regions_for_alloc is accurate number only when it find_heap_region_for_allocation returns nullptr.
+      if (r == nullptr && available_regions_for_alloc == 0) {
         return nullptr;
       }
       if (r != nullptr) {
@@ -144,10 +144,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
           if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator && (waste_bytes > 0)) {
             _free_set->increase_bytes_allocated(waste_bytes);
           }
-        }
-
-        if (regions_ready_for_refresh == 0) {
-          return obj;
         }
       }
     }
@@ -172,7 +168,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
   uint i = 0u;
   while (i < _alloc_region_count) {
     uint idx = (alloc_start_index + i) % _alloc_region_count;
-    ShenandoahHeapRegion* const r =  AtomicAccess::load(&_alloc_regions[idx]._address);
+    ShenandoahHeapRegion* const r =  _alloc_regions[idx]._address;
     if (r != nullptr && r->is_active_alloc_region()) {
       bool ready_for_retire = false;
       obj = atomic_allocate_in(r, req, in_new_region, ready_for_retire);
