@@ -259,6 +259,7 @@ public:
 
   ciInstanceKlass* unique_implementor() {
     assert(is_loaded(), "must be loaded");
+    assert(is_interface(), "must be");
     ciInstanceKlass* impl = implementor();
     return (impl != this ? impl : nullptr);
   }
