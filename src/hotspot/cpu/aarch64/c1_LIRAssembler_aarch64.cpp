@@ -61,22 +61,6 @@ const Register SHIFT_count = r0;   // where count for shift operations must be
 static void select_different_registers(Register preserve,
                                        Register extra,
                                        Register &tmp1,
-                                       Register &tmp2) {
-  if (tmp1 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp1 = extra;
-  } else if (tmp2 == preserve) {
-    assert_different_registers(tmp1, tmp2, extra);
-    tmp2 = extra;
-  }
-  assert_different_registers(preserve, tmp1, tmp2);
-}
-
-
-
-static void select_different_registers(Register preserve,
-                                       Register extra,
-                                       Register &tmp1,
                                        Register &tmp2,
                                        Register &tmp3) {
   if (tmp1 == preserve) {
