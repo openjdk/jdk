@@ -3363,6 +3363,9 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
+    if (r->is_affiliated() && r->affiliation() != affiliation && !r->is_trash()) {
+      continue;
+    }
     size_t ac_words = alloc_capacity_words(r);
     if (ac_words >= PLAB::min_size()) {
       if (r->is_trash() || r->is_empty()) {
@@ -3435,8 +3438,7 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
-    assert(r->affiliation() == affiliation || r->affiliation() == FREE || r->is_trash(), "Affiliation of region must align with the partition.");
-    if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
+    if (r->is_affiliated() && r->affiliation() != affiliation && !r->is_trash()) {
       continue;
     }
     if (r->affiliation() == FREE && use_affiliated_region_first) {
