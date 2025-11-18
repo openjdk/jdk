@@ -137,7 +137,7 @@ import java.io.PrintStream;
 // <launch returns>     waiter running
 // launch resumer       enter threadLock
 // <launch returns>     while !READY_TO_NOTIFY  resumer running
-// :                    threadLock.wait(1)      wait for notify
+// :                      threadLock.wait(1)    wait for notify
 // enter threadLock     :                       :
 // set READY_TO_NOTIFY  :
 // threadLock.notify    wait finishes           :
@@ -248,7 +248,7 @@ public class SuspendWithObjectMonitorWait {
                     timeMax = Integer.parseUnsignedInt(args[argIndex]);
                 } catch (NumberFormatException nfe) {
                     System.err.println("'" + args[argIndex] +
-                            "': invalid time_max value.");
+                                       "': invalid time_max value.");
                     usage();
                 }
             } else {
