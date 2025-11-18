@@ -515,11 +515,11 @@ bool ObjectMonitor::enter(JavaThread* current, bool post_jvmti_events) {
   return true;
 }
 
-void ObjectMonitor::notify_contended_enter(JavaThread* current) {
+void ObjectMonitor::notify_contended_enter(JavaThread* current, bool post_jvmti_events) {
   current->set_current_pending_monitor(this);
 
   DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
-  if (JvmtiExport::should_post_monitor_contended_enter()) {
+  if (post_jvmti_events && JvmtiExport::should_post_monitor_contended_enter()) {
     JvmtiExport::post_monitor_contended_enter(current, this);
 
     // The current thread does not yet own the monitor and does not
@@ -554,7 +554,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
   ContinuationEntry* ce = current->last_continuation();
   bool is_virtual = ce != nullptr && ce->is_virtual_thread();
   if (is_virtual) {
-    notify_contended_enter(current);
+    notify_contended_enter(current, post_jvmti_events);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       bool acquired = vthread_monitor_enter(current);
