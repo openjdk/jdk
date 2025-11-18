@@ -91,6 +91,14 @@ public:
 
 };
 
+class HeapLockedByCurrentThreadReset : StackObj {
+  bool &_heap_locked_by_current_thread;
+  public:
+  HeapLockedByCurrentThreadReset(bool &heap_locked_by_current_thread) : _heap_locked_by_current_thread(heap_locked_by_current_thread) { }
+  ~HeapLockedByCurrentThreadReset() {
+    _heap_locked_by_current_thread = false;
+  }
+};
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
   uint regions_ready_for_refresh = 0;
   // Fast path: Start
@@ -101,6 +109,8 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
 
   {
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+    HeapLockedByCurrentThreadReset state_reset(_heap_locked_by_current_thread);
+    _heap_locked_by_current_thread = true;
     ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
     // We may run to here to take heap lock for different reasons:
     // 1. attempt_allocation_in_alloc_regions was not able to allocate the object, obj is nullptr.
@@ -181,6 +191,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
     } else if (r == nullptr) {
       regions_ready_for_refresh++;
     }
+    yield_to_safepoint();
     i++;
   }
   return nullptr;
