@@ -81,6 +81,12 @@ hotspot_native_sanity = \
 hotspot_containers = \
   containers
 
+# Used to check if there are dependencies between different gtests
+hotspot_validate_gtest = \
+  gtest/AllNotVMGtest.java \
+  gtest/CheckGtestDependencies.java \
+  gtest/CheckShuffledGtest.java
+
 # Test sets for running inside container environment
 hotspot_containers_extended = \
   runtime \
@@ -142,6 +148,8 @@ serviceability_ttf_virtual = \
 tier1_common = \
   sources \
   sanity/BasicVMTest.java \
+  gtest/AllNotVMGtest.java \
+  gtest/CheckShuffledGtest.java \
   gtest/GTestWrapper.java \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \

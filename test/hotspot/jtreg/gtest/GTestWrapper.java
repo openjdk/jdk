@@ -32,6 +32,7 @@
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
@@ -39,12 +40,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class GTestWrapper {
-    public static void main(String[] args) throws Throwable {
+    protected static OutputAnalyzer runGTestLauncher(String... args) throws Throwable {
         // gtestLauncher is located in <test_image>/hotspot/gtest/<vm_variant>/
         // nativePath points either to <test_image>/hotspot/jtreg/native or to <test_image>/hotspot/gtest
         Path nativePath = Paths.get(Utils.TEST_NATIVE_PATH);
@@ -76,20 +79,23 @@ public class GTestWrapper {
             env.put(pathVar, path + File.pathSeparator + ldLibraryPath);
         }
 
-        Path resultFile = Paths.get("test_result.xml");
-
         ArrayList<String> command = new ArrayList<>();
         command.add(execPath.toAbsolutePath().toString());
         command.add("-jdk");
         command.add(Utils.TEST_JDK);
         command.add("-Xmx200m");
-        command.add("--gtest_output=xml:" + resultFile);
         command.add("--gtest_catch_exceptions=0");
         for (String a : args) {
             command.add(a);
         }
         pb.command(command);
-        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
+        return ProcessTools.executeCommand(pb);
+    }
+
+    public static void main(String[] args) throws Throwable {
+        var resultFile = Paths.get("test_result.xml");
+        var gtestArgs = Stream.concat(Stream.of("--gtest_output=xml:" + resultFile), Arrays.stream(args)).toArray(String[]::new);
+        int exitCode = runGTestLauncher(gtestArgs).getExitValue();
         if (exitCode != 0) {
             List<String> failedTests = failedTests(resultFile);
             String message = "gtest execution failed; exit code = " + exitCode + ".";
