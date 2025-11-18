@@ -468,7 +468,7 @@ available for this update.
 The minimum accepted version is Visual Studio 2019 version 16.8. (Note that
 this version is often presented as "MSVC 14.28", and reported by cl.exe as
 19.28.) Older versions will not be accepted by `configure` and will not work.
-The maximum accepted version of Visual Studio is 2022.
+The maximum accepted version of Visual Studio is 2026.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
