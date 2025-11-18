@@ -125,6 +125,7 @@ public final class PlatformEventType extends Type {
                      Type.EVENT_NAME_PREFIX + "FileWrite" -> 6;
                 case Type.EVENT_NAME_PREFIX + "FileRead",
                      Type.EVENT_NAME_PREFIX + "FileForce" -> 5;
+                case Type.EVENT_NAME_PREFIX + "FinalFieldMutation" -> 4;
                 default -> 3;
             };
         }

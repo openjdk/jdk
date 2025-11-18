@@ -258,17 +258,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // not be constant is when the field is a *special* static & final field
       // whose value may change.  The three examples are java.lang.System.in,
       // java.lang.System.out, and java.lang.System.err.
-      assert(vmClasses::System_klass() != nullptr, "Check once per vm");
-      if (k == vmClasses::System_klass()) {
-        // Check offsets for case 2: System.in, System.out, or System.err
-        if (_offset == java_lang_System::in_offset()  ||
-            _offset == java_lang_System::out_offset() ||
-            _offset == java_lang_System::err_offset()) {
-          _is_constant = false;
-          return;
-        }
-      }
-      _is_constant = true;
+      _is_constant = !fd->is_mutable_static_final();
     } else {
       // An instance field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in

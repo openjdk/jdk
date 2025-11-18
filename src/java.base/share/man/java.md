@@ -450,7 +450,7 @@ the JVM.
     > **Note:** This option will be removed in a future release.
 
     -   `allow`: This mode allows illegal native access in all modules,
-        without any warings.
+        without any warnings.
 
     -   `warn`: This mode is identical to `allow` except that a warning
         message is issued for the first illegal native access found in a module.
@@ -464,6 +464,39 @@ the JVM.
     To verify that your application is ready for a future version of the JDK,
     run it with `--illegal-native-access=deny` along with any necessary `--enable-native-access`
     options.
+
+`--enable-final-field-mutation` *module*\[,*module*...\]
+:   Mutation of final fields is possible with the reflection API of the Java Platform.
+    However, it compromises safety and performance in all programs.
+    This option allows code in the specified modules to mutate final fields by reflection.
+    Attempts by code in any other module to mutate final fields by reflection are deemed _illegal_.
+
+    *module* can be the name of a module on the module path, or `ALL-UNNAMED` to indicate
+    code on the class path.
+
+-`--illegal-final-field-mutation=`*parameter*
+:   This option specifies a mode for how _illegal_ final field mutation is handled:
+
+    > **Note:** This option will be removed in a future release.
+
+    -   `allow`: This mode allows illegal final field mutation in all modules,
+        without any warnings.
+
+    -   `warn`: This mode is identical to `allow` except that a warning message is
+        issued for the first illegal final field mutation performaed in a module.
+        This mode is the default for the current JDK but will change in a future
+        release.
+
+    -   `debug`: This mode is identical to `allow` except that a warning message
+        and stack trace are printed for every illegal final field mutation.
+
+    -   `deny`: This mode disables final field mutation. That is, any illegal final
+        field mutation access causes an `IllegalAccessException`. This mode will
+        become the default in a future release.
+
+    To verify that your application is ready for a future version of the JDK,
+    run it with `--illegal-final-field-mutation=deny` along with any necessary
+    `--enable-final-field-mutation` options.
 
 `--finalization=`*value*
 :   Controls whether the JVM performs finalization of objects. Valid values
@@ -701,7 +734,8 @@ the Java HotSpot Virtual Machine.
     - A class descriptor is in decorated format (`Lname;`) when it should not be.
     - A `NULL` parameter is allowed, but its use is questionable.
     - Calling other JNI functions in the scope of `Get/ReleasePrimitiveArrayCritical`
-      or `Get/ReleaseStringCritical`
+      or `Get/ReleaseStringCritical`.
+    - A JNI call was made to mutate a final field.
 
     Expect a performance degradation when this option is used.
 

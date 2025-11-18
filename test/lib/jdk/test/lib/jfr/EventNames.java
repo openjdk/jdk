@@ -220,6 +220,7 @@ public class EventNames {
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
     public static final String VirtualThreadSubmitFailed = PREFIX + "VirtualThreadSubmitFailed";
+    public static final String FinalFieldMutation = PREFIX + "FinalFieldMutation";
 
     // Containers
     public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";

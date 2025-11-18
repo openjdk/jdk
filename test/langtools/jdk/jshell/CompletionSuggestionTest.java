@@ -32,7 +32,7 @@
  *          jdk.jshell/jdk.jshell:open
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
- * @run junit/timeout=480 CompletionSuggestionTest
+ * @run junit/othervm/timeout=480 --enable-final-field-mutation=ALL-UNNAMED CompletionSuggestionTest
  */
 
 import java.io.IOException;
