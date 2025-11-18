@@ -148,6 +148,9 @@ constexpr Register rdispatch     = r21; // dispatch table base
 constexpr Register esp           = r20; // Java expression stack pointer
 constexpr Register r19_sender_sp = r19; // sender's SP while in interpreter
 
+// State for randomized profile counters. Used by C1.
+extern Register r_profile_rng;
+
 // Preserved predicate register with all elements set TRUE.
 constexpr PRegister ptrue = p7;
 

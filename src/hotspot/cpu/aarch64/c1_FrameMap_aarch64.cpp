@@ -200,7 +200,14 @@ void FrameMap::initialize() {
     map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
   }
 
-  if(!PreserveFramePointer) {
+  // r_profile_rng is allocated conditionally. It is used to hold the random
+  // generator for profile counters.
+  r_profile_rng
+    = (UseCompressedOops && ProfileCaptureRatio > 1) ? r26
+    : (ProfileCaptureRatio > 1) ? r27
+    : noreg;
+
+   if(!PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++;
   }
 
