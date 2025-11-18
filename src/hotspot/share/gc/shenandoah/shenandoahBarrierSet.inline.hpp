@@ -205,13 +205,7 @@ inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
     return;
   }
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
-  if (UseCondCardMark) {
-    if (*byte != CardTable::dirty_card_val()) {
-      *byte = CardTable::dirty_card_val();
-    }
-  } else {
-    *byte = CardTable::dirty_card_val();
-  }
+  *byte = CardTable::dirty_card_val();
 }
 
 template <typename T>
