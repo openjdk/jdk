@@ -22,44 +22,43 @@
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.quic.QuicServerConnection;
 import jdk.httpclient.test.lib.quic.QuicStandaloneServer;
-import jdk.internal.net.http.quic.TerminationCause;
+import jdk.internal.net.http.common.Logger;
+import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HexFormat;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
-import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpOption.H3_DISCOVERY;
-import static org.testng.Assert.*;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
- * @summary Verifies that the HTTP client correctly handles malformed responses
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @library ../access
- * @build jdk.test.lib.net.SimpleSSLContext
- *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @build java.net.http/jdk.internal.net.http.Http3ConnectionAccess
- * @run testng/othervm
- *              -Djdk.internal.httpclient.debug=true
- *              -Djdk.httpclient.HttpClient.log=requests,responses,errors H3MalformedResponseTest
+ * @bug 8369595
+ * @summary Verifies that the HTTP/3 malformed responses are correctly handled
+ * @library /test/jdk/java/net/httpclient/lib
+ *          /test/lib
+ * @run junit H3MalformedResponseTest
  */
 
 /// Verifies that the HTTP/3 malformed responses are correctly handled.
@@ -126,16 +125,67 @@ import static org.testng.Assert.*;
 /// | `01xx xxxx xxxx xxxx` | 2 bytes    | 14 bits      | 16,383        |
 /// | `10xx xxx…`           | 4 bytes    | 30 bits      | 1,073,741,823 |
 /// | `11xx xxx…`           | 8 bytes    | 62 bits      | 4.61e18       |
-public class H3MalformedResponseTest implements HttpServerAdapters {
+class H3MalformedResponseTest {
 
-    private SSLContext sslContext;
-    private QuicStandaloneServer server;
-    private String requestURIBase;
+    private static final String CLASS_NAME = H3MalformedResponseTest.class.getSimpleName();
 
-    // These responses are malformed and should not be accepted by the client,
-    // but they should not cause connection closure
-    @DataProvider
-    public static Object[][] malformedResponse() {
+    private static final Logger LOGGER = Utils.getDebugLogger(CLASS_NAME::toString, Utils.DEBUG);
+
+    private static SSLContext SSL_CONTEXT;
+
+    private static QuicStandaloneServer SERVER;
+
+    private static HttpRequest REQUEST;
+
+    @BeforeAll
+    static void setUp() throws Exception {
+
+        // Obtain an `SSLContext`
+        SSL_CONTEXT = new SimpleSSLContext().get();
+        assertNotNull(SSL_CONTEXT);
+
+        // Create and start the server
+        SERVER = QuicStandaloneServer.newBuilder()
+                .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
+                .sslContext(SSL_CONTEXT)
+                .alpn("h3")
+                .build();
+        SERVER.start();
+        LOGGER.log("Server is started at {}", SERVER.getAddress());
+
+        // Create the request
+        var requestURI = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(SERVER.getAddress().getPort())
+                .path("/" + CLASS_NAME)
+                .build();
+        REQUEST = HttpRequest.newBuilder(requestURI)
+                .version(Version.HTTP_3)
+                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                .build();
+
+    }
+
+    @AfterAll
+    static void tearDown() {
+        close("server", SERVER);
+    }
+
+    private static void close(String name, AutoCloseable closeable) {
+        if (closeable != null) {
+            LOGGER.log("Closing {}", name);
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                LOGGER.log("Could not close " + name, e);
+            }
+        }
+    }
+
+    /// Malformed responses that should not be accepted by the client, but
+    /// should neither cause the connection get closed.
+    static Object[][] malformedResponsesInvalidatingConnection() {
         return new Object[][]{
                 new Object[] {"empty", HexFormat.of().parseHex(
                         ""
@@ -246,10 +296,9 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         };
     }
 
-    // These responses are malformed and should not be accepted by the client.
-    // They might or might not cause connection closure (H3_FRAME_UNEXPECTED)
-    @DataProvider
-    public static Object[][] malformedResponse2() {
+    /// Malformed responses that should not be accepted by the client.
+    /// They might or might not cause the connection to get closed (`H3_FRAME_UNEXPECTED`).
+    static Object[][] malformedResponses() {
         // data before headers is covered by H3ErrorHandlingTest
         return new Object[][]{
                 new Object[] {"100+data", HexFormat.of().parseHex(
@@ -306,13 +355,13 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         };
     }
 
-    @DataProvider
-    public static Object[][] wellformedResponse() {
+    /// Well-formed responses that should be accepted by the client.
+    static Object[][] wellFormedResponses() {
         return new Object[][]{
                 new Object[] {"100+200+data+reserved", HexFormat.of().parseHex(
                         "01040000"+ // headers, length 4, section prefix
                                 "ff00"+ // :status:100
-                        "01030000"+ // headers, length 3, section prefix
+                                "01030000"+ // headers, length 3, section prefix
                                 "d9"+ // :status:200
                                 "000100"+ // data, 1 byte
                                 "210100" // reserved, 1 byte
@@ -358,131 +407,58 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
         };
     }
 
-    @BeforeClass
-    public void beforeClass() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        if (sslContext == null) {
-            throw new AssertionError("Unexpected null sslContext");
+    @ParameterizedTest
+    @MethodSource("wellFormedResponses")
+    void testWellFormedResponse(String desc, byte[] serverResponseBytes) throws Exception {
+        var terminated = configureServerResponse(serverResponseBytes);
+        try (var client = createClient()) {
+            final HttpResponse<Void> response = client.send(REQUEST, BodyHandlers.discarding());
+            assertEquals(200, response.statusCode());
+            assertFalse(terminated.getAsBoolean(), "Expected the connection to be open");
         }
-        server = QuicStandaloneServer.newBuilder()
-                .availableVersions(new QuicVersion[]{QuicVersion.QUIC_V1})
-                .sslContext(sslContext)
-                .alpn("h3")
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedResponsesInvalidatingConnection")
+    void testMalformedResponseInvalidatingConnection(String desc, byte[] serverResponseBytes) {
+        var terminated = configureServerResponse(serverResponseBytes);
+        try (var client = createClient()) {
+            var exception = assertThrows(Exception.class, () -> client.send(REQUEST, BodyHandlers.discarding()));
+            LOGGER.log("Got expected exception for: " + desc, exception);
+            assertFalse(terminated.getAsBoolean(), "Expected the connection to be open");
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("malformedResponses")
+    void testMalformedResponse(String desc, byte[] serverResponseBytes) {
+        configureServerResponse(serverResponseBytes);
+        try (var client = createClient()) {
+            var exception = assertThrows(Exception.class, () -> client.send(REQUEST, BodyHandlers.discarding()));
+            LOGGER.log("Got expected exception for: " + desc, exception);
+        }
+    }
+
+    private static HttpClient createClient() {
+        return HttpServerAdapters.createClientBuilderForH3()
+                .proxy(NO_PROXY)
+                .version(Version.HTTP_3)
+                .sslContext(SSL_CONTEXT)
                 .build();
-        server.start();
-        System.out.println("Server started at " + server.getAddress());
-        requestURIBase = URIBuilder.newBuilder().scheme("https").loopback()
-                .port(server.getAddress().getPort()).build().toString();
     }
 
-    @AfterClass
-    public void afterClass() throws Exception {
-        if (server != null) {
-            System.out.println("Stopping server " + server.getAddress());
-            server.close();
-        }
-    }
-
-    /**
-     * Server sends a well-formed response
-     */
-    @Test(dataProvider = "wellformedResponse")
-    public void testWellFormedResponse(String desc, byte[] response) throws Exception {
-        CompletableFuture<TerminationCause> errorCF = new CompletableFuture<>();
-        server.addHandler((c,s)-> {
+    private static BooleanSupplier configureServerResponse(byte[] serverResponseBytes) {
+        var terminated = new AtomicBoolean();
+        SERVER.addHandler((c, s)-> {
             try (OutputStream outputStream = s.outputStream()) {
-                outputStream.write(response);
+                outputStream.write(serverResponseBytes);
             }
-            // verify that the connection stays open
-            completeUponTermination(c, errorCF);
+            c.futureTerminationCause().handle((_, _) -> {
+                terminated.set(true);
+                return true;
+            });
         });
-        HttpClient client = getHttpClient();
-        try {
-            HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.send(
-                    request,
-                    BodyHandlers.discarding());
-            assertEquals(response1.statusCode(), 200);
-            assertFalse(errorCF.isDone(), "Expected the connection to be open");
-        } finally {
-            client.shutdownNow();
-        }
+        return terminated::get;
     }
 
-
-    /**
-     * Server sends a malformed response that should not close connection
-     */
-    @Test(dataProvider = "malformedResponse")
-    public void testMalformedResponse(String desc, byte[] response) throws Exception {
-        CompletableFuture<TerminationCause> errorCF = new CompletableFuture<>();
-        server.addHandler((c,s)-> {
-            try (OutputStream outputStream = s.outputStream()) {
-                outputStream.write(response);
-            }
-            // verify that the connection stays open
-            completeUponTermination(c, errorCF);
-        });
-        HttpClient client = getHttpClient();
-        try {
-            HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.send(
-                            request,
-                            BodyHandlers.discarding());
-            fail("Expected the request to fail, got " + response1);
-        } catch (Exception e) {
-            System.out.println("Got expected exception: " +e);
-            e.printStackTrace();
-            assertFalse(errorCF.isDone(), "Expected the connection to be open");
-        } finally {
-            client.shutdownNow();
-        }
-    }
-
-    /**
-     * Server sends a malformed response that might close connection
-     */
-    @Test(dataProvider = "malformedResponse2")
-    public void testMalformedResponse2(String desc, byte[] response) throws Exception {
-        server.addHandler((c,s)-> {
-            try (OutputStream outputStream = s.outputStream()) {
-                outputStream.write(response);
-            }
-        });
-        HttpClient client = getHttpClient();
-        try {
-            HttpRequest request = getRequest();
-            final HttpResponse<Void> response1 = client.send(
-                            request,
-                            BodyHandlers.discarding());
-            fail("Expected the request to fail, got " + response1);
-        } catch (Exception e) {
-            System.out.println("Got expected exception: " +e);
-            e.printStackTrace();
-        } finally {
-            client.shutdownNow();
-        }
-    }
-
-    private HttpRequest getRequest() throws URISyntaxException {
-        final URI reqURI = new URI(requestURIBase + "/hello");
-        final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
-                .version(Version.HTTP_3)
-                .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
-        return reqBuilder.build();
-    }
-
-    private HttpClient getHttpClient() {
-        final HttpClient client = newClientBuilderForH3()
-                .proxy(HttpClient.Builder.NO_PROXY)
-                .version(Version.HTTP_3)
-                .sslContext(sslContext).build();
-        return client;
-    }
-
-    private static void completeUponTermination(final QuicServerConnection serverConnection,
-                                                final CompletableFuture<TerminationCause> cf) {
-        serverConnection.futureTerminationCause().handle(
-                (r,t) -> t != null ? cf.completeExceptionally(t) : cf.complete(r));
-    }
 }
