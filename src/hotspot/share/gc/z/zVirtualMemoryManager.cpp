@@ -41,6 +41,8 @@
 #include <cstdint>
 
 bool ZVirtualMemoryReserver::reserve(uintptr_t addr, size_t size) {
+  log_debug(gc, init)("ZGC reserve:   [" PTR_FORMAT " - " PTR_FORMAT ")", addr, addr + size);
+
   // Reserve address space
   if (!pd_reserve(addr, size)) {
     return false;
@@ -57,6 +59,8 @@ void ZVirtualMemoryReserver::split_reserved(uintptr_t addr, size_t split_size, s
 }
 
 void ZVirtualMemoryReserver::unreserve(uintptr_t addr, size_t size) {
+  log_debug(gc, init)("ZGC unreserve: [" PTR_FORMAT " - " PTR_FORMAT ")", addr, addr + size);
+
   // Unregister the reserved memory from NMT
   ZNMT::unreserve(addr, size);
 
@@ -337,62 +341,84 @@ size_t ZVirtualMemoryAdaptiveReserver::unreserve_after(size_t keep_size) {
 
   const size_t before = reserved();
 
-  size_t accumulated = 0;
+  struct UnreservePoint {
+    int    _index;
+    size_t _offset;
+  };
+
+  auto find_unreserve_point = [&]() -> UnreservePoint {
+    size_t accumulated = 0;
+
+    for (int i = 0; i < _reserved_ranges.length(); i++) {
+      ZVirtualMemoryUntyped vmem = _reserved_ranges.at(i);
+
+      accumulated += vmem._size;
+
+      if (accumulated < keep_size) {
+        // Keep on accumulating
+        continue;
+      }
+
+      // We have found the unreserve point
+
+      if (accumulated > keep_size) {
+        // The unreserve point splits a vmem
+        size_t vmem_over_size = (accumulated - keep_size);
+        size_t vmem_split_size = vmem._size - vmem_over_size;
+
+        return {i, vmem_split_size};
+      }
+
+      // The unreserve point doesn't split a vmem
+      return {i + 1, 0};
+    }
+
+    log_info(test)("None:  %d " PTR_FORMAT " " PTR_FORMAT, _reserved_ranges.length(), (uintptr_t)0, (uintptr_t)0);
+
+    // Nothing to split
+    return {_reserved_ranges.length(), 0};
+  };
+
+  // Search for the point where we should unreserve from
+  const UnreservePoint split = find_unreserve_point();
+
+  int index = split._index;
+  const size_t offset = split._offset;
+
   size_t unreserved = 0;
-  int i;
 
   auto do_unreserve = [&](uintptr_t addr, size_t size) {
     ZVirtualMemoryReserver::unreserve(addr, size);
     unreserved += size;
   };
 
-  for (i = 0; i < _reserved_ranges.length(); i++) {
-    ZVirtualMemoryUntyped vmem = _reserved_ranges.at(i);
-
-    accumulated += vmem._size;
-
-    if (accumulated < keep_size) {
-      // Keep on accumulating
-      continue;
-    }
-
-    // We have found the split point
-
-    if (accumulated == keep_size) {
-      // Done - unreserve the rest
-      break;
-    }
-
-    size_t vmem_over_size = (accumulated - keep_size);
-    size_t vmem_split_size = vmem._size - vmem_over_size;
+  // Split a vmem if the unreserve point falls inside a vmem
+  if (offset > 0) {
+    const ZVirtualMemoryUntyped& vmem = _reserved_ranges.at(index);
 
     // Mainly a call to Windows that the memory reservation is split
-    ZVirtualMemoryReserver::split_reserved(vmem._start, vmem_split_size, vmem._size);
-
-    uintptr_t vmem_over_start = vmem._start + vmem_over_size;
+    ZVirtualMemoryReserver::split_reserved(vmem._start, offset, vmem._size);
 
     // Unreserve the surplus
-    do_unreserve(vmem_over_start, vmem_over_size);
+    do_unreserve(vmem._start + offset, vmem._size - offset);
 
-    _reserved_ranges.at(i) = ZVirtualMemoryUntyped{vmem._start, vmem_split_size};
+    // Re-register the area that was shrunk
+    _reserved_ranges.at(index) = ZVirtualMemoryUntyped{vmem._start, offset};
 
-    // Done - unreserve the rest
-    break;
+    // Unreserve the rest
+    index++;
   }
 
-  int unreserve_from = i + 1;
+  // Unreserve the reset of the vmems
+  for (int i = index; i < _reserved_ranges.length(); i++) {
+    const ZVirtualMemoryUntyped& vmem = _reserved_ranges.at(i);
 
-  if (unreserve_from < _reserved_ranges.length()) {
-    for (; i < _reserved_ranges.length(); i++) {
-      ZVirtualMemoryUntyped vmem = _reserved_ranges.at(i);
-
-      do_unreserve(vmem._start, vmem._size);
-    }
-
-    _reserved_ranges.trunc_to(unreserve_from);
+    do_unreserve(vmem._start, vmem._size);
   }
 
-  z_on_error_capture_64_5(keep_size, unreserved, before, unreserve_from, _reserved_ranges.length());
+  _reserved_ranges.trunc_to(index);
+
+  z_on_error_capture_64_6(keep_size, unreserved, before, index, offset, _reserved_ranges.length());
 
   postcond(keep_size + unreserved == before);
   postcond(reserved() == keep_size);
@@ -402,7 +428,7 @@ size_t ZVirtualMemoryAdaptiveReserver::unreserve_after(size_t keep_size) {
 
 void ZVirtualMemoryAdaptiveReserver::unreserve_all() {
   for (ZVirtualMemoryUntyped vmem : _reserved_ranges) {
-    ZVirtualMemoryReserver::unreserve(vmem._start, vmem._start + vmem._size);
+    ZVirtualMemoryReserver::unreserve(vmem._start, vmem._size);
   }
 
   _reserved_ranges.clear();
