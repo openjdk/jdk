@@ -51,11 +51,6 @@ public:
   zoffset           _page_offset;
 
   virtual void SetUp() {
-    // Only run test on supported Windows versions
-    if (!is_os_supported()) {
-      GTEST_SKIP() << "OS not supported";
-    }
-
     _old_heap = ZHeap::_heap;
     ZHeap::_heap = (ZHeap*)os::malloc(sizeof(ZHeap), mtTest);
 
@@ -83,11 +78,6 @@ public:
   }
 
   virtual void TearDown() {
-    if (!is_os_supported()) {
-      // Test skipped, nothing to cleanup
-      return;
-    }
-
     os::free(ZHeap::_heap);
     ZHeap::_heap = _old_heap;
     ZGeneration::_old = _old_old;

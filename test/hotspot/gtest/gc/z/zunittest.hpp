@@ -76,7 +76,6 @@ public:
       }
 
       void SetUp(size_t reservation_size) {
-        GTEST_EXPECT_TRUE(ZArguments::is_os_supported()) << "Should not use SetUp on unsupported systems";
         GTEST_EXPECT_FALSE(_active) << "SetUp called twice without a TearDown";
         _active = true;
 
@@ -109,12 +108,21 @@ private:
   ZAddressOffsetMaxSetter _zaddress_offset_max_setter;
   unsigned int _rand_seed;
 
+  void skip_all_tests() {
+    // Skipping from the constructor currently works, but according to the
+    // documentation the GTEST_SKIP macro should be used from the test or
+    // from the SetUp function. If this start to fail down the road, then
+    // we'll have to explicitly call this for each inheriting gtest.
+    GTEST_SKIP() << "OS not supported";
+  }
+
 protected:
   ZTest()
     : _zaddress_offset_max_setter(ZAddressOffsetMax),
       _rand_seed(static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed())) {
     if (!is_os_supported()) {
       // If the OS does not support ZGC do not run initialization, as it may crash the VM.
+      skip_all_tests();
       return;
     }
 
