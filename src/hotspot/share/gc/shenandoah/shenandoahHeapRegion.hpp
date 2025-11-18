@@ -521,7 +521,6 @@ public:
 
   inline void set_active_alloc_region() {
     assert(_active_alloc_region.is_unset(), "Must be");
-    assert(is_affiliated(), "Region %lu must be affiliated, affiliation: %s", index(), shenandoah_affiliation_name(affiliation()));
     _active_alloc_region.set();
   }
 

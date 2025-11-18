@@ -428,6 +428,10 @@ void ShenandoahDegenGC::op_update_roots() {
     heap->free_set()->collector_allocator()->release_alloc_regions();
   }
   heap->rebuild_free_set(false /*concurrent*/);
+  {
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
+    ShenandoahHeap::heap()->free_set()->mutator_allocator()->reserve_alloc_regions();
+  }
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

@@ -774,6 +774,10 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
+    
+    // Release all alloc regions before choose cset and rebuild free-set
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
     if (is_generational) {
       // Seed the collection set with resource area-allocated
       // preselected regions, which are removed when we exit this scope.
@@ -782,10 +786,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       // Find the amount that will be promoted, regions that will be promoted in
       // place, and preselect older regions that will be promoted by evacuation.
       compute_evacuation_budgets(heap);
-
-      // Release all alloc regions before choose cset and rebuild free-set
-      heap->free_set()->mutator_allocator()->release_alloc_regions();
-      heap->free_set()->collector_allocator()->release_alloc_regions();
 
       // Choose the collection set, including the regions preselected above for
       // promotion into the old generation.
@@ -808,9 +808,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
         heap->old_generation()->prepare_for_mixed_collections_after_global_gc();
       }
     } else {
-      // Release all alloc regions before choose cset and rebuild free-set
-      heap->free_set()->mutator_allocator()->release_alloc_regions();
-      heap->free_set()->collector_allocator()->release_alloc_regions();
       _heuristics->choose_collection_set(collection_set);
     }
   }

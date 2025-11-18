@@ -146,6 +146,8 @@ public:
 
   static const size_t FreeSetUnderConstruction = SIZE_MAX;
 
+  static const char* partition_name(ShenandoahFreeSetPartitionId t);
+
   inline idx_t max() const { return _max; }
 
   // At initialization, reset OldCollector tallies
@@ -292,7 +294,7 @@ public:
     return _region_counts[int(which_partition)];
   }
 
-  inline void increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  void increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
   inline void decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
   inline size_t get_empty_region_counts(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -517,7 +519,7 @@ private:
   // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
 
-  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
+  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, bool delay_total_recomputation = false);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
   // region is entirely empty.
@@ -526,10 +528,10 @@ private:
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
   // the Mutator free set into the Collector or OldCollector free set. The conditions to move this region are checked by
   // the caller, so the given region is always moved.
-  void flip_to_gc(ShenandoahHeapRegion* r);
+  void flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation = false);
 
   // Return true if and only if the given region is successfully flipped to the old partition
-  bool flip_to_old_gc(ShenandoahHeapRegion* r);
+  bool flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation = false);
 
   // Handle allocation for mutator.
   HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);

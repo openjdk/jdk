@@ -81,8 +81,8 @@ public:
         _free_set->recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
                                               /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ true,
                                               /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ true,
-                                              /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                              /* UnaffiliatedChangesAreYoungNeutral */ true>();
+                                              /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
+                                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
         break;
       case ShenandoahFreeSetPartitionId::NotFree:
       default:
@@ -225,8 +225,8 @@ int ShenandoahAllocator::refresh_alloc_regions() {
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = alloc_region->_address;
-    size_t free_bytes;
-    if (region == nullptr || (free_bytes = region->free()) / HeapWordSize < PLAB::min_size()) {
+    size_t free_bytes = region == nullptr ? 0 : region->free();
+    if (region == nullptr || free_bytes / HeapWordSize < PLAB::min_size()) {
       if (region != nullptr) {
         region->unset_active_alloc_region();
         if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
@@ -234,10 +234,12 @@ int ShenandoahAllocator::refresh_alloc_regions() {
             _free_set->increase_bytes_allocated(free_bytes);
           }
         }
-        log_debug(gc, alloc)("Removing Region %li from alloc region %i, partition: %hhu", region->index(), alloc_region->_alloc_region_index, _alloc_partition_id);
+        log_debug(gc, alloc)("Removing Region %li from alloc region %i of %s allocator.",
+          region->index(), alloc_region->_alloc_region_index, ShenandoahRegionPartitions::partition_name(_alloc_partition_id));
         AtomicAccess::store(&alloc_region->_address, static_cast<ShenandoahHeapRegion*>(nullptr));
       }
-      log_debug(gc, alloc)("Adding alloc region %i to refreshable", alloc_region->_alloc_region_index);
+      log_debug(gc, alloc)("Adding alloc region %i to refreshable for %s allocator",
+        alloc_region->_alloc_region_index, ShenandoahRegionPartitions::partition_name(_alloc_partition_id));
       refreshable[refreshable_alloc_regions++] = alloc_region;
     }
   }
@@ -292,6 +294,7 @@ void ShenandoahAllocator::release_alloc_regions() {
         if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
           r->make_empty();
           r->set_affiliation(FREE);
+          _free_set->partitions()->increase_empty_region_counts(_alloc_partition_id, 1);
         }
         _free_set->partitions()->decrease_used(_alloc_partition_id, free_bytes);
         _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
