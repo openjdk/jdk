@@ -269,19 +269,7 @@ private:
   bool _needs_bitmap_reset;
 
   ShenandoahSharedFlag _active_alloc_region; // Flag indicates that whether the region is an active alloc region.
-  volatile int _direct_alloc_mutators = 0;
 
-  class DirectAllocMutatorCounter {
-  private:
-    int volatile* _counter;
-  public:
-    DirectAllocMutatorCounter(int volatile* counter): _counter(counter) {
-      AtomicAccess::inc(_counter);
-    }
-    ~DirectAllocMutatorCounter() {
-      AtomicAccess::dec(_counter);
-    }
-  };
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -533,6 +521,7 @@ public:
 
   inline void set_active_alloc_region() {
     assert(_active_alloc_region.is_unset(), "Must be");
+    assert(is_affiliated(), "Region %lu must be affiliated, affiliation: %s", index(), shenandoah_affiliation_name(affiliation()));
     _active_alloc_region.set();
   }
 
@@ -543,10 +532,6 @@ public:
 
   inline bool is_active_alloc_region() const {
     return _active_alloc_region.is_set();
-  }
-
-  inline int direct_alloc_mutators() const {
-    return AtomicAccess::load(&_direct_alloc_mutators);
   }
 
 private:
