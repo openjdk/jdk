@@ -40,6 +40,7 @@ ShenandoahAllocator::ShenandoahAllocator(uint const alloc_region_count, Shenando
     _alloc_regions = PaddedArray<ShenandoahAllocRegion, mtGC>::create_unfreeable(alloc_region_count);
     for (uint i = 0; i < alloc_region_count; i++) {
       _alloc_regions[i]._address = nullptr;
+      _alloc_regions[i]._alloc_region_index = i;
     }
   }
 }
@@ -225,16 +226,20 @@ int ShenandoahAllocator::refresh_alloc_regions() {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = alloc_region->_address;
     size_t free_bytes;
-    if (region != nullptr && (free_bytes = region->free()) / HeapWordSize < PLAB::min_size()) {
-      region->unset_active_alloc_region();
-      if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
-        if (free_bytes > 0) {
-          _free_set->increase_bytes_allocated(free_bytes);
+    if (region == nullptr || (free_bytes = region->free()) / HeapWordSize < PLAB::min_size()) {
+      if (region != nullptr) {
+        region->unset_active_alloc_region();
+        if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
+          if (free_bytes > 0) {
+            _free_set->increase_bytes_allocated(free_bytes);
+          }
         }
+        log_debug(gc, alloc)("Removing Region %li from alloc region %i, partition: %hhu", region->index(), alloc_region->_alloc_region_index, _alloc_partition_id);
+        AtomicAccess::store(&alloc_region->_address, static_cast<ShenandoahHeapRegion*>(nullptr));
       }
-      AtomicAccess::store(&alloc_region->_address, static_cast<ShenandoahHeapRegion*>(nullptr));
+      log_debug(gc, alloc)("Adding alloc region %i to refreshable", alloc_region->_alloc_region_index);
+      refreshable[refreshable_alloc_regions++] = alloc_region;
     }
-    refreshable[refreshable_alloc_regions++] = alloc_region;
   }
 
   if (refreshable_alloc_regions > 0) {
@@ -243,9 +248,12 @@ int ShenandoahAllocator::refresh_alloc_regions() {
     int reserved_regions = _free_set->reserve_alloc_regions(_alloc_partition_id, refreshable_alloc_regions, reserved);
     assert(reserved_regions <= refreshable_alloc_regions, "Sanity check");
 
+    ShenandoahAffiliation affiliation = _alloc_partition_id == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
     // Step 3: Install the new reserved alloc regions
     if (reserved_regions > 0) {
       for (int i = 0; i < reserved_regions; i++) {
+        assert(reserved[i]->affiliation() == affiliation, "Affiliation of reserved region must match, invalid affiliation: %s", shenandoah_affiliation_name(reserved[i]->affiliation()));
+        log_debug(gc, alloc)("Storing Region %li to alloc region %i, partition: %hhu", reserved[i]->index(), refreshable[i]->_alloc_region_index, _alloc_partition_id);
         AtomicAccess::store(&refreshable[i]->_address, reserved[i]);
       }
     }

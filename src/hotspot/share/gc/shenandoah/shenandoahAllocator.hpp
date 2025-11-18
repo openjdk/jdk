@@ -37,6 +37,7 @@ class ShenandoahAllocator : public CHeapObj<mtGC> {
 protected:
   struct ShenandoahAllocRegion {
     ShenandoahHeapRegion* volatile _address;
+    int                            _alloc_region_index;
   };
 
   static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
