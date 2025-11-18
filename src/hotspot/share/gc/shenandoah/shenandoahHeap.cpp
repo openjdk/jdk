@@ -918,7 +918,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   if (req.is_mutator_alloc()) {
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
-      result = allocate_memory_for_mutator(req, in_new_region);
+      result = _free_set->mutator_allocator()->allocate(req, in_new_region);
     }
 
     // Check that gc overhead is not exceeded.
@@ -950,7 +950,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       const size_t original_count = shenandoah_policy()->full_gc_count();
       while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
-        result = allocate_memory_for_mutator(req, in_new_region);
+        result = _free_set->mutator_allocator()->allocate(req, in_new_region);
       }
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -966,7 +966,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
-    result = allocate_memory_under_lock(req, in_new_region);
+    result = allocate_memory_for_collector(req, in_new_region);
     // Do not call handle_alloc_failure() here, because we cannot block.
     // The allocation failure would be handled by the LRB slowpath with handle_alloc_failure_evac().
   }
@@ -991,19 +991,12 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   return result;
 }
 
-HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& req, bool& in_new_region) {
-  assert(req.is_mutator_alloc(), "Sanity");
-  assert(!req.is_old(), "Sanity");
-  shenandoah_assert_not_heaplocked();
-  return _free_set->mutator_allocator()->allocate(req, in_new_region);
-}
-
 inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {
   return shenandoah_policy()->full_gc_count() == original_full_gc_count
       && !shenandoah_policy()->is_at_shutdown();
 }
 
-HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req, bool& in_new_region) {
+HeapWord* ShenandoahHeap::allocate_memory_for_collector(ShenandoahAllocRequest& req, bool& in_new_region) {
   // If we are dealing with mutator allocation, then we may need to block for safepoint.
   // We cannot block for safepoint for GC allocations, because there is a high chance
   // we are already running at safepoint or from stack watermark machinery, and we cannot
@@ -1011,9 +1004,8 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   if (req.is_young()) {
     return free_set()->collector_allocator()->allocate(req, in_new_region);
   }
-
+  // Allocate with old collector allocator
   ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
-
   // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
   if (req.is_old() && !old_generation()->can_allocate(req)) {
     return nullptr;
@@ -1021,10 +1013,10 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
 
   // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
   // memory.
-  HeapWord* result = _free_set->allocate(req, in_new_region);
+  HeapWord* result = _free_set->old_collector_allocator()->allocate(req, in_new_region);
 
   // Record the plab configuration for this result and register the object.
-  if (result != nullptr && req.is_old()) {
+  if (result != nullptr) {
     old_generation()->configure_plab_for_current_thread(req);
     if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
       // Register the newly allocated object while we're holding the global lock since there's no synchronization

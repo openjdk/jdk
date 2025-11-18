@@ -677,8 +677,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
-  HeapWord* allocate_memory_for_mutator(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_for_collector(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 

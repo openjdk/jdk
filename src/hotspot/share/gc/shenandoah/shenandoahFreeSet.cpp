@@ -1215,6 +1215,7 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   clear_internal();
   _mutator_allocator = new ShenandoahMutatorAllocator(this);
   _collector_allocator = new ShenandoahCollectorAllocator(this);
+  _old_collector_allocator = new ShenandoahOldCollectorAllocator(this);
 }
 
 // was pip_pad_bytes
@@ -3430,7 +3431,10 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
   bool const use_affiliated_region_first = partition != ShenandoahFreeSetPartitionId::Mutator;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    assert(r->affiliation() == affiliation || r->affiliation() == FREE, "Affiliation of region must align with the partition.");
+    if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
+      continue;
+    }
+    assert(r->affiliation() == affiliation || r->affiliation() == FREE || r->is_trash(), "Affiliation of region must align with the partition.");
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
@@ -3480,6 +3484,10 @@ ShenandoahHeapRegion* ShenandoahFreeSet::steal_heap_region_from_mutator_for_allo
   ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
+      continue;
+    }
+
     if (can_allocate_from(r)) {
       if (partition == ShenandoahFreeSetPartitionId::OldCollector) {
         if (!flip_to_old_gc(r)) {

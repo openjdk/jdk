@@ -35,9 +35,11 @@
 
 ShenandoahAllocator::ShenandoahAllocator(uint const alloc_region_count, ShenandoahFreeSet* free_set, ShenandoahFreeSetPartitionId alloc_partition_id):
   _alloc_region_count(alloc_region_count), _free_set(free_set), _alloc_partition_id(alloc_partition_id) {
-  _alloc_regions = PaddedArray<ShenandoahAllocRegion, mtGC>::create_unfreeable(alloc_region_count);
-  for (uint i = 0; i < alloc_region_count; i++) {
-    _alloc_regions[i]._address = nullptr;
+  if (alloc_region_count > 0) {
+    _alloc_regions = PaddedArray<ShenandoahAllocRegion, mtGC>::create_unfreeable(alloc_region_count);
+    for (uint i = 0; i < alloc_region_count; i++) {
+      _alloc_regions[i]._address = nullptr;
+    }
   }
 }
 
@@ -170,9 +172,8 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
   uint i = 0u;
   while (i < _alloc_region_count) {
     uint idx = (alloc_start_index + i) % _alloc_region_count;
-    ShenandoahHeapRegion* r = nullptr;
-    // Intentionally not using AtomicAccess::load, if a mutator see a stale region it will fail to allocate anyway.
-    if ((r = _alloc_regions[idx]._address) != nullptr && r->is_active_alloc_region()) {
+    ShenandoahHeapRegion* const r =  AtomicAccess::load(&_alloc_regions[idx]._address);
+    if (r != nullptr && r->is_active_alloc_region()) {
       bool ready_for_retire = false;
       obj = atomic_allocate_in(r, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
@@ -190,6 +191,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
 }
 
 HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
+  assert(ready_for_retire == false, "Sanity check");
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
   if (req.is_lab_alloc()) {
@@ -265,31 +267,30 @@ HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest &req, bool &in_ne
     in_new_region = true;
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
     return _free_set->allocate_contiguous(req, req.type() != ShenandoahAllocRequest::_alloc_cds /*is_humongous*/);
-  } else {
-    return attempt_allocation(req, in_new_region);
   }
-  return nullptr;
+  return attempt_allocation(req, in_new_region);
 }
 
 void ShenandoahAllocator::release_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
+  ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion& alloc_region = _alloc_regions[i];
     ShenandoahHeapRegion* r = AtomicAccess::load(&alloc_region._address);
     if (r != nullptr) {
       assert(r->is_active_alloc_region(), "Must be");
-      AtomicAccess::store(&alloc_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       r->unset_active_alloc_region();
+      AtomicAccess::store(&alloc_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       size_t free_bytes = r->free();
-      if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
-        r->make_empty();
-        r->set_affiliation(FREE);
+      if (free_bytes >= PLAB::min_size_bytes()) {
+        if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
+          r->make_empty();
+          r->set_affiliation(FREE);
+        }
         _free_set->partitions()->decrease_used(_alloc_partition_id, free_bytes);
         _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
-      } else if (free_bytes >= PLAB::min_size_bytes()) {
-        _free_set->partitions()->decrease_used(_alloc_partition_id, free_bytes);
-        _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
+        accounting_updater._need_update = true;
       }
     }
   }
@@ -297,7 +298,10 @@ void ShenandoahAllocator::release_alloc_regions() {
 
 void ShenandoahAllocator::reserve_alloc_regions() {
   shenandoah_assert_heaplocked();
-  refresh_alloc_regions();
+  ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
+  if (refresh_alloc_regions() > 0) {
+    accounting_updater._need_update = true;
+  }
 }
 
 THREAD_LOCAL uint ShenandoahMutatorAllocator::_alloc_start_index = UINT_MAX;
@@ -341,10 +345,18 @@ uint ShenandoahCollectorAllocator::alloc_start_index() {
 }
 
 ShenandoahOldCollectorAllocator::ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator((uint) ParallelGCThreads, free_set, ShenandoahFreeSetPartitionId::OldCollector) {
+  ShenandoahAllocator(0u, free_set, ShenandoahFreeSetPartitionId::OldCollector) {
   _yield_to_safepoint = false;
 }
 
 uint ShenandoahOldCollectorAllocator::alloc_start_index() {
   return Thread::current()->is_Worker_thread() ? WorkerThread::worker_id() % _alloc_region_count : 0u;
+}
+
+HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
+#ifdef ASSERT
+  verify(req);
+#endif // ASSERT
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+  return _free_set->allocate_for_collector(req, in_new_region);
 }

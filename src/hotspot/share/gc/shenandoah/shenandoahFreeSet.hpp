@@ -456,6 +456,7 @@ private:
   ShenandoahRegionPartitions _partitions;
   ShenandoahMutatorAllocator* _mutator_allocator;
   ShenandoahCollectorAllocator* _collector_allocator;
+  ShenandoahOldCollectorAllocator* _old_collector_allocator;
 
   size_t _total_humongous_waste;
 
@@ -548,9 +549,6 @@ private:
   // Search for regions to satisfy allocation request using iterator.
   template<typename Iter>
   HeapWord* allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region);
-
-  // Handle allocation for collector (for evacuation).
-  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // Search for allocation in region with same affiliation as request, using given iterator,
   // or affiliate the first usable FREE region with given affiliation and allocate in.
@@ -812,12 +810,21 @@ public:
     return _mutator_allocator;
   }
 
-  // Get the cllector allocator.
+  // Get the collector allocator.
   inline ShenandoahCollectorAllocator* collector_allocator() {
     return _collector_allocator;
   }
 
+  // Get the old collector allocator.
+  inline ShenandoahOldCollectorAllocator* old_collector_allocator() {
+    return _old_collector_allocator;
+  }
+
+
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
+
+  // Handle allocation for collector (for evacuation).
+  HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 
   // While holding the heap lock, allocate memory for a humongous object which spans one or more regions that
   // were previously empty.  Regions that represent humongous objects are entirely dedicated to the humongous

@@ -76,8 +76,8 @@ public:
 
   // Handle the allocation request.
   virtual HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
-  void release_alloc_regions();
-  void reserve_alloc_regions();
+  virtual void release_alloc_regions();
+  virtual void reserve_alloc_regions();
 };
 
 /*
@@ -103,7 +103,9 @@ public:
   ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set);
 };
 
-// TODO ShenandoahOldCollectorAllocator doesn't handle plab alloc property yet because of
+// Currently ShenandoahOldCollectorAllocator delegate allocation handling to ShenandoahFreeSet,
+// because of the complexity in plab allocation where we have specialised logic to handle card table size alignment.
+// We will make ShenandoahOldCollectorAllocator use compare-and-swap/atomic operation later.
 class ShenandoahOldCollectorAllocator : public ShenandoahAllocator {
   uint alloc_start_index() override;
 #ifdef ASSERT
@@ -111,6 +113,9 @@ class ShenandoahOldCollectorAllocator : public ShenandoahAllocator {
 #endif // ASSERT
 public:
   ShenandoahOldCollectorAllocator(ShenandoahFreeSet* free_set);
+  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region) override;
+  void release_alloc_regions() override { /* nothing to release*/ }
+  void reserve_alloc_regions() override { /* no need to reserve any alloc region*/}
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
