@@ -24,34 +24,19 @@
 /*
  * @test
  * @summary Test JAAS access to in-memory credential caches
- * @library /test/lib ../auto
+ * @library /test/lib
  * @requires os.family != "windows"
- * @compile -XDignore.symbol.file
- *   --add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.ccache=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.crypto=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.ktab=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.jgss.krb5=ALL-UNNAMED
- *   --add-exports java.base/sun.security.util=ALL-UNNAMED
- *   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
- *   NativeCacheTest.java
+ * @modules java.security.jgss/sun.security.krb5:+open
+ *          java.security.jgss/sun.security.krb5.internal:+open
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ktab
+ *          java.security.jgss/sun.security.jgss.krb5
+ *          java.base/sun.security.util:+open
+ *          java.base/jdk.internal.misc
+ * @compile NativeCacheTest.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm/native
- *   --add-exports java.security.jgss/sun.security.krb5=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.ccache=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.crypto=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.krb5.internal.ktab=ALL-UNNAMED
- *   --add-exports java.security.jgss/sun.security.jgss.krb5=ALL-UNNAMED
- *   --add-exports java.base/sun.security.util=ALL-UNNAMED
- *   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
- *   --add-opens java.security.jgss/sun.security.krb5=ALL-UNNAMED
- *   --add-opens java.security.jgss/sun.security.krb5.internal=ALL-UNNAMED
- *   --add-opens java.base/sun.security.util=ALL-UNNAMED
- *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.net.hosts.file=TestHosts
- *   NativeCacheTest
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED -Djdk.net.hosts.file=TestHosts NativeCacheTest
  */
 
 import sun.security.krb5.Credentials;

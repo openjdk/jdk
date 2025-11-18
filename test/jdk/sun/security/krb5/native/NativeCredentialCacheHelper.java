@@ -47,6 +47,3 @@ public class NativeCredentialCacheHelper {
      */
     public static native boolean createInMemoryCacheFromFileCache(String inMemoryCacheName, String fileCacheName);
 }
-
-
-
