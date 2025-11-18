@@ -201,23 +201,23 @@ public:
     return (_alloc_type & bit_lab_alloc) != 0;
   }
 
-  bool is_old() const {
+  inline bool is_old() const {
     return (_alloc_type & bit_old_alloc) != 0;
   }
 
-  bool is_young() const {
+  inline bool is_young() const {
     return (_alloc_type & bit_old_alloc) == 0;
   }
 
-  ShenandoahAffiliation affiliation() const {
+  inline ShenandoahAffiliation affiliation() const {
     return (_alloc_type & bit_old_alloc) == 0 ? YOUNG_GENERATION : OLD_GENERATION ;
   }
 
-  const char* affiliation_name() const {
+  inline const char* affiliation_name() const {
     return shenandoah_affiliation_name(affiliation());
   }
 
-  bool is_promotion() const {
+  inline bool is_promotion() const {
     return (_alloc_type & bit_promotion_alloc) != 0;
   }
 };

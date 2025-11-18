@@ -1615,6 +1615,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     request_generation = _heap->old_generation();
     orig_partition = ShenandoahFreeSetPartitionId::OldCollector;
   } else {
+    // Not old collector alloc, so this is a young collector gclab or shared allocation
     request_generation = _heap->mode()->is_generational()? _heap->young_generation(): _heap->global_generation();
     orig_partition = ShenandoahFreeSetPartitionId::Collector;
   }
