@@ -102,12 +102,12 @@ void AOTMappedHeapWriter::init() {
       // the same classlist file, we can generate the same static CDS archive.
       // To ensure determinism, we always use the same compressed oop encoding
       // (zero-based, no shift). See set_requested_address_range().
-      //
-      // Determninistic output is not supported by the new AOT workflow. Future AOT
-      // optimizations such as AOT compiled code require the same compressed oop
-      // encoding to be used in the assembly phase and production run, so we cannot
-      // force (zero-based, no shift) encoding.
       _is_writing_deterministic_heap = true;
+    } else {
+      // Determninistic output is not supported by the new AOT workflow, so
+      // we don't force the (zero-based, no shift) encoding. This way, it is more
+      // likely that we can avoid oop relocation in the production run.
+      _is_writing_deterministic_heap = false;
     }
   }
 }
@@ -585,7 +585,6 @@ size_t AOTMappedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 //
 //     In the production run, if different COOPS encodings are used:
 //         - The heap contents needs to be relocated.
-//         - AOTCodeCache will be disabled.
 //
 // (2) UseCompressedOops == true && is_writing_deterministic_heap()
 //
