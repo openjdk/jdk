@@ -1219,6 +1219,29 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
             }
         }),
+        MAC_RUNTIME_PLIST_JDK_KEY(cmd -> {
+            if (TKit.isOSX()) {
+                var appLayout = cmd.appLayout();
+                // Runtime directory may not exist.
+                // For example in AppImagePackageTest.testEmpty() case.
+                if (!Files.isDirectory(appLayout.runtimeDirectory())) {
+                    return;
+                }
+                var plistPath = appLayout.runtimeDirectory().resolve("Contents/Info.plist");
+                var keyName = "JavaVM";
+                var keyValue = MacHelper.readPList(plistPath).findDictValue(keyName);
+                if (cmd.isRuntime() || Files.isDirectory(appLayout.runtimeHomeDirectory().resolve("bin"))) {
+                    // There are native launchers in the runtime
+                    TKit.assertTrue(keyValue.isPresent(), String.format(
+                            "Check the runtime plist file [%s] contains '%s' key",
+                            plistPath, keyName));
+                } else {
+                    TKit.assertTrue(keyValue.isEmpty(), String.format(
+                            "Check the runtime plist file [%s] contains NO '%s' key",
+                            plistPath, keyName));
+                }
+            }
+        }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
             Optional.ofNullable(cmd.getArgumentValue("--app-image")).filter(_ -> {
                 return !TKit.isOSX() || !MacHelper.signPredefinedAppImage(cmd);

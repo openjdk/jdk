@@ -370,7 +370,8 @@ final class MacPackagingPipeline {
         // or other executables in the "bin" subdirectory of the embedded
         // runtime.
         final var useRuntimeInfoPlist = app.isRuntime() ||
-                app.runtimeBuilder().orElseThrow().withNativeCommands();
+                app.runtimeBuilder().orElseThrow().withNativeCommands() ||
+                Files.isDirectory(env.resolvedLayout().runtimeDirectory().resolve("bin"));
 
         Map<String, String> data = new HashMap<>();
         data.put("CF_BUNDLE_IDENTIFIER", app.bundleIdentifier());
