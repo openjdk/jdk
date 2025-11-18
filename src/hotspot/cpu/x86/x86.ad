@@ -3433,7 +3433,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       if (is_subword_type(bt) &&
          ((size_in_bits > 256 && !VM_Version::supports_avx512bw()) ||
-          (size_in_bits < 64)                                      ||
           (bt == T_SHORT && !VM_Version::supports_bmi2()))) {
         return false;
       }
@@ -3448,9 +3447,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       // fallthrough
     case Op_LoadVectorGather:
       if (!is_subword_type(bt) && size_in_bits == 64) {
-        return false;
-      }
-      if (is_subword_type(bt) && size_in_bits < 64) {
         return false;
       }
       break;
@@ -17987,6 +17983,19 @@ instruct reinterpret_mask(kReg dst) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct reinterpret_mask_same_esize(kReg dst) %{
+  predicate(n->bottom_type()->isa_vectmask() &&
+            type2aelembytes(Matcher::vector_element_basic_type(n)) ==
+            type2aelembytes(Matcher::vector_element_basic_type(n->in(1))));
+  match(Set dst (VectorReinterpret dst));
+  ins_cost(125);
+  format %{ "reinterpret_mask_same_esize $dst\t!" %}
+  ins_encode %{
+    // empty
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct reinterpret_mask_W2B(kReg dst, kReg src, vec xtmp) %{
   predicate(UseAVX > 2 && Matcher::vector_length(n) != Matcher::vector_length(n->in(1)) &&
             n->bottom_type()->isa_vectmask() &&
@@ -18366,9 +18375,10 @@ instruct vgather_subwordLE8B(vec dst, memory mem, rRegP idx_base, rRegP tmp, rRe
   format %{ "vector_gatherLE8 $dst, $mem, $idx_base\t! using $tmp and $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ lea($tmp$$Register, $mem$$Address);
-    __ vgather8b(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp$$Register, vlen_enc);
+    __ vgather_le8b(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -18398,11 +18408,12 @@ instruct vgather_masked_subwordLE8B_avx3(vec dst, memory mem, rRegP idx_base, kR
   format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ xorq($mask_idx$$Register, $mask_idx$$Register);
     __ lea($tmp$$Register, $mem$$Address);
     __ kmovql($rtmp2$$Register, $mask$$KRegister);
-    __ vgather8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+    __ vgather_le8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -18434,6 +18445,7 @@ instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, ve
   format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     __ lea($tmp$$Register, $mem$$Address);
     __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
@@ -18442,7 +18454,7 @@ instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, ve
       __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
     }
     __ xorl($mask_idx$$Register, $mask_idx$$Register);
-    __ vgather8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+    __ vgather_le8b_masked(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vector_len, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
