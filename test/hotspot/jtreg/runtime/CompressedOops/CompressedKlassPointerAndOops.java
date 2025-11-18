@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @bug 8000968
- * @summary NPG: USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE asserts with ObjectAlignmentInBytes=32
+ * @summary Test Compressed Oops with different object alignments
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

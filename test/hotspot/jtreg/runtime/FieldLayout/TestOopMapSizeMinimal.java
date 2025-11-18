@@ -176,10 +176,9 @@ public class TestOopMapSizeMinimal {
         // DERIVED4  o4  oopmap entry 2  (reversed order)
         //           i4
 
-        // There are two combinations that have gaps:
-        // -UseCompressedOops + +COH, and -UseCompressedOops + -USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE.
-        // In both cases there is a gap following i1, and i2 will therefore nestle into that gap.
-        // Otherwise the same logic applies.
+        // There is one combination that has gaps:
+        // -UseCompressedOops + +COH: A gap will be following i1, and i2 will therefore nestle into that gap.
+        // Otherwise, the same logic applies.
 
         if (OOP_SIZE_IN_BYTES == 4 ||                               // oop size == int size
             (OOP_SIZE_IN_BYTES == 8 && HEADER_SIZE_IN_BYTES == 12)
