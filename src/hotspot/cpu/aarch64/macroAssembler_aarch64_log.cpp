@@ -259,7 +259,7 @@ ATTRIBUTE_ALIGNED(64) juint _L_tbl[] = // Lookup table: polynomial coefficients 
 // tmp1..tmp5: general purpose scratch registers
 void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
                               FloatRegister vtmp2, FloatRegister vtmp3,
-                              FloatRegister vtmp4, FloatRegister vtmp5, 
+                              FloatRegister vtmp4, FloatRegister vtmp5,
                               FloatRegister C1, FloatRegister C2,
                               FloatRegister C3, FloatRegister C4,
                               Register tmp1, Register tmp2, Register tmp3,
