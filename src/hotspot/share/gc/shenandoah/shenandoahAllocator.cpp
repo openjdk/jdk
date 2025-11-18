@@ -357,6 +357,6 @@ HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req,
 #ifdef ASSERT
   verify(req);
 #endif // ASSERT
-  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+  shenandoah_assert_heaplocked();
   return _free_set->allocate_for_collector(req, in_new_region);
 }
