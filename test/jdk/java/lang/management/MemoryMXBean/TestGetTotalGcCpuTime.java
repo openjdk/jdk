@@ -85,6 +85,8 @@ public class TestGetTotalGcCpuTime {
     static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
     static final boolean usingEpsilonGC = ManagementFactory.getRuntimeMXBean().getInputArguments().stream().anyMatch(p -> p.contains("-XX:+UseEpsilonGC"));
 
+    private static ArrayList<Object> objs = null;
+
     public static void main(String[] args) throws Exception {
         try {
             if (!mxThreadBean.isThreadCpuTimeEnabled()) {
@@ -99,11 +101,11 @@ public class TestGetTotalGcCpuTime {
 
         // Add some tracing work to ensure OSs with slower update rates would report usage
         for (int i = 0; i < 200; i++) {
-          ArrayList<Object> objs = new ArrayList<Object>();
-          for (int j = 0; j < 5000; j++) {
-            objs.add(new Object());
-          }
-          System.gc();
+            ArrayList<Object> objs = new ArrayList<Object>();
+            for (int j = 0; j < 5000; j++) {
+                objs.add(new Object());
+            }
+            System.gc();
         }
 
         long gcCpuTimeFromThread = mxMemoryBean.getTotalGcCpuTime();
