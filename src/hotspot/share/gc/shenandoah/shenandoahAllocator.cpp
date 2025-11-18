@@ -238,18 +238,23 @@ int ShenandoahAllocator::refresh_alloc_regions() {
     }
   }
 
-  // Step 2: allocate region from FreeSets to fill the alloc regions or satisfy the alloc request.
-  ShenandoahHeapRegion* reserved[MAX_ALLOC_REGION_COUNT];
-  int reserved_regions = _free_set->reserve_alloc_regions(_alloc_partition_id, refreshable_alloc_regions, reserved);
-  assert(reserved_regions <= refreshable_alloc_regions, "Sanity check");
+  if (refreshable_alloc_regions > 0) {
+    // Step 2: allocate region from FreeSets to fill the alloc regions or satisfy the alloc request.
+    ShenandoahHeapRegion* reserved[MAX_ALLOC_REGION_COUNT];
+    int reserved_regions = _free_set->reserve_alloc_regions(_alloc_partition_id, refreshable_alloc_regions, reserved);
+    assert(reserved_regions <= refreshable_alloc_regions, "Sanity check");
 
-  // Step 3: Install the new reserved alloc regions
-  if (reserved_regions > 0) {
-    for (int i = 0; i < reserved_regions; i++) {
-      AtomicAccess::store(&refreshable[i]->_address, reserved[i]);
+    // Step 3: Install the new reserved alloc regions
+    if (reserved_regions > 0) {
+      for (int i = 0; i < reserved_regions; i++) {
+        AtomicAccess::store(&refreshable[i]->_address, reserved[i]);
+      }
     }
+
+    return reserved_regions;
   }
-  return reserved_regions;
+
+  return 0;
 }
 
 HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest &req, bool &in_new_region) {
