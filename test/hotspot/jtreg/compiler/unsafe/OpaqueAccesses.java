@@ -247,28 +247,14 @@ public class OpaqueAccesses {
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:+UseCompressedOops", "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
+                "-XX:+UseCompressedOops",
                 "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
         );
         TestFramework.runWithFlags(
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:+UseCompressedOops", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
-                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
-        );
-        TestFramework.runWithFlags(
-                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:-UseCompressedOops", "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
-                "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
-        );
-        TestFramework.runWithFlags(
-                "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
-                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:-TieredCompilation", "-Xbatch",
-                "-XX:-UseCompressedOops", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
+                "-XX:-UseCompressedOops",
                 "-XX:CompileCommand=dontinline,compiler.unsafe.OpaqueAccesses::test*"
         );
     }
