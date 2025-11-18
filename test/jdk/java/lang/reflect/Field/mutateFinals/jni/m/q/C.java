@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-import jdk.test.whitebox.WhiteBox;
+package q;
 
-public class GCSharedStringsDuringDumpWb {
-    public static void main(String[] args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        String s = "shared_test_string_unique_14325";
-        s = s.intern();
-        CheckString(wb, s);
-        for (int i=0; i<100000; i++) {
-            s = "generated_string " + i;
-            s = s.intern();
-            CheckString(wb, s);
-        }
-    }
+/**
+ * public class, public final field.
+ */
+public class C {
+    public final int value;
 
-    public static void CheckString(WhiteBox wb, String s) {
-        if (wb.areSharedStringsMapped() && !wb.isSharedInternedString(s)) {
-            throw new RuntimeException("String is not shared.");
-        }
+    public C(int value) {
+        this.value = value;
     }
 }
