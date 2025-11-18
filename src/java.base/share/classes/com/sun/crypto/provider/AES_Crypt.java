@@ -54,12 +54,11 @@ final class AES_Crypt extends SymmetricCipher {
     private int rounds;
     private byte[] prevKey = null;
 
-    // Following attributes (sessionKe and K) are specific to Intrinsics, where
-    // sessionKe is the unprocessed key that is used for PPC64, S390 and
-    // RISCV64 architectures, whereas K is used for everything else.
+    // Following attributes are specific to Intrinsics, where sessionKe is the
+    // unprocessed key that is also used for decryption on PPC64, S390 and
+    // RISCV64 architectures. Other ones use sessionKd for decryption.
     private int[] sessionKe = null; // key for encryption
     private int[] sessionKd = null; // preprocessed key for decryption
-    private int[] K = null; // preprocessed key in case of decryption
 
     // Round constant
     private static final int[] RCON = {
@@ -940,9 +939,6 @@ final class AES_Crypt extends SymmetricCipher {
             if (sessionKd == null) {
                 sessionKd = genInvRoundKeys(sessionKe, rounds);
             }
-            K = sessionKd;
-        } else {
-            K = sessionKe;
         }
     }
 
@@ -1044,6 +1040,7 @@ final class AES_Crypt extends SymmetricCipher {
      */
     @IntrinsicCandidate
     private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
+        int[] K = sessionKe;
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
         int w = K.length - WB;
@@ -1222,6 +1219,7 @@ final class AES_Crypt extends SymmetricCipher {
      */
     @IntrinsicCandidate
     private void implDecryptBlock(byte[] c, int co, byte[] p, int po) {
+        int[] K = sessionKd;
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
 
