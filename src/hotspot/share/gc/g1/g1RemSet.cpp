@@ -1012,14 +1012,6 @@ class G1MergeHeapRootsTask : public WorkerTask {
     }
 
     bool should_clear_region(G1HeapRegion* hr) const {
-      // Old comment for situation that does not arise:
-      //
-      // There is one exception: shutdown might have aborted the Concurrent Cleanup for Next
-      // Mark phase midway, which might have also left stale marks in old generation regions.
-      // There might actually have been scheduled multiple collections, but at that point we do
-      // not care that much about performance and just do the work multiple times if needed.
-      assert(!_g1h->concurrent_mark_is_terminating(), "Should not reach here");
-
       // The bitmap for young regions must obviously be clear as we never mark through them;
       // old regions that are currently being marked through are only in the collection set
       // after the concurrent cycle completed, so their bitmaps must also be clear except when

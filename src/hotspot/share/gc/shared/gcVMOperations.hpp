@@ -139,7 +139,12 @@ class VM_GC_Operation: public VM_Heap_Sync_Operation {
   virtual bool allow_nested_vm_operations() const  { return true; }
   virtual bool gc_succeeded() const { return _prologue_succeeded; }
 
-  // Queried value of CollectedHeap::is_shutting_down while holding the Heap_lock.
+  // This function returns the value of CollectedHeap::is_shutting_down() that
+  // was recorded in the prologue. Unlike, CollectedHeap::is_shutting_down(),
+  // this function can be called without acquiring the Heap_lock.
+  //
+  // This funciton exists so that code that tries to schedule a GC operation
+  // can check if it was refused because the JVM is about to shut down.
   bool is_shutting_down() const { return _is_shutting_down; }
 
   static void notify_gc_begin(bool full = false);

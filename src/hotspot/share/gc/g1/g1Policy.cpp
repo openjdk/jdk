@@ -1279,10 +1279,6 @@ void G1Policy::decide_on_concurrent_start_pause() {
   // concurrent start pause).
   assert(!collector_state()->in_concurrent_start_gc(), "pre-condition");
 
-  // We should not be starting a concurrent start pause if the concurrent mark
-  // thread is terminating.
-  assert(!_g1h->concurrent_mark_is_terminating(), "Should not reach here");
-
   if (collector_state()->initiate_conc_mark_if_possible()) {
     // We had noticed on a previous pause that the heap occupancy has
     // gone over the initiating threshold and we should start a
