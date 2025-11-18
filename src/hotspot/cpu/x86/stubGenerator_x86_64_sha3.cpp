@@ -508,3 +508,12 @@ void StubGenerator::generate_sha3_stubs() {
       generate_sha3_implCompress(StubId::stubgen_sha3_implCompressMB_id, this, _masm);
   }
 }
+
+#undef __
+
+void StubGenerator::init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(round_constsAddr());
+  ADD(permsAndRotsAddr());
+#undef ADD
+}

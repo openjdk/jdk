@@ -1029,3 +1029,24 @@ address StubGenerator::generate_libmTan() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_tan(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_MUL16);
+  ADD(_sign_mask_tan);
+  ADD(_PI32INV_tan);
+  ADD(_P_1_tan);
+  ADD(_P_2_tan);
+  ADD(_P_3_tan);
+  ADD(_Ctable_tan);
+  ADD(_MASK_35_tan);
+  ADD(_Q_11_tan);
+  ADD(_Q_9_tan);
+  ADD(_Q_7_tan);
+  ADD(_Q_5_tan);
+  ADD(_Q_3_tan);
+  ADD(_PI_4_tan);
+  ADD(((address)_PI_4_tan+8));
+  ADD(_QQ_2_tan);
+#undef ADD
+}

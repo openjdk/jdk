@@ -950,3 +950,19 @@ void StubGenerator::generate_kyber_stubs() {
     }
   }
 }
+
+void StubGenerator::init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  // use accessors to correctly identify the relevant addresses
+  ADD(kyberAvx512NttPermsAddr());
+  ADD(kyberAvx512InverseNttPermsAddr());
+  ADD(kyberAvx512_nttMultPermsAddr());
+  ADD(kyberAvx512_12To16PermsAddr());
+  ADD(kyberAvx512ConstsAddr(qOffset));
+  ADD(kyberAvx512ConstsAddr(qInvModROffset));
+  ADD(kyberAvx512ConstsAddr(dimHalfInverseOffset));
+  ADD(kyberAvx512ConstsAddr(barretMultiplierOffset));
+  ADD(kyberAvx512ConstsAddr(montRSquareModqOffset));
+  ADD(kyberAvx512ConstsAddr(f00Offset));
+#undef ADD
+}

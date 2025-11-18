@@ -58,4 +58,5 @@ public:
   void store_parameter(jobject c,   int offset_from_esp_in_words);
   void store_parameter(Metadata* c, int offset_from_esp_in_words);
 
+  void static init_AOTAddressTable(GrowableArray<address>& external_addresses);
 #endif // CPU_X86_C1_LIRASSEMBLER_X86_HPP

@@ -584,3 +584,10 @@ bVec,
 }
 
 #undef __
+void StubGenerator::init_AOTAddressTable_chacha(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(CC20_COUNTER_ADD_AVX);
+  ADD(CC20_COUNTER_ADD_AVX512);
+  ADD(CC20_LROT_CONSTS);
+#undef ADD
+}

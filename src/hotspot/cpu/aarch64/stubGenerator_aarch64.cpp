@@ -11196,7 +11196,7 @@ class StubGenerator: public StubCodeGenerator {
       address start = nullptr;
       address end = nullptr;
       load_archive_data(stub_id, start, end, &entries);
-      assert(entries.length() == 1,
+      assert(entries.length() == Klass::SECONDARY_SUPERS_TABLE_SIZE - 1,
              "unexpected extra entry count %d", entries.length());
       StubRoutines::_lookup_secondary_supers_table_stubs[0] = start;
       for (int slot = 1; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {

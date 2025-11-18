@@ -708,3 +708,23 @@ address StubGenerator::generate_libmLog10() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_log(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_L_tbl);
+  ADD(_log2);
+  ADD(((address)_log2+8));
+  ADD(_coeff);
+  ADD(((address)_coeff+16));
+  ADD(((address)_coeff+32));
+  ADD(_HIGHSIGMASK_log10);
+  ADD(_LOG10_E);
+  ADD(((address)_LOG10_E+8));
+  ADD(_L_tbl_log10);
+  ADD(_log2_log10);
+  ADD(((address)_log2_log10+8));
+  ADD(_coeff_log10);
+  ADD(((address)_coeff_log10+16));
+  ADD(((address)_coeff_log10+32));
+#undef ADD
+}

@@ -1695,3 +1695,12 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
   __ vpaddq(A1, A1, YTMP2, Assembler::AVX_256bit); //Add medium 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, YTMP5, Assembler::AVX_256bit);
 }
+#undef __
+
+void StubGenerator::init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(POLY1305_PAD_MSG);
+  ADD(POLY1305_MASK42);
+  ADD(POLY1305_MASK44);
+#undef ADD
+}

@@ -764,3 +764,16 @@ address StubGenerator::generate_intpoly_assign() {
   __ ret(0);
   return start;
 }
+#undef __
+
+void StubGenerator::init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  // use accessors to retrieve all correct addresses
+  ADD(shift_1L());
+  ADD(shift_1R());
+  ADD(p256_mask52());
+  ADD(mask_limb5());
+  ADD(modulus_p256());
+  ADD(modulus_p256(1));
+#undef ADD
+}

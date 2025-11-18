@@ -5574,7 +5574,7 @@ void  MacroAssembler::cmp_narrow_klass(Address dst, Klass* k) {
 
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
-    if (Universe::heap() != nullptr) {
+    if (Universe::heap() != nullptr && !AOTCodeCache::is_on_for_dump()) {
       if (CompressedOops::base() == nullptr) {
         MacroAssembler::xorptr(r12_heapbase, r12_heapbase);
       } else {

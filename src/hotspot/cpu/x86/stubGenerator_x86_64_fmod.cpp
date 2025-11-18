@@ -525,3 +525,13 @@ address StubGenerator::generate_libmFmod() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_fmod(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(CONST_NaN);
+  ADD(CONST_1p260);
+  ADD(CONST_MAX);
+  ADD(CONST_INF);
+  ADD(CONST_e307);
+#undef ADD
+}

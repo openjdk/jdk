@@ -233,3 +233,27 @@ ATTRIBUTE_ALIGNED(16) static const juint _Ctable[] = {
 };
 address StubGenerator::Ctable = (address)_Ctable;
 
+void StubGenerator::init_AOTAddressTable_constants(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(_ONE);
+  ADD(_ONEHALF);
+  ADD(_SIGN_MASK);
+  ADD(_TWO_POW_55);
+  ADD(_TWO_POW_M55);
+  ADD(_SHIFTER);
+  ADD(_ZERO);
+  ADD(_SC_1);
+  ADD(_SC_2);
+  ADD(_SC_3);
+  ADD(_SC_4);
+  ADD(_PI_4);
+  ADD(((address)_PI_4+8));
+  ADD(_PI32INV);
+  ADD(_NEG_ZERO);
+  ADD(_P_1);
+  ADD(_P_2);
+  ADD(_P_3);
+  ADD(_PI_INV_TABLE);
+  ADD(_Ctable);
+#undef ADD
+}

@@ -1863,3 +1863,31 @@ address StubGenerator::generate_libmPow() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_pow(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_HIGHSIGMASK);
+  ADD(_LOG2_E);
+  ADD(_HIGHMASK_Y);
+  ADD((address)_HIGHMASK_Y+8);
+  ADD(_T_exp);
+  ADD(_e_coeff);
+  ADD((address)_e_coeff+16);
+  ADD((address)_e_coeff+32);
+  ADD(_coeff_h);
+  ADD((address)_coeff_h+8);
+  ADD(_HIGHMASK_LOG_X);
+  ADD(_HALFMASK);
+  ADD(_coeff_pow);
+  ADD((address)_coeff_pow+16);
+  ADD((address)_coeff_pow+32);
+  ADD((address)_coeff_pow+48);
+  ADD((address)_coeff_pow+64);
+  ADD((address)_coeff_pow+80);
+  ADD(_L_tbl_pow);
+  ADD(_log2_pow);
+  ADD(_DOUBLE2);
+  ADD(_DOUBLE0);
+  ADD(_DOUBLE0DOT5);
+#undef ADD
+}

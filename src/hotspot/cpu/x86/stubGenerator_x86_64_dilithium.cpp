@@ -1032,3 +1032,14 @@ void StubGenerator::generate_dilithium_stubs() {
         generate_dilithiumDecomposePoly_avx512(this, _masm);
   }
 }
+
+void StubGenerator::init_AOTAddressTable_dilithium(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  // use accessors to correctly identify the relevant addresses
+  ADD(dilithiumAvx512PermsAddr());
+  ADD(dilithiumAvx512ConstsAddr(montQInvModRIdx));
+  ADD(dilithiumAvx512ConstsAddr(dilithium_qIdx));
+  ADD(dilithiumAvx512ConstsAddr(montRSquareModQIdx));
+  ADD(dilithiumAvx512ConstsAddr(barrettAddendIdx));
+#undef ADD
+}

@@ -4093,3 +4093,25 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
  }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_aes(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(key_shuffle_mask_addr());
+  ADD(counter_shuffle_mask_addr());
+  ADD(counter_mask_linc0_addr());
+  ADD(counter_mask_linc1_addr());
+  ADD(counter_mask_linc1f_addr());
+  ADD(counter_mask_linc2_addr());
+  ADD(counter_mask_linc2f_addr());
+  ADD(counter_mask_linc4_addr());
+  ADD(counter_mask_linc8_addr());
+  ADD(counter_mask_linc16_addr());
+  ADD(counter_mask_linc32_addr());
+  ADD(counter_mask_ones_addr());
+  ADD(ghash_polynomial_reduction_addr());
+  ADD(ghash_polynomial_two_one_addr());
+  ADD(counter_mask_addbe_4444_addr());
+  ADD(counter_mask_addbe_1234_addr());
+  ADD(counter_mask_add_1234_addr());
+#undef ADD
+}

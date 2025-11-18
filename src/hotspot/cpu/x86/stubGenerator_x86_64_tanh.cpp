@@ -499,3 +499,23 @@ address StubGenerator::generate_libmTanh() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_tanh(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_L2E);
+  ADD(_L2E + 8);
+  ADD(_HALFMASK);
+  ADD(_ONEMASK);
+  ADD(_TWOMASK);
+  ADD(_Shifter);
+  ADD(_cv);
+  ADD(_cv + 16);
+  ADD(_cv + 32);
+  ADD(_T2_neg_f);
+  ADD(_pv);
+  ADD(_pv + 16);
+  ADD(_pv + 32);
+  ADD(_MASK3);
+  ADD(_RMASK);
+#undef ADD
+}

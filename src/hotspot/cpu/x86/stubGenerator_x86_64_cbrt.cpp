@@ -339,3 +339,24 @@ address StubGenerator::generate_libmCbrt() {
 }
 
 #undef __
+void StubGenerator::init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(_ABS_MASK);
+  ADD(_SIG_MASK);
+  ADD(_EXP_MASK);
+  ADD(_EXP_MSK2);
+  ADD(_EXP_MSK3);
+  ADD(_SCALE63);
+  ADD(_ZERON);
+  ADD(_INF);
+  ADD(_NEG_INF);
+  address coeff_table = (address)_coeff_table;
+  ADD(coeff_table);
+  ADD(coeff_table + 16);
+  ADD(coeff_table + 32);
+  ADD(coeff_table + 48);
+  ADD(_rcp_table);
+  ADD(_cbrt_table);
+  ADD(_D_table);
+#undef ADD
+}

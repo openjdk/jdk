@@ -303,11 +303,11 @@ class StubGenerator: public StubCodeGenerator {
   address generate_sha512_implCompress(StubId stub_id);
 
   // Mask for byte-swapping a couple of qwords in an XMM register using (v)pshufb.
-  address generate_pshuffle_byte_flip_mask_sha512();
+  address generate_pshuffle_byte_flip_mask_sha512(address& entry_ymm_lo);
 
   address generate_upper_word_mask();
   address generate_shuffle_byte_flip_mask();
-  address generate_pshuffle_byte_flip_mask();
+  address generate_pshuffle_byte_flip_mask(address& entry_00ba, address& entry_dc0);
 
 
   // AES intrinsic stubs
@@ -637,8 +637,30 @@ class StubGenerator: public StubCodeGenerator {
   void generate_compiler_stubs();
   void generate_final_stubs();
 
+  static void init_AOTAddressTable_adler(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_aes(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_cbrt(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_chacha(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_constants(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_dilithium(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_exp(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_fmod(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_ghash(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_kyber(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_log(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_poly1305(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_pow(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sha3(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sin(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_sinh(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_tan(GrowableArray<address>& external_addresses);
+  static void init_AOTAddressTable_tanh(GrowableArray<address>& external_addresses);
+
 public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id);
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data);
+  static void init_AOTAddressTable(GrowableArray<address>& external_addresses);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

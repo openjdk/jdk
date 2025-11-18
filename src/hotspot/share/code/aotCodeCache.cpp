@@ -1714,7 +1714,7 @@ void AOTCodeReader::read_dbg_strings(DbgStrings& dbg_strings) {
 // [_stubs_base, _stubs_base + _stubs_max -1], [_c_str_base,
 // _c_str_base + _c_str_max -1],
 
-#define _extrs_max 200
+#define _extrs_max 350
 #define _stubs_max static_cast<int>(EntryId::NUM_ENTRYIDS)
 
 #define _extrs_base 0
@@ -1753,10 +1753,6 @@ void AOTCodeAddressTable::init_extrs() {
   {
     // Required by initial stubs
     SET_ADDRESS(_extrs, SharedRuntime::exception_handler_for_return_address); // used by forward_exception
-#if defined(AMD64)
-    SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_std()); // used by call_stub
-    SET_ADDRESS(_extrs, StubRoutines::x86::addr_mxcsr_rz()); // used by libmFmod
-#endif
     SET_ADDRESS(_extrs, CompressedOops::base_addr()); // used by call_stub
     SET_ADDRESS(_extrs, Thread::current); // used by call_stub
     SET_ADDRESS(_extrs, SharedRuntime::throw_StackOverflowError);
@@ -1831,17 +1827,6 @@ void AOTCodeAddressTable::init_extrs() {
 #ifndef PRODUCT
   SET_ADDRESS(_extrs, &SharedRuntime::_partial_subtype_ctr);
   SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
-#endif
-
-#if defined(AMD64)
-  SET_ADDRESS(_extrs, StubRoutines::x86::arrays_hashcode_powers_of_31());
-#endif
-
-#ifdef X86
-  SET_ADDRESS(_extrs, LIR_Assembler::float_signmask_pool);
-  SET_ADDRESS(_extrs, LIR_Assembler::double_signmask_pool);
-  SET_ADDRESS(_extrs, LIR_Assembler::float_signflip_pool);
-  SET_ADDRESS(_extrs, LIR_Assembler::double_signflip_pool);
 #endif
 
   SET_ADDRESS(_extrs, JfrIntrinsicSupport::write_checkpoint);

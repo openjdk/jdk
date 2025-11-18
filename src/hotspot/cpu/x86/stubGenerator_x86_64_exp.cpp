@@ -385,3 +385,22 @@ address StubGenerator::generate_libmExp() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_exp(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(_cv);
+  ADD(((address)_cv+16));
+  ADD(((address)_cv+32));
+  ADD(((address)_cv+48));
+  ADD(((address)_cv+64));
+  ADD(((address)_cv+80));
+  ADD(_mmask);
+  ADD(_bias);
+  ADD(_Tbl_addr);
+  ADD(_ALLONES);
+  ADD(_ebias);
+  ADD(_XMAX);
+  ADD(_XMIN);
+  ADD(_INF);
+#undef ADD
+}

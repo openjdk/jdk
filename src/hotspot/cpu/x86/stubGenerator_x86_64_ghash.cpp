@@ -538,3 +538,12 @@ void StubGenerator::generateHtbl_eight_blocks(Register htbl) {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_ghash(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)addr);
+  ADD(GHASH_SHUFFLE_MASK);
+  ADD(GHASH_LONG_SWAP_MASK);
+  ADD(GHASH_BYTE_SWAP_MASK);
+  ADD(GHASH_POLYNOMIAL);
+#undef ADD
+}

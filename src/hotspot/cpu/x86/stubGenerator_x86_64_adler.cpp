@@ -338,3 +338,11 @@ address StubGenerator::generate_updateBytesAdler32() {
 }
 
 #undef __
+
+void StubGenerator::init_AOTAddressTable_adler(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr))
+  ADD(ADLER32_ASCALE_TABLE);
+  ADD(ADLER32_SHUF0_TABLE);
+  ADD(ADLER32_SHUF1_TABLE);
+#undef ADD
+}
