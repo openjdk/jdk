@@ -83,10 +83,8 @@ public class Array extends Oop {
     }
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
       lengthOffsetInBytes = Oop.getHeaderSize();
-    } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
-      lengthOffsetInBytes = typeSize - VM.getVM().getIntSize();
     } else {
-      lengthOffsetInBytes = typeSize;
+      lengthOffsetInBytes = typeSize - VM.getVM().getIntSize();
     }
     return lengthOffsetInBytes;
   }

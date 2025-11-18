@@ -61,7 +61,7 @@ public class SysDictCrash {
             if (!output.getStdout().contains("UseCompressedOops disabled due to")) {
                 throw re;
             } else {
-                System.out.println("Shared archive was not created due to UseCompressedOops and USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE have been disabled.");
+                System.out.println("Shared archive was not created due to UseCompressedOops being disabled.");
                 continueTest = false;
             }
         }
