@@ -4042,6 +4042,37 @@ public class Check {
     }
 
     /**
+     *  Check for bit shifts using an out-of-range bit count.
+     *  @param pos           Position for error reporting.
+     *  @param operator      The operator for the expression
+     *  @param operand       The right hand operand for the expression
+     */
+    void checkOutOfRangeShift(final DiagnosticPosition pos, Symbol operator, Type operand) {
+        if (operand.constValue() instanceof Number shiftAmount) {
+            Type targetType;
+            int maximumShift;
+            switch (((OperatorSymbol)operator).opcode) {
+            case ByteCodes.ishl, ByteCodes.ishr, ByteCodes.iushr, ByteCodes.ishll, ByteCodes.ishrl, ByteCodes.iushrl -> {
+                targetType = syms.intType;
+                maximumShift = 0x1f;
+            }
+            case ByteCodes.lshl, ByteCodes.lshr, ByteCodes.lushr, ByteCodes.lshll, ByteCodes.lshrl, ByteCodes.lushrl -> {
+                targetType = syms.longType;
+                maximumShift = 0x3f;
+            }
+            default -> {
+                return;
+            }
+            }
+            long specifiedShift = shiftAmount.longValue();
+            if (specifiedShift > maximumShift || specifiedShift < -maximumShift) {
+                int actualShift = (int)specifiedShift & (maximumShift - 1);
+                log.warning(pos, LintWarnings.BitShiftOutOfRange(targetType, specifiedShift, actualShift));
+            }
+        }
+    }
+
+    /**
      *  Check for possible loss of precission
      *  @param pos           Position for error reporting.
      *  @param found    The computed type of the tree

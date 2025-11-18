@@ -51,9 +51,9 @@
                           FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
                           BasicType eltype);
 
-  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
-  void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  void fast_lock(Register object, Register box, Register t1, Register t2, Register t3);
+  void fast_unlock(Register object, Register box, Register t1, Register t2, Register t3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -85,15 +85,19 @@
   // the higher garbage bits.
   void bytemask_compress(Register dst);
 
-  // Pack the lowest-numbered bit of each mask element in src into a long value
-  // in dst, at most the first 64 lane elements.
-  void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                        FloatRegister vtmp1, FloatRegister vtmp2);
+  // Pack the value of each mask element in "src" into a long value in "dst", at most the
+  // first 64 lane elements. The input "src" is a vector of boolean represented as bytes
+  // with 0x00/0x01 as element values. Each lane value from "src" is packed into one bit in
+  // "dst".
+  void sve_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp, int lane_cnt);
 
-  // Unpack the mask, a long value in src, into predicate register dst based on the
-  // corresponding data type. Note that dst can support at most 64 lanes.
-  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
-                          FloatRegister vtmp1, FloatRegister vtmp2);
+  void sve2_vmask_tolong(Register dst, FloatRegister src, FloatRegister vtmp1,
+                         FloatRegister vtmp2, int lane_cnt);
+
+  // Unpack the mask, a long value in "src", into vector register "dst" with boolean type.
+  // Each bit in "src" is unpacked into one byte lane in "dst". Note that "dst" can support
+  // at most 64 lanes.
+  void sve_vmask_fromlong(FloatRegister dst, Register src, FloatRegister vtmp, int lane_cnt);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,

@@ -1904,6 +1904,11 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
+    public static final String SAFEPOINT_SCALAROBJECT_OF = COMPOSITE_PREFIX + "SAFEPOINT_SCALAROBJECT_OF" + POSTFIX;
+    static {
+        safepointScalarobjectOfNodes(SAFEPOINT_SCALAROBJECT_OF, "SafePointScalarObject");
+    }
+
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
@@ -2053,6 +2058,16 @@ public class IRNode {
     public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;
     static {
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
+    }
+
+    public static final String VECTOR_LOAD_MASK = PREFIX + "VECTOR_LOAD_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_LOAD_MASK, "VectorLoadMask");
+    }
+
+    public static final String VECTOR_STORE_MASK = PREFIX + "VECTOR_STORE_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_STORE_MASK, "VectorStoreMask");
     }
 
     public static final String SUB = PREFIX + "SUB" + POSTFIX;
@@ -3211,6 +3226,11 @@ public class IRNode {
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
+        beforeMatching(irNodePlaceholder, regex);
+    }
+
+    private static void safepointScalarobjectOfNodes(String irNodePlaceholder, String irNodeRegex) {
+        String regex = START + irNodeRegex + MID + ".*" + IS_REPLACED + ".*" + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 

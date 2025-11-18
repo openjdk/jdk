@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1543,7 +1544,7 @@ public class Exhaustiveness extends TestRunner {
     private static final int NESTING_CONSTANT = 4;
 
     Set<String> createDeeplyNestedVariants() {
-        Set<String> variants = new HashSet<>();
+        Set<String> variants = new LinkedHashSet<>();
         variants.add("C _");
         variants.add("R(I _, I _, I _)");
         for (int n = 0; n < NESTING_CONSTANT; n++) {
