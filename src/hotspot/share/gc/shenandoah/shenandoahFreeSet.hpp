@@ -590,6 +590,15 @@ private:
   // log status, assuming lock has already been acquired by the caller.
   void log_status();
 
+  template<typename Iter>
+  int reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
+
+  template<typename Iter>
+  ShenandoahHeapRegion* find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
+
+  // Steal one FREE region from mutator partition for allocation on Collector/OldCollector partition.
+  ShenandoahHeapRegion* steal_heap_region_from_mutator_for_allocation(ShenandoahFreeSetPartitionId partition);
+
 public:
   static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
 
@@ -824,17 +833,8 @@ public:
   // it ensures at least one region with sufficient capacity will be reserved.
   int reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
 
-  template<typename Iter>
-  int reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
-
   // Find a heap region for allocation, the region must have min_free_words which is the minial needed for the allocation.
   ShenandoahHeapRegion* find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
-
-  template<typename Iter>
-  ShenandoahHeapRegion* find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region);
-
-  // Steal one FREE region from mutator partition for allocation on Collector/OldCollector partition.
-  ShenandoahHeapRegion* steal_heap_region_from_mutator_for_allocation(ShenandoahFreeSetPartitionId partition);
 
   /*
    * Internal fragmentation metric: describes how fragmented the heap regions are.
