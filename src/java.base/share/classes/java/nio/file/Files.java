@@ -611,7 +611,8 @@ public final class Files {
     }
 
     /**
-     * Creates a new directory. The check for the existence of the file and the
+     * Creates a new directory, failing if the directory already exists.
+     * The check for the existence of the file and the
      * creation of the directory if it does not exist are a single operation
      * that is atomic with respect to all other filesystem activities that might
      * affect the directory. The {@link #createDirectories createDirectories}
