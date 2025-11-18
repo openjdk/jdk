@@ -62,7 +62,7 @@ void VTransformGraph::optimize(VTransform& vtransform) {
           // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
           // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
           // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
-          !(vtn->isa_LoopPhi() != nullptr ||
+          !(vtn->isa_PhiScalar() != nullptr ||
             vtn->is_load_or_store_in_loop() ||
             (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
         vtn->mark_dead();
@@ -123,8 +123,10 @@ bool VTransformGraph::schedule() {
         // Skip dead nodes
         if (!use->is_alive()) { continue; }
 
-        // Skip LoopPhi backedge.
-        if ((use->isa_LoopPhi() != nullptr || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) { continue; }
+        // Skip backedges.
+        if ((use->is_loop_head_phi() || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) {
+          continue;
+        }
 
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
@@ -205,7 +207,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     // Is vtn a loop-phi?
-    if (vtn->isa_LoopPhi() != nullptr ||
+    if (vtn->is_loop_head_phi() ||
         vtn->is_load_or_store_in_loop()) {
       is_not_before_loop.set(vtn->_idx);
       continue;
@@ -232,8 +234,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
     for (uint i = 0; i < vtn->out_strong_edges(); i++) {
       VTransformNode* use = vtn->out_strong_edge(i);
       // Or is vtn a backedge or one of its transitive defs?
-      if (in_loop.test(use->_idx) ||
-          use->isa_LoopPhi() != nullptr) {
+      if (in_loop.test(use->_idx) || use->is_loop_head_phi()) {
         in_loop.set(vtn->_idx);
         break;
       }
@@ -957,7 +958,7 @@ VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& appl
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+VTransformApplyResult VTransformPhiScalarNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   Node* in0 = apply_state.transformed_node(in_req(0));
   Node* in1 = apply_state.transformed_node(in_req(1));
@@ -965,19 +966,14 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   phase->igvn().replace_input_of(_node, 1, in1);
   // Note: the backedge is hooked up later.
 
-  // The Phi's inputs may have been modified, and the types changes,
-  // e.g. from scalar to vector.
-  const Type* t = in1->bottom_type();
-  _node->as_Type()->set_type(t);
-  phase->igvn().set_type(_node, t);
-
   return VTransformApplyResult::make_scalar(_node);
 }
 
 // Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
 // we only have the transformed backedges after the phis are already transformed.
 // We hook the backedges into the phis now, during cleanup.
-void VTransformLoopPhiNode::apply_backedge(VTransformApplyState& apply_state) const {
+void VTransformPhiScalarNode::apply_backedge(VTransformApplyState& apply_state) const {
+  assert(_node == apply_state.transformed_node(this), "sanity");
   PhaseIdealLoop* phase = apply_state.phase();
   if (_node->is_memory_phi()) {
     // Memory phi/backedge
@@ -1219,7 +1215,7 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 //       are performed inside the loop.
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform) {
   // We have a phi with a single use.
-  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  VTransformPhiScalarNode* phi = in_req(1)->isa_PhiScalar();
   if (phi == nullptr) {
     return false;
   }
@@ -1256,7 +1252,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   // back to the phi. Check that all non strict order reductions only have a single
   // use, except for the last (last_red), which only has phi as a use in the loop,
   // and all other uses are outside the loop.
-  VTransformReductionVectorNode* first_red   = this;
   VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
   VTransformReductionVectorNode* current_red = last_red;
   while (true) {
@@ -1268,7 +1263,11 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         tty->print("  Cannot move out of loop, other reduction node does not match:");
         print();
         tty->print("  other: ");
-        current_red->print();
+        if (current_red != nullptr) {
+          current_red->print();
+        } else {
+          tty->print("nullptr");
+        }
       )
       return false; // not compatible
     }
@@ -1284,7 +1283,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       // All uses must be outside loop body, except for the phi.
       for (uint i = 0; i < current_red->out_strong_edges(); i++) {
         VTransformNode* use = current_red->out_strong_edge(i);
-        if (use->isa_LoopPhi() == nullptr &&
+        if (use->isa_PhiScalar() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
           assert(false, "reduction has use inside loop");
@@ -1339,16 +1338,28 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
   vtn_identity_vector->init_req(1, vtn_identity);
 
-  // Turn the scalar phi into a vector phi.
-  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
-  VTransformNode* init = phi->in_req(1);
-  phi->set_req(1, vtn_identity_vector);
+  // Look at old scalar phi.
+  VTransformPhiScalarNode* phi_scalar = in_req(1)->isa_PhiScalar();
+  PhiNode* old_phi = phi_scalar->node();
+  VTransformNode* init = phi_scalar->in_req(1);
+
+  TRACE_OPTIMIZE(
+    tty->print("  phi_scalar ");
+    phi_scalar->print();
+  )
+
+  // Create new vector phi
+  const VTransformVectorNodeProperties properties = VTransformVectorNodeProperties::make_for_phi_vector(old_phi, vlen, bt);
+  VTransformPhiVectorNode* phi_vector = new (vtransform.arena()) VTransformPhiVectorNode(vtransform, 3, properties);
+  phi_vector->init_req(0, phi_scalar->in_req(0));
+  phi_vector->init_req(1, vtn_identity_vector);
+  // Note: backedge comes later
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
   VTransformReductionVectorNode* first_red   = this;
-  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* last_red    = phi_scalar->in_req(2)->isa_ReductionVector();
   VTransformReductionVectorNode* current_red = first_red;
-  VTransformNode* current_vector_accumulator = phi;
+  VTransformNode* current_vector_accumulator = phi_vector;
   while (true) {
     VTransformNode* vector_input = current_red->in_req(2);
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
@@ -1366,15 +1377,15 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   }
 
   // Feed vector accumulator into the backedge.
-  phi->set_req(2, current_vector_accumulator);
+  phi_vector->set_req(2, current_vector_accumulator);
 
   // Create post-loop reduction. last_red keeps all uses outside the loop.
   last_red->set_req(1, init);
   last_red->set_req(2, current_vector_accumulator);
 
   TRACE_OPTIMIZE(
-    tty->print("  phi        ");
-    phi->print();
+    tty->print("  phi_scalar ");
+    phi_scalar->print();
     tty->print("  after loop ");
     last_red->print();
   )
@@ -1396,6 +1407,37 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   ReductionNode* vn = ReductionNode::make(scalar_opcode(), nullptr, init, vec, element_basic_type());
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vn->vect_type());
+}
+
+VTransformApplyResult VTransformPhiVectorNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* in0 = apply_state.transformed_node(in_req(0));
+  Node* in1 = apply_state.transformed_node(in_req(1));
+
+  // We create a new phi node, because the type is different to the scalar phi.
+  PhiNode* old_phi = approximate_origin()->as_Phi();
+  PhiNode* new_phi = old_phi->clone()->as_Phi();
+
+  phase->igvn().replace_input_of(new_phi, 0, in0);
+  phase->igvn().replace_input_of(new_phi, 1, in1);
+  // Note: the backedge is hooked up later.
+
+  // Give the new phi node the correct vector type.
+  const TypeVect* vt = TypeVect::make(element_basic_type(), vector_length());
+  new_phi->as_Type()->set_type(vt);
+  phase->igvn().set_type(new_phi, vt);
+
+  return VTransformApplyResult::make_vector(new_phi, vt);
+}
+
+// Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
+// we only have the transformed backedges after the phis are already transformed.
+// We hook the backedges into the phis now, during cleanup.
+void VTransformPhiVectorNode::apply_backedge(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  PhiNode* new_phi = apply_state.transformed_node(this)->as_Phi();
+  Node* in2 = apply_state.transformed_node(in_req(2));
+  phase->igvn().replace_input_of(new_phi, 2, in2);
 }
 
 float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -1535,7 +1577,7 @@ void VTransformDataScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
-void VTransformLoopPhiNode::print_spec() const {
+void VTransformPhiScalarNode::print_spec() const {
   tty->print("node[%d %s]", _node->_idx, _node->Name());
 }
 
@@ -1586,8 +1628,9 @@ void VTransformReinterpretVectorNode::print_spec() const {
 
 void VTransformBoolVectorNode::print_spec() const {
   VTransformVectorNode::print_spec();
-  const BoolTest bt(_test._mask);
-  tty->print(" test=");
+  BoolTest::mask m = BoolTest::mask(_test._mask & ~BoolTest::unsigned_compare);
+  const BoolTest bt(m);
+  tty->print(" test=%s", m == _test._mask ? "" : "unsigned ");
   bt.dump_on(tty);
 }
 #endif

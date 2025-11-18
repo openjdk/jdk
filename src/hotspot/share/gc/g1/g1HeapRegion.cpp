@@ -428,7 +428,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
 void G1HeapRegion::print() const { print_on(tty); }
 
 void G1HeapRegion::print_on(outputStream* st) const {
-  st->print("|%4u", this->_hrm_index);
+  st->print("|%5u", this->_hrm_index);
   st->print("|" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT,
             p2i(bottom()), p2i(top()), p2i(end()));
   st->print("|%3d%%", (int) ((double) used() * 100 / capacity()));
@@ -442,7 +442,7 @@ void G1HeapRegion::print_on(outputStream* st) const {
     st->print("|  ");
   }
   G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
-  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %-9s ",
             p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
@@ -787,23 +787,13 @@ void G1HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) 
   // possible that there is a pinned object that is not any more referenced by
   // Java code (only by native).
   //
-  // In this case we must not zap contents of such an array but we can overwrite
-  // the header; since only pinned typearrays are allowed, this fits nicely with
-  // putting filler arrays into the dead range as the object header sizes match and
-  // no user data is overwritten.
+  // In this case we should not zap, because that would overwrite
+  // user-observable data. Memory corresponding to obj-header is safe to
+  // change, since it's not directly user-observable.
   //
   // In particular String Deduplication might change the reference to the character
   // array of the j.l.String after native code obtained a raw reference to it (via
   // GetStringCritical()).
-  CollectedHeap::fill_with_objects(start, range_size, !has_pinned_objects());
-  HeapWord* current = start;
-  do {
-    // Update the BOT if the a threshold is crossed.
-    size_t obj_size = cast_to_oop(current)->size();
-    update_bot_for_block(current, current + obj_size);
-
-    // Advance to the next object.
-    current += obj_size;
-    guarantee(current <= end, "Should never go past end");
-  } while (current != end);
+  CollectedHeap::fill_with_object(start, range_size, !has_pinned_objects());
+  update_bot_for_block(start, start + range_size);
 }
