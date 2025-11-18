@@ -23,10 +23,9 @@
  */
 
 #include "cds/aotMetaspace.hpp"
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -323,7 +322,7 @@ void Universe::archive_exception_instances() {
 }
 
 void Universe::load_archived_object_instances() {
-  if (ArchiveHeapLoader::is_in_use()) {
+  if (HeapShared::is_archived_heap_in_use()) {
     for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
       int index = _archived_basic_type_mirror_indices[i];
       if (!is_reference_type((BasicType)i) && index >= 0) {
@@ -558,34 +557,32 @@ void Universe::genesis(TRAPS) {
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
-    if (CDSConfig::is_using_archive() &&
-        ArchiveHeapLoader::is_in_use() &&
-        _basic_type_mirrors[T_INT].resolve() != nullptr) {
-      assert(ArchiveHeapLoader::can_use(), "Sanity");
-
-      // check that all basic type mirrors are mapped also
-      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-        if (!is_reference_type((BasicType)i)) {
-          oop m = _basic_type_mirrors[i].resolve();
-          assert(m != nullptr, "archived mirrors should not be null");
-        }
+  if (CDSConfig::is_using_archive() &&
+      HeapShared::is_archived_heap_in_use() &&
+      _basic_type_mirrors[T_INT].resolve() != nullptr) {
+    // check that all basic type mirrors are mapped also
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      if (!is_reference_type((BasicType)i)) {
+        oop m = _basic_type_mirrors[i].resolve();
+        assert(m != nullptr, "archived mirrors should not be null");
       }
-    } else
-      // _basic_type_mirrors[T_INT], etc, are null if archived heap is not mapped.
+    }
+  } else
+    // _basic_type_mirrors[T_INT], etc, are null if not using an archived heap
 #endif
-    {
-      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-        BasicType bt = (BasicType)i;
-        if (!is_reference_type(bt)) {
-          oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
-          _basic_type_mirrors[i] = OopHandle(vm_global(), m);
-        }
-        CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
+  {
+    for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+      BasicType bt = (BasicType)i;
+      if (!is_reference_type(bt)) {
+        oop m = java_lang_Class::create_basic_type_mirror(type2name(bt), bt, CHECK);
+        _basic_type_mirrors[i] = OopHandle(vm_global(), m);
       }
+      CDS_JAVA_HEAP_ONLY(_archived_basic_type_mirror_indices[i] = -1);
     }
-    if (CDSConfig::is_dumping_heap()) {
-      HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
-    }
+  }
+  if (CDSConfig::is_dumping_heap()) {
+    HeapShared::init_scratch_objects_for_basic_type_mirrors(CHECK);
+  }
 }
 
 void Universe::fixup_mirrors(TRAPS) {
@@ -911,6 +908,21 @@ jint universe_init() {
     return JNI_EINVAL;
   }
 
+  // Add main_thread to threads list to finish barrier setup with
+  // on_thread_attach.  Should be before starting to build Java objects in
+  // the AOT heap loader, which invokes barriers.
+  {
+    JavaThread* main_thread = JavaThread::current();
+    MutexLocker mu(Threads_lock);
+    Threads::add(main_thread);
+  }
+
+  HeapShared::initialize_writing_mode();
+
+  // Create the string table before the AOT object archive is loaded,
+  // as it might need to access the string table.
+  StringTable::create_table();
+
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
@@ -933,7 +945,6 @@ jint universe_init() {
 #endif
 
   SymbolTable::create_table();
-  StringTable::create_table();
 
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
@@ -1178,6 +1189,7 @@ bool universe_post_init() {
   MemoryService::add_metaspace_memory_pools();
 
   MemoryService::set_universe_heap(Universe::heap());
+
 #if INCLUDE_CDS
   AOTMetaspace::post_initialize(CHECK_false);
 #endif

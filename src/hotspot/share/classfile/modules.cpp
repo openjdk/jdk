@@ -739,6 +739,8 @@ void Modules::init_archived_modules(JavaThread* current, Handle h_platform_loade
     ModuleEntryTable::patch_javabase_entries(current, java_base_module);
   }
 
+  ClassLoaderDataShared::load_archived_platform_and_system_class_loaders();
+
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
   SystemDictionary::set_platform_loader(platform_loader_data);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
