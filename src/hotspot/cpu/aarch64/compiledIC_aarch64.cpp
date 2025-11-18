@@ -128,11 +128,6 @@ void CompiledDirectCall::verify() {
 
   // Verify stub.
   address stub = find_stub();
-  if (! stub) {
-    asm("nop");
-    for(;;)
-      find_stub();
-  }
   assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
