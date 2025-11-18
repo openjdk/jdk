@@ -119,7 +119,6 @@ public class DataPatchTest extends CodeInstallationTest {
 
     @Test
     public void testInlineNarrowMetadata() {
-        Assume.assumeTrue(config.useCompressedClassPointers);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
@@ -144,7 +143,6 @@ public class DataPatchTest extends CodeInstallationTest {
 
     @Test
     public void testNarrowMetadataInDataSection() {
-        Assume.assumeTrue(config.useCompressedClassPointers);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
