@@ -536,7 +536,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #ifdef _LP64
-  { "USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
+  { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
   { "ParallelRefProcEnabled",       JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
   { "ParallelRefProcBalancingEnabled", JDK_Version::jdk(26),  JDK_Version::jdk(27), JDK_Version::jdk(28) },
