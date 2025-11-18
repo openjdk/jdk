@@ -101,7 +101,7 @@ public class TestGetTotalGcCpuTime {
 
         // Add some tracing work to ensure OSs with slower update rates would report usage
         for (int i = 0; i < 200; i++) {
-            ArrayList<Object> objs = new ArrayList<Object>();
+            objs = new ArrayList<Object>();
             for (int j = 0; j < 5000; j++) {
                 objs.add(new Object());
             }
