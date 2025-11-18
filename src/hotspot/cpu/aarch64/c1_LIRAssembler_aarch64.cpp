@@ -933,7 +933,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   if (is_volatile) {
     load_volatile(from_addr, dest, type);
   } else {
-    load_generic(from_addr, dest, type, wide);
+    load_relaxed(from_addr, dest, type, wide);
   }
 
   if (is_reference_type(type)) {
@@ -945,7 +945,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type,
   }
 }
 
-void LIR_Assembler::load_generic(LIR_Address *from_addr, LIR_Opr dest,
+void LIR_Assembler::load_relaxed(LIR_Address *from_addr, LIR_Opr dest,
                                  BasicType type, bool wide) {
   switch (type) {
     case T_FLOAT: {
