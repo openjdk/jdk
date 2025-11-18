@@ -413,7 +413,11 @@ public class JavacTrees extends DocTrees {
             }
 
             if (ref.qualifierExpression == null) {
-                tsym = env.enclClass.sym;
+                tsym = switch (path.getLeaf().getKind()) {
+                    // Implicit type is only required for member lookup in classes.
+                    case PACKAGE, MODULE, COMPILATION_UNIT -> null;
+                    default -> env.enclClass.sym;
+                };
                 memberName = (Name) ref.memberName;
             } else {
                 // Check if qualifierExpression is a type or package, using the methods javac provides.
@@ -470,8 +474,11 @@ public class JavacTrees extends DocTrees {
                 }
             }
 
-            if (memberName == null)
+            if (memberName == null) {
                 return tsym;
+            } else if (tsym == null || tsym.getKind() == ElementKind.PACKAGE || tsym.getKind() == ElementKind.MODULE) {
+                return null;  // Non-null member name in non-class context
+            }
 
             final List<Type> paramTypes;
             if (ref.paramTypes == null)
