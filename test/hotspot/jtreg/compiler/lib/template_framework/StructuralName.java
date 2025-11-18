@@ -180,7 +180,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Samples a random {@link StructuralName} from the filtered set, according to the weights
-         * of the contained {@link StructuralName}s, and making a hashtag replacement for both
+         * of the contained {@link StructuralName}s, and makes a hashtag replacement for both
          * the name and type of the {@link StructuralName}, in the current scope.
          *
          * @param name the key of the hashtag replacement for the {@link StructuralName} name.
@@ -195,7 +195,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Samples a random {@link StructuralName} from the filtered set, according to the weights
-         * of the contained {@link StructuralName}s, and making a hashtag replacement for the
+         * of the contained {@link StructuralName}s, and makes a hashtag replacement for the
          * name of the {@link StructuralName}, in the current scope.
          *
          * @param name the key of the hashtag replacement for the {@link StructuralName} name.

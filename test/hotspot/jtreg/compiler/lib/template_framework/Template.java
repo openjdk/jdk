@@ -641,7 +641,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *     // CODE1: some code in the outer scope
      *     scope(
      *       // CODE2: some code in the inner scope. Names, hashtags and setFuelCost
-     *       //        does not escape the inner scope.
+     *       //        do not escape the inner scope.
      *     ),
      *     // CODE3: more code in the outer scope, names and hashtags from CODE2 are
      *     //        not available anymore because of the non-transparent "scope".
@@ -665,8 +665,8 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link ScopeToken} that represents a completely transparent scope, allowing
-     * anything to escape anything. This means that {@link DataName}s, {@link StructuralName}s,
+     * Creates a {@link ScopeToken} that represents a completely transparent scope.
+     * This means that {@link DataName}s, {@link StructuralName}s,
      * hashtag-replacements and {@link #setFuelCost} declared inside the scope will be available
      * in the outer scope.
      * The scope is formed from a list of tokens, which can be {@link String}s,
@@ -797,9 +797,9 @@ public sealed interface Template permits Template.ZeroArgs,
      *     """
      *     }
      *     """
-     *     // CODe3: we are back in the outer scope of CODE1, and can use
+     *     // CODE3: we are back in the outer scope of CODE1, and can use
      *     //        more fuel again in nested template uses. setFuelCost
-     *     //        automatically restored to what was set before the
+     *     //        is automatically restored to what was set before the
      *     //        inner scope.
      * ));
      * }
