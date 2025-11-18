@@ -730,6 +730,10 @@ void StringDedup::Table::verify() {
 }
 
 void StringDedup::Table::log_statistics() {
+  if (!log_is_enabled(Debug, stringdedup)) {
+    return;
+  }
+
   size_t dead_count;
   int dead_state;
   {

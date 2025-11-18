@@ -198,10 +198,8 @@ void StringDedup::Processor::run(JavaThread* thread) {
 void StringDedup::Processor::log_statistics() {
   _total_stat.add(&_cur_stat);
   Stat::log_summary(&_cur_stat, &_total_stat);
-  if (log_is_enabled(Debug, stringdedup)) {
-    _cur_stat.log_statistics(false);
-    _total_stat.log_statistics(true);
-    Table::log_statistics();
-  }
+  _cur_stat.emit_statistics(false /* total */);
+  _total_stat.emit_statistics(true /* total */);
+  Table::log_statistics();
   _cur_stat = Stat{};
 }
