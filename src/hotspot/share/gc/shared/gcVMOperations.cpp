@@ -97,6 +97,10 @@ static void block_if_java_thread() {
   if (thread->is_Java_thread()) {
     // Block here and allow the shutdown to complete
     while (true) {
+      // The call to wait has a few important effects:
+      // 1) Block forever (minus spurious wake-ups, hence the loop)
+      // 2) Release the Heap_lock, which is taken by the shutdown code
+      // 3) Transition to blocked state so that the final VM_Exit operation can be scheduled
       Heap_lock->wait();
     }
   } else {
