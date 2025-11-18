@@ -207,7 +207,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
 
         /**
          * Samples a random {@link DataName} from the filtered set, according to the weights
-         * of the contained {@link DataName}s, and making a hashtag replacement for both
+         * of the contained {@link DataName}s, and makes a hashtag replacement for both
          * the name and type of the {@link DataName}, in the current scope.
          *
          * <p>
@@ -249,7 +249,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
 
         /**
          * Samples a random {@link DataName} from the filtered set, according to the weights
-         * of the contained {@link DataName}s, and making a hashtag replacement for the
+         * of the contained {@link DataName}s, and makes a hashtag replacement for the
          * name of the {@link DataName}, in the current scope.
          *
          * <p>
