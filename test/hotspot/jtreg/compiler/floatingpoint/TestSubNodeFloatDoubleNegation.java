@@ -38,7 +38,9 @@ import jdk.test.lib.Asserts;
 public class TestSubNodeFloatDoubleNegation {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector", "-XX:CompileCommand=inline,jdk.incubator.vector.Float16::*");
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector",
+                                   "-XX:CompileCommand=inline,jdk.incubator.vector.Float16::*",
+                                   "-XX:CompileCommand=dontinline,java.lang.Float::*");
     }
 
     @Run(test = { "testHalfFloat", "testFloat", "testDouble" })
