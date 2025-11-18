@@ -21,15 +21,18 @@
  * questions.
  */
 
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-final class StableTestUtil {
+final class LazyConstantTestUtil {
 
-    private StableTestUtil() {}
+    private LazyConstantTestUtil() { }
+
+    public static final String UNINITIALIZED_TAG = ".uninitialized";
 
     public static final class CountingSupplier<T>
             extends AbstractCounting<Supplier<T>>
@@ -114,6 +117,57 @@ final class StableTestUtil {
         @Override
         public final String toString() {
             return cnt.toString();
+        }
+    }
+
+    static Object functionHolder(Object o) {
+        try {
+            final Field field = field(o.getClass(), "functionHolder");
+            field.setAccessible(true);
+            return field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static Object functionHolderFunction(Object o) {
+        try {
+            final Field field = field(o.getClass(), "function");
+            field.setAccessible(true);
+            return field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int functionHolderCounter(Object o) {
+        try {
+            final Field field = field(o.getClass(), "counter");
+            field.setAccessible(true);
+            return (int)field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static Supplier<?> computingFunction(LazyConstant<?> o) {
+        try {
+            final Field field = field(o.getClass(), "computingFunction");
+            field.setAccessible(true);
+            return (Supplier<?>) field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static Field field(Class<?> clazz, String name) {
+        if (clazz.equals(Object.class)) {
+            throw new RuntimeException("No " + name);
+        }
+        try {
+            return clazz.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            return field(clazz.getSuperclass(), name);
         }
     }
 
