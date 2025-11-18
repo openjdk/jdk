@@ -92,20 +92,6 @@ public:
 
 };
 
-inline void ShenandoahAllocator::yield_to_safepoint() {
-  if (_yield_to_safepoint && !_heap_locked_by_current_thread && Thread::current()->is_Java_thread()) {
-    ThreadBlockInVM tbivm(JavaThread::current());
-  }
-}
-
-class HeapLockedByCurrentThreadReset : StackObj {
-  bool &_heap_locked_by_current_thread;
-  public:
-  HeapLockedByCurrentThreadReset(bool &heap_locked_by_current_thread) : _heap_locked_by_current_thread(heap_locked_by_current_thread) { }
-  ~HeapLockedByCurrentThreadReset() {
-    _heap_locked_by_current_thread = false;
-  }
-};
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
   uint regions_ready_for_refresh = 0;
   // Fast path: Start
@@ -116,8 +102,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
 
   {
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-    HeapLockedByCurrentThreadReset state_reset(_heap_locked_by_current_thread);
-    _heap_locked_by_current_thread = true;
     ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
     // We may run to here to take heap lock for different reasons:
     // 1. attempt_allocation_in_alloc_regions was not able to allocate the object, obj is nullptr.
@@ -198,7 +182,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
     } else if (r == nullptr) {
       regions_ready_for_refresh++;
     }
-    yield_to_safepoint();
     i++;
   }
   return nullptr;
@@ -241,8 +224,8 @@ int ShenandoahAllocator::refresh_alloc_regions() {
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
     ShenandoahHeapRegion* region = alloc_region->_address;
-    size_t free_bytes = region == nullptr ? 0 : region->free();
-    if (region != nullptr && free_bytes / HeapWordSize < PLAB::min_size()) {
+    size_t free_bytes;
+    if (region != nullptr && (free_bytes = region->free()) / HeapWordSize < PLAB::min_size()) {
       region->unset_active_alloc_region();
       if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
         if (free_bytes > 0) {
@@ -250,8 +233,8 @@ int ShenandoahAllocator::refresh_alloc_regions() {
         }
       }
       AtomicAccess::store(&alloc_region->_address, static_cast<ShenandoahHeapRegion*>(nullptr));
-      refreshable[refreshable_alloc_regions++] = alloc_region;
     }
+    refreshable[refreshable_alloc_regions++] = alloc_region;
   }
 
   if (refreshable_alloc_regions > 0) {
