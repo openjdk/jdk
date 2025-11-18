@@ -216,12 +216,14 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _obj_alignment = ObjectAlignmentInBytes;
   _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     _object_streaming_mode = HeapShared::is_writing_streaming_mode();
     _narrow_oop_mode = AOTMappedHeapWriter::narrow_oop_mode();
     _narrow_oop_base = AOTMappedHeapWriter::narrow_oop_base();
     _narrow_oop_shift = AOTMappedHeapWriter::narrow_oop_shift();
   }
+#endif
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   if (UseCompressedClassPointers) {
