@@ -303,7 +303,7 @@ void ShenandoahAllocator::reserve_alloc_regions() {
 THREAD_LOCAL uint ShenandoahMutatorAllocator::_alloc_start_index = UINT_MAX;
 
 ShenandoahMutatorAllocator::ShenandoahMutatorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator((uint) ShenandoahMutatorAllocRegionCount, free_set, ShenandoahFreeSetPartitionId::Mutator) {
+  ShenandoahAllocator((uint) ShenandoahMutatorAllocRegions, free_set, ShenandoahFreeSetPartitionId::Mutator) {
   _yield_to_safepoint = true;
 }
 
@@ -332,7 +332,7 @@ void ShenandoahOldCollectorAllocator::verify(ShenandoahAllocRequest& req) {
 
 
 ShenandoahCollectorAllocator::ShenandoahCollectorAllocator(ShenandoahFreeSet* free_set) :
-  ShenandoahAllocator((uint) ParallelGCThreads, free_set, ShenandoahFreeSetPartitionId::Collector) {
+  ShenandoahAllocator((uint) ShenandoahCollectorAllocRegions, free_set, ShenandoahFreeSetPartitionId::Collector) {
   _yield_to_safepoint = false;
 }
 
