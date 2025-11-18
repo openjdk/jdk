@@ -92,7 +92,6 @@ public class TestVMConfigInHsErrFile {
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:-UseCompactObjectHeaders",
-        "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
         "-Xmx100M",
         "-XX:-CreateCoredumpOnCrash",
         "-XX:ErrorHandlerTest=14",

@@ -164,25 +164,6 @@ public class TestIRMatching {
                  BadFailOnConstraint.create(RunTests.class, "bad1(int)", 2, "Load")
         );
 
-        runCheck(new String[] {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:-USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE"},
-                 BadFailOnConstraint.create(Loads.class, "load()", 1, 1, "Load"),
-                 BadFailOnConstraint.create(Loads.class, "load()", 1, 3, "LoadI"),
-                 BadCountsConstraint.create(Loads.class, "load()", 1, 1, 0),
-                 BadCountsConstraint.create(Loads.class, "load()", 1, 2, 1,"Load"),
-                 GoodRuleConstraint.create(Loads.class, "load()", 2),
-                 GoodFailOnConstraint.create(Loads.class, "load()", 3),
-                 BadCountsConstraint.create(Loads.class, "load()", 3, 2, 2,"Store"),
-                 BadFailOnConstraint.create(Loads.class, "load()", 4, 2, "Store"),
-                 BadFailOnConstraint.create(Loads.class, "load()", 5, "Load"),
-                 BadFailOnConstraint.create(Loads.class, "load()", 6, "Load"),
-                 BadFailOnConstraint.create(Loads.class, "load()", 7, "Load"),
-                 GoodRuleConstraint.create(Loads.class, "load()", 8),
-                 GoodRuleConstraint.create(Loads.class, "load()", 9),
-                 GoodRuleConstraint.create(Loads.class, "load()", 10),
-                 BadFailOnConstraint.create(Loads.class, "loadKlass()", 1),
-                 BadCountsConstraint.create(Loads.class, "loadKlass()", 2, 2,"Field")
-                 );
-
         // Loops
         runCheck(BadFailOnConstraint.create(Loops.class, "loop()", 1, "Loop"),
                  GoodRuleConstraint.create(Loops.class, "loop()", 2),
