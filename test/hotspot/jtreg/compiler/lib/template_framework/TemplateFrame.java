@@ -50,8 +50,8 @@ import java.util.Map;
  * and queries such as {@link Template#let} definitions. Each {@link TemplateFrame}
  * has such a set of hashtag replacements, and implicitly provides access to the
  * hashtag replacements of the outer {@link TemplateFrame}s, up to the outermost
- * of the current {@link Template}. If a hashtag replacemnt is added in a scope,
- * we have to find traverse to outer scopes until we find one that is not transparent
+ * of the current {@link Template}. If a hashtag replacement is added in a scope,
+ * we have to traverse to outer scopes until we find one that is not transparent
  * for hashtags (at most it is the frame of the Template), and insert it there.
  * The hashtag replacent is local to that frame, and accessible for any frames nested
  * inside it, but not inside other Templates. The hashtag replacement disappears once
@@ -62,7 +62,7 @@ import java.util.Map;
  * their inner scopes. The {@link #fuel} is reduced over this chain to give a heuristic
  * on how deeply nested the code is at a given point, correlating to the runtime that
  * would be spent if the code was executed. The idea is that once the fuel is depleated,
- * we do not want to nest more deaply, so that there is a reasonable chance that the
+ * we do not want to nest more deeply, so that there is a reasonable chance that the
  * execution of the generated code can terminate.
  *
  * <p>
