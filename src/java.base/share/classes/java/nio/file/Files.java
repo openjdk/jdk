@@ -637,8 +637,9 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the directory
      * @throws  FileAlreadyExistsException
-     *          if a directory could not otherwise be created because a file of
-     *          that name already exists <i>(optional specific exception)</i>
+     *          if a directory could not otherwise be created because a file or
+     *          directory of that name already exists
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
      */
