@@ -151,7 +151,7 @@ HeapWord* ShenandoahHeapRegion::allocate_lab(const ShenandoahAllocRequest& req, 
 class ShenandoahHeapRegionReadyForRetireChecker : public StackObj {
 public:
   size_t _remnant_free_words;
-  bool _ready_for_retire;
+  bool &_ready_for_retire;
 
   ShenandoahHeapRegionReadyForRetireChecker(bool &ready_for_retire) : _remnant_free_words(ShenandoahHeapRegion::region_size_words()), _ready_for_retire(ready_for_retire) {
     assert(!ready_for_retire, "Sanity check");
