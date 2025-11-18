@@ -224,7 +224,15 @@ int ShenandoahAllocator::refresh_alloc_regions() {
   // Step 1: find out the alloc regions which are ready to refresh.
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion* alloc_region = &_alloc_regions[i];
-    if (alloc_region->_address == nullptr || alloc_region->_address->free() / HeapWordSize < PLAB::min_size()) {
+    ShenandoahHeapRegion* region = alloc_region->_address;
+    size_t free_bytes = region == nullptr ? 0 : region->free();
+    if (region != nullptr && free_bytes / HeapWordSize < PLAB::min_size()) {
+      region->unset_active_alloc_region();
+      if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
+        if (free_bytes > 0) {
+          _free_set->increase_bytes_allocated(free_bytes);
+        }
+      }
       AtomicAccess::store(&alloc_region->_address, static_cast<ShenandoahHeapRegion*>(nullptr));
       refreshable[refreshable_alloc_regions++] = alloc_region;
     }
@@ -238,12 +246,7 @@ int ShenandoahAllocator::refresh_alloc_regions() {
   // Step 3: Install the new reserved alloc regions
   if (reserved_regions > 0) {
     for (int i = 0; i < reserved_regions; i++) {
-      ShenandoahHeapRegion* new_region = reserved[i];
-      ShenandoahAllocRegion* alloc_region = refreshable[i];
-      if (alloc_region->_address != nullptr) {
-        alloc_region->_address->unset_active_alloc_region();
-      }
-      AtomicAccess::store(&alloc_region->_address, new_region);
+      AtomicAccess::store(&refreshable[i]->_address, reserved[i]);
     }
   }
   return reserved_regions;
