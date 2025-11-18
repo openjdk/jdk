@@ -2016,19 +2016,19 @@ public final class String
         return encode(Charset.defaultCharset(), coder(), value);
     }
 
-    boolean bytesCompatible(Charset charset) {
+    boolean bytesCompatible(Charset charset, int srcIndex, int numChars) {
         if (isLatin1()) {
             if (charset == ISO_8859_1.INSTANCE) {
                 return true; // ok, same encoding
             } else if (charset == UTF_8.INSTANCE || charset == US_ASCII.INSTANCE) {
-                return !StringCoding.hasNegatives(value, 0, value.length); // ok, if ASCII-compatible
+                return !StringCoding.hasNegatives(value, srcIndex, numChars); // ok, if ASCII-compatible
             }
         }
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset) {
-        MemorySegment.copy(value, 0, segment, ValueLayout.JAVA_BYTE, offset, value.length);
+    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int numChars) {
+        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, numChars);
     }
 
     /**

@@ -2634,6 +2634,24 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     }
 
     /**
+     * asd
+     *
+     * @param src src
+     * @param dstEncoding d
+     * @param srcIndex s
+     * @param dst d
+     * @param numChars n
+     */
+    @ForceInline
+    static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+
+        AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, numChars);
+    }
+
+    /**
      * Finds and returns the relative offset, in bytes, of the first mismatch between the
      * source and the destination segments. More specifically, the bytes at offset
      * {@code srcFromOffset} through {@code srcToOffset - 1} in the source segment are

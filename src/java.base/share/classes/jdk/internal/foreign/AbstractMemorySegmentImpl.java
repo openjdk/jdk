@@ -695,6 +695,16 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
     }
 
+    @ForceInline
+    public static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, int numChars) {
+        Objects.requireNonNull(src);
+        Objects.requireNonNull(dstEncoding);
+        Objects.requireNonNull(dst);
+
+        AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dst;
+        StringSupport.write(destImpl, 0, dstEncoding, src, srcIndex, numChars);
+    }
+
     // accessors
 
     @ForceInline

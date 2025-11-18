@@ -2315,13 +2315,13 @@ public final class System {
             }
 
             @Override
-            public void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-                string.copyToSegmentRaw(segment, offset);
+            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars) {
+                string.copyToSegmentRaw(segment, offset, srcIndex, numChars);
             }
 
             @Override
-            public boolean bytesCompatible(String string, Charset charset) {
-                return string.bytesCompatible(charset);
+            public boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
+                return string.bytesCompatible(charset, srcIndex, numChars);
             }
         });
     }

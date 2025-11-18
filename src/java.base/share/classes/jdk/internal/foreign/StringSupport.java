@@ -33,8 +33,11 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
+import java.nio.StringCharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -74,6 +77,11 @@ public final class StringSupport {
             // use replacement characters for malformed input
             return new String(bytes, charset);
         }
+    }
+
+    @ForceInline
+    public static void write(AbstractMemorySegmentImpl segment, long offset, Charset charset, String string, int srcIndex, int length) {
+        copyBytes(string, segment, charset, offset, srcIndex, length);
     }
 
     @ForceInline
@@ -342,13 +350,13 @@ public final class StringSupport {
         }
     }
 
-    public static boolean bytesCompatible(String string, Charset charset) {
-        return JAVA_LANG_ACCESS.bytesCompatible(string, charset);
+    public static boolean bytesCompatible(String string, Charset charset, int srcIndex, int numChars) {
+        return JAVA_LANG_ACCESS.bytesCompatible(string, charset, srcIndex, numChars);
     }
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset) {
-        if (bytesCompatible(string, charset)) {
-            copyToSegmentRaw(string, segment, offset);
+        if (bytesCompatible(string, charset, 0, string.length())) {
+            copyToSegmentRaw(string, segment, offset, 0, string.length());
             return string.length();
         } else {
             byte[] bytes = string.getBytes(charset);
@@ -357,7 +365,23 @@ public final class StringSupport {
         }
     }
 
-    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset) {
-        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset);
+    public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset, int srcIndex, int numChars) {
+        if (bytesCompatible(string, charset, srcIndex, numChars)) {
+            copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
+            return string.length();
+        } else if (srcIndex == 0 && numChars == string.length()) {
+            byte[] bytes = string.getBytes();
+            MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
+            return bytes.length;
+        } else {
+            StringCharBuffer scb = new StringCharBuffer(string, srcIndex, numChars);
+            ByteBuffer byteBuffer = segment.asByteBuffer().position((int) offset);
+            charset.newEncoder().encode(scb, byteBuffer, false);
+            return byteBuffer.position();
+        }
+    }
+
+    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars) {
+        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
     }
 }

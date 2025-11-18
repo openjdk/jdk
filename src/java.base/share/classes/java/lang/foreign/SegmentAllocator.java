@@ -31,7 +31,10 @@ import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.nio.ByteBuffer;
+import java.nio.StringCharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -137,10 +140,10 @@ public interface SegmentAllocator {
         int termCharSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
         MemorySegment segment;
         int length;
-        if (StringSupport.bytesCompatible(str, charset)) {
+        if (StringSupport.bytesCompatible(str, charset, 0, str.length())) {
             length = str.length();
             segment = allocateNoInit((long) length + termCharSize);
-            StringSupport.copyToSegmentRaw(str, segment, 0);
+            StringSupport.copyToSegmentRaw(str, segment, 0, 0, str.length());
         } else {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
@@ -149,6 +152,60 @@ public interface SegmentAllocator {
         }
         for (int i = 0 ; i < termCharSize ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, length + i, (byte)0);
+        }
+        return segment;
+    }
+
+    /**
+     * Converts a Java string into a null-terminated C string using the provided charset,
+     * and storing the result into a memory segment.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement byte array. The
+     * {@link java.nio.charset.CharsetEncoder} class should be used when more
+     * control over the encoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getString(long)}, the string
+     * will appear truncated when read again.
+     *
+     * @param str     the Java string to be converted into a C string
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
+     *                string bytes
+     * @param srcIndex srcIndex
+     * @param numChars numChars
+     * @return a new native segment containing the converted C string
+     * @throws IllegalArgumentException if {@code charset} is not a
+     *         {@linkplain StandardCharsets standard charset}
+     * @implSpec The default implementation for this method copies the contents of the
+     *           provided Java string into a new memory segment obtained by calling
+     *           {@code this.allocate(B + N)}, where:
+     * <ul>
+     *     <li>{@code B} is the size, in bytes, of the string encoded using the
+     *         provided charset (e.g. {@code str.getBytes(charset).length});</li>
+     *     <li>{@code N} is the size (in bytes) of the terminator char according to the
+     *         provided charset. For instance, this is 1 for {@link StandardCharsets#US_ASCII}
+     *         and 2 for {@link StandardCharsets#UTF_16}.</li>
+     * </ul>
+     */
+    @ForceInline
+    default MemorySegment allocateFrom(String str, Charset charset, int srcIndex, int numChars) {
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(str);
+        MemorySegment segment;
+        if (StringSupport.bytesCompatible(str, charset, srcIndex, numChars)) {
+            segment = allocateNoInit(numChars);
+            StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
+        } else if (srcIndex == 0 && numChars == str.length()) {
+            byte[] bytes = str.getBytes(charset);
+            segment = allocateNoInit(bytes.length);
+            MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
+        } else {
+            StringCharBuffer scb = new StringCharBuffer(str, srcIndex, numChars);
+            ByteBuffer bytes = charset.encode(scb);
+            segment = allocateNoInit(bytes.limit());
+            MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.limit());
         }
         return segment;
     }
