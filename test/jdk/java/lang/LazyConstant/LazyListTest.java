@@ -22,23 +22,18 @@
  */
 
 /* @test
- * @summary Basic tests for StableList methods
- * @modules java.base/jdk.internal.lang.stable
+ * @summary Basic tests for lazy list methods
  * @enablePreview
- * @run junit StableListTest
+ * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED LazyListTest
  */
 
-import jdk.internal.lang.stable.StableUtil;
-import jdk.internal.lang.stable.StableValueImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
@@ -54,7 +49,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableListTest {
+final class LazyListTest {
 
     private static final int ZERO = 0;
     private static final int INDEX = 7;
@@ -63,26 +58,26 @@ final class StableListTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.list(SIZE, null));
-        assertThrows(IllegalArgumentException.class, () -> StableValue.list(-1, IDENTITY));
+        assertThrows(NullPointerException.class, () -> List.ofLazy(SIZE, null));
+        assertThrows(IllegalArgumentException.class, () -> List.ofLazy(-1, IDENTITY));
     }
 
     @Test
     void isEmpty() {
-        assertFalse(newList().isEmpty());
-        assertTrue(newEmptyList().isEmpty());
+        assertFalse(newLazyList().isEmpty());
+        assertTrue(newEmptyLazyList().isEmpty());
     }
 
     @Test
     void size() {
-        assertEquals(SIZE, newList().size());
-        assertEquals(ZERO, newEmptyList().size());
+        assertEquals(SIZE, newLazyList().size());
+        assertEquals(ZERO, newEmptyLazyList().size());
     }
 
     @Test
     void get() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(IDENTITY);
-        var lazy = StableValue.list(SIZE, cif);
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<Integer>(IDENTITY);
+        var lazy = List.ofLazy(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
             assertEquals(i + 1, cif.cnt());
@@ -93,10 +88,10 @@ final class StableListTest {
 
     @Test
     void getException() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(_ -> {
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<Integer>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = StableValue.list(SIZE, cif);
+        var lazy = List.ofLazy(SIZE, cif);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(INDEX));
@@ -105,8 +100,8 @@ final class StableListTest {
 
     @Test
     void toArray() {
-        assertArrayEquals(new Object[ZERO], newEmptyList().toArray());
-        assertArrayEquals(newRegularList().toArray(), newList().toArray());
+        assertArrayEquals(new Object[ZERO], newEmptyLazyList().toArray());
+        assertArrayEquals(newRegularList().toArray(), newLazyList().toArray());
     }
 
     @Test
@@ -115,8 +110,8 @@ final class StableListTest {
         for (int i = 0; i < SIZE; i++) {
             actual[INDEX] = 100 + i;
         }
-        var list = StableValue.list(INDEX, IDENTITY);
-        assertSame(actual, list.toArray(actual));
+        var lazy = List.ofLazy(INDEX, IDENTITY);
+        assertSame(actual, lazy.toArray(actual));
         Integer[] expected = IntStream.range(0, SIZE)
                 .mapToObj(i -> i < INDEX ? i : null)
                 .toArray(Integer[]::new);
@@ -126,7 +121,7 @@ final class StableListTest {
     @Test
     void toArrayWithArraySmaller() {
         Integer[] arr = new Integer[INDEX];
-        Integer[] actual = newList().toArray(arr);
+        Integer[] actual = newLazyList().toArray(arr);
         assertNotSame(arr, actual);
         Integer[] expected = newRegularList().toArray(new Integer[0]);
         assertArrayEquals(expected, actual);
@@ -135,13 +130,13 @@ final class StableListTest {
     @Test
     void toArrayWithGenerator() {
         Integer[] expected = newRegularList().toArray(Integer[]::new);
-        Integer[] actual = newList().toArray(Integer[]::new);
+        Integer[] actual = newLazyList().toArray(Integer[]::new);
         assertArrayEquals(expected, actual);
     }
 
     @Test
     void firstIndex() {
-        var lazy = newList();
+        var lazy = newLazyList();
         for (int i = INDEX; i < SIZE; i++) {
             assertEquals(i, lazy.indexOf(i));
         }
@@ -150,7 +145,7 @@ final class StableListTest {
 
     @Test
     void lastIndex() {
-        var lazy = newList();
+        var lazy = newLazyList();
         for (int i = INDEX; i < SIZE; i++) {
             assertEquals(i, lazy.lastIndexOf(i));
         }
@@ -159,42 +154,28 @@ final class StableListTest {
 
     @Test
     void toStringTest() {
-        assertEquals("[]", newEmptyList().toString());
-        var list = StableValue.list(2, IDENTITY);
-        assertEquals("[.unset, .unset]", list.toString());
-        list.get(0);
-        assertEquals("[0, .unset]", list.toString());
-        list.get(1);
-        assertEquals("[0, 1]", list.toString());
+        assertEquals("[]", newEmptyLazyList().toString());
+        assertEquals("[0, 1]", List.ofLazy(2, IDENTITY).toString());
     }
 
     @Test
     void hashCodeTest() {
-        assertEquals(List.of().hashCode(), newEmptyList().hashCode());
-        assertEquals(newRegularList().hashCode(), newList().hashCode());
+        assertEquals(List.of().hashCode(), newEmptyLazyList().hashCode());
+        assertEquals(newRegularList().hashCode(), newLazyList().hashCode());
     }
 
     @Test
     void equalsTest() {
-        assertTrue(newEmptyList().equals(List.of()));
-        assertTrue(List.of().equals(newEmptyList()));
-        assertTrue(newList().equals(newRegularList()));
-        assertTrue(newRegularList().equals(newList()));
-        assertFalse(newList().equals("A"));
-    }
-
-    @Test
-    void equalsPartialEvaluationTest() {
-        var list = StableValue.list(2, IDENTITY);
-        assertFalse(list.equals(List.of(0)));
-        assertEquals("[0, .unset]", list.toString());
-        assertTrue(list.equals(List.of(0, 1)));
-        assertEquals("[0, 1]", list.toString());
+        assertTrue(newEmptyLazyList().equals(List.of()));
+        assertTrue(List.of().equals(newEmptyLazyList()));
+        assertTrue(newLazyList().equals(newRegularList()));
+        assertTrue(newRegularList().equals(newLazyList()));
+        assertFalse(newLazyList().equals("A"));
     }
 
     @Test
     void iteratorTotal() {
-        var iterator = newList().iterator();
+        var iterator = newLazyList().iterator();
         for (int i = 0; i < SIZE; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -209,7 +190,7 @@ final class StableListTest {
 
     @Test
     void iteratorPartial() {
-        var iterator = newList().iterator();
+        var iterator = newLazyList().iterator();
         for (int i = 0; i < INDEX; i++) {
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
@@ -225,7 +206,7 @@ final class StableListTest {
 
     @Test
     void subList() {
-        var lazy = newList();
+        var lazy = newLazyList();
         var lazySubList = lazy.subList(1, SIZE);
         assertInstanceOf(RandomAccess.class, lazySubList);
         var regularList = newRegularList();
@@ -235,36 +216,33 @@ final class StableListTest {
 
     @Test
     void subList2() {
-        var lazy = newList();
+        var lazy = newLazyList();
         var lazySubList = lazy.subList(1, SIZE);
         lazySubList.get(0);
-        var eq = newList();
+        var eq = newLazyList();
         eq.get(1);
         assertEquals(eq.toString(), lazy.toString());
     }
 
-    void assertUnevaluated(List<Integer> subList) {
-        assertEquals(asString(".unset", subList), subList.toString());
-    }
-
     @Test
     void reversed() {
-        var reversed = newList().reversed();
-        assertInstanceOf(RandomAccess.class, reversed);
-        assertEquals(SIZE - 1, reversed.getFirst());
-        assertEquals(0, reversed.getLast());
+        var lazy = newLazyList();
+        var reversedLazy = lazy.reversed();
+        assertInstanceOf(RandomAccess.class, reversedLazy);
+        assertEquals(SIZE - 1, reversedLazy.getFirst());
+        assertEquals(0, reversedLazy.getLast());
 
-        var reversed2 = reversed.reversed();
-        assertInstanceOf(RandomAccess.class, reversed2);
-        assertEquals(0, reversed2.getFirst());
-        assertEquals(SIZE - 1, reversed2.getLast());
+        var reversed2Lazy = reversedLazy.reversed();
+        assertInstanceOf(RandomAccess.class, reversed2Lazy);
+        assertEquals(0, reversed2Lazy.getFirst());
+        assertEquals(SIZE - 1, reversed2Lazy.getLast());
         // Make sure we get back a non-reversed implementation
-        assertEquals("java.util.ImmutableCollections$StableList", reversed2.getClass().getName());
+        assertEquals(lazy.getClass().getName(), reversed2Lazy.getClass().getName());
     }
 
     @Test
     void sublistReversedToString() {
-        var actual = StableValue.list(4, IDENTITY);
+        var actual = List.ofLazy(4, IDENTITY);
         var expected = List.of(0, 1, 2, 3);
         for (UnaryOperation op : List.of(
                 new UnaryOperation("subList", l -> l.subList(1, 3)),
@@ -276,60 +254,17 @@ final class StableListTest {
         actual.getLast();
 
         var actualToString = actual.toString();
-        var expectedToString = expected.toString().replace("2", ".unset");
+        var expectedToString = expected.toString();
         assertEquals(expectedToString, actualToString);
-    }
-
-    // This test makes sure successive view operations retains the property
-    // of being a Stable view.
-    @Test
-    void viewsStable() {
-        viewOperations().forEach(op0 -> {
-            viewOperations().forEach( op1 -> {
-                viewOperations().forEach(op2 -> {
-                    var list = newList();
-                    var view1 = op0.apply(list);
-                    var view2 = op1.apply(view1);
-                    var view3 = op2.apply(view2);
-                    var className3 = className(view3);
-                    var transitions = className(list) + ", " +
-                            op0 + " -> " + className(view1) + ", " +
-                            op1 + " -> " + className(view2) + ", " +
-                            op2 + " -> " + className3;
-                    assertTrue(className3.contains("Stable"), transitions);
-                    assertUnevaluated(list);
-                    assertUnevaluated(view1);
-                    assertUnevaluated(view2);
-                    assertUnevaluated(view3);
-                });
-            });
-        });
     }
 
     @Test
     void recursiveCall() {
         AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
-        var lazy = StableValue.list(SIZE, i -> ref.get().apply(i));
+        var lazy = List.ofLazy(SIZE, i -> ref.get().apply(i));
         ref.set(lazy::get);
         var x = assertThrows(IllegalStateException.class, () -> lazy.get(INDEX));
-        assertEquals("Recursive initialization of a stable value is illegal", x.getMessage());
-    }
-
-    @Test
-    void indexOfNullInViews() {
-        final int size = 5;
-        final int middle = 2;
-        viewOperations().forEach(op0 -> {
-            viewOperations().forEach( op1 -> {
-                viewOperations().forEach(op2 -> {
-                    var list = StableValue.list(size, x -> x == middle ? null : x);;
-                    var view1 = op0.apply(list);
-                    var view2 = op1.apply(view1);
-                    var view3 = op2.apply(view2);
-                    assertEquals(middle, view3.indexOf(null));
-                });
-            });
-        });
+        assertEquals("Recursive initialization of a lazy collection is illegal", x.getMessage());
     }
 
     // Immutability
@@ -355,7 +290,7 @@ final class StableListTest {
     }
 
     static <T extends Throwable> void assertThrowsForOperation(Class<T> expectedType, Operation operation) {
-        var lazy = newList();
+        var lazy = newLazyList();
         assertThrows(expectedType, () -> operation.accept(lazy));
         var sub = lazy.subList(1, SIZE / 2);
         assertThrows(expectedType, () -> operation.accept(sub));
@@ -367,14 +302,14 @@ final class StableListTest {
 
     @Test
     void serializable() {
-        serializable(newList());
-        serializable(newEmptyList());
+        serializable(newLazyList());
+        serializable(newEmptyLazyList());
     }
 
     void serializable(List<Integer> list) {
         assertFalse(list instanceof Serializable);
         if (list.size()>INDEX) {
-            assertFalse(newList().subList(1, INDEX) instanceof Serializable);
+            assertFalse(newLazyList().subList(1, INDEX) instanceof Serializable);
         }
         assertFalse(list.iterator() instanceof Serializable);
         assertFalse(list.reversed() instanceof Serializable);
@@ -383,54 +318,25 @@ final class StableListTest {
 
     @Test
     void randomAccess() {
-        assertInstanceOf(RandomAccess.class, newList());
-        assertInstanceOf(RandomAccess.class, newEmptyList());
-        assertInstanceOf(RandomAccess.class, newList().subList(1, INDEX));
+        assertInstanceOf(RandomAccess.class, newLazyList());
+        assertInstanceOf(RandomAccess.class, newEmptyLazyList());
+        assertInstanceOf(RandomAccess.class, newLazyList().subList(1, INDEX));
     }
 
     @Test
-    void distinct() {
-        StableValueImpl<Integer>[] array = StableUtil.array(SIZE);
-        assertEquals(SIZE, array.length);
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        for (var e: array) {
-            idMap.put(e, true);
+    void functionHolder() {
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(IDENTITY);
+        List<Integer> f1 = List.ofLazy(SIZE, cif);
+
+        Object holder = LazyConstantTestUtil.functionHolder(f1);
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(SIZE - i, LazyConstantTestUtil.functionHolderCounter(holder));
+            assertSame(cif, LazyConstantTestUtil.functionHolderFunction(holder));
+            int v = f1.get(i);
+            int v2 = f1.get(i);
         }
-        assertEquals(SIZE, idMap.size());
-    }
-
-    @Test
-    void childObjectOpsLazy() {
-        viewOperations().forEach(op0 -> {
-            viewOperations().forEach(op1 -> {
-                viewOperations().forEach(op2 -> {
-                    childOperations().forEach(co -> {
-                        var list = newList();
-                        var view1 = op0.apply(list);
-                        var view2 = op1.apply(view1);
-                        var view3 = op2.apply(view2);
-                        var child = co.apply(view3);
-                        var childClassName = className(child);
-                        var transitions = className(list) + ", " +
-                                op0 + " -> " + className(view1) + ", " +
-                                op1 + " -> " + className(view2) + ", " +
-                                op2 + " -> " + className(view3) + ", " +
-                                co + " -> " + childClassName;
-
-                        // None of these operations should trigger evaluation
-                        var childToString = child.toString();
-                        int childHashCode = child.hashCode();
-                        boolean childEqualToNewObj = child.equals(new Object());
-
-                        assertUnevaluated(list);
-                        assertUnevaluated(view1);
-                        assertUnevaluated(view2);
-                        assertUnevaluated(view3);
-                    });
-                });
-            });
-        });
+        assertEquals(0, LazyConstantTestUtil.functionHolderCounter(holder));
+        assertNull(LazyConstantTestUtil.functionHolderFunction(holder));
     }
 
     // Support constructs
@@ -516,25 +422,15 @@ final class StableListTest {
         );
     }
 
-    static List<Integer> newList() {
-        return StableValue.list(SIZE, IDENTITY);
+    static List<Integer> newLazyList() {
+        return List.ofLazy(SIZE, IDENTITY);
     }
 
-    static List<Integer> newEmptyList() {
-        return StableValue.list(ZERO, IDENTITY);
+    static List<Integer> newEmptyLazyList() {
+        return List.ofLazy(ZERO, IDENTITY);
     }
 
     static List<Integer> newRegularList() {
         return IntStream.range(0, SIZE).boxed().toList();
-    }
-
-    static String asString(String first, List<Integer> list) {
-        return "[" + first + ", " + Stream.generate(() -> ".unset")
-                .limit(list.size() - 1)
-                .collect(Collectors.joining(", ")) + "]";
-    }
-
-    static String className(Object o) {
-        return o.getClass().getName();
     }
 }

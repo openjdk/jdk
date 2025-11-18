@@ -28,14 +28,15 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -43,7 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy map performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -54,16 +55,17 @@ import java.util.stream.IntStream;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-public class StableFunctionSingleBenchmark {
+public class StableMapSingleBenchmark {
 
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final Map<Integer, Integer> MAP = StableValue.map(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.function(SET, Function.identity());
+    private static final Map<Integer, Integer> MAP = Map.ofLazy(SET, Function.identity());
+    private static final Map<MyEnum, Integer> MAP_ENUM = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
+    private static final Map<MyEnum, Optional<Integer>> MAP_ENUM_OPTIONAL = Map.ofLazy(EnumSet.allOf(MyEnum.class), e -> Optional.of(e.ordinal()));
 
-    private final Map<Integer, Integer> map = StableValue.map(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.function(SET, Function.identity());
+    private final Map<Integer, Integer> map = Map.ofLazy(SET, Function.identity());
+    private final Map<MyEnum, Integer> mapEnum = Map.ofLazy(EnumSet.allOf(MyEnum.class), MyEnum::ordinal);
 
     @Benchmark
     public int map() {
@@ -71,18 +73,25 @@ public class StableFunctionSingleBenchmark {
     }
 
     @Benchmark
-    public int function() {
-        return function.apply(1);
+    public int mapEnum() {
+        return mapEnum.get(MyEnum.BAR);
     }
 
     @Benchmark
-    public int staticSMap() {
+    public int staticMap() {
         return MAP.get(1);
     }
 
     @Benchmark
-    public int staticIntFunction() {
-        return FUNCTION.apply(1);
+    public int staticMapEnum() {
+        return MAP_ENUM.get(MyEnum.BAR);
     }
+
+    @Benchmark
+    public int staticMapEnumOptional() {
+        return MAP_ENUM_OPTIONAL.get(MyEnum.BAR).orElseThrow();
+    }
+
+    private enum MyEnum {FOO, BAR}
 
 }
