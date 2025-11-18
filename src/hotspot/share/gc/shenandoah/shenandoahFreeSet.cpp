@@ -3345,6 +3345,7 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
   if (partition != ShenandoahFreeSetPartitionId::Mutator && number_of_reserved_regions == 0) {
     ShenandoahHeapRegion* region = steal_heap_region_from_mutator_for_allocation(partition);
     region->set_active_alloc_region();
+    partitions()->retire_from_partition(partition, region->index(), region->used());
     reserved_regions[0] = region;
     number_of_reserved_regions = 1;
   }
