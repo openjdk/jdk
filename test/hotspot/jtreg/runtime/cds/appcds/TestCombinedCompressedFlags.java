@@ -63,7 +63,7 @@ public class TestCombinedCompressedFlags {
             initExecArgs();
         }
         private void initExecArgs() {
-            // We fail this test if the UseCompressedClassPointers setting used at dumptime differs from runtime,
+            // We fail this test if the UseCompressedOops setting used at dumptime differs from runtime,
             // succeed if it is identical
             execArgs = new ArrayList<ConfArg>();
             execArgs
