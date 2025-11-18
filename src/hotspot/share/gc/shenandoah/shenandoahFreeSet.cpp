@@ -243,6 +243,15 @@ inline size_t ShenandoahFreeSet::alloc_capacity(ShenandoahHeapRegion *r) const {
   }
 }
 
+inline size_t ShenandoahFreeSet::alloc_capacity_words(ShenandoahHeapRegion *r) const {
+  if (r->is_trash()) {
+    // This would be recycled on allocation path
+    return ShenandoahHeapRegion::region_size_words();
+  } else {
+    return r->free_words();
+  }
+}
+
 inline size_t ShenandoahFreeSet::alloc_capacity(size_t idx) const {
   ShenandoahHeapRegion* r = _heap->get_region(idx);
   return alloc_capacity(r);
@@ -3313,7 +3322,77 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous_cds(ShenandoahAllocRequest& req
   return allocate_contiguous(req, /*is_humongous*/false);
 }
 
-HeapWord* ShenandoahFreeSet::reserve_alloc_regions_and_allocate(ShenandoahFreeSetPartitionId partition, int num_regions, GrowableArray<ShenandoahHeapRegion*> &alloc_regions, ShenandoahAllocRequest *req, bool *in_new_region) {
+int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+  assert(regions_to_reserve > 0, "Sanity check");
+  shenandoah_assert_heaplocked();
+  if (partition == ShenandoahFreeSetPartitionId::Mutator) {
+    update_allocation_bias();
+  }
+
+  if (partition == ShenandoahFreeSetPartitionId::Mutator && _partitions.is_empty(partition)) {
+    return 0;
+  }
+
+  int number_of_reserved_regions;;
+  if (_partitions.alloc_from_left_bias(partition)) {
+    ShenandoahLeftRightIterator iterator(&_partitions, partition);
+    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, reserved_regions);
+  } else {
+    ShenandoahRightLeftIterator iterator(&_partitions, partition);
+    number_of_reserved_regions = reserve_alloc_regions_internal(iterator, partition, regions_to_reserve, reserved_regions);
+  }
+
+  if (partition != ShenandoahFreeSetPartitionId::Mutator && number_of_reserved_regions == 0) {
+    ShenandoahHeapRegion* region = steal_heap_region_from_mutator_for_allocation(partition);
+    region->set_active_alloc_region();
+    reserved_regions[0] = region;
+    number_of_reserved_regions = 1;
+  }
+  return number_of_reserved_regions;
+}
+
+template<typename Iter>
+int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int const regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+
+  ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
+  int number_of_reserved_regions = 0;
+  for (idx_t idx = iterator.current(); iterator.has_next() && number_of_reserved_regions < regions_to_reserve; idx = iterator.next()) {
+    ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
+      continue;
+    }
+    size_t ac_words = alloc_capacity_words(r);
+    if (ac_words >= PLAB::max_size()) {
+      if (r->is_trash() || r->is_empty()) {
+        r->try_recycle_under_lock();
+        assert(r->affiliation() == FREE, "Empty region must be free");
+        r->set_affiliation(affiliation);
+        r->make_regular_allocation(affiliation);
+        partitions()->one_region_is_no_longer_empty(partition);
+        if (affiliation == OLD_GENERATION) {
+          // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
+          // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
+          // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
+          // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
+          // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
+          // coalesce-and-fill processing.
+          r->end_preemptible_coalesce_and_fill();
+          _heap->old_generation()->clear_cards_for(r);
+        }
+      }
+      // The region still have capacity for at least one lab alloc
+      size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
+      if (partition == ShenandoahFreeSetPartitionId::Mutator) {
+        increase_bytes_allocated(reserved_bytes);
+      }
+      r->set_active_alloc_region();
+      reserved_regions[number_of_reserved_regions++] = r;
+    }
+  }
+  return number_of_reserved_regions;
+}
+
+ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region) {
   shenandoah_assert_heaplocked();
   if (partition == ShenandoahFreeSetPartitionId::Mutator) {
     update_allocation_bias();
@@ -3323,119 +3402,104 @@ HeapWord* ShenandoahFreeSet::reserve_alloc_regions_and_allocate(ShenandoahFreeSe
     return nullptr;
   }
 
-  HeapWord* obj = nullptr;
+  ShenandoahHeapRegion* region = nullptr;
   if (_partitions.alloc_from_left_bias(partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, partition);
-    obj = reserve_alloc_regions_and_allocate_internal(iterator, partition, num_regions, alloc_regions, req, in_new_region);
+    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
   } else {
     ShenandoahRightLeftIterator iterator(&_partitions, partition);
-    obj = reserve_alloc_regions_and_allocate_internal(iterator, partition, num_regions, alloc_regions, req, in_new_region);
+    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
   }
 
-  if (partition != ShenandoahFreeSetPartitionId::Mutator && alloc_regions.length() < num_regions) {
-    //TODO here it may need to transfer regions from Mutator partition into Collector/OldCollector partition to satisfy the request.
+  if (region == nullptr && partition != ShenandoahFreeSetPartitionId::Mutator &&
+      _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) > 0) {
+    // Steal one FREE region from Mutator view for gc
+    region = steal_heap_region_from_mutator_for_allocation(partition);
+    if (region != nullptr) {
+      new_region = true;
+    }
   }
-  return obj;
+  return region;
 }
 
 template<typename Iter>
-HeapWord* ShenandoahFreeSet::reserve_alloc_regions_and_allocate_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int num_regions, GrowableArray<ShenandoahHeapRegion*> &alloc_regions, ShenandoahAllocRequest* req, bool* in_new_region) {
-  assert(req == nullptr || in_new_region != nullptr, "Must be sane.");
-
-  ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
-  HeapWord* obj = nullptr;
-  size_t min_alloc_byte_size = req != nullptr ? ((req->is_lab_alloc() ? req->min_size() : req->size()) * HeapWordSize) : 0;
-  bool affiliation_changed = false;
+ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region) {
+  ShenandoahHeapRegion* first_free_region = nullptr;
+  ShenandoahAffiliation const affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
+  bool const use_affiliated_region_first = partition != ShenandoahFreeSetPartitionId::Mutator;
   for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
+    assert(r->affiliation() == affiliation || r->affiliation() == FREE, "Affiliation of region must align with the partition.");
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
-    if (alloc_regions.length() < num_regions) {
-      size_t ac = alloc_capacity(r);
-      if (req != nullptr && obj == nullptr && ac >= min_alloc_byte_size) {
-        obj = try_allocate_in(r, *req, *in_new_region);
-        if (obj != nullptr) {
-          ac = alloc_capacity(r);
-        }
+    if (r->affiliation() == FREE && use_affiliated_region_first) {
+      if (first_free_region == nullptr) {
+        first_free_region = r;
       }
-      if (ac >= PLAB::min_size_bytes()) {
-        if (r->is_trash() || r->is_empty()) {
-          r->try_recycle_under_lock();
-          assert(r->affiliation() == FREE, "Empty region must be free");
-          r->set_affiliation(affiliation);
-          r->make_regular_allocation(affiliation);
-          partitions()->one_region_is_no_longer_empty(partition);
-          affiliation_changed = true;
-          if (affiliation == OLD_GENERATION) {
-            // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
-            // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
-            // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
-            // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
-            // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
-            // coalesce-and-fill processing.
-            r->end_preemptible_coalesce_and_fill();
-            _heap->old_generation()->clear_cards_for(r);
-          }
-        }
-        // The region still have capacity for at least one lab alloc
-        size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
-        if (partition == ShenandoahFreeSetPartitionId::Mutator) {
-          increase_bytes_allocated(reserved_bytes);
-        }
-        r->set_active_alloc_region();
-        alloc_regions.append(r);
-      }
-    } else if (req != nullptr && obj == nullptr) {
-      obj = try_allocate_in(r, *req, *in_new_region);
+      continue;
     }
+    size_t ac_words = alloc_capacity_words(r);
+    if (is_lab_alloc && ac_words != ShenandoahHeapRegion::region_size_words()) {
+      // For lab, must make sure the alloc capacity is still sufficient after aligning down;
+      ac_words = align_down((ac_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
+    }
+    if (ac_words >= min_free_words) {
+      // Found a region with enough capacity to meet the min_free_words condition, prepare the region and return it here
+      if (r->is_trash() || r->is_empty()) {
+        r->try_recycle_under_lock();
+        assert(r->affiliation() == FREE, "Empty region must be free");
+        r->set_affiliation(affiliation);
+        r->make_regular_allocation(affiliation);
+        partitions()->one_region_is_no_longer_empty(partition);
+        new_region = true;
+      }
+      assert(r->affiliation() == affiliation, "Must be");
+      return r;
+    }
+  }
 
-    if (alloc_regions.length() == num_regions && (req == nullptr || obj != nullptr)) {
-      break;
-    }
+  if (first_free_region != nullptr) {
+    assert(partition == ShenandoahFreeSetPartitionId::Collector || partition == ShenandoahFreeSetPartitionId::OldCollector, "Must be");
+    assert(first_free_region->is_empty(), "Free region must be empty");
+    first_free_region->try_recycle_under_lock(); // Still need this due to race condition with concurrent recycle which is done w/o holding heap lock.
+    first_free_region->set_affiliation(affiliation);
+    first_free_region->make_regular_allocation(affiliation);
+    partitions()->one_region_is_no_longer_empty(partition);
+    new_region = true;
+    return first_free_region;
   }
-  if (alloc_regions.length() > 0 || affiliation_changed) {
-    switch (partition) {
-      case ShenandoahFreeSetPartitionId::Mutator:
-        recompute_total_used</* UsedByMutatorChanged */ true,
-                             /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ false>();
-        if (affiliation_changed) {
-          recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
-                                     /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                     /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                     /* UnaffiliatedChangesAreYoungNeutral */ false>();
-        }
-        break;
-      case ShenandoahFreeSetPartitionId::Collector:
-        recompute_total_used</* UsedByMutatorChanged */ false,
-                             /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
-        if (affiliation_changed) {
-          recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ true,
-                                     /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ false,
-                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                     /* AffiliatedChangesAreYoungNeutral */ false, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                     /* UnaffiliatedChangesAreYoungNeutral */ false>();
-        }
-        break;
-      case ShenandoahFreeSetPartitionId::OldCollector:
-        recompute_total_used</* UsedByMutatorChanged */ false,
-                             /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
-        if (affiliation_changed) {
-          recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
-                                     /* OldCollectorEmptiesChanged */ true, /* MutatorSizeChanged */ false,
-                                     /* CollectorSizeChanged */ false, /* OldCollectorSizeChanged */ false,
-                                     /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ false,
-                                     /* UnaffiliatedChangesAreYoungNeutral */ true>();
-        }
-        break;
-      case ShenandoahFreeSetPartitionId::NotFree:
-      default:
-        assert(false, "won't happen");
-    }
-  }
-  return obj;
+
+  return nullptr;
 }
+
+ShenandoahHeapRegion* ShenandoahFreeSet::steal_heap_region_from_mutator_for_allocation(ShenandoahFreeSetPartitionId partition) {
+  assert(partition == ShenandoahFreeSetPartitionId::Collector || partition == ShenandoahFreeSetPartitionId::OldCollector, "Must be");
+
+  ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator, true);
+  for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
+    ShenandoahHeapRegion* r = _heap->get_region(idx);
+    if (can_allocate_from(r)) {
+      if (partition == ShenandoahFreeSetPartitionId::OldCollector) {
+        if (!flip_to_old_gc(r)) {
+          continue;
+        }
+      } else {
+        flip_to_gc(r);
+      }
+      log_debug(gc, free)("Flipped free region %zu to partition %s: ", idx, partition_name(partition));
+      ShenandoahAffiliation const affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
+      r->try_recycle_under_lock();
+      assert(r->affiliation() == FREE, "Empty region must be free");
+      r->set_affiliation(affiliation);
+      r->make_regular_allocation(affiliation);
+      partitions()->one_region_is_no_longer_empty(partition);
+      return r;
+    }
+  }
+  return nullptr;
+}
+
 
 void ShenandoahFreeSet::print_on(outputStream* out) const {
   out->print_cr("Mutator Free Set: %zu", _partitions.count(ShenandoahFreeSetPartitionId::Mutator));

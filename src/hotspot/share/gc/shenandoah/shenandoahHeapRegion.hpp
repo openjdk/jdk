@@ -386,9 +386,9 @@ public:
   inline HeapWord* allocate_lab(const ShenandoahAllocRequest &req, size_t &actual_size);
 
   // Atomic allocation using CAS, return nullptr if full or no enough space for the req
-  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req);
+  inline HeapWord* allocate_atomic(size_t word_size, const ShenandoahAllocRequest &req, bool &ready_for_retire);
 
-  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size);
+  inline HeapWord* allocate_lab_atomic(const ShenandoahAllocRequest &req, size_t &actual_size, bool &ready_for_retire);
 
   inline bool try_allocate(HeapWord* const obj, size_t const size);
 
@@ -468,6 +468,8 @@ public:
   size_t used() const           { return byte_size(bottom(), top()); }
   size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
+  size_t free_words() const     { return pointer_delta(end(), top()); }
+
 
   // Does this region contain this address?
   bool contains(HeapWord* p) const {

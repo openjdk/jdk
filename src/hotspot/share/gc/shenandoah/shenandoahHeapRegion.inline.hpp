@@ -27,6 +27,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
 
+#include "gc/shared/plab.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -145,18 +146,35 @@ HeapWord* ShenandoahHeapRegion::allocate_lab(const ShenandoahAllocRequest& req, 
   return obj;
 }
 
-HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req) {
+// Stack object to check if region is ready for retire after atomic allocation attempts,
+// It tracks the free words of the region and check it at the exit of atomic allocation.
+class ShenandoahHeapRegionReadyForRetireChecker : public StackObj {
+  size_t &free_words;
+  bool &ready_for_retire;
+public:
+  ShenandoahHeapRegionReadyForRetireChecker(size_t &free_words, bool &ready_for_retire) : free_words(free_words), ready_for_retire(ready_for_retire) {
+    assert(!ready_for_retire, "Sanity check");
+  }
+
+  ~ShenandoahHeapRegionReadyForRetireChecker() {
+    if (free_words < PLAB::min_size()) {
+      ready_for_retire = true;
+    }
+  }
+};
+
+HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAllocRequest& req, bool &ready_for_retire) {
   DirectAllocMutatorCounter c(&_direct_alloc_mutators);
   assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
 
+  size_t free_words;
+  ShenandoahHeapRegionReadyForRetireChecker retire_checker(free_words, ready_for_retire);
   for (;;) {
-    if (!is_active_alloc_region()) {
-      return nullptr;
-    }
     HeapWord* obj = top();
-    if (pointer_delta(end(), obj) >= size) {
+    free_words = pointer_delta( end(), obj);
+    if (free_words >= size) {
       if (try_allocate(obj, size)) {
         reset_age();
         adjust_alloc_metadata(req.type(), size);
@@ -168,20 +186,21 @@ HeapWord* ShenandoahHeapRegion::allocate_atomic(size_t size, const ShenandoahAll
   }
 }
 
-HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size) {
+HeapWord* ShenandoahHeapRegion::allocate_lab_atomic(const ShenandoahAllocRequest& req, size_t &actual_size, bool &ready_for_retire) {
   DirectAllocMutatorCounter c(&_direct_alloc_mutators);
   assert(req.is_lab_alloc() && req.type() != ShenandoahAllocRequest::_alloc_plab, "Only tlab/gclab alloc");
   assert(this->affiliation() == req.affiliation(), "Region affiliation should already be established");
   assert(this->is_regular() || this->is_regular_pinned(), "must be a regular region");
+
+  size_t free_words;
+  ShenandoahHeapRegionReadyForRetireChecker retire_checker(free_words, ready_for_retire);
   for (;;) {
-    if (!is_active_alloc_region()) {
-      return nullptr;
-    }
     size_t adjusted_size = req.size();
     HeapWord* obj = top();
-    size_t free_words = align_down(byte_size(obj, end()) >> LogHeapWordSize, MinObjAlignment);
-    if (adjusted_size > free_words) {
-      adjusted_size = free_words;
+    free_words = pointer_delta(end(), obj);
+    size_t aligned_free_words = align_down((free_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
+    if (adjusted_size > aligned_free_words) {
+      adjusted_size = aligned_free_words;
     }
     if (adjusted_size >= req.min_size()) {
       if (try_allocate(obj, adjusted_size)) {

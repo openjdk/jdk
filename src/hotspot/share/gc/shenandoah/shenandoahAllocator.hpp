@@ -36,13 +36,14 @@ class ShenandoahAllocRequest;
 
 class ShenandoahAllocator : public CHeapObj<mtGC> {
 protected:
-
   struct ShenandoahAllocRegion {
     ShenandoahHeapRegion* volatile _address;
   };
 
+  static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
+
   PaddedEnd<ShenandoahAllocRegion>* _alloc_regions;
-  uint const                        _alloc_region_count;
+  uint  const                       _alloc_region_count;
   ShenandoahFreeSet*                _free_set;
   ShenandoahFreeSetPartitionId      _alloc_partition_id;
   bool                              _yield_to_safepoint = false;
@@ -58,13 +59,13 @@ protected:
 
   // Attempt to allocate in shared alloc regions, the allocation attempt is done with atomic operation w/o
   // holding heap lock.
-  HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index);
+  HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);
 
   // Allocate in a region with atomic.
-  HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region);
+  HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
-  // Refill new alloc regions, allocate the object in the new alloc region.
-  HeapWord* new_alloc_regions_and_allocate(ShenandoahAllocRequest* req, bool* in_new_region, uint &new_alloc_start_index);
+  // Refresh new alloc regions, allocate the object in the new alloc region.
+  int refresh_alloc_regions();
 #ifdef ASSERT
   virtual void verify(ShenandoahAllocRequest& req) { }
 #endif
