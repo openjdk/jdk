@@ -322,9 +322,9 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
     cmp(state, rscratch1);
     br(HS, big);
 
-    // lea(temp, ExternalAddress((address)&baz));
-    // incrementw(Address(temp));
-    // b(done);
+    lea(temp, ExternalAddress((address)&baz));
+    incrementw(Address(temp));
+    b(done);
 
     bind(big);
     lea(temp, ExternalAddress((address)&barf));
