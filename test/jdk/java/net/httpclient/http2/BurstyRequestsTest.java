@@ -39,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
 import jdk.httpclient.test.lib.http2.BodyOutputStream;
@@ -49,7 +48,6 @@ import jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -99,8 +97,8 @@ class BurstyRequestsTest {
 
     private static Field openConnections; // Set<> jdk.internal.net.http.HttpClientImpl#openedConnections
 
-    private static SSLContext sslContext;
-    private static Http2TestServer h2server;
+    // we use a h2c server but it doesn't matter if it is h2c or h2
+    private static Http2TestServer http2Server;
 
     @BeforeAll
     static void beforeAll() throws Exception {
@@ -108,19 +106,18 @@ class BurstyRequestsTest {
                 .getDeclaredField("openedConnections");
         openConnections.setAccessible(true);
 
-        sslContext = new SimpleSSLContext().get();
-        h2server = new Http2TestServer(true, sslContext);
-        h2server.setExchangeSupplier(new ExchangeSupplier());
-        h2server.addHandler(new Handler(), HANDLER_PATH);
-        h2server.start();
-        System.err.println("started HTTP/2 server " + h2server.getAddress());
+        http2Server = new Http2TestServer(false, 0);
+        http2Server.setExchangeSupplier(new ExchangeSupplier());
+        http2Server.addHandler(new Handler(), HANDLER_PATH);
+        http2Server.start();
+        System.err.println("started HTTP/2 server " + http2Server.getAddress());
     }
 
     @AfterAll
     static void afterAll() {
-        if (h2server != null) {
-            System.err.println("stopping server " + h2server.getAddress());
-            h2server.stop();
+        if (http2Server != null) {
+            System.err.println("stopping server " + http2Server.getAddress());
+            http2Server.stop();
         }
     }
 
@@ -133,9 +130,9 @@ class BurstyRequestsTest {
     @Test
     void testOpenConnections() throws Exception {
         final URI reqURI = URIBuilder.newBuilder()
-                .scheme("https")
-                .host(h2server.getAddress().getAddress())
-                .port(h2server.getAddress().getPort())
+                .scheme("http")
+                .host(http2Server.getAddress().getAddress())
+                .port(http2Server.getAddress().getPort())
                 .path(HANDLER_PATH)
                 .build();
         final HttpRequest req = HttpRequest.newBuilder().uri(reqURI).build();
@@ -147,7 +144,6 @@ class BurstyRequestsTest {
 
         try (final ExecutorService executor = Executors.newCachedThreadPool();
              final HttpClient client = HttpClient.newBuilder()
-                     .sslContext(sslContext)
                      .proxy(NO_PROXY)
                      .version(HTTP_2)
                      .build()) {
