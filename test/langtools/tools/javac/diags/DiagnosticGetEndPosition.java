@@ -186,4 +186,32 @@ public class DiagnosticGetEndPosition {
         }
     }
 
+    @Test
+    public void testGetEndPositionSyntheticTree() throws Exception {
+        Path base = Paths.get(".");
+        Path src = base.resolve("src");
+        String testCode = """
+                          package test;
+                          public class Test extends Base {
+                          }
+                          class Base {
+                              Base(int i) {}
+                          }
+                          """;
+
+        tb.writeJavaFiles(src, testCode);
+
+        try (var fm = compiler.getStandardFileManager(null, null, null)) {
+            compiler.getTask(
+                null,
+                null,
+                d -> assertEquals("",
+                                  testCode.substring((int) d.getStartPosition(),
+                                                     (int) d.getEndPosition())),
+                List.of("-sourcepath", src.toString(), "-Xlint:divzero"),
+                null,
+                fm.getJavaFileObjects(src.resolve("test").resolve("Test.java"))
+            ).call();
+        }
+    }
 }
