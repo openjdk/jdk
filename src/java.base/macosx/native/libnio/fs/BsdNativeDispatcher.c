@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ static jfieldID entry_name;
 static jfieldID entry_dir;
 static jfieldID entry_fstype;
 static jfieldID entry_options;
+static jfieldID entry_dev;
 
 struct fsstat_iter {
     struct statfs *buf;
@@ -85,6 +86,8 @@ Java_sun_nio_fs_BsdNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     CHECK_NULL(entry_fstype);
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
     CHECK_NULL(entry_options);
+    entry_dev = (*env)->GetFieldID(env, clazz, "dev", "J");
+    CHECK_NULL(entry_dev);
 }
 
 JNIEXPORT jlong JNICALL
@@ -151,6 +154,8 @@ Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry(JNIEnv* env, jclass this,
     char* dir;
     char* fstype;
     char* options;
+    int32_t fsid_val[2];
+    long dev;
 
     if (iter == NULL || iter->pos >= iter->nentries)
        return -1;
@@ -162,6 +167,8 @@ Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry(JNIEnv* env, jclass this,
         options="ro";
     else
         options="";
+    fsid_val[0] = iter->buf[iter->pos].f_fsid.val[0];
+    fsid_val[1] = iter->buf[iter->pos].f_fsid.val[1];
 
     iter->pos++;
 
@@ -192,6 +199,9 @@ Java_sun_nio_fs_BsdNativeDispatcher_fsstatEntry(JNIEnv* env, jclass this,
         return -1;
     (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)options);
     (*env)->SetObjectField(env, entry, entry_options, bytes);
+
+    dev = (((long)fsid_val[1]) << 32) | (long)fsid_val[0];
+    (*env)->SetLongField(env, entry, entry_dev, long_to_jlong(dev));
 
     return 0;
 }

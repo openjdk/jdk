@@ -549,8 +549,6 @@ class SuperWord : public ResourceObj {
 
  private:
   bool           _do_vector_loop;  // whether to do vectorization/simd style
-  int            _num_work_vecs;   // Number of non memory vector operations
-  int            _num_reductions;  // Number of reduction expressions applied
 
   // Accessors
   Arena* arena()                   { return &_arena; }
