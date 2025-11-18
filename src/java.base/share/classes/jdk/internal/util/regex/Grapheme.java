@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 16.0.
+     * is based on the annex for Unicode version 17.0.
      *
-     * @spec http://www.unicode.org/reports/tr29/tr29-45.html
+     * @spec http://www.unicode.org/reports/tr29/tr29-47.html
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
@@ -283,7 +283,6 @@ public final class Grapheme {
                 case 0x113D1:
                 case 0x1193F:
                 case 0x11941:
-                case 0x11A3A:
                 case 0x11A84:
                 case 0x11A85:
                 case 0x11A86:

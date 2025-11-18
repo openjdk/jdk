@@ -201,9 +201,7 @@ public final class UBiDiProps {
     // data format constants ----------------------------------------------- ***
     @SuppressWarnings("deprecation")
     private static final String DATA_FILE_NAME =
-            "/jdk/internal/icu/impl/data/icudt" +
-            VersionInfo.ICU_DATA_VERSION_PATH +
-            "/ubidi.icu";
+            "/jdk/internal/icu/impl/data/icudata/ubidi.icu";
 
     /* format "BiDi" */
     private static final int FMT=0x42694469;
