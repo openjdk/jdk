@@ -1394,9 +1394,6 @@ const int ObjectAlignmentInBytes = 8;
           "Maximum size of Metaspaces (in bytes)")                          \
           constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
                                                                             \
-  product(bool, USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE, true,                           \
-          "(Deprecated) Use 32-bit class pointers.")                        \
-                                                                            \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
           "class pointers are used")                                        \
