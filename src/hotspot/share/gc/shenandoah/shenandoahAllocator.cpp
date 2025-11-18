@@ -204,7 +204,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
   return nullptr;
 }
 
-HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
+inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
