@@ -129,7 +129,7 @@ bool VM_GC_Operation::doit_prologue() {
   _is_shutting_down = CollectedHeap::is_shutting_down();
   if (_is_shutting_down) {
     // Block forever if a Java thread is triggering a GC after
-    // the GC have started to shut down.
+    // the GC has started to shut down.
     block_if_java_thread();
   }
 
