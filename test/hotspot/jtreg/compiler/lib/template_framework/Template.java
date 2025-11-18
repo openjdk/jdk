@@ -205,7 +205,7 @@ import compiler.lib.ir_framework.TestFramework;
  * <table border="1">
  *   <caption>Scopes and (non-)transparency</caption>
  *   <tr>
- *     <th>                          </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link #setFuelCost} </th>
+ *     <th>                           </th><th> hashtag         </th><th> {@link DataName} and {@link StructuralName} </th><th> {@link #setFuelCost} </th>
  *   </tr>
  *   <tr>
  *     <th> {@link #scope}            </th><th> non-transparent </th><th> non-transparent                             </th><th> non-transparent     </th>
@@ -218,6 +218,9 @@ import compiler.lib.ir_framework.TestFramework;
  *   </tr>
  *   <tr>
  *     <th> {@link #setFuelCostScope} </th><th> transparent     </th><th> transparent                                 </th><th> non-transparent     </th>
+ *   </tr>
+ *   <tr>
+ *     <th> {@link #transparentScope} </th><th> transparent     </th><th> transparent                                 </th><th> transparent         </th>
  *   </tr>
  * </table>
  *
@@ -620,17 +623,16 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * Note that regardless of the chosen scope for {@code Template.make},
      * hashtag-replacements and {@link #setFuelCost} are always implicitly
-     * non-transparent (i.e. non-escaping) for hashtag-replacements and
-     * {@link #setFuelCost} (e.g. a {@link #let} will not escape the template
-     * scope even when using {@link #transparentScope}. As a default, it is
-     * recommended to use {@link #scope} for {@code Template.make} since in
-     * most cases template scopes align with code scopes that are
-     * non-transparent for fields, variables, etc. In rare cases, where the
-     * scope of the template needs to be transparent (e.g. because we need
-     * to insert a variable or field into an outer scope), it is recommended
-     * to use {@link #transparentScope}. This allows to make {@link DataName}s
-     * and {@link StructuralName}s available outside this template crossing
-     * the template boundary.
+     * non-transparent (i.e. non-escaping). For example, {@link #let} will
+     * not escape the template scope even when using {@link #transparentScope}.
+     * As a default, it is recommended to use {@link #scope} for
+     * {@code Template.make} since in most cases template scopes align with
+     * code scopes that are non-transparent for fields, variables, etc. In
+     * rare cases, where the scope of the template needs to be transparent
+     * (e.g. because we need to insert a variable or field into an outer scope),
+     * it is recommended to use {@link #transparentScope}. This allows to make
+     * {@link DataName}s and {@link StructuralName}s available outside this
+     * template crossing the template boundary.
      *
      * <p>
      * We can also use nested scopes inside of templates:
