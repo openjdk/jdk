@@ -561,7 +561,7 @@ freeUnusedVThreadNode(JNIEnv *env, ThreadNode* node)
      * node->suspendCount requires special handling to see if it triggers having
      * to keep the node around. It's possible for it to be 0 yet we still need to
      * keep the node around. Also, it's possbile for it to be non-zero yet we
-     * don't need to keep the node around. More details int he comments below.
+     * don't need to keep the node around. More details in the comments below.
      */
     if (node->suspendCount == 0) {
         /*
