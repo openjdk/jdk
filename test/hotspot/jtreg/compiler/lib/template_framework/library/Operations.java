@@ -249,7 +249,7 @@ public final class Operations {
         ops.add(Expression.make(LONGS, "Math.multiplyHigh(", LONGS, ",", LONGS, ")"));
         ops.add(Expression.make(LONGS, "Math.unsignedMultiplyHigh(", LONGS, ",", LONGS, ")"));
 
-        // TODO: other classes.
+        // TODO: rest of Math and other classes.
 
         // Make sure the list is not modifiable.
         return List.copyOf(ops);
