@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -90,6 +91,12 @@ public:
   }
 
 };
+
+inline void ShenandoahAllocator::yield_to_safepoint() {
+  if (_yield_to_safepoint && !_heap_locked_by_current_thread && Thread::current()->is_Java_thread()) {
+    ThreadBlockInVM tbivm(JavaThread::current());
+  }
+}
 
 class HeapLockedByCurrentThreadReset : StackObj {
   bool &_heap_locked_by_current_thread;

@@ -26,7 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
-#include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahFreeSet;
@@ -53,11 +52,7 @@ protected:
   // start index of the shared alloc regions where the allocation will start from.
   virtual uint alloc_start_index() { return 0u; }
 
-  inline void yield_to_safepoint() {
-    if (_yield_to_safepoint && !_heap_locked_by_current_thread && Thread::current()->is_Java_thread()) {
-      ThreadBlockInVM tbivm(JavaThread::current());
-    }
-  }
+  inline void yield_to_safepoint();
 
   // Attempt to allocate
   // It will try to allocate in alloc regions first, if fails it will try to get new alloc regions from free-set
