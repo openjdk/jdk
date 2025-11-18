@@ -232,7 +232,7 @@ public class SuspendWithObjectMonitorWait {
                     testCase = Integer.parseUnsignedInt(args[argIndex]);
                 } catch (NumberFormatException nfe) {
                     System.err.println("'" + args[argIndex] +
-                            "': invalid test_case value.");
+                                       "': invalid test_case value.");
                     usage();
                 }
                 if (testCase < 1 || testCase > 3) {
