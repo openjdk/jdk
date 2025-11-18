@@ -2131,16 +2131,14 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
       break;
     case BoolTest::ge:
       cmov_fp_cmp_fp_ge(op1, op2, dst, src, cmp_single, cmov_single);
-      assert(false, "Should go to BoolTest::le case");
-      ShouldNotReachHere();
+      log_warning(jit)("Float/Double BoolTest::ge path is not tested well, please report the test case!");
       break;
     case BoolTest::lt:
       cmov_fp_cmp_fp_lt(op1, op2, dst, src, cmp_single, cmov_single);
       break;
     case BoolTest::gt:
       cmov_fp_cmp_fp_gt(op1, op2, dst, src, cmp_single, cmov_single);
-      assert(false, "Should go to BoolTest::lt case");
-      ShouldNotReachHere();
+      log_warning(jit)("Float/Double BoolTest::gt path is not tested well, please report the test case!");
       break;
     default:
       assert(false, "unsupported compare condition");
