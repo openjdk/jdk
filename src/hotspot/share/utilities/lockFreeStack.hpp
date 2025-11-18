@@ -56,10 +56,10 @@
 //
 // \tparam T is the class of the elements in the stack.
 //
-// \tparam next_access is a function pointer.  Applying this function to
+// \tparam next_accessor is a function pointer.  Applying this function to
 // an object of type T must return a pointer to the list entry member
 // of the object associated with the LockFreeStack type.
-template<typename T, auto next_access>
+template<typename T, auto next_accessor>
 class LockFreeStack {
   Atomic<T*> _top;
 
@@ -82,7 +82,7 @@ class LockFreeStack {
   static constexpr bool use_atomic_access_impl(T* volatile* (*)(T&)) { return true; }
   static constexpr bool use_atomic_access_impl(Atomic<T*>* (*)(T&)) { return false; }
 
-  static constexpr bool use_atomic_access = use_atomic_access_impl(next_access);
+  static constexpr bool use_atomic_access = use_atomic_access_impl(next_accessor);
 
 public:
   LockFreeStack() : _top(nullptr) {}
@@ -174,9 +174,9 @@ public:
   // specialized LockFreeStack class.
   static T* next(const T& value) {
     if constexpr (use_atomic_access) {
-      return AtomicAccess::load(next_access(const_cast<T&>(value)));
+      return AtomicAccess::load(next_accessor(const_cast<T&>(value)));
     } else {
-      return next_access(const_cast<T&>(value))->load_relaxed();
+      return next_accessor(const_cast<T&>(value))->load_relaxed();
     }
   }
 
@@ -186,9 +186,9 @@ public:
   // there must be no concurrent push or pop operations on that stack.
   static void set_next(T& value, T* new_next) {
     if constexpr (use_atomic_access) {
-      AtomicAccess::store(next_access(value), new_next);
+      AtomicAccess::store(next_accessor(value), new_next);
     } else {
-      next_access(value)->store_relaxed(new_next);
+      next_accessor(value)->store_relaxed(new_next);
     }
   }
 };
