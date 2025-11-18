@@ -143,30 +143,30 @@ public final class SSLLogger implements System.Logger {
     }
 
     public static void severe(String msg, Object... params) {
-        SSLLogger.doLog(Level.ERROR, msg, params);
+        SSLLogger.log0(Level.ERROR, msg, params);
     }
 
     public static void warning(String msg, Object... params) {
-        SSLLogger.doLog(Level.WARNING, msg, params);
+        SSLLogger.log0(Level.WARNING, msg, params);
     }
 
     public static void info(String msg, Object... params) {
-        SSLLogger.doLog(Level.INFO, msg, params);
+        SSLLogger.log0(Level.INFO, msg, params);
     }
 
     public static void fine(String msg, Object... params) {
-        SSLLogger.doLog(Level.DEBUG, msg, params);
+        SSLLogger.log0(Level.DEBUG, msg, params);
     }
 
     public static void finer(String msg, Object... params) {
-        SSLLogger.doLog(Level.TRACE, msg, params);
+        SSLLogger.log0(Level.TRACE, msg, params);
     }
 
     public static void finest(String msg, Object... params) {
-        SSLLogger.doLog(Level.TRACE, msg, params);
+        SSLLogger.log0(Level.TRACE, msg, params);
     }
 
-    private static void doLog(Level level, String msg, Object... params) {
+    private static void log0(Level level, String msg, Object... params) {
         if (logger != null && logger.isLoggable(level)) {
             if (params == null || params.length == 0) {
                 logger.log(level, msg);
