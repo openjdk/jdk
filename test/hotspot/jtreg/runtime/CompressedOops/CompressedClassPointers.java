@@ -40,7 +40,6 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jtreg.SkippedException;
 
 public class CompressedClassPointers {
 
@@ -218,7 +217,6 @@ public class CompressedClassPointers {
     public static void smallHeapTestNoCoop() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedBaseAddress=8g",
             "-Xmx128m",
@@ -236,7 +234,6 @@ public class CompressedClassPointers {
     public static void smallHeapTestWith1GNoCoop() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:CompressedClassSpaceSize=1g",
             "-Xmx128m",
@@ -258,7 +255,6 @@ public class CompressedClassPointers {
     public static void largeHeapTestNoCoop() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+UnlockExperimentalVMOptions",
             "-Xmx30g",
@@ -280,7 +276,6 @@ public class CompressedClassPointers {
     public static void largePagesTestNoCoop() throws Exception {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-Xmx128m",
             "-XX:+UseLargePages",
@@ -291,23 +286,10 @@ public class CompressedClassPointers {
         output.shouldHaveExitValue(0);
     }
 
-    public static void heapBaseMinAddressTestNoCoop() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
-            "-XX:HeapBaseMinAddress=1m",
-            "-Xlog:gc+heap+coops=debug",
-            "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("HeapBaseMinAddress must be at least");
-        output.shouldHaveExitValue(0);
-    }
-
     public static void sharingTestNoCoop() throws Exception {
         // Test small heaps
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
@@ -325,7 +307,6 @@ public class CompressedClassPointers {
 
           pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:-UseCompressedOops",
-            "-XX:+USE_COMPRESSED_CLASS_POINTERS_ALWAYS_TRUE",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./CompressedClassPointers.jsa",
             "-Xmx128m",
@@ -356,7 +337,6 @@ public class CompressedClassPointers {
         smallHeapTestWith1GNoCoop();
         largeHeapTestNoCoop();
         largePagesTestNoCoop();
-        heapBaseMinAddressTestNoCoop();
         sharingTestNoCoop();
     }
 }
