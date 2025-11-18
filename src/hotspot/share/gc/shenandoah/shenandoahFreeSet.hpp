@@ -51,7 +51,6 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
 // for which the ShenandoahFreeSetPartitionId is not equal to NotFree.
 class ShenandoahRegionPartitions {
 friend class ShenandoahFreeSet;
-friend class DirectAllocatableRegionRefillClosure;
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 
@@ -441,15 +440,7 @@ public:
 //     sure there is enough memory reserved at the high end of memory to hold the objects that might need to be evacuated
 //     during the next GC pass.
 
-class ShenandoahHeapRegionIterationClosure : public StackObj {
-public:
-  // Return true to break the iteration loop.
-  virtual bool heap_region_do(ShenandoahHeapRegion *r) { return false; };
-};
-
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
-  friend class DirectAllocatableRegionRefillClosure;
-
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
   ShenandoahHeap* const _heap;
