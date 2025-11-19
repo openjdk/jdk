@@ -25,10 +25,11 @@
 #ifndef SHARE_OOPS_BSMATTRIBUTE_HPP
 #define SHARE_OOPS_BSMATTRIBUTE_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "oops/array.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class ClassLoaderData;
 
 class BSMAttributeEntry {
   friend class ConstantPool;

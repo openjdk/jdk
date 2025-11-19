@@ -133,7 +133,7 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_array<Klass*>(loader_data, resolved_klasses());
   set_resolved_klasses(nullptr);
 
-  _bsmaentries.deallocate_contents(loader_data);
+  bsm_entries().deallocate_contents(loader_data);
 
   release_C_heap_structures();
 

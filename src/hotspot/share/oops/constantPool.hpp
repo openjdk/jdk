@@ -91,7 +91,7 @@ class ConstantPool : public Metadata {
   ConstantPoolCache*   _cache;       // the cache holding interpreter runtime information
   InstanceKlass*       _pool_holder; // the corresponding class
 
-  BSMAttributeEntries _bsmaentries;
+  BSMAttributeEntries _bsm_entries;
 
   // Consider using an array of compressed klass pointers to
   // save space on 64-bit platforms.
@@ -173,10 +173,10 @@ class ConstantPool : public Metadata {
   Array<u1>* tags() const                   { return _tags; }
 
   BSMAttributeEntries& bsm_entries() {
-    return _bsmaentries;
+    return _bsm_entries;
   }
   const BSMAttributeEntries& bsm_entries() const {
-    return _bsmaentries;
+    return _bsm_entries;
   }
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
@@ -527,7 +527,7 @@ class ConstantPool : public Metadata {
   }
 
   BSMAttributeEntry* bsm_attribute_entry(int bsms_attribute_index) {
-    return _bsmaentries.entry(bsms_attribute_index);
+    return _bsm_entries.entry(bsms_attribute_index);
   }
 
   bool compare_bootstrap_entry_to(int bsms_attribute_index1, const constantPoolHandle& cp2,
