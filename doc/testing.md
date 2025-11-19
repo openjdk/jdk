@@ -515,7 +515,7 @@ Defaults to `files`.
 
 #### MANUAL
 
-Set to `true` to execute manual tests.
+Set to `true` to execute manual tests only.
 
 ### Gtest keywords
 
