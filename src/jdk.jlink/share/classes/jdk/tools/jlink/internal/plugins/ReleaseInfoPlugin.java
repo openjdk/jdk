@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
@@ -107,8 +108,8 @@ public final class ReleaseInfoPlugin extends AbstractPlugin {
             default: {
                 // --release-info <file>
                 Properties props = new Properties();
-                try (FileInputStream fis = new FileInputStream(operation)) {
-                    props.load(fis);
+                try (InputStreamReader isr = new InputStreamReader(new FileInputStream(operation), "UTF-8")) {
+                    props.load(isr);
                 } catch (IOException exp) {
                     throw new UncheckedIOException(exp);
                 }
