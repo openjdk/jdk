@@ -35,7 +35,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
-import java.nio.channels.NetworkChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
