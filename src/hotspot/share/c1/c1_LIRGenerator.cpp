@@ -3177,22 +3177,21 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
   LIR_Opr tmp = new_register(T_INT);
 
-  CodeStub* overflow = nullptr;
-
   if (notify && (!backedge || UseOnStackReplacement)) {
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
-    int freq = frequency
-      // Clear the bottom bit based on capture ratio, such that we
-      // detect overflows.
-      >> exact_log2(ProfileCaptureRatio) << exact_log2(ProfileCaptureRatio)
-      << InvocationCounter::count_shift;
-    overflow = new CounterOverflowStub (info, bci, meth);
+    CodeStub* overflow = new CounterOverflowStub (info, bci, meth);
+    // Zero the low-order bits of the frequency, otherwise we'll miss
+    // overflows when usind randomized profile counters.
+    unsigned int freq = (unsigned int)frequency
+                         >> ratio_shift << ratio_shift
+                         << InvocationCounter::count_shift;
     __ increment_profile_ctr(step, counter, result, tmp,
                              LIR_OprFact::intConst(freq), step, overflow, info);
   } else {
     __ increment_profile_ctr(step, counter, result, tmp,
-                             LIR_OprFact::illegalOpr, step, overflow, info);
+                             LIR_OprFact::illegalOpr, step, nullptr, info);
   }
 }
 

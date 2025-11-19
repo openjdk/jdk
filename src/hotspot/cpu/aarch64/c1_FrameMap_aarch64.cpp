@@ -191,31 +191,31 @@ void FrameMap::initialize() {
   map_register(i, r23); r23_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r24); r24_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r25); r25_opr = LIR_OprFact::single_cpu(i); i++;
-  map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
 
-  // r27 is allocated conditionally. With compressed oops it holds
-  // the heapbase value and is not visible to the allocator.
-  bool preserve_rheapbase = i >= nof_caller_save_cpu_regs();
-  if (!preserve_rheapbase) {
-    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
+  if (UseCompressedOops && (CompressedOops::base() != nullptr)) {
+    // r27 is allocated conditionally. With compressed oops it holds
+    // the heapbase value and is not visible to the allocator.
+    if (ProfileCaptureRatio > 1) {
+      r_profile_rng = r26;
+    } else {
+      map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
+    }
+  } else { // r27 is free
+    map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
+    if (ProfileCaptureRatio > 1) {
+      r_profile_rng = r27;
+    } else {
+      // push r27 into the allocation pool
+      map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++;
+    }
   }
 
-  // r_profile_rng is allocated conditionally. It is used to hold the random
-  // generator for profile counters.
-  r_profile_rng
-    = (UseCompressedOops && ProfileCaptureRatio > 1) ? r26
-    : (ProfileCaptureRatio > 1) ? r27
-    : noreg;
-
-   if(!PreserveFramePointer) {
+  if(!PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++;
   }
 
   // The unallocatable registers are at the end
 
-  if (preserve_rheapbase) {
-    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
-  }
   map_register(i, r28); r28_opr = LIR_OprFact::single_cpu(i); i++; // rthread
   if(PreserveFramePointer) {
     map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++; // rfp

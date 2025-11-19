@@ -2947,7 +2947,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
             // If step is 0, make sure the stub check below always fails
             __ cmpl(incr->as_register(), 0);
             __ movl(temp, InvocationCounter::count_increment * ProfileCaptureRatio);
-            __ cmovl(Assembler::equal, result, temp);
+            __ cmovl(Assembler::notEqual, result, temp);
           }
           __ andl(result, freq_op->as_jint());
           __ jcc(Assembler::equal, *overflow_stub->entry());
@@ -3375,13 +3375,11 @@ void LIR_Assembler::leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code, Co
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
-  __ save_profile_rng();
   __ call(RuntimeAddress(dest));
   if (info != nullptr) {
     add_call_info_here(info);
   }
   __ post_call_nop();
-  __ restore_profile_rng();
 }
 
 

@@ -480,6 +480,25 @@ class MacroAssembler: public Assembler {
   WRAP(smaddl) WRAP(smsubl) WRAP(umaddl) WRAP(umsubl)
 #undef WRAP
 
+  using Assembler::andw, Assembler::andr;
+  void andw(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/true, imm)) {
+      Assembler::andw(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      movw(Rd, imm);
+      andw(Rd, Rn, Rd);
+    }
+  }
+  void andr(Register Rd, Register Rn, uint64_t imm) {
+    if (operand_valid_for_logical_immediate(/*is32*/false, imm)) {
+      Assembler::andr(Rd, Rn, imm);
+    } else {
+      assert(Rd != Rn, "must be");
+      mov(Rd, imm);
+      andr(Rd, Rn, Rd);
+    }
+  }
 
   // macro assembly operations needed for aarch64
 
