@@ -27,7 +27,6 @@
  * @summary Test that StressDuplicateBackedge correctly clones Template Assertion Predicates to the inner counted loop.
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressDuplicateBackedge
  *                   compiler.predicates.assertion.TestStressDuplicateBackedgeWithAssertionPredicate
- *
  */
 
 package compiler.predicates.assertion;
