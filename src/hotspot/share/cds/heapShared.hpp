@@ -332,7 +332,7 @@ public:
     // Used by CDSHeapVerifier.
     OopHandle _orig_referrer;
 
-    // The location of this object inside ArchiveHeapWriter::_buffer
+    // The location of this object inside {AOTMappedHeapWriter, AOTStreamedHeapWriter}::_buffer
     size_t _buffer_offset;
 
     // One or more fields in this object are pointing to non-null oops.
