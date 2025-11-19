@@ -189,6 +189,8 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
+  Node* load_default_array_klass(Node* klass_node);
+
   Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
                                    ByteSize offset, const Type* type, BasicType bt);
   Node* generate_misc_flags_guard(Node* kls,
@@ -196,20 +198,32 @@ class LibraryCallKit : public GraphKit {
                                   RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
+
+  enum ArrayKind {
+    AnyArray,
+    NonArray,
+    RefArray,
+    NonRefArray,
+    TypeArray
+  };
+
   Node* generate_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, false, false, obj);
+    return generate_array_guard_common(kls, region, AnyArray, obj);
   }
   Node* generate_non_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, false, true, obj);
+    return generate_array_guard_common(kls, region, NonArray, obj);
   }
-  Node* generate_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, true, false, obj);
+  Node* generate_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, RefArray, obj);
   }
-  Node* generate_non_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, true, true, obj);
+  Node* generate_non_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, NonRefArray, obj);
+  }
+  Node* generate_typeArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, TypeArray, obj);
   }
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
-                                    bool obj_array, bool not_array, Node** obj = nullptr);
+                                    ArrayKind kind, Node** obj = nullptr);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
   CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
   CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {

@@ -66,6 +66,7 @@
 #include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
@@ -509,16 +510,13 @@ void Universe::genesis(TRAPS) {
   // SystemDictionary::initialize(CHECK); is run. See the extra check
   // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
-    Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
-    _objectArrayKlass = ObjArrayKlass::cast(oak);
+    ArrayKlass* oak = vmClasses::Object_klass()->array_klass(CHECK);
+    oak->append_to_sibling_list();
+
+    // Create a RefArrayKlass (which is the default) and initialize.
+    ObjArrayKlass* rak = ObjArrayKlass::cast(oak)->default_ref_array_klass(CHECK);
+    _objectArrayKlass = rak;
   }
-  // OLD
-  // Add the class to the class hierarchy manually to make sure that
-  // its vtable is initialized after core bootstrapping is completed.
-  // ---
-  // New
-  // Have already been initialized.
-  _objectArrayKlass->append_to_sibling_list();
 
   #ifdef ASSERT
   if (FullGCALot) {
@@ -653,6 +651,9 @@ static void reinitialize_vtables() {
     Klass* sub = iter.klass();
     sub->vtable().initialize_vtable();
   }
+
+  // This isn't added to the subclass list, so need to reinitialize vtables directly.
+  Universe::objectArrayKlass()->vtable().initialize_vtable();
 }
 
 static void reinitialize_itables() {

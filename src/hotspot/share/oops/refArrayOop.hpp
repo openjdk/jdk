@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,27 @@
  *
  */
 
-#ifndef SHARE_OOPS_OBJARRAYOOP_HPP
-#define SHARE_OOPS_OBJARRAYOOP_HPP
+#ifndef SHARE_OOPS_REFARRAYOOP_HPP
+#define SHARE_OOPS_REFARRAYOOP_HPP
 
-#include "cppstdlib/type_traits.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
+#include <type_traits>
 
 class Klass;
 
-// An objArrayOop is an array containing oops.
-// Evaluating "String arg[10]" will create an objArrayOop.
+// An refArrayOop is an array containing references (oops).
+// Evaluating "String arg[10]" will create an refArrayOop.
 
-class objArrayOopDesc : public arrayOopDesc {
-  friend class AOTMappedHeapWriter;
-  friend class ObjArrayKlass;
+class refArrayOopDesc : public arrayOopDesc {
+  friend class ArchiveHeapWriter;
+  friend class RefArrayKlass;
   friend class Runtime1;
   friend class psPromotionManager;
   friend class CSetMarkWordClosure;
   friend class Continuation;
   template <typename T>
   friend class RawOopWriter;
-  friend class AOTMapLogger;
 
   template <class T> T* obj_at_addr(int index) const;
 
@@ -58,24 +57,38 @@ class objArrayOopDesc : public arrayOopDesc {
     return arrayOopDesc::base_offset_in_bytes(T_OBJECT);
   }
 
-  inline static objArrayOop cast(oop o);
+  inline static refArrayOop cast(oop o);
 
   // base is the address following the header.
-  HeapWord* base() const;
+  inline HeapWord* base() const;
 
   // Accessing
   oop obj_at(int index) const;
   void obj_at_put(int index, oop value);
 
+  oop replace_if_null(int index, oop exchange_value);
+
+  // Sizing
+  size_t object_size()        { return object_size(length()); }
+
+  static size_t object_size(int length) {
+    // This returns the object size in HeapWords.
+    size_t asz = (size_t)length * heapOopSize;
+    size_t size_words = heap_word_size(base_offset_in_bytes() + asz);
+    size_t osz = align_object_size(size_words);
+    assert(osz < max_jint, "no overflow");
+    return osz;
+  }
+
   Klass* element_klass();
 
 public:
-  // Special iterators for an element index range.
+  // special iterators for index ranges, returns size of object
   template <typename OopClosureType>
-  void oop_iterate_elements_range(OopClosureType* blk, int start, int end);
+  void oop_iterate_range(OopClosureType* blk, int start, int end);
 };
 
 // See similar requirement for oopDesc.
-static_assert(std::is_trivially_default_constructible<objArrayOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<refArrayOopDesc>::value, "required");
 
-#endif // SHARE_OOPS_OBJARRAYOOP_HPP
+#endif // SHARE_OOPS_REFARRAYOOP_HPP

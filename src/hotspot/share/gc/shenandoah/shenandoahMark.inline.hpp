@@ -85,7 +85,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
 
       obj->oop_iterate(cl);
       dedup_string<STRING_DEDUP>(obj, req);
-    } else if (obj->is_objArray()) {
+    } else if (obj->is_refArray()) {
       // Case 2: Object array instance and no chunk is set. Must be the first
       // time we visit it, start the chunked processing.
       do_chunked_array_start<T>(q, cl, obj, weak);
@@ -156,7 +156,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 
 template <class T>
 inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, T* cl, oop obj, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
+  assert(obj->is_refArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
   int len = array->length();
 
@@ -223,7 +223,7 @@ inline void ShenandoahMark::do_chunked_array_start(ShenandoahObjToScanQueue* q, 
 
 template <class T>
 inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl, oop obj, int chunk, int pow, bool weak) {
-  assert(obj->is_objArray(), "expect object array");
+  assert(obj->is_refArray(), "expect object array");
   objArrayOop array = objArrayOop(obj);
 
   // Split out tasks, as suggested in ShenandoahMarkTask docs. Avoid pushing tasks that

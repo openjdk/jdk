@@ -2447,7 +2447,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
             // klass.  Users of this result need to do a null check on the returned klass.
             return TypePtr::NULL_PTR;
           }
-          return TypeKlassPtr::make(ciArrayKlass::make(t), Type::trust_interfaces);
+          return TypeKlassPtr::make(ciArrayKlass::make(t, false), Type::trust_interfaces);
         }
         if (!t->is_klass()) {
           // a primitive Class (e.g., int.class) has null for a klass field
@@ -2556,9 +2556,10 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
       Node* base2 = base->in(MemNode::Address);
       if (base2->is_Load()) { /* direct load of a load which is the OopHandle */
         Node* adr2 = base2->in(MemNode::Address);
+        // TODO 8366668 Re-enable this for arrays
         const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
         if (tkls != nullptr && !tkls->empty()
-            && (tkls->isa_instklassptr() || tkls->isa_aryklassptr())
+            && ((tkls->isa_instklassptr() && !tkls->is_instklassptr()->might_be_an_array()) || (tkls->isa_aryklassptr() && false))
             && adr2->is_AddP()
            ) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());

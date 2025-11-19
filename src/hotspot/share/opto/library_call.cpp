@@ -2349,7 +2349,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   const TypeOopPtr* result = nullptr;
   // See if it is a narrow oop array.
   if (adr_type->isa_aryptr()) {
-    if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
+    if (adr_type->offset() >= refArrayOopDesc::base_offset_in_bytes()) {
       const TypeOopPtr* elem_type = adr_type->is_aryptr()->elem()->make_oopptr();
       if (elem_type != nullptr && elem_type->is_loaded()) {
         // Sharpen the value type.
@@ -3840,7 +3840,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 }
 
 const Type* LibraryCallKit::scopedValueCache_type() {
-  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass(), false);
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
@@ -4362,30 +4362,27 @@ bool LibraryCallKit::inline_native_subtype_check() {
 }
 
 //---------------------generate_array_guard_common------------------------
-Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
-                                                  bool obj_array, bool not_array, Node** obj) {
+Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region, ArrayKind kind, Node** obj) {
 
   if (stopped()) {
     return nullptr;
   }
 
-  // If obj_array/non_array==false/false:
-  // Branch around if the given klass is in fact an array (either obj or prim).
-  // If obj_array/non_array==false/true:
-  // Branch around if the given klass is not an array klass of any kind.
-  // If obj_array/non_array==true/true:
-  // Branch around if the kls is not an oop array (kls is int[], String, etc.)
-  // If obj_array/non_array==true/false:
-  // Branch around if the kls is an oop array (Object[] or subtype)
-  //
   // Like generate_guard, adds a new path onto the region.
   jint  layout_con = 0;
   Node* layout_val = get_layout_helper(kls, layout_con);
   if (layout_val == nullptr) {
-    bool query = (obj_array
-                  ? Klass::layout_helper_is_objArray(layout_con)
-                  : Klass::layout_helper_is_array(layout_con));
-    if (query == not_array) {
+    bool query = 0;
+    switch(kind) {
+      case RefArray:       query = Klass::layout_helper_is_refArray(layout_con); break;
+      case NonRefArray:    query = !Klass::layout_helper_is_refArray(layout_con); break;
+      case TypeArray:      query = Klass::layout_helper_is_typeArray(layout_con); break;
+      case AnyArray:       query = Klass::layout_helper_is_array(layout_con); break;
+      case NonArray:       query = !Klass::layout_helper_is_array(layout_con); break;
+      default:
+        ShouldNotReachHere();
+    }
+    if (!query) {
       return nullptr;                       // never a branch
     } else {                             // always a branch
       Node* always_branch = control();
@@ -4395,18 +4392,33 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
       return always_branch;
     }
   }
+  unsigned int value = 0;
+  BoolTest::mask btest = BoolTest::illegal;
+  switch(kind) {
+    case RefArray:
+    case NonRefArray: {
+      value = Klass::_lh_array_tag_ref_value;
+      layout_val = _gvn.transform(new RShiftINode(layout_val, intcon(Klass::_lh_array_tag_shift)));
+      btest = (kind == RefArray) ? BoolTest::eq : BoolTest::ne;
+      break;
+    }
+    case TypeArray: {
+      value = Klass::_lh_array_tag_type_value;
+      layout_val = _gvn.transform(new RShiftINode(layout_val, intcon(Klass::_lh_array_tag_shift)));
+      btest = BoolTest::eq;
+      break;
+    }
+    case AnyArray:    value = Klass::_lh_neutral_value; btest = BoolTest::lt; break;
+    case NonArray:    value = Klass::_lh_neutral_value; btest = BoolTest::gt; break;
+    default:
+      ShouldNotReachHere();
+  }
   // Now test the correct condition.
-  jint  nval = (obj_array
-                ? (jint)(Klass::_lh_array_tag_type_value
-                   <<    Klass::_lh_array_tag_shift)
-                : Klass::_lh_neutral_value);
+  jint nval = (jint)value;
   Node* cmp = _gvn.transform(new CmpINode(layout_val, intcon(nval)));
-  BoolTest::mask btest = BoolTest::lt;  // correct for testing is_[obj]array
-  // invert the test if we are looking for a non-array
-  if (not_array)  btest = BoolTest(btest).negate();
   Node* bol = _gvn.transform(new BoolNode(cmp, btest));
   Node* ctrl = generate_fair_guard(bol, region);
-  Node* is_array_ctrl = not_array ? control() : ctrl;
+  Node* is_array_ctrl = kind == NonArray ? control() : ctrl;
   if (obj != nullptr && is_array_ctrl != nullptr && is_array_ctrl != top()) {
     // Keep track of the fact that 'obj' is an array to prevent
     // array specific accesses from floating above the guard.
@@ -4414,7 +4426,6 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
   }
   return ctrl;
 }
-
 
 //-----------------------inline_native_newArray--------------------------
 // private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
@@ -4475,6 +4486,8 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     // Normal case:  The array type has been cached in the java.lang.Class.
     // The following call works fine even if the array type is polymorphic.
     // It could be a dynamic mix of int[], boolean[], Object[], etc.
+    klass_node = load_default_array_klass(klass_node);
+
     Node* obj = new_array(klass_node, count_val, 0);  // no arguments to push
     result_reg->init_req(_normal_path, control());
     result_val->init_req(_normal_path, obj);
@@ -4495,6 +4508,73 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   set_result(result_reg, result_val);
   return true;
+}
+
+Node* LibraryCallKit::load_default_array_klass(Node* klass_node) {
+  // TODO 8366668
+  // - Fred suggested that we could just have the first entry in the refined list point to the array with ArrayKlass::ArrayProperties::DEFAULT property
+  //   For now, we just load from ObjArrayKlass::_default_ref_array_klass, which would always be the refKlass for non-values, and deopt if it's not
+  // - Convert this to an IGVN optimization, so it's also folded after parsing
+  // - The generate_typeArray_guard is not needed by all callers, double-check that it's folded
+
+  const Type* klass_t = _gvn.type(klass_node);
+  const TypeAryKlassPtr* ary_klass_t = klass_t->isa_aryklassptr();
+  if (ary_klass_t && ary_klass_t->klass_is_exact()) {
+    if (ary_klass_t->exact_klass()->is_obj_array_klass()) {
+      ary_klass_t = ary_klass_t->get_vm_type(false);
+      return makecon(ary_klass_t);
+    } else {
+      return klass_node;
+    }
+  }
+
+  // Load next refined array klass if klass is an ObjArrayKlass
+  RegionNode* refined_region = new RegionNode(2);
+  Node* refined_phi = new PhiNode(refined_region, klass_t);
+
+  generate_typeArray_guard(klass_node, refined_region);
+  if (refined_region->req() == 3) {
+    refined_phi->add_req(klass_node);
+  }
+
+  Node* adr_refined_klass = basic_plus_adr(klass_node, in_bytes(ObjArrayKlass::default_ref_array_klass_offset()));
+  Node* refined_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), adr_refined_klass, TypeRawPtr::BOTTOM, TypeInstKlassPtr::OBJECT_OR_NULL));
+
+  RegionNode* refined_region2 = new RegionNode(3);
+  Node* refined_phi2 = new PhiNode(refined_region2, klass_t);
+
+  Node* null_ctl = top();
+  Node* null_free_klass = null_check_common(refined_klass, T_OBJECT, false, &null_ctl);
+  refined_region2->init_req(1, null_ctl);
+  refined_phi2->init_req(1, klass_node);
+
+  refined_region2->init_req(2, control());
+  refined_phi2->init_req(2, null_free_klass);
+
+  set_control(_gvn.transform(refined_region2));
+  refined_klass = _gvn.transform(refined_phi2);
+
+#if 0
+  Node* adr_properties = basic_plus_adr(refined_klass, in_bytes(ObjArrayKlass::properties_offset()));
+
+  Node* properties = _gvn.transform(LoadNode::make(_gvn, control(), immutable_memory(), adr_properties, TypeRawPtr::BOTTOM, TypeInt::INT, T_INT, MemNode::unordered));
+  Node* default_val = makecon(TypeInt::make(ArrayKlass::ArrayProperties::DEFAULT));
+  Node* chk = _gvn.transform(new CmpINode(properties, default_val));
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+
+  { // Deoptimize if not the default property
+    BuildCutout unless(this, tst, PROB_MAX);
+    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
+  }
+
+#endif
+  refined_region->init_req(1, control());
+  refined_phi->init_req(1, refined_klass);
+
+  set_control(_gvn.transform(refined_region));
+  klass_node = _gvn.transform(refined_phi);
+
+  return klass_node;
 }
 
 //----------------------inline_native_getLength--------------------------
@@ -4563,10 +4643,12 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
     // Despite the generic type of Arrays.copyOf, the mirror might be int, int[], etc.
     // Bail out if that is so.
-    Node* not_objArray = generate_non_objArray_guard(klass_node, bailout);
+    Node* not_objArray = generate_non_refArray_guard(klass_node, bailout);
+    klass_node = load_default_array_klass(klass_node);
+
     if (not_objArray != nullptr) {
       // Improve the klass node's type from the new optimistic assumption:
-      ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
+      ciKlass* ak = ciArrayKlass::make(env()->Object_klass(), false);
       const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
       Node* cast = new CastPPNode(control(), klass_node, akls);
       klass_node = _gvn.transform(cast);
@@ -5373,7 +5455,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, false, BarrierSetC2::Parsing)) {
         // If it is an oop array, it requires very special treatment,
         // because gc barriers are required when accessing the array.
-        Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)nullptr);
+        Node* is_obja = generate_refArray_guard(obj_klass, (RegionNode*)nullptr);
         if (is_obja != nullptr) {
           PreserveJVMState pjvms2(this);
           set_control(is_obja);

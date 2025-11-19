@@ -237,9 +237,10 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stole
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
   G1SkipCardMarkSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
-  to_array->oop_iterate_elements_range(&_scanner,
-                                       checked_cast<int>(claim._start),
-                                       checked_cast<int>(claim._end));
+  assert(to_array->is_refArray(), "Must be");
+  refArrayOop(to_array)->oop_iterate_elements_range(&_scanner,
+                              checked_cast<int>(claim._start),
+                              checked_cast<int>(claim._end));
 }
 
 MAYBE_INLINE_EVACUATION
@@ -259,7 +260,8 @@ void G1ParScanThreadState::start_partial_objarray(oop from_obj,
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
-  to_array->oop_iterate_elements_range(&_scanner, 0, checked_cast<int>(initial_chunk_size));
+  assert(to_array->is_refArray(), "Must be");
+  refArrayOop(to_array)->oop_iterate_elements_range(&_scanner, 0, checked_cast<int>(initial_chunk_size));
 }
 
 MAYBE_INLINE_EVACUATION
@@ -433,13 +435,13 @@ void G1ParScanThreadState::do_iterate_object(oop const obj,
     if (klass->is_array_klass()) {
       assert(!klass->is_stack_chunk_instance_klass(), "must be");
 
-      if (klass->is_objArray_klass()) {
+      if (klass->is_refArray_klass()) {
         start_partial_objarray(old, obj);
       } else {
         // Nothing needs to be done for typeArrays.  Body doesn't contain
         // any oops to scan, and the type in the klass will already be handled
         // by processing the built-in module.
-        assert(klass->is_typeArray_klass(), "invariant");
+        assert(klass->is_typeArray_klass() || klass->is_objArray_klass(), "invariant");
       }
       return;
     }

@@ -1273,10 +1273,13 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
       int len = sv->field_size() / type2size[ak->element_type()];
       InternalOOMEMark iom(THREAD);
       obj = ak->allocate_instance(len, THREAD);
-    } else if (k->is_objArray_klass()) {
-      ObjArrayKlass* ak = ObjArrayKlass::cast(k);
+    } else if (k->is_refArray_klass()) {
+      RefArrayKlass* ak = RefArrayKlass::cast(k);
       InternalOOMEMark iom(THREAD);
       obj = ak->allocate_instance(sv->field_size(), THREAD);
+    } else {
+      // No objects of type ObjArrayKlass are allocated.
+      ShouldNotReachHere();
     }
 
     if (obj == nullptr) {
@@ -1582,6 +1585,15 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
+
+    // If it's an array, get the properties
+    if (k->is_array_klass() && !k->is_typeArray_klass()) {
+      assert(!k->is_refArray_klass(), "Unexpected refined klass");
+      nmethod* nm = fr->cb()->as_nmethod_or_null();
+      // Just go with the default properties for now
+      k = ObjArrayKlass::cast(k)->default_ref_array_klass_acquire();
+    }
+
     Handle obj = sv->value();
     assert(obj.not_null() || realloc_failures, "reallocation was missed");
 #ifndef PRODUCT
@@ -1625,8 +1637,10 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
     } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k);
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
-    } else if (k->is_objArray_klass()) {
+    } else if (k->is_refArray_klass()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
+    } else {
+      ShouldNotReachHere();  // should not be an object with klass objArrayKlass.
     }
   }
   // These objects may escape when we return to Interpreter after deoptimization.

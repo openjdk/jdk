@@ -208,7 +208,7 @@ ciType* NewTypeArray::exact_type() const {
 }
 
 ciType* NewObjectArray::exact_type() const {
-  return ciObjArrayKlass::make(klass());
+  return ciObjArrayKlass::make(klass(), true);
 }
 
 ciType* NewArray::declared_type() const {

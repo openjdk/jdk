@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_OOPS_REFARRAYKLASS_INLINE_HPP
+#define SHARE_OOPS_REFARRAYKLASS_INLINE_HPP
+
+#include "oops/refArrayKlass.hpp"
+
+#include "memory/memRegion.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/klass.hpp"
+#include "oops/refArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
+#include "utilities/macros.hpp"
+
+template <typename T, class OopClosureType>
+void RefArrayKlass::oop_oop_iterate_elements(refArrayOop a,
+                                             OopClosureType *closure) {
+  oop_oop_iterate_elements_range<T>(a, closure, 0, a->length());
+}
+
+// Like oop_oop_iterate but only iterates over a specified range and only used
+// for objArrayOops.
+template <typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements_range(objArrayOop a, OopClosureType* closure, int start, int end) {
+  T* base        = (T*)a->base();
+  T* p           = base + start;
+  T* const end_p = base + end;
+
+  for (;p < end_p; ++p) {
+    Devirtualizer::do_oop(closure, p);
+  }
+}
+
+template <typename T, class OopClosureType>
+void RefArrayKlass::oop_oop_iterate_elements_bounded(refArrayOop a,
+                                                     OopClosureType *closure,
+                                                     void *low, void *high) {
+
+  T *const l = (T *)low;
+  T *const h = (T *)high;
+
+  T *p = (T *)a->base();
+  T *end = p + a->length();
+
+  if (p < l) {
+    p = l;
+  }
+  if (end > h) {
+    end = h;
+  }
+
+  for (; p < end; ++p) {
+    Devirtualizer::do_oop(closure, p);
+  }
+}
+
+template <typename T, typename OopClosureType>
+void RefArrayKlass::oop_oop_iterate(oop obj, OopClosureType *closure) {
+  assert(obj->is_array(), "obj must be array");
+  refArrayOop a = refArrayOop(obj);
+
+  if (Devirtualizer::do_metadata(closure)) {
+    Devirtualizer::do_klass(closure, obj->klass());
+  }
+
+  oop_oop_iterate_elements<T>(a, closure);
+}
+
+template <typename T, typename OopClosureType>
+void RefArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType *closure) {
+  // No reverse implementation ATM.
+  oop_oop_iterate<T>(obj, closure);
+}
+
+template <typename T, typename OopClosureType>
+void RefArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType *closure,
+                                            MemRegion mr) {
+  assert(obj->is_array(), "obj must be array");
+  refArrayOop a = refArrayOop(obj);
+
+  if (Devirtualizer::do_metadata(closure)) {
+    Devirtualizer::do_klass(closure, a->klass());
+  }
+
+  oop_oop_iterate_elements_bounded<T>(a, closure, mr.start(), mr.end());
+}
+
+#endif // SHARE_OOPS_REFARRAYKLASS_INLINE_HPP

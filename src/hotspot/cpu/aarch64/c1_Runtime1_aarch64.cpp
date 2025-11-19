@@ -761,7 +761,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           __ asrw(t0, t0, Klass::_lh_array_tag_shift);
           int tag = ((id == StubId::c1_new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
-                     : Klass::_lh_array_tag_obj_value);
+                     : Klass::_lh_array_tag_ref_value);
           __ mov(rscratch1, tag);
           __ cmpw(t0, rscratch1);
           __ br(Assembler::EQ, ok);

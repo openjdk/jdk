@@ -47,13 +47,16 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
-  // Constructor
-  ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
+  ObjArrayKlass* _default_ref_array_klass;
+
   static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
 
-  objArrayOop allocate_instance(int length, TRAPS);
+  virtual objArrayOop allocate_instance(int length, TRAPS);
 
  protected:
+  // Constructor
+  ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind);
+
   // Create array_name for element klass
   static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
 
@@ -74,6 +77,12 @@ class ObjArrayKlass : public ArrayKlass {
 
   ModuleEntry* module() const override;
   PackageEntry* package() const override;
+
+  ObjArrayKlass* default_ref_array_klass(TRAPS);
+  inline ObjArrayKlass* default_ref_array_klass_acquire() const;
+  inline void release_set_default_ref_array_klass(ObjArrayKlass* ak);
+
+  static ByteSize default_ref_array_klass_offset() { return byte_offset_of(ObjArrayKlass, _default_ref_array_klass); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const override;
@@ -96,12 +105,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter) override;
 
- private:
-  // Either oop or narrowOop depending on UseCompressedOops.
-  // must be called from within ObjArrayKlass.cpp
-  void do_copy(arrayOop s, size_t src_offset,
-               arrayOop d, size_t dst_offset,
-               int length, TRAPS);
  public:
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));

@@ -1977,6 +1977,12 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
   const TypeAryKlassPtr* ary_klass_t = _igvn.type(klass_node)->isa_aryklassptr();
+  // TODO 8366668 Compute the VM type, is this even needed now that we set it earlier? Should we assert instead?
+  if (ary_klass_t && ary_klass_t->klass_is_exact() && ary_klass_t->exact_klass()->is_obj_array_klass()) {
+    ary_klass_t = ary_klass_t->get_vm_type();
+    klass_node = makecon(ary_klass_t);
+    _igvn.replace_input_of(alloc, AllocateNode::KlassNode, klass_node);
+  }
   address slow_call_address;  // Address of slow call
   if (init != nullptr && init->is_complete_with_arraycopy() &&
       ary_klass_t && ary_klass_t->elem()->isa_klassptr() == nullptr) {

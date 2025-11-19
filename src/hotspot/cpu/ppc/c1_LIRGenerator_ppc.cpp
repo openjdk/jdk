@@ -913,7 +913,7 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   LIR_Opr len = length.result();
 
   CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciMetadata* obj = ciObjArrayKlass::make(x->klass());
+  ciMetadata* obj = ciObjArrayKlass::make(x->klass(), true);
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }

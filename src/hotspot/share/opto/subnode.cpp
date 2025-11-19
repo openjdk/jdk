@@ -1109,7 +1109,9 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     Node* k2 = isa_java_mirror_load(phase, in(2));
     Node* conk2 = isa_const_java_mirror(phase, in(2));
 
-    if (k1 && (k2 || conk2)) {
+    // TODO 8366668 add a test for this. Improve this condition
+    bool doIt = (conk2 && !phase->type(conk2)->isa_aryklassptr());
+    if (k1 && (k2 || conk2) && doIt) {
       Node* lhs = k1;
       Node* rhs = (k2 != nullptr) ? k2 : conk2;
       set_req_X(1, lhs, phase);

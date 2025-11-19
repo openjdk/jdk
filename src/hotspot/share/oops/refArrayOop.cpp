@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,20 @@
  */
 
 #include "oops/access.inline.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.inline.hpp"
+#include "oops/refArrayKlass.hpp"
+#include "oops/refArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-Klass* objArrayOopDesc::element_klass() {
-  return ObjArrayKlass::cast(klass())->element_klass();
+oop refArrayOopDesc::replace_if_null(int index, oop exchange_value) {
+  ptrdiff_t offs;
+  if (UseCompressedOops) {
+    offs = refArrayOopDesc::obj_at_offset<narrowOop>(index);
+  } else {
+    offs = refArrayOopDesc::obj_at_offset<oop>(index);
+  }
+  return HeapAccess<IS_ARRAY>::oop_atomic_cmpxchg_at(as_oop(), offs, (oop)nullptr, exchange_value);
+}
+
+Klass* refArrayOopDesc::element_klass() {
+  return RefArrayKlass::cast(klass())->element_klass();
 }

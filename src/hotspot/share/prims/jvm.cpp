@@ -3544,12 +3544,13 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
   if (k != vmClasses::Thread_klass()) {
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
+  refArrayHandle rah(THREAD, (refArrayOop)ah()); // j.l.Thread is an identity class, arrays are always reference arrays
 
   ResourceMark rm(THREAD);
 
   GrowableArray<instanceHandle>* thread_handle_array = new GrowableArray<instanceHandle>(num_threads);
   for (int i = 0; i < num_threads; i++) {
-    oop thread_obj = ah->obj_at(i);
+    oop thread_obj = rah->obj_at(i);
     instanceHandle h(THREAD, (instanceOop) thread_obj);
     thread_handle_array->append(h);
   }
