@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -658,6 +658,7 @@ public:
 
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);
+  DEBUG_ONLY(static bool is_load_array_klass_related(const Node* uncast_base));
 
   // Utility function for nodes that load an object
   void add_objload_to_connection_graph(Node* n, Unique_Node_List* delayed_worklist);

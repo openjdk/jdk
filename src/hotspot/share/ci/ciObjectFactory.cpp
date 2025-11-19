@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
+#include "ci/ciRefArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
@@ -375,7 +376,7 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciMethodType(h_i);
     else
       return new (arena()) ciInstance(h_i);
-  } else if (o->is_objArray()) {
+  } else if (o->is_refArray()) {
     objArrayHandle h_oa(THREAD, (objArrayOop)o);
     return new (arena()) ciObjArray(h_oa);
   } else if (o->is_typeArray()) {
@@ -404,7 +405,11 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
       assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
-      return new (arena()) ciObjArrayKlass(k);
+      if (k->is_refArray_klass()) {
+        return new (arena()) ciRefArrayKlass(k);
+      } else {
+        return new (arena()) ciObjArrayKlass(k);
+      }
     } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(k);
     }

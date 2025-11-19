@@ -147,6 +147,7 @@ bool oopDesc::is_instanceRef_noinline() const { return is_instanceRef(); }
 bool oopDesc::is_stackChunk_noinline()  const { return is_stackChunk();  }
 bool oopDesc::is_array_noinline()       const { return is_array();       }
 bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
+bool oopDesc::is_refArray_noinline()    const { return is_refArray();    }
 bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 
 #if INCLUDE_CDS_JAVA_HEAP

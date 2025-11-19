@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,34 @@
  *
  */
 
-#include "oops/access.inline.hpp"
-#include "oops/objArrayKlass.hpp"
-#include "oops/objArrayOop.inline.hpp"
-#include "oops/oop.inline.hpp"
+package sun.jvm.hotspot.oops;
 
-Klass* objArrayOopDesc::element_klass() {
-  return ObjArrayKlass::cast(klass())->element_klass();
-}
+import java.io.*;
+import java.util.*;
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.utilities.Observable;
+import sun.jvm.hotspot.utilities.Observer;
+
+// RefArrayKlass is the klass for RefArrays
+
+public class RefArrayKlass extends ObjArrayKlass {
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
+          initialize(VM.getVM().getTypeDataBase());
+        }
+      });
+  }
+
+  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+    Type type = db.lookupType("RefArrayKlass");
+  }
+
+  public RefArrayKlass(Address addr) {
+    super(addr);
+  }
+
+};

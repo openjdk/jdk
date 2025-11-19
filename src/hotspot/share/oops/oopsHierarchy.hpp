@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ typedef class   instanceOopDesc*            instanceOop;
 typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
+typedef class       refArrayOopDesc*            refArrayOop;
 typedef class     typeArrayOopDesc*           typeArrayOop;
 
 #else
@@ -153,6 +154,7 @@ DEF_OOP(instance);
 DEF_OOP(stackChunk);
 DEF_OOP(array);
 DEF_OOP(objArray);
+DEF_OOP(refArray);
 DEF_OOP(typeArray);
 
 #endif // CHECK_UNHANDLED_OOPS
@@ -189,6 +191,7 @@ class     InstanceRefKlass;
 class     InstanceStackChunkKlass;
 class   ArrayKlass;
 class     ObjArrayKlass;
+class       RefArrayKlass;
 class     TypeArrayKlass;
 
 #endif // SHARE_OOPS_OOPSHIERARCHY_HPP

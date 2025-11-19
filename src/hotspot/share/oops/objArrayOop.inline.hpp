@@ -27,13 +27,17 @@
 
 #include "oops/objArrayOop.hpp"
 
-#include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/globals.hpp"
+#include "oops/refArrayOop.inline.hpp"
 
 inline HeapWord* objArrayOopDesc::base() const { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
+
+inline objArrayOop objArrayOopDesc::cast(oop o) {
+  assert(o->is_objArray(), "Must be a objArray");
+  return (objArrayOop)o;
+}
 
 template <class T> T* objArrayOopDesc::obj_at_addr(int index) const {
   assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
@@ -41,15 +45,11 @@ template <class T> T* objArrayOopDesc::obj_at_addr(int index) const {
 }
 
 inline oop objArrayOopDesc::obj_at(int index) const {
-  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
-  ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
-  return HeapAccess<IS_ARRAY>::oop_load_at(as_oop(), offset);
+  return ((const refArrayOopDesc* )this)->obj_at(index);
 }
 
 inline void objArrayOopDesc::obj_at_put(int index, oop value) {
-  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
-  ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
-  HeapAccess<IS_ARRAY>::oop_store_at(as_oop(), offset, value);
+  ((refArrayOopDesc* )this)->obj_at_put(index, value);
 }
 
 template <typename OopClosureType>

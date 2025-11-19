@@ -73,10 +73,11 @@ class Klass : public Metadata {
     InstanceStackChunkKlassKind,
     TypeArrayKlassKind,
     ObjArrayKlassKind,
+    RefArrayKlassKind,
     UnknownKlassKind
   };
 
-  static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
+  static const uint KLASS_KIND_COUNT = RefArrayKlassKind + 1;
  protected:
 
   // If you add a new field that points to any metaspace object, you
@@ -471,7 +472,7 @@ protected:
   static const int _lh_header_size_mask        = right_n_bits(BitsPerByte);  // shifted mask
   static const int _lh_array_tag_bits          = 2;
   static const int _lh_array_tag_shift         = BitsPerInt - _lh_array_tag_bits;
-  static const int _lh_array_tag_obj_value     = ~0x01;   // 0x80000000 >> 30
+  static const int _lh_array_tag_ref_value     = ~0x01;   // 0x80000000 >> 30
 
   static const unsigned int _lh_array_tag_type_value = 0Xffffffff; // ~0x00,  // 0xC0000000 >> 30
 
@@ -494,7 +495,10 @@ protected:
     return (juint)lh >= (juint)(_lh_array_tag_type_value << _lh_array_tag_shift);
   }
   static bool layout_helper_is_objArray(jint lh) {
-    // _lh_array_tag_obj_value == (lh >> _lh_array_tag_shift);
+    ShouldNotReachHere();
+  }
+  static bool layout_helper_is_refArray(jint lh) {
+    // _lh_array_tag_ref_value == (lh >> _lh_array_tag_shift);
     return (jint)lh < (jint)(_lh_array_tag_type_value << _lh_array_tag_shift);
   }
   static int layout_helper_header_size(jint lh) {
@@ -675,6 +679,7 @@ public:
   virtual bool is_instance_klass_slow()     const { return false; }
   virtual bool is_array_klass_slow()        const { return false; }
   virtual bool is_objArray_klass_slow()     const { return false; }
+  virtual bool is_refArray_klass_slow()     const { return false; }
   virtual bool is_typeArray_klass_slow()    const { return false; }
 #endif // ASSERT
  public:
@@ -699,7 +704,9 @@ public:
   bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
   bool is_array_klass()                 const { return assert_same_query( _kind >= TypeArrayKlassKind, is_array_klass_slow()); }
   bool is_stack_chunk_instance_klass()  const { return _kind == InstanceStackChunkKlassKind; }
-  bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind,  is_objArray_klass_slow()); }
+  bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind || _kind == RefArrayKlassKind,  is_objArray_klass_slow()); }
+  bool is_refArray_klass()              const { return assert_same_query( _kind == RefArrayKlassKind, is_refArray_klass_slow()); }
+  bool is_refined_objArray_klass()      const { return is_refArray_klass(); }
   bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query
 
