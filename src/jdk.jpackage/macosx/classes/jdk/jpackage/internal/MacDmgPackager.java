@@ -29,6 +29,7 @@ import static jdk.jpackage.internal.util.PathUtils.normalizedAbsolutePathString;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -43,6 +44,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
+import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathGroup;
@@ -229,7 +231,9 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     "-fs", "HFS+",
                     "-format", "UDRW").executeExpectSuccess();
         } catch (IOException ex) {
-            Log.verbose(ex); // Log exception
+            LOGGER.log(Level.TRACE, "Failed to create a DMG from the entire app image", ex);
+
+            LOGGER.log(Level.TRACE, "Will create an empty DMG and fill it manually");
 
             // Creating DMG from entire app image failed, so lets try to create empty
             // DMG and copy files manually. See JDK-8248059.
@@ -285,7 +289,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .timeout(3, TimeUnit.MINUTES)
                 .executeExpectSuccess();
             } catch (IOException ex) {
-                Log.verbose(ex);
+                LOGGER.log(Level.ERROR, "Failed to set background image", ex);
             }
 
             // volume icon
@@ -317,8 +321,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                             normalizedAbsolutePathString(mountedVolume)
                     ).executeExpectSuccess();
                 } catch (IOException ex) {
-                    Log.error(ex.getMessage());
-                    Log.verbose("Cannot enable custom icon using SetFile utility");
+                    LOGGER.log(Level.ERROR, "Failed to set custom icon", ex);
                 }
             } else {
                 Log.verbose(I18N.getString("message.setfile.dmg"));
@@ -345,12 +348,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                     .execute();
         }
 
-        try {
-            //Delete the temporary image
-            Files.deleteIfExists(protoDMG);
-        } catch (IOException ex) {
-            // Don't care if fails
-        }
+        FileUtils.deleteIfExistsIgnoreError(protoDMG, LOGGER);
     }
 
     private void detachVolume() throws IOException {
@@ -404,14 +402,17 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
                 .setAttemptTimeout(3, TimeUnit.SECONDS)
                 .execute();
         } catch (IOException ex) {
-            Log.verbose(ex);
+            LOGGER.log(Level.ERROR, "Failed to convert an interim DMG into the output DMG", ex);
+
+            LOGGER.log(Level.TRACE, "Try to convert a copy of an interim DMG into the output DMG", ex);
+
             // Something holds the file, try to convert a copy.
             Path copyDmg = protoCopyDmg();
             Files.copy(protoDmg(), copyDmg);
             try {
                 convert.apply(copyDmg).executeExpectSuccess();
             } finally {
-                Files.deleteIfExists(copyDmg);
+                FileUtils.deleteIfExistsIgnoreError(copyDmg, LOGGER);
             }
         }
     }
@@ -420,4 +421,6 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
     private static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
     private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
+
+    private static final System.Logger LOGGER = Logger.MAIN.get();
 }
