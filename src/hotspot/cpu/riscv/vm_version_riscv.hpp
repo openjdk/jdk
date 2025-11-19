@@ -65,7 +65,7 @@ class VM_Version : public Abstract_VM_Version {
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
     virtual void log_enabled() = 0;
-    virtual void log_disabled(const char* reason = nullptr) = 0;
+    virtual void log_disabled(const char* reason) = 0;
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -139,7 +139,7 @@ class VM_Version : public Abstract_VM_Version {
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
     void log_enabled();
-    void log_disabled(const char* reason = nullptr);
+    void log_disabled(const char* reason);
 
    protected:
     bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
@@ -210,7 +210,7 @@ class VM_Version : public Abstract_VM_Version {
     void disable_feature() { _value = DEFAULT_VALUE; }
     int64_t value() { return _value; }
     void log_enabled();
-    void log_disabled(const char* reason = nullptr);
+    void log_disabled(const char* reason);
   };
 
  public:

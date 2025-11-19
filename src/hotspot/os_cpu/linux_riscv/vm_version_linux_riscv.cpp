@@ -108,11 +108,7 @@ void VM_Version::RVExtFeatureValue::log_enabled() {
 }
 
 void VM_Version::RVExtFeatureValue::log_disabled(const char* reason) {
-  if (reason == nullptr) {
-    log_info(os, cpu)("Disabled RV64 feature \"%s\"", pretty());
-  } else {
-    log_info(os, cpu)("Disabled RV64 feature \"%s\" (%s)", pretty(), reason);
-  }
+  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%s)", pretty(), reason);
 }
 
 void VM_Version::RVNonExtFeatureValue::log_enabled() {
@@ -120,11 +116,7 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
 }
 
 void VM_Version::RVNonExtFeatureValue::log_disabled(const char* reason) {
-  if (reason == nullptr) {
-    log_info(os, cpu)("Disabled RV64 feature \"%s\" (%ld)", pretty(), value());
-  } else {
-    log_info(os, cpu)("Disabled RV64 feature \"%s\" (%ld) (%s)", pretty(), value(), reason);
-  }
+  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%ld) (%s)", pretty(), value(), reason);
 }
 
 void VM_Version::setup_cpu_available_features() {
