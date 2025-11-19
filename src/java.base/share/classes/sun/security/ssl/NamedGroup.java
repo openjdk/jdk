@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHParameterSpec;
@@ -403,10 +405,9 @@ enum NamedGroup {
             AlgorithmConstraints constraints, NamedGroupSpec type) {
 
         boolean hasFFDHEGroups = false;
-        for (String ng : sslConfig.namedGroups) {
-            NamedGroup namedGroup = NamedGroup.nameOf(ng);
-            if (namedGroup != null &&
-                namedGroup.isAvailable && namedGroup.spec == type) {
+        for (NamedGroup namedGroup :
+                SupportedGroups.getGroupsFromConfig(sslConfig)) {
+            if (namedGroup.isAvailable && namedGroup.spec == type) {
                 if (namedGroup.isPermitted(constraints)) {
                     return true;
                 }
@@ -441,8 +442,8 @@ enum NamedGroup {
     // Is the named group supported?
     static boolean isEnabled(SSLConfiguration sslConfig,
                              NamedGroup namedGroup) {
-        for (String ng : sslConfig.namedGroups) {
-            if (namedGroup.name.equalsIgnoreCase(ng)) {
+        for (NamedGroup ng : SupportedGroups.getGroupsFromConfig(sslConfig)) {
+            if (namedGroup.equals(ng)) {
                 return true;
             }
         }
@@ -456,12 +457,10 @@ enum NamedGroup {
             SSLConfiguration sslConfig,
             ProtocolVersion negotiatedProtocol,
             AlgorithmConstraints constraints, NamedGroupSpec[] types) {
-        for (String name : sslConfig.namedGroups) {
-            NamedGroup ng = NamedGroup.nameOf(name);
-            if (ng != null && ng.isAvailable &&
-                    (NamedGroupSpec.arrayContains(types, ng.spec)) &&
-                    ng.isAvailable(negotiatedProtocol) &&
-                    ng.isPermitted(constraints)) {
+        for (NamedGroup ng : SupportedGroups.getGroupsFromConfig(sslConfig)) {
+            if (ng.isAvailable && NamedGroupSpec.arrayContains(types, ng.spec)
+                    && ng.isAvailable(negotiatedProtocol)
+                    && ng.isPermitted(constraints)) {
                 return ng;
             }
         }
@@ -739,19 +738,86 @@ enum NamedGroup {
         }
     }
 
+    // Inner class encapsulating supported named groups.
     static final class SupportedGroups {
-        // the supported named groups, non-null immutable list
+
+        // Default named groups.
+        private static final NamedGroup[] defaultGroups = new NamedGroup[]{
+
+                // Primary XDH (RFC 7748) curves
+                X25519,
+
+                // Primary NIST Suite B curves
+                SECP256_R1,
+                SECP384_R1,
+                SECP521_R1,
+
+                // Secondary XDH curves
+                X448,
+
+                // FFDHE (RFC 7919)
+                FFDHE_2048,
+                FFDHE_3072,
+                FFDHE_4096,
+                FFDHE_6144,
+                FFDHE_8192
+        };
+
+        private static final String[] defaultNames = Arrays.stream(
+                        defaultGroups)
+                .filter(ng -> ng.isAvailable)
+                // Filter default groups names against default constraints.
+                .filter(ng -> ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
+                .map(ng -> ng.name)
+                .toArray(String[]::new);
+
+        private static final NamedGroup[] customizedGroups =
+                getCustomizedNamedGroups();
+
+        private static final String[] customizedNames =
+                customizedGroups == null ?
+                        null : Arrays.stream(customizedGroups)
+                        .map(ng -> ng.name)
+                        .toArray(String[]::new);
+
+        // Named group names for SSLConfiguration.
         static final String[] namedGroups;
 
         static {
-            // The value of the System Property defines a list of enabled named
-            // groups in preference order, separated with comma.  For example:
-            //
-            //      jdk.tls.namedGroups="secp521r1, secp256r1, ffdhe2048"
-            //
-            // If the System Property is not defined or the value is empty, the
-            // default groups and preferences will be used.
+            if (customizedNames != null) {
+                namedGroups = customizedNames;
+            } else {
+                if (defaultNames.length == 0) {
+                    SSLLogger.logWarning("ssl", "No default named groups");
+                }
+                namedGroups = defaultNames;
+            }
+        }
+
+        // Avoid the group lookup for default and customized groups.
+        static NamedGroup[] getGroupsFromConfig(SSLConfiguration sslConfig) {
+            if (sslConfig.namedGroups == defaultNames) {
+                return defaultGroups;
+            } else if (sslConfig.namedGroups == customizedNames) {
+                return customizedGroups;
+            } else {
+                return Arrays.stream(sslConfig.namedGroups)
+                        .map(NamedGroup::nameOf)
+                        .filter(Objects::nonNull)
+                        .toArray(NamedGroup[]::new);
+            }
+        }
+
+        // The value of the System Property defines a list of enabled named
+        // groups in preference order, separated with comma.  For example:
+        //
+        //      jdk.tls.namedGroups="secp521r1, secp256r1, ffdhe2048"
+        //
+        // If the System Property is not defined or the value is empty, the
+        // default groups and preferences will be used.
+        private static NamedGroup[] getCustomizedNamedGroups() {
             String property = System.getProperty("jdk.tls.namedGroups");
+
             if (property != null && !property.isEmpty()) {
                 // remove double quote marks from beginning/end of the property
                 if (property.length() > 1 && property.charAt(0) == '"' &&
@@ -760,63 +826,25 @@ enum NamedGroup {
                 }
             }
 
-            ArrayList<String> groupList;
             if (property != null && !property.isEmpty()) {
-                String[] groups = property.split(",");
-                groupList = new ArrayList<>(groups.length);
-                for (String group : groups) {
-                    group = group.trim();
-                    if (!group.isEmpty()) {
-                        NamedGroup namedGroup = nameOf(group);
-                        if (namedGroup != null) {
-                            if (namedGroup.isAvailable) {
-                                groupList.add(namedGroup.name);
-                            }
-                        }   // ignore unknown groups
-                    }
-                }
+                NamedGroup[] ret = Arrays.stream(property.split(","))
+                        .map(String::trim)
+                        .map(NamedGroup::nameOf)
+                        .filter(Objects::nonNull)
+                        .filter(ng -> ng.isAvailable)
+                        .toArray(NamedGroup[]::new);
 
-                if (groupList.isEmpty()) {
+                if (ret.length == 0) {
                     throw new IllegalArgumentException(
                             "System property jdk.tls.namedGroups(" +
-                            property + ") contains no supported named groups");
-                }
-            } else {        // default groups
-                NamedGroup[] groups = new NamedGroup[] {
-
-                        // Primary XDH (RFC 7748) curves
-                        X25519,
-
-                        // Primary NIST Suite B curves
-                        SECP256_R1,
-                        SECP384_R1,
-                        SECP521_R1,
-
-                        // Secondary XDH curves
-                        X448,
-
-                        // FFDHE (RFC 7919)
-                        FFDHE_2048,
-                        FFDHE_3072,
-                        FFDHE_4096,
-                        FFDHE_6144,
-                        FFDHE_8192,
-                    };
-
-                groupList = new ArrayList<>(groups.length);
-                for (NamedGroup group : groups) {
-                    if (group.isAvailable) {
-                        groupList.add(group.name);
-                    }
+                                    property
+                                    + ") contains no supported named groups");
                 }
 
-                if (groupList.isEmpty() &&
-                        SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("No default named groups");
-                }
+                return ret;
             }
 
-            namedGroups = groupList.toArray(new String[0]);
+            return null;
         }
     }
 }
