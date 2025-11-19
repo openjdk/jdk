@@ -306,24 +306,16 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             TKit.trace(String.format("Init fake runtime in [%s] directory",
                     fakeRuntimeDir));
 
-            Files.createDirectories(fakeRuntimeDir);
-
-            if (TKit.isLinux()) {
-                // Need to make the code in rpm spec happy as it assumes there is
-                // always something in application image.
-                fakeRuntimeDir.resolve("bin").toFile().mkdir();
-            }
-
             if (TKit.isOSX()) {
                 // Make MacAppImageBuilder happy
                 createBulkFile.accept(fakeRuntimeDir.resolve(Path.of(
                         "lib/jli/libjli.dylib")));
             }
 
-            // Mak sure fake runtime takes some disk space.
+            // Make sure fake runtime takes some disk space.
             // Package bundles with 0KB size are unexpected and considered
             // an error by PackageTest.
-            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("bin", "bulk")));
+            createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("lib", "bulk")));
 
             cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
         });
@@ -1225,6 +1217,24 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
             if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
                 MacHelper.verifyUnsignedBundleSignature(cmd);
+            }
+        }),
+        MAC_RUNTIME_PLIST_JDK_KEY(cmd -> {
+            if (TKit.isOSX()) {
+                var appLayout = cmd.appLayout();
+                var plistPath = appLayout.runtimeDirectory().resolve("Contents/Info.plist");
+                var keyName = "JavaVM";
+                var keyValue = MacHelper.readPList(plistPath).findDictValue(keyName);
+                if (cmd.isRuntime() || Files.isDirectory(appLayout.runtimeHomeDirectory().resolve("bin"))) {
+                    // There are native launchers in the runtime
+                    TKit.assertTrue(keyValue.isPresent(), String.format(
+                            "Check the runtime plist file [%s] contains '%s' key",
+                            plistPath, keyName));
+                } else {
+                    TKit.assertTrue(keyValue.isEmpty(), String.format(
+                            "Check the runtime plist file [%s] contains NO '%s' key",
+                            plistPath, keyName));
+                }
             }
         }),
         PREDEFINED_APP_IMAGE_COPY(cmd -> {
