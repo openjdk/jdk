@@ -100,6 +100,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
+    assert(!region->is_active_alloc_region(), "Not expecting any active alloc region at the time");
 
     size_t garbage = region->garbage();
     total_garbage += garbage;
@@ -108,7 +109,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
     } else if (region->is_regular()) {
-      if (!region->has_live() && region->has_allocs()) {
+      if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
