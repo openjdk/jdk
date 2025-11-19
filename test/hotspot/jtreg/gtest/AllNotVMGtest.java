@@ -56,7 +56,6 @@ public class AllNotVMGtest {
         TF("LogOutputList.is_level_single_output"),
         TF("LogOutputList.level_for"),
         TF("os_linux.addr_to_function_valid"),
-        TF("Semaphore.trywait", Platform.isOSX()),
         TF("ZArrayTest.slice"),
         TF("ZNUMATest.calculate_share"),
     };
