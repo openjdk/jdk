@@ -353,6 +353,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data, AOTClassLocatio
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_as_output();
+  dynamic_info->prepare_for_writing();
   ArchiveBuilder::write_archive(dynamic_info, nullptr, nullptr);
 
   address base = _requested_dynamic_archive_bottom;
