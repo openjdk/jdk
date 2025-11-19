@@ -1580,7 +1580,7 @@ class Http2Connection implements Closeable {
             stateLock.unlock();
         }
         if (debug.on()) debug.log("connection closed: closing stream %d", stream);
-        final Http2TerminationCause terminationCause = this.connTerminator.getTerminationCause();
+        final Http2TerminationCause terminationCause = getTerminationCause();
         assert terminationCause != null : "termination cause is null";
         stream.cancel(new IOException("Stream " + streamid + " cancelled", terminationCause.getCloseCause()));
     }
@@ -1686,7 +1686,7 @@ class Http2Connection implements Closeable {
         Throwable cause = null;
         synchronized (this) {
             if (!isOpen()) {
-                final Http2TerminationCause terminationCause = this.connTerminator.getTerminationCause();
+                final Http2TerminationCause terminationCause = getTerminationCause();
                 assert terminationCause != null : "termination cause is null";
                 cause = terminationCause.getCloseCause();
             }
@@ -2002,7 +2002,7 @@ class Http2Connection implements Closeable {
      * Returns the termination cause if the connection is closed, else returns null.
      */
     final Http2TerminationCause getTerminationCause() {
-        return this.connTerminator.getTerminationCause();
+        return this.connTerminator.determineTerminationCause();
     }
 
     // Responsible for doing all the necessary work for closing a Http2Connection
@@ -2100,14 +2100,14 @@ class Http2Connection implements Closeable {
         }
 
         /**
-         * Returns the termination cause for the connection. This method guarantees
-         * that when this method is called, if the
-         * {@linkplain Http2Connection#isOpen() connection is not open} then this returns
-         * a non-null termination cause.
+         * Returns the termination cause for the connection. This method guarantees that if the
+         * {@linkplain Http2Connection#isOpen() connection is not open}, when this method is called,
+         * then it returns a non-null termination cause. Returns null if the connection is open.
          */
-        private Http2TerminationCause getTerminationCause() {
+        private Http2TerminationCause determineTerminationCause() {
             final Http2TerminationCause tc = this.terminationCause.get();
             if (tc != null) {
+                // already terminated, return the cause
                 return tc;
             }
             if (!connection.channel().isOpen()) {
@@ -2119,7 +2119,7 @@ class Http2Connection implements Closeable {
                 assert terminated != null : "missing termination cause";
                 return terminated;
             }
-            return null;
+            return null; // connection still open
         }
     }
 }
