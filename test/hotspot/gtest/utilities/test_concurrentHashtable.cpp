@@ -551,7 +551,6 @@ public:
 };
 
 typedef ConcurrentHashTable<TestInterface, mtInternal> TestTable;
-typedef ConcurrentHashTable<TestInterface, mtInternal>::MultiGetHandle TestGetHandle;
 
 struct TestLookup {
   uintptr_t _val;
