@@ -64,8 +64,6 @@ class PSScavenge: AllStatic {
 
   static void clean_up_failed_promotion();
 
-  static bool should_attempt_scavenge();
-
   // Private accessors
   static PSCardTable* card_table()                 { assert(_card_table != nullptr, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
