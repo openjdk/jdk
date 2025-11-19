@@ -287,12 +287,12 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                            case Triple(_, A _, _) -> 0;
                            case Triple(_, _, A _) -> 0;
                            case Triple(A p, C(Nested _, NestedBaseA _), _) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Underneath _, NestedBaseA _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Underneath _, NestedBaseB _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Underneath _, NestedBaseC _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseC _), C(Underneath _, NestedBaseA _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseC _), C(Underneath _, NestedBaseB _)) -> 0;
-//                           case Path(A p, C(Nested _, NestedBaseC _), C(Underneath _, NestedBaseC _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseB _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseC _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseB _)) -> 0;
+//                           case Path(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseC _)) -> 0;
                        };
                    }
                    record Triple(Base c1, Base c2, Base c3) {}
@@ -475,6 +475,61 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "test.Test.Pair(test.Test.B(test.Test.B _))");
     }
 
+    @Test
+    public void testNeedToExpandIfRecordExists(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+                class Test {
+                   sealed interface A { }
+                   record B() implements A { }
+                   record C(A a) implements A { }
+
+                   void test(A a) {
+                       switch (a) {
+                           case C(B _) -> throw null;
+                       }
+                   }
+               }               """,
+               "test.Test.B _",
+               "test.Test.C(test.Test.C _)");
+    }
+
+    @Test
+    public void testComplex6(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface Base {}
+                   record NoOp() implements Base {}
+                   record Const() implements Base {}
+                   record Pair(Base n1,
+                               Base b2) implements Base {}
+
+                   int t(Base b) {
+                       return switch (b) {
+                           case NoOp _ -> 0;
+                           case Const _ -> 0;
+                           case Pair(NoOp _, _) -> 0;
+                           case Pair(Const _, _) -> 0;
+                           case Pair(Pair _, NoOp _) -> 0;
+                           case Pair(Pair _, Const _) -> 0;
+                           case Pair(Pair _, Pair(NoOp _, _)) -> 0;
+                           case Pair(Pair _, Pair(Const _, _)) -> 0;
+                           case Pair(Pair _, Pair(Pair(NoOp _, _), _)) -> 0;
+                           case Pair(Pair _, Pair(Pair(Const _, _), _)) -> 0;
+                           case Pair(Pair(NoOp _, _), Pair(Pair(Pair _, _), _)) -> 0;
+                           case Pair(Pair(Const _, _), Pair(Pair(Pair _, _), _)) -> 0;
+//                           case Pair(Pair(Pair _, _), Pair(Pair(Pair _, _), _)) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.Pair(Test.Pair(Test.Pair _, Test.Base _), Test.Pair(Test.Pair(Test.Pair _, Test.Base _), Test.Base _))");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -513,7 +568,8 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .diagnosticListener(d -> {
-                if ("compiler.err.not.exhaustive.details".equals(d.getCode())) {
+                if ("compiler.err.not.exhaustive.details".equals(d.getCode()) ||
+                    "compiler.err.not.exhaustive.statement.details".equals(d.getCode())) {
                     if (d instanceof DiagnosticSourceUnwrapper uw) {
                         d = uw.d;
                     }

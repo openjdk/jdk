@@ -872,7 +872,7 @@ public class ExhaustivenessComputer {
                 boolean reduced =
                         removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, applicableDirectPermittedPatterns);
 
-                if (!reduced) {
+                if (!reduced && !hasMatchingRecordPattern(basePatterns, inMissingPatterns, toExpand)) {
                     //if all immediate permitted subtypes are needed
                     //give up, and simply use the current pattern:
                     return inMissingPatterns;
@@ -948,7 +948,7 @@ public class ExhaustivenessComputer {
                 //this is particularly important for the case where the sealed supertype only has one permitted type, the record
                 //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
                 Set<PatternDescription> sortedCandidates =
-                        partialSortPattern(combinatorialPatterns, basePatterns, combinatorialPatterns);
+                        partialSortPattern(combinatorialPatterns, basePatterns, replace(inMissingPatterns, toExpand, combinatorialPatterns));
 
                 removeUnnecessaryPatterns(selectorType, bp, basePatterns, inMissingPatterns, sortedCandidates);
 
@@ -1132,7 +1132,7 @@ public class ExhaustivenessComputer {
                 }
             }
 
-            throw Assert.error();
+            return null;
         }
 
         private boolean basePatternsHaveRecordPatternOnThisSpot(Set<? extends PatternDescription> basePatterns,
