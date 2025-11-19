@@ -411,9 +411,6 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahHeapLocker locker(heap->lock());
     size_t young_trash_regions, old_trash_regions;
     size_t first_old, last_old, num_old;
-    // Release all alloc regions before rebuild free-set
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
     heap->free_set()->prepare_to_rebuild(young_trash_regions, old_trash_regions, first_old, last_old, num_old);
     // At the end of old-gen, we may find that we have reclaimed immediate garbage, allowing a longer allocation runway.
     // We may also find that we have accumulated canddiate regions for mixed evacuation.  If so, we will want to expand

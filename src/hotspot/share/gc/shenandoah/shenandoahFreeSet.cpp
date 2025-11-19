@@ -2172,6 +2172,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
   size_t num_regions = _heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
+    assert(!region->is_active_alloc_region(), "Not expecting any active alloc region at the time");
     if (region->is_trash()) {
       // Trashed regions represent immediate garbage identified by final mark and regions that had been in the collection
       // partition but have not yet been "cleaned up" following update refs.

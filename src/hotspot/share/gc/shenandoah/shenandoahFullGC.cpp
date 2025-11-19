@@ -1115,6 +1115,8 @@ void ShenandoahFullGC::phase5_epilog() {
 
   // Bring regions in proper states after the collection, and set heap properties.
   {
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
@@ -1143,6 +1145,4 @@ void ShenandoahFullGC::phase5_epilog() {
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
-
-  heap->free_set()->mutator_allocator()->reserve_alloc_regions();
 }

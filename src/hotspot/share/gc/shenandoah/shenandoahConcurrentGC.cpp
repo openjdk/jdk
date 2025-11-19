@@ -746,6 +746,13 @@ void ShenandoahConcurrentGC::op_final_mark() {
   }
 
   if (!heap->cancelled_gc()) {
+    {
+      // Release all alloc regions at the beginning of final mark.
+      ShenandoahHeapLocker locker(heap->lock());
+      heap->free_set()->mutator_allocator()->release_alloc_regions();
+      heap->free_set()->collector_allocator()->release_alloc_regions();
+    }
+
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 

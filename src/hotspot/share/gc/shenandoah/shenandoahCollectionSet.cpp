@@ -92,6 +92,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(Thread::current()->is_VM_thread(), "Must be VMThread");
   assert(!is_in(r), "Already in collection set");
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
+  assert(!r->is_active_alloc_region(), "Active alloc region can't be added to collection set");
 
   _cset_map[r->index()] = 1;
   size_t live    = r->get_live_data_bytes();

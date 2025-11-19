@@ -774,10 +774,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
-    
-    // Release all alloc regions before choose cset and rebuild free-set
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
     if (is_generational) {
       // Seed the collection set with resource area-allocated
       // preselected regions, which are removed when we exit this scope.
