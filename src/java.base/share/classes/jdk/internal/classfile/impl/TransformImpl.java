@@ -120,6 +120,7 @@ public final class TransformImpl {
 
         @Override
         public ClassTransform andThen(ClassTransform next) {
+            // Optimized for shared _ -> true filter in ClassTransform.transformingMethods(MethodTransform)
             if (next instanceof ClassMethodTransform(var nextTransform, var nextFilter) && filter == nextFilter)
                 return new ClassMethodTransform(transform.andThen(nextTransform), filter);
             else
@@ -142,6 +143,7 @@ public final class TransformImpl {
 
         @Override
         public ClassTransform andThen(ClassTransform next) {
+            // Optimized for shared _ -> true filter in ClassTransform.transformingFields(FieldTransform)
             if (next instanceof ClassFieldTransform(var nextTransform, var nextFilter) && filter == nextFilter)
                 return new ClassFieldTransform(transform.andThen(nextTransform), filter);
             else
