@@ -135,7 +135,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
       if (r != nullptr) {
         bool dummy;
         bool ready_for_retire = false;
-        obj = atomic_allocate_in(r, req, dummy, ready_for_retire);
+        obj = atomic_allocate_in(r, false, req, dummy, ready_for_retire);
         assert(obj != nullptr, "Should always succeed.");
 
         accounting_updater._need_update = true;
@@ -183,7 +183,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
     ShenandoahHeapRegion* r =  nullptr;
     if ((r = AtomicAccess::load_acquire(&_alloc_regions[idx]._address)) != nullptr && r->is_active_alloc_region()) {
       bool ready_for_retire = false;
-      obj = atomic_allocate_in(r, req, in_new_region, ready_for_retire);
+      obj = atomic_allocate_in(r, true, req, in_new_region, ready_for_retire);
       if (ready_for_retire) {
         regions_ready_for_refresh++;
       }
@@ -198,7 +198,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_in_alloc_regions(ShenandoahAll
   return nullptr;
 }
 
-inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
+inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* region, bool const is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire) {
   assert(ready_for_retire == false, "Sanity check");
   HeapWord* obj = nullptr;
   size_t actual_size = req.size();
@@ -209,6 +209,8 @@ inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* r
   }
   if (obj != nullptr) {
     assert(actual_size > 0, "Must be");
+    log_debug(gc, alloc)("%sAllocator: Allocated %lu bytes from heap region %lu, request size: %lu, alloc region: %s, remnant: %lu",
+      _alloc_partition_name, actual_size, region->index(), req.size() * HeapWordSize, is_alloc_region ? "true" : "false", region->free());
     req.set_actual_size(actual_size);
     if (pointer_delta(obj, region->bottom()) == actual_size) {
       // Set to true if it is the first object/tlab allocated in the region.
@@ -305,7 +307,7 @@ void ShenandoahAllocator::release_alloc_regions() {
       AtomicAccess::store(&alloc_region._address, static_cast<ShenandoahHeapRegion*>(nullptr));
       size_t free_bytes = r->free();
       if (free_bytes >= PLAB::min_size_bytes()) {
-        if (free_bytes == ShenandoahHeapRegion::region_size_bytes()) {
+        if (!r->has_allocs()) {
           r->make_empty();
           r->set_affiliation(FREE);
           _free_set->partitions()->increase_empty_region_counts(_alloc_partition_id, 1);
