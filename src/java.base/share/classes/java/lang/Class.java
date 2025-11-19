@@ -159,6 +159,10 @@ import sun.reflect.annotation.*;
  * other members are the classes and interfaces whose declarations are
  * enclosed within the top-level class declaration.
  *
+ * <p> Unless otherwise specified, methods in this class throw a
+ * {@link NullPointerException} when they are called with {@code null}
+ * or an array that contains {@code null} as an argument.
+ *
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
