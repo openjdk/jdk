@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.PrintStream;
+
 public class SuspendWithObjectMonitorWaitBase {
     protected static final String AGENT_LIB = "SuspendWithObjectMonitorWait";
     protected static final int exit_delta   = 95;
@@ -73,5 +75,113 @@ public class SuspendWithObjectMonitorWaitBase {
             throw new InternalError("Unexpected test state value: "
                     + "expected=" + exp + " actual=" + testState);
         }
+    }
+
+    public SuspendWithObjectMonitorWaitWorker launchWaiter(long waitTimeout) {
+        SuspendWithObjectMonitorWaitWorker waiter;
+        // launch the waiter thread
+        synchronized (barrierLaunch) {
+            waiter = new SuspendWithObjectMonitorWaitWorker("waiter", waitTimeout);
+            waiter.start();
+
+            while (testState != TS_WAITER_RUNNING) {
+                try {
+                    barrierLaunch.wait(0);  // wait until it is running
+                } catch (InterruptedException ex) {
+                }
+            }
+        }
+        return waiter;
+    }
+
+    public SuspendWithObjectMonitorWaitWorker launchResumer(SuspendWithObjectMonitorWaitWorker waiter) {
+        SuspendWithObjectMonitorWaitWorker resumer;
+        synchronized (barrierLaunch) {
+            resumer = new SuspendWithObjectMonitorWaitWorker("resumer", waiter);
+            resumer.start();
+
+            while (testState != TS_RESUMER_RUNNING) {
+                try {
+                    barrierLaunch.wait(0);  // wait until it is running
+                } catch (InterruptedException ex) {
+                }
+            }
+        }
+        return resumer;
+    }
+
+    public void barrierResumerNotify() {
+        synchronized (barrierResumer) {
+            checkTestState(TS_CALL_SUSPEND);
+
+            // tell resumer thread to resume waiter thread
+            testState = TS_READY_TO_RESUME;
+            barrierResumer.notify();
+
+            // Can't call checkTestState() here because the
+            // resumer thread may have already resumed the
+            // waiter thread.
+        }
+    }
+
+    public void shutDown(SuspendWithObjectMonitorWaitWorker resumer, SuspendWithObjectMonitorWaitWorker waiter) {
+        try {
+            resumer.join(JOIN_MAX * 1000);
+            if (resumer.isAlive()) {
+                System.err.println("Failure at " + count + " loops.");
+                throw new InternalError("resumer thread is stuck");
+            }
+            waiter.join(JOIN_MAX * 1000);
+            if (waiter.isAlive()) {
+                System.err.println("Failure at " + count + " loops.");
+                throw new InternalError("waiter thread is stuck");
+            }
+        } catch (InterruptedException ex) {
+        }
+    }
+
+    public int run(int timeMax, PrintStream out) {
+        return 0;
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length > 2) {
+            System.err.println("Invalid number of arguments, there are too many arguments.");
+            usage();
+        }
+
+        try {
+            System.loadLibrary(AGENT_LIB);
+            log("Loaded library: " + AGENT_LIB);
+        } catch (UnsatisfiedLinkError ule) {
+            log("Failed to load library: " + AGENT_LIB);
+            log("java.library.path: " + System.getProperty("java.library.path"));
+            throw ule;
+        }
+
+        int timeMax = 0;
+        for (int argIndex = 0; argIndex < args.length; argIndex++) {
+            if ("-p".equals(args[argIndex])) {
+                // Handle optional -p arg regardless of position.
+                printDebug = true;
+                continue;
+            }
+
+            if (argIndex < args.length) {
+                // timeMax is an optional arg.
+                try {
+                    timeMax = Integer.parseUnsignedInt(args[argIndex]);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + args[argIndex] +
+                            "': invalid time_max value.");
+                    usage();
+                }
+            } else {
+                timeMax = DEF_TIME_MAX;
+            }
+        }
+        SuspendWithObjectMonitorWaitBase test = new SuspendWithObjectMonitorWaitBase();
+        int result = test.run(timeMax, System.out);
+        System.exit(result + exit_delta);
     }
 }

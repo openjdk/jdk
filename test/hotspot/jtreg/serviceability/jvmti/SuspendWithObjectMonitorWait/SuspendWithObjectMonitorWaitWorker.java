@@ -21,14 +21,9 @@
  * questions.
  */
 
-class SuspendWithObjectMonitorWaitWorker extends Thread {
+public class SuspendWithObjectMonitorWaitWorker extends Thread {
     private SuspendWithObjectMonitorWaitWorker target;  // target for resume operation
     private final long waitTimeout;
-
-    public SuspendWithObjectMonitorWaitWorker(String name) {
-        super(name);
-        this.waitTimeout = 0;
-    }
 
     public SuspendWithObjectMonitorWaitWorker(String name, long waitTimeout) {
         super(name);

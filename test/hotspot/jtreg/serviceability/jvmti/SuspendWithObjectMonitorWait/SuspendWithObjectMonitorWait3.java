@@ -75,48 +75,9 @@ import java.io.PrintStream;
 
 public class SuspendWithObjectMonitorWait3 extends SuspendWithObjectMonitorWaitBase {
 
-    public static void main(String[] args) throws Exception {
-        if (args.length > 2) {
-            System.err.println("Invalid number of arguments, there are too many arguments.");
-            usage();
-        }
-
-        try {
-            System.loadLibrary(AGENT_LIB);
-            log("Loaded library: " + AGENT_LIB);
-        } catch (UnsatisfiedLinkError ule) {
-            log("Failed to load library: " + AGENT_LIB);
-            log("java.library.path: " + System.getProperty("java.library.path"));
-            throw ule;
-        }
-
-        int timeMax = 0;
-        for (int argIndex = 0; argIndex < args.length; argIndex++) {
-            if ("-p".equals(args[argIndex])) {
-                // Handle optional -p arg regardless of position.
-                printDebug = true;
-                continue;
-            }
-
-            if (argIndex < args.length) {
-                // timeMax is an optional arg.
-                try {
-                    timeMax = Integer.parseUnsignedInt(args[argIndex]);
-                } catch (NumberFormatException nfe) {
-                    System.err.println("'" + args[argIndex] +
-                                       "': invalid time_max value.");
-                    usage();
-                }
-            } else {
-                timeMax = DEF_TIME_MAX;
-            }
-        }
-
-        System.exit(run(timeMax, System.out) + exit_delta);
-    }
-
-    public static int run(int timeMax, PrintStream out) {
-        return (new SuspendWithObjectMonitorWait3()).doWork3(timeMax, out);
+    @Override
+    public int run(int timeMax, PrintStream out) {
+        return doWork3(timeMax, out);
     }
 
     // Suspend on the re-entry path of wait.
@@ -132,30 +93,10 @@ public class SuspendWithObjectMonitorWait3 extends SuspendWithObjectMonitorWaitB
             testState = TS_INIT;  // starting the test loop
 
             // launch the waiter thread
-            synchronized (barrierLaunch) {
-                waiter = new SuspendWithObjectMonitorWaitWorker("waiter", 100);
-                waiter.start();
-
-                while (testState != TS_WAITER_RUNNING) {
-                    try {
-                        barrierLaunch.wait(0);  // wait until it is running
-                    } catch (InterruptedException ex) {
-                    }
-                }
-            }
+            waiter = launchWaiter(100);
 
             // launch the resumer thread
-            synchronized (barrierLaunch) {
-                resumer = new SuspendWithObjectMonitorWaitWorker("resumer", waiter);
-                resumer.start();
-
-                while (testState != TS_RESUMER_RUNNING) {
-                    try {
-                        barrierLaunch.wait(0);  // wait until it is running
-                    } catch (InterruptedException ex) {
-                    }
-                }
-            }
+            resumer = launchResumer(waiter);
 
             checkTestState(TS_RESUMER_RUNNING);
 
@@ -201,18 +142,7 @@ public class SuspendWithObjectMonitorWait3 extends SuspendWithObjectMonitorWaitB
                 // - resumption of the waiter thread
                 // - a threadLock enter in the freshly resumed waiter thread
                 //
-
-                synchronized (barrierResumer) {
-                    checkTestState(TS_CALL_SUSPEND);
-
-                    // tell resumer thread to resume waiter thread
-                    testState = TS_READY_TO_RESUME;
-                    barrierResumer.notify();
-
-                    // Can't call checkTestState() here because the
-                    // resumer thread may have already resumed the
-                    // waiter thread.
-                }
+                barrierResumerNotify();
                 try {
                     // Delay for 1-second while holding the threadLock to force the
                     // resumer thread to block on entering the threadLock.
@@ -220,20 +150,7 @@ public class SuspendWithObjectMonitorWait3 extends SuspendWithObjectMonitorWaitB
                 } catch (Exception e) {}
             }
 
-            try {
-                resumer.join(JOIN_MAX * 1000);
-                if (resumer.isAlive()) {
-                    System.err.println("Failure at " + count + " loops.");
-                    throw new InternalError("resumer thread is stuck");
-                }
-                waiter.join(JOIN_MAX * 1000);
-                if (waiter.isAlive()) {
-                    System.err.println("Failure at " + count + " loops.");
-                    throw new InternalError("waiter thread is stuck");
-                }
-            } catch (InterruptedException ex) {
-            }
-
+            shutDown(waiter ,resumer);
             checkTestState(TS_WAITER_DONE);
         }
 
