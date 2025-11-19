@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8360561
+ * @bug 8371716
  * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
  *          Comparing such values in such range with != should always be true.
  * @run main/othervm -XX:-TieredCompilation
