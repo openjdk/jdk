@@ -111,6 +111,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.misc.VM;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
@@ -155,6 +156,11 @@ import static java.time.temporal.ChronoField.*;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    private static final boolean UNROLLING_PRINTERS_BY_CLASS_FILE;
+    static {
+        String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.UnrollingByClassFile");
+        UNROLLING_PRINTERS_BY_CLASS_FILE = property == null || Boolean.parseBoolean(property);
+    }
     /**
      * Query for a time-zone that is region-only.
      */
@@ -2525,7 +2531,11 @@ public final class DateTimeFormatterBuilder {
         private CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
             this.printerParsers = printerParsers;
             this.optional = optional;
-            this.formatter = DateTimePrinterFactory.createFormatter(printerParsers);
+            if (UNROLLING_PRINTERS_BY_CLASS_FILE) {
+                this.formatter = DateTimePrinterParserFactory.createFormatter(printerParsers, optional);
+            } else {
+                this.formatter = DateTimePrinterFactory.createFormatter(printerParsers);
+            }
         }
 
         /**
@@ -2742,8 +2752,8 @@ public final class DateTimeFormatterBuilder {
      * Prints or parses a character literal.
      */
     static final class CharLiteralPrinterParser implements DateTimePrinterParser {
-        private final char literal;
-        private final boolean isSpaceSeparator;
+        final char literal;
+        final boolean isSpaceSeparator;
 
         private CharLiteralPrinterParser(char literal) {
             this.literal = literal;
@@ -2851,7 +2861,7 @@ public final class DateTimeFormatterBuilder {
         final TemporalField field;
         final int minWidth;
         final int maxWidth;
-        private final SignStyle signStyle;
+        final SignStyle signStyle;
         final int subsequentWidth;
 
         /**
