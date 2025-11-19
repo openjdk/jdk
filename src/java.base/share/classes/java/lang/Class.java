@@ -161,7 +161,10 @@ import sun.reflect.annotation.*;
  *
  * <p> Unless otherwise specified, methods in this class throw a
  * {@link NullPointerException} when they are called with {@code null}
- * or an array that contains {@code null} as an argument.
+ * or an array that contains {@code null} as an argument.  If a method
+ * accepts such an argument, it is specified in the corresponding parameter.
+ * If a method throws a different exception for such an argument, it is
+ * specified in the exceptions thrown by that method.
  *
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
@@ -455,7 +458,6 @@ public final class Class<T> implements java.io.Serializable,
      * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
      * @throws    ClassNotFoundException if the class cannot be located
-     * @throws    NullPointerException if {@code name} is {@code null}
      *
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
@@ -543,7 +545,6 @@ public final class Class<T> implements java.io.Serializable,
      *            by this method fails
      * @throws    ClassNotFoundException if the class cannot be located by
      *            the specified class loader
-     * @throws    NullPointerException if {@code name} is {@code null}
      *
      * @see       java.lang.Class#forName(String)
      * @see       java.lang.ClassLoader
@@ -595,8 +596,6 @@ public final class Class<T> implements java.io.Serializable,
      * @return {@code Class} object of the given name defined in the given module;
      *         {@code null} if not found.
      *
-     * @throws NullPointerException if the given module or name is {@code null}
-     *
      * @throws LinkageError if the linkage fails
      *
      * @jls 12.2 Loading of Classes and Interfaces
@@ -625,8 +624,6 @@ public final class Class<T> implements java.io.Serializable,
      * null} is returned.
      *
      * @param primitiveName the name of the primitive type to find
-     *
-     * @throws NullPointerException if the argument is {@code null}
      *
      * @jls 4.2 Primitive Types and Values
      * @jls 15.8.2 Class Literals
@@ -793,8 +790,6 @@ public final class Class<T> implements java.io.Serializable,
      * @param     cls the {@code Class} object to be checked
      * @return    the {@code boolean} value indicating whether objects of the
      *            type {@code cls} can be assigned to objects of this class
-     * @throws    NullPointerException if the specified Class parameter is
-     *            null.
      * @since     1.1
      */
     @IntrinsicCandidate
@@ -2058,7 +2053,6 @@ public final class Class<T> implements java.io.Serializable,
      *         {@code name}
      * @throws NoSuchFieldException if a field with the specified name is
      *         not found.
-     * @throws NullPointerException if {@code name} is {@code null}
      *
      * @since 1.1
      * @jls 8.2 Class Members
@@ -2156,7 +2150,6 @@ public final class Class<T> implements java.io.Serializable,
      *         if {@code parameterTypes} contains {@code null},
      *         or if the name is {@value ConstantDescs#INIT_NAME} or
      *         {@value ConstantDescs#CLASS_INIT_NAME}
-     * @throws NullPointerException if {@code name} is {@code null}
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
@@ -2374,7 +2367,6 @@ public final class Class<T> implements java.io.Serializable,
      *          class
      * @throws  NoSuchFieldException if a field with the specified name is
      *          not found.
-     * @throws  NullPointerException if {@code name} is {@code null}
      *
      * @since 1.1
      * @jls 8.2 Class Members
@@ -2416,7 +2408,6 @@ public final class Class<T> implements java.io.Serializable,
      *         if {@code parameterTypes} contains {@code null},
      *         or if the name is {@value ConstantDescs#INIT_NAME} or
      *         {@value ConstantDescs#CLASS_INIT_NAME}
-     * @throws NullPointerException if {@code name} is {@code null}
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
@@ -2548,7 +2539,6 @@ public final class Class<T> implements java.io.Serializable,
      *          resource with this name is found, or the resource is in a package
      *          that is not {@linkplain Module#isOpen(String, Module) open} to at
      *          least the caller module.
-     * @throws  NullPointerException If {@code name} is {@code null}
      *
      * @see Module#getResourceAsStream(String)
      * @since  1.1
@@ -2644,7 +2634,6 @@ public final class Class<T> implements java.io.Serializable,
      *         resource is in a package that is not
      *         {@linkplain Module#isOpen(String, Module) open} to at least the caller
      *         module.
-     * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
      */
     @CallerSensitive
@@ -3526,7 +3515,6 @@ public final class Class<T> implements java.io.Serializable,
      * @throws ClassCastException if this {@code Class} object does not
      *    represent a subclass of the specified class (here "subclass" includes
      *    the class itself).
-     * @throws NullPointerException if {@code clazz} is {@code null}
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
@@ -3542,7 +3530,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
@@ -3555,7 +3542,6 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
     @Override
@@ -3568,7 +3554,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3598,7 +3583,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3614,7 +3598,6 @@ public final class Class<T> implements java.io.Serializable,
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -3841,7 +3824,6 @@ public final class Class<T> implements java.io.Serializable,
      * @param c the class to check
      * @return {@code true} if this class and {@code c} are members of
      * the same nest; and {@code false} otherwise.
-     * @throws NullPointerException if {@code c} is {@code null}
      *
      * @since 11
      */
