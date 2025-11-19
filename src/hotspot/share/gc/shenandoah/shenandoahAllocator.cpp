@@ -144,7 +144,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
           _free_set->increase_bytes_allocated(req.actual_size() * HeapWordSize);
         } else {
           _free_set->partitions()->increase_used(_alloc_partition_id, (req.actual_size() + req.waste()) * HeapWordSize);
-          r->set_update_watermark(r->top());
         }
 
         if (ready_for_retire) {
@@ -210,7 +209,7 @@ inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* r
   if (obj != nullptr) {
     assert(actual_size > 0, "Must be");
     log_debug(gc, alloc)("%sAllocator: Allocated %lu bytes from heap region %lu, request size: %lu, alloc region: %s, remnant: %lu",
-      _alloc_partition_name, actual_size, region->index(), req.size() * HeapWordSize, is_alloc_region ? "true" : "false", region->free());
+      _alloc_partition_name, actual_size * HeapWordSize, region->index(), req.size() * HeapWordSize, is_alloc_region ? "true" : "false", region->free());
     req.set_actual_size(actual_size);
     if (pointer_delta(obj, region->bottom()) == actual_size) {
       // Set to true if it is the first object/tlab allocated in the region.
@@ -220,8 +219,7 @@ inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* r
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
-      // TODO double check if race condition here could cause problem?
-      region->set_update_watermark(region->top());
+      region->concurrent_set_update_watermark(region->top());
     }
   }
   return obj;
@@ -296,6 +294,7 @@ void ShenandoahAllocator::release_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
+  log_debug(gc, alloc)("%sAllocator: Releasing all heap regions", _alloc_partition_name);
   for (uint i = 0; i < _alloc_region_count; i++) {
     ShenandoahAllocRegion& alloc_region = _alloc_regions[i];
     ShenandoahHeapRegion* r = AtomicAccess::load(&alloc_region._address);

@@ -474,6 +474,7 @@ public:
 
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
+  inline void concurrent_set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
 
   inline ShenandoahAffiliation affiliation() const;
