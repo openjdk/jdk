@@ -435,15 +435,13 @@ void VM_Version::c2_initialize() {
       UseAES = true;
     }
 
-    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics) && UseZbb) {
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
     }
 
-    if (UseAESCTRIntrinsics) {
-      if (!UseZbb) {
-        warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
-        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-      }
+    if (UseAESCTRIntrinsics && !UseZbb) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   } else {
     if (UseAES) {
@@ -455,7 +453,7 @@ void VM_Version::c2_initialize() {
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
     if (UseAESCTRIntrinsics) {
-      warning("AES/CTR intrinsics are not available on this CPU");
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvkn support.");
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   }

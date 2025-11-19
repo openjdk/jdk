@@ -2631,93 +2631,32 @@ class StubGenerator: public StubCodeGenerator {
     __ sd(t1, Address(counter));
   }
 
-  // CTR AES crypt.
-  // Arguments:
-  //
-  // Inputs:
-  //   c_rarg0   - source byte array address
-  //   c_rarg1   - destination byte array address
-  //   c_rarg2   - K (key) in little endian int array
-  //   c_rarg3   - counter vector byte array address
-  //   c_rarg4   - input length
-  //   c_rarg5   - saved encryptedCounter start
-  //   c_rarg6   - saved used length
-  //
-  // Output:
-  //   x10       - input length
-  //
-  address generate_counterMode_AESCrypt() {
-    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
-    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
-
-    __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
-    StubCodeMark mark(this, stub_id);
-
-    const Register in                  = c_rarg0;
-    const Register out                 = c_rarg1;
-    const Register key                 = c_rarg2;
-    const Register counter             = c_rarg3;
-    const Register input_len           = c_rarg4;
-    const Register saved_encrypted_ctr = c_rarg5;
-    const Register used_ptr            = c_rarg6;
-
-    const Register keylen              = c_rarg7; // temporary register
-
-    const address start = __ pc();
-    __ enter();
-
-    Label L_EXIT;
-    __ beqz(input_len, L_EXIT);
-
-    Label L_aes128, L_aes192;
-    // Compute #rounds for AES based on the length of the key array
-    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ mv(t0, 52);
-    __ bltu(keylen, t0, L_aes128);
-    __ beq(keylen, t0, L_aes192);
-    // Else we fallthrough to the biggest case (256-bit key size)
-
-    // Note: the following function performs crypt with key += 15*16
-    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
-
-    // Note: the following function performs crypt with key += 13*16
-    __ bind(L_aes192);
-    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
-
-    // Note: the following function performs crypt with key += 11*16
-    __ bind(L_aes128);
-    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_ptr);
-
-    __ bind(L_EXIT);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
-
-    return start;
-  }
-
   void counterMode_AESCrypt(int round, Register in, Register out, Register key, Register counter,
                             Register input_len,  Register saved_encrypted_ctr, Register used_ptr) {
     // Algorithm:
     //
     //   generate_aes_loadkeys();
+    //   load_counter_128(counter_hi, counter_lo, counter);
+    //
+    //   L_next:
+    //     if (used >= BLOCK_SIZE) goto L_main_loop;
     //
     //   L_encrypt_next:
-    //     while (used < BLOCK_SIZE) {
-    //       if (len == 0) goto L_exit;
-    //       out = in ^ saved_encrypted_ctr[used]);
+    //       *out = *in ^ saved_encrypted_ctr[used]);
     //       out++; in++; used++; len--;
-    //     }
+    //       if (len == 0) goto L_exit;
+    //       goto L_next;
     //
     //   L_main_loop:
     //     if (len == 0) goto L_exit;
     //     saved_encrypted_ctr = generate_aes_encrypt(counter);
-    //     if (len < BLOCK_SIZE) {
-    //       used = 0;
-    //       goto L_encrypt_next;
-    //     }
-    //     increase(counter);
+    //
+    //     add_counter_128(counter_hi, counter_lo);
+    //     be_store_counter_128(counter_hi, counter_lo, counter);
+    //     used = 0;
+    //
+    //     if(len < BLOCK_SIZE) goto L_encrypt_next;
+    //
     //     v_in = load_16Byte(in);
     //     v_out = load_16Byte(out);
     //     v_saved_encrypted_ctr = load_16Byte(saved_encrypted_ctr);
@@ -2727,10 +2666,12 @@ class StubGenerator: public StubCodeGenerator {
     //     len -= BLOCK_SIZE;
     //     used = BLOCK_SIZE;
     //     goto L_main_loop;
-    // }
     //
-    // L_exit:
-    //   return result;
+    //
+    //   L_exit:
+    //     store(used);
+    //     result = input_len
+    //     return result;
 
     const Register used          = x28;
     const Register len           = x29;
@@ -2814,6 +2755,73 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret();
   };
+
+  // CTR AES crypt.
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //   c_rarg5   - saved encryptedCounter start
+  //   c_rarg6   - saved used length
+  //
+  // Output:
+  //   x10       - input length
+  //
+  address generate_counterMode_AESCrypt() {
+    assert(UseZvkn, "need AES instructions (Zvkned extension) support");
+    assert(UseAESCTRIntrinsics, "need AES instructions (Zvkned extension) support");
+    assert(UseZbb, "need basic bit manipulation (Zbb extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubId stub_id = StubId::stubgen_counterMode_AESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    const Register in                  = c_rarg0;
+    const Register out                 = c_rarg1;
+    const Register key                 = c_rarg2;
+    const Register counter             = c_rarg3;
+    const Register input_len           = c_rarg4;
+    const Register saved_encrypted_ctr = c_rarg5;
+    const Register used_len_ptr        = c_rarg6;
+
+    const Register keylen              = c_rarg7; // temporary register
+
+    const address start = __ pc();
+    __ enter();
+
+    Label L_EXIT;
+    __ beqz(input_len, L_EXIT);
+
+    Label L_aes128, L_aes192;
+    // Compute #rounds for AES based on the length of the key array
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ mv(t0, 52); // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ bltu(keylen, t0, L_aes128);
+    __ beq(keylen, t0, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs crypt with key += 15*16
+    counterMode_AESCrypt(15, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 13*16
+    __ bind(L_aes192);
+    counterMode_AESCrypt(13, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    // Note: the following function performs crypt with key += 11*16
+    __ bind(L_aes128);
+    counterMode_AESCrypt(11, in, out, key, counter, input_len, saved_encrypted_ctr, used_len_ptr);
+
+    __ bind(L_EXIT);
+    __ mv(x10, input_len);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU,
