@@ -2144,7 +2144,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(StubId stub_id, address* e
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == expected_entry_count, "sanity check");
   GrowableArray<address>* entries_ptr = (entry_count == 1 ? nullptr : &entries);
-  GrowableArray<address>* extras_ptr = (add_extras ? extras_ptr : nullptr);
+  GrowableArray<address>* extras_ptr = (add_extras ? &extras : nullptr);
   if (find_archive_data(stub_id)) {
     address start = nullptr;
     address end = nullptr;
