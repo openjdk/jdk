@@ -305,7 +305,12 @@ inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
 
 inline void ShenandoahHeapRegion::set_update_watermark(HeapWord* w) {
   assert(bottom() <= w && w <= top(), "within bounds");
-  AtomicAccess::release_store(&_update_watermark, w);
+  HeapWord* watermark = nullptr;
+  while ((watermark = AtomicAccess::load(&_update_watermark)) < w) {
+    if (AtomicAccess::cmpxchg(&_update_watermark, watermark, w, memory_order_release) == watermark) {
+      return;
+    }
+  }
 }
 
 // Fast version that avoids synchronization, only to be used at safepoints.
