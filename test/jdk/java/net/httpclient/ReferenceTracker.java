@@ -390,12 +390,6 @@ public class ReferenceTracker {
         }
     }
 
-    private boolean isSelectorManager(Thread t) {
-        String name = t.getName();
-        if (name == null) return false;
-        return name.contains("SelectorManager");
-    }
-
     // This is a slightly more permissive check than the default checks,
     // it only verifies that all CFs returned by send/sendAsync have been
     // completed, and that all opened channels have been closed, and that
