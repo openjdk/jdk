@@ -32,7 +32,7 @@
 
 using namespace testing;
 
-class ZMapperTest : public ZTest {
+class ZMapperTest : public ZVMTest {
 private:
   static constexpr size_t ReservationSize = 3 * ZGranuleSize;
 

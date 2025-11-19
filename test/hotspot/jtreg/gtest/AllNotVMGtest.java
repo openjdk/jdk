@@ -57,8 +57,6 @@ public class AllNotVMGtest {
         TF("LogOutputList.level_for"),
         TF("os_linux.addr_to_function_valid"),
         TF("Semaphore.trywait", Platform.isOSX()),
-        TF("ZArrayTest.slice"),
-        TF("ZNUMATest.calculate_share"),
     };
 
     public static Stream<String> getFilteredTests() {
