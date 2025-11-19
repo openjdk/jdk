@@ -59,7 +59,7 @@ class LogFileStreamOutput;
 // ConfigurationLock. In addition flush() is called during JVM termination, via LogConfiguration::finalize.
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
-  friend class AsyncLogTest_logBuffer_vm_Test;
+  friend class AsyncLogTest_logBuffer__vm_Test;
   class Locker;
   class ProducerLocker;
   class ConsumerLocker;

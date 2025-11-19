@@ -55,7 +55,7 @@ public class CheckShuffledGtest {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static final TestFilter[] TEST_FILTERS = {
-        TF("LogTagSet.defaults_vm"),
+        TF("LogTagSet.defaults__vm"),
     };
 
     public static Stream<String> getFilteredTests() {

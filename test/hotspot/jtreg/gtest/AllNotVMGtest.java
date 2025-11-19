@@ -70,7 +70,7 @@ public class AllNotVMGtest {
     public static void main(String[] args) throws Throwable {
         // Create a negative filter which matches all VM gtests
         // and append all test with known issues.
-        var filter = Stream.concat(Stream.of("--gtest_filter=-*_vm:*_vm_assert"),
+        var filter = Stream.concat(Stream.of("--gtest_filter=-*__vm:*__other_vm:*__vm_assert"),
                                    getFilteredTests())
                            .collect(Collectors.joining(":"));
 
