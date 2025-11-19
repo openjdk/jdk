@@ -52,9 +52,6 @@ public class AllNotVMGtest {
     // with them, and should be removed once they are resolved.
     static TestFilter[] TEST_FILTERS = {
         TF("globalDefinitions.format_specifiers"),
-        TF("LogOutputList.is_level_multiple_outputs"),
-        TF("LogOutputList.is_level_single_output"),
-        TF("LogOutputList.level_for"),
         TF("os_linux.addr_to_function_valid"),
         TF("Semaphore.trywait", Platform.isOSX()),
         TF("ZArrayTest.slice"),
