@@ -32,7 +32,7 @@ import java.util.Objects;
 import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
- * Termination cause for a {@linkplain Http2Connection HTTP/2 connection}
+ * Termination cause for an {@linkplain Http2Connection HTTP/2 connection}
  */
 public abstract sealed class Http2TerminationCause {
     private String logMsg;
@@ -66,9 +66,9 @@ public abstract sealed class Http2TerminationCause {
     }
 
     /**
-     * Returns the IOException that is considered the cause of the connection termination.
+     * Returns the {@link IOException} that is considered the cause of the connection termination.
      * Even a {@linkplain #isAbnormalClose() normal} termination will have
-     * a IOException associated with it, so this method will always return a non-null instance.
+     * an {@code IOException} associated with it, so this method will always return a non-null instance.
      */
     public final IOException getCloseCause() {
         return this.reportedCause;

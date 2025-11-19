@@ -2016,8 +2016,9 @@ class Http2Connection implements Closeable {
             // already sent
             return;
         }
-        Log.logTrace("{0} sending GOAWAY {1}", connection, goAway);
-        if (debug.on()) {
+        if (Log.trace()) {
+            Log.logTrace("{0} sending GOAWAY {1}", connection, goAway);
+        } else if (debug.on()) {
             debug.log("sending GOAWAY " + goAway);
         }
         // this merely enqueues the frame
@@ -2072,14 +2073,17 @@ class Http2Connection implements Closeable {
             }
             // now close the connection
 
-            if (Log.errors()) {
-                Log.logError("Closing connection due to: {0}", tc);
-            } else if (debug.on()) {
+            if (Log.errors() || debug.on()) {
                 final String stateStr = "Abnormal close=" + tc.isAbnormalClose() +
                         ", has active streams=" + isActive() +
                         ", GOAWAY received=" + goAwayRecvd.get() +
                         ", GOAWAY sent=" + goAwaySent.get();
-                debug.log("Closing connection (" + stateStr + ") due to: " + tc);
+                if (Log.errors()) {
+                    Log.logError("Closing connection {0} ({1}) due to: {2}",
+                            connection, stateStr, tc);
+                } else {
+                    debug.log("Closing connection (" + stateStr + ") due to: " + tc);
+                }
             }
             // close the TubeSubscriber
             subscriber.close();
