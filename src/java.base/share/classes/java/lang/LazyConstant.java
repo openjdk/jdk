@@ -68,7 +68,7 @@ import java.util.function.Supplier;
  *        // ...
  *    }
  * }
- *}
+ * }
  * <p>
  * Initially, the lazy constant is <em>not initialized</em>. When {@code logger.get()}
  * is first invoked, it evaluates the computing function and initializes the constant to
@@ -125,7 +125,7 @@ import java.util.function.Supplier;
  *     }
  *
  * }
- *}
+ * }
  * Calling {@code BAR.get()} will create the {@code Bar} singleton if it is not already
  * created. Upon such a creation, a dependent {@code Foo} will first be created if
  * the {@code Foo} does not already exist.
@@ -242,10 +242,10 @@ public sealed interface LazyConstant<T>
     // Object methods
 
     /**
-     * {@return if this lazy constant is the same as the provided {@code obj}}
+     * {@return if this lazy constant is the same instance as the provided {@code obj}}
      * <p>
      * In other words, equals compares the identity of this lazy constant and {@code obj}
-     * to determine equality. Hence, two lazy constants with the same contents are
+     * to determine equality. Hence, two distinct lazy constants with the same contents are
      * <em>not</em> equal.
      * <p>
      * This method never triggers initialization of this lazy constant.
