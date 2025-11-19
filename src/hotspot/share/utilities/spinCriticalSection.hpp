@@ -27,7 +27,7 @@
 
 #include "runtime/javaThread.hpp"
 
-class SpinCriticalSectionHelper {
+class SpinCriticalSectionHelper : AllStatic {
   friend class SpinCriticalSection;
   template<class Lambda, class...Args>
   friend class SpinSingleSection;
@@ -35,15 +35,19 @@ class SpinCriticalSectionHelper {
   // Not for general synchronization use.
   static void spin_acquire(volatile int* Lock);
   static void spin_release(volatile int* Lock);
-  static bool try_spin_acquire(volatile int* Lock);
 };
 
-// Short critical section. To be used when having a
-// mutex is considered to be expensive.
+// Ad-hoc mutual exclusion primitive: spin critical section,
+// which employs a spin lock.
+//
+// We use this critical section _only for low-contention code, and
+// when it is know that the duration is short. To be used where
+// we're concerned about native mutex_t or HotSpot Mutex:: latency.
 class SpinCriticalSection {
 private:
   volatile int* const _lock;
 public:
+  NONCOPYABLE(SpinCriticalSection);
   SpinCriticalSection(volatile int* lock) : _lock(lock) {
     SpinCriticalSectionHelper::spin_acquire(_lock);
   }
@@ -52,26 +56,4 @@ public:
   }
 };
 
-template<class Lambda, class...Args>
-class SpinSingleSection {
-private:
-  volatile int* const _lock;
-  Thread* _lock_owner;
-public:
-  SpinSingleSection(volatile int* lock, Lambda& F, Args&... args) : _lock(lock), _lock_owner(nullptr) {
-    if (SpinCriticalSectionHelper::try_spin_acquire(_lock)) {
-      _lock_owner = Thread::current();
-      F(args...);
-    }
-  }
-  ~SpinSingleSection() {
-    // It is safe to not have any atomic operations here,
-    // as a thread either sees a nullptr or a pointer to a thread which
-    // succeeded in locking the lock. Comparison will fail in both
-    // cases if it is not a succeeded thread.
-    if (_lock_owner == Thread::current()) {
-      SpinCriticalSectionHelper::spin_release(_lock);
-    }
-  }
-};
-#endif //SHARE_UTILITIES_SPINCRITICALSECTION_HPP
+#endif // SHARE_UTILITIES_SPINCRITICALSECTION_HPP

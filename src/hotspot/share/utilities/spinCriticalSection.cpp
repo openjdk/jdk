@@ -24,35 +24,19 @@
 
 #include "runtime/atomicAccess.hpp"
 #include "utilities/spinCriticalSection.hpp"
+#include "utilities/spinYield.hpp"
 
- // Ad-hoc mutual exclusion primitive: spin lock
- //
- // We employ a spin lock _only for low-contention, fixed-length
- // short-duration critical sections where we're concerned
- // about native mutex_t or HotSpot Mutex:: latency.
 void SpinCriticalSectionHelper::spin_acquire(volatile int* adr) {
   if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }
 
+  SpinYield sy(4096, 5, 1000000);
+
   // Slow-path : We've encountered contention -- Spin/Yield/Block strategy.
-  int ctr = 0;
-  int yields = 0;
   for (;;) {
     while (*adr != 0) {
-      ++ctr;
-      if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
-        if (yields > 5) {
-          os::naked_short_sleep(1);
-        }
-        else {
-          os::naked_yield();
-          ++yields;
-        }
-      }
-      else {
-        SpinPause();
-      }
+      sy.wait();
     }
     if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) return;
   }
@@ -70,12 +54,5 @@ void SpinCriticalSectionHelper::spin_release(volatile int* adr) {
   // So we need a #loadstore|#storestore "release" memory barrier before
   // the ST of 0 into the lock-word which releases the lock.
   AtomicAccess::release_store(adr, 0);
-}
-
-bool SpinCriticalSectionHelper::try_spin_acquire(volatile int* adr) {
-  if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
-    return true;
-  }
-  return false;
 }
 

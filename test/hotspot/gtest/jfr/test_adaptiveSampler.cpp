@@ -38,7 +38,6 @@
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinCriticalSection.hpp"
 #include "unittest.hpp"

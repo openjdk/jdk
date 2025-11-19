@@ -317,13 +317,13 @@ oop ObjectMonitor::object() const {
 void ObjectMonitor::set_object_strong() {
   check_object_context();
   if (_object_strong.is_empty()) {
-    auto setObjectStrongLambda = [&](OopHandle& object_strong, const WeakHandle& object) {
+    if (AtomicAccess::cmpxchg(&_object_strong_lock, 0, 1) == 0) {
       if (_object_strong.is_empty()) {
         assert(_object.resolve() != nullptr, "");
-        object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
+        _object_strong = OopHandle(JavaThread::thread_oop_storage(), _object.resolve());
       }
-    };
-    SpinSingleSection<decltype(setObjectStrongLambda), OopHandle, WeakHandle> sss(&_object_strong_lock, setObjectStrongLambda, _object_strong, _object);
+      AtomicAccess::release_store(&_object_strong_lock, 0);
+    }
   }
 }
 

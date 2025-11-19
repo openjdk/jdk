@@ -63,11 +63,9 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   // pretty badly it turns out.
   {
     SpinCriticalSection scs(&ListLock);
-    {
-      ev = FreeList;
-      if (ev != nullptr) {
-        FreeList = ev->FreeNext;
-      }
+    ev = FreeList;
+    if (ev != nullptr) {
+      FreeList = ev->FreeNext;
     }
   }
 
