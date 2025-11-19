@@ -455,7 +455,6 @@ JTReg keywords sent to JTReg using `-k`. Please be careful in making sure that
 spaces and special characters (like `!`) are properly quoted. To avoid some
 issues, the special value `%20` can be used instead of space.
 
-
 #### EXTRA_PROBLEM_LISTS
 
 Use additional problem lists file or files, in addition to the default
