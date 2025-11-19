@@ -42,11 +42,13 @@ public class TestMissingOptMoveX2YLoadX {
     static volatile long b;
 
     public static void main(String[] strArr) {
-        Double.longBitsToDouble(0L);
-        test();
+        // could theoretically happen with other variants of MoveNode
+        // but there is no known reproducer for the other cases
+        Double.longBitsToDouble(0l);
+        testMoveL2D();
     }
 
-    static void test() {
+    static void testMoveL2D() {
         int e = 8, f, g = 9, h = 2, i[] = new int[N];
         long j[] = new long[N];
         while (++e < 37) {
