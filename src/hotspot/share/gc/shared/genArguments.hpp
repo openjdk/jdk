@@ -50,6 +50,8 @@ private:
   static size_t scale_by_NewRatio_aligned(size_t base_size, size_t alignment);
 
 protected:
+  virtual size_t young_gen_size_lower_bound();
+  virtual size_t old_gen_size_lower_bound();
   virtual void initialize_heap_flags_and_sizes();
 };
 

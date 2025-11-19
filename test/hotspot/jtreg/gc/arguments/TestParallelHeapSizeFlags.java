@@ -29,7 +29,9 @@ package gc.arguments;
  * @summary Tests argument processing for initial and maximum heap size for the
  * parallel collectors.
  * @key flag-sensitive
+ * @comment Since 8372150, UseLargePages may alter Min and Initial heap size
  * @requires vm.gc.Parallel & vm.opt.MinHeapSize == null & vm.opt.MaxHeapSize == null & vm.opt.InitialHeapSize == null
+ * @requires !vm.opt.final.UseLargePages
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @library /

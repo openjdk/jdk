@@ -33,9 +33,8 @@ class CollectedHeap;
 class ParallelArguments : public GenArguments {
 private:
   virtual void initialize_alignments();
+  virtual size_t young_gen_size_lower_bound();
   virtual void initialize_heap_flags_and_sizes();
-
-  void initialize_heap_flags_and_sizes_one_pass();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();

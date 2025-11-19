@@ -105,36 +105,22 @@ void ParallelArguments::initialize_alignments() {
   HeapAlignment = compute_heap_alignment();
 }
 
-void ParallelArguments::initialize_heap_flags_and_sizes_one_pass() {
-  // Do basic sizing work
-  GenArguments::initialize_heap_flags_and_sizes();
+size_t ParallelArguments::young_gen_size_lower_bound() {
+  const size_t num_eden_spaces = UseNUMA
+      ? os::numa_get_groups_num()
+      : 1;
+
+  // One for each space in eden and two survivors
+  return (num_eden_spaces + 2) * SpaceAlignment;
 }
 
 void ParallelArguments::initialize_heap_flags_and_sizes() {
-  initialize_heap_flags_and_sizes_one_pass();
-
-  if (!UseLargePages) {
-    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
-    return;
+  const size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  if (page_size > SpaceAlignment) {
+    SpaceAlignment = page_size;
   }
 
-  // If using large-page, need to update SpaceAlignment so that spaces are page-size aligned.
-  const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
-  const size_t page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
-  ParallelScavengeHeap::set_desired_page_size(page_sz);
-
-  if (page_sz == os::vm_page_size()) {
-    log_warning(gc, heap)("MinHeapSize (%zu) must be large enough for 4 * page-size; Disabling UseLargePages for heap", MinHeapSize);
-    return;
-  }
-
-  // Space is largepage-aligned.
-  size_t new_alignment = page_sz;
-  if (new_alignment != SpaceAlignment) {
-    SpaceAlignment = new_alignment;
-    // Redo everything from the start
-    initialize_heap_flags_and_sizes_one_pass();
-  }
+  GenArguments::initialize_heap_flags_and_sizes();
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {
