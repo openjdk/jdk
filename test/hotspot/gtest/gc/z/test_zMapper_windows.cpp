@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 using namespace testing;
 
-class ZMapperTest : public ZTest {
+class ZMapperTest : public ZVMTest {
 private:
   static constexpr size_t ReservationSize = 3 * ZGranuleSize;
 
