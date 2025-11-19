@@ -3373,13 +3373,14 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
-    if (r->is_affiliated() && r->affiliation() != affiliation && !r->is_trash()) {
+    r->try_recycle_under_lock();
+    assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty.");
+    if (r->is_affiliated() && r->affiliation() != affiliation) {
       continue;
     }
     size_t ac_words = alloc_capacity_words(r);
     if (ac_words >= PLAB::min_size()) {
-      if (r->is_trash() || r->is_empty()) {
-        r->try_recycle_under_lock();
+      if (r->is_empty()) {
         assert(r->affiliation() == FREE, "Empty region must be free");
         r->set_affiliation(affiliation);
         r->make_regular_allocation(affiliation);
@@ -3449,10 +3450,15 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
     if (r->is_trash() && _heap->is_concurrent_weak_root_in_progress()) {
       continue;
     }
-    if (r->is_affiliated() && r->affiliation() != affiliation && !r->is_trash()) {
+    // Found a region with enough capacity to meet the min_free_words condition, prepare the region and return it here
+    r->try_recycle_under_lock();
+    assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty.");
+    if (r->is_affiliated() && r->affiliation() != affiliation) {
       continue;
     }
+
     if (r->affiliation() == FREE && use_affiliated_region_first) {
+      available_regions_seem_for_alloc++;
       if (first_free_region == nullptr) {
         first_free_region = r;
       }
@@ -3467,8 +3473,6 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
       ac_words = align_down((ac_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
     }
     if (ac_words >= min_free_words) {
-      // Found a region with enough capacity to meet the min_free_words condition, prepare the region and return it here
-      r->try_recycle_under_lock();
       if (r->is_empty()) {
         assert(r->affiliation() == FREE, "Empty region must be free");
         r->set_affiliation(affiliation);
@@ -3484,7 +3488,6 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
   if (first_free_region != nullptr) {
     assert(partition == ShenandoahFreeSetPartitionId::Collector || partition == ShenandoahFreeSetPartitionId::OldCollector, "Must be");
     assert(first_free_region->is_empty(), "Free region must be empty");
-    first_free_region->try_recycle_under_lock(); // Still need this due to race condition with concurrent recycle which is done w/o holding heap lock.
     first_free_region->set_affiliation(affiliation);
     first_free_region->make_regular_allocation(affiliation);
     partitions()->one_region_is_no_longer_empty(partition);
