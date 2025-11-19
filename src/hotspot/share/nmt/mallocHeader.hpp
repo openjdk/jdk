@@ -111,12 +111,10 @@ class MallocHeader {
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 
   uint16_t get_footer() const {
-    AsanPoisoningHelper aph(reinterpret_cast<uint16_t*>(footer_address()));
     return build_footer(footer_address()[0], footer_address()[1]);
   }
 
   void set_footer(uint16_t v) {
-    AsanPoisoningHelper aph(reinterpret_cast<uint16_t*>(footer_address()));
     footer_address()[0] = (uint8_t)(v >> 8);
     footer_address()[1] = (uint8_t)v;
   }
@@ -124,44 +122,25 @@ class MallocHeader {
   template<typename InTypeParam, typename OutTypeParam>
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
-  void asan_poison_self() {
-      AsanPoisoningHelper<uint16_t>::poison_memory(&_canary);
-      AsanPoisoningHelper<uint16_t>::poison_memory(reinterpret_cast<uint16_t*>(footer_address()));
-      AsanPoisoningHelper<size_t>::poison_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<uint32_t>::poison_memory(&_alt_canary));
-  }
-
-  void asan_unpoison_self() {
-      AsanPoisoningHelper<uint16_t>::unpoison_memory(&_canary);
-      AsanPoisoningHelper<uint16_t>::unpoison_memory(reinterpret_cast<uint16_t*>(footer_address()));
-      AsanPoisoningHelper<size_t>::unpoison_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<uint32_t>::unpoison_memory(&_alt_canary));
-  }
-
   #ifndef _LP64
-  inline uint32_t alt_canary() const {
-    AsanPoisoningHelper aph(&_alt_canary);
-    return _alt_canary;
-  }
-
-  inline void set_alt_canary(uint32_t value) {
-    AsanPoisoningHelper aph(&_alt_canary);
-      _alt_canary = value;
-  }
+  inline uint32_t alt_canary() const { return _alt_canary; }
+  inline void set_alt_canary(uint32_t value) { _alt_canary = value; }
   #endif
 
-  inline void set_header_canary(uint16_t value) {
-    // _canary is unpoisoned until aph dtor is called
-    AsanPoisoningHelper aph(&_canary);
-    _canary = value;
-  }
-
-  inline uint16_t canary() const {
-    AsanPoisoningHelper aph(&_canary);
-    return _canary;
-  }
+  inline void set_header_canary(uint16_t value) { _canary = value; }
+  inline uint16_t canary() const { return _canary; }
 
 public:
+  void asan_poison_self() const {
+    AsanPoisoningHelper::poison_memory(footer_address(), sizeof(uint16_t)); // don't change the order
+    AsanPoisoningHelper::poison_memory(this, sizeof(MallocHeader));
+  }
+
+  void asan_unpoison_self() const {
+    AsanPoisoningHelper::unpoison_memory(this, sizeof(MallocHeader));
+    AsanPoisoningHelper::unpoison_memory(footer_address(), sizeof(uint16_t));
+  }
+
   uint8_t* footer_address() const { return ((address)this) + sizeof(MallocHeader) + size(); }
 
   // Contains all of the necessary data to to deaccount block with NMT.
@@ -174,10 +153,7 @@ public:
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
-  inline size_t size() const {
-    AsanPoisoningHelper aph(&_size);
-    return _size;
-  }
+  inline size_t size() const { return _size; }
 
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }

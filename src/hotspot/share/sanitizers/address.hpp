@@ -76,32 +76,41 @@
   } while (false)
 #endif
 
-template<typename T>
+
+#ifdef ADDRESS_SANITIZER
+// This class uses RAII to temproraily unpoison a memory block.
+// Note that on dtor the memory block will be poisoned, regardless of its original un-/poisoned state.
+// General un/poisoning API are provided too.
 class AsanPoisoningHelper {
-  const T* _memory_region;
+  const void* _memory_region;
+  const size_t _size;
  public:
   AsanPoisoningHelper() = delete;
-  AsanPoisoningHelper(const T* addr) : _memory_region(addr) {
-    #if INCLUDE_ASAN
-      ASAN_UNPOISON_MEMORY_REGION(_memory_region, sizeof(T));
-    #endif
+  AsanPoisoningHelper(const void* addr, const size_t size) : _memory_region(addr), _size(size) {
+    ASAN_UNPOISON_MEMORY_REGION(_memory_region, _size);
   }
   ~AsanPoisoningHelper() {
-    #if INCLUDE_ASAN
-      ASAN_POISON_MEMORY_REGION(_memory_region, sizeof(T));
-    #endif
+    ASAN_POISON_MEMORY_REGION(_memory_region, _size);
   }
-  static void poison_memory(const T* addr) {
-    #if INCLUDE_ASAN
-      ASAN_POISON_MEMORY_REGION(addr, sizeof(T));
-    #endif
+  static void poison_memory(const void* addr, const size_t size) {
+    ASAN_POISON_MEMORY_REGION(addr, size);
   }
-  static void unpoison_memory(const T* addr) {
-    #if INCLUDE_ASAN
-      ASAN_UNPOISON_MEMORY_REGION(addr, sizeof(T));
-    #endif
+  static void unpoison_memory(const void* addr, size_t size) {
+    ASAN_UNPOISON_MEMORY_REGION(addr, size);
   }
 };
+
+#elif
+
+class AsanPoisoningHelper {
+ public:
+  AsanPoisoningHelper() = delete;
+  AsanPoisoningHelper(const void* addr, const size_t size) {}
+  ~AsanPoisoningHelper() { }
+  static void poison_memory(const void* addr, const size_t size) { }
+  static void unpoison_memory(const void* addr, size_t size) { }
+};
+#endif
 
 class outputStream;
 

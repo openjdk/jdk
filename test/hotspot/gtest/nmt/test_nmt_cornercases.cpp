@@ -34,6 +34,7 @@
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MemTag mem_tag, size_t size) {
   const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
+  hdr->asan_unpoison_self();
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->mem_tag(), mem_tag);
 }

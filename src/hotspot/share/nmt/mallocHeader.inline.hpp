@@ -133,6 +133,9 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   // Note: if you modify the error messages here, make sure you
   // adapt the associated gtests too.
 
+  AsanPoisoningHelper aph_header(this, sizeof(MallocHeader));
+  AsanPoisoningHelper aph_footer(footer_address(), sizeof(_canary));
+
   // Check header canary
   if (canary() != _header_canary_live_mark) {
     *p_corruption = (address)this;

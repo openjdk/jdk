@@ -196,6 +196,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   // Read back
   {
     const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
+    AsanPoisoningHelper aph(header2, sizeof(MallocHeader));
     assert(header2->size() == size, "Wrong size");
     assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
@@ -210,6 +211,7 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
+  header->asan_unpoison_self();
   deaccount(header->free_info());
 
   if (ZapCHeap) {

@@ -707,19 +707,24 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
       return nullptr;
     }
 
-    const size_t old_size = MallocTracker::malloc_header(memblock)->size();
+    MallocHeader* header = MallocTracker::malloc_header(memblock);
+    header->asan_unpoison_self();
+    const size_t old_size = header->size();
 
     // Observe MallocLimit
     if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
+      header->asan_poison_self();// keep current header poisoned when realloc failed
       return nullptr;
     }
 
-    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
-    // may invalidate the old block, including its header.
-    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    // resolve_checked() will poison the header on return. Get FreeInfo and mem_tag here to avoid unpoisoning again.
+    const MallocHeader::FreeInfo free_info = header->free_info();
     assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
            NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
-    const MallocHeader::FreeInfo free_info = header->free_info();
+
+    // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
+    // may invalidate the old block, including its header.
+    header = MallocHeader::resolve_checked(memblock);
 
     header->mark_block_as_dead();
 

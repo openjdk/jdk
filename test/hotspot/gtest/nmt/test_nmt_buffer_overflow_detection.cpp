@@ -32,8 +32,6 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
-#if !INCLUDE_ASAN
-
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
 #define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT has detected a memory corruption bug."
@@ -51,6 +49,8 @@
   }
 
 ///////
+
+#if !INCLUDE_ASAN
 
 static void test_overwrite_front() {
   address p = (address) os::malloc(1, mtTest);
@@ -182,25 +182,17 @@ TEST_VM(NMT, test_realloc) {
 
 #else // ASAN is enabled
 
-#define DEFINE_ASAN_TEST(test_function)                                                   \
-  TEST_VM_FATAL_ERROR_MSG(NMT_ASAN, test_function, ".*AddressSanitizer.*") {              \
-    if (MemTracker::tracking_level() > NMT_off) {                                         \
-      test_function ();                                                                   \
-    } else {                                                                              \
-      /* poisoning header/footer of memory requires NMT to be on. If off, fake assert. */ \
-      guarantee(false,                                                                    \
-                "fake message ignore this - AddressSanitizer");                           \
-    }                                                                                     \
-  }
+#define DEFINE_ASAN_TEST(test_function)  \
+  DEFINE_TEST(test_function, ".*AddressSanitizer.*")
 
-static void test_write_canary() {
+static void test_write_header() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
   *canary_ptr = 1;
 }
 
-static void test_read_canary() {
+static void test_read_header() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
@@ -224,23 +216,7 @@ static void test_read_footer() {
   uint16_t read_footer = *footer_ptr;
 }
 
-static void test_write_size() {
-  const size_t SIZE = 10;
-  char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
-  *size_ptr = 1;
-}
-
-static void test_read_size() {
-  const size_t SIZE = 10;
-  char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
-  size_t read_size = *size_ptr;
-}
-
-static void test_write_canary_after_realloc() {
+static void test_write_header_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
@@ -248,7 +224,7 @@ static void test_write_canary_after_realloc() {
   *canary_ptr = 1;
 }
 
-static void test_read_canary_after_realloc() {
+static void test_read_header_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
@@ -275,37 +251,14 @@ static void test_read_footer_after_realloc() {
   uint16_t read_footer = *footer_ptr;
 }
 
-static void test_write_size_after_realloc() {
-  const size_t SIZE = 10;
-  char* p = (char*)os::malloc(SIZE, mtTest);
-  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
-  *size_ptr = 1;
-}
-
-static void test_read_size_after_realloc() {
-  const size_t SIZE = 10;
-  char* p = (char*)os::malloc(SIZE, mtTest);
-  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
-  size_t read_size = *size_ptr;
-}
-
-
-DEFINE_ASAN_TEST(test_write_canary);
-DEFINE_ASAN_TEST(test_read_canary);
+DEFINE_ASAN_TEST(test_write_header);
+DEFINE_ASAN_TEST(test_read_header);
 DEFINE_ASAN_TEST(test_write_footer);
 DEFINE_ASAN_TEST(test_read_footer);
-DEFINE_ASAN_TEST(test_write_size);
-DEFINE_ASAN_TEST(test_read_size);
-DEFINE_ASAN_TEST(test_write_canary_after_realloc);
-DEFINE_ASAN_TEST(test_read_canary_after_realloc);
+DEFINE_ASAN_TEST(test_write_header_after_realloc);
+DEFINE_ASAN_TEST(test_read_header_after_realloc);
 DEFINE_ASAN_TEST(test_write_footer_after_realloc);
 DEFINE_ASAN_TEST(test_read_footer_after_realloc);
-DEFINE_ASAN_TEST(test_write_size_after_realloc);
-DEFINE_ASAN_TEST(test_read_size_after_realloc);
 
 static void test_poison_local() {
   uint16_t a;
@@ -319,7 +272,7 @@ TEST_VM(NMT_ASAN, test_unpoison_temporarily_no_death) {
   uint16_t a;
   ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
   {
-    AsanPoisoningHelper<uint16_t> aph(&a);
+    AsanPoisoningHelper aph(&a, sizeof(a));
     a = 2;
     EXPECT_EQ(a, 2);
   }
@@ -329,7 +282,7 @@ static void test_unpoison_temporarily() {
   uint16_t a;
   ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
   {
-    AsanPoisoningHelper<uint16_t> aph(&a);
+    AsanPoisoningHelper aph(&a, sizeof(a));
     a = 2;
     EXPECT_EQ(a, 2);
   }
