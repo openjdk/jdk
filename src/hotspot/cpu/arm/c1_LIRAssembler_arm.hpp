@@ -54,7 +54,7 @@
   enum {
     _call_stub_size = 16,
     _exception_handler_size = PRODUCT_ONLY(68) NOT_PRODUCT(68+60),
-    _deopt_handler_size = 20
+    _deopt_handler_size = 16
   };
 
  public:

@@ -39,6 +39,7 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
@@ -114,24 +115,29 @@ public final class JdkConsoleImpl implements JdkConsole {
     // check if `System.console()` returns a Console instance and use it if available. Otherwise,
     // it should call this method to obtain a JdkConsoleImpl. This ensures only one Console
     // instance exists in the Java runtime.
-    private static final StableValue<Optional<JdkConsoleImpl>> INSTANCE = StableValue.of();
-    public static Optional<JdkConsoleImpl> passwordConsole() {
-        return INSTANCE.orElseSet(() -> {
-            // If there's already a proper console, throw an exception
-            if (System.console() != null) {
-                throw new IllegalStateException("Can’t create a dedicated password " +
-                    "console since a real console already exists");
-            }
+    private static final LazyConstant<Optional<JdkConsoleImpl>> PASSWORD_CONSOLE = LazyConstant.of(
+            new Supplier<Optional<JdkConsoleImpl>>() {
+                @Override
+                public Optional<JdkConsoleImpl> get() {
+                    if (System.console() != null) {
+                        throw new IllegalStateException("Can’t create a dedicated password " +
+                                "console since a real console already exists");
+                    }
 
-            // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
-            // instance, otherwise an empty Optional.
-            return SharedSecrets.getJavaIOAccess().isStdinTty() ?
-                Optional.of(
-                    new JdkConsoleImpl(
-                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
-                Optional.empty();
-        });
+                    // If stdin is NOT redirected, return an Optional containing a JdkConsoleImpl
+                    // instance, otherwise an empty Optional.
+                    return SharedSecrets.getJavaIOAccess().isStdinTty() ?
+                            Optional.of(
+                                    new JdkConsoleImpl(
+                                            Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
+                                            Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                            Optional.empty();
+                }
+            }
+    );
+
+    public static Optional<JdkConsoleImpl> passwordConsole() {
+        return PASSWORD_CONSOLE.get();
     }
 
     // Dedicated entry for sun.security.util.Password when stdout is redirected.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.awt.print.PageFormat;
 import java.nio.ByteBuffer;
@@ -40,8 +41,8 @@ public final class CPrinterSurfaceData extends OSXSurfaceData{
 //    public static final SurfaceType IntArgbPQ = SurfaceType.IntArgb.deriveSubType(DESC_INT_ARGB_PQ);
     public static final SurfaceType IntRgbPQ = SurfaceType.IntRgb.deriveSubType(DESC_INT_RGB_PQ);
 
-    static SurfaceData createData(PageFormat pf, long context) {
-        return new CPrinterSurfaceData(CPrinterGraphicsConfig.getConfig(pf), context);
+    static SurfaceData createData(PageFormat pf, AffineTransform deviceTransform, long context) {
+        return new CPrinterSurfaceData(new CPrinterGraphicsConfig(pf, deviceTransform), context);
     }
 
     private CPrinterSurfaceData(GraphicsConfiguration gc, long context) {
