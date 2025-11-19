@@ -25,13 +25,12 @@
 #ifndef SHARE_MEMORY_ALLOCATION_HPP
 #define SHARE_MEMORY_ALLOCATION_HPP
 
+#include "cppstdlib/new.hpp"
 #include "memory/allStatic.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
-#include <new>
 
 class outputStream;
 class Thread;

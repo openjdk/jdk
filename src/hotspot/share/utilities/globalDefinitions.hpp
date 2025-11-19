@@ -1386,4 +1386,25 @@ template<typename T> inline constexpr bool DependentAlwaysFalse = false;
 // handled.
 bool IEEE_subnormal_handling_OK();
 
+//----------------------------------------------------------------------------------------------------
+// Forbid using the global allocator by HotSpot code.
+//
+// This is a subset of allocator and deallocator functions. These are
+// implicitly declared in all translation units, without needing to include
+// <new>; see C++17 6.7.4. This isn't even the full set of those; implicit
+// declarations involving std::align_val_t are not covered here, since that
+// type is defined in <new>.  A translation unit that doesn't include <new> is
+// still likely to include this file.  See cppstdlib/new.hpp for more details.
+#ifndef HOTSPOT_GTEST
+
+[[deprecated]] void* operator new(std::size_t);
+[[deprecated]] void operator delete(void*) noexcept;
+[[deprecated]] void operator delete(void*, std::size_t) noexcept;
+
+[[deprecated]] void* operator new[](std::size_t);
+[[deprecated]] void operator delete[](void*) noexcept;
+[[deprecated]] void operator delete[](void*, std::size_t) noexcept;
+
+#endif // HOTSPOT_GTEST
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
