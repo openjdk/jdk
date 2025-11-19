@@ -3422,7 +3422,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) : StubCodeGenerator(code, blob_id, stub_data) {
     switch(blob_id) {
     case BlobId::stubgen_preuniverse_id:
       generate_preuniverse_stubs();
@@ -3479,6 +3479,10 @@ class StubGenerator: public StubCodeGenerator {
 
 };
 
-void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
-  StubGenerator g(code, blob_id);
+// nothing to do for s390
+void StubGenerator_AOTAddressTable_init() {
+}
+
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id, AOTStubData* stub_data) {
+  StubGenerator g(code, blob_id, stub_data);
 }
