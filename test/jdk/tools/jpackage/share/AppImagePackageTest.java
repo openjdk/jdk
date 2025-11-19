@@ -120,7 +120,8 @@ public class AppImagePackageTest {
                     StandardAssert.MAIN_JAR_FILE,
                     StandardAssert.MAIN_LAUNCHER_FILES,
                     StandardAssert.MAC_BUNDLE_STRUCTURE,
-                    StandardAssert.RUNTIME_DIRECTORY);
+                    StandardAssert.RUNTIME_DIRECTORY,
+                    StandardAssert.MAC_RUNTIME_PLIST_JDK_KEY);
         })
         .run(Action.CREATE_AND_UNPACK);
     }
