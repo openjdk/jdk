@@ -212,7 +212,7 @@ public class SegmentFactories {
             allocationBase = allocateMemoryWrapper(allocationSize);
             result = Utils.alignUp(allocationBase, byteAlignment);
         } else {
-            allocationSize = (alignedSize < byteAlignment) ? byteAlignment : alignedSize;
+            allocationSize = Math.max(alignedSize, byteAlignment);
             if (shouldReserve) {
                 AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
             }
