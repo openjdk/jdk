@@ -2633,6 +2633,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register keylen     = x28;
     const Register len        = x29;
 
+    const unsigned int BLOCK_SIZE = 16;
+
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
       v9, v10, v11, v12, v13, v14, v15
@@ -2655,59 +2657,59 @@ class StubGenerator: public StubCodeGenerator {
 
     // Note: the following function performs key += 15*16
     generate_aes_loadkeys(key, working_vregs, 15);
-
+    // Encrypt from source by block size
     __ bind(L_aes256_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vxor_vv(v16, v16, v17);
       generate_aes_encrypt(v16, working_vregs, 15);
       __ vse32_v(v16, to);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes256_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
     generate_aes_loadkeys(key, working_vregs, 11);
-
+    // Encrypt from source by block size
     __ bind(L_aes128_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vxor_vv(v16, v16, v17);
       generate_aes_encrypt(v16, working_vregs, 11);
       __ vse32_v(v16, to);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes128_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
     generate_aes_loadkeys(key, working_vregs, 13);
-
+    // Encrypt from source by block size
     __ bind(L_aes192_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vxor_vv(v16, v16, v17);
       generate_aes_encrypt(v16, working_vregs, 13);
       __ vse32_v(v16, to);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes192_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     return start;
   }
@@ -2739,6 +2741,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register keylen      = x28;
     const Register len         = x29;
 
+    const unsigned int BLOCK_SIZE = 16;
+
     VectorRegister working_vregs[] = {
       v1, v2, v3, v4, v5, v6, v7, v8,
       v9, v10, v11, v12, v13, v14, v15
@@ -2761,64 +2765,65 @@ class StubGenerator: public StubCodeGenerator {
 
     // Note: the following function performs key += 15*16
     generate_aes_loadkeys(key, working_vregs, 15);
-
+    // Decrypt from source by block size
     __ bind(L_aes256_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vmv_v_v(v18, v17);
       generate_aes_decrypt(v17, working_vregs, 15);
       __ vxor_vv(v17, v17, v16);
       __ vse32_v(v17, to);
       __ vmv_v_v(v16, v18);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes256_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     // Note: the following function performs key += 11*16
     __ bind(L_aes128);
     generate_aes_loadkeys(key, working_vregs, 11);
+    // Decrypt from source by block size
     __ bind(L_aes128_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vmv_v_v(v18, v17);
       generate_aes_decrypt(v17, working_vregs, 11);
       __ vxor_vv(v17, v17, v16);
       __ vse32_v(v17, to);
       __ vmv_v_v(v16, v18);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes128_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     // Note: the following function performs key += 13*16
     __ bind(L_aes192);
     generate_aes_loadkeys(key, working_vregs, 13);
-
+    // Decrypt from source by block size
     __ bind(L_aes192_loop);
       __ vle32_v(v17, from);
-      __ addi(from, from, 16);
+      __ addi(from, from, BLOCK_SIZE);
       __ vmv_v_v(v18, v17);
       generate_aes_decrypt(v17, working_vregs, 13);
       __ vxor_vv(v17, v17, v16);
       __ vse32_v(v17, to);
       __ vmv_v_v(v16, v18);
-      __ addi(to, to, 16);
-      __ subi(len, len, 16);
+      __ addi(to, to, BLOCK_SIZE);
+      __ subi(len, len, BLOCK_SIZE);
       __ bnez(len, L_aes192_loop);
-
-    __ vse32_v(v16, iv);
-    __ mv(x10, input_len);
-    __ leave();
-    __ ret();
+      // save current iv and return
+      __ vse32_v(v16, iv);
+      __ mv(x10, input_len);
+      __ leave();
+      __ ret();
 
     return start;
   }
