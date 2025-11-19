@@ -31,7 +31,6 @@
  * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.newSessionTicketCount=0
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

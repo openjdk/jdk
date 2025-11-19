@@ -30,7 +30,6 @@
  * @run main/othervm MultiNSTParallel 10 -Djdk.tls.client.protocols=TLSv1.3
  */
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 

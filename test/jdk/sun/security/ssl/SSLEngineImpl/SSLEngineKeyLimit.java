@@ -60,7 +60,6 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
 
 public class SSLEngineKeyLimit extends SSLContextTemplate {
 

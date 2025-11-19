@@ -68,7 +68,6 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.Utils;
 import jdk.test.lib.hexdump.HexPrinter;
 
 public class SSLSocketKeyLimit {
