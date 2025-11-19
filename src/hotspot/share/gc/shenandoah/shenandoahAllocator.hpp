@@ -46,8 +46,8 @@ protected:
   uint  const                       _alloc_region_count;
   ShenandoahFreeSet*                _free_set;
   ShenandoahFreeSetPartitionId      _alloc_partition_id;
+  const char*                       _alloc_partition_name;
   bool                              _yield_to_safepoint = false;
-  volatile int                      _alloc_regions_refresh_count = 0;
 
   // start index of the shared alloc regions where the allocation will start from.
   virtual uint alloc_start_index() { return 0u; }
