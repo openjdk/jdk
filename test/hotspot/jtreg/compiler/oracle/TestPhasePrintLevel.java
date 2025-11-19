@@ -33,6 +33,7 @@ import compiler.lib.ir_framework.CompilePhase;
 
 /**
  * @test
+ * @bug 8372097
  * @summary Checks that -XX:CompileCommand=PhasePrintLevel,... interacts with
  *          -XX:PrintPhaseLevel as expected.
  * @library /test/lib /
@@ -68,9 +69,9 @@ public class TestPhasePrintLevel {
     static void test(int flagLevel, int compileCommandLevel, String expectedPhase, String unexpectedPhase) throws Exception {
         List<String> options = new ArrayList<String>();
         options.add("-Xbatch");
-        options.add("-XX:CompileCommand=dontinline," + getTestClass() + "::test");
+        options.add("-XX:CompileOnly=" + getTestName());
         options.add("-XX:PrintPhaseLevel=" + flagLevel);
-        options.add("-XX:CompileCommand=PhasePrintLevel," + getTestClass() + "::test," + compileCommandLevel);
+        options.add("-XX:CompileCommand=PhasePrintLevel," + getTestName() + "," + compileCommandLevel);
         options.add(getTestClass());
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
         oa.shouldHaveExitValue(0)
@@ -85,9 +86,12 @@ public class TestPhasePrintLevel {
         }
     }
 
-    // Test class that is invoked by the sub-process.
     static String getTestClass() {
         return TestMain.class.getName();
+    }
+
+    static String getTestName() {
+        return getTestClass() + "::test";
     }
 
     static class TestMain {
