@@ -197,11 +197,12 @@ inline void ShenandoahBarrierSet::write_ref_field_post(T* field) {
   }
   T heap_oop = RawAccess<>::oop_load(field);
   if (CompressedOops::is_null(heap_oop)) {
+    // Null reference store do not require card mark.
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
   if (!_heap->is_in_young(obj)) {
-    // Young object -> old field stores do not require card mark.
+    // Not an old->young reference store.
     return;
   }
   volatile CardTable::CardValue* byte = card_table()->byte_for(field);
