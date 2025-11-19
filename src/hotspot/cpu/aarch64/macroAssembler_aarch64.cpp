@@ -3468,7 +3468,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              bool acquire, bool release,
                              bool weak,
                              Register result) {
-  cmpxchg(addr, expected, new_val, size, acquire, release, weak, result, false);
+  cmpxchg(addr, expected, new_val, size, acquire, release, weak, result, /*with_barrier*/ false);
 }
 
 // Provides acquire barrier semantics, and, when CAS is successful,
@@ -3479,7 +3479,7 @@ void MacroAssembler::cmpxchg_barrier(Register addr, Register expected,
                              bool acquire, bool release,
                              bool weak,
                              Register result) {
-  cmpxchg(addr, expected, new_val, size, acquire, release, weak, result, true);
+  cmpxchg(addr, expected, new_val, size, acquire, release, weak, result, /*with_barrier*/ true);
 }
 
 // A generic comparison. Only compares for equality, clobbers rscratch1.
@@ -3538,14 +3538,14 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
   }                                                                     \
 }
 
-ATOMIC_OP(add, ldxr, add, sub, ldadd, stxr, Assembler::xword, false)
-ATOMIC_OP(addw, ldxrw, addw, subw, ldadd, stxrw, Assembler::word, false)
-ATOMIC_OP(addal, ldaxr, add, sub, ldaddal, stlxr, Assembler::xword, false)
-ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word, false)
+ATOMIC_OP(add,    ldxr,   add,  sub,  ldadd,   stxr,   Assembler::xword, /*with_barrier*/ false)
+ATOMIC_OP(addw,   ldxrw,  addw, subw, ldadd,   stxrw,  Assembler::word,  /*with_barrier*/ false)
+ATOMIC_OP(addal,  ldaxr,  add,  sub,  ldaddal, stlxr,  Assembler::xword, /*with_barrier*/ false)
+ATOMIC_OP(addalw, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word,  /*with_barrier*/ false)
 
 // These versions provide trailing membar semantics.
-ATOMIC_OP(addal_barrier, ldaxr, add, sub, ldaddal, stlxr, Assembler::xword, true)
-ATOMIC_OP(addalw_barrier, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word, true)
+ATOMIC_OP(addal_barrier,  ldaxr,  add,  sub,  ldaddal, stlxr,  Assembler::xword, /*with_barrier*/ true)
+ATOMIC_OP(addalw_barrier, ldaxrw, addw, subw, ldaddal, stlxrw, Assembler::word,  /*with_barrier*/ true)
 
 #undef ATOMIC_OP
 
@@ -3573,16 +3573,16 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
   }                                                                     \
 }
 
-ATOMIC_XCHG(xchg, swp, ldxr, stxr, Assembler::xword, false)
-ATOMIC_XCHG(xchgw, swp, ldxrw, stxrw, Assembler::word, false)
-ATOMIC_XCHG(xchgl, swpl, ldxr, stlxr, Assembler::xword, false)
-ATOMIC_XCHG(xchglw, swpl, ldxrw, stlxrw, Assembler::word, false)
-ATOMIC_XCHG(xchgal, swpal, ldaxr, stlxr, Assembler::xword, false)
-ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word, false)
+ATOMIC_XCHG(xchg,    swp,   ldxr,   stxr,   Assembler::xword, /*with_barrier*/ false)
+ATOMIC_XCHG(xchgw,   swp,   ldxrw,  stxrw,  Assembler::word,  /*with_barrier*/ false)
+ATOMIC_XCHG(xchgl,   swpl,  ldxr,   stlxr,  Assembler::xword, /*with_barrier*/ false)
+ATOMIC_XCHG(xchglw,  swpl,  ldxrw,  stlxrw, Assembler::word,  /*with_barrier*/ false)
+ATOMIC_XCHG(xchgal,  swpal, ldaxr,  stlxr,  Assembler::xword, /*with_barrier*/ false)
+ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word,  /*with_barrier*/ false)
 
 // These versions provide trailing membar semantics.
-ATOMIC_XCHG(xchgal_barrier, swpal, ldaxr, stlxr, Assembler::xword, true)
-ATOMIC_XCHG(xchgalw_barrier, swpal, ldaxrw, stlxrw, Assembler::word, true)
+ATOMIC_XCHG(xchgal_barrier,  swpal, ldaxr,  stlxr, Assembler::xword, /*with_barrier*/ true)
+ATOMIC_XCHG(xchgalw_barrier, swpal, ldaxrw, stlxrw, Assembler::word, /*with_barrier*/ true)
 
 #undef ATOMIC_XCHG
 
