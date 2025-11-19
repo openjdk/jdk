@@ -39,12 +39,16 @@ import java.util.function.Supplier;
  * <p>
  * A lazy constant is created using the factory method
  * {@linkplain LazyConstant#of(Supplier) LazyConstant.of({@code <computing function>})}.
+ * <p>
  * When created, the lazy constant is <em>not initialized</em>, meaning it has no contents.
+ * <p>
  * The lazy constant (of type {@code T}) can then be <em>initialized</em>
  * (and its contents retrieved) by calling {@linkplain #get() get()}. The first time
  * {@linkplain #get() get()} is called, the underlying <em>computing function</em>
  * (provided at construction) will be invoked and the result will be used to initialize
- * the constant. Once a lazy constant is initialized, its contents can <em>never change</em>
+ * the constant.
+ * <p>
+ * Once a lazy constant is initialized, its contents can <em>never change</em>
  * and will be retrieved over and over again upon subsequent {@linkplain #get() get()}
  * invocations.
  * <p>
