@@ -50,7 +50,6 @@ public class CheckGtestDependencies extends GTestWrapper {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static final TestFilter[] TEST_FILTERS = {
-        TF("istream.coverage_vm"),
         TF("ZForwardingTest.find_every_other_vm"),
     };
 
