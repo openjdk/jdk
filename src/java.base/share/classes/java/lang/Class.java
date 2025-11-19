@@ -161,10 +161,7 @@ import sun.reflect.annotation.*;
  *
  * <p> Unless otherwise specified, methods in this class throw a
  * {@link NullPointerException} when they are called with {@code null}
- * or an array that contains {@code null} as an argument.  If a method
- * accepts such an argument, it is specified in the corresponding parameter.
- * If a method throws a different exception for such an argument, it is
- * specified in the exceptions thrown by that method.
+ * or an array that contains {@code null} as an argument.
  *
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
