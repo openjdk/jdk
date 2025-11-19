@@ -1782,10 +1782,10 @@ void AOTCodeAddressTable::init_extrs() {
 
   SET_ADDRESS(_extrs, SharedRuntime::enable_stack_reserved_zone);
 
-#ifdef AMD64
+#if defined(AMD64) && !defined(ZERO)
   SET_ADDRESS(_extrs, SharedRuntime::montgomery_multiply);
   SET_ADDRESS(_extrs, SharedRuntime::montgomery_square);
-#endif // AMD64
+#endif // defined(AMD64) && !defined(ZERO)
 
   SET_ADDRESS(_extrs, SharedRuntime::d2f);
   SET_ADDRESS(_extrs, SharedRuntime::d2i);
@@ -1795,12 +1795,16 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, SharedRuntime::dlog);
   SET_ADDRESS(_extrs, SharedRuntime::dlog10);
   SET_ADDRESS(_extrs, SharedRuntime::dpow);
+#ifndef ZERO
   SET_ADDRESS(_extrs, SharedRuntime::drem);
+#endif
   SET_ADDRESS(_extrs, SharedRuntime::dsin);
   SET_ADDRESS(_extrs, SharedRuntime::dtan);
   SET_ADDRESS(_extrs, SharedRuntime::f2i);
   SET_ADDRESS(_extrs, SharedRuntime::f2l);
+#ifndef ZERO
   SET_ADDRESS(_extrs, SharedRuntime::frem);
+#endif
   SET_ADDRESS(_extrs, SharedRuntime::l2d);
   SET_ADDRESS(_extrs, SharedRuntime::l2f);
   SET_ADDRESS(_extrs, SharedRuntime::ldiv);
