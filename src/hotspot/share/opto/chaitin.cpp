@@ -1660,15 +1660,11 @@ uint PhaseChaitin::Select( ) {
 
     Node* def = lrg->_def;
     MachNode* mdef = lrg->is_singledef() && !lrg->_is_bound && def->is_Mach() ? def->as_Mach() : nullptr;
-    if (Matcher::should_attempt_register_biasing(mdef, 1)) {
+    if (Matcher::is_register_biasing_candidate(mdef, 1)) {
       Node* in1 = mdef->in(mdef->operand_index(1));
       if (in1 != nullptr) {
         uint lrg_in1 = _lrg_map.find(in1);
-        // Complex memory operand covers multiple incoming
-        // edges needed for address computation, biasing def
-        // towards any address component will not result into
-        // NDD demotion by assembler.
-        if (lrg_in1 != 0 && lrg->_copy_bias == 0 && mdef->operand_num_edges(1) == 1) {
+        if (lrg_in1 != 0 && lrg->_copy_bias == 0) {
           lrg->_copy_bias = lrg_in1;
         }
       }
@@ -1676,11 +1672,11 @@ uint PhaseChaitin::Select( ) {
 
     // For commutative operation, def allocation can also be
     // biased towards LRG of second input's def.
-    if (Matcher::should_attempt_register_biasing(mdef, 2)) {
+    if (Matcher::is_register_biasing_candidate(mdef, 2)) {
       Node* in2 = mdef->in(mdef->operand_index(2));
       if (in2 != nullptr) {
         uint lrg_in2 = _lrg_map.find(in2);
-        if (lrg_in2 != 0 && lrg->_copy_bias2 == 0 && mdef->operand_num_edges(2) == 1) {
+        if (lrg_in2 != 0 && lrg->_copy_bias2 == 0) {
           lrg->_copy_bias2 = lrg_in2;
         }
       }

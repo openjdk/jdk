@@ -2633,21 +2633,39 @@ bool Matcher::supports_vector_calling_convention(void) {
   return EnableVectorSupport;
 }
 
-bool Matcher::should_attempt_register_biasing(const MachNode* mdef, int oper_index) {
+bool Matcher::is_register_biasing_candidate(const MachNode *mdef, int oper_index) {
   if (mdef == nullptr) {
     return false;
   }
 
-  if (mdef->num_opnds() <= oper_index || mdef->operand_index(oper_index) < 0) {
+  if (mdef->num_opnds() <= oper_index || mdef->operand_index(oper_index) < 0 ||
+      // Complex memory operand covers multiple incoming edges needed for
+      // address computation, biasing def towards any address component will not
+      // result into NDD demotion by assembler.
+      mdef->operand_num_edges(oper_index) == 1) {
     return false;
   }
 
-  // Returns true for MachNode corresponding to Intel APX NDD selection patterns which
-  // can be demoted to REX/REX2 encodings. For commutative operations with register
-  // operands, allocation of definition operand is biased towards both the operands.
-  return (((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0) &&
-           (oper_index != 2 ||
-            ((mdef->flags() & Node::PD::Flag_ndd_commutative) != 0)));
+  // First operand of MachNode corresponding to Intel APX NDD selection
+  // pattern can share its assigned register with definition operand if
+  // their live ranges do not overlap, in such a scenario we can demote
+  // it to legacy map0/map1 instruction by replacing its 4-byte extended
+  // EVEX prefix with shorter REX/REX2 encoding. Demotion candidates
+  // are decorated with a special flag by instruction selector.
+  if (oper_index == 1 &&
+      ((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0)) {
+    return true;
+  }
+
+  // For commutative operation allocation of definition
+  // operand can also be biased towards second operand.
+  if (oper_index == 2 &&
+      ((mdef->flags() & Node::PD::Flag_ndd_commutative) != 0) &&
+      ((mdef->flags() & Node::PD::Flag_ndd_demotable) != 0)) {
+    return true;
+  }
+
+  return false;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
