@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.util.PathUtils.normalizedAbsolutePathString;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Base64;
@@ -288,7 +289,7 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         // Copy app image, since we did not create DMG with it, but instead we created
         // empty one.
         if (copyAppImage) {
-            FileUtils.copyRecursive(srcFolder, mountedVolume);
+            FileUtils.copyRecursive(srcFolder, mountedVolume, LinkOption.NOFOLLOW_LINKS);
         }
 
         try {
