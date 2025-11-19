@@ -25,11 +25,11 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -43,7 +43,9 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.DottedVersion;
+import jdk.jpackage.internal.model.Logger;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.Slot;
 
 /**
  * WiX tool.
@@ -180,13 +182,13 @@ public enum WixTool {
             final Path toolPath = lookupDir.map(p -> p.resolve(
                     tool.toolFileName)).orElse(tool.toolFileName);
 
-            final boolean[] tooOld = new boolean[1];
-            final String[] parsedVersion = new String[1];
+            final var tooOld = Slot.<Boolean>createEmpty();
+            final var parsedVersion = Slot.<String>createEmpty();
 
             final var validator = new ToolValidator(toolPath)
                     .setMinimalVersion(tool.minimalVersion)
                     .setToolOldVersionErrorHandler((name, version) -> {
-                        tooOld[0] = true;
+                        tooOld.set(true);
                         return null;
                     });
 
@@ -222,13 +224,13 @@ public enum WixTool {
             }
 
             validator.setVersionParser(output -> {
-                parsedVersion[0] = versionParser.apply(output);
-                return parsedVersion[0];
+                parsedVersion.set(versionParser.apply(output));
+                return parsedVersion.get();
             });
 
             if (validator.validate() == null) {
                 // Tool found
-                ToolInfo info = new DefaultToolInfo(toolPath, parsedVersion[0]);
+                ToolInfo info = new DefaultToolInfo(toolPath, parsedVersion.get());
                 if (tool == Candle3) {
                     // Detect FIPS mode
                     var fips = false;
@@ -242,11 +244,13 @@ public enum WixTool {
                             }
                         }
                     } catch (IOException ex) {
-                        Log.verbose(ex);
+                        LOGGER.log(Level.ERROR, () -> {
+                            return String.format("Failed to execute [%s -?] command to detect FIPS mode. Assume FIPS=false", toolPath);
+                        }, ex);
                     }
                     info = new DefaultCandleInfo(info, fips);
                 }
-                return Optional.of(new ToolLookupResult(tool, info, tooOld[0]));
+                return Optional.of(new ToolLookupResult(tool, info, tooOld.get()));
             } else {
                 return Optional.empty();
             }
@@ -258,47 +262,48 @@ public enum WixTool {
     }
 
     private static Path getSystemDir(String envVar, String knownDir) {
-        return Optional
-                .ofNullable(getEnvVariableAsPath(envVar))
-                .orElseGet(() -> Optional
-                .ofNullable(getEnvVariableAsPath("SystemDrive"))
-                .orElseGet(() -> Path.of("C:")).resolve(knownDir));
+        return getEnvVariableAsPath(envVar).orElseGet(() -> {
+            return getEnvVariableAsPath("SystemDrive").orElseGet(() -> {
+                return Path.of("C:");
+            }).resolve(knownDir);
+        });
     }
 
-    private static Path getEnvVariableAsPath(String envVar) {
-        String path = System.getenv(envVar);
-        if (path != null) {
+    private static Optional<Path> getEnvVariableAsPath(String envVar) {
+        Objects.requireNonNull(envVar);
+        return Optional.ofNullable(System.getenv(envVar)).map(v -> {
             try {
-                return Path.of(path);
+                return Path.of(v);
             } catch (InvalidPathException ex) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.invalid-envvar"), envVar));
+                LOGGER.log(Level.ERROR, () -> {
+                    return String.format("The value of environment variable '%s' [%s] is not a path", envVar, v);
+                }, ex);
+                return null;
             }
-        }
-        return null;
+        });
     }
 
     private static List<Path> findWixInstallDirs() {
-        return Stream.of(findWixCurrentInstallDirs(), findWix3InstallDirs()).
-                flatMap(List::stream).toList();
+        return Stream.of(
+                findWixCurrentInstallDirs(),
+                findWix3InstallDirs()
+        ).flatMap(List::stream).toList();
     }
 
     private static List<Path> findWixCurrentInstallDirs() {
-        return Stream.of(getEnvVariableAsPath("USERPROFILE"), Optional.ofNullable(System.
-                getProperty("user.home")).map(Path::of).orElse(null)).filter(Objects::nonNull).map(
-                path -> {
-                    return path.resolve(".dotnet/tools");
-                }).filter(Files::isDirectory).distinct().toList();
+        return Stream.of(
+                getEnvVariableAsPath("USERPROFILE"),
+                Optional.ofNullable(System. getProperty("user.home")).map(Path::of)
+        ).filter(Optional::isPresent).map(Optional::get).map(path -> {
+            return path.resolve(".dotnet/tools");
+        }).filter(Files::isDirectory).distinct().toList();
     }
 
     private static List<Path> findWix3InstallDirs() {
-        PathMatcher wixInstallDirMatcher = FileSystems.getDefault().
-                getPathMatcher(
-                        "glob:WiX Toolset v*");
+        var wixInstallDirMatcher = FileSystems.getDefault().getPathMatcher("glob:WiX Toolset v*");
 
-        Path programFiles = getSystemDir("ProgramFiles", "\\Program Files");
-        Path programFilesX86 = getSystemDir("ProgramFiles(x86)",
-                "\\Program Files (x86)");
+        var programFiles = getSystemDir("ProgramFiles", "\\Program Files");
+        var programFilesX86 = getSystemDir("ProgramFiles(x86)", "\\Program Files (x86)");
 
         // Returns list of WiX install directories ordered by WiX version number.
         // Newer versions go first.
@@ -306,17 +311,20 @@ public enum WixTool {
             try (var paths = Files.walk(path, 1)) {
                 return paths.toList();
             } catch (IOException ex) {
-                Log.verbose(ex);
-                List<Path> empty = List.of();
-                return empty;
+                LOGGER.log(Level.ERROR, () -> {
+                    return String.format("Can not get a listing of [%s] path", path);
+                }, ex);
+                return List.<Path>of();
             }
         }).flatMap(List::stream)
-                .filter(path -> wixInstallDirMatcher.matches(path.getFileName())).
-                sorted(Comparator.comparing(Path::getFileName).reversed())
+                .filter(path -> wixInstallDirMatcher.matches(path.getFileName()))
+                .sorted(Comparator.comparing(Path::getFileName).reversed())
                 .map(path -> path.resolve("bin"))
                 .toList();
     }
 
     private final Path toolFileName;
     private final DottedVersion minimalVersion;
+
+    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

@@ -25,8 +25,8 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +40,7 @@ import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Logger;
 
 abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<PackagingPipeline.Builder> {
 
@@ -135,19 +136,23 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<String> neededLibPackages;
         if (withRequiredPackagesLookup) {
             neededLibPackages = findRequiredPackages();
+            LOGGER.log(Level.TRACE, "Runtime image requires: {0}", neededLibPackages);
         } else {
             neededLibPackages = Collections.emptyList();
-            Log.info(I18N.getString("warning.foreign-app-image"));
+            Log.info(I18N.format("message.not-default-bundler-no-dependencies-lookup",
+                    pkg.asStandardPackageType().orElseThrow().suffix().substring(1)));
         }
+
+        LOGGER.log(Level.TRACE, "Features of the package require: {0}", caPackages);
 
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
-        Stream.of(caPackages, neededLibPackages)
+        requiredPackages = Stream.of(caPackages, neededLibPackages)
                 .flatMap(List::stream)
                 .filter(Predicate.not(String::isEmpty))
-                .sorted().distinct().forEach(requiredPackages::add);
+                .sorted().distinct().toList();
 
-        Log.verbose(String.format("Required packages: %s", requiredPackages));
+        LOGGER.log(Level.TRACE, "Required packages: {0}", requiredPackages);
     }
 
     private List<String> findRequiredPackages() throws IOException {
@@ -160,9 +165,9 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<? extends Exception> errors;
         try {
             errors = findErrorsInOutputPackage();
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             // Ignore error as it is not critical. Just report it.
-            Log.verbose(ex);
+            LOGGER.log(Level.ERROR, ex);
             return;
         }
 
@@ -178,6 +183,8 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
     protected final T pkg;
     protected final Path outputDir;
     private final boolean withRequiredPackagesLookup;
-    private final List<String> requiredPackages = new ArrayList<>();
+    private List<String> requiredPackages;
     private final List<ShellCustomAction> customActions;
+
+    private final static System.Logger LOGGER = Logger.MAIN.get();
 }

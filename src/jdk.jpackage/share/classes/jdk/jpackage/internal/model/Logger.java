@@ -26,38 +26,19 @@ package jdk.jpackage.internal.model;
 
 import java.util.Objects;
 
-/**
- * Standard native package types.
- */
-public enum StandardPackageType implements PackageType {
-    WIN_MSI("bundle-type.win-msi", ".msi"),
-    WIN_EXE("bundle-type.win-exe", ".exe"),
-    LINUX_DEB("bundle-type.linux-deb", ".deb"),
-    LINUX_RPM("bundle-type.linux-rpm", ".rpm"),
-    MAC_PKG("bundle-type.mac-pkg", ".pkg"),
-    MAC_DMG("bundle-type.mac-dmg", ".dmg");
+public enum Logger {
+    MAIN("jdk.jpackage"),
+    MAC_SIGN("jdk.jpackage.mac-sign"),
+    LINUX_LIBS("jdk.jpackage.linux-libs"),
+    ;
 
-    StandardPackageType(String key, String suffix) {
-        this.key = Objects.requireNonNull(key);
-        this.suffix = Objects.requireNonNull(suffix);
+    Logger(String loggerName) {
+        this.loggerName = Objects.requireNonNull(loggerName);
     }
 
-    /**
-     * Gets file extension corresponding to the package type. E.g.:
-     * <code>.msi</code>, <code>.dmg</code>, <code>.deb</code>.
-     *
-     * @return file extension corresponding to the package type; the value starts
-     *         with the full stop (.) character.
-     */
-    public String suffix() {
-        return suffix;
+    public System.Logger get() {
+        return System.getLogger(loggerName);
     }
 
-    @Override
-    public String label() {
-        return I18N.getString(key);
-    }
-
-    private final String key;
-    private final String suffix;
+    private final String loggerName;
 }
