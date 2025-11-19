@@ -1829,9 +1829,10 @@ void AOTCodeAddressTable::init_extrs() {
   SET_ADDRESS(_extrs, JavaThread::verify_cross_modify_fence_failure);
 #endif
 
+#if INCLUDE_JFR
   SET_ADDRESS(_extrs, JfrIntrinsicSupport::write_checkpoint);
   SET_ADDRESS(_extrs, JfrIntrinsicSupport::return_lease);
-
+#endif
 
   SET_ADDRESS(_extrs, UpcallLinker::handle_uncaught_exception); // used by upcall_stub_exception_handler
 

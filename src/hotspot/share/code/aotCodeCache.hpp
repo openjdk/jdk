@@ -151,7 +151,7 @@ public:
   void init_extrs();
   void init_extrs2();
   void add_stub_entry(EntryId entry_id, address entry);
-  void add_external_addresses(GrowableArray<address>& addresses);
+  void add_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
   void set_shared_stubs_complete();
   void set_c1_stubs_complete();
   void set_c2_stubs_complete();
@@ -242,25 +242,23 @@ private:
   GrowableArray<address>& address_array() { return _address_array; }
   // accessor for entry/auxiliary addresses defaults to start entry
 public:
-  AOTStubData(BlobId blob_id);
+  AOTStubData(BlobId blob_id) NOT_CDS({});
 
-  ~AOTStubData() {
-    FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);
-  }
+  ~AOTStubData()    CDS_ONLY({FREE_C_HEAP_ARRAY(StubAddrRange, _ranges);}) NOT_CDS({})
 
-  bool is_open()    { return (_flags & OPEN) != 0; }
-  bool is_using()   { return (_flags & USING) != 0; }
-  bool is_dumping() { return (_flags & DUMPING) != 0; }
-  bool is_aot()     { return is_using() || is_dumping(); }
-  bool is_invalid() { return (_flags & INVALID) != 0; }
+    bool is_open()  CDS_ONLY({ return (_flags & OPEN) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_using()   CDS_ONLY({ return (_flags & USING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_dumping() CDS_ONLY({ return (_flags & DUMPING) != 0; }) NOT_CDS_RETURN_(false);
+  bool is_aot()     CDS_ONLY({ return is_using() || is_dumping(); }) NOT_CDS_RETURN_(false);
+  bool is_invalid() CDS_ONLY({ return (_flags & INVALID) != 0; }) NOT_CDS_RETURN_(false);
 
   BlobId blob_id() { return _blob_id; }
   StubId current_stub_id() { return _current; }
   //
-  bool load_code_blob();
-  bool store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffe);
+  bool load_code_blob() NOT_CDS_RETURN_(true);
+  bool store_code_blob(CodeBlob& new_blob, CodeBuffer *code_buffer) NOT_CDS_RETURN_(true);
   // determine whether a stub is available in the AOT cache
-  bool find_archive_data(StubId stub_id);
+  bool find_archive_data(StubId stub_id) NOT_CDS_RETURN_(false);
   // retrieve stub entry data if it we are using archived stubs and
   // the stub has been found in an AOT-restored blob or store stub
   // entry data if we are saving archived stubs and the stub has just
@@ -289,8 +287,8 @@ public:
   // memory protection ranges and associated handler addresses. These
   // do do not need to be declared as entries and their number and
   // meaning may vary according to the architecture.
-  void load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr);
-  void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr);
+  void load_archive_data(StubId stub_id, address& start, address& end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
+  void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address>* entries = nullptr, GrowableArray<address>* extras = nullptr) NOT_CDS_RETURN;
 
   const AOTStubData* as_const() { return (const AOTStubData*)this; }
 };
@@ -436,10 +434,10 @@ public:
   void load_strings();
   int store_strings();
 
-  static void set_shared_stubs_complete();
-  static void set_c1_stubs_complete();
-  static void set_c2_stubs_complete();
-  static void set_stubgen_stubs_complete();
+  static void set_shared_stubs_complete() NOT_CDS_RETURN;
+  static void set_c1_stubs_complete() NOT_CDS_RETURN ;
+  static void set_c2_stubs_complete() NOT_CDS_RETURN;
+  static void set_stubgen_stubs_complete() NOT_CDS_RETURN;
 
   void add_stub_entries(StubId stub_id, address start, GrowableArray<address> *entries = nullptr, int offset = -1) NOT_CDS_RETURN;
 
@@ -515,9 +513,9 @@ public:
                                   BlobId id,
                                   AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
-  static void publish_external_addresses(GrowableArray<address>& addresses);
+  static void publish_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
   // publish all entries for a code blob in code cache address table
-  static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data);
+  static void publish_stub_addresses(CodeBlob &code_blob, BlobId id, AOTStubData *stub_data) NOT_CDS_RETURN;
 
   static uint store_entries_cnt() {
     if (is_on_for_dump()) {
