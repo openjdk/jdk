@@ -162,18 +162,6 @@ public class AccessibleObject implements AnnotatedElement {
      * to the caller and the package containing the declaring class is not open
      * to the caller's module. </p>
      *
-     * <p> This method cannot be used to enable {@linkplain Field#set <em>write</em>}
-     * access to a <em>non-modifiable</em> final field.  The following fields
-     * are non-modifiable:
-     * <ul>
-     * <li>static final fields declared in any class or interface</li>
-     * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
-     * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
-     * </ul>
-     * <p> The {@code accessible} flag when {@code true} suppresses Java language access
-     * control checks to only enable {@linkplain Field#get <em>read</em>} access to
-     * these non-modifiable final fields.
-     *
      * @param flag the new value for the {@code accessible} flag
      * @throws InaccessibleObjectException if access cannot be enabled
      *
