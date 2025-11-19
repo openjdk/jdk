@@ -27,7 +27,6 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.ProtocolException;
-import java.net.http.HttpClient.Version;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -707,12 +706,10 @@ final class Exchange<T> {
                             if (s == null) {
                                 // s can be null if an exception occurred
                                 // asynchronously while sending the preface.
-                                final Throwable terminationException = c.getTerminationException()
-                                        .orElse(null);
+                                final Http2TerminationCause tc = c.getTerminationCause();
                                 IOException ioe;
-                                if (terminationException != null) {
-                                    ioe = new IOException("Can't get stream 1: " + terminationException,
-                                            terminationException);
+                                if (tc != null) {
+                                    ioe = new IOException("Can't get stream 1", tc.getCloseCause());
                                 } else {
                                     ioe = new IOException("Can't get stream 1");
                                 }

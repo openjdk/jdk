@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -879,32 +878,6 @@ class Http2Connection implements Closeable {
             Log.logTrace(msg);
             close(Http2TerminationCause.forException(e));
         }
-    }
-
-    /**
-     * Returns the exception which caused the connection to be terminated. Even a normal termination
-     * of a connection will have a {@code IOException} associated with it.
-     * If the connection hasn't yet been terminated then this method returns an empty Optional.
-     */
-    final Optional<IOException> getTerminationException() {
-        final Http2TerminationCause terminationCause = this.connTerminator.getTerminationCause();
-        if (terminationCause != null) {
-            return Optional.of(terminationCause.getCloseCause());
-        }
-        // there can be window of race where the termination cause isn't yet set
-        // but the connection isn't open. that can happen when the underlying SocketChannel
-        // is closed behind the scenes and the Http2Connection isn't aware of it and hasn't
-        // set a termination cause for it.
-        // so here we check if the connection isn't open and if it isn't then we call
-        // Terminator.getTerminationCause() which has the necessary infrastructure to create
-        // and return a termination cause for that situation.
-        if (!isOpen()) {
-            final Http2TerminationCause tc = this.connTerminator.getTerminationCause();
-            assert tc != null : "termination cause is null for a closed connection";
-            return Optional.of(tc.getCloseCause());
-        }
-        // connection isn't terminated
-        return Optional.empty();
     }
 
     /**
@@ -2025,6 +1998,13 @@ class Http2Connection implements Closeable {
         sendFrame(goAway);
     }
 
+    /**
+     * Returns the termination cause if the connection is closed, else returns null.
+     */
+    final Http2TerminationCause getTerminationCause() {
+        return this.connTerminator.getTerminationCause();
+    }
+
     // Responsible for doing all the necessary work for closing a Http2Connection
     private final class Terminator {
         // the cause for closing the connection. Must only be set in the
@@ -2121,8 +2101,9 @@ class Http2Connection implements Closeable {
 
         /**
          * Returns the termination cause for the connection. This method guarantees
-         * that if the {@linkplain Http2Connection#isOpen() connection is not open}
-         * then this returns a non-null termination cause.
+         * that when this method is called, if the
+         * {@linkplain Http2Connection#isOpen() connection is not open} then this returns
+         * a non-null termination cause.
          */
         private Http2TerminationCause getTerminationCause() {
             final Http2TerminationCause tc = this.terminationCause.get();
