@@ -33,8 +33,6 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -363,15 +361,10 @@ public final class StringSupport {
         if (bytesCompatible(string, charset, srcIndex, numChars)) {
             copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
             return string.length();
-        } else if (srcIndex == 0 && numChars == string.length()) {
-            byte[] bytes = string.getBytes();
+        } else {
+            byte[] bytes = string.substring(srcIndex, numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
             return bytes.length;
-        } else {
-            CharBuffer charBuffer = CharBuffer.wrap(string, srcIndex, numChars);
-            ByteBuffer byteBuffer = segment.asByteBuffer().position((int) offset);
-            charset.newEncoder().encode(charBuffer, byteBuffer, false);
-            return byteBuffer.position();
         }
     }
 

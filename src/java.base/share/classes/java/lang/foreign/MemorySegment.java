@@ -1296,7 +1296,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * over the decoding process is required.
      * <p>
      * Getting a string from a segment with a known byte offset and
-     * known byte length can be done using {@link #getString(long, Charset, int)}.
+     * known byte length can be done using {@link #getString(long, Charset, long)}.
      *
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
@@ -2651,25 +2651,28 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                 {@linkplain StandardCharsets standard charset}
      * @param srcIndex the starting index of the source string
      * @param dst      the destination segment
+     * @param dstOffset the starting offset, in bytes, of the destination segment
      * @param numChars the number of characters to be copied
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         {@code dst} is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code dst.isAccessibleBy(T) == false}
-     * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
-     * @throws IndexOutOfBoundsException  if the {@code endIndex} is larger than the length of
+     * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code numChars}, or {@code dstOffset}
+     *         are {@code < 0}
+     * @throws IndexOutOfBoundsException if the {@code endIndex} is larger than the length of
      *         this {@code String} object, or {@code beginIndex} is larger than {@code endIndex}.
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
-     * @throws IllegalArgumentException if {@code charset} is not a
-     *         {@linkplain StandardCharsets standard charset}
+     * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}
+     * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
+     *         in bytes, of the string encoded using the given charset.
      */
     @ForceInline
-    static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, int numChars) {
+    static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, long dstOffset, int numChars) {
         Objects.requireNonNull(src);
         Objects.requireNonNull(dstEncoding);
         Objects.requireNonNull(dst);
 
-        AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, numChars);
+        AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, dstOffset, numChars);
     }
 
     /**

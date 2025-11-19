@@ -31,8 +31,6 @@ import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -195,15 +193,10 @@ public interface SegmentAllocator {
         if (StringSupport.bytesCompatible(str, charset, srcIndex, numChars)) {
             segment = allocateNoInit(numChars);
             StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
-        } else if (srcIndex == 0 && numChars == str.length()) {
-            byte[] bytes = str.getBytes(charset);
+        } else {
+            byte[] bytes = str.substring(srcIndex, numChars).getBytes(charset);
             segment = allocateNoInit(bytes.length);
             MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
-        } else {
-            CharBuffer charBuffer = CharBuffer.wrap(str, srcIndex, numChars);
-            ByteBuffer bytes = charset.encode(charBuffer);
-            segment = allocateNoInit(bytes.limit());
-            MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.limit());
         }
         return segment;
     }
