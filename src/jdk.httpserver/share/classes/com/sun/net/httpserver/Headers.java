@@ -132,7 +132,7 @@ public class Headers implements Map<String,List<String>> {
         // Find the first non-normalized `char`
         int i = 0;
         char c = key.charAt(i);
-        if (c >= 'A' && c <= 'Z') {
+        if (!(c == '\r' || c == '\n' || (c >= 'a' && c <= 'z'))) {
             i++;
             for (; i < l; i++) {
                 c = key.charAt(i);
@@ -147,18 +147,20 @@ public class Headers implements Map<String,List<String>> {
             return key;
         }
 
-        // Normalize the first `char`
+        // Upper-case the first `char`
         char[] cs = key.toCharArray();
         int o = 'a' - 'A';
         if (i == 0) {
             if (c == '\r' || c == '\n') {
                 throw new IllegalArgumentException("illegal character in key at index " + i);
             }
-            cs[0] = (char) (c - o);
+            if (c >= 'a' && c <= 'z') {
+                cs[0] = (char) (c - o);
+            }
             i++;
         }
 
-        // Normalize the secondary `char`s
+        // Lower-case the secondary `char`s
         for (; i < l; i++) {
             c = cs[i];
             if (c >= 'A' && c <= 'Z') {

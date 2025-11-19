@@ -76,6 +76,7 @@ public class HeaderNormalization {
 
     @Param({
             "Accept-charset",   // Already normalized
+            "4ccept-charset",   // Already normalized with a non-alpha first letter
             "accept-charset",   // Only the first `a` must be upper-cased
             "Accept-Charset",   // Only `c` must be lower-cased
             "ACCEPT-CHARSET",   // All secondary must be lower-cased
