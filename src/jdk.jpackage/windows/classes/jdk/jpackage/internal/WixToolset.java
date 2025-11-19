@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.DottedVersion;
 
-final class WixToolset {
+record WixToolset(Map<WixTool, WixTool.ToolInfo> tools) {
 
-    static enum WixToolsetType {
+    WixToolset {
+        tools = Map.copyOf(tools);
+    }
+
+    enum WixToolsetType {
         // Wix v4+
         Wix4(WixTool.Wix4),
         // Wix v3+
@@ -49,10 +53,6 @@ final class WixToolset {
         }
 
         private final Set<WixTool> tools;
-    }
-
-    private WixToolset(Map<WixTool, WixTool.ToolInfo> tools) {
-        this.tools = tools;
     }
 
     WixToolsetType getType() {
@@ -89,6 +89,4 @@ final class WixToolset {
             return Optional.empty();
         }
     }
-
-    private final Map<WixTool, WixTool.ToolInfo> tools;
 }
