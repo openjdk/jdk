@@ -207,8 +207,6 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
 void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
-  CollectedHeap* heap = Universe::heap();
-
   // Note: GCCauseSetter is intentionally not used here.
   // The specific GC cause is set directly in downstream calls that initiate
   // collections, allowing us to accurately reflect different situations:
@@ -235,6 +233,8 @@ void VM_CollectForMetadataAllocation::doit() {
     log_debug(gc)("G1 full GC for Metaspace");
   }
 #endif
+
+  CollectedHeap* heap = Universe::heap();
 
   // Don't clear the soft refs yet.
   heap->collect_as_vm_thread(_gc_cause);
