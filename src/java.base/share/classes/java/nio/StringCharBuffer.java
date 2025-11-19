@@ -29,12 +29,12 @@ import java.util.Objects;
 
 // ## If the sequence is a string, use reflection to share its array
 
-public final class StringCharBuffer
+final class StringCharBuffer                                  // package-private
     extends CharBuffer
 {
     CharSequence str;
 
-    public StringCharBuffer(CharSequence s, int start, int end) { // package-private
+    StringCharBuffer(CharSequence s, int start, int end) { // package-private
         super(-1, start, end, s.length(), null);
         int n = s.length();
         Objects.checkFromToIndex(start, end, n);

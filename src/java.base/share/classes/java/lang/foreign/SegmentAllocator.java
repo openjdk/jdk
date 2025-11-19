@@ -32,9 +32,8 @@ import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.nio.ByteBuffer;
-import java.nio.StringCharBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -137,7 +136,7 @@ public interface SegmentAllocator {
     default MemorySegment allocateFrom(String str, Charset charset) {
         Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
-        int termCharSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
+        int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
         MemorySegment segment;
         int length;
         if (StringSupport.bytesCompatible(str, charset, 0, str.length())) {
@@ -170,24 +169,23 @@ public interface SegmentAllocator {
      * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
      *
-     * @param str     the Java string to be converted into a C string
-     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
-     *                string bytes
-     * @param srcIndex srcIndex
-     * @param numChars numChars
+     * @param str      the Java string to be converted into a C string
+     * @param charset  the charset used to {@linkplain Charset#newEncoder() encode} the
+     *                 string bytes
+     * @param srcIndex the starting index of the source string
+     * @param numChars the number of characters to be copied
      * @return a new native segment containing the converted C string
      * @throws IllegalArgumentException if {@code charset} is not a
      *         {@linkplain StandardCharsets standard charset}
+     * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
+     * @throws IndexOutOfBoundsException  if the {@code endIndex} is larger than the length of
+     *         this {@code String} object, or {@code beginIndex} is larger than {@code endIndex}.
+     *
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling
-     *           {@code this.allocate(B + N)}, where:
-     * <ul>
-     *     <li>{@code B} is the size, in bytes, of the string encoded using the
-     *         provided charset (e.g. {@code str.getBytes(charset).length});</li>
-     *     <li>{@code N} is the size (in bytes) of the terminator char according to the
-     *         provided charset. For instance, this is 1 for {@link StandardCharsets#US_ASCII}
-     *         and 2 for {@link StandardCharsets#UTF_16}.</li>
-     * </ul>
+     *           {@code this.allocate(B)}, where {@code B} is the size, in bytes, of
+     *           the string encoded using the provided charset
+     *           (e.g. {@code str.getBytes(charset).length});
      */
     @ForceInline
     default MemorySegment allocateFrom(String str, Charset charset, int srcIndex, int numChars) {
@@ -202,8 +200,8 @@ public interface SegmentAllocator {
             segment = allocateNoInit(bytes.length);
             MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
         } else {
-            StringCharBuffer scb = new StringCharBuffer(str, srcIndex, numChars);
-            ByteBuffer bytes = charset.encode(scb);
+            CharBuffer charBuffer = CharBuffer.wrap(str, srcIndex, numChars);
+            ByteBuffer bytes = charset.encode(charBuffer);
             segment = allocateNoInit(bytes.limit());
             MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.limit());
         }

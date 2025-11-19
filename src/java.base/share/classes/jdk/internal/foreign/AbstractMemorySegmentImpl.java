@@ -536,7 +536,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public String getString(long offset, Charset charset, int length) {
+    public String getString(long offset, Charset charset, long length) {
         if (length < 0) {
             throw new IllegalArgumentException();
         }
@@ -702,7 +702,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         Objects.requireNonNull(dst);
 
         AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dst;
-        StringSupport.write(destImpl, 0, dstEncoding, src, srcIndex, numChars);
+        StringSupport.copyBytes(src, destImpl, dstEncoding, 0, srcIndex, numChars);
     }
 
     // accessors

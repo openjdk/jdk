@@ -46,9 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(
-        value = 3,
-        jvmArgs = {"--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native"})
+@Fork(value = 3)
 public class FromJavaStringTest {
 
     private String str;
@@ -57,10 +55,6 @@ public class FromJavaStringTest {
 
     @Param({"5", "20", "100", "200", "451"})
     int size;
-
-    static {
-        System.loadLibrary("ToJavaString");
-    }
 
     @Setup
     public void setup() {
@@ -73,25 +67,24 @@ public class FromJavaStringTest {
         lengthBytes = str.getBytes(UTF_8).length;
     }
 
-    // @Benchmark
-    // public void panama_setString() {
-    //     strSegment.setString(0, str, UTF_8);
-    // }
+    @Benchmark
+    public void panama_setString() {
+        strSegment.setString(0, str, UTF_8);
+    }
 
     @Benchmark
     public void panama_copy() {
         MemorySegment.copy(str, UTF_8, 0, strSegment, str.length());
     }
 
-    // @Benchmark
-    // public void panama_getBytes() {
-    //     byte[] bytes = str.getBytes(UTF_8);
-    //     MemorySegment.copy(bytes, 0, strSegment, JAVA_BYTE, 0, bytes.length);
-    // }
+    @Benchmark
+    public void panama_getBytes() {
+        byte[] bytes = str.getBytes(UTF_8);
+        MemorySegment.copy(bytes, 0, strSegment, JAVA_BYTE, 0, bytes.length);
+    }
 
     static String LOREM =
             """
-            💩
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
              dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
              ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu

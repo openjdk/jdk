@@ -34,10 +34,9 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
-import java.nio.StringCharBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -62,13 +61,13 @@ public final class StringSupport {
     }
 
     @ForceInline
-    public static String read(AbstractMemorySegmentImpl segment, long offset, Charset charset, int length) {
-        int lengthBytes = length * CharsetKind.of(charset).codeUnitSize();
-        return readBytes(segment, offset, charset, lengthBytes);
+    public static String read(AbstractMemorySegmentImpl segment, long offset, Charset charset, long length) {
+        return readBytes(segment, offset, charset, length);
     }
 
     @ForceInline
-    public static String readBytes(AbstractMemorySegmentImpl segment, long offset, Charset charset, int lengthBytes) {
+    public static String readBytes(AbstractMemorySegmentImpl segment, long offset, Charset charset, long length) {
+        final int lengthBytes = (int) length;
         final byte[] bytes = new byte[lengthBytes];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, lengthBytes);
         try {
@@ -77,11 +76,6 @@ public final class StringSupport {
             // use replacement characters for malformed input
             return new String(bytes, charset);
         }
-    }
-
-    @ForceInline
-    public static void write(AbstractMemorySegmentImpl segment, long offset, Charset charset, String string, int srcIndex, int length) {
-        copyBytes(string, segment, charset, offset, srcIndex, length);
     }
 
     @ForceInline
@@ -320,14 +314,14 @@ public final class StringSupport {
         DOUBLE_BYTE(2),
         QUAD_BYTE(4);
 
-        final int codeUnitSize;
+        final int terminatorCharSize;
 
-        CharsetKind(int codeUnitSize) {
-            this.codeUnitSize = codeUnitSize;
+        CharsetKind(int terminatorCharSize) {
+            this.terminatorCharSize = terminatorCharSize;
         }
 
-        public int codeUnitSize() {
-            return codeUnitSize;
+        public int terminatorCharSize() {
+            return terminatorCharSize;
         }
 
         public static CharsetKind of(Charset charset) {
@@ -374,9 +368,9 @@ public final class StringSupport {
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
             return bytes.length;
         } else {
-            StringCharBuffer scb = new StringCharBuffer(string, srcIndex, numChars);
+            CharBuffer charBuffer = CharBuffer.wrap(string, srcIndex, numChars);
             ByteBuffer byteBuffer = segment.asByteBuffer().position((int) offset);
-            charset.newEncoder().encode(scb, byteBuffer, false);
+            charset.newEncoder().encode(charBuffer, byteBuffer, false);
             return byteBuffer.position();
         }
     }

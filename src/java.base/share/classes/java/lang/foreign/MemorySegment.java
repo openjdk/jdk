@@ -1324,8 +1324,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     String getString(long offset, Charset charset);
 
     /**
-     * Reads a string using the given length from this segment at the given offset,
-     * using the provided charset.
+     * Reads a string from this segment at the given offset, using the provided length
+     * and charset.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement string. The {@link
@@ -1336,15 +1336,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
      *                string bytes
-     * @param length  length to be used for string conversion, in code units for
-     *                the provided charset
+     * @param length  length to be used for string conversion, in bytes
      * @return a Java string constructed from the bytes read from the given starting
      *         address reading the given length of characters
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (length * N)},
-     *         where {@code N} is the size, in bytes, of a code unit in the provided charset
+     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - length}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1353,7 +1351,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         {@linkplain StandardCharsets standard charset}
      * @throws IllegalArgumentException if {@code length < 0}
      */
-    String getString(long offset, Charset charset, int length);
+    String getString(long offset, Charset charset, long length);
 
     /**
      * Writes the given string into this segment at the given offset, converting it to
@@ -2634,13 +2632,36 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     }
 
     /**
-     * asd
+     * Copies the byte sequence of the given string encoded using the provided charset
+     * to the destination segment.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string. The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getString(long)}, the string
+     * will appear truncated when read again.
      *
-     * @param src src
-     * @param dstEncoding d
-     * @param srcIndex s
-     * @param dst d
-     * @param numChars n
+     * @param src      the Java string to be written into this segment
+     * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
+     *                 the string bytes. The {@code charset} must be a
+     *                 {@linkplain StandardCharsets standard charset}
+     * @param srcIndex the starting index of the source string
+     * @param dst      the destination segment
+     * @param numChars the number of characters to be copied
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         {@code dst} is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code dst.isAccessibleBy(T) == false}
+     * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
+     * @throws IndexOutOfBoundsException  if the {@code endIndex} is larger than the length of
+     *         this {@code String} object, or {@code beginIndex} is larger than {@code endIndex}.
+     * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if {@code charset} is not a
+     *         {@linkplain StandardCharsets standard charset}
      */
     @ForceInline
     static void copy(String src, Charset dstEncoding, int srcIndex, MemorySegment dst, int numChars) {

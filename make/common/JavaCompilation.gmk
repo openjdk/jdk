@@ -280,7 +280,7 @@ define SetupJavaCompilationBody
   $1_FLAGS += -encoding utf-8
 
   ifeq ($$(JAVA_WARNINGS_AS_ERRORS), true)
-    $1_FLAGS += -XDfoo
+    $1_FLAGS += -Werror
   endif
 
   ifneq ($$($1_DISABLED_WARNINGS), )
