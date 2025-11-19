@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -62,6 +63,9 @@ static volatile int currentAgentStatus = NSK_STATUS_PASSED;
 
 void nsk_jvmti_setFailStatus() {
     currentAgentStatus = NSK_STATUS_FAILED;
+    printf("Test failed by setFailStatus(). See log.");
+    fflush(stdout);
+    exit(97);
 }
 
 int nsk_jvmti_isFailStatus() {
