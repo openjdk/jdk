@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -38,10 +39,13 @@ import java.util.stream.IntStream;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.Main;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
 
@@ -58,6 +62,11 @@ public class AsyncTest {
 
     @Test
     public void test() throws Throwable {
+
+        // Create test jar only once.
+        // Besides of saving time, this avoids asynchronous invocations of java tool provider that randomly fail.
+        APP_JAR.set(HelloApp.createBundle(JavaAppDesc.parse("Hello!"), TKit.workDir()));
+
         //
         // Run test cases from InternalAsyncTest class asynchronously.
         // Spawn a thread for every test case.
@@ -109,15 +118,13 @@ public class AsyncTest {
         @Test
         @ParameterSupplier("ids")
         public void testAppImage(int id) throws Exception {
-            init(JPackageCommand.helloAppImage()).executeAndAssertHelloAppImageCreated();
+            init(new JPackageCommand()).setPackageType(PackageType.IMAGE).executeAndAssertImageCreated();
         }
 
         @Test
         @ParameterSupplier("ids")
         public void testNativeBundle(int id) throws Exception {
-            new PackageTest().configureHelloApp().addInitializer(cmd -> {
-                init(cmd);
-            }).run(Action.CREATE_AND_UNPACK);
+            new PackageTest().addInitializer(AsyncTest::init).run(Action.CREATE_AND_UNPACK);
         }
 
         public static Collection<Object[]> ids() {
@@ -128,7 +135,11 @@ public class AsyncTest {
     }
 
     private static JPackageCommand init(JPackageCommand cmd) {
-        return cmd.useToolProvider(true).setFakeRuntime().setArgumentValue("--name", "Foo");
+        return cmd.useToolProvider(true).setFakeRuntime()
+                .setDefaultInputOutput()
+                .setArgumentValue("--input", APP_JAR.get().getParent())
+                .setArgumentValue("--main-jar", APP_JAR.get().getFileName())
+                .setArgumentValue("--name", "Foo");
     }
 
 
@@ -207,4 +218,5 @@ public class AsyncTest {
 
     private static final int JOB_COUNT = 30;
     private static final TKit.State DEFAULT_STATE = TKit.state();
+    private static final InheritableThreadLocal<Path> APP_JAR = new InheritableThreadLocal<>();
 }
