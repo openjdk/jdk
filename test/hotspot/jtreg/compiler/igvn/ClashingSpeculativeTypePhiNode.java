@@ -27,7 +27,8 @@
  * @bug 8371716
  * @summary Ranges can be proven to be disjoint but not orderable (thanks to unsigned range)
  *          Comparing such values in such range with != should always be true.
- * @run main/othervm -XX:-TieredCompilation
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:-TieredCompilation
  *                   -XX:-UseOnStackReplacement
  *                   -XX:-BackgroundCompilation
  *                   -XX:CompileOnly=compiler.igvn.ClashingSpeculativeTypePhiNode::test1
