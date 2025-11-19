@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 import jdk.jpackage.internal.model.ConfigException;
@@ -61,6 +62,10 @@ public enum WixTool {
         this.minimalVersion = minimalVersion;
     }
 
+    Path fileName() {
+        return toolFileName;
+    }
+
     sealed interface ToolInfo {
         Path path();
         DottedVersion version();
@@ -70,7 +75,7 @@ public enum WixTool {
         boolean fips();
     }
 
-    private record DefaultToolInfo(Path path, DottedVersion version) implements ToolInfo {
+    record DefaultToolInfo(Path path, DottedVersion version) implements ToolInfo {
         DefaultToolInfo {
             Objects.requireNonNull(path);
             Objects.requireNonNull(version);
@@ -86,7 +91,7 @@ public enum WixTool {
         }
     }
 
-    private record DefaultCandleInfo(Path path, DottedVersion version, boolean fips) implements CandleInfo {
+    record DefaultCandleInfo(Path path, DottedVersion version, boolean fips) implements CandleInfo {
         DefaultCandleInfo {
             Objects.requireNonNull(path);
             Objects.requireNonNull(version);
@@ -109,6 +114,10 @@ public enum WixTool {
     }
 
     static WixToolset createToolset() {
+        return createToolset(WixTool::findWixInstallDirs, true);
+    }
+
+    static WixToolset createToolset(Supplier<List<Path>> wixInstallDirs, boolean searchInPath) {
         Function<List<ToolLookupResult>, Map<WixTool, ToolInfo>> conv = lookupResults -> {
             return lookupResults.stream().filter(ToolLookupResult::isValid).collect(groupingBy(lookupResult -> {
                 return lookupResult.info().version().toString();
@@ -141,14 +150,19 @@ public enum WixTool {
             }).filter(Optional::isPresent).map(Optional::get).findFirst();
         };
 
-        var toolsInPath = Stream.of(values()).map(tool -> {
-            return ToolLookupResult.lookup(tool, Optional.empty());
-        }).filter(Optional::isPresent).map(Optional::get).toList();
+        final List<ToolLookupResult> toolsInPath;
+        if (searchInPath) {
+            toolsInPath = Stream.of(values()).map(tool -> {
+                return ToolLookupResult.lookup(tool, Optional.empty());
+            }).filter(Optional::isPresent).map(Optional::get).toList();
+        } else {
+            toolsInPath = List.of();
+        }
 
         // Try to build a toolset from tools in the PATH first.
         var toolset = createToolset.apply(toolsInPath).orElseGet(() -> {
             // Look up for WiX tools in known locations.
-            var toolsInKnownWiXDirs = findWixInstallDirs().stream().map(dir -> {
+            var toolsInKnownWiXDirs = wixInstallDirs.get().stream().map(dir -> {
                 return Stream.of(values()).map(tool -> {
                     return ToolLookupResult.lookup(tool, Optional.of(dir));
                 }).filter(Optional::isPresent).map(Optional::get);
