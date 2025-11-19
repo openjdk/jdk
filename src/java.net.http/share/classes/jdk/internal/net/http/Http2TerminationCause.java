@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.ProtocolException;
 import java.util.Objects;
 
+import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
@@ -172,7 +173,7 @@ public abstract sealed class Http2TerminationCause {
         } else if (original instanceof IOException ioe) {
             return ioe;
         } else {
-            return new IOException(original);
+            return Utils.toIOException(original);
         }
     }
 
