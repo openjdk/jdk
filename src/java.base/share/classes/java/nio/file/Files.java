@@ -576,10 +576,10 @@ public final class Files {
 
     /**
      * Creates a new and empty file, failing if {@code path} locates an existing
-     * file. The
-     * check for the existence of the file and the creation of the new file if
-     * it does not exist are a single operation that is atomic with respect to
-     * all other filesystem activities that might affect the directory.
+     * file. The check for the existence of the file and the creation of the new
+     * file if it does not exist are a single operation that is atomic with
+     * respect to all other filesystem activities that might affect the
+     * directory.
      *
      * <p> The {@code attrs} parameter is optional {@link FileAttribute
      * file-attributes} to set atomically when creating the file. Each attribute
@@ -678,7 +678,7 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the directory
      * @throws  FileAlreadyExistsException
-     *          if {@code dir} locates an existing file but is not a directory
+     *          if {@code dir} locates an existing file that is not a directory
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
@@ -982,7 +982,7 @@ public final class Files {
 
     /**
      * Creates a new link (directory entry) for an existing file,
-    * failing if {@code link} locates an existing file <i>(optional
+     * failing if {@code link} locates an existing file <i>(optional
      * operation)</i>.
      *
      * <p> The {@code link} parameter locates the directory entry to create.
