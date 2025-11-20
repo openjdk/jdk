@@ -50,6 +50,7 @@ import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static java.net.http.HttpRequest.BodyPublishers;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -100,7 +101,7 @@ class H3RequestRejectedTest {
      */
     @Test
     void testAlwaysRejected() throws Exception {
-        try (final HttpClient client = HttpClient.newBuilder()
+        try (final HttpClient client = createClientBuilderForH3()
                 .sslContext(sslContext).proxy(NO_PROXY).version(HTTP_3)
                 .build()) {
 
@@ -134,7 +135,7 @@ class H3RequestRejectedTest {
      */
     @Test
     void testRejectedRequest() throws Exception {
-        try (final HttpClient client = HttpClient.newBuilder().sslContext(sslContext)
+        try (final HttpClient client = createClientBuilderForH3().sslContext(sslContext)
                 .proxy(NO_PROXY).version(HTTP_3)
                 .build()) {
 
