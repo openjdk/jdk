@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.Arrays;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
@@ -29,7 +30,7 @@ import jdk.test.lib.security.SecurityUtils;
 
 /*
   * @test
-  * @bug 8224650 8242929
+  * @bug 8224650 8242929 8314323
   * @library /javax/net/ssl/templates
   *          /javax/net/ssl/TLSCommon
   *          /test/lib
@@ -44,6 +45,9 @@ import jdk.test.lib.security.SecurityUtils;
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe4096
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe6144
   * @run main/othervm NamedGroupsWithCipherSuite ffdhe8192
+  * @run main/othervm NamedGroupsWithCipherSuite X25519MLKEM768
+  * @run main/othervm NamedGroupsWithCipherSuite SecP256r1MLKEM768
+  * @run main/othervm NamedGroupsWithCipherSuite SecP384r1MLKEM1024
  */
 public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
@@ -75,6 +79,22 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
             CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+    };
+
+    private static final String[] HYBRID_NAMEDGROUPS = {
+            "X25519MLKEM768",
+            "SecP256r1MLKEM768",
+            "SecP384r1MLKEM1024"
+    };
+
+    private static final Protocol[] HYBRID_PROTOCOL = new Protocol[] {
+            Protocol.TLSV1_3
+    };
+
+    private static final CipherSuite[] HYBRID_CIPHER_SUITES = new CipherSuite[] {
+            CipherSuite.TLS_AES_128_GCM_SHA256,
+            CipherSuite.TLS_AES_256_GCM_SHA384,
+            CipherSuite.TLS_CHACHA20_POLY1305_SHA256
     };
 
     private String protocol;
@@ -151,19 +171,27 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
         // Re-enable TLSv1 and TLSv1.1 since test depends on it.
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1", "TLSv1.1");
 
-        for (Protocol protocol : PROTOCOLS) {
-            for (CipherSuite cipherSuite : CIPHER_SUITES) {
-                // Named group converted to lower case just
-                // to satisfy Test condition
+        boolean hybridGroup = Arrays.asList(HYBRID_NAMEDGROUPS).
+                contains(namedGroup);
+        Protocol[] protocolList = hybridGroup ?
+                HYBRID_PROTOCOL : PROTOCOLS;
+        CipherSuite[] cipherList = hybridGroup ?
+                HYBRID_CIPHER_SUITES : CIPHER_SUITES;
+
+        // non-Hybrid named group converted to lower case just
+        // to satisfy Test condition
+        String normalizedGroup = hybridGroup ?
+                namedGroup : namedGroup.toLowerCase();
+
+        for (Protocol protocol : protocolList) {
+            for (CipherSuite cipherSuite : cipherList) {
                 if (cipherSuite.supportedByProtocol(protocol)
-                        && groupSupportdByCipher(namedGroup.toLowerCase(),
-                                cipherSuite)) {
+                        && groupSupportdByCipher(normalizedGroup,
+                        cipherSuite)) {
                     System.out.printf("Protocol: %s, cipher suite: %s%n",
                             protocol, cipherSuite);
-                    // Named group converted to lower case just
-                    // to satisfy Test condition
                     new NamedGroupsWithCipherSuite(protocol,
-                            cipherSuite, namedGroup.toLowerCase()).run();
+                            cipherSuite, normalizedGroup).run();
                 }
             }
         }
@@ -171,6 +199,10 @@ public class NamedGroupsWithCipherSuite extends SSLSocketTemplate {
 
     private static boolean groupSupportdByCipher(String group,
             CipherSuite cipherSuite) {
+        if (Arrays.asList(HYBRID_NAMEDGROUPS).contains(group)) {
+            return cipherSuite.keyExAlgorithm == null;
+        }
+
         return (group.startsWith("x")
                         && xdhGroupSupportdByCipher(cipherSuite))
                 || (group.startsWith("secp")
