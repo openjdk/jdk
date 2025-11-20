@@ -51,11 +51,15 @@ public class AllNotVMGtest {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static TestFilter[] TEST_FILTERS = {
+        // JDK-8372245
         TF("globalDefinitions.format_specifiers"),
+        // JDK-8372246
         TF("LogOutputList.is_level_multiple_outputs"),
         TF("LogOutputList.is_level_single_output"),
         TF("LogOutputList.level_for"),
+        // JDK-8372249
         TF("os_linux.addr_to_function_valid"),
+        // JDK-8372244
         TF("ZArrayTest.slice"),
         TF("ZNUMATest.calculate_share"),
     };

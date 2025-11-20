@@ -55,6 +55,7 @@ public class CheckShuffledGtest {
     // List of tests which have dependencies, these should have bugs associated
     // with them, and should be removed once they are resolved.
     static final TestFilter[] TEST_FILTERS = {
+        // JDK-8372242
         TF("LogTagSet.defaults_vm"),
     };
 
