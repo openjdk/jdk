@@ -1390,11 +1390,14 @@ commonResume(jthread thread)
     ThreadNode *node;
 
     /*
-     * The thread is normally between its start and end events, but if
-     * not, check the auxiliary list used by threadControl_suspendThread.
+     * We need to call findRunningThread(thread) here instead of just calling
+     * findThread(NULL, thread) because it's possible that there is not currently a
+     * ThreadNode for the thread, and findRunningThread() will create one in that case.
      */
     node = findRunningThread(thread);
     if (node == NULL) {
+        // The thread is normally between its start and end events, but if not,
+        // check the auxiliary list used by commonSuspend() and commonSuspendList().
         node = findThread(&otherThreads, thread);
     }
 #if 0
