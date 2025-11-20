@@ -32,22 +32,22 @@
 package compiler.c2;
 
 public class Test8370502 {
-  public static void main(String[] args) {
-    int[] a = new int[0]; // test valid only when size is 0.
-    for (int i = 0; i < Integer.valueOf(10000); i++)
-      try {
-        test(a, 0);
-      } catch (ArrayIndexOutOfBoundsException e) {
-      }
-  }
-
-  static void test(int[] a, int invar) {
-    for (int i = 0; i < 1;) {
-      a[i] = 0;
-      synchronized (Test8370502.class) {
-      }
-      for (int j = 0; Integer.valueOf(j) < 1;)
-        j = 0;
+    public static void main(String[] args) {
+        int[] a = new int[0]; // test valid only when size is 0.
+        for (int i = 0; i < Integer.valueOf(10000); i++)
+            try {
+                test(a, 0);
+            } catch (ArrayIndexOutOfBoundsException e) {
+            }
     }
-  }
+
+    static void test(int[] a, int invar) {
+        for (int i = 0; i < 1;) {
+            a[i] = 0;
+            synchronized (Test8370502.class) {
+            }
+            for (int j = 0; Integer.valueOf(j) < 1;)
+                j = 0;
+        }
+    }
 }
