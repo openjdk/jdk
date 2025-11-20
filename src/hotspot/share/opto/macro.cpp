@@ -2351,8 +2351,8 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
   if (_callprojs.fallthrough_memproj != nullptr) {
     // create a Phi for the memory state
-    Node *mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
-    Node *memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
+    Node* mem_phi = new PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    Node* memproj = transform_later(new ProjNode(call, TypeFunc::Memory));
     mem_phi->init_req(1, memproj);
     mem_phi->init_req(2, mem);
     transform_later(mem_phi);
