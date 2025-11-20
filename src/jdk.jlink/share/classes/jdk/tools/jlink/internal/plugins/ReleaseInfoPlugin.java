@@ -25,12 +25,13 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -108,8 +109,8 @@ public final class ReleaseInfoPlugin extends AbstractPlugin {
             default: {
                 // --release-info <file>
                 Properties props = new Properties();
-                try (InputStreamReader isr = new InputStreamReader(new FileInputStream(operation), "UTF-8")) {
-                    props.load(isr);
+                try (Reader reader = Files.newBufferedReader(Path.of(operation))) {
+                    props.load(reader); // Use reader API so as to read in as UTF-8
                 } catch (IOException exp) {
                     throw new UncheckedIOException(exp);
                 }

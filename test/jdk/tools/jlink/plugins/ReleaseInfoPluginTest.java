@@ -24,8 +24,7 @@
 import jdk.test.lib.process.*;
 import jdk.test.lib.Asserts;
 
-import java.io.InputStreamReader;
-import java.io.FileInputStream;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -67,12 +66,12 @@ public class ReleaseInfoPluginTest {
                                "--release-info", utf8File.toString()
                              }, "java.base").assertSuccess();
 
-        // release file produced should have IMPLEMENTOR in an
-        // appropriate encoding
+        // release file produced should have IMPLEMENTOR in
+        // UTF-8 encoding
         var release = image.resolve("release");
         Properties props = new Properties();
-        try (InputStreamReader isr = new InputStreamReader(new FileInputStream(release.toFile()), "UTF-8")) {
-            props.load(isr);
+        try (Reader reader= Files.newBufferedReader(release)) {
+            props.load(reader); // Load as UTF-8
         }
         String noQuotesMods = ((String)props.get("MODULES")).replace("\"", "");
         Asserts.assertEquals("java.base", noQuotesMods);
