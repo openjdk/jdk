@@ -2433,7 +2433,7 @@ void os::Linux::print_uptime_info(outputStream* st) {
   if (ret == 0) {
     os::print_dhm(st, "OS uptime:", (long) sinfo.uptime);
   }
-  assert(ret == 0, "sysinfo must return 0");
+  assert(ret == 0, "sysinfo failed: %s", os::strerror(errno));
 }
 
 bool os::Linux::print_container_info(outputStream* st) {
@@ -2599,7 +2599,7 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   int ret = sysinfo(&si);
-  assert(ret == 0, "sysinfo must return 0");
+  assert(ret == 0, "sysinfo failed: %s", os::strerror(errno));
   physical_memory_size_type phys_mem = physical_memory();
   st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
