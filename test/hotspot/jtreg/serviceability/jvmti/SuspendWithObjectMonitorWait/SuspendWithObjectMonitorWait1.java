@@ -135,7 +135,3 @@ public class SuspendWithObjectMonitorWait1 extends SuspendWithObjectMonitorWaitB
         return 0;
     }
 }
-
-
-
-
