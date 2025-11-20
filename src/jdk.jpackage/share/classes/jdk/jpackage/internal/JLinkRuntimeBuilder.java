@@ -83,6 +83,11 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         }
     }
 
+    @Override
+    public boolean withNativeCommands() {
+        return !jlinkCmdLine.contains("--strip-native-commands");
+    }
+
     static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
         return ModuleFinder.compose(
                 ModulePath.of(JarFile.runtimeVersion(), true,
