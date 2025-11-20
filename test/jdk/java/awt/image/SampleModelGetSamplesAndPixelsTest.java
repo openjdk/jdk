@@ -306,6 +306,13 @@ public class SampleModelGetSamplesAndPixelsTest {
         } catch (ArrayIndexOutOfBoundsException e) {
             System.out.println(e.getMessage());
         }
+
+        try {
+            sm.setDataElements(0, 0, null, db);
+            noException(sm);
+        } catch (NullPointerException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     private static SampleModel createSampleModel(Class<? extends SampleModel> cls) {

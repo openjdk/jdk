@@ -600,6 +600,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      *                  object
      * @param data      The DataBuffer containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code obj} is null.
      * @throws NullPointerException if {@code data} is null.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code obj} is too small to hold the input.

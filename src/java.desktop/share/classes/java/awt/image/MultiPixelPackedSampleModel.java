@@ -594,6 +594,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param obj a primitive array containing pixel data
      * @param data the {@code DataBuffer} containing the image data
      * @see #getDataElements(int, int, Object, DataBuffer)
+     * @throws NullPointerException if {@code obj} is null.
      * @throws NullPointerException if {@code data} is null.
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code obj} is too small to hold the input.
