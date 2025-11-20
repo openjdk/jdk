@@ -322,11 +322,6 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
 }
 
 bool ShenandoahOldHeuristics::top_off_collection_set() {
-#undef KELVIN_DEBUG
-#ifdef KELVIN_DEBUG
-  log_info(gc)("Topping off collection set");
-#endif
-
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   } else {
