@@ -218,7 +218,7 @@ public class MetalButtonUI extends BasicButtonUI {
         else if ( isIcon ) {
             focusRect.setBounds( iconRect );
         } else {
-            Rectangle emptyRect = viewRect;
+            Rectangle emptyRect = new Rectangle();
             emptyRect.x = 5;
             emptyRect.y = 5;
             emptyRect.width = b.getWidth() - emptyRect.x * 2;
