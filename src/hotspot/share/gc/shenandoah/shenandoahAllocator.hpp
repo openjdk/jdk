@@ -72,7 +72,7 @@ protected:
   inline HeapWord* atomic_allocate_in(ShenandoahHeapRegion* region, bool is_alloc_region, ShenandoahAllocRequest &req, bool &in_new_region, bool &ready_for_retire);
 
   // Refresh new alloc regions, allocate the object in the new alloc region.
-  int refresh_alloc_regions();
+  int refresh_alloc_regions(ShenandoahAllocRequest* req = nullptr, bool* in_new_region = nullptr, HeapWord** obj = nullptr);
 #ifdef ASSERT
   virtual void verify(ShenandoahAllocRequest& req) { }
 #endif
