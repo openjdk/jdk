@@ -56,13 +56,13 @@ public class TestGCMSplitBound {
     private static final int IV_SIZE_IN_BYTES = 12;
     private static final int TAG_SIZE_IN_BYTES = 16;
 
-    private Cipher getCipher(final byte[] key, final byte[] aad, byte[] nonce)
+    private Cipher getCipher(final byte[] key, final byte[] aad, final byte[] nonce, int mode)
         throws Exception {
         SecretKey keySpec = new SecretKeySpec(key, "AES");
         AlgorithmParameterSpec params =
             new GCMParameterSpec(8 * TAG_SIZE_IN_BYTES, nonce, 0, nonce.length);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, params);
+        cipher.init(mode, keySpec, params);
         if (aad != null && aad.length != 0) {
             cipher.updateAAD(aad);
         }
@@ -72,7 +72,7 @@ public class TestGCMSplitBound {
     private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
         throws Exception {
         byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
-        Cipher cipher = getCipher(key, aad, nonce);
+        Cipher cipher = getCipher(key, aad, nonce, Cipher.ENCRYPT_MODE);
         int outputSize = cipher.getOutputSize(plaintext.length);
         int len = IV_SIZE_IN_BYTES + outputSize;
         byte[] output = new byte[len];
@@ -85,7 +85,7 @@ public class TestGCMSplitBound {
         throws Exception {
         byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
         System.arraycopy(ciphertext, 0, nonce, 0, IV_SIZE_IN_BYTES);
-        Cipher cipher = getCipher(key, aad, nonce);
+        Cipher cipher = getCipher(key, aad, nonce, Cipher.DECRYPT_MODE);
         return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES);
     }
 
