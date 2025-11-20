@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
  * @test
  * @bug 8151299 8164704
  * @modules java.net.http/jdk.internal.net.http
- * @run testng java.net.http/jdk.internal.net.http.RawChannelTest
+ * @run testng/othervm java.net.http/jdk.internal.net.http.RawChannelTest
  */
+// use
+//     @run testng/othervm -Dseed=6434511950803022575
+//          java.net.http/jdk.internal.net.http.RawChannelTest
+// to reproduce a failure with a particular seed (e.g. 6434511950803022575)
+// if this test is observed failing with that seed
 //-Djdk.internal.httpclient.websocket.debug=true

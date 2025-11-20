@@ -1649,10 +1649,15 @@ source_hpp %{ // Header information of the source block.
 class HandlerImpl {
  public:
 
+  static int emit_exception_handler(C2_MacroAssembler *masm);
   static int emit_deopt_handler(C2_MacroAssembler* masm);
 
+  static uint size_exception_handler() {
+    return NativeJump::max_instruction_size();
+  }
+
   static uint size_deopt_handler() {
-    return NativeCall::max_instruction_size() + MacroAssembler::jump_pcrelative_size();
+    return NativeCall::max_instruction_size();
   }
 };
 
@@ -1667,6 +1672,43 @@ public:
 
 source %{
 
+// This exception handler code snippet is placed after the method's
+// code. It is the return point if an exception occurred. it jumps to
+// the exception blob.
+//
+// If the method gets deoptimized, the method and this code snippet
+// get patched.
+//
+// 1) Trampoline code gets patched into the end of this exception
+//   handler. the trampoline code jumps to the deoptimization blob.
+//
+// 2) The return address in the method's code will get patched such
+//   that it jumps to the trampoline.
+//
+// 3) The handler will get patched such that it does not jump to the
+//   exception blob, but to an entry in the deoptimization blob being
+//   aware of the exception.
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler *masm) {
+  Register temp_reg = Z_R1;
+
+  address base = __ start_a_stub(size_exception_handler());
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;          // CodeBuffer::expand failed
+  }
+
+  int offset = __ offset();
+  // Use unconditional pc-relative jump with 32-bit range here.
+  __ load_const_optimized(temp_reg, (address)OptoRuntime::exception_blob()->content_begin());
+  __ z_br(temp_reg);
+
+  assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
+
+  __ end_a_stub();
+
+  return offset;
+}
+
 // Emit deopt handler code.
 int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   address        base = __ start_a_stub(size_deopt_handler());
@@ -1678,22 +1720,14 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   int offset = __ offset();
 
-  Label start;
-  __ bind(start);
-
   // Size_deopt_handler() must be exact on zarch, so for simplicity
   // we do not use load_const_opt here.
   __ load_const(Z_R1, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1);
-
-  int entry_offset = __ offset();
-
-  __ z_bru(start);
-
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
 
   __ end_a_stub();
-  return entry_offset;
+  return offset;
 }
 
 //=============================================================================
@@ -1772,6 +1806,10 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
+bool Matcher::mask_op_prefers_predicate(int opcode, const TypeVect* vt) {
   return false;
 }
 
@@ -10123,14 +10161,14 @@ instruct partialSubtypeCheckConstSuper(rarg2RegP sub, rarg1RegP super, immP supe
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
   match(Set pcc (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
-    __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
     // If locking was successful, cc should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where cc is 'NE'.
@@ -10138,14 +10176,14 @@ instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iReg
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct cmpFastUnlockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
   match(Set pcc (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
-    __ fast_unlock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_unlock($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
     // If unlocking was successful, cc should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where cc is 'NE'.

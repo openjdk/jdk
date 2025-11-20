@@ -206,7 +206,7 @@ address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
     nmethod* nm = cb()->as_nmethod_or_null();
     assert(nm != nullptr, "only nmethod is expected here");
-    return nm->deopt_handler_entry() - pc_return_offset;
+    return nm->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -355,7 +355,7 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt handler.
   nmethod* nm = _cb->as_nmethod();
-  address deopt = nm->deopt_handler_entry();
+  address deopt = nm->deopt_handler_begin();
 
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 

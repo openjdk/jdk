@@ -1765,7 +1765,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Try fastpath for locking.
     // Fast_lock kills r_temp_1, r_temp_2.
-    __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
+    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1961,7 +1961,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Try fastpath for unlocking.
     // Fast_unlock kills r_tmp1, r_tmp2.
-    __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
+    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2544,10 +2544,14 @@ void SharedRuntime::generate_deopt_blob() {
   // Normal entry (non-exception case)
   //
   // We have been called from the deopt handler of the deoptee.
-  // Z_R14 points to the entry point of the deopt handler.
+  // Z_R14 points behind the call in the deopt handler. We adjust
+  // it such that it points to the start of the deopt handler.
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
+  // The (int) cast is necessary, because -((unsigned int)14)
+  // is an unsigned int.
+  __ add2reg(Z_R14, -(int)NativeCall::max_instruction_size());
 
   const Register   exec_mode_reg = Z_tmp_1;
 

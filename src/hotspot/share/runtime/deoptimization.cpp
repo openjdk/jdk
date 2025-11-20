@@ -74,7 +74,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -85,7 +84,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -499,9 +498,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                         RegisterMap::WalkContinuation::skip);
   // Now get the deoptee with a valid map
   frame deoptee = stub_frame.sender(&map);
-  if (exec_mode == Unpack_deopt) {
-    assert(deoptee.is_deoptimized_frame(), "frame is not marked for deoptimization");
-  }
   // Set the deoptee nmethod
   assert(current->deopt_compiled_method() == nullptr, "Pending deopt!");
   nmethod* nm = deoptee.cb()->as_nmethod_or_null();
@@ -1680,8 +1676,8 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         }
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                              deoptee_thread, thread);
+            ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                           deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");

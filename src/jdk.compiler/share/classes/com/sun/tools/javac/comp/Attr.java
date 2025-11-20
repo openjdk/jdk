@@ -124,6 +124,7 @@ public class Attr extends JCTree.Visitor {
     final ArgumentAttr argumentAttr;
     final MatchBindingsComputer matchBindingsComputer;
     final AttrRecover attrRecover;
+    final boolean captureMRefReturnType;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -175,6 +176,7 @@ public class Attr extends JCTree.Visitor {
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+        captureMRefReturnType = Source.Feature.ERASE_POLY_SIG_RETURN_TYPE.allowedInSource(source);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
@@ -375,7 +377,7 @@ public class Attr extends JCTree.Visitor {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
-                if (site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
+                if (site == null || site.kind == ERR || site.kind == ABSENT_TYP || site.kind == HIDDEN)
                     return site;
                 Name name = (Name)node.getIdentifier();
                 if (site.kind == PCK) {
@@ -1859,7 +1861,7 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isUnconditionallyExact(seltype, patternType);
+                                types.isUnconditionallyExactTypeBased(seltype, patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
@@ -1982,7 +1984,7 @@ public class Attr extends JCTree.Visitor {
                         twrResult.check(resource, resource.type);
 
                         //check that resource type cannot throw InterruptedException
-                        checkAutoCloseable(resource.pos(), localEnv, resource.type);
+                        checkAutoCloseable(localEnv, resource, true);
 
                         VarSymbol var = ((JCVariableDecl) resource).sym;
 
@@ -2031,7 +2033,9 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    void checkAutoCloseable(DiagnosticPosition pos, Env<AttrContext> env, Type resource) {
+    void checkAutoCloseable(Env<AttrContext> env, JCTree tree, boolean useSite) {
+        DiagnosticPosition pos = tree.pos();
+        Type resource = tree.type;
         if (!resource.isErroneous() &&
             types.asSuper(resource, syms.autoCloseableType.tsym) != null &&
             !types.isSameType(resource, syms.autoCloseableType)) { // Don't emit warning for AutoCloseable itself
@@ -2049,9 +2053,15 @@ public class Attr extends JCTree.Visitor {
                 log.popDiagnosticHandler(discardHandler);
             }
             if (close.kind == MTH &&
-                    close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
+                    (useSite || close.owner != syms.autoCloseableType.tsym) &&
+                    ((MethodSymbol)close).binaryOverrides(syms.autoCloseableClose, resource.tsym, types) &&
                     chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
-                log.warning(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
+                if (!useSite && close.owner == resource.tsym) {
+                    log.warning(TreeInfo.diagnosticPositionFor(close, tree),
+                        LintWarnings.TryResourceCanThrowInterruptedExc(resource));
+                } else {
+                    log.warning(pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
+                }
             }
         }
     }
@@ -3824,9 +3834,10 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (!returnType.hasTag(VOID) && !resType.hasTag(VOID)) {
+            Type capturedResType = captureMRefReturnType ? types.capture(resType) : resType;
             if (resType.isErroneous() ||
-                    new FunctionalReturnContext(checkContext).compatible(resType, returnType,
-                            checkContext.checkWarner(tree, resType, returnType))) {
+                    new FunctionalReturnContext(checkContext).compatible(capturedResType, returnType,
+                            checkContext.checkWarner(tree, capturedResType, returnType))) {
                 incompatibleReturnType = null;
             }
         }
@@ -3990,6 +4001,7 @@ public class Attr extends JCTree.Visitor {
                               operator.type.getReturnType(),
                               owntype);
             chk.checkLossOfPrecision(tree.rhs.pos(), operand, owntype);
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, operand);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -4080,6 +4092,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             chk.checkDivZero(tree.rhs.pos(), operator, right);
+            chk.checkOutOfRangeShift(tree.rhs.pos(), operator, right);
         }
         result = check(tree, owntype, KindSelector.VAL, resultInfo);
     }
@@ -5649,7 +5662,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkImplementations(tree);
 
         //check that a resource implementing AutoCloseable cannot throw InterruptedException
-        checkAutoCloseable(tree.pos(), env, c.type);
+        checkAutoCloseable(env, tree, false);
 
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
             // Attribute declaration

@@ -541,9 +541,12 @@ class Bundle {
                         pattern = (String) parentsMap.remove(key);
                     }
                     if (pattern != null) {
+                        // escape reserved chars, excluding date/time patterns, eg, "{1} {0}"
+                        String transPattern = key.endsWith("-dateTime") ? pattern : escapeReservedChars(pattern);
+
                         // Perform date-time format pattern conversion which is
                         // applicable to both SimpleDateFormat and j.t.f.DateTimeFormatter.
-                        String transPattern = translateDateFormatLetters(calendarType, key, pattern, this::convertDateTimePatternLetter);
+                        transPattern = translateDateFormatLetters(calendarType, key, transPattern, this::convertDateTimePatternLetter);
                         dateTimePatterns.add(i, transPattern);
                         // Additionally, perform SDF specific date-time format pattern conversion
                         sdfPatterns.add(i, translateDateFormatLetters(calendarType, key, transPattern, this::convertSDFLetter));
@@ -780,7 +783,7 @@ class Bundle {
                 e -> calendarPrefix + e.getKey(),
                 e -> translateDateFormatLetters(calendarType,
                         e.getKey(),
-                        (String)e.getValue(),
+                        escapeReservedChars((String)e.getValue()),
                         this::convertDateTimePatternLetter)
             ))
         );
@@ -843,5 +846,40 @@ class Bundle {
                         e -> ((String)e.getValue()).trim()
                 ))
         );
+    }
+
+    /**
+     * Escape reserved pattern characters or optional start/ends,
+     * '#', '{', '}', '[', and ']' in the pattern string.
+     *
+     * @param pattern original pattern string
+     * @return escaped pattern string
+     * @see DateTimeFormatterBuilder#appendPattern
+     */
+    private static String escapeReservedChars(String pattern) {
+        StringBuilder out = new StringBuilder();
+        boolean inQuote = false;
+
+        for (int i = 0; i < pattern.length(); i++) {
+            char c = pattern.charAt(i);
+            if (c == '\'') {
+                if (i + 1 < pattern.length() && pattern.charAt(i + 1) == '\'') {
+                    // single quote literal
+                    out.append("''");
+                    i++;
+                } else {
+                    inQuote = !inQuote;
+                    out.append(c);
+                }
+            } else if (!inQuote &&
+                (c == '#' || c == '{' || c == '}' || c == '[' || c == ']')) {
+                // escape the reserved char
+                out.append('\'').append(c).append('\'');
+            } else {
+                out.append(c);
+            }
+        }
+
+        return out.toString();
     }
 }

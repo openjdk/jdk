@@ -353,9 +353,7 @@ protected:
   // collection or expansion activity.
   virtual size_t unsafe_max_tlab_alloc() const = 0;
 
-  // Perform a collection of the heap; intended for use in implementing
-  // "System.gc".  This probably implies as full a collection as the
-  // "CollectedHeap" supports.
+  // Perform a collection of the heap of a type depending on the given cause.
   virtual void collect(GCCause::Cause cause) = 0;
 
   // Perform a full collection
@@ -500,6 +498,7 @@ protected:
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+  virtual size_t bootstrap_max_memory() const;
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.
