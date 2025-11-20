@@ -3527,7 +3527,7 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
 
   __ bind(MESG_BELOW_32_BLKS);
   __ subl(len, 16 * 16);
-  __ cmpl(len, 256);
+  __ cmpl(len, 16 * 16);
   __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
   __ addl(pos, 16 * 16);
   gcm_enc_dec_last_avx512(len, in, pos, AAD_HASHx, SHUF_MASK, avx512_subkeyHtbl, ghashin_offset, HashKey_16, true, true);
