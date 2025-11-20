@@ -42,6 +42,11 @@ class Node;
 class InlineTree;
 class ciMethod;
 class JVMState;
+<<<<<<< HEAD
+=======
+class LRG;
+class ConnectionGraph;
+>>>>>>> 38cfdefba74920520729ee6f5f60c2ceaf6a4e24
 class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
@@ -117,6 +122,7 @@ private:
   Compile *C;
   double _max_freq;
   bool _append;
+  ConnectionGraph* _congraph;
   const Parse* _parse;
 
   // Walk the native stack and print relevant C2 frames as IGV properties (if
@@ -166,6 +172,7 @@ private:
   void end_method();
   void print_graph(const char* name, const frame* fr = nullptr);
   void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, const frame* fr = nullptr);
+  void set_congraph(ConnectionGraph* congraph) { _congraph = congraph; }
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };
