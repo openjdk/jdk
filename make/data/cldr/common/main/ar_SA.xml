@@ -133,7 +133,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} بوصة مربعة</unitPattern>
 				<unitPattern count="other">{0} بوصة مربعة</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="zero" draft="contributed">{0} جزء في المليون</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} جزء في المليون</unitPattern>
 				<unitPattern count="two" draft="contributed">جزءان في المليون</unitPattern>
@@ -367,7 +367,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} قيراطًا</unitPattern>
 				<unitPattern count="other">{0} قيراط</unitPattern>
 			</unit>
-			<unit type="concentr-permillion">
+			<unit type="concentr-part-per-1e6">
 				<unitPattern count="zero" draft="contributed">{0} جزء/مليون</unitPattern>
 				<unitPattern count="one" draft="contributed">{0} جزء/مليون</unitPattern>
 				<unitPattern count="two" draft="contributed">جزءان/مليون</unitPattern>

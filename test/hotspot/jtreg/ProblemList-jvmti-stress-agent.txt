@@ -27,9 +27,6 @@
 #
 #############################################################################
 
-
-compiler/macronodes/TestTopInMacroElimination.java      8362832 generic-all
-
 gc/stringdedup/TestStringDeduplicationAgeThreshold.java 8362562 generic-all
 gc/stringdedup/TestStringDeduplicationInterned.java     8362562 generic-all
 gc/stringdedup/TestStringDeduplicationPrintOptions.java 8362562 generic-all
