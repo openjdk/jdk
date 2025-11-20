@@ -64,15 +64,15 @@ Developers are responsible for updating their custom runtime images.
 `--bind-services`
 :   Link service provider modules and their dependencies.
 
-`--compress=zip-[0-9]`
+`-c zip-[0-9]` or `--compress=zip-[0-9]`
 :   Enable compression of resources. The accepted values are:
     zip-[0-9], where zip-0 provides no compression,
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
-    -   `0`: No compression. Equivalent to zip-0.
+    -   `0`: No compression. Use zip-0 instead.
     -   `1`: Constant string sharing
-    -   `2`: ZIP. Equivalent to zip-6.
+    -   `2`: ZIP. Use zip-6 instead.
 
 `--disable-plugin` *pluginname*
 :   Disables the specified plug-in. See [jlink Plug-ins] for the list of
@@ -182,9 +182,9 @@ Description
     and zip-9 provides the best compression. Default is zip-6.
 
 :   Deprecated values to be removed in a future release:
-    -   Level 0: No compression. Equivalent to zip-0.
+    -   Level 0: No compression. Use zip-0 instead.
     -   Level 1: Constant string sharing
-    -   Level 2: ZIP. Equivalent to zip-6.
+    -   Level 2: ZIP. Use zip-6 instead.
 
     An optional *pattern-list* filter can be specified to list the pattern of
     files to include.

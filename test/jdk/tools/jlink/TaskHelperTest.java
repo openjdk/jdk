@@ -64,12 +64,16 @@ public class TaskHelperTest {
         }, true, "--main-expecting"),
         new Option<>(false, (task, opt, arg) -> {
             mainFlag = true;
-        }, true, "--main-no-arg")
+        }, true, "--main-no-arg"),
+        new Option<>(true, (task, opt, arg) -> {
+            compressArgValue = (arg != null && !arg.isEmpty()) ? arg : "zip-6";
+        }, "--compress", "-c")
     );
 
     private static String argValue;
     private static String mainArgValue;
     private static boolean mainFlag = false;
+    private static String compressArgValue;
 
     public record ArgTestCase(String cmdLine, String[] tokens, String pluginArgValue, String mainArgValue, boolean mainFlagSet) {};
 
@@ -118,6 +122,7 @@ public class TaskHelperTest {
         argValue = null;
         mainArgValue = null;
         mainFlag = false;
+        compressArgValue= null;
     }
 
     public static Stream<ArgTestCase> gnuStyleUsages() {
@@ -217,4 +222,45 @@ public class TaskHelperTest {
         var remaining = optionsHelper.handleOptions(this, args);
         assertEquals(2, remaining.size());
     }
+
+    record CompressTestCase(String[] tokens, String expectedCompressValue, boolean expectedMainFlag) {}
+
+    public static Stream<CompressTestCase> compressUsages() {
+        return Stream.of(
+
+                new CompressTestCase(new String[] {"-c", "0"}, "0", false),
+                new CompressTestCase(new String[] {"--compress=zip-0"}, "zip-0", false),
+
+                new CompressTestCase(new String[] {"-c", "1"}, "1", false),
+                new CompressTestCase(new String[] {"--compress=zip-1"}, "zip-1", false),
+
+                new CompressTestCase(new String[] {"-c", "2"}, "2", false),
+                new CompressTestCase(new String[] {"--compress=zip-2"}, "zip-2", false),
+
+                new CompressTestCase(new String[] {"--compress=zip-3"}, "zip-3", false),
+                new CompressTestCase(new String[] {"--compress=zip-4"}, "zip-4", false),
+                new CompressTestCase(new String[] {"--compress=zip-5"}, "zip-5", false),
+                new CompressTestCase(new String[] {"--compress=zip-6"}, "zip-6", false),
+                new CompressTestCase(new String[] {"--compress=zip-7"}, "zip-7", false),
+                new CompressTestCase(new String[] {"--compress=zip-8"}, "zip-8", false),
+                new CompressTestCase(new String[] {"--compress=zip-9"}, "zip-9", false)
+                );
+    }
+
+    @ParameterizedTest
+    @MethodSource("compressUsages")
+    public void testCompressOptionArg(CompressTestCase testCase) throws TaskHelper.BadArgs {
+        var remaining = optionsHelper.handleOptions(this, testCase.tokens);
+        try {
+            // trigger Plugin::configure
+            taskHelper.getPluginsConfig(null, null, null);
+        } catch (IOException ex) {
+            fail("Unexpected IOException");
+        }
+
+        assertTrue(remaining.isEmpty());
+        assertEquals(testCase.expectedCompressValue, compressArgValue);
+        assertEquals(testCase.expectedMainFlag(), mainFlag);
+    }
+
 }
