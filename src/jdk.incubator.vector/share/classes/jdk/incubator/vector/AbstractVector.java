@@ -182,7 +182,29 @@ abstract class AbstractVector<E> extends Vector<E> {
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType));
+        return convert0('X', vspecies().withLanes(laneType)).maybeSwapOnConverted(java.nio.ByteOrder.nativeOrder(), vspecies());
+    }
+
+    @ForceInline
+    protected static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
+        final int lanes = targetSpecies.laneCount();
+        if (subLanesPerSrc <= 1) {
+            int[] id = new int[lanes];
+            for (int i = 0; i < lanes; ++i) id[i] = i;
+            return VectorShuffle.fromArray(targetSpecies, id, 0);
+        }
+        if ((lanes % subLanesPerSrc) != 0) {
+            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
+        }
+        final int groups = lanes / subLanesPerSrc;
+        int[] map = new int[lanes];
+        for (int g = 0; g < groups; ++g) {
+            int base = g * subLanesPerSrc;
+            for (int j = 0; j < subLanesPerSrc; ++j) {
+                 map[base + j] = base + (subLanesPerSrc - 1 - j);
+            }
+        }
+        return VectorShuffle.fromArray(targetSpecies, map, 0);
     }
 
     /*package-private*/
@@ -241,6 +263,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
+
+    /*package-private*/
+    abstract AbstractVector<?> maybeSwapOnConverted(ByteOrder bo, AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline
