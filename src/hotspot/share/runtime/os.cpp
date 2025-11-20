@@ -2222,7 +2222,7 @@ bool os::is_containerized() {
   return false;
 }
 
-double os::Container::processor_count() {
+bool os::Container::processor_count(double& value) {
   ShouldNotReachHere();
   return 0.0;
 }

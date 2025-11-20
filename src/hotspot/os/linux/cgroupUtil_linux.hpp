@@ -31,13 +31,18 @@
 class CgroupUtil: AllStatic {
 
   public:
-    static double processor_count(CgroupCpuController* cpu, int host_cpus);
+    static bool processor_count(CgroupCpuController* cpu, int upper_bound, double& value);
     // Given a memory controller, adjust its path to a point in the hierarchy
     // that represents the closest memory limit.
     static void adjust_controller(CgroupMemoryController* m);
     // Given a cpu controller, adjust its path to a point in the hierarchy
     // that represents the closest cpu limit.
     static void adjust_controller(CgroupCpuController* c);
+  private:
+    static physical_memory_size_type get_updated_mem_limit(CgroupMemoryController* m,
+                                                           physical_memory_size_type lowest,
+                                                           physical_memory_size_type upper_bound);
+    static double get_updated_cpu_limit(CgroupCpuController* c, int lowest, int upper_bound);
 };
 
 #endif // CGROUP_UTIL_LINUX_HPP

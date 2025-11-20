@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm_md.h"
-#include "memory/allStatic.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
@@ -375,7 +374,7 @@ class os: AllStatic {
   // These methods are not safe to use unless `os::is_containerized()` is true.
   class Container : AllStatic {
   public:
-    static double processor_count(); // Returns the core-equivalent CPU quota
+    [[nodiscard]] static bool processor_count(double& value); // Returns the core-equivalent CPU quota
 
     [[nodiscard]] static bool available_memory(physical_memory_size_type& value);
     [[nodiscard]] static bool used_memory(physical_memory_size_type& value);
