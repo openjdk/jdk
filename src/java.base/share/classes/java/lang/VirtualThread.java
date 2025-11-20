@@ -1387,7 +1387,18 @@ final class VirtualThread extends BaseVirtualThread {
         this.carrierThread = carrier;
     }
 
-    // -- JVM TI support --
+    // The following four methods notify the VM when a "transition" starts and ends.
+    // A "mount transition" embodies the steps to transfer control from a platform
+    // thread to a virtual thread, changing the thread identity, and starting or
+    // resuming the virtual thread's continuation on the carrier.
+    // An "unmount transition" embodies the steps to transfer control from a virtual
+    // thread to its carrier, suspending the virtual thread's continuation, and
+    // restoring the thread identity to the platform thread.
+    // The notifications to the VM are necessary in order to coordinate with functions
+    // (JVMTI mostly) that disable transitions for one or all virtual threads. Starting
+    // a transition may block if transitions are disabled. Ending a transition may
+    // notify a thread that is waiting to disable transitions. The notifications are
+    // also used to post JVMTI events for virtual thread start and end.
 
     @IntrinsicCandidate
     @JvmtiMountTransition
