@@ -65,6 +65,9 @@ public final class StringSupport {
 
     @ForceInline
     public static String readBytes(AbstractMemorySegmentImpl segment, long offset, Charset charset, long length) {
+        if (length > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Required length exceeds implementation limit");
+        }
         final int lengthBytes = (int) length;
         final byte[] bytes = new byte[lengthBytes];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, lengthBytes);

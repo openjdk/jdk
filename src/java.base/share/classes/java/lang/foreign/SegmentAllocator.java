@@ -154,7 +154,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Converts a Java string into a null-terminated C string using the provided charset,
+     * Converts a Java string into a C string using the provided charset,
      * and storing the result into a memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
@@ -173,11 +173,9 @@ public interface SegmentAllocator {
      * @param srcIndex the starting index of the source string
      * @param numChars the number of characters to be copied
      * @return a new native segment containing the converted C string
-     * @throws IllegalArgumentException if {@code charset} is not a
-     *         {@linkplain StandardCharsets standard charset}
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
-     * @throws IndexOutOfBoundsException  if the {@code endIndex} is larger than the length of
-     *         this {@code String} object, or {@code beginIndex} is larger than {@code endIndex}.
+     * @throws IndexOutOfBoundsException  if the {@code numChars} is larger than the length of
+     *         this {@code String} object, or {@code srcIndex} is larger than {@code numChars}.
      *
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling

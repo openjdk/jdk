@@ -112,9 +112,8 @@ public class TestStringEncoding {
                 if (isStandard(charset)) {
                     for (Arena arena : arenas()) {
                         try (arena) {
-                            MemorySegment text = arena.allocateFrom(testString, charset);
-                            int length = testString.getBytes(charset).length;
-                            String roundTrip = text.getString(0, charset, length);
+                            MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
+                            String roundTrip = text.getString(0, charset, text.byteSize());
                             if (charset.newEncoder().canEncode(testString)) {
                                 assertEquals(roundTrip, testString);
                             }

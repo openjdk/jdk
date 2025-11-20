@@ -1336,9 +1336,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
      *                string bytes
-     * @param length  length to be used for string conversion, in bytes
+     * @param length  length in bytes of the string to read
      * @return a Java string constructed from the bytes read from the given starting
-     *         address reading the given length of characters
+     *         address reading the given length of bytes
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
@@ -2658,8 +2658,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code dst.isAccessibleBy(T) == false}
      * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code numChars}, or {@code dstOffset}
      *         are {@code < 0}
-     * @throws IndexOutOfBoundsException if the {@code endIndex} is larger than the length of
-     *         this {@code String} object, or {@code beginIndex} is larger than {@code endIndex}.
+     * @throws IndexOutOfBoundsException if the {@code numChars} is larger than the length of
+     *         this {@code String} object, or {@code srcIndex} is larger than {@code numChars}.
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
      * @throws IllegalArgumentException if {@code charset} is not a {@linkplain StandardCharsets standard charset}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
