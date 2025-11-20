@@ -527,9 +527,6 @@ private:
   // Return true if and only if the given region is successfully flipped to the old partition
   bool flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation = false);
 
-  // Handle allocation for mutator.
-  HeapWord* allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region);
-
   // Update allocation bias and decided whether to allocate from the left or right side of the heap.
   void update_allocation_bias();
 

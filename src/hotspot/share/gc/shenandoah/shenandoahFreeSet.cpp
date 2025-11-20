@@ -1305,10 +1305,6 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator,
   return nullptr;
 }
 
-HeapWord* ShenandoahFreeSet::allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
-  return mutator_allocator()->allocate(req, in_new_region);
-}
-
 void ShenandoahFreeSet::update_allocation_bias() {
   if (_alloc_bias_weight-- <= 0) {
     // We have observed that regions not collected in previous GC cycle tend to congregate at one end or the other
