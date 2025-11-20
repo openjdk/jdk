@@ -42,9 +42,6 @@ import org.junit.jupiter.api.Assertions;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpOption.H3_DISCOVERY;
-import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 
 /*
  * @test id=default
@@ -142,7 +139,7 @@ class H2SelectorVTTest implements HttpServerAdapters {
         if (sslContext == null) {
             throw new AssertionError("Unexpected null sslContext");
         }
-        // create an H3 only server
+        // create a h2 server
         h2Server = HttpTestServer.create(HTTP_2, sslContext);
         h2Server.addHandler((exchange) -> exchange.sendResponseHeaders(200, 0), "/hello");
         h2Server.start();
@@ -192,6 +189,15 @@ class H2SelectorVTTest implements HttpServerAdapters {
         }
     }
 
+    // This method attempts to determine whether the selector thread
+    // is a platform thread or a virtual thread, and throws if expectations
+    // ar not met.
+    // Since we don't have access to the selector thread, the method
+    // uses a roundabout way to figure this out: it enumerates all
+    // platform threads, and if it finds a thread whose name matches
+    // the expected name of the selector thread it concludes that the
+    // selector thread is a platform thread. Otherwise, it assumes
+    // that the thread is virtual.
     private static void assertSelectorThread(HttpClient client) {
         String cname = client.toString();
         String clientId = cname.substring(cname.indexOf('(') + 1, cname.length() -1);
