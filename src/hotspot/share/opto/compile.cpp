@@ -5233,7 +5233,7 @@ void Compile::end_method() {
 
 #ifndef PRODUCT
 bool Compile::should_print_phase(const int level) const {
-  return PrintPhaseLevel > 0 && directive()->PhasePrintLevelOption >= level &&
+  return PrintPhaseLevel >= 0 && directive()->PhasePrintLevelOption >= level &&
          _method != nullptr; // Do not print phases for stubs.
 }
 
