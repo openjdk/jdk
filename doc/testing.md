@@ -512,6 +512,10 @@ helps to reproduce intermittent test failures. Defaults to 0.
 Use this report style when reporting test results (sent to JTReg as `-report`).
 Defaults to `files`.
 
+#### MANUAL
+
+Set to `true` to execute manual tests only.
+
 ### Gtest keywords
 
 #### REPEAT
