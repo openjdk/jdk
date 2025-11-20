@@ -958,18 +958,20 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-bool AOTMetaspace::is_recording_preimage_static_archive() {
+bool AOTMetaspace::preimage_static_archive_dumped() {
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-      return _preimage_static_archive_dumped == 0;
+      return _preimage_static_archive_dumped == 1;
   }
   return false;
 }
 
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
-    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
-      return;
-    }
+  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
+  // Ensure this function is only executed once.  Multiple invocations may happen
+  // via JCmd, during VM exit or other means (in the future) from different threads 
+  // and possibly concurrently.
+  if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+    return;
   }
 
   if (CDSConfig::is_dumping_classic_static_archive()) {

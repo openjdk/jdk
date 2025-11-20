@@ -114,7 +114,7 @@ public:
   // inside the metaspace of the dynamic static CDS archive
   static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
 
-  static bool is_recording_preimage_static_archive() NOT_CDS_RETURN_(false);
+  static bool preimage_static_archive_dumped() NOT_CDS_RETURN_(false);
 
   static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);

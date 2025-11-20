@@ -54,7 +54,7 @@ public class JcmdAOTEndRecordingTest {
 
             try {
                 OutputAnalyzer output = ProcessTools.executeProcess(jcmd.getCommand());
-                output.shouldContain("Error! Not a recording run");
+                output.shouldContain("AOT.end_recording is unsupported");
             } catch (Exception e) {
                 throw new RuntimeException("Test failed: " + e);
             }
