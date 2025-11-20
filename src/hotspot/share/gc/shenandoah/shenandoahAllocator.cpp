@@ -95,8 +95,12 @@ public:
 
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
   if (_alloc_region_count == 0u) {
+    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-    return attempt_allocation_from_free_set(req, in_new_region);
+    HeapWord* obj = attempt_allocation_from_free_set(req, in_new_region);
+    if (obj != nullptr) {
+      accounting_updater._need_update = true;
+    }
   }
 
   uint dummy = 0;
@@ -120,8 +124,8 @@ HeapWord* ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& r
 
   if (regions_ready_for_refresh > 0u) {
     int refreshed = refresh_alloc_regions();
+    accounting_updater._need_update = true;
     if (refreshed > 0) {
-      accounting_updater._need_update = true;
       // Try again after refreshing alloc regions.
       uint dummy = 0u;
       obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), dummy);
@@ -133,6 +137,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& r
 
   obj = attempt_allocation_from_free_set(req, in_new_region);
   if (obj != nullptr) {
+    accounting_updater._need_update = true;
     return obj;
   }
 
