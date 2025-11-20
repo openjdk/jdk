@@ -620,11 +620,21 @@ class Stream<T> extends ExchangeImpl<T> {
 
         if (!finalResponseCodeReceived) {
             try {
-                responseCode = (int) responseHeaders
-                        .firstValueAsLong(":status")
-                        .orElseThrow(() -> new ProtocolException(String.format(
-                                "Stream %s PROTOCOL_ERROR: no status code in response",
-                                streamid)));
+                var responseCodeString = responseHeaders.firstValue(":status").orElse(null);
+                if (responseCodeString == null) {
+                    throw new ProtocolException(String.format(
+                            "Stream %s PROTOCOL_ERROR: no status code in response",
+                            streamid));
+                }
+                try {
+                    responseCode = Integer.parseInt(responseCodeString);
+                } catch (NumberFormatException nfe) {
+                    var pe = new ProtocolException(String.format(
+                            "Stream %s PROTOCOL_ERROR: invalid status code in response",
+                            streamid));
+                    pe.initCause(nfe);
+                    throw pe;
+                }
             } catch (ProtocolException cause) {
                 cancelImpl(cause, ResetFrame.PROTOCOL_ERROR);
                 rspHeadersConsumer.reset();
@@ -659,12 +669,6 @@ class Stream<T> extends ExchangeImpl<T> {
             response = new Response(
                     request, exchange, responseHeaders, connection(),
                     responseCode, HttpClient.Version.HTTP_2);
-
-            /* TODO: review if needs to be removed
-               the value is not used, but in case `content-length` doesn't parse as
-               long, there will be NumberFormatException. If left as is, make sure
-               code up the stack handles NFE correctly. */
-            responseHeaders.firstValueAsLong("content-length");
 
             if (Log.headers()) {
                 StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));
@@ -1755,21 +1759,28 @@ class Stream<T> extends ExchangeImpl<T> {
             HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
             if (!finalPushResponseCodeReceived) {
-                responseCode = (int)responseHeaders
-                    .firstValueAsLong(":status")
-                    .orElse(-1);
-
-                if (responseCode == -1) {
-                    cancelImpl(new ProtocolException("No status code"), ResetFrame.PROTOCOL_ERROR);
+                try {
+                    var responseCodeString = responseHeaders.firstValue(":status").orElse(null);
+                    if (responseCodeString == null) {
+                        throw new ProtocolException("No status code");
+                    }
+                    try {
+                        responseCode = Integer.parseInt(responseCodeString);
+                    } catch (NumberFormatException nfe) {
+                        var pe = new ProtocolException("Invalid status code: " + responseCodeString);
+                        pe.initCause(nfe);
+                        throw pe;
+                    }
+                    if (responseCode >= 100 && responseCode < 200) {
+                        String protocolErrorMsg = checkInterimResponseCountExceeded();
+                        if (protocolErrorMsg != null) {
+                            throw new ProtocolException(protocolErrorMsg);
+                        }
+                    }
+                } catch (ProtocolException pe) {
+                    cancelImpl(pe, ResetFrame.PROTOCOL_ERROR);
                     rspHeadersConsumer.reset();
                     return;
-                } else if (responseCode >= 100 && responseCode < 200) {
-                    String protocolErrorMsg = checkInterimResponseCountExceeded();
-                    if (protocolErrorMsg != null) {
-                        cancelImpl(new ProtocolException(protocolErrorMsg), ResetFrame.PROTOCOL_ERROR);
-                        rspHeadersConsumer.reset();
-                        return;
-                    }
                 }
 
                 this.finalPushResponseCodeReceived = true;
@@ -1777,12 +1788,6 @@ class Stream<T> extends ExchangeImpl<T> {
                 this.response = new Response(
                         pushReq, exchange, responseHeaders, connection(),
                         responseCode, HttpClient.Version.HTTP_2);
-
-                /* TODO: review if needs to be removed
-                   the value is not used, but in case `content-length` doesn't parse
-                   as long, there will be NumberFormatException. If left as is, make
-                   sure code up the stack handles NFE correctly. */
-                responseHeaders.firstValueAsLong("content-length");
 
                 if (Log.headers()) {
                     StringBuilder sb = new StringBuilder("RESPONSE HEADERS (streamid=%s):\n".formatted(streamid));

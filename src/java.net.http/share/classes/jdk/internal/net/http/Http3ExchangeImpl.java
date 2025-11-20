@@ -1281,10 +1281,21 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         if (Set.of("PUT", "DELETE", "OPTIONS", "TRACE").contains(method)) {
             throw new ProtocolException("push method not allowed pushId=" + pushId);
         }
-        long clen = promiseHeaders.firstValueAsLong("Content-Length").orElse(-1);
-        if (clen > 0) {
-            throw new ProtocolException("push headers contain non-zero Content-Length for pushId=" + pushId);
+
+        // Read & validate `Content-Length`
+        var clenK = "Content-Length";
+        long clen;
+        try {
+            clen = promiseHeaders.firstValueAsLong(clenK).orElse(-1);
+        } catch (NumberFormatException nfe) {
+            var pe = new ProtocolException("push headers contain illegal " + clenK);
+            pe.initCause(nfe);
+            throw pe;
         }
+        if (clen > 0) {
+            throw new ProtocolException("push headers contain non-zero " + clenK + " for pushId=" + pushId);
+        }
+
         if (promiseHeaders.firstValue("Transfer-Encoding").isPresent()) {
             throw new ProtocolException("push headers contain Transfer-Encoding for pushId=" + pushId);
         }

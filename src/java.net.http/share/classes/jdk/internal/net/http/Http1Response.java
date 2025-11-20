@@ -29,6 +29,7 @@ import java.io.EOFException;
 import java.lang.System.Logger.Level;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.net.ProtocolException;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -275,13 +276,25 @@ class Http1Response<T> {
      * Read up to MAX_IGNORE bytes discarding
      */
     public CompletableFuture<Void> ignoreBody(Executor executor) {
-        int clen = (int)headers.firstValueAsLong("Content-Length").orElse(-1);
+
+        // Read the `Content-Length` header
+        int clen;
+        var clenK = "Content-Length";
+        try {
+            clen = (int) headers.firstValueAsLong(clenK).orElse(-1);
+        } catch (NumberFormatException nfe) {
+            var pe = new ProtocolException("Illegal value in header " + clenK);
+            pe.initCause(nfe);
+            return MinimalFuture.failedFuture(pe);
+        }
+
         if (clen == -1 || clen > MAX_IGNORE) {
             connection.close();
             return MinimalFuture.completedFuture(null); // not treating as error
         } else {
             return readBody(discarding(), !request.isWebSocket(), executor);
         }
+
     }
 
     // Used for those response codes that have no body associated
@@ -311,13 +324,26 @@ class Http1Response<T> {
 
         final CompletableFuture<U> cf = new MinimalFuture<>();
 
-        long clen0 = headers.firstValueAsLong("Content-Length").orElse(-1L);
-        final long clen = fixupContentLen(clen0);
+        // Read the `Content-Length` header
+        var clenK = "Content-Length";
+        long clen;
+        try {
+            long clen0 = headers.firstValueAsLong(clenK).orElse(-1L);
+            clen = fixupContentLen(clen0);
+        } catch (NumberFormatException nfe) {
+            var pe = new ProtocolException("Invalid value in header " + clenK);
+            pe.initCause(nfe);
+            cf.completeExceptionally(pe);
+            return cf;
+        }
 
         // expect-continue reads headers and body twice.
         // if we reach here, we must reset the headersReader state.
-        asyncReceiver.unsubscribe(headersReader);
-        headersReader.reset();
+        finally {
+            asyncReceiver.unsubscribe(headersReader);
+            headersReader.reset();
+        }
+
         ClientRefCountTracker refCountTracker = new ClientRefCountTracker(connection.client(), debug);
 
         // We need to keep hold on the client facade until the
