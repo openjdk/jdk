@@ -60,6 +60,10 @@ protected:
   // Slow path of allocation attempt, it will handle the allocation with heap lock held.
   HeapWord* attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region);
 
+  // Attempt to allocate from a region in free set, rather than from any of alloc regions.
+  // Caller have to hold heap lock.
+  HeapWord* attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region);
+
   // Attempt to allocate in shared alloc regions, the allocation attempt is done with atomic operation w/o
   // holding heap lock.
   HeapWord* attempt_allocation_in_alloc_regions(ShenandoahAllocRequest& req, bool& in_new_region, uint const alloc_start_index, uint &regions_ready_for_refresh);

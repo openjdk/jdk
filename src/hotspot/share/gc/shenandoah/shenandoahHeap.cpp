@@ -997,51 +997,10 @@ inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_coun
 }
 
 HeapWord* ShenandoahHeap::allocate_memory_for_collector(ShenandoahAllocRequest& req, bool& in_new_region) {
-  // If we are dealing with mutator allocation, then we may need to block for safepoint.
-  // We cannot block for safepoint for GC allocations, because there is a high chance
-  // we are already running at safepoint or from stack watermark machinery, and we cannot
-  // block again.
   if (req.is_young()) {
-    return free_set()->collector_allocator()->allocate(req, in_new_region);
+    return _free_set->collector_allocator()->allocate(req, in_new_region);
   }
-  // Allocate with old collector allocator
-  ShenandoahHeapLocker locker(lock(), req.is_mutator_alloc());
-  // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
-  if (req.is_old() && !old_generation()->can_allocate(req)) {
-    return nullptr;
-  }
-
-  // If TLAB request size is greater than available, allocate() will attempt to downsize request to fit within available
-  // memory.
-  HeapWord* result = _free_set->old_collector_allocator()->allocate(req, in_new_region);
-
-  // Record the plab configuration for this result and register the object.
-  if (result != nullptr) {
-    old_generation()->configure_plab_for_current_thread(req);
-    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
-      // Register the newly allocated object while we're holding the global lock since there's no synchronization
-      // built in to the implementation of register_object().  There are potential races when multiple independent
-      // threads are allocating objects, some of which might span the same card region.  For example, consider
-      // a card table's memory region within which three objects are being allocated by three different threads:
-      //
-      // objects being "concurrently" allocated:
-      //    [-----a------][-----b-----][--------------c------------------]
-      //            [---- card table memory range --------------]
-      //
-      // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
-      // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
-      // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
-      // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
-      // card region.
-      //
-      // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
-      // last-start representing object b while first-start represents object c.  This is why we need to require all
-      // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
-      old_generation()->card_scan()->register_object(result);
-    }
-  }
-
-  return result;
+  return _free_set->old_collector_allocator()->allocate(req, in_new_region);
 }
 
 HeapWord* ShenandoahHeap::mem_allocate(size_t size) {

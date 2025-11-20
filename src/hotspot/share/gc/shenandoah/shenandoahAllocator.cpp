@@ -94,6 +94,11 @@ public:
 };
 
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
+  if (_alloc_region_count == 0u) {
+    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+    return attempt_allocation_from_free_set(req, in_new_region);
+  }
+
   uint dummy = 0;
   // Fast path: start the attempt to allocate in alloc regions right away
   HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), dummy);
@@ -126,6 +131,18 @@ HeapWord* ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& r
     }
   }
 
+  obj = attempt_allocation_from_free_set(req, in_new_region);
+  if (obj != nullptr) {
+    return obj;
+  }
+
+  log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
+    _alloc_partition_name, req.size());
+  return nullptr;
+}
+
+HeapWord* ShenandoahAllocator::attempt_allocation_from_free_set(ShenandoahAllocRequest& req, bool& in_new_region) {
+  HeapWord* obj;
   size_t min_free_words = req.is_lab_alloc() ? req.min_size() : req.size();
   ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(_alloc_partition_id, min_free_words, req.is_lab_alloc(), in_new_region);
   // The region returned by find_heap_region_for_allocation must have sufficient free space for the allocation it if it is not nullptr
@@ -134,7 +151,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& r
     obj = atomic_allocate_in(r, false, req, in_new_region, ready_for_retire);
     assert(obj != nullptr, "Should always succeed.");
 
-    accounting_updater._need_update = true;
     _free_set->partitions()->increase_used(_alloc_partition_id, (req.actual_size() + req.waste()) * HeapWordSize);
     if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
       _free_set->increase_bytes_allocated(req.actual_size() * HeapWordSize);
@@ -151,9 +167,6 @@ HeapWord* ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& r
   }
   log_debug(gc, alloc)("%sAllocator: Didn't find one region with at least %lu free words to satisfy the alloc request, request size: %lu",
                        _alloc_partition_name, min_free_words, req.size());
-  log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
-    _alloc_partition_name, req.size());
-
   return nullptr;
 }
 
@@ -366,9 +379,45 @@ uint ShenandoahOldCollectorAllocator::alloc_start_index() {
 }
 
 HeapWord* ShenandoahOldCollectorAllocator::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
+  shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
   verify(req);
 #endif // ASSERT
-  shenandoah_assert_heaplocked();
-  return _free_set->allocate_for_collector(req, in_new_region);
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+  // Make sure the old generation has room for either evacuations or promotions before trying to allocate.
+  auto old_gen = ShenandoahHeap::heap()->old_generation();
+  if (req.is_old() && !old_gen->can_allocate(req)) {
+    return nullptr;
+  }
+
+  HeapWord* obj = _free_set->allocate_for_collector(req, in_new_region);
+  // Record the plab configuration for this result and register the object.
+  if (obj != nullptr) {
+    old_gen->configure_plab_for_current_thread(req);
+    if (req.type() == ShenandoahAllocRequest::_alloc_shared_gc) {
+      // Register the newly allocated object while we're holding the global lock since there's no synchronization
+      // built in to the implementation of register_object().  There are potential races when multiple independent
+      // threads are allocating objects, some of which might span the same card region.  For example, consider
+      // a card table's memory region within which three objects are being allocated by three different threads:
+      //
+      // objects being "concurrently" allocated:
+      //    [-----a------][-----b-----][--------------c------------------]
+      //            [---- card table memory range --------------]
+      //
+      // Before any objects are allocated, this card's memory range holds no objects.  Note that allocation of object a
+      // wants to set the starts-object, first-start, and last-start attributes of the preceding card region.
+      // Allocation of object b wants to set the starts-object, first-start, and last-start attributes of this card region.
+      // Allocation of object c also wants to set the starts-object, first-start, and last-start attributes of this
+      // card region.
+      //
+      // The thread allocating b and the thread allocating c can "race" in various ways, resulting in confusion, such as
+      // last-start representing object b while first-start represents object c.  This is why we need to require all
+      // register_object() invocations to be "mutually exclusive" with respect to each card's memory range.
+      old_gen->card_scan()->register_object(obj);
+    }
+
+    return obj;
+  }
+
+  return nullptr;
 }
