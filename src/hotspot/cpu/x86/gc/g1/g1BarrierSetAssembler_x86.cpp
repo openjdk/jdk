@@ -198,7 +198,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
   }
   // Is the previous value null?
   __ testptr(pre_val, pre_val);
-  __ jccb(Assembler::equal, done);
+  __ jcc(Assembler::equal, done);
   generate_queue_insertion(masm,
                            G1ThreadLocalData::satb_mark_queue_index_offset(),
                            G1ThreadLocalData::satb_mark_queue_buffer_offset(),
@@ -446,7 +446,7 @@ void G1BarrierSetAssembler::gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrier
     ce->mem2reg(stub->addr(), stub->pre_val(), T_OBJECT, stub->patch_code(), stub->info(), false /*wide*/);
   }
 
-  __ cmpptr(pre_val_reg, NULL_WORD);
+  __ testptr(pre_val_reg, pre_val_reg);
   __ jcc(Assembler::equal, *stub->continuation());
   ce->store_parameter(stub->pre_val()->as_register(), 0);
   __ call(RuntimeAddress(bs->pre_barrier_c1_runtime_code_blob()->code_begin()));
