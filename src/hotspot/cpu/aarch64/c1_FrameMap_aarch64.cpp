@@ -192,22 +192,25 @@ void FrameMap::initialize() {
   map_register(i, r24); r24_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r25); r25_opr = LIR_OprFact::single_cpu(i); i++;
 
+  auto remaining = RegSet::of(r26, r27);
+
   if (UseCompressedOops && (CompressedOops::base() != nullptr)) {
     // r27 is allocated conditionally. With compressed oops it holds
     // the heapbase value and is not visible to the allocator.
-    if (ProfileCaptureRatio > 1) {
-      r_profile_rng = r26;
-    } else {
-      map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
-    }
-  } else { // r27 is free
+    remaining -= r27;
+  }
+
+  if (ProfileCaptureRatio > 1) {
+    // Use the highest remaining register for r_profile_rng.
+    r_profile_rng = *remaining.rbegin();
+    remaining -= r_profile_rng;
+  }
+
+  if (remaining.contains(r26)) {
     map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
-    if (ProfileCaptureRatio > 1) {
-      r_profile_rng = r27;
-    } else {
-      // push r27 into the allocation pool
-      map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++;
-    }
+  }
+  if (remaining.contains(r27)) {
+    map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++;
   }
 
   if(!PreserveFramePointer) {
