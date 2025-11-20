@@ -741,18 +741,18 @@ void ShenandoahConcurrentGC::op_final_mark() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
+  {
+    // Release all alloc regions at the beginning of final mark.
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   if (!heap->cancelled_gc()) {
-    {
-      // Release all alloc regions at the beginning of final mark.
-      ShenandoahHeapLocker locker(heap->lock());
-      heap->free_set()->mutator_allocator()->release_alloc_regions();
-      heap->free_set()->collector_allocator()->release_alloc_regions();
-    }
-
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
 
@@ -1182,6 +1182,12 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
   assert(!heap->_update_refs_iterator.has_next(), "Should have finished update references");
 
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
+
   heap->finish_concurrent_roots();
 
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
@@ -1217,11 +1223,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     Universe::verify();
   }
 
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
-  }
   heap->rebuild_free_set(true /*concurrent*/);
 
   {

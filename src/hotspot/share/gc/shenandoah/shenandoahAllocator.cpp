@@ -95,78 +95,81 @@ public:
 
 HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, bool& in_new_region) {
   uint regions_ready_for_refresh = 0;
-  // Fast path: Start
+  // Fast path: start the attempt to allocate in alloc regions right away
   HeapWord* obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
   if (obj != nullptr && regions_ready_for_refresh < 3) {
     return obj;
   }
+  // Slow path under heap lock
+  attempt_allocation_slow(req, in_new_region, obj);
+  return obj;
+}
 
-  {
-    ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
-    ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
-    // We may run to here to take heap lock for different reasons:
-    // 1. attempt_allocation_in_alloc_regions was not able to allocate the object, obj is nullptr.
-    // 2. attempt_allocation_in_alloc_regions was able to allocate the object, but determined that there are 3 or more regions were ready to retire.
-    // For #1, it will retry attempt_allocation_in_alloc_regions right away after taking heap lock,
-    // if retry on attempt_allocation_in_alloc_regions succeeded, it means one of other threads successfully just refreshed alloc regions, it will return immediately.
-    if (obj == nullptr) {
-      regions_ready_for_refresh = 0;
-      obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
-      if (obj != nullptr) {
-        return obj;
+void ShenandoahAllocator::attempt_allocation_slow(ShenandoahAllocRequest& req, bool& in_new_region, HeapWord* &obj) {
+  ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock(), _yield_to_safepoint);
+  ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
+  // We may run to here to take heap lock for different reasons:
+  // 1. attempt_allocation_in_alloc_regions was not able to allocate the object, obj is nullptr.
+  // 2. attempt_allocation_in_alloc_regions was able to allocate the object, but determined that there are 3 or more regions were ready to retire.
+  // For #1, it will retry attempt_allocation_in_alloc_regions right away after taking heap lock,
+  // if retry on attempt_allocation_in_alloc_regions succeeded, it means one of other threads successfully just refreshed alloc regions, it will return immediately.
+  uint regions_ready_for_refresh = 0;
+  if (obj == nullptr) {
+    regions_ready_for_refresh = 0;
+    obj = attempt_allocation_in_alloc_regions(req, in_new_region, alloc_start_index(), regions_ready_for_refresh);
+    if (obj != nullptr) {
+      return;
+    }
+  }
+
+  if (obj == nullptr) {
+    size_t min_free_words = req.is_lab_alloc() ? req.min_size() : req.size();
+    uint available_regions_for_alloc = 0;
+    ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(_alloc_partition_id, min_free_words, req.is_lab_alloc(), in_new_region, available_regions_for_alloc);
+    // After search the partition, we know there is no region with capacity more than min_free_words in partition, we can short-cut here.
+    // available_regions_for_alloc is accurate number only when it find_heap_region_for_allocation returns nullptr.
+    if (r == nullptr) {
+      log_debug(gc, alloc)("%sAllocator: Didn't find one region with at least %lu free words to satisfy the alloc request, request size: %lu, we now know %i regions with at least %lu words",
+        _alloc_partition_name, min_free_words, req.size(), available_regions_for_alloc, PLAB::min_size());
+      if (available_regions_for_alloc == 0) {
+        log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
+          _alloc_partition_name, req.size());
+        return;
       }
     }
+    if (r != nullptr) {
+      bool dummy;
+      bool ready_for_retire = false;
+      obj = atomic_allocate_in(r, false, req, dummy, ready_for_retire);
+      assert(obj != nullptr, "Should always succeed.");
 
-    if (obj == nullptr) {
-      size_t min_free_words = req.is_lab_alloc() ? req.min_size() : req.size();
-      uint available_regions_for_alloc = 0;
-      ShenandoahHeapRegion* r = _free_set->find_heap_region_for_allocation(_alloc_partition_id, min_free_words, req.is_lab_alloc(), in_new_region, available_regions_for_alloc);
-      // After search the partition, we know there is no region with capacity more than min_free_words in partition, we can short-cut here.
-      // available_regions_for_alloc is accurate number only when it find_heap_region_for_allocation returns nullptr.
-      if (r == nullptr) {
-        log_debug(gc, alloc)("%sAllocator: Didn't find one region with at least %lu free words to satisfy the alloc request, request size: %lu, we now know %i regions with at least %lu words",
-          _alloc_partition_name, min_free_words, req.size(), available_regions_for_alloc, PLAB::min_size());
-        if (available_regions_for_alloc == 0) {
-          log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
-            _alloc_partition_name, req.size());
-          return nullptr;
+      accounting_updater._need_update = true;
+      if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
+        _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+        _free_set->increase_bytes_allocated(req.actual_size() * HeapWordSize);
+      } else {
+        _free_set->partitions()->increase_used(_alloc_partition_id, (req.actual_size() + req.waste()) * HeapWordSize);
+      }
+
+      if (ready_for_retire) {
+        size_t waste_bytes = _free_set->partitions()->retire_from_partition(_alloc_partition_id, r->index(), r->used());
+        if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator && (waste_bytes > 0)) {
+          _free_set->increase_bytes_allocated(waste_bytes);
         }
       }
-      if (r != nullptr) {
-        bool dummy;
-        bool ready_for_retire = false;
-        obj = atomic_allocate_in(r, false, req, dummy, ready_for_retire);
-        assert(obj != nullptr, "Should always succeed.");
-
-        accounting_updater._need_update = true;
-        if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator) {
-          _free_set->partitions()->increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
-          _free_set->increase_bytes_allocated(req.actual_size() * HeapWordSize);
-        } else {
-          _free_set->partitions()->increase_used(_alloc_partition_id, (req.actual_size() + req.waste()) * HeapWordSize);
-        }
-
-        if (ready_for_retire) {
-          size_t waste_bytes = _free_set->partitions()->retire_from_partition(_alloc_partition_id, r->index(), r->used());
-          if (_alloc_partition_id == ShenandoahFreeSetPartitionId::Mutator && (waste_bytes > 0)) {
-            _free_set->increase_bytes_allocated(waste_bytes);
-          }
-        }
-      }
     }
+  }
 
-    if (regions_ready_for_refresh > 0) {
-      int refreshed = refresh_alloc_regions();
-      if (refreshed > 0) {
-        accounting_updater._need_update = true;
-      }
+  if (regions_ready_for_refresh > 0) {
+    int refreshed = refresh_alloc_regions();
+    if (refreshed > 0) {
+      accounting_updater._need_update = true;
     }
+  }
 
-    if (obj == nullptr) {
-      log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
-        _alloc_partition_name, req.size());
-    }
-    return obj;
+  if (obj == nullptr) {
+    log_debug(gc, alloc)("%sAllocator: Failed to allocate satisfy the alloc request, reqeust size: %lu",
+      _alloc_partition_name, req.size());
   }
 }
 
@@ -211,10 +214,7 @@ inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* r
     log_debug(gc, alloc)("%sAllocator: Allocated %lu bytes from heap region %lu, request size: %lu, alloc region: %s, remnant: %lu",
       _alloc_partition_name, actual_size * HeapWordSize, region->index(), req.size() * HeapWordSize, is_alloc_region ? "true" : "false", region->free());
     req.set_actual_size(actual_size);
-    if (pointer_delta(obj, region->bottom()) == actual_size) {
-      // Set to true if it is the first object/tlab allocated in the region.
-      in_new_region = true;
-    }
+    in_new_region = obj == region->bottom(); // is in new region when the allocated object is at the bottom of the region.
     if (req.is_gc_alloc()) {
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
@@ -266,6 +266,7 @@ int ShenandoahAllocator::refresh_alloc_regions() {
     if (reserved_regions > 0) {
       for (int i = 0; i < reserved_regions; i++) {
         assert(reserved[i]->affiliation() == affiliation, "Affiliation of reserved region must match, invalid affiliation: %s", shenandoah_affiliation_name(reserved[i]->affiliation()));
+        assert(_free_set->membership(reserved[i]->index()) == ShenandoahFreeSetPartitionId::NotFree, "Reserved heap region must have been retired from free set.");
         log_debug(gc, alloc)("%sAllocator: Storing heap region %li to alloc region %i",
           _alloc_partition_name, reserved[i]->index(), refreshable[i]->_alloc_region_index);
         AtomicAccess::release_store(&refreshable[i]->_address, reserved[i]);
@@ -337,7 +338,7 @@ ShenandoahMutatorAllocator::ShenandoahMutatorAllocator(ShenandoahFreeSet* free_s
 
 uint ShenandoahMutatorAllocator::alloc_start_index() {
   if (_alloc_start_index == UINT_MAX) {
-    if (_alloc_region_count == 1u) {
+    if (_alloc_region_count <= 1u) {
       _alloc_start_index = 0u;
     } else {
       _alloc_start_index = abs(os::random()) % _alloc_region_count;

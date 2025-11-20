@@ -859,8 +859,6 @@ size_t ShenandoahHeapRegion::pin_count() const {
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {
-  assert(new_affiliation != OLD_GENERATION || !is_active_alloc_region(), "Reserved region can't move to old");
-
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahAffiliation region_affiliation = heap->region_affiliation(this);

@@ -336,6 +336,13 @@ void ShenandoahDegenGC::op_finish_mark() {
 
 void ShenandoahDegenGC::op_prepare_evacuation() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_generation);
   }
@@ -343,11 +350,6 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
   // STW cleanup weak roots and unload classes
   heap->parallel_cleaning(_generation, false /*full gc*/);
 
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
-  }
   // Prepare regions and collection set
   _generation->prepare_regions_and_collection_set(false /*concurrent*/);
 
@@ -416,6 +418,12 @@ void ShenandoahDegenGC::op_update_refs() {
 void ShenandoahDegenGC::op_update_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
+  {
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
+
   update_roots(false /*full_gc*/);
 
   heap->update_heap_region_states(false /*concurrent*/);
@@ -428,11 +436,6 @@ void ShenandoahDegenGC::op_update_roots() {
     Universe::verify();
   }
 
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
-  }
   heap->rebuild_free_set(false /*concurrent*/);
 }
 

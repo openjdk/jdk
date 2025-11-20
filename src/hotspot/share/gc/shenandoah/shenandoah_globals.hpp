@@ -552,11 +552,11 @@
                                                                             \
   product(uintx, ShenandoahMutatorAllocRegions, 4, EXPERIMENTAL,            \
          "Number of alloc regions for mutator allocation.")                 \
-         range(1, 128)                                                      \
+         range(0, 32)                                                      \
                                                                             \
   product(uintx, ShenandoahCollectorAllocRegions, 4, EXPERIMENTAL,          \
          "Number of alloc regions for collector allocation.")               \
-         range(1, 128)                                                      \
+         range(0, 32)                                                      \
 
   // end of GC_SHENANDOAH_FLAGS
 
