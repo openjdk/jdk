@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,9 @@ Java_NotifyFramePopStressTest_notifyFramePop(JNIEnv *jni, jclass cls, jthread th
     return JNI_FALSE;
   }
   check_jvmti_status(jni, err, "notifyFramePop: Failed in JVMTI notifyFramePop");
-  LOG("\nNotifyFramePop called for method %s\n", name);
+
+  LOG("\nnotifyFramePop: requested FramePop event for frame with method: %s\n", name);
+  print_stack_trace(jvmti, jni, thread);
 
   if (isMain) {
     LOG("notifyFramePop not counting main method\n");

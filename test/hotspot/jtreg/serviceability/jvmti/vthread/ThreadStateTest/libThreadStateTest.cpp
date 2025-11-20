@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
+static jrawMonitorID agent_event_lock = nullptr;
+static int frame_pops_cnt = 0;
 static const jint EXP_VT_STATE = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
 static const jint EXP_CT_STATE = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_WAITING |
                                  JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
@@ -42,13 +44,25 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
 }
 
 static void JNICALL
+FramePop(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
+         jmethodID method, jboolean by_exception) {
+  const char* tname = get_thread_name(jvmti, jni, thread);
+  const char* mname = get_method_name(jvmti, jni, method);
+
+  RawMonitorLocker event_locker(jvmti, jni, agent_event_lock);
+  LOG("FramePop event #%d: thread: %s method: %s\n", ++frame_pops_cnt, tname, mname);
+  deallocate(jvmti, jni, (void*)tname);
+  deallocate(jvmti, jni, (void*)mname);
+}
+
+static void JNICALL
 MonitorContended(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread,
                  jobject object) {
 }
 
 static void JNICALL
 check_thread_state(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jint state, jint exp_state, const char* msg) {
-  if (state != exp_state) {
+  if ((state & ~JVMTI_THREAD_STATE_SUSPENDED) != exp_state) {
     const char* tname = get_thread_name(jvmti, jni, thread);
 
     LOG("FAILED: %p: %s: thread state: %x expected state: %x\n",
@@ -57,6 +71,33 @@ check_thread_state(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jint state, jin
     deallocate(jvmti, jni, (void*)tname);
     jni->FatalError(msg);
   }
+}
+
+JNIEXPORT void JNICALL
+Java_ThreadStateTest_setFramePopEvent(JNIEnv* jni, jclass klass, jthread thread) {
+  RawMonitorLocker event_locker(jvmti, jni, agent_event_lock);
+
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, thread);
+  if (err != JVMTI_ERROR_NONE) {
+    if (err == JVMTI_ERROR_THREAD_NOT_ALIVE || err == JVMTI_ERROR_NO_MORE_FRAMES) {
+      return;
+    } else {
+      check_jvmti_status(jni, err, "setFramePopEvent error in JVMTI SetEventNotificationMode for JVMTI_EVENT_FRAME_POP");
+    }
+  }
+  err = jvmti->SuspendThread(thread);
+  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+    return;
+  }
+  check_jvmti_status(jni, err, "setFramePopEvent error in JVMTI SuspendThread");
+
+  err = jvmti->NotifyFramePop(thread, 4);
+  if (err != JVMTI_ERROR_NO_MORE_FRAMES && err != JVMTI_ERROR_OPAQUE_FRAME) {
+    check_jvmti_status(jni, err, "setFramePopEvent error in JVMTI NotifyFramePop");
+  }
+
+  err = jvmti->ResumeThread(thread);
+  check_jvmti_status(jni, err, "setFramePopEvent error in JVMTI ResumeThread");
 }
 
 JNIEXPORT void JNICALL
@@ -111,6 +152,8 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) 
 
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_single_step_events = 1;
+  caps.can_generate_frame_pop_events = 1;
+  caps.can_suspend = 1;
   caps.can_support_virtual_threads = 1;
   caps.can_generate_monitor_events = 1;
 
@@ -120,12 +163,14 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) 
   }
 
   memset(&callbacks, 0, sizeof(callbacks));
-  callbacks.SingleStep  = &SingleStep;
+  callbacks.SingleStep = &SingleStep;
+  callbacks.FramePop = &FramePop;
   callbacks.MonitorContendedEnter  = &MonitorContended;
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", err);
   }
+  agent_event_lock = create_raw_monitor(jvmti, "agent_event_lock");
   printf("Agent_OnLoad: finished\n");
 
   return 0;

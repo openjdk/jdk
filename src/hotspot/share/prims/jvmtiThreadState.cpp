@@ -30,6 +30,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -74,6 +75,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _scratch_class_for_redefinition_verification = nullptr;
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
   _saved_interp_only_mode = false;
+  _vthread_pending_deopts = nullptr;
 
   // JVMTI ForceEarlyReturn support
   _pending_step_for_earlyret = false;
@@ -136,6 +138,8 @@ JvmtiThreadState::~JvmtiThreadState()   {
 
   // clear this as the state for the thread
   get_thread()->set_jvmti_thread_state(nullptr);
+
+  delete _vthread_pending_deopts;
 
   // zap our env thread states
   {
@@ -660,6 +664,12 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
 
   assert(thread->is_in_VTMS_transition(), "sanity check");
   finish_VTMS_transition(vthread, /* is_mount */ true);
+
+  // FramePop optimization support
+  JvmtiThreadState* state = thread->jvmti_thread_state();
+  if (state != nullptr && state->is_virtual() && state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
+    state->process_vthread_pending_deopts();
+  }
 }
 
 void
@@ -681,6 +691,41 @@ JvmtiVTMSTransitionDisabler::VTMS_unmount_end(jobject vthread) {
   finish_VTMS_transition(vthread, /* is_mount */ false);
 }
 
+void
+JvmtiThreadState::process_vthread_pending_deopts() {
+  if (!has_vthread_pending_deopts()) {
+    return;
+  }
+  JavaThread* thread = get_thread();
+  ResourceMark rm;
+  GrowableArray<int>* deopts = get_vthread_pending_deopts();
+  javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(thread->vthread());
+  int frame_count = (int)JvmtiEnvBase::get_frame_count(jvf);
+
+  for (int idx = 0; idx  < deopts->length(); idx++) {
+    int frame_number = deopts->at(idx);
+    deopts->remove_at(idx);
+    int depth = frame_count - frame_number;
+    jvf = JvmtiEnvBase::jvf_for_thread_and_depth(thread, depth);
+    frame fr = jvf->fr();
+    if (fr.is_heap_frame()) {
+      fr = jvf->stack_chunk()->derelativize(fr);
+    }
+    Deoptimization::deoptimize(thread, fr);
+  }
+}
+
+void
+JvmtiThreadState::process_pending_interp_only(JavaThread* current) {
+  JvmtiThreadState* state = current->jvmti_thread_state();
+
+  if (state != nullptr && (state->is_pending_interp_only_mode())) {
+    MutexLocker mu(JvmtiThreadState_lock);
+    if (state->is_pending_interp_only_mode()) {
+      JvmtiEventController::enter_interp_only_mode(state);
+    }
+  }
+}
 
 //
 // Virtual Threads Suspend/Resume management
@@ -938,23 +983,19 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
 // Called by: PopFrame
 //
 void JvmtiThreadState::update_for_pop_top_frame() {
-  if (is_interp_only_mode()) {
-    // remove any frame pop notification request for the top frame
-    // in any environment
-    int popframe_number = cur_stack_depth();
-    {
-      JvmtiEnvThreadStateIterator it(this);
-      for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-        if (ets->is_frame_pop(popframe_number)) {
-          ets->clear_frame_pop(popframe_number);
-        }
+  // remove any frame pop notification request for the top frame
+  // in any environment
+  int popframe_number = cur_stack_depth();
+  {
+    JvmtiEnvThreadStateIterator it(this);
+    for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+      if (ets->is_frame_pop(popframe_number)) {
+        ets->clear_frame_pop(popframe_number);
       }
     }
-    // force stack depth to be recalculated
-    invalidate_cur_stack_depth();
-  } else {
-    assert(!is_enabled(JVMTI_EVENT_FRAME_POP), "Must have no framepops set");
   }
+  // force stack depth to be recalculated
+  invalidate_cur_stack_depth();
 }
 
 

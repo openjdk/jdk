@@ -1363,6 +1363,27 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
     return JVMTI_ERROR_DUPLICATE;
   }
   ets->set_frame_pop(frame_number);
+
+  JavaThread* thread = state->is_virtual() ?
+                       state->get_thread() :
+                       state->get_thread_or_saved(); // saved is needed for a carrier thread
+  frame fr = jvf->fr();
+
+  if (jvf->is_compiled_frame()) {
+    if (!fr.can_be_deoptimized()) {
+      return JVMTI_ERROR_OPAQUE_FRAME;
+    }
+
+    if (state->is_virtual() && (thread == nullptr || !thread->is_vthread_mounted())) { // unmounted virtual thread
+      // set pending frame deoptimization to process at mount transition
+      state->get_vthread_pending_deopts()->append(frame_number);
+    } else { // platform thread or mounted virtual thread
+      if (fr.is_heap_frame()) {
+        fr = jvf->stack_chunk()->derelativize(fr);
+      }
+      Deoptimization::deoptimize(thread, fr);
+    }
+  }
   return JVMTI_ERROR_NONE;
 }
 
@@ -2486,6 +2507,7 @@ SetOrClearFramePopClosure::do_thread(Thread *target) {
     return;
   }
   if (!_set) { // ClearAllFramePops
+    _state->check_and_clear_vthread_pending_deopts();
     _result = _env->clear_all_frame_pops(_state);
     return;
   }
@@ -2513,9 +2535,12 @@ SetOrClearFramePopClosure::do_vthread(Handle target_h) {
     return;
   }
   if (!_set) { // ClearAllFramePops
+    _state->check_and_clear_vthread_pending_deopts();
     _result = _env->clear_all_frame_pops(_state);
     return;
   }
+  assert(_state->get_thread() == _target_jt, "sanity check");
+
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
   _result = _env->set_frame_pop(_state, jvf, _depth);
 }

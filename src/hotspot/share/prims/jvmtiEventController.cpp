@@ -576,10 +576,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
   }
   julong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
   julong any_env_enabled = 0;
-  // JVMTI_EVENT_FRAME_POP can be disabled (in the case FRAME_POP_BIT is not set),
-  // but we need to set interp_only if some JvmtiEnvThreadState has frame pop set
-  // to clear the request
-  bool has_frame_pops = false;
 
   {
     // This iteration will include JvmtiEnvThreadStates whose environments
@@ -588,7 +584,6 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       any_env_enabled |= recompute_env_thread_enabled(ets, state);
-      has_frame_pops |= ets->has_frame_pops();
     }
   }
 
@@ -604,7 +599,7 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     }
   }
   // compute interp_only mode
-  bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0 || has_frame_pops;
+  bool should_be_interp = (any_env_enabled & (INTERP_EVENT_BITS & ~FRAME_POP_BIT)) != 0;
   bool is_now_interp = state->is_interp_only_mode() || state->is_pending_interp_only_mode();
 
   if (should_be_interp != is_now_interp) {

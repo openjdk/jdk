@@ -1354,6 +1354,23 @@ JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   }
 }
 
+bool JvmtiExport::has_frame_pop_for_top_frame(JavaThread *current) {
+  assert(current == JavaThread::current(), "must be");
+  JvmtiThreadState *state = current->jvmti_thread_state();
+  if (state == nullptr) {
+    return false;
+  }
+  JvmtiEnvThreadStateIterator it(state);
+  int top_frame_num = state->count_frames();
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+    if (ets->has_frame_pops() && ets->is_enabled(JVMTI_EVENT_FRAME_POP) &&
+        ets->is_frame_pop(top_frame_num)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return;
@@ -1890,11 +1907,11 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   }
   JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
-  bool interp_only; // might be changed in JRT_BLOCK_END
+  bool need_processing;
   JRT_BLOCK
     state = get_jvmti_thread_state(thread);
-    interp_only = state != nullptr && state->is_interp_only_mode();
-    if (interp_only) {
+    need_processing = state != nullptr && current_frame.is_interpreted_frame();
+    if (need_processing) {
       if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
@@ -1909,7 +1926,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
-  if (interp_only) {
+  if (need_processing) {
     // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
     // adding FramePop event requests as no safepoint can happen before removing activation.
     state->clr_top_frame_is_exiting();
@@ -2146,21 +2163,14 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 
   if (state->is_exception_detected()) {
 
+    // The cached cur_stack_depth might have changed from the operations of frame pop or method exit.
+    // We are not 100% sure the cached cur_stack_depth is still valid depth so invalidate it.
     state->invalidate_cur_stack_depth();
     if (!in_handler_frame) {
       // Not in exception handler.
-      if(state->is_interp_only_mode()) {
-        // method exit and frame pop events are posted only in interp mode.
-        // When these events are enabled code should be in running in interp mode.
-        jvalue no_value;
-        no_value.j = 0L;
-        JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
-        // The cached cur_stack_depth might have changed from the
-        // operations of frame pop or method exit. We are not 100% sure
-        // the cached cur_stack_depth is still valid depth so invalidate
-        // it.
-        state->invalidate_cur_stack_depth();
-      }
+      jvalue no_value;
+      no_value.j = 0L;
+      JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
     } else {
       // In exception handler frame. Report exception catch.
       assert(location != nullptr, "must be a known location");
