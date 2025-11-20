@@ -242,7 +242,8 @@ public sealed interface LazyConstant<T>
     // Object methods
 
     /**
-     * {@return if this lazy constant is the same instance as the provided {@code obj}}
+     * {@return {@code true} if this lazy constant is the same instance as
+     *          the provided {@code obj}, otherwise {@code false}}
      * <p>
      * In other words, equals compares the identity of this lazy constant and {@code obj}
      * to determine equality. Hence, two distinct lazy constants with the same contents are
