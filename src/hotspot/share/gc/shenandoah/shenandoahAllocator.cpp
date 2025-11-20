@@ -315,6 +315,7 @@ void ShenandoahAllocator::release_alloc_regions() {
           _free_set->partitions()->increase_empty_region_counts(_alloc_partition_id, 1);
         }
         _free_set->partitions()->decrease_used(_alloc_partition_id, free_bytes);
+        _free_set->partitions()->increase_region_counts(_alloc_partition_id, 1);
         _free_set->partitions()->unretire_to_partition(r, _alloc_partition_id);
         accounting_updater._need_update = true;
       }
