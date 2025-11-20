@@ -1932,12 +1932,20 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     assert(!has_owner(current), "invariant");
     ObjectWaiter::TStates v = node.TState;
     if (v == ObjectWaiter::TS_RUN) {
+      // This means the thread has been un-parked, but not added to the entry list
+      // i.e. has timed-out waiting.
+
+      // Done waiting, post the corresponding event
+      post_waited_event(current, &wait_event, was_notified, &node, millis, ret);
+  
       // We use the NoPreemptMark for the very rare case where the previous
       // preempt attempt failed due to OOM. The preempt on monitor contention
       // could succeed but we can't unmount now.
       NoPreemptMark npm(current);
       enter(current);
     } else {
+      // This means the thread has been un-parked and added to the entry_list
+      // in notify_internal, i.e. notified while waiting.
       guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
       ExitOnSuspend eos(this);
       {
@@ -1951,6 +1959,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         // If there is a suspend request, ExitOnSuspend will exit the OM
         // and set the OM as pending.
       }
+      // Done waiting, post the corresponding event
+      post_waited_event(current, &wait_event, was_notified, &node, millis, ret);
       if (eos.exited()) {
         // ExitOnSuspend exit the OM
         assert(!has_owner(current), "invariant");
@@ -1960,34 +1970,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       }
       assert(has_owner(current), "invariant");
       node.wait_reenter_end(this);
-    }
-
-    // post monitor waited event. Note that this is past-tense, we are done waiting.
-    if (JvmtiExport::should_post_monitor_waited()) {
-      JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
-
-      if (was_notified && has_successor(current)) {
-        // In this part of the monitor wait-notify-reenter protocol it
-        // is possible (and normal) for another thread to do a fastpath
-        // monitor enter-exit while this thread is still trying to get
-        // to the reenter portion of the protocol.
-        //
-        // The ObjectMonitor was notified and the current thread is
-        // the successor which also means that an unpark() has already
-        // been done. The JVMTI_EVENT_MONITOR_WAITED event handler can
-        // consume the unpark() that was done when the successor was
-        // set because the same ParkEvent is shared between Java
-        // monitors and JVM/TI RawMonitors (for now).
-        //
-        // We redo the unpark() to ensure forward progress, i.e., we
-        // don't want all pending threads hanging (parked) with none
-        // entering the unlocked monitor.
-        current->_ParkEvent->unpark();
-      }
-    }
-
-    if (wait_event.should_commit()) {
-      post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
     }
 
     // current has reacquired the lock.
@@ -2027,6 +2009,36 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   // NOTE: Spurious wake up will be consider as timeout.
   // Monitor notify has precedence over thread interrupt.
+}
+
+void ObjectMonitor::post_waited_event(JavaThread* current, EventJavaMonitorWait* wait_event, bool was_notified, ObjectWaiter* node, jlong millis, int ret) {
+  // post monitor waited event. Note that this is past-tense, we are done waiting.
+  if (JvmtiExport::should_post_monitor_waited()) {
+    JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
+
+    if (was_notified && has_successor(current)) {
+      // In this part of the monitor wait-notify-reenter protocol it
+      // is possible (and normal) for another thread to do a fastpath
+      // monitor enter-exit while this thread is still trying to get
+      // to the reenter portion of the protocol.
+      //
+      // The ObjectMonitor was notified and the current thread is
+      // the successor which also means that an unpark() has already
+      // been done. The JVMTI_EVENT_MONITOR_WAITED event handler can
+      // consume the unpark() that was done when the successor was
+      // set because the same ParkEvent is shared between Java
+      // monitors and JVM/TI RawMonitors (for now).
+      //
+      // We redo the unpark() to ensure forward progress, i.e., we
+      // don't want all pending threads hanging (parked) with none
+      // entering the unlocked monitor.
+      current->_ParkEvent->unpark();
+    }
+  }
+
+  if (wait_event->should_commit()) {
+    post_monitor_wait_event(wait_event, this, node->_notifier_tid, millis, ret == OS_TIMEOUT);
+  }
 }
 
 // Consider:
