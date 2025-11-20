@@ -102,6 +102,7 @@ HeapWord* ShenandoahAllocator::attempt_allocation(ShenandoahAllocRequest& req, b
     if (obj != nullptr) {
       accounting_updater._need_update = true;
     }
+    return obj;
   }
 
   uint dummy = 0;
