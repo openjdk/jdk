@@ -2019,7 +2019,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_rec
                                                ShenandoahFreeSetPartitionId::Collector, ac);
   if (!delay_total_recomputation) {
     recompute_total_used</* UsedByMutatorChanged */ true,
-                         /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
+                         /* UsedByCollectorChanged */ true, /* UsedByOldCollectorChanged */ false>();
     // Transfer only affects unaffiliated regions, which stay in young
     recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ true,
                                /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
@@ -2131,53 +2131,44 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
       // Do not add regions that would almost surely fail allocation
       size_t ac = alloc_capacity(region);
       if (ac >= PLAB::min_size() * HeapWordSize) {
-        if (!region->is_active_alloc_region()) {
-          if (region->is_trash() || !region->is_old()) {
-            // Both young and old collected regions (trashed) are placed into the Mutator set
-            _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
-            if (idx < mutator_leftmost) {
-              mutator_leftmost = idx;
-            }
-            if (idx > mutator_rightmost) {
-              mutator_rightmost = idx;
-            }
-            if (ac == region_size_bytes) {
-              mutator_empty++;
-              if (idx < mutator_leftmost_empty) {
-                mutator_leftmost_empty = idx;
-              }
-              if (idx > mutator_rightmost_empty) {
-                mutator_rightmost_empty = idx;
-              }
-            } else {
-              affiliated_mutator_regions++;
-            }
-            mutator_regions++;
-            total_mutator_regions++;
-            mutator_used += (region_size_bytes - ac);
-          } else {
-            // !region->is_trash() && region is_old()
-            _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::OldCollector);
-            if (idx < old_collector_leftmost) {
-              old_collector_leftmost = idx;
-            }
-            if (idx > old_collector_rightmost) {
-              old_collector_rightmost = idx;
-            }
-            assert(ac != region_size_bytes, "Empty regions should be in mutator partition");
-            affiliated_old_collector_regions++;
-            old_collector_regions++;
-            total_old_collector_regions++;
-            old_collector_used += region_size_bytes - ac;
+        if (region->is_trash() || !region->is_old()) {
+          // Both young and old collected regions (trashed) are placed into the Mutator set
+          _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::Mutator);
+          if (idx < mutator_leftmost) {
+            mutator_leftmost = idx;
           }
-        } else {
-          // region->is_active_alloc_region(), a reserved region should count in mutator regions,
-          // but it won't be assigned to Mutator in the partition table, the entire region is counted as used.
+          if (idx > mutator_rightmost) {
+            mutator_rightmost = idx;
+          }
+          if (ac == region_size_bytes) {
+            mutator_empty++;
+            if (idx < mutator_leftmost_empty) {
+              mutator_leftmost_empty = idx;
+            }
+            if (idx > mutator_rightmost_empty) {
+              mutator_rightmost_empty = idx;
+            }
+          } else {
+            affiliated_mutator_regions++;
+          }
+          mutator_regions++;
           total_mutator_regions++;
-          mutator_used += region_size_bytes;
-          affiliated_mutator_regions++;
-        }
-      } else {
+          mutator_used += (region_size_bytes - ac);
+        } else {
+          // !region->is_trash() && region is_old()
+          _partitions.raw_assign_membership(idx, ShenandoahFreeSetPartitionId::OldCollector);
+          if (idx < old_collector_leftmost) {
+            old_collector_leftmost = idx;
+          }
+          if (idx > old_collector_rightmost) {
+            old_collector_rightmost = idx;
+          }
+          assert(ac != region_size_bytes, "Empty regions should be in mutator partition");
+          affiliated_old_collector_regions++;
+          old_collector_regions++;
+          total_old_collector_regions++;
+          old_collector_used += region_size_bytes - ac;
+        }      } else {
         // This region does not have enough free to be part of the free set.  Count all of its memory as used.
         assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Region should have been retired");
         if (region->is_old()) {
