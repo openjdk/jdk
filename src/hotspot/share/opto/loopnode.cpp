@@ -1691,7 +1691,7 @@ void PhaseIdealLoop::LoopExitTest::build() {
   // need 'loop()' test to tell if limit is loop invariant
   // ---------
 
-  if (!_phase->is_member(_loop, _phase->get_ctrl(_incr))) { // Swapped trip counter and limit?
+  if (!_phase->ctrl_is_member(_loop, _incr)) { // Swapped trip counter and limit?
     swap(_incr, _limit);   // Then reverse order into the CmpI
     _mask = BoolTest(_mask).commute(); // And commute the exit test
   }
@@ -1699,7 +1699,7 @@ void PhaseIdealLoop::LoopExitTest::build() {
   if (!_loop->is_invariant(_limit)) { // Limit must be loop-invariant
      return;
   }
-  if (!_phase->is_member(_loop, _phase->get_ctrl(_incr))) { // Trip counter must be loop-variant
+  if (!_loop->is_invariant(_incr)) { // Trip counter must be loop-variant
     return;
   }
 
@@ -1736,7 +1736,7 @@ void PhaseIdealLoop::LoopIVIncr::build(Node* old_incr) {
     }
     Node* phi_incr = incr;
     Node* back_control = phi_incr->in(LoopNode::LoopBackControl); // Assume incr is on backedge of Phi
-    if (_loop->_phase->is_member(_loop, _loop->_phase->get_ctrl(back_control))) { // Trip counter must be loop-variant
+    if (_loop->_phase->ctrl_is_member(_loop, back_control)) { // Trip counter must be loop-variant
       _incr = back_control;
       _phi_incr = phi_incr;
       _is_valid = true;
