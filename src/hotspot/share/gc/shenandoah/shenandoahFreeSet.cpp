@@ -3305,24 +3305,23 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
   return number_of_reserved_regions;
 }
 
-ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region, uint &available_regions_seem_for_alloc) {
+ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region) {
   shenandoah_assert_heaplocked();
   if (partition == ShenandoahFreeSetPartitionId::Mutator) {
     update_allocation_bias();
   }
 
   if (partition == ShenandoahFreeSetPartitionId::Mutator && _partitions.is_empty(partition)) {
-    available_regions_seem_for_alloc = 0u;
     return nullptr;
   }
 
   ShenandoahHeapRegion* region = nullptr;
   if (_partitions.alloc_from_left_bias(partition)) {
     ShenandoahLeftRightIterator iterator(&_partitions, partition);
-    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region, available_regions_seem_for_alloc);
+    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
   } else {
     ShenandoahRightLeftIterator iterator(&_partitions, partition);
-    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region, available_regions_seem_for_alloc);
+    region = find_heap_region_for_allocation_internal(iterator, partition, min_free_words, is_lab_alloc, new_region);
   }
 
   if (region == nullptr && partition != ShenandoahFreeSetPartitionId::Mutator &&
@@ -3338,7 +3337,7 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(Shenand
 }
 
 template<typename Iter>
-ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region, uint &available_regions_seem_for_alloc) {
+ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region) {
   ShenandoahHeapRegion* result = nullptr;
   ShenandoahHeapRegion* first_free_region = nullptr;
   ShenandoahAffiliation const affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
@@ -3356,16 +3355,12 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
     }
 
     if (r->affiliation() == FREE && use_affiliated_region_first) {
-      available_regions_seem_for_alloc++;
       if (first_free_region == nullptr) {
         first_free_region = r;
       }
       continue;
     }
     size_t ac_words = alloc_capacity_words(r);
-    if (ac_words >= PLAB::min_size()) {
-      available_regions_seem_for_alloc++;
-    }
     if (is_lab_alloc && ac_words != ShenandoahHeapRegion::region_size_words()) {
       // For lab, must make sure the alloc capacity is still sufficient after aligning down;
       ac_words = align_down((ac_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
