@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,13 +219,13 @@ public final class SealedGraph implements Taglet {
             // This implies the module is always the same.
             private String relativeLink(TypeElement node) {
                 var util = SealedGraph.this.docletEnvironment.getElementUtils();
-                var rootPackage = util.getPackageOf(rootNode);
                 var nodePackage = util.getPackageOf(node);
-                var backNavigator = rootPackage.getQualifiedName().toString().chars()
+                // Note: SVG files for nested types use the simple names of containing types as parent directories.
+                // We therefore need to convert all dots in the qualified name to "../" below.
+                var backNavigator = rootNode.getQualifiedName().toString().chars()
                         .filter(c -> c == '.')
                         .mapToObj(c -> "../")
-                        .collect(joining()) +
-                        "../";
+                        .collect(joining());
                 var forwardNavigator = nodePackage.getQualifiedName().toString()
                         .replace(".", "/");
 

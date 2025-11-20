@@ -36,7 +36,6 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,9 +51,9 @@ import java.util.stream.Stream;
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
@@ -64,7 +63,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void create(AppImageLayout appImageLayout) throws PackagerException {
+    public void create(AppImageLayout appImageLayout) {
         var args = new ArrayList<String>();
         args.add("--output");
         args.add(appImageLayout.runtimeDirectory().toString());
@@ -79,8 +78,13 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         args.add(0, "jlink");
         Log.verbose(args, List.of(jlinkOut), retVal, -1);
         if (retVal != 0) {
-            throw new PackagerException("error.jlink.failed", jlinkOut);
+            throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
         }
+    }
+
+    @Override
+    public boolean withNativeCommands() {
+        return !jlinkCmdLine.contains("--strip-native-commands");
     }
 
     static ModuleFinder createModuleFinder(Collection<Path> modulePath) {
@@ -177,8 +181,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         for (String option : options) {
             switch (option) {
                 case "--output", "--add-modules", "--module-path" -> {
-                    throw new ConfigException(MessageFormat.format(I18N.getString(
-                            "error.blocked.option"), option), null);
+                    throw I18N.buildConfigException("error.blocked.option", option).create();
                 }
                 default -> {
                     args.add(option);

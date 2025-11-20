@@ -64,7 +64,7 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
       const VPointer& mem_p = _vloop_analyzer.vpointers().vpointer(mem);
       vtn = new (_vtransform.arena()) VTransformMemopScalarNode(_vtransform, mem, mem_p);
     } else if (n->is_Phi()) {
-      vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, n->as_Phi());
+      vtn = new (_vtransform.arena()) VTransformPhiScalarNode(_vtransform, n->as_Phi());
     } else if (n->is_CountedLoop()) {
       vtn = new (_vtransform.arena()) VTransformCountedLoopNode(_vtransform, n->as_CountedLoop());
     } else if (n->is_CFG()) {

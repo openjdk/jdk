@@ -29,7 +29,6 @@ import static jdk.jpackage.test.ApplicationLayout.platformAppImage;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -193,9 +192,7 @@ final class ConfigFilesStasher {
     }
 
     private static ApplicationLayout appImageAppLayout(JPackageCommand cmd) {
-        if (cmd.isRuntime()) {
-            throw new UnsupportedOperationException();
-        }
+        cmd.verifyNotRuntime();
 
         if (cmd.isImagePackageType()) {
             return platformAppImage();
@@ -214,22 +211,9 @@ final class ConfigFilesStasher {
     }
 
     private static boolean isWithServices(JPackageCommand cmd) {
-        boolean[] withServices = new boolean[1];
-        withServices[0] = cmd.hasArgument("--launcher-as-service");
-        if (!withServices[0]) {
-            AdditionalLauncher.forEachAdditionalLauncher(cmd, (launcherName, propertyFilePath) -> {
-                try {
-                    final var launcherAsService = new AdditionalLauncher.PropertyFile(propertyFilePath)
-                            .findBooleanProperty("launcher-as-service").orElse(false);
-                    if (launcherAsService) {
-                        withServices[0] = true;
-                    }
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
-            });
-        }
-        return withServices[0];
+        return cmd.launcherNames(true).stream().anyMatch(launcherName -> {
+            return LauncherAsServiceVerifier.launcherAsService(cmd, launcherName);
+        });
     }
 
     private static List<String> listAppImage(Path to) {

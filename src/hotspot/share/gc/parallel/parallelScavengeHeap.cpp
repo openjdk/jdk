@@ -51,6 +51,7 @@
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
@@ -324,6 +325,14 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
         return result;
       }
 
+      if (!is_init_completed()) {
+        // Can't do GC; try heap expansion to satisfy the request.
+        result = expand_heap_and_allocate(size, is_tlab);
+        if (result != nullptr) {
+          return result;
+        }
+      }
+
       gc_count = total_collections();
     }
 
@@ -361,6 +370,55 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
   PSParallelCompact::invoke(clear_all_soft_refs, should_do_max_compaction);
 }
 
+bool ParallelScavengeHeap::should_attempt_young_gc() const {
+  const bool ShouldRunYoungGC = true;
+  const bool ShouldRunFullGC = false;
+
+  if (!_young_gen->to_space()->is_empty()) {
+    log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
+    return ShouldRunFullGC;
+  }
+
+  // Check if the predicted promoted bytes will overflow free space in old-gen.
+  PSAdaptiveSizePolicy* policy = _size_policy;
+
+  size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
+  size_t promotion_estimate = MIN2(avg_promoted, _young_gen->used_in_bytes());
+  // Total free size after possible old gen expansion
+  size_t free_in_old_gen_with_expansion = _old_gen->max_gen_size() - _old_gen->used_in_bytes();
+
+  log_trace(gc, ergo)("average_promoted %zu; padded_average_promoted %zu",
+              (size_t) policy->average_promoted_in_bytes(),
+              (size_t) policy->padded_average_promoted_in_bytes());
+
+  if (promotion_estimate >= free_in_old_gen_with_expansion) {
+    log_debug(gc, ergo)("Run full-gc; predicted promotion size >= max free space in old-gen: %zu >= %zu",
+      promotion_estimate, free_in_old_gen_with_expansion);
+    return ShouldRunFullGC;
+  }
+
+  if (UseAdaptiveSizePolicy) {
+    // Also checking OS has enough free memory to commit and expand old-gen.
+    // Otherwise, the recorded gc-pause-time might be inflated to include time
+    // of OS preparing free memory, resulting in inaccurate young-gen resizing.
+    assert(_old_gen->committed().byte_size() >= _old_gen->used_in_bytes(), "inv");
+    // Use uint64_t instead of size_t for 32bit compatibility.
+    uint64_t free_mem_in_os;
+    if (os::free_memory(free_mem_in_os)) {
+      size_t actual_free = (size_t)MIN2(_old_gen->committed().byte_size() - _old_gen->used_in_bytes() + free_mem_in_os,
+                                        (uint64_t)SIZE_MAX);
+      if (promotion_estimate > actual_free) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
+          promotion_estimate, actual_free);
+        return ShouldRunFullGC;
+      }
+    }
+  }
+
+  // No particular reasons to run full-gc, so young-gc.
+  return ShouldRunYoungGC;
+}
+
 static bool check_gc_heap_free_limit(size_t free_bytes, size_t capacity_bytes) {
   return (free_bytes * 100 / capacity_bytes) < GCHeapFreeLimit;
 }
@@ -374,6 +432,13 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
     bool little_mutator_time = _size_policy->mutator_time_percent() * 100 < (100 - GCTimeLimit);
     bool little_free_space = check_gc_heap_free_limit(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes())
                           && check_gc_heap_free_limit(  _old_gen->free_in_bytes(),   _old_gen->capacity_in_bytes());
+
+    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space Young %f Old %f Counter %zu",
+                  (100 - _size_policy->mutator_time_percent()),
+                  percent_of(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  percent_of(_old_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  _gc_overhead_counter);
+
     if (little_mutator_time && little_free_space) {
       _gc_overhead_counter++;
       if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
@@ -387,8 +452,17 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
 }
 
 HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
-  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
-  // We just finished a young/full gc, try everything to satisfy this allocation request.
+#ifdef ASSERT
+  assert(Heap_lock->is_locked(), "precondition");
+  if (is_init_completed()) {
+    assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+    assert(Thread::current()->is_VM_thread(), "precondition");
+  } else {
+    assert(Thread::current()->is_Java_thread(), "precondition");
+    assert(Heap_lock->owned_by_self(), "precondition");
+  }
+#endif
+
   HeapWord* result = young_gen()->expand_and_allocate(size);
 
   if (result == nullptr && !is_tlab) {
@@ -426,7 +500,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   }
 
   if (check_gc_overhead_limit()) {
-    log_info(gc)("GCOverheadLimitThreshold %zu reached.", GCOverheadLimitThreshold);
+    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold);
     return nullptr;
   }
 
@@ -440,16 +514,16 @@ void ParallelScavengeHeap::ensure_parsability(bool retire_tlabs) {
   young_gen()->eden_space()->ensure_parsability();
 }
 
-size_t ParallelScavengeHeap::tlab_capacity(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_capacity(thr);
+size_t ParallelScavengeHeap::tlab_capacity() const {
+  return young_gen()->eden_space()->tlab_capacity();
 }
 
-size_t ParallelScavengeHeap::tlab_used(Thread* thr) const {
-  return young_gen()->eden_space()->tlab_used(thr);
+size_t ParallelScavengeHeap::tlab_used() const {
+  return young_gen()->eden_space()->tlab_used();
 }
 
-size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
-  return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
+size_t ParallelScavengeHeap::unsafe_max_tlab_alloc() const {
+  return young_gen()->eden_space()->unsafe_max_tlab_alloc();
 }
 
 HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
@@ -491,17 +565,18 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-void ParallelScavengeHeap::collect_at_safepoint(bool full) {
+void ParallelScavengeHeap::collect_at_safepoint(bool is_full) {
   assert(!GCLocker::is_active(), "precondition");
   bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
-  if (!full) {
-    bool success = PSScavenge::invoke(clear_soft_refs);
-    if (success) {
+  if (!is_full && should_attempt_young_gc()) {
+    bool young_gc_success = PSScavenge::invoke(clear_soft_refs);
+    if (young_gc_success) {
       return;
     }
-    // Upgrade to Full-GC if young-gc fails
+    log_debug(gc, heap)("Upgrade to Full-GC since Young-gc failed.");
   }
+
   const bool should_do_max_compaction = false;
   PSParallelCompact::invoke(clear_soft_refs, should_do_max_compaction);
 }
