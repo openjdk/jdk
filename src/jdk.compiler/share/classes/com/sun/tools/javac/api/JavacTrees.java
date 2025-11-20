@@ -413,9 +413,13 @@ public class JavacTrees extends DocTrees {
             }
 
             if (ref.qualifierExpression == null) {
+                // Resolve target for unqualified reference based on declaring element
                 tsym = switch (path.getLeaf().getKind()) {
-                    // Implicit type is only required for member lookup in classes.
-                    case PACKAGE, MODULE, COMPILATION_UNIT -> null;
+                    case PACKAGE -> env.toplevel.packge;
+                    case MODULE -> env.toplevel.modle;
+                    // Local reference in package.html or a doc-file
+                    case COMPILATION_UNIT -> null;
+                    // Class or class member reference
                     default -> env.enclClass.sym;
                 };
                 memberName = (Name) ref.memberName;

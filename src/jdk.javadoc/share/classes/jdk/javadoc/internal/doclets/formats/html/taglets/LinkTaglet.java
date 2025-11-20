@@ -160,8 +160,8 @@ public class LinkTaglet extends BaseTaglet {
                         Optional.of(refSignature));
             }
             refFragment = refFragment.substring(1);
-            if (refSignature.startsWith("##")) {
-                // Create a local anchor link
+            if (ref == null && refSignature.startsWith("##")) {
+                // Unqualified local anchor link
                 return htmlWriter.links.createLink(HtmlId.of(refFragment), labelContent);
             }
         }
