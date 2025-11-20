@@ -42,11 +42,7 @@ class Node;
 class InlineTree;
 class ciMethod;
 class JVMState;
-<<<<<<< HEAD
-=======
-class LRG;
 class ConnectionGraph;
->>>>>>> 38cfdefba74920520729ee6f5f60c2ceaf6a4e24
 class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
