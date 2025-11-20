@@ -2607,10 +2607,10 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
     = profile_capture_ratio > 1 ? new ProfileStub() : nullptr;
 
   Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
-  Address dest_adr = as_Address(counter_addr->as_address_ptr());
+  Address raw_dest_adr = as_Address(counter_addr->as_address_ptr());
 
   auto lambda = [counter_stub, overflow_stub, freq_op, ratio_shift, step,
-                 temp, dest, dest_adr] (LIR_Assembler* ce, LIR_Op* op) {
+                 temp, dest, raw_dest_adr] (LIR_Assembler* ce, LIR_Op* op) {
 
 #undef __
 #define __ masm->
@@ -2620,37 +2620,34 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr counter_addr, LI
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
     if (step->is_register()) {
+      Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jint), rscratch2);
       Register inc = step->as_register();
-      auto ptr = __ legitimize_address(dest_adr, sizeof (jint), rscratch1);
-      __ ldr(temp, ptr);
+      __ ldrw(temp, dest_adr);
       if (ProfileCaptureRatio > 1) {
         __ lsl(inc, inc, ratio_shift);
       }
-      __ add(temp, temp, inc);
-      __ str(temp, ptr);
+      __ addw(temp, temp, inc);
+      __ strw(temp, dest_adr);
       if (dest->is_register())  __ mov(dest->as_register(), temp);
       if (ProfileCaptureRatio > 1) {
         __ lsr(inc, inc, ratio_shift);
       }
+      if (dest->is_register())  __ mov(dest->as_register(), temp);
     } else {
       jint inc = step->as_constant_ptr()->as_jint_bits();
       switch (dest->type()) {
         case T_INT: {
+          Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jint), rscratch2);
           inc *= ProfileCaptureRatio;
-          auto ptr = __ legitimize_address(dest_adr, sizeof (jint), rscratch1);
-          __ ldrw(temp, ptr);
-          __ addw(temp, temp, inc);
-          __ strw(temp, ptr);
+          __ incrementw(dest_adr, inc);
           if (dest->is_register())  __ movw(dest->as_register(), temp);
 
           break;
         }
         case T_LONG: {
+          Address dest_adr = __ legitimize_address(raw_dest_adr, sizeof (jlong), rscratch2);
           inc *= ProfileCaptureRatio;
-          auto ptr = __ legitimize_address(dest_adr, sizeof (jlong), rscratch1);
-          __ ldr(temp, ptr);
-          __ add(temp, temp, inc);
-          __ str(temp, ptr);
+          __ increment(dest_adr, inc);
           if (dest->is_register())  __ mov(dest->as_register_lo(), temp);
 
           break;
