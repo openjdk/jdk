@@ -23,4 +23,21 @@
 
 package compiler.lib.template_framework;
 
-record NothingToken() implements Token {}
+import java.util.function.Function;
+
+/**
+ * Represents the sampling of {@link Name}s, and the function that is called given
+ * the sampled name, as well as the (optional) hashtag replacement keys for the
+ * name and type of the sampled name, which are then available in the inner scope
+ * created by the provided function.
+ */
+record NameSampleToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(Name n) {
+        return function().apply((N)n);
+    }
+}

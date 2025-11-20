@@ -23,9 +23,8 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * A {@link ScopeToken} represents a scope in a {@link Template}, which can be
+ * created with {@link Template#scope}, {@link Template#transparentScope}, and other related methods.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+public sealed interface ScopeToken extends Token permits ScopeTokenImpl {}
