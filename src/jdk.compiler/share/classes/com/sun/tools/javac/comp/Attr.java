@@ -176,7 +176,7 @@ public class Attr extends JCTree.Visitor {
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
-        captureMRefReturnType = Source.Feature.CAPTURE_MREF_RETURN_TYPE.allowedInSource(source);
+        captureMRefReturnType = Source.Feature.ERASE_POLY_SIG_RETURN_TYPE.allowedInSource(source);
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);

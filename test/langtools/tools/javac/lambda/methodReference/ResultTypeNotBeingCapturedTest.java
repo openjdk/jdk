@@ -26,7 +26,6 @@
  * @bug 8369517
  * @summary Compilation mismatch for equivalent lambda and method reference
  * @compile/fail/ref=ResultTypeNotBeingCapturedTest.out -XDrawDiagnostics ResultTypeNotBeingCapturedTest.java
- * @compile/fail/ref=ResultTypeNotBeingCapturedTest_2.out -XDrawDiagnostics -source 25 ResultTypeNotBeingCapturedTest.java
  */
 
 import java.util.function.Supplier;
