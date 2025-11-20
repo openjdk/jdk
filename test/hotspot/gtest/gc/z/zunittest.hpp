@@ -137,14 +137,12 @@ public:
 };
 
 class ZTestAddressReserver {
-  ZVirtualMemoryAdaptiveReserver* _reserver;
   ZVirtualMemoryReservation*      _reservation;
   bool                            _active;
 
 public:
   ZTestAddressReserver()
-  : _reserver(nullptr),
-    _reservation(nullptr),
+  : _reservation(nullptr),
     _active(false) {}
 
   ~ZTestAddressReserver() {

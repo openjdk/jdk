@@ -115,15 +115,12 @@ void ZGlobalsPointers::set_heap_limits(uintptr_t heap_base, uintptr_t heap_upper
 
   // Setup the heap base
   ZAddressHeapBase = heap_base;
-  ZAddressHeapBaseShift = exact_log2(heap_base);
+  ZAddressHeapBaseShift = (size_t)log2i_exact(heap_base);
 
   z_on_error_capture_64_5(ZAddressHeapBaseShift, ZAddressHeapBaseMaxShift, ZAddressPlatformHeapBaseMaxShift,
                           ZAddressHeapBaseMinShift, ZAddressMaxHeapRequiredHeapBaseShift);
 
-  assert(ZAddressHeapBaseShift <= ZAddressHeapBaseMaxShift, "Heap base shift to large");
-  assert(ZAddressHeapBaseShift <= ZAddressPlatformHeapBaseMaxShift, "Heap base shift to large");
-  assert(ZAddressHeapBaseShift >= ZAddressHeapBaseMinShift, "Heap base shift to small");
-  assert(ZAddressHeapBaseShift >= ZAddressMaxHeapRequiredHeapBaseShift, "Heap base shift to small");
+  validate_heap_base_shift(ZAddressHeapBaseShift);
 
   // Setup the offset
   ZAddressOffsetBits = ZAddressHeapBaseShift;

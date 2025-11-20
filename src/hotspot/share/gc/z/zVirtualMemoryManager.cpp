@@ -38,8 +38,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <cstdint>
-
 bool ZVirtualMemoryReserver::reserve(uintptr_t addr, size_t size) {
   log_debug(gc, init)("ZGC reserve:   [" PTR_FORMAT " - " PTR_FORMAT ")", addr, addr + size);
 
@@ -372,8 +370,6 @@ size_t ZVirtualMemoryAdaptiveReserver::unreserve_after(size_t keep_size) {
       // The unreserve point doesn't split a vmem
       return {i + 1, 0};
     }
-
-    log_info(test)("None:  %d " PTR_FORMAT " " PTR_FORMAT, _reserved_ranges.length(), (uintptr_t)0, (uintptr_t)0);
 
     // Nothing to split
     return {_reserved_ranges.length(), 0};

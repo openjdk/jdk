@@ -27,14 +27,14 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 
-#define z_expand_64_1(first)      #first, uint64_t(first)
+#define z_expand_64_1(first)      uint64_t(first)
 #define z_expand_64_2(first, ...) z_expand_64_1(first), z_expand_64_1(__VA_ARGS__)
 #define z_expand_64_3(first, ...) z_expand_64_1(first), z_expand_64_2(__VA_ARGS__)
 #define z_expand_64_4(first, ...) z_expand_64_1(first), z_expand_64_3(__VA_ARGS__)
 #define z_expand_64_5(first, ...) z_expand_64_1(first), z_expand_64_4(__VA_ARGS__)
 #define z_expand_64_6(first, ...) z_expand_64_1(first), z_expand_64_5(__VA_ARGS__)
 
-#define z_expand_format_64_1(first)      "%s: " UINT64_FORMAT_X " "
+#define z_expand_format_64_1(first)      #first ": " UINT64_FORMAT_X " "
 #define z_expand_format_64_2(first, ...) z_expand_format_64_1(first) z_expand_format_64_1(__VA_ARGS__)
 #define z_expand_format_64_3(first, ...) z_expand_format_64_1(first) z_expand_format_64_2(__VA_ARGS__)
 #define z_expand_format_64_4(first, ...) z_expand_format_64_1(first) z_expand_format_64_3(__VA_ARGS__)
@@ -44,7 +44,7 @@
 #define z_on_error_capture_64(N, ...)                  \
   OnVMError on_error([&](outputStream* st) {           \
     st->print("Captured: "                             \
-              z_expand_format_64_##N(__VA_ARGS_),      \
+              z_expand_format_64_##N(__VA_ARGS__),     \
               z_expand_64_##N(__VA_ARGS__));           \
   })
 
