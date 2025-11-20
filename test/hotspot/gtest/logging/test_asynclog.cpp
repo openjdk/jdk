@@ -253,6 +253,8 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
 
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
+  AsyncLogWriter::flush();
+  fflush(nullptr);
   bool messages_dropped = file_contains_substring(TestLogFileName, "messages dropped due to async logging");
   if (!messages_dropped) {
     stringStream content;
