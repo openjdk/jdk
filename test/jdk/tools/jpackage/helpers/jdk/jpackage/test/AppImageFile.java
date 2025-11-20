@@ -77,8 +77,8 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     public Map<String, Map<String, String>> addLaunchers() {
         var map = launchers.entrySet().stream().filter(e -> {
             return !e.getKey().equals(mainLauncherName);
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (k, _) -> {
-            throw new IllegalStateException(String.format("Duplicate key %s", k));
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (v, _) -> {
+            throw new IllegalStateException(String.format("Duplicate value [%s]", v));
         }, LinkedHashMap::new));
         return Collections.unmodifiableMap(map);
     }
@@ -164,8 +164,8 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
             }, launcherProps -> {
                 launcherProps.remove("name");
                 return Collections.unmodifiableMap(launcherProps);
-            }, (k, _) -> {
-                throw new IllegalStateException(String.format("Duplicate key %s", k));
+            }, (v, _) -> {
+                throw new IllegalStateException(String.format("Duplicate value [%s]", v));
             }, LinkedHashMap::new));
 
             return new AppImageFile(
