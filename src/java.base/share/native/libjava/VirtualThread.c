@@ -32,8 +32,8 @@
 #define VIRTUAL_THREAD  "Ljava/lang/VirtualThread;"
 
 static JNINativeMethod methods[] = {
-    { "endFirstTransition",       "()V",  (void *)&JVM_VirtualThreadStart },
-    { "startFinalTransition",     "()V",  (void *)&JVM_VirtualThreadEnd },
+    { "endFirstTransition",       "()V",  (void *)&JVM_VirtualThreadEndFirstTransition },
+    { "startFinalTransition",     "()V",  (void *)&JVM_VirtualThreadStartFinalTransition },
     { "startTransition",          "(Z)V", (void *)&JVM_VirtualThreadStartTransition },
     { "endTransition",            "(Z)V", (void *)&JVM_VirtualThreadEndTransition },
     { "notifyJvmtiDisableSuspend", "(Z)V", (void *)&JVM_VirtualThreadDisableSuspend },

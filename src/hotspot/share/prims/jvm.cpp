@@ -3662,12 +3662,12 @@ JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
 
-JVM_ENTRY(void, JVM_VirtualThreadStart(JNIEnv* env, jobject vthread))
+JVM_ENTRY(void, JVM_VirtualThreadEndFirstTransition(JNIEnv* env, jobject vthread))
   oop vt = JNIHandles::resolve_external_guard(vthread);
   MountUnmountDisabler::end_transition(thread, vt, true /*is_mount*/, true /*is_thread_start*/);
 JVM_END
 
-JVM_ENTRY(void, JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread))
+JVM_ENTRY(void, JVM_VirtualThreadStartFinalTransition(JNIEnv* env, jobject vthread))
   oop vt = JNIHandles::resolve_external_guard(vthread);
   MountUnmountDisabler::start_transition(thread, vt, false /*is_mount */, true /*is_thread_end*/);
 JVM_END

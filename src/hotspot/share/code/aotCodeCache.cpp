@@ -1352,8 +1352,8 @@ void AOTCodeAddressTable::init_extrs() {
     SET_ADDRESS(_extrs, OptoRuntime::rethrow_C);
     SET_ADDRESS(_extrs, OptoRuntime::slow_arraycopy_C);
     SET_ADDRESS(_extrs, OptoRuntime::register_finalizer_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_C);
-    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_end_first_transition_C);
+    SET_ADDRESS(_extrs, OptoRuntime::vthread_start_final_transition_C);
     SET_ADDRESS(_extrs, OptoRuntime::vthread_start_transition_C);
     SET_ADDRESS(_extrs, OptoRuntime::vthread_end_transition_C);
 #if defined(AARCH64)

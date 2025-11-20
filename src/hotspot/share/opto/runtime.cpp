@@ -552,11 +552,11 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread*
   JRT_BLOCK_END;
 JRT_END
 
-JRT_ENTRY(void, OptoRuntime::vthread_start_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+JRT_ENTRY(void, OptoRuntime::vthread_end_first_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
   MountUnmountDisabler::end_transition(current, vt, true /*is_mount*/, true /*is_thread_start*/);
 JRT_END
 
-JRT_ENTRY(void, OptoRuntime::vthread_end_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+JRT_ENTRY(void, OptoRuntime::vthread_start_final_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
   java_lang_Thread::set_is_in_VTMS_transition(vt, false);
   current->set_is_in_VTMS_transition(false);
   MountUnmountDisabler::start_transition(current, vt, false /*is_mount */, true /*is_thread_end*/);

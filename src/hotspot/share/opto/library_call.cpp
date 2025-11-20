@@ -480,9 +480,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_Continuation_pin:          return inline_native_Continuation_pinning(false);
   case vmIntrinsics::_Continuation_unpin:        return inline_native_Continuation_pinning(true);
 
-  case vmIntrinsics::_vthreadEndFirstTransition:    return inline_native_vthread_end_transition(CAST_FROM_FN_PTR(address, OptoRuntime::vthread_start_Java()),
+  case vmIntrinsics::_vthreadEndFirstTransition:    return inline_native_vthread_end_transition(CAST_FROM_FN_PTR(address, OptoRuntime::vthread_end_first_transition_Java()),
                                                                                                 "endFirstTransition", true);
-  case vmIntrinsics::_vthreadStartFinalTransition:  return inline_native_vthread_start_transition(CAST_FROM_FN_PTR(address, OptoRuntime::vthread_end_Java()),
+  case vmIntrinsics::_vthreadStartFinalTransition:  return inline_native_vthread_start_transition(CAST_FROM_FN_PTR(address, OptoRuntime::vthread_start_final_transition_Java()),
                                                                                                   "startFinalTransition", true);
   case vmIntrinsics::_vthreadStartTransition:       return inline_native_vthread_start_transition(CAST_FROM_FN_PTR(address, OptoRuntime::vthread_start_transition_Java()),
                                                                                                   "startTransition", false);

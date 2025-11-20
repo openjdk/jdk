@@ -234,8 +234,8 @@ public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
 
-  static void vthread_start_C(oopDesc* vt, jboolean hide, JavaThread* current);
-  static void vthread_end_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_end_first_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_start_final_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
   static void vthread_start_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
   static void vthread_end_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
 
@@ -294,8 +294,8 @@ private:
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
 
-  static address vthread_start_Java()                    { return _vthread_start_Java; }
-  static address vthread_end_Java()                      { return _vthread_end_Java; }
+  static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
+  static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
   static address vthread_start_transition_Java()         { return _vthread_start_transition_Java; }
   static address vthread_end_transition_Java()           { return _vthread_end_transition_Java; }
 
@@ -722,11 +722,11 @@ private:
     return _vthread_transition_Type;
   }
 
-  static inline const TypeFunc* vthread_start_Type() {
+  static inline const TypeFunc* vthread_end_first_transition_Type() {
     return vthread_transition_Type();
   }
 
-  static inline const TypeFunc* vthread_end_Type() {
+  static inline const TypeFunc* vthread_start_final_transition_Type() {
     return vthread_transition_Type();
   }
 
