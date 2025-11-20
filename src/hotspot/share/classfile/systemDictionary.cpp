@@ -1870,7 +1870,10 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // only reach here under the same error condition, so we can ignore the potential race with setting
       // the message. If we see it is already set then we can ignore it.
       entry->set_nest_host_error(message);
-    } else {
+    } else if (entry == nullptr) {
+      // Only add a new resolution error if one hasn't been found for this constant pool index. In this case,
+      // resolution succeeded but there's an error in this nest host.
+      assert(pool->resolved_klass_at(which) != nullptr, "klass is should be resolved if there is no entry");
       ResolutionErrorTable::add_entry(pool, which, message);
     }
   }
