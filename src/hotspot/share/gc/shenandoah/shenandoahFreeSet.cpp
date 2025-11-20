@@ -3205,7 +3205,7 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
 }
 
 int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
-  assert(regions_to_reserve > 0, "Sanity check");
+  assert(0 < regions_to_reserve && regions_to_reserve <= (int) ShenandoahAllocator::MAX_ALLOC_REGION_COUNT, "Sanity check");
   shenandoah_assert_heaplocked();
   if (partition == ShenandoahFreeSetPartitionId::Mutator) {
     update_allocation_bias();
@@ -3240,10 +3240,13 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
 
 template<typename Iter>
 int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int const regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+  bool use_affiliated_first = partition != ShenandoahFreeSetPartitionId::Mutator;
+  ShenandoahHeapRegion* free_heap_regions[ShenandoahAllocator::MAX_ALLOC_REGION_COUNT];
+  int free_heap_region_count = 0;
 
   ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
-  int number_of_reserved_regions = 0;
-  for (idx_t idx = iterator.current(); iterator.has_next() && number_of_reserved_regions < regions_to_reserve; idx = iterator.next()) {
+  int reserved_regions_count = 0;
+  for (idx_t idx = iterator.current(); iterator.has_next() && reserved_regions_count < regions_to_reserve; idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
       continue;
@@ -3255,32 +3258,66 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     }
     size_t ac_words = alloc_capacity_words(r);
     if (ac_words >= PLAB::min_size()) {
-      if (r->is_empty()) {
+      if (r->is_empty() && free_heap_region_count < regions_to_reserve) {
+        free_heap_regions[free_heap_region_count++] = r;
         assert(r->affiliation() == FREE, "Empty region must be free");
-        r->set_affiliation(affiliation);
-        r->make_regular_allocation(affiliation);
-        partitions()->one_region_is_no_longer_empty(partition);
-        if (affiliation == OLD_GENERATION) {
-          // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
-          // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
-          // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
-          // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
-          // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
-          // coalesce-and-fill processing.
-          r->end_preemptible_coalesce_and_fill();
-          _heap->old_generation()->clear_cards_for(r);
+        if (use_affiliated_first) {
+          // Just temporary put the FREE region in the array, will further process it later.
+          continue;
         }
       }
-      // The region still have capacity for at least one lab alloc
-      size_t reserved_bytes = partitions()->retire_from_partition(partition, idx, r->used());
-      if (partition == ShenandoahFreeSetPartitionId::Mutator) {
-        increase_bytes_allocated(reserved_bytes);
-      }
-      r->set_active_alloc_region();
-      reserved_regions[number_of_reserved_regions++] = r;
+      reserved_regions[reserved_regions_count++] = r;
     }
   }
-  return number_of_reserved_regions;
+
+  if (reserved_regions_count == 0 && free_heap_region_count == 0) {
+    return 0;
+  }
+
+  int reserved_free_region_count = 0;
+  if (use_affiliated_first && reserved_regions_count < regions_to_reserve && free_heap_region_count > 0) {
+    while (reserved_regions_count < regions_to_reserve && reserved_free_region_count < free_heap_region_count) {
+      reserved_regions[reserved_regions_count++] = free_heap_regions[reserved_free_region_count++];
+    }
+    // we have found enough regions, release the ones won't be used.
+    int i = reserved_free_region_count;
+    while (i < free_heap_region_count) {
+      free_heap_regions[i++] = nullptr;
+    }
+  }
+
+  if (reserved_free_region_count == 0) {
+    return 0;
+  }
+
+  for (int i = 0; i < reserved_free_region_count; i++) {
+    ShenandoahHeapRegion* r = free_heap_regions[i];
+    r->set_affiliation(affiliation);
+    r->make_regular_allocation(affiliation);
+    partitions()->one_region_is_no_longer_empty(partition);
+    if (affiliation == OLD_GENERATION) {
+      // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
+      // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
+      // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
+      // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
+      // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
+      // coalesce-and-fill processing.
+      r->end_preemptible_coalesce_and_fill();
+      _heap->old_generation()->clear_cards_for(r);
+    }
+  }
+
+  for (int i = 0; i < reserved_regions_count; i++) {
+    ShenandoahHeapRegion* r = reserved_regions[i];
+    // The region still have capacity for at least one lab alloc
+    size_t reserved_bytes = partitions()->retire_from_partition(partition, r->index(), r->used());
+    if (partition == ShenandoahFreeSetPartitionId::Mutator) {
+      increase_bytes_allocated(reserved_bytes);
+    }
+    r->set_active_alloc_region();
+  }
+
+  return reserved_regions_count;
 }
 
 ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation(ShenandoahFreeSetPartitionId partition, size_t min_free_words, bool is_lab_alloc, bool &new_region) {

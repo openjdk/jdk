@@ -43,8 +43,6 @@ protected:
     int                            _alloc_region_index;
   };
 
-  static constexpr uint             MAX_ALLOC_REGION_COUNT = 128;
-
   PaddedEnd<ShenandoahAllocRegion>* _alloc_regions;
   uint  const                       _alloc_region_count;
   ShenandoahFreeSet*                _free_set;
@@ -81,6 +79,8 @@ protected:
 #endif
 
 public:
+  static constexpr uint             MAX_ALLOC_REGION_COUNT = 32;
+
   ShenandoahAllocator(uint alloc_region_count, ShenandoahFreeSet* free_set, ShenandoahFreeSetPartitionId alloc_partition_id);
   virtual ~ShenandoahAllocator() { }
 
