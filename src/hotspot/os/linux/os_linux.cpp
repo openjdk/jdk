@@ -1770,7 +1770,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
-#if    (defined AMD64)
+#if  (defined IA32)
+  static  Elf32_Half running_arch_code=EM_386;
+#elif   (defined AMD64) || (defined X32)
   static  Elf32_Half running_arch_code=EM_X86_64;
 #elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
@@ -1804,7 +1806,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1866,6 +1868,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
+#ifndef IA32
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
@@ -1888,9 +1891,14 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   // numerical "accuracy", but we need to protect Java semantics first
   // and foremost. See JDK-8295159.
 
+  // This workaround is ineffective on IA32 systems because the MXCSR
+  // register (which controls flush-to-zero mode) is not stored in the
+  // legacy fenv.
+
   fenv_t default_fenv;
   int rtn = fegetenv(&default_fenv);
   assert(rtn == 0, "fegetenv must succeed");
+#endif // IA32
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
@@ -1910,6 +1918,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
+#ifndef IA32
     // Quickly test to make sure subnormals are correctly handled.
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point flags.
@@ -1935,6 +1944,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
         assert(false, "fesetenv didn't work");
       }
     }
+#endif // IA32
   }
   return result;
 }
