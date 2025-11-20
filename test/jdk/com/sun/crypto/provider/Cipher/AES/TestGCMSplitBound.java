@@ -86,7 +86,7 @@ public class TestGCMSplitBound {
       byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
       System.arraycopy(ciphertext, 0, nonce, 0, IV_SIZE_IN_BYTES);
       Cipher cipher = getCipher(key, aad, nonce);
-      return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES); 
+      return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES);
     }
 
     // x86-64 parallel intrinsic data size
