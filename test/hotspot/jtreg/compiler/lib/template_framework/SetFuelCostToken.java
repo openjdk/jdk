@@ -23,12 +23,7 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
 /**
- * A Template generates a {@link TemplateBody}, which is a list of {@link Token}s,
- * which are then later rendered to {@link String}s.
- *
- * @param tokens The list of {@link Token}s that are later rendered to {@link String}s.
+ * Represents the setting of the fuel cost in the current scope.
  */
-public record TemplateBody(List<Token> tokens) {}
+record SetFuelCostToken(float fuelCost) implements Token {}
