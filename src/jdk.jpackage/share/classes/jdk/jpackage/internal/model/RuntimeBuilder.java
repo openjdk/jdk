@@ -47,6 +47,16 @@ public interface RuntimeBuilder {
     void create(AppImageLayout appImageLayout) throws PackagerException;
 
     /**
+     * Returns {@code true} if "--strip-native-commands" was not used with jlink.
+     * Default implementation returns {@code false}.
+     *
+     * @return {@code true} if "--strip-native-commands" was not used with jlink
+     */
+    default boolean withNativeCommands() {
+        return false;
+    }
+
+    /**
      * Gets the default set of paths where jlink should look up for system Java
      * modules.
      *
