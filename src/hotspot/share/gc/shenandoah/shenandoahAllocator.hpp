@@ -31,6 +31,7 @@
 class ShenandoahFreeSet;
 class ShenandoahRegionPartitions;
 enum class ShenandoahFreeSetPartitionId : uint8_t;
+class ShenandoahHeapRegion;
 class ShenandoahAllocRequest;
 
 class ShenandoahAllocator : public CHeapObj<mtGC> {
