@@ -287,8 +287,14 @@ public:
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
-  inline void increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
-  inline void decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline void increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    _region_counts[int(which_partition)] += regions;
+  }
+  inline void decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    assert(_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
+    _region_counts[int(which_partition)] -= regions;
+  }
+
   inline size_t get_region_counts(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     return _region_counts[int(which_partition)];

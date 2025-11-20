@@ -501,15 +501,6 @@ size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId wh
   return _available[int(which_partition)];;
 }
 
-void ShenandoahRegionPartitions::increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-  _region_counts[int(which_partition)] += regions;
-}
-
-void ShenandoahRegionPartitions::decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-  assert(_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
-  _region_counts[int(which_partition)] -= regions;
-}
-
 void ShenandoahRegionPartitions::increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
   _empty_region_counts[int(which_partition)] += regions;
 }
