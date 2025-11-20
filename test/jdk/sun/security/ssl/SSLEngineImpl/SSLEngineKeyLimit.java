@@ -107,6 +107,7 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
                 p.write(" "+ args[i]);
             }
             p.close();
+
             System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
                     " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
