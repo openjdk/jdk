@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 8371864
- * @run main/othervm TestGCMSplitBound
+ * @run main/othervm/timeout=600 TestGCMSplitBound
  * @summary Test GaloisCounterMode.implGCMCrypt0 AVX512/AVX2 intrinsics.
  */
 
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.time.Duration;
+import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -55,9 +56,8 @@ public class TestGCMSplitBound {
     private static final int IV_SIZE_IN_BYTES = 12;
     private static final int TAG_SIZE_IN_BYTES = 16;
 
-    private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
+    private Cipher getCipher(final byte[] key, final byte[] aad, byte[] nonce)
         throws Exception {
-        byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
         SecretKey keySpec = new SecretKeySpec(key, "AES");
         AlgorithmParameterSpec params =
             new GCMParameterSpec(8 * TAG_SIZE_IN_BYTES, nonce, 0, nonce.length);
@@ -66,6 +66,13 @@ public class TestGCMSplitBound {
         if (aad != null && aad.length != 0) {
             cipher.updateAAD(aad);
         }
+        return cipher;
+    }
+
+    private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
+        throws Exception {
+        byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
+        Cipher cipher = getCipher(key, aad, nonce);
         int outputSize = cipher.getOutputSize(plaintext.length);
         int len = IV_SIZE_IN_BYTES + outputSize;
         byte[] output = new byte[len];
@@ -74,40 +81,55 @@ public class TestGCMSplitBound {
         return output;
     }
 
+    private byte[] gcmDecrypt(final byte[] key, final byte[] ciphertext, final byte[] aad)
+        throws Exception {
+      byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
+      System.arraycopy(ciphertext, 0, nonce, 0, IV_SIZE_IN_BYTES);
+      Cipher cipher = getCipher(key, aad, nonce);
+      return cipher.doFinal(ciphertext, IV_SIZE_IN_BYTES, ciphertext.length - IV_SIZE_IN_BYTES); 
+    }
+
     // x86-64 parallel intrinsic data size
     private static final int PARALLEL_LEN = 512;
     // max data size for x86-64 intrinsic
     private static final int SPLIT_LEN = 1048576; // 1MB
 
-    private void jitFunc() throws Exception {
+    private void encryptAndDecrypt(byte[] key, byte[] aad, byte[] message, int messageSize)
+        throws Exception {
+        byte[] ciphertext = gcmEncrypt(key, message, aad);
+        byte[] decrypted = gcmDecrypt(key, ciphertext, aad);
+        if (ciphertext == null) {
+            throw new RuntimeException("ciphertext is null");
+        }
+        if (Arrays.compare(decrypted, 0, messageSize, message, 0, messageSize) != 0) {
+            throw new RuntimeException(
+                 "Decrypted message is different from the original message");
+        }
+    }
+
+    private void run() throws Exception {
         byte[] aad = randBytes(20);
         byte[] key = randBytes(16);
         // Force JIT.
         for (int i = 0; i < 100000; i++) {
             byte[] message = randBytes(PARALLEL_LEN);
-            byte[] ciphertext = gcmEncrypt(key, message, aad);
-            if (ciphertext == null) {
-                throw new RuntimeException("ciphertext is null");
-            }
+            encryptAndDecrypt(key, aad, message, PARALLEL_LEN);
         }
         for (int messageSize = SPLIT_LEN - 300; messageSize <= SPLIT_LEN + 300; messageSize++) {
             byte[] message = randBytes(messageSize);
             try {
-                byte[] ciphertext = gcmEncrypt(key, message, aad);
-                if (ciphertext == null) {
-                    throw new RuntimeException("ciphertext is null");
-                }
+                encryptAndDecrypt(key, aad, message, messageSize);
             } catch (Exception e) {
-                throw new Exception("Failed for messageSize " + Integer.toHexString(messageSize), e);
+                throw new RuntimeException(
+                    "Failed for messageSize " + Integer.toHexString(messageSize), e);
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
         TestGCMSplitBound test = new TestGCMSplitBound();
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < 60 * 1000) {
-            test.jitFunc();
+        for (int i = 0; i < 3; i++) {
+            test.run();
         }
     }
 }
