@@ -34,7 +34,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
@@ -187,111 +189,109 @@ class H3MalformedResponseTest {
     /// should neither cause the connection get closed.
     static Object[][] malformedResponsesInvalidatingConnection() {
         return new Object[][]{
-                new Object[] {"empty", HexFormat.of().parseHex(
-                        ""
+                {"empty", IOException.class, parseHex("")},
+                {"non-final response", IOException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "ff00" // :status:100
                 )},
-                new Object[] {"non-final response", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "ff00" // :status:100
+                {"uppercase header name", ProtocolException.class, parseHex(
+                        "01090000", // headers, length 9, section prefix
+                        "d9", // :status:200
+                        "234147450130", // AGE:0
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"uppercase header name", HexFormat.of().parseHex(
-                        "01090000"+ // headers, length 9, section prefix
-                                "d9"+ // :status:200
-                                "234147450130"+ // AGE:0
+                {"content too long", IOException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "d9", // :status:200
+                        "c4", // content-length:0
+                        "000100" // data, 1 byte
+                )},
+                {"content too short", IOException.class, parseHex(
+                        "01060000", // headers, length 6, section prefix
+                        "d9", // :status:200
+                        "540132", // content-length:2
+                        "000100" // data, 1 byte
+                )},
+                {"text in content-length", ProtocolException.class, parseHex(
+                        "01060000" + // headers, length 6, section prefix
+                                "d9" + // :status:200
+                                "540161" + // content-length:a
                                 "000100" // data, 1 byte
                 )},
-                new Object[] {"content too long", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "d9"+ // :status:200
-                                "c4"+ // content-length:0
-                                "000100" // data, 1 byte
-                )},
-                new Object[] {"content too short", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "540132"+ // content-length:2
-                                "000100" // data, 1 byte
-                )},
-                new Object[] {"text in content-length", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "540161"+ // content-length:a
-                                "000100" // data, 1 byte
-                )},
-                new Object[] {"connection: close", HexFormat.of().parseHex(
-                        "01150000"+ // headers, length 21, section prefix
-                                "d9"+ // :status:200
-                                "2703636F6E6E656374696F6E05636C6F7365"+ // connection:close
+                {"connection: close", ProtocolException.class, parseHex(
+                        "01150000", // headers, length 21, section prefix
+                        "d9", // :status:200
+                        "2703636F6E6E656374696F6E05636C6F7365" + // connection:close
                                 "000100" // data, 1 byte
                 )},
                 // request pseudo-headers in response
-                new Object[] {":method in response", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "d9"+ // :status:200
-                                "d1"+ // :method:get
-                                "000100" // data, 1 byte
+                {":method in response", ProtocolException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "d9", // :status:200
+                        "d1", // :method:get
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {":authority in response", HexFormat.of().parseHex(
-                        "01100000"+ // headers, length 16, section prefix
-                                "d9"+ // :status:200
-                                "508b089d5c0b8170dc702fbce7"+ // :authority
-                                "000100" // data, 1 byte
+                {":authority in response", ProtocolException.class, parseHex(
+                        "01100000", // headers, length 16, section prefix
+                        "d9", // :status:200
+                        "508b089d5c0b8170dc702fbce7", // :authority
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {":path in response", HexFormat.of().parseHex(
-                        "010a0000"+ // headers, length 10, section prefix
-                                "d9"+ // :status:200
-                                "51856272d141ff"+ // :path
-                                "000100" // data, 1 byte
+                {":path in response", ProtocolException.class, parseHex(
+                        "010a0000", // headers, length 10, section prefix
+                        "d9", // :status:200
+                        "51856272d141ff", // :path
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {":scheme in response", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "d9"+ // :status:200
-                                "d7"+ // :scheme:https
-                                "000100" // data, 1 byte
+                {":scheme in response", ProtocolException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "d9", // :status:200
+                        "d7", // :scheme:https
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"undefined pseudo-header", HexFormat.of().parseHex(
-                        "01080000"+ // headers, length 8, section prefix
-                                "d9"+ // :status:200
-                                "223A6D0130"+ // :m:0
-                                "000100" // data, 1 byte
+                {"undefined pseudo-header", ProtocolException.class, parseHex(
+                        "01080000", // headers, length 8, section prefix
+                        "d9", // :status:200
+                        "223A6D0130", // :m:0
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"pseudo-header after regular", HexFormat.of().parseHex(
-                        "011a0000"+ // headers, length 26, section prefix
-                                "5f5094ca3ee35a74a6b589418b5258132b1aa496ca8747"+ //user-agent
-                                "d9"+ // :status:200
-                                "000100" // data, 1 byte
+                {"pseudo-header after regular", ProtocolException.class, parseHex(
+                        "011a0000", // headers, length 26, section prefix
+                        "5f5094ca3ee35a74a6b589418b5258132b1aa496ca8747", //user-agent
+                        "d9", // :status:200
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"trailer", HexFormat.of().parseHex(
+                {"trailer", IOException.class, parseHex(
                         "01020000" // headers, length 2, section prefix
                 )},
-                new Object[] {"trailer+data", HexFormat.of().parseHex(
-                        "01020000"+ // headers, length 2, section prefix
-                                "000100" // data, 1 byte
+                {"trailer+data", IOException.class, parseHex(
+                        "01020000", // headers, length 2, section prefix
+                        "000100" // data, 1 byte
                 )},
                 //  valid characters include \t, 0x20-0x7e, 0x80-0xff (RFC 9110, section 5.5)
-                new Object[] {"invalid character in field value 00", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "570100"+ // etag:\0
-                                "000100" // data, 1 byte
+                {"invalid character in field value 00", ProtocolException.class, parseHex(
+                        "01060000", // headers, length 6, section prefix
+                        "d9", // :status:200
+                        "570100", // etag:\0
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"invalid character in field value 0a", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "57010a"+ // etag:\n
-                                "000100" // data, 1 byte
+                {"invalid character in field value 0a", ProtocolException.class, parseHex(
+                        "01060000", // headers, length 6, section prefix
+                        "d9", // :status:200
+                        "57010a", // etag:\n
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"invalid character in field value 0d", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "57010d"+ // etag:\r
-                                "000100" // data, 1 byte
+                {"invalid character in field value 0d", ProtocolException.class, parseHex(
+                        "01060000", // headers, length 6, section prefix
+                        "d9", // :status:200
+                        "57010d", // etag:\r
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"invalid character in field value 7f", HexFormat.of().parseHex(
-                        "01060000"+ // headers, length 6, section prefix
-                                "d9"+ // :status:200
-                                "57017f"+ // etag: 0x7f
-                                "000100" // data, 1 byte
+                {"invalid character in field value 7f", ProtocolException.class, parseHex(
+                        "01060000", // headers, length 6, section prefix
+                        "d9", // :status:200
+                        "57017f", // etag: 0x7f
+                        "000100" // data, 1 byte
                 )},
         };
     }
@@ -301,56 +301,56 @@ class H3MalformedResponseTest {
     static Object[][] malformedResponses() {
         // data before headers is covered by H3ErrorHandlingTest
         return new Object[][]{
-                new Object[] {"100+data", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "ff00"+ // :status:100
-                                "000100" // data, 1 byte
+                {"100+data", IOException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "ff00", // :status:100
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"100+data+200", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "ff00"+ // :status:100
-                                "000100"+ // data, 1 byte
-                                "01030000"+ // headers, length 3, section prefix
-                                "d9" // :status:200
+                {"100+data+200", IOException.class, parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "ff00", // :status:100
+                        "000100", // data, 1 byte
+                        "01030000", // headers, length 3, section prefix
+                        "d9" // :status:200
                 )},
-                new Object[] {"200+data+200", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "01030000"+ // headers, length 3, section prefix
-                                "d9" // :status:200
+                {"200+data+200", IOException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "01030000", // headers, length 3, section prefix
+                        "d9" // :status:200
                 )},
-                new Object[] {"200+data+100", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "01040000"+ // headers, length 4, section prefix
-                                "ff00" // :status:100
+                {"200+data+100", IOException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "01040000", // headers, length 4, section prefix
+                        "ff00" // :status:100
                 )},
-                new Object[] {"200+data+trailers+data", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "01020000"+ // trailers, length 2, section prefix
-                                "000100" // data, 1 byte
+                {"200+data+trailers+data", ProtocolException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "01020000", // trailers, length 2, section prefix
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"200+trailers+data", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "01020000"+ // trailers, length 2, section prefix
-                                "000100" // data, 1 byte
+                {"200+trailers+data", IOException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "01020000", // trailers, length 2, section prefix
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"200+200", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "01030000"+ // headers, length 3, section prefix
-                                "d9" // :status:200
+                {"200+200", IOException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "01030000", // headers, length 3, section prefix
+                        "d9" // :status:200
                 )},
-                new Object[] {"200+100", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "01040000"+ // headers, length 4, section prefix
-                                "ff00" // :status:100
+                {"200+100", IOException.class, parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "01040000", // headers, length 4, section prefix
+                        "ff00" // :status:100
                 )},
         };
     }
@@ -358,53 +358,61 @@ class H3MalformedResponseTest {
     /// Well-formed responses that should be accepted by the client.
     static Object[][] wellFormedResponses() {
         return new Object[][]{
-                new Object[] {"100+200+data+reserved", HexFormat.of().parseHex(
-                        "01040000"+ // headers, length 4, section prefix
-                                "ff00"+ // :status:100
-                                "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "210100" // reserved, 1 byte
+                {"100+200+data+reserved", parseHex(
+                        "01040000", // headers, length 4, section prefix
+                        "ff00", // :status:100
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "210100" // reserved, 1 byte
                 )},
-                new Object[] {"200+data+reserved", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "210100" // reserved, 1 byte
+                {"200+data+reserved", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "210100" // reserved, 1 byte
                 )},
-                new Object[] {"200+data", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100" // data, 1 byte
+                {"200+data", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"200+user-agent+data", HexFormat.of().parseHex(
-                        "011a0000"+ // headers, length 26, section prefix
-                                "d9"+ // :status:200
-                                "5f5094ca3ee35a74a6b589418b5258132b1aa496ca8747"+ //user-agent
-                                "000100" // data, 1 byte
+                {"200+user-agent+data", parseHex(
+                        "011a0000", // headers, length 26, section prefix
+                        "d9", // :status:200
+                        "5f5094ca3ee35a74a6b589418b5258132b1aa496ca8747", //user-agent
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"200", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9" // :status:200
+                {"200", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9" // :status:200
                 )},
-                new Object[] {"200+data+data", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "000100" // data, 1 byte
+                {"200+data+data", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "000100" // data, 1 byte
                 )},
-                new Object[] {"200+data+trailers", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "000100"+ // data, 1 byte
-                                "01020000" // trailers, length 2, section prefix
+                {"200+data+trailers", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "000100", // data, 1 byte
+                        "01020000" // trailers, length 2, section prefix
                 )},
-                new Object[] {"200+trailers", HexFormat.of().parseHex(
-                        "01030000"+ // headers, length 3, section prefix
-                                "d9"+ // :status:200
-                                "01020000" // trailers, length 2, section prefix
+                {"200+trailers", parseHex(
+                        "01030000", // headers, length 3, section prefix
+                        "d9", // :status:200
+                        "01020000" // trailers, length 2, section prefix
                 )},
         };
+    }
+
+    private static byte[] parseHex(String... strings) {
+        var buffer = new StringBuilder();
+        for (String string : strings) {
+            buffer.append(string);
+        }
+        return HexFormat.of().parseHex(buffer.toString());
     }
 
     @ParameterizedTest
@@ -420,10 +428,13 @@ class H3MalformedResponseTest {
 
     @ParameterizedTest
     @MethodSource("malformedResponsesInvalidatingConnection")
-    void testMalformedResponseInvalidatingConnection(String desc, byte[] serverResponseBytes) {
+    void testMalformedResponseInvalidatingConnection(
+            String desc,
+            Class<? extends Exception> exceptionClass,
+            byte[] serverResponseBytes) {
         var terminated = configureServerResponse(serverResponseBytes);
         try (var client = createClient()) {
-            var exception = assertThrows(Exception.class, () -> client.send(REQUEST, BodyHandlers.discarding()));
+            var exception = assertThrows(exceptionClass, () -> client.send(REQUEST, BodyHandlers.discarding()));
             LOGGER.log("Got expected exception for: " + desc, exception);
             assertFalse(terminated.getAsBoolean(), "Expected the connection to be open");
         }
@@ -431,10 +442,13 @@ class H3MalformedResponseTest {
 
     @ParameterizedTest
     @MethodSource("malformedResponses")
-    void testMalformedResponse(String desc, byte[] serverResponseBytes) {
+    void testMalformedResponse(
+            String desc,
+            Class<? extends Exception> exceptionClass,
+            byte[] serverResponseBytes) {
         configureServerResponse(serverResponseBytes);
         try (var client = createClient()) {
-            var exception = assertThrows(Exception.class, () -> client.send(REQUEST, BodyHandlers.discarding()));
+            var exception = assertThrows(exceptionClass, () -> client.send(REQUEST, BodyHandlers.discarding()));
             LOGGER.log("Got expected exception for: " + desc, exception);
         }
     }
