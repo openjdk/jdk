@@ -1937,7 +1937,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
       // Done waiting, post the corresponding event
       post_waited_event(current, &wait_event, was_notified, &node, millis, ret);
-  
+
       // We use the NoPreemptMark for the very rare case where the previous
       // preempt attempt failed due to OOM. The preempt on monitor contention
       // could succeed but we can't unmount now.
