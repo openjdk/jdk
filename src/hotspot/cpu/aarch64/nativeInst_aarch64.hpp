@@ -536,7 +536,7 @@ public:
     // The two parts should be checked separately to prevent out of bounds access in case
     // the return address points to the deopt handler stub code entry point which could be
     // at the end of page.
-    first_check_size = 4
+    first_check_size = instruction_size
   };
 
   bool check() const {

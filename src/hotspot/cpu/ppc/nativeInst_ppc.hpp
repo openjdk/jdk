@@ -533,7 +533,7 @@ public:
     // If the check is adjusted to read beyond size of the instruction at the deopt handler stub
     // code entry point, it has to happen in two stages - to prevent out of bounds access in case
     // the return address points to the entry point which could be at the end of page.
-    first_check_size = 4
+    first_check_size = BytesPerInstWord
   };
 
   bool is_post_call_nop() const { return MacroAssembler::is_post_call_nop(long_at(0)); }
