@@ -990,8 +990,8 @@ public final class JceKeyStore extends KeyStoreSpi {
     private void emitWeakKeyStoreWarning() {
         debug.println("WARNING: JCEKS uses outdated cryptographic "
                 + "algorithms and will be removed in a future "
-                + "release. Migrate to PKCS12 using:\n"
-                + "keytool -importkeystore -srckeystore <keystore> "
+                + "release. Migrate to PKCS12 using:");
+        debug.println("keytool -importkeystore -srckeystore <keystore> "
                 + "-destkeystore <keystore> -deststoretype pkcs12");
     }
 }
