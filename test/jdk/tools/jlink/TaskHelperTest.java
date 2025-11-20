@@ -262,5 +262,4 @@ public class TaskHelperTest {
         assertEquals(testCase.expectedCompressValue, compressArgValue);
         assertEquals(testCase.expectedMainFlag(), mainFlag);
     }
-
 }
