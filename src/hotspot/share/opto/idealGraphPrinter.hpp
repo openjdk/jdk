@@ -42,7 +42,6 @@ class Node;
 class InlineTree;
 class ciMethod;
 class JVMState;
-class LRG;
 class Parse;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {

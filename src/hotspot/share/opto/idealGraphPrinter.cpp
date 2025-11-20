@@ -42,14 +42,14 @@ private:
 
 public:
   PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
-  void print_node_properties(Node* node, Compile* C);
-  void print_lrg_properties(const LRG &lrg, const char* buffer);
+  void print_node_properties(Node* node);
+  void print_lrg_properties(const LRG& lrg, const char* buffer);
   void print_property(int flag, const char* name);
   void print_property(int flag, const char* name, const char* val);
   void print_property(int flag, const char* name, int val);
 };
 
-void PrintProperties::print_node_properties(Node* node, Compile* C) {
+void PrintProperties::print_node_properties(Node* node) {
   const jushort flags = node->flags();
   print_property((flags & Node::Flag_is_Copy), "is_copy");
   print_property((flags & Node::Flag_rematerialize), "rematerialize");
@@ -61,14 +61,14 @@ void PrintProperties::print_node_properties(Node* node, Compile* C) {
   print_property((flags & Node::Flag_may_be_short_branch), "may_be_short_branch");
   print_property((flags & Node::Flag_has_call), "has_call");
   print_property((flags & Node::Flag_has_swapped_edges), "has_swapped_edges");
-  if (C->matcher() != nullptr) {
-    print_property(C->matcher()->is_shared(node),"is_shared");
-    print_property(!(C->matcher()->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
-    print_property(C->matcher()->is_dontcare(node), "is_dontcare");
-    print_property(!(C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
-    Node* old = C->matcher()->find_old_node(node);
+  if (_printer->C->matcher() != nullptr) {
+    print_property(_printer->C->matcher()->is_shared(node),"is_shared");
+    print_property(!(_printer->C->matcher()->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
+    print_property(_printer->C->matcher()->is_dontcare(node), "is_dontcare");
+    print_property(!(_printer->C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
+    Node* old = _printer->C->matcher()->find_old_node(node);
     if (old != nullptr) {
-      print_property(true, "old_node_idx", C->matcher()->find_old_node(node)->_idx);
+      print_property(true, "old_node_idx", old->_idx);
     }
   }
 }
@@ -610,7 +610,7 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     }
 
     PrintProperties print_node(this);
-    print_node.print_node_properties(node, C);
+    print_node.print_node_properties(node);
 
     if (node->is_Proj()) {
       print_prop("con", (int)node->as_Proj()->_con);
