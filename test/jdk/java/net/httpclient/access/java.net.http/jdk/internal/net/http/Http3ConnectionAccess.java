@@ -22,15 +22,30 @@
  */
 package jdk.internal.net.http;
 
+import java.lang.reflect.Field;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.http3.ConnectionSettings;
 
 public final class Http3ConnectionAccess {
+
+    private static final Field openedConnections; // Set<> jdk.internal.net.http.HttpClientImpl#openedConnections
+
+    static {
+        try {
+            openedConnections = Class.forName("jdk.internal.net.http.HttpClientImpl")
+                    .getDeclaredField("openedConnections");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private Http3ConnectionAccess() {
         throw new AssertionError();
@@ -60,5 +75,16 @@ public final class Http3ConnectionAccess {
         } catch (Exception ex) {
             return MinimalFuture.failedFuture(ex);
         }
+    }
+
+    public static Set<?> getOpenedConnections(final HttpClient client)
+            throws IllegalAccessException {
+        Objects.requireNonNull(client, "client");
+        final HttpClientImpl clientImpl = impl(client);
+        if (clientImpl == null) {
+            return null;
+        }
+        openedConnections.setAccessible(true);
+        return (Set<?>) openedConnections.get(clientImpl);
     }
 }

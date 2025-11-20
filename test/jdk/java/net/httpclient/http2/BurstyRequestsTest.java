@@ -23,7 +23,6 @@
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -47,6 +46,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.internal.net.http.Http3ConnectionAccess;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -62,50 +62,24 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * @bug 8326498 8361091
  * @summary verify that the HttpClient does not leak connections when dealing with
  *          sudden rush of HTTP/2 requests
- * @modules java.net.http/jdk.internal.net.http:+open
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.net.http/jdk.internal.net.http.quic
- *          java.net.http/jdk.internal.net.http.quic.packets
- *          java.net.http/jdk.internal.net.http.quic.frames
- *          java.net.http/jdk.internal.net.http.quic.streams
- *          java.net.http/jdk.internal.net.http.http3.streams
- *          java.net.http/jdk.internal.net.http.http3.frames
- *          java.net.http/jdk.internal.net.http.http3
- *          java.net.http/jdk.internal.net.http.qpack
- *          java.net.http/jdk.internal.net.http.qpack.readers
- *          java.net.http/jdk.internal.net.http.qpack.writers
- *          java.logging
- *          java.base/jdk.internal.net.quic
- *          java.base/jdk.internal.util
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
- *
- * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @library /test/lib /test/jdk/java/net/httpclient/lib ../access
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.httpclient.test.lib.http2.Http2Handler
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier
+ *        java.net.http/jdk.internal.net.http.Http3ConnectionAccess
  * @run junit ${test.main.class}
  */
 class BurstyRequestsTest {
 
     private static final String HANDLER_PATH = "/8326498/";
 
-    private static Field openConnections; // Set<> jdk.internal.net.http.HttpClientImpl#openedConnections
-
     // we use a h2c server but it doesn't matter if it is h2c or h2
     private static Http2TestServer http2Server;
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        openConnections = Class.forName("jdk.internal.net.http.HttpClientImpl")
-                .getDeclaredField("openedConnections");
-        openConnections.setAccessible(true);
-
         http2Server = new Http2TestServer(false, 0);
         http2Server.setExchangeSupplier(new ExchangeSupplier());
         http2Server.addHandler(new Handler(), HANDLER_PATH);
@@ -149,8 +123,8 @@ class BurstyRequestsTest {
                      .build()) {
             // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl,
             // so we skip the test if the HttpClient isn't of the expected type
-            final Object clientImpl = reflectHttpClientImplInstance(client);
-            assumeTrue(clientImpl != null,
+            final Set<?> openedConnections = Http3ConnectionAccess.getOpenedConnections(client);
+            assumeTrue(openedConnections != null,
                     "skipping test against HttpClient of type " + client.getClass().getName());
 
             for (int i = 0; i < numRequests; i++) {
@@ -168,40 +142,21 @@ class BurstyRequestsTest {
             System.err.println("waiting for at least " + (numRequests - 1) + " connections to be closed");
             // now verify that the current open TCP connections is not more than 1.
             // we let the test timeout if we never reach that count.
-            final Set<?> currentOpenConns = (Set<?>) openConnections.get(clientImpl);
-            int size = currentOpenConns.size();
-            System.err.println("currently " + size + " open connections: " + currentOpenConns);
+            int size = openedConnections.size();
+            System.err.println("currently " + size + " open connections: " + openedConnections);
             while (size > 1) {
                 // wait
                 Thread.sleep(100);
                 final int prev = size;
-                size = currentOpenConns.size();
+                size = openedConnections.size();
                 if (prev != size) {
-                    System.err.println("currently " + size + " open connections: " + currentOpenConns);
+                    System.err.println("currently " + size + " open connections: " + openedConnections);
                 }
             }
             // we expect at most 1 connection will stay open
             assertTrue((size == 0 || size == 1),
                     "unexpected number of current open connections: " + size);
         }
-    }
-
-    // using reflection, return the jdk.internal.net.http.HttpClientImpl instance held
-    // by the given client
-    private static Object reflectHttpClientImplInstance(final HttpClient client) throws Exception {
-        if (!client.getClass().getName().equals("jdk.internal.net.http.HttpClientFacade")) {
-            return null;
-        }
-        final Field implField = client.getClass().getDeclaredField("impl");
-        implField.setAccessible(true);
-        final Object clientImpl = implField.get(client);
-        if (clientImpl == null) {
-            return null;
-        }
-        if (!clientImpl.getClass().getName().equals("jdk.internal.net.http.HttpClientImpl")) {
-            return null;
-        }
-        return clientImpl; // the expected HttpClientImpl instance
     }
 
     private static final class RequestIssuer implements Callable<Void> {
