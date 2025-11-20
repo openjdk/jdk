@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,14 @@
 
 /* @test
  * @bug 7184932 8232673
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run main AdaptorCloseAndInterrupt
  * @summary Test asynchronous close and interrupt of timed socket adapter methods
  * @key randomness intermittent
  */
+
+import jdk.test.lib.net.IPSupport;
 
 import java.io.*;
 import java.nio.*;
@@ -69,6 +74,7 @@ public class AdaptorCloseAndInterrupt {
     }
 
     public static void main(String args[]) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         try {
             try (ServerSocketChannel listener = ServerSocketChannel.open()) {
                 listener.socket().bind(null);

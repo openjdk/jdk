@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 /* @test
  * @bug 8202252
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @run testng CompletionHandlerRelease
  * @summary Verify that reference to CompletionHandler is cleared after use
  */
@@ -44,7 +46,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import jdk.test.lib.net.IPSupport;
 import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -143,6 +147,11 @@ public class CompletionHandlerRelease {
     @AfterTest
     void cleanup() throws IOException {
         GROUP.shutdownNow();
+    }
+
+    @BeforeClass
+    void printSupportedPlatforms(){
+        IPSupport.printPlatformSupport(System.out);
     }
 
     class Server implements Closeable {

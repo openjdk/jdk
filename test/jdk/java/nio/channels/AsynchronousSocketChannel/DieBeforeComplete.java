@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,12 @@
 /* @test
  * @bug 6842687
  * @summary Unit test for AsynchronousSocketChannel/AsynchronousServerSocketChannel
+ * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
+ * @run main DieBeforeComplete
  */
+import jdk.test.lib.net.IPSupport;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.net.*;
@@ -38,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DieBeforeComplete {
 
     public static void main(String[] args) throws Exception {
+        IPSupport.printPlatformSupport(System.out);
         final AsynchronousServerSocketChannel listener =
                 AsynchronousServerSocketChannel.open().bind(new InetSocketAddress(0));
 
