@@ -23,6 +23,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "opto/c2_globals.hpp"
+#include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
@@ -1147,7 +1148,10 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
       if (load_sz > MaxVectorSize) {
-        // Dead node, should go away
+        // After loop opts, cast nodes are aggressively removed, if the input is then transformed
+        // into a constant that is outside the range of the removed cast, we may encounter it here.
+        // This should be a dead node then.
+        assert(Compile::current()->post_loop_opts_phase(), "");
         return nullptr;
       }
 
@@ -1170,7 +1174,8 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
       if (load_sz > MaxVectorSize) {
-        // Dead node, should go away
+        // See LoadVectorMaskedNode::Ideal
+        assert(Compile::current()->post_loop_opts_phase(), "");
         return nullptr;
       }
 
