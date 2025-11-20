@@ -1231,6 +1231,11 @@ public class TestReductions {
         applyIfCPUFeatureOr = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     // AArch64 SVE has problems with LoadVector being <I:4>, not <I:8>, as test expects.
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true"},
+        applyIfAnd = {"AutoVectorizationOverrideProfitability", "> 0", "UseSVE", "0"})
     private static int intMulSimple() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1350,6 +1355,11 @@ public class TestReductions {
         applyIfCPUFeatureOr = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     // AArch64 SVE has problems with LoadVector being <I:4>, not <I:8>, as test expects.
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true"},
+        applyIfAnd = {"AutoVectorizationOverrideProfitability", "> 0", "UseSVE", "0"})
     private static int intMulDotProduct() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1469,6 +1479,11 @@ public class TestReductions {
         applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     // AArch64 SVE has problems with LoadVector being <I:4>, not <I:8>, as test expects.
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"asimd", "true"},
+        applyIfAnd = {"AutoVectorizationOverrideProfitability", "> 0", "UseSVE", "0"})
     private static int intMulBig() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
