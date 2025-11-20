@@ -184,6 +184,7 @@ public class MacSignTest {
 
     @Test
     @ParameterSupplier
+    @ParameterSupplier("testSelectSigningIdentity_JDK_8371094")
     public static void testSelectSigningIdentity(String signingKeyUserName, CertificateRequest certRequest) {
 
         MacSign.withKeychain(keychain -> {
@@ -205,6 +206,12 @@ public class MacSignTest {
             acc.accept(new Object[] {certRequest.shortName(), certRequest});
             acc.accept(new Object[] {certRequest.name(), certRequest});
         }).toList();
+    }
+
+    public static Collection<Object[]> testSelectSigningIdentity_JDK_8371094() {
+        return List.<Object[]>of(new Object[] {
+                "ACME Technologies Limited", SigningBase.StandardCertificateRequest.CODESIGN_ACME_TECH_LTD.spec()
+        });
     }
 
     enum SignOption {
