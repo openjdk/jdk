@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8371864
- * @run main/othervm TestAesGcmIntrinsic
+ * @run main/othervm TestGCMSplitBound
  * @summary Test GaloisCounterMode.implGCMCrypt0 AVX512/AVX2 intrinsics.
  */
 
@@ -36,7 +36,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-public class TestAesGcmIntrinsic {
+public class TestGCMSplitBound {
 
     static final SecureRandom SECURE_RANDOM = newDefaultSecureRandom();
 
@@ -90,7 +90,7 @@ public class TestAesGcmIntrinsic {
                 throw new RuntimeException("ciphertext is null");
             }
         }
-        for (int messageSize = SPLIT_LEN; messageSize < SPLIT_LEN + 300; messageSize++) {
+        for (int messageSize = SPLIT_LEN - 300; messageSize <= SPLIT_LEN + 300; messageSize++) {
             byte[] message = randBytes(messageSize);
             try {
                 byte[] ciphertext = gcmEncrypt(key, message, aad);
@@ -104,7 +104,7 @@ public class TestAesGcmIntrinsic {
     }
 
     public static void main(String[] args) throws Exception {
-        TestAesGcmIntrinsic test = new TestAesGcmIntrinsic();
+        TestGCMSplitBound test = new TestGCMSplitBound();
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < 60 * 1000) {
             test.jitFunc();
