@@ -35,19 +35,20 @@ import org.openjdk.jmh.annotations.*;
 @Fork(value = 1, jvmArgs = {"--add-modules=jdk.incubator.vector"})
 public class VectorStoreMaskBenchmark {
     static final int LENGTH = 256;
-    static final boolean[] mask_arr = new boolean[LENGTH];
+    static final boolean[] mask_arr_input = new boolean[LENGTH];
+    static final boolean[] mask_arr_output = new boolean[LENGTH];
     static {
         for (int i = 0; i < LENGTH; i++) {
-            mask_arr[i] = (i & 1) == 0;
+            mask_arr_input[i] = (i & 1) == 0;
         }
     }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
     public <E, F> void maskLoadCastStoreKernel(VectorSpecies<E> species_from, VectorSpecies<F> species_to) {
         for (int i = 0; i < LENGTH; i += species_from.length()) {
-            VectorMask<E> mask_from = VectorMask.fromArray(species_from, mask_arr, i);
+            VectorMask<E> mask_from = VectorMask.fromArray(species_from, mask_arr_input, i);
             VectorMask<F> mask_to = mask_from.cast(species_to);
-            mask_to.intoArray(mask_arr, i);
+            mask_to.intoArray(mask_arr_output, i);
         }
     }
 
