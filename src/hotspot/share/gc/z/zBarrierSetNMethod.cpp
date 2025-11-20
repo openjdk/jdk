@@ -33,6 +33,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -70,12 +71,16 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal barriers
-  ZNMethod::nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic(nm);
 
-  // Heal oops
-  ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
-  ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    // Heal barriers
+    ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
+
+    // Heal oops
+    ZUncoloredRootProcessWeakOopClosure cl(ZNMethod::color(nm));
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+  }
 
   const uintptr_t prev_color = ZNMethod::color(nm);
   const uintptr_t new_color = *ZPointerStoreGoodMaskLowOrderBitsAddr;

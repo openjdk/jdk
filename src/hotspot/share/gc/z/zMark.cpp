@@ -719,12 +719,15 @@ public:
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
     if (_bs_nm->is_armed(nm)) {
-      // Heal barriers
-      ZNMethod::nmethod_patch_barriers(nm);
+      {
+         ICacheInvalidationContext icic(nm);
+         // Heal barriers
+         ZNMethod::nmethod_patch_barriers(nm, icic.deferred_invalidation());
 
-      // Heal oops
-      ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
-      ZNMethod::nmethod_oops_do_inner(nm, &cl);
+         // Heal oops
+         ZUncoloredRootMarkOopClosure cl(ZNMethod::color(nm));
+         ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+      }
 
       // CodeCache unloading support
       nm->mark_as_maybe_on_stack();

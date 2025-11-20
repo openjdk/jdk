@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -201,8 +202,12 @@ void ZNMethod::register_nmethod(nmethod* nm) {
 
   log_register(nm);
 
-  // Patch nmethod barriers
-  nmethod_patch_barriers(nm);
+  {
+    ICacheInvalidationContext icic(nm);
+
+    // Patch nmethod barriers
+    nmethod_patch_barriers(nm, icic.deferred_invalidation());
+  }
 
   // Register nmethod
   ZNMethodTable::register_nmethod(nm);
@@ -366,9 +371,12 @@ public:
         const uintptr_t prev_color = ZNMethod::color(nm);
         assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
-        // Heal oops and potentially mark young objects if there is a concurrent young collection.
-        ZUncoloredRootProcessOopClosure cl(prev_color);
-        ZNMethod::nmethod_oops_do_inner(nm, &cl);
+        {
+          ICacheInvalidationContext icic(nm);
+          // Heal oops and potentially mark young objects if there is a concurrent young collection.
+          ZUncoloredRootProcessOopClosure cl(prev_color);
+          ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
+        }
 
         // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
         // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for

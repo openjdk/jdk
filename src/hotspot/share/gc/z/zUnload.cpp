@@ -38,6 +38,7 @@
 #include "gc/z/zUnload.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "oops/access.inline.hpp"
+#include "runtime/icache.hpp"
 
 static const ZStatSubPhase ZSubPhaseConcurrentClassesUnlink("Concurrent Classes Unlink", ZGenerationId::old);
 static const ZStatSubPhase ZSubPhaseConcurrentClassesPurge("Concurrent Classes Purge", ZGenerationId::old);
@@ -81,7 +82,8 @@ public:
       return false;
     }
     ZIsUnloadingOopClosure cl(nm);
-    ZNMethod::nmethod_oops_do_inner(nm, &cl);
+    ICacheInvalidationContext icic(nm);
+    ZNMethod::nmethod_oops_do_inner(nm, &cl, icic.deferred_invalidation());
     return cl.is_unloading();
   }
 };

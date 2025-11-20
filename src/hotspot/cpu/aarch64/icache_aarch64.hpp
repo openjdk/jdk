@@ -28,6 +28,7 @@
 
 #include OS_CPU_HEADER(icache)
 
+#include "code/nmethod.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define PD_ICACHE_INVALIDATION_CONTEXT
@@ -59,7 +60,7 @@ inline void ICacheInvalidationContext::pd_invalidate_icache() {
     // of injected TLB invalidations should be minimized in the trap handler to mitigate
     // the performance impact due to this workaround."
     //
-    // As the addrress for icache invalidation is not relevant, we use the nmethod's code start address.
+    // As the address for icache invalidation is not relevant, we use the nmethod's code start address.
     ICache::invalidate_word(_nm->code_begin());
   }
 }
