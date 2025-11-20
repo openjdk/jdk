@@ -250,6 +250,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 
   HeapWord* right = MIN2(region->top(), end_range_of_interest);
   HeapWord* end_of_search_next = MIN2(right, tams);
+  // Since end_range_of_interest may not align on a card boundary, last_relevant_card_index is conservative.  Not all of the
+  // memory within the last relevant card's span is < right.
   size_t last_relevant_card_index;
   if (end_range_of_interest == _end_of_heap) {
     last_relevant_card_index = _rs->card_index_for_addr(end_range_of_interest - 1);
@@ -352,9 +354,8 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
             return nullptr;
           }
         } while (!starts_object(following_card_index));
-        assert(_rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index),
-               "Result must precede right");
-        return _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+        HeapWord* result_candidate = _rs->addr_for_card_index(following_card_index) + get_first_start(following_card_index);
+        return (result_candidate >= right)? nullptr: result_candidate;
       }
     }
   }
