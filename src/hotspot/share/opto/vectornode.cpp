@@ -22,6 +22,7 @@
  */
 
 #include "memory/allocation.inline.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/mulnode.hpp"
@@ -1145,7 +1146,11 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (ty && ty->is_con()) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(3));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      assert(load_sz <= MaxVectorSize, "Unexpected load size");
+      if (load_sz > MaxVectorSize) {
+        // Dead node, should go away
+        return nullptr;
+      }
+
       if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
@@ -1164,7 +1169,11 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (ty && ty->is_con()) {
       BasicType mask_bt = Matcher::vector_element_basic_type(in(4));
       int load_sz = type2aelembytes(mask_bt) * ty->get_con();
-      assert(load_sz <= MaxVectorSize, "Unexpected store size");
+      if (load_sz > MaxVectorSize) {
+        // Dead node, should go away
+        return nullptr;
+      }
+
       if (load_sz == MaxVectorSize) {
         Node* ctr = in(MemNode::Control);
         Node* mem = in(MemNode::Memory);
