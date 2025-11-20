@@ -959,19 +959,18 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
 }
 
 bool AOTMetaspace::preimage_static_archive_dumped() {
-  if (CDSConfig::is_dumping_preimage_static_archive()) {
-      return _preimage_static_archive_dumped == 1;
-  }
-  return false;
+  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
+  return _preimage_static_archive_dumped == 1;
 }
 
 void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
-  assert(CDSConfig::is_dumping_preimage_static_archive(), "Required");
-  // Ensure this function is only executed once.  Multiple invocations may happen
-  // via JCmd, during VM exit or other means (in the future) from different threads 
-  // and possibly concurrently.
-  if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
-    return;
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
+    // When dumping to the AOT configuration file ensure this function is only executed once.
+    // Multiple invocations may happen via JCmd, during VM exit or other means (in the future)
+    // from different threads and possibly concurrently.
+    if (AtomicAccess::cmpxchg(&_preimage_static_archive_dumped, 0, 1) != 0) {
+      return;
+    }
   }
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
