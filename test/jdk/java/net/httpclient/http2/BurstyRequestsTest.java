@@ -46,7 +46,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
-import jdk.internal.net.http.Http3ConnectionAccess;
+import jdk.internal.net.http.HttpClientImplAccess;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *        jdk.httpclient.test.lib.http2.Http2Handler
  *        jdk.httpclient.test.lib.http2.Http2TestExchange
  *        jdk.httpclient.test.lib.http2.Http2TestExchangeSupplier
- *        java.net.http/jdk.internal.net.http.Http3ConnectionAccess
+ *        java.net.http/jdk.internal.net.http.HttpClientImplAccess
  * @run junit ${test.main.class}
  */
 class BurstyRequestsTest {
@@ -123,7 +123,7 @@ class BurstyRequestsTest {
                      .build()) {
             // our test needs to peek into the internal field of jdk.internal.net.http.HttpClientImpl,
             // so we skip the test if the HttpClient isn't of the expected type
-            final Set<?> openedConnections = Http3ConnectionAccess.getOpenedConnections(client);
+            final Set<?> openedConnections = HttpClientImplAccess.getOpenedConnections(client);
             assumeTrue(openedConnections != null,
                     "skipping test against HttpClient of type " + client.getClass().getName());
 

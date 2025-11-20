@@ -22,43 +22,46 @@
  */
 package jdk.internal.net.http;
 
+import java.lang.reflect.Field;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.NoSuchElementException;
-import java.util.concurrent.CompletableFuture;
-import jdk.internal.net.http.common.MinimalFuture;
-import jdk.internal.net.http.http3.ConnectionSettings;
+import java.util.Objects;
+import java.util.Set;
 
-public final class Http3ConnectionAccess {
+public final class HttpClientImplAccess {
 
-    private Http3ConnectionAccess() {
+    private static final Field openedConnections; // Set<> jdk.internal.net.http.HttpClientImpl#openedConnections
+
+    static {
+        try {
+            openedConnections = Class.forName("jdk.internal.net.http.HttpClientImpl")
+                    .getDeclaredField("openedConnections");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private HttpClientImplAccess() {
         throw new AssertionError();
     }
 
-    static HttpClientImpl impl(HttpClient client) {
+    private static HttpClientImpl impl(final HttpClient client) {
         if (client instanceof HttpClientImpl impl) return impl;
         if (client instanceof HttpClientFacade facade) return facade.impl;
         return null;
     }
 
-    static HttpRequestImpl impl(HttpRequest request) {
-        if (request instanceof HttpRequestImpl impl) return impl;
-        return null;
-    }
-
-    public static CompletableFuture<ConnectionSettings> peerSettings(HttpClient client, HttpResponse<?> resp) {
-        try {
-            Http3Connection conn = impl(client)
-                    .client3()
-                    .get()
-                    .findPooledConnectionFor(impl(resp.request()), null);
-            if (conn == null) {
-                return MinimalFuture.failedFuture(new NoSuchElementException("no connection found"));
-            }
-            return conn.peerSettingsCF();
-        } catch (Exception ex) {
-            return MinimalFuture.failedFuture(ex);
+    /**
+     * Returns the {@code jdk.internal.net.http.HttpClientImpl#openedConnections Set}.
+     * Returns null if the underlying client isn't of type jdk.internal.net.http.HttpClientImpl.
+     */
+    public static Set<?> getOpenedConnections(final HttpClient client)
+            throws IllegalAccessException {
+        Objects.requireNonNull(client, "client");
+        final HttpClientImpl clientImpl = impl(client);
+        if (clientImpl == null) {
+            return null;
         }
+        openedConnections.setAccessible(true);
+        return (Set<?>) openedConnections.get(clientImpl);
     }
 }
