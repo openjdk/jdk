@@ -2023,9 +2023,15 @@ public:
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp, bool use64byteVector = false);
 
+  void fill64_unmasked(uint shift, Register dst, int disp,
+                         XMMRegister xmm, Register length, Register temp);
+
   void fill32_masked(uint shift, Register dst, int disp,
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
+
+  void fill32_unmasked(uint shift, Register dst, int disp,
+                         XMMRegister xmm, Register length, Register temp);
 
   void fill32(Address dst, XMMRegister xmm);
 
