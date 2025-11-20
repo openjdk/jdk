@@ -595,7 +595,8 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab) {
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
-// the maximum we're able to transfer from young to old.
+// the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
+// for the idle span that precedes the next GC.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
                                                                 size_t old_cset_regions, size_t young_cset_regions) {
   shenandoah_assert_heaplocked();

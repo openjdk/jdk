@@ -398,7 +398,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     log_debug(gc, cset)("Shrinking old evac reserve to match old_evac_commited: " PROPERFMT, PROPERFMTARGS(old_evacuated_committed));
     old_evacuation_reserve = old_evacuated_committed;
 
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
     log_info(gc)("adjust_evac_budgets shrinks old_evac_reserve to old_evac_committed: %zu", old_evacuated_committed);
 #endif
@@ -878,15 +878,17 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     // We are preparing for evacuation.  At this time, we ignore cset region tallies.
     size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
+
+#ifdef KELVIN_DEBUG
+    log_info(gc)("About to prepare_to_rebuild(), young_reserve: %zu, old_reserve: %zu, promo_reserve: %zu",
+                   heap->young_generation()->get_evacuation_reserve(), heap->old_generation()->get_evacuation_reserve(), 
+                   heap->old_generation()->get_promoted_reserve());
+#endif
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    if (heap->mode()->is_generational()) {
-      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
-      // We know that old is large enough to represent any evacuations that are directed to Old.  If we ended up budgeting
-      // more memory for old than is required by the chosen collection set, this is our opportunity to transfer some
-      // regions from old to mutator in order to expand the allocation runway.
-      size_t mutator_xfer_limit = 0;
-      gen_heap->compute_old_generation_balance(mutator_xfer_limit, old_cset_regions, young_cset_regions);
-    }
+#ifdef KELVIN_DEBUG
+    log_info(gc)("After prepare_to_rebuild(), young_cset_regions: %zu, old_cset_regions: %zu, first_old: %zu, last_old: %zu, num_old: %zu",
+                 young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+#endif
     // Free set construction uses reserve quantities, because they are known to be valid here
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
