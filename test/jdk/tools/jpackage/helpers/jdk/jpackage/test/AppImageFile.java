@@ -25,24 +25,27 @@ package jdk.jpackage.test;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
-public record AppImageFile(String mainLauncherName, String mainLauncherClassName,
+public record AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName,
         String version, boolean macSigned, boolean macAppStore, Map<String, Map<String, String>> launchers) {
 
     public static Path getPathInAppImage(Path appImageDir) {
@@ -61,14 +64,21 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
         }
     }
 
-    public AppImageFile(String mainLauncherName, String mainLauncherClassName) {
+    public AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName) {
         this(mainLauncherName, mainLauncherClassName, "1.0", false, false, Map.of(mainLauncherName, Map.of()));
     }
 
+    public AppImageFile(String mainLauncherName, String mainLauncherClassName) {
+        this(mainLauncherName, Optional.of(mainLauncherClassName));
+    }
+
     public Map<String, Map<String, String>> addLaunchers() {
-        return launchers.entrySet().stream().filter(e -> {
+        var map = launchers.entrySet().stream().filter(e -> {
             return !e.getKey().equals(mainLauncherName);
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (k, _) -> {
+            throw new IllegalStateException(String.format("Duplicate key %s", k));
+        }, LinkedHashMap::new));
+        return Collections.unmodifiableMap(map);
     }
 
     public void save(Path appImageDir) throws IOException {
@@ -82,12 +92,14 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
             xml.writeEndElement();
 
             xml.writeStartElement("main-launcher");
-            xml.writeCharacters(mainLauncherName);
+            xml.writeAttribute("name", mainLauncherName);
             xml.writeEndElement();
 
-            xml.writeStartElement("main-class");
-            xml.writeCharacters(mainLauncherClassName);
-            xml.writeEndElement();
+            mainLauncherClassName.ifPresent(toConsumer(v -> {
+                xml.writeStartElement("main-class");
+                xml.writeCharacters(v);
+                xml.writeEndElement();
+            }));
 
             xml.writeStartElement("signed");
             xml.writeCharacters(Boolean.toString(macSigned));
@@ -120,11 +132,8 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
 
             var version = xPath.evaluate("/jpackage-state/app-version/text()", doc);
 
-            var mainLauncherName = xPath.evaluate(
-                    "/jpackage-state/main-launcher/text()", doc);
-
-            var mainLauncherClassName = xPath.evaluate(
-                    "/jpackage-state/main-class/text()", doc);
+            var mainLauncherClassName = Optional.ofNullable(xPath.evaluate(
+                    "/jpackage-state/main-class/text()", doc));
 
             var macSigned = Optional.ofNullable(xPath.evaluate(
                     "/jpackage-state/signed/text()", doc)).map(
@@ -134,36 +143,49 @@ public record AppImageFile(String mainLauncherName, String mainLauncherClassName
                     "/jpackage-state/app-store/text()", doc)).map(
                             Boolean::parseBoolean).orElse(false);
 
-            var addLaunchers = XmlUtils.queryNodes(doc, xPath, "/jpackage-state/add-launcher").map(Element.class::cast).map(toFunction(addLauncher -> {
-                Map<String, String> launcherProps = new HashMap<>();
-
-                // @name and @service attributes.
-                XmlUtils.toStream(addLauncher.getAttributes()).forEach(attr -> {
-                    launcherProps.put(attr.getNodeName(), attr.getNodeValue());
-                });
-
-                // Extra properties.
-                XmlUtils.queryNodes(addLauncher, xPath, "*[count(*) = 0]").map(Element.class::cast).forEach(e -> {
-                    launcherProps.put(e.getNodeName(), e.getTextContent());
-                });
-
-                return launcherProps;
+            var addLaunchers = XmlUtils.queryNodes(doc, xPath, "/jpackage-state/add-launcher").map(Element.class::cast).map(toFunction(launcher -> {
+                return readLauncherProperties(xPath, launcher);
             }));
 
-            var mainLauncherProperties = Map.of("name", mainLauncherName);
+            var mainLauncher = XmlUtils.queryNodes(doc, xPath, "/jpackage-state/main-launcher[last()]").map(Element.class::cast).map(toFunction(launcher -> {
+                return readLauncherProperties(xPath, launcher);
+            })).findFirst().orElseThrow();
 
-            var launchers = Stream.concat(Stream.of(mainLauncherProperties), addLaunchers).collect(toMap(attrs -> {
-                return Objects.requireNonNull(attrs.get("name"));
-            }, attrs -> {
-                Map<String, String> copy = new HashMap<>(attrs);
-                copy.remove("name");
-                return Map.copyOf(copy);
-            }));
+            var mainLauncherName = mainLauncher.get("name");
 
-            return new AppImageFile(mainLauncherName, mainLauncherClassName,
-                    version, macSigned, macAppStore, launchers);
+            var launchers = Stream.concat(Stream.of(mainLauncher), addLaunchers).collect(toMap(launcherProps -> {
+                return Objects.requireNonNull(launcherProps.get("name"));
+            }, launcherProps -> {
+                launcherProps.remove("name");
+                return Collections.unmodifiableMap(launcherProps);
+            }, (k, _) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", k));
+            }, LinkedHashMap::new));
+
+            return new AppImageFile(
+                    mainLauncherName,
+                    mainLauncherClassName,
+                    version,
+                    macSigned,
+                    macAppStore,
+                    Collections.unmodifiableMap(launchers));
 
         }).get();
+    }
+
+    private static HashMap<String, String> readLauncherProperties(XPath xPath, Element launcherElement) throws XPathExpressionException {
+        HashMap<String, String> launcherProps = new HashMap<>();
+
+        var name = Objects.requireNonNull(xPath.evaluate("@name", launcherElement));
+
+        launcherProps.put("name", name);
+
+        // Extra properties.
+        XmlUtils.queryNodes(launcherElement, xPath, "*[count(*) = 0]").map(Element.class::cast).forEach(e -> {
+            launcherProps.put(e.getNodeName(), e.getTextContent());
+        });
+
+        return launcherProps;
     }
 
     private static String getVersion() {
