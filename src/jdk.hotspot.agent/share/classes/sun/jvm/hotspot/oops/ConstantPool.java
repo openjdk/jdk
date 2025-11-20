@@ -89,7 +89,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     Type type   = db.lookupType("ConstantPool");
     tags        = type.getAddressField("_tags");
     cache       = type.getAddressField("_cache");
-    bsm_entries = type.getField("_bsmaentries").getOffset();
+    bsm_entries = type.getField("_bsm_entries").getOffset();
     Type bsmae_type = db.lookupType("BSMAttributeEntries");
     bsm_entries_offsets = bsmae_type.getAddressField("_offsets");
     bsm_entries_bootstrap_methods = bsmae_type.getAddressField("_bootstrap_methods");

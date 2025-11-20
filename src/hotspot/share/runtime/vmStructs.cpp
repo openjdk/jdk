@@ -169,7 +169,7 @@
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(BSMAttributeEntries,         _offsets,                                      Array<u4>*)                            \
   nonstatic_field(BSMAttributeEntries,         _bootstrap_methods,                            Array<u2>*)                            \
-  nonstatic_field(ConstantPool,                _bsmaentries,                                  BSMAttributeEntries)                   \
+  nonstatic_field(ConstantPool,                _bsm_entries,                                  BSMAttributeEntries)                   \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
