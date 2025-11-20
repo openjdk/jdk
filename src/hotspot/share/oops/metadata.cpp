@@ -26,15 +26,15 @@
 #include "oops/metadata.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 
+#if defined(__APPLE__)
 extern void* _ZTV8Metadata[];
 
 // avoid code stripping which disturbs the serviceability agent
-#if defined(__APPLE__)
 __attribute__((used))
-#endif
  void* dead_strip_helper() {
   return _ZTV8Metadata[0];
 }
+#endif
 
 void Metadata::set_on_stack(const bool value) {
   // nothing to set for most metadata
