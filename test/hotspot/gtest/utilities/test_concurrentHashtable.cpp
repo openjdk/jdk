@@ -783,7 +783,7 @@ public:
     for (uintptr_t v = 0x1; v < 0xFFF; v++ ) {
       uintptr_t tv;
       TestLookup tl(v);
-      tv = cht_get_copy(_cht, this, tl);      
+      tv = cht_get_copy(_cht, this, tl);
       EXPECT_TRUE(tv == 0 || tv == v) << "Got unknown value.";
     }
     return true;
