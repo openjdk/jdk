@@ -41,6 +41,9 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
+#ifdef COMPILER2
+#include "runtime/hotCodeGrouper.hpp"
+#endif // COMPILER2
 #include "runtime/icache.hpp"
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
@@ -203,6 +206,12 @@ jint init_globals2() {
   compiler_stubs_init(false /* in_compiler_thread */); // compiler's intrinsics stubs
   final_stubs_init();    // final StubRoutines stubs
   MethodHandles::generate_adapters();
+
+#ifdef COMPILER2
+  if (HotCodeHeap) {
+    HotCodeGrouper::initialize();
+  }
+#endif // COMPILER2
 
   // All the flags that get adjusted by VM_Version_init and os::init_2
   // have been set so dump the flags now.
