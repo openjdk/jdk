@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
+#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahFreeSet;
