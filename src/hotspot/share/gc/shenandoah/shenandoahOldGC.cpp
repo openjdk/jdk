@@ -48,17 +48,18 @@ void ShenandoahOldGC::op_final_mark() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
+  {
+    // Release all alloc regions at the beginning of final mark.
+    ShenandoahHeapLocker locker(heap->lock());
+    heap->free_set()->mutator_allocator()->release_alloc_regions();
+    heap->free_set()->collector_allocator()->release_alloc_regions();
+  }
+
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_no_forwarded(_old_generation);
   }
 
   if (!heap->cancelled_gc()) {
-    {
-      // Release all alloc regions at the beginning of final mark.
-      ShenandoahHeapLocker locker(heap->lock());
-      heap->free_set()->mutator_allocator()->release_alloc_regions();
-      heap->free_set()->collector_allocator()->release_alloc_regions();
-    }
     assert(_mark.generation()->is_old(), "Generation of Old-Gen GC should be OLD");
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
