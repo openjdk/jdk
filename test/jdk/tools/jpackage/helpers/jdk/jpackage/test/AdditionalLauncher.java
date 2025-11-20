@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
@@ -202,13 +203,13 @@ public final class AdditionalLauncher {
 
     public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
-        PropertyFile shell[] = new PropertyFile[1];
+        var result = Slot.<PropertyFile>createEmpty();
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
             if (name.equals(launcherName)) {
-                shell[0] = new PropertyFile(propertiesFilePath);
+                result.set(new PropertyFile(propertiesFilePath));
             }
         });
-        return Objects.requireNonNull(shell[0]);
+        return result.get();
     }
 
     private void initialize(JPackageCommand cmd) throws IOException {
