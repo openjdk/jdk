@@ -32,6 +32,7 @@ import static java.util.ServiceLoader.load;
 /**
  * @test
  * @bug 8143909
+ * @key sound
  * @author Sergey Bylokhov
  */
 public final class ExpectedNPEOnNull {
