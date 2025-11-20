@@ -24,25 +24,36 @@
 
 #include "runtime/atomicAccess.hpp"
 #include "utilities/spinCriticalSection.hpp"
-#include "utilities/spinYield.hpp"
 
-void SpinCriticalSectionHelper::spin_acquire(volatile int* adr) {
+void SpinCriticalSection::spin_acquire(volatile int* adr) {
   if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }
 
-  SpinYield sy(4096, 5, 1000000);
-
   // Slow-path : We've encountered contention -- Spin/Yield/Block strategy.
+  int ctr = 0;
+  int Yields = 0;
   for (;;) {
     while (*adr != 0) {
-      sy.wait();
+      ++ctr;
+      if ((ctr & 0xFFF) == 0 || !os::is_MP()) {
+        if (Yields > 5) {
+          os::naked_short_sleep(1);
+        }
+        else {
+          os::naked_yield();
+          ++Yields;
+        }
+      }
+      else {
+        SpinPause();
+      }
     }
     if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) return;
   }
 }
 
-void SpinCriticalSectionHelper::spin_release(volatile int* adr) {
+void SpinCriticalSection::spin_release(volatile int* adr) {
   assert(*adr != 0, "invariant");
   // Roach-motel semantics.
   // It's safe if subsequent LDs and STs float "up" into the critical section,

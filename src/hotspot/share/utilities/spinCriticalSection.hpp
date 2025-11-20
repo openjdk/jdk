@@ -27,32 +27,29 @@
 
 #include "runtime/javaThread.hpp"
 
-class SpinCriticalSectionHelper : AllStatic {
-  friend class SpinCriticalSection;
-  template<class Lambda, class...Args>
-  friend class SpinSingleSection;
-  // Low-level leaf-lock primitives used to implement synchronization.
-  // Not for general synchronization use.
-  static void spin_acquire(volatile int* Lock);
-  static void spin_release(volatile int* Lock);
-};
-
 // Ad-hoc mutual exclusion primitive: spin critical section,
 // which employs a spin lock.
 //
-// We use this critical section _only for low-contention code, and
+// We use this critical section only for low-contention code, and
 // when it is know that the duration is short. To be used where
 // we're concerned about native mutex_t or HotSpot Mutex:: latency.
 class SpinCriticalSection {
 private:
+  // We use int type as 32-bit atomic operation is the most performant
+  // compared to  smaller/larger types.
   volatile int* const _lock;
+
+  // Low-level leaf-lock primitives used to implement synchronization.
+  // Not for general synchronization use.
+  static void spin_acquire(volatile int* Lock);
+  static void spin_release(volatile int* Lock);
 public:
   NONCOPYABLE(SpinCriticalSection);
   SpinCriticalSection(volatile int* lock) : _lock(lock) {
-    SpinCriticalSectionHelper::spin_acquire(_lock);
+    spin_acquire(_lock);
   }
   ~SpinCriticalSection() {
-    SpinCriticalSectionHelper::spin_release(_lock);
+    spin_release(_lock);
   }
 };
 
