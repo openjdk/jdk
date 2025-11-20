@@ -254,8 +254,6 @@ final class SSLConfiguration implements Cloneable {
                 CustomizedServerSignatureSchemes.signatureSchemes != null ?
                         CustomizedServerSignatureSchemes.signatureSchemes :
                         SupportedSigSchemes.DEFAULT;
-                CustomizedClientSignatureSchemes.signatureSchemes :
-                CustomizedServerSignatureSchemes.signatureSchemes;
 
         this.certDeflaters = Map.of();
         this.certInflaters = Map.of();

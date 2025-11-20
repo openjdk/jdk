@@ -26,6 +26,7 @@
  * @bug 8273042
  * @summary TLS certificate compression
  * @library /test/lib
+ *          /javax/net/ssl/templates
  * @run main/othervm HttpsCompressedCert
  */
 
