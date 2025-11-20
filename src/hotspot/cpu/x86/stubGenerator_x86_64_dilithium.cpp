@@ -1261,11 +1261,11 @@ static address generate_dilithiumDecomposePoly_avx(StubGenerator *stubgen,
   }
   // r1 in RPlus
   // int r1 = rplus - r0 - (dilithium_q - 1);
+  // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
   for (int i = 0; i < regCnt; i++) {
     __ vpsubd(RPlus[i], RPlus[i], R0[i], vector_len);
   }
 
-  // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
   if (vector_len == Assembler::AVX_512bit) {
     KRegister EqMsk[] = {k1, k2, k3, k4};
     for (int i = 0; i < regCnt; i++) {
@@ -1280,7 +1280,6 @@ static address generate_dilithiumDecomposePoly_avx(StubGenerator *stubgen,
     // r1 in Quotient
     // r1 = r1 & quotient; // copy 0 or keep as is, using EqMsk as filter
     for (int i = 0; i < regCnt; i++) {
-      // FIXME: replace with void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);?
       __ evpandd(Quotient[i], EqMsk[i], Quotient[i], zero, true, vector_len);
     }
   } else {
