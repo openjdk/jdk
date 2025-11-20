@@ -56,7 +56,7 @@ public class TestGCMSplitBound {
     private static final int IV_SIZE_IN_BYTES = 12;
     private static final int TAG_SIZE_IN_BYTES = 16;
 
-    private Cipher getCipher(final byte[] key, final byte[] aad, byte[] nonce)
+    private Cipher getCipher(final byte[] key, final byte[] aad, final byte[] nonce)
         throws Exception {
         SecretKey keySpec = new SecretKeySpec(key, "AES");
         AlgorithmParameterSpec params =
