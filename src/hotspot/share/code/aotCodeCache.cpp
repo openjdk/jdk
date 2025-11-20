@@ -1425,7 +1425,7 @@ void AOTCodeCache::publish_stub_addresses(CodeBlob &code_blob, BlobId blob_id, A
     } else {
       assert(code_blob.is_deoptimization_stub(), "only expecting one entry for stub %s", StubInfo::name(stub_id));
       DeoptimizationBlob *deopt_blob = code_blob.as_deoptimization_blob();
-      assert(deopt_blob->unpack() == start, "unexpected offset 0x%lx for deopt stub entry", deopt_blob->unpack() - start);
+      assert(deopt_blob->unpack() == start, "unexpected offset 0x%x for deopt stub entry", (int)(deopt_blob->unpack() - start));
       GrowableArray<address> addresses;
       addresses.append(deopt_blob->unpack_with_exception());
       addresses.append(deopt_blob->unpack_with_reexecution());
