@@ -110,7 +110,7 @@ JIMAGE_FindResource(JImageFile* image,
     size_t nameLen = strlen(name);
     size_t index;
 
-    // TBD:   assert(moduleNameLen > 0 && "module name must be non-empty");
+    assert(moduleNameLen > 0 && "module name must be non-empty");
     assert(nameLen > 0 && "name must non-empty");
 
     // If the concatenated string is too long for the buffer, return not found

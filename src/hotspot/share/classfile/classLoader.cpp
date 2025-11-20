@@ -412,31 +412,30 @@ ClassFileStream* ClassPathImageEntry::open_stream(JavaThread* current, const cha
 //
 ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {
   jlong size;
-  JImageLocationRef location = (*JImageFindResource)(jimage_non_null(), "", get_jimage_version_string(), name, &size);
+  JImageLocationRef location = 0;
 
-  if (location == 0) {
-    TempNewSymbol class_name = SymbolTable::new_symbol(name);
-    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+  TempNewSymbol class_name = SymbolTable::new_symbol(name);
+  TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
 
-    if (pkg_name != nullptr) {
-      if (!Universe::is_module_initialized()) {
-        location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
-      } else {
-        PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
-        if (package_entry != nullptr) {
-          ResourceMark rm(current);
-          // Get the module name
-          ModuleEntry* module = package_entry->module();
-          assert(module != nullptr, "Boot classLoader package missing module");
-          assert(module->is_named(), "Boot classLoader package is in unnamed module");
-          const char* module_name = module->name()->as_C_string();
-          if (module_name != nullptr) {
-            location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
-          }
+  if (pkg_name != nullptr) {
+    if (!Universe::is_module_initialized()) {
+      location = (*JImageFindResource)(jimage_non_null(), JAVA_BASE_NAME, get_jimage_version_string(), name, &size);
+    } else {
+      PackageEntry* package_entry = ClassLoader::get_package_entry(pkg_name, loader_data);
+      if (package_entry != nullptr) {
+        ResourceMark rm(current);
+        // Get the module name
+        ModuleEntry* module = package_entry->module();
+        assert(module != nullptr, "Boot classLoader package missing module");
+        assert(module->is_named(), "Boot classLoader package is in unnamed module");
+        const char* module_name = module->name()->as_C_string();
+        if (module_name != nullptr) {
+          location = (*JImageFindResource)(jimage_non_null(), module_name, get_jimage_version_string(), name, &size);
         }
       }
     }
   }
+
   if (location != 0) {
     if (UsePerfData) {
       ClassLoader::perf_sys_classfile_bytes_read()->inc(size);
