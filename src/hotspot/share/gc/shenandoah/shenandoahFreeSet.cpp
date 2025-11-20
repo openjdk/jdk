@@ -1305,58 +1305,8 @@ HeapWord* ShenandoahFreeSet::allocate_with_affiliation(Iter& iterator,
   return nullptr;
 }
 
-HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& in_new_region) {
-  shenandoah_assert_heaplocked();
-
-  // Scan the bitmap looking for a first fit.
-  //
-  // Leftmost and rightmost bounds provide enough caching to walk bitmap efficiently. Normally,
-  // we would find the region to allocate at right away.
-  //
-  // Allocations are biased: GC allocations are taken from the high end of the heap.  Regular (and TLAB)
-  // mutator allocations are taken from the middle of heap, below the memory reserved for Collector.
-  // Humongous mutator allocations are taken from the bottom of the heap.
-  //
-  // Free set maintains mutator and collector partitions.  Normally, each allocates only from its partition,
-  // except in special cases when the collector steals regions from the mutator partition.
-
-  // Overwrite with non-zero (non-null) values only if necessary for allocation bookkeeping.
-
-  switch (req.type()) {
-    case ShenandoahAllocRequest::_alloc_tlab:
-    case ShenandoahAllocRequest::_alloc_shared:
-    case ShenandoahAllocRequest::_alloc_cds:
-      return allocate_for_mutator(req, in_new_region);
-    case ShenandoahAllocRequest::_alloc_gclab:
-    case ShenandoahAllocRequest::_alloc_plab:
-    case ShenandoahAllocRequest::_alloc_shared_gc:
-      return allocate_for_collector(req, in_new_region);
-    default:
-      ShouldNotReachHere();
-  }
-  return nullptr;
-}
-
 HeapWord* ShenandoahFreeSet::allocate_for_mutator(ShenandoahAllocRequest &req, bool &in_new_region) {
-  update_allocation_bias();
-
-  if (_partitions.is_empty(ShenandoahFreeSetPartitionId::Mutator)) {
-    // There is no recovery. Mutator does not touch collector view at all.
-    return nullptr;
-  }
-
-  // Try to allocate in the mutator view
-  if (_partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Mutator)) {
-    // Allocate from low to high memory.  This keeps the range of fully empty regions more tightly packed.
-    // Note that the most recently allocated regions tend not to be evacuated in a given GC cycle.  So this
-    // tends to accumulate "fragmented" uncollected regions in high memory.
-    ShenandoahLeftRightIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator);
-    return allocate_from_regions(iterator, req, in_new_region);
-  }
-
-  // Allocate from high to low memory. This preserves low memory for humongous allocations.
-  ShenandoahRightLeftIterator iterator(&_partitions, ShenandoahFreeSetPartitionId::Mutator);
-  return allocate_from_regions(iterator, req, in_new_region);
+  return mutator_allocator()->allocate(req, in_new_region);
 }
 
 void ShenandoahFreeSet::update_allocation_bias() {
@@ -1383,21 +1333,6 @@ void ShenandoahFreeSet::update_allocation_bias() {
     _partitions.set_bias_from_left_to_right(ShenandoahFreeSetPartitionId::Mutator, (non_empty_on_right < non_empty_on_left));
     _alloc_bias_weight = INITIAL_ALLOC_BIAS_WEIGHT;
   }
-}
-
-template<typename Iter>
-HeapWord* ShenandoahFreeSet::allocate_from_regions(Iter& iterator, ShenandoahAllocRequest &req, bool &in_new_region) {
-  for (idx_t idx = iterator.current(); iterator.has_next(); idx = iterator.next()) {
-    ShenandoahHeapRegion* r = _heap->get_region(idx);
-    size_t min_size = (req.type() == ShenandoahAllocRequest::_alloc_tlab) ? req.min_size() : req.size();
-    if (!r->is_active_alloc_region() && alloc_capacity(r) >= min_size * HeapWordSize) {
-      HeapWord* result = try_allocate_in(r, req, in_new_region);
-      if (result != nullptr) {
-        return result;
-      }
-    }
-  }
-  return nullptr;
 }
 
 HeapWord* ShenandoahFreeSet::allocate_for_collector(ShenandoahAllocRequest &req, bool &in_new_region) {
@@ -3289,45 +3224,6 @@ void ShenandoahFreeSet::decrease_humongous_waste_for_regular_bypass(ShenandoahHe
     }
   }
   _total_humongous_waste -= waste;
-}
-
-
-HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
-  shenandoah_assert_heaplocked();
-  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
-    switch (req.type()) {
-      case ShenandoahAllocRequest::_alloc_shared:
-      case ShenandoahAllocRequest::_alloc_shared_gc:
-        in_new_region = true;
-        return allocate_contiguous(req, /* is_humongous = */ true);
-      case ShenandoahAllocRequest::_alloc_cds:
-        in_new_region = true;
-        return allocate_contiguous(req, /* is_humongous = */ false);
-      case ShenandoahAllocRequest::_alloc_plab:
-      case ShenandoahAllocRequest::_alloc_gclab:
-      case ShenandoahAllocRequest::_alloc_tlab:
-        in_new_region = false;
-        assert(false, "Trying to allocate TLAB in humongous region: %zu", req.size());
-        return nullptr;
-      default:
-        ShouldNotReachHere();
-        return nullptr;
-    }
-  } else {
-    return allocate_single(req, in_new_region);
-  }
-}
-
-HeapWord* ShenandoahFreeSet::allocate_humongous(ShenandoahAllocRequest& req) {
-  assert(ShenandoahHeapRegion::requires_humongous(req.size()), "Must be humongous alloc");
-  ShenandoahHeapLocker locker(_heap->lock(), req.is_mutator_alloc());
-  return allocate_contiguous(req, /*is_humongous*/true);
-}
-
-HeapWord* ShenandoahFreeSet::allocate_contiguous_cds(ShenandoahAllocRequest& req) {
-  assert(req.type() == ShenandoahAllocRequest::_alloc_cds, "Must be CDS alloc.");
-  ShenandoahHeapLocker locker(_heap->lock(), req.is_mutator_alloc());
-  return allocate_contiguous(req, /*is_humongous*/false);
 }
 
 int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {

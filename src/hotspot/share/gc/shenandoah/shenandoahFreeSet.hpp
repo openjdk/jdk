@@ -513,12 +513,6 @@ private:
   // if this is the first allocation in the region.
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
-  // While holding the heap lock, allocate memory for a single object or LAB  which is to be entirely contained
-  // within a single HeapRegion as characterized by req.
-  //
-  // Precondition: !ShenandoahHeapRegion::requires_humongous(req.size())
-  HeapWord* allocate_single(ShenandoahAllocRequest& req, bool& in_new_region);
-
   bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, bool delay_total_recomputation = false);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
@@ -813,9 +807,6 @@ public:
     return _old_collector_allocator;
   }
 
-
-  HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
-
   // Handle allocation for collector (for evacuation).
   HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 
@@ -826,9 +817,6 @@ public:
   // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
 
-  HeapWord* allocate_humongous(ShenandoahAllocRequest &req);
-
-  HeapWord* allocate_contiguous_cds(ShenandoahAllocRequest &req);
   // Reserve number of alloc regions from given partition of FreeSets,
   // it ensures at least one region with sufficient capacity will be reserved.
   int reserve_alloc_regions(ShenandoahFreeSetPartitionId partition, int regions_to_reserve, ShenandoahHeapRegion** reserved_regions);
