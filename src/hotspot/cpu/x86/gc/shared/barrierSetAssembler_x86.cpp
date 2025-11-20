@@ -396,7 +396,7 @@ extern void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
 void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slowpath) {
-  __ movptr(obj, Address(obj, 0));
+  __ movptr(obj, Address(obj));
 }
 
 #undef __

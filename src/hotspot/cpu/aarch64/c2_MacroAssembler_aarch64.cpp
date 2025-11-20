@@ -158,8 +158,6 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   Label locked;
   // Finish fast lock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
-  // Finish fast lock unsuccessfully. Sets flag == NE
-  Label slow_path_set_ne;
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds or we need to take the slow-path.
@@ -224,9 +222,9 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     if (!UseObjectMonitorTable) {
       assert(t1_monitor == t1_mark, "should be the same here");
     } else {
-      Label monitor_found;
-      Label lookup_in_table;
       Label found_in_cache;
+      Label lookup_in_table;
+      Label monitor_found;
 
       // Load cache address
       lea(t3_t, Address(rthread, JavaThread::om_cache_oops_offset()));
@@ -238,7 +236,6 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
         br(Assembler::EQ, found_in_cache);
         increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
       }
-
       b(lookup_in_table);
 
       bind(found_in_cache);
@@ -247,28 +244,28 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
 
       bind(lookup_in_table);
 
-      // Grab hash code
+      // Get the hash code.
       ubfx(t1_mark, t1_mark, markWord::hash_shift, markWord::hash_bits);
 
-      // Get the table and calculate bucket
+      // Get the table and calculate the bucket's address
       lea(t3, ExternalAddress(ObjectMonitorTable::current_table_address()));
-      ldr(t3, Address(t3, 0));
+      ldr(t3, Address(t3));
       ldr(t2, Address(t3, ObjectMonitorTable::table_capacity_mask_offset()));
       ands(t1_mark, t1_mark, t2);
       ldr(t3, Address(t3, ObjectMonitorTable::table_buckets_offset()));
 
-      // Read monitor from bucket
-      lsl(t1_mark, t1_mark, 3);
+      // Read the monitor from the bucket.
+      lsl(t1_mark, t1_mark, LogBytesPerWord);
       ldr(t1_monitor, Address(t3, t1_mark));
 
-      // Check if empty slot, removed slot or tomb stone
-      cmp(t1_monitor, (unsigned char)2);
-      br(Assembler::LS, slow_path_set_ne);
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmp(t1_monitor, (unsigned char)ObjectMonitorTable::SpecialPointerValues::below_is_special);
+      br(Assembler::LT, slow_path);
 
-      // Check if object matches
+      // Check if object matches.
       ldr(t3, Address(t1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path_set_ne);
+      bs_asm->try_resolve_weak_handle_in_c2(this, t3, t2, slow_path);
       cmp(t3, obj);
       br(Assembler::NE, slow_path);
 
@@ -307,18 +304,12 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
 
   bind(locked);
 
-  Label the_end;
 #ifdef ASSERT
   // Check that locked label is reached with Flags == EQ.
   Label flag_correct;
   br(Assembler::EQ, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
-  b(the_end);
-
-  bind(slow_path_set_ne);
-  // Set NE
-  cmp(rthread, zr);
 
   bind(slow_path);
 #ifdef ASSERT
@@ -327,7 +318,6 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
 #endif
-  bind(the_end);
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 

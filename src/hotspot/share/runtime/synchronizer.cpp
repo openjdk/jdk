@@ -1485,12 +1485,12 @@ class ObjectMonitorTable::Table : public CHeapObj<mtObjectMonitor> {
 
   volatile size_t _items_count;
 
-  static ObjectMonitor* tomb_stone() {
-    return (ObjectMonitor*)1;
+  static ObjectMonitor* tombstone() {
+    return (ObjectMonitor*)ObjectMonitorTable::SpecialPointerValues::tombstone;
   }
 
   static ObjectMonitor* removed_entry() {
-    return (ObjectMonitor*)2;
+    return (ObjectMonitor*)ObjectMonitorTable::SpecialPointerValues::removed;
   }
 
   // Make sure we leave space for previous versions to relocate too
@@ -1551,7 +1551,7 @@ public:
   }
 
   ObjectMonitor* get(oop obj, int hash) {
-    // Acquire tomb stones and relocations in case prev transitioned to null
+    // Acquire tombstones and relocations in case prev transitioned to null
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
       ObjectMonitor* result = prev->get(obj, hash);
@@ -1567,7 +1567,7 @@ public:
       ObjectMonitor* volatile* bucket = _buckets + index;
       ObjectMonitor* monitor = AtomicAccess::load(bucket);
 
-      if (monitor == tomb_stone() || monitor == nullptr) {
+      if (monitor == tombstone() || monitor == nullptr) {
         // Not found
         break;
       }
@@ -1591,7 +1591,7 @@ public:
   }
 
   ObjectMonitor* get_set(oop obj, ObjectMonitor* new_monitor, int hash) {
-    // Acquire any tomb stones and relocations if prev transitioned to null
+    // Acquire any tombstones and relocations if prev transitioned to null
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
       ObjectMonitor* result = prev->get_set(obj, new_monitor, hash);
@@ -1623,7 +1623,7 @@ public:
         } else {
           // Out of allowance; leaving place for rehashing to succeed
           // To avoid concurrent inserts succeeding, place a tomb stine here.
-          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tomb_stone());
+          ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tombstone());
           if (result == monitor) {
             // Success; nobody will try to insert here again, except reinsert from rehashing
             return nullptr;
@@ -1632,7 +1632,7 @@ public:
         }
       }
 
-      if (monitor == tomb_stone()) {
+      if (monitor == tombstone()) {
         // Can't insert into this table
         return nullptr;
       }
@@ -1651,7 +1651,7 @@ public:
   }
 
   void remove(oop obj, ObjectMonitor* old_monitor, int hash) {
-    // Acquire any tomb stones and relocations if prev transitioned to null
+    // Acquire any tombstones and relocations if prev transitioned to null
     Table* prev = AtomicAccess::load_acquire(&_prev);
     if (prev != nullptr) {
       prev->remove(obj, old_monitor, hash);
@@ -1706,7 +1706,7 @@ public:
         monitor = result;
       }
 
-      if (monitor == tomb_stone()) {
+      if (monitor == tombstone()) {
         // A concurrent inserter did not get enough allowance in the table
         // But reinsert always succeeds - we will take the spot
         ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, new_monitor, memory_order_release);
@@ -1721,7 +1721,7 @@ public:
       }
 
       assert(monitor != nullptr, "invariant");
-      assert(monitor != tomb_stone(), "invariant");
+      assert(monitor != tombstone(), "invariant");
       assert(monitor == removed_entry() || monitor->object_peek() != obj, "invariant");
 
       index = (index + 1) & _capacity_mask;
@@ -1752,8 +1752,8 @@ public:
       ObjectMonitor* monitor = AtomicAccess::load(bucket);
 
       if (monitor == nullptr) {
-        // Empty slot; put a tomb stone there
-        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tomb_stone(), memory_order_relaxed);
+        // Empty slot; put a tombstone there
+        ObjectMonitor* result = AtomicAccess::cmpxchg(bucket, monitor, tombstone(), memory_order_relaxed);
         if (result == nullptr) {
           // Success; move to next entry
           continue;
@@ -1763,7 +1763,7 @@ public:
         monitor = result;
       }
 
-      if (monitor != tomb_stone() && monitor != removed_entry()) {
+      if (monitor != tombstone() && monitor != removed_entry()) {
         // A monitor
         oop obj = monitor->object_peek();
         if (!monitor->is_being_async_deflated() && obj != nullptr) {
@@ -1773,7 +1773,7 @@ public:
       }
     }
 
-    // Unlink this table, releasing the tomb stones and relocations
+    // Unlink this table, releasing the tombstones and relocations
     AtomicAccess::release_store(&_prev, (Table*)nullptr);
   }
 };

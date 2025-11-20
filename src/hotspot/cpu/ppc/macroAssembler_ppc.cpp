@@ -2758,9 +2758,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     } else {
       const Register cache_addr = tmp2;
       const Register tmp3_bucket = tmp3;
-      Label monitor_found;
-      Label lookup_in_table;
       Label found_in_cache;
+      Label lookup_in_table;
+      Label monitor_found;
 
       // Load cache address
       addi(cache_addr, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
@@ -2772,7 +2772,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
         beq(CR0, found_in_cache);
         addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
       }
-
       b(lookup_in_table);
 
       bind(found_in_cache);
@@ -2781,28 +2780,26 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
       bind(lookup_in_table);
 
-      // Grab hash code
+      // Get the hash code.
       srdi(mark, mark, markWord::hash_shift);
 
-      // Get the table and calculate bucket
+      // Get the table and calculate the bucket's address
       load_const_optimized(tmp3, ObjectMonitorTable::current_table_address(), R0);
       ld_ptr(tmp3, 0, tmp3);
       ld(tmp2, in_bytes(ObjectMonitorTable::table_capacity_mask_offset()), tmp3);
       andr(mark, mark, tmp2);
       ld(tmp3, in_bytes(ObjectMonitorTable::table_buckets_offset()), tmp3);
-
-      // Read monitor from bucket
       sldi(mark, mark, LogBytesPerWord);
       add(tmp3_bucket, tmp3, mark);
 
-      // Read monitor from bucket
+      // Read the monitor from the bucket.
       ld_ptr(monitor, 0, tmp3_bucket);
 
-      // Check if empty slot, removed slot or tomb stone
-      cmpdi(CR0, monitor, 3);
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      cmpdi(CR0, monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
       blt(CR0, slow_path);
 
-      // Check if object matches
+      // Check if object matches.
       ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
       bs_asm->try_resolve_weak_handle_in_c2(this, tmp3, tmp2, slow_path);

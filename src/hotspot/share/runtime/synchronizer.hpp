@@ -79,6 +79,13 @@ private:
   static Table* grow_table(Table* curr);
 
 public:
+  typedef enum {
+    empty = 0,
+    tombstone = 1,
+    removed = 2,
+    below_is_special = (removed + 1)
+  } SpecialPointerValues;
+
   static void create();
   static ObjectMonitor* monitor_get(Thread* current, oop obj);
   static ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj);

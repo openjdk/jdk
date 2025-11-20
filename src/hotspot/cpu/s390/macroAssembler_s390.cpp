@@ -6373,9 +6373,10 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       assert(tmp1_monitor == mark, "should be the same here");
     } else {
       const Register cache_addr = tmp2;
-      NearLabel monitor_found;
-      NearLabel lookup_in_table;
+      const Register tmp1_bucket = tmp1;
       NearLabel found_in_cache;
+      NearLabel lookup_in_table;
+      NearLabel monitor_found;
 
       // load cache address
       z_la(cache_addr, Address(Z_thread, JavaThread::om_cache_oops_offset()));
@@ -6386,7 +6387,6 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
         z_bre(found_in_cache);
         add2reg(cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
       }
-
       z_bru(lookup_in_table);
 
       bind(found_in_cache);
@@ -6395,26 +6395,26 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
 
       bind(lookup_in_table);
 
-      // Grab hash code
+      // Get the hash code.
       z_srlg(mark, mark, markWord::hash_shift);
 
-      // Get the table and calculate bucket
+      // Get the table and calculate the bucket's address.
       load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
       z_lg(tmp2, Address(tmp2));
       z_lg(Z_R0_scratch, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
       z_ngr(mark, Z_R0_scratch);
       z_lg(Z_R0_scratch, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
-
-      // Read monitor from bucket
       z_sllg(mark, mark, LogBytesPerWord);
-      z_agr(tmp1, Z_R0_scratch);
-      z_lg(tmp1_monitor, Address(tmp1));
+      z_agr(tmp1_bucket, Z_R0_scratch);
 
-      // Check if empty slot, removed slot or tomb stone
-      z_cghi(tmp1_monitor, 3);
+      // Read the monitor from the bucket.
+      z_lg(tmp1_monitor, Address(tmp1_bucket));
+
+      // Check if the monitor in the bucket is special (empty, tombstone or removed).
+      z_cghi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
       z_brl(slow_path);
 
-      // Check if object matches
+      // Check if object matches.
       z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
       BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
       bs_asm->try_resolve_weak_handle_in_c2(this, tmp2, Z_R0_scratch, slow_path);

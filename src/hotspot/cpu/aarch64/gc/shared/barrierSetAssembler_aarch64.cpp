@@ -442,7 +442,7 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
 }
 
 void BarrierSetAssembler::try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Register tmp, Label& slow_path) {
-  __ ldr(obj, Address(obj, 0));
+  __ ldr(obj, Address(obj));
 }
 
 #undef __
