@@ -92,7 +92,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   Label done;
 
   __ testptr(count, count);
-  __ jcc(Assembler::zero, done);
+  __ jccb(Assembler::zero, done);
 
   // Calculate end address in "count".
   Address::ScaleFactor scale = UseCompressedOops ? Address::times_4 : Address::times_8;
@@ -128,7 +128,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ addptr(addr, sizeof(CardTable::CardValue));
   __ cmpptr(addr, count);
   __ jcc(Assembler::belowEqual, loop);
-  __ jmp(done);
+  __ jmpb(done);
 
   __ bind(is_clean_card);
   // Card was clean. Dirty card and go to next..
@@ -197,8 +197,8 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
     __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
   // Is the previous value null?
-  __ cmpptr(pre_val, NULL_WORD);
-  __ jcc(Assembler::equal, done);
+  __ testptr(pre_val, pre_val);
+  __ jccb(Assembler::equal, done);
   generate_queue_insertion(masm,
                            G1ThreadLocalData::satb_mark_queue_index_offset(),
                            G1ThreadLocalData::satb_mark_queue_buffer_offset(),
@@ -272,23 +272,23 @@ static void generate_post_barrier(MacroAssembler* masm,
                                   const Register store_addr,
                                   const Register new_val,
                                   const Register tmp1,
-                                  Label& done,
                                   bool new_val_may_be_null) {
 
   assert_different_registers(store_addr, new_val, tmp1, noreg);
 
   Register thread = r15_thread;
 
+  Label done;
   // Does store cross heap regions?
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
   __ xorptr(tmp1, new_val);                                       // tmp1 := store address ^ new value
   __ shrptr(tmp1, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?
-  __ jcc(Assembler::equal, done);
+  __ jccb(Assembler::equal, done);
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
-    __ cmpptr(new_val, NULL_WORD);                                // new value == null?
-    __ jcc(Assembler::equal, done);
+    __ testptr(new_val, new_val);                                 // new value == null?
+    __ jccb(Assembler::equal, done);
   }
 
   __ movptr(tmp1, store_addr);                                    // tmp1 := store address
@@ -298,20 +298,19 @@ static void generate_post_barrier(MacroAssembler* masm,
   __ addptr(tmp1, card_table_addr);                               // tmp1 := card address
   if (UseCondCardMark) {
     __ cmpb(Address(tmp1, 0), G1CardTable::clean_card_val());     // *(card address) == clean_card_val?
-    __ jcc(Assembler::notEqual, done);
+    __ jccb(Assembler::notEqual, done);
   }
   // Storing a region crossing, non-null oop, card is clean.
   // Dirty card.
   __ movb(Address(tmp1, 0), G1CardTable::dirty_card_val());       // *(card address) := dirty_card_val
+  __ bind(done);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
                                                   Register store_addr,
                                                   Register new_val,
                                                   Register tmp) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp, done, true /* new_val_may_be_null */);
-  __ bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp, true /* new_val_may_be_null */);
 }
 
 #if defined(COMPILER2)
@@ -374,9 +373,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
                                                      Register new_val,
                                                      Register tmp,
                                                      bool new_val_may_be_null) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp, done, new_val_may_be_null);
-  __ bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp, new_val_may_be_null);
 }
 
 #endif // COMPILER2
@@ -465,9 +462,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
                                                      Register thread,
                                                      Register tmp1,
                                                      Register tmp2 /* unused on x86 */) {
-  Label done;
-  generate_post_barrier(masm, store_addr, new_val, tmp1, done, true /* new_val_may_be_null */);
-  masm->bind(done);
+  generate_post_barrier(masm, store_addr, new_val, tmp1, true /* new_val_may_be_null */);
 }
 
 #define __ sasm->
