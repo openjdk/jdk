@@ -1225,7 +1225,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool result         = true;
 
   int c_or_eof = getc(stream);
-  while(c_or_eof != EOF && pos < (int)(sizeof(token)-1)) {
+  while (c_or_eof != EOF && pos < (int)(sizeof(token) - 1)) {
     // We have checked the c_or_eof for EOF. getc should only ever return the
     // EOF or an unsigned char converted to an int. We cast down to a char to
     // avoid the char to int promotions we would otherwise do in the comparisons
