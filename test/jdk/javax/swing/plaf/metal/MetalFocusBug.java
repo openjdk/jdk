@@ -40,9 +40,9 @@ public class MetalFocusBug {
 
     static final String INSTRUCTIONS = """
         A JFrame is shown with 2 JButtons.
-        A button "Top" at TOP and 
+        A button "Top" at TOP and
         another button with empty text and without icon at the bottom.
-        Initially the focus is at the "TOP" button. 
+        Initially the focus is at the "TOP" button.
         Verify that Red color focus rectangle is around the "TOP" text.
         Press "Tab" key and verify the bottom button gets focus via
         red color focus rectangle.
@@ -71,4 +71,4 @@ public class MetalFocusBug {
         frame.setSize(300, 300);
         return frame;
     }
-} 
+}
