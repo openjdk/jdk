@@ -115,10 +115,6 @@ void VM_Version::RVNonExtFeatureValue::log_enabled() {
   log_info(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
 }
 
-void VM_Version::RVNonExtFeatureValue::log_disabled(const char* reason) {
-  log_info(os, cpu)("Disabled RV64 feature \"%s\" (%ld) (%s)", pretty(), value(), reason);
-}
-
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
