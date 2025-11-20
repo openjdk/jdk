@@ -2870,7 +2870,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 }
 
 bool InstanceKlass::can_be_verified_at_dumptime() const {
-  if (AOTMetaspace::in_aot_cache(this)) {
+  if (CDSConfig::is_dumping_dynamic_archive() && AOTMetaspace::in_aot_cache(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;

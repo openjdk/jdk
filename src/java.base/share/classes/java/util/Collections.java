@@ -5253,6 +5253,20 @@ public final class Collections {
         public int hashCode() {
             return Objects.hashCode(element);
         }
+        @Override
+        public Object[] toArray() {
+            return new Object[] {element};
+        }
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            if (a.length < 1)
+                a = (T[])Array.newInstance(a.getClass().getComponentType(), 1);
+            a[0] = (T)element;
+            if (a.length > 1)
+                a[1] = null;
+            return a;
+        }
     }
 
     /**
