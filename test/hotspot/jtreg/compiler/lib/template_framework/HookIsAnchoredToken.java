@@ -23,9 +23,15 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents an {@link Hook#isAnchored} query with the function that creates an inner scope
+ * given the boolean answer.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record HookIsAnchoredToken(Hook hook, Function<Boolean, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(boolean isAnchored) {
+        return function().apply(isAnchored);
+    }
+}

@@ -43,7 +43,7 @@ import compiler.lib.generators.Generators;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 
 import compiler.lib.template_framework.library.Hooks;
@@ -82,7 +82,7 @@ public class TestWithTestFrameworkClass {
     // Generate a source Java file as String
     public static String generate(CompileFramework comp) {
         // A simple template that adds a comment.
-        var commentTemplate = Template.make(() -> body(
+        var commentTemplate = Template.make(() -> scope(
             """
             // Comment inserted from test method to class hook.
             """
@@ -103,7 +103,7 @@ public class TestWithTestFrameworkClass {
         // - The test method makes use of hashtag replacements (#con2 and #op).
         // - The Check method verifies the results of the test method with the
         //   GOLD value.
-        var testTemplate = Template.make("op", (String op) -> body(
+        var testTemplate = Template.make("op", (String op) -> scope(
             let("size", Generators.G.safeRestrict(Generators.G.ints(), 10_000, 20_000).next()),
             let("con1", Generators.G.ints().next()),
             let("con2", Generators.G.safeRestrict(Generators.G.ints(), 1, Integer.MAX_VALUE).next()),

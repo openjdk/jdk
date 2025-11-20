@@ -38,7 +38,7 @@ import java.util.Set;
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import compiler.lib.template_framework.library.CodeGenerationDataNameType;
 import compiler.lib.template_framework.library.Expression;
 
@@ -93,7 +93,7 @@ public class TestExpression {
         Expression e3 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, ",", myTypeA1, "]");
         Expression e4 = Expression.make(myTypeA, "[", myTypeA, ",", myTypeB, ",", myTypeA1, ",", myTypeA, "]");
 
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             "xx", e1.toString(), "yy\n",
             "xx", e2.toString(), "yy\n",
             "xx", e3.toString(), "yy\n",
@@ -141,7 +141,7 @@ public class TestExpression {
         Expression e3e1 = e3.nest(0, e1);
         Expression e4e5 = e4.nest(1, e5);
 
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             "xx", e1e1.toString(), "yy\n",
             "xx", e2e1.toString(), "yy\n",
             "xx", e3e1.toString(), "yy\n",
@@ -184,7 +184,7 @@ public class TestExpression {
         // Alternating pattern
         Expression deep2 = Expression.nestRandomly(myTypeA, List.of(e5, e3), 5);
 
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             "xx", e1e2.toString(), "yy\n",
             "xx", e1ex.toString(), "yy\n",
             "xx", e1e4.toString(), "yy\n",

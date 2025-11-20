@@ -40,7 +40,7 @@ import java.util.Set;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
@@ -78,7 +78,7 @@ public class TestExpressions {
             // precision results from some operators. We only compare the results if we know that the
             // result is deterministically the same.
             TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
-            return body(
+            return scope(
                 let("returnType", expression.returnType),
                 """
                 @Test

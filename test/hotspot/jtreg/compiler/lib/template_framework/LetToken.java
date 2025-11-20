@@ -23,9 +23,16 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents a let (aka hashtag) definition. The hashtag replacement is active for the
+ * scope ({@link ScopeToken}) that the {@code function} creates, but can escape that
+ * scope if it is transparent to hashtags.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record LetToken<T>(String key, T value, Function<T, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken() {
+        return function().apply(value);
+    }
+}

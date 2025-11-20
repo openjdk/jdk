@@ -43,7 +43,9 @@ import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.StructuralName;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.transparentScope;
+import static compiler.lib.template_framework.Template.hashtagScope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.fuel;
@@ -68,13 +70,14 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
         comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
         comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
+        comp.addJavaSourceCode("p.xyz.InnerTest3c", generateWithHashtagAndDollarReplacements3());
         comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
         comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
         comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
-        comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithDataNamesAndScopes1());
-        comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithDataNamesAndScopes2());
+        comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithScopes1());
+        comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithScopes2());
         comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithDataNamesForFuzzing());
         comp.addJavaSourceCode("p.xyz.InnerTest11", generateWithStructuralNamesForMethods());
 
@@ -91,6 +94,7 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3c", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
@@ -105,9 +109,9 @@ public class TestTutorial {
     // This example shows the use of various Tokens.
     public static String generateWithListOfTokens() {
         // A Template is essentially a function / lambda that produces a
-        // token body, which is a list of Tokens that are concatenated.
-        var templateClass = Template.make(() -> body(
-            // The "body" method is filled by a sequence of "Tokens".
+        // scope, which contains a list of Tokens that are concatenated.
+        var templateClass = Template.make(() -> scope(
+            // The "scope" arguments are a sequence of "Tokens".
             // These can be Strings and multi-line Strings, but also
             // boxed primitives.
             """
@@ -141,14 +145,14 @@ public class TestTutorial {
     // This example shows the use of Templates, with and without arguments.
     public static String generateWithTemplateArguments() {
         // A Template with no arguments.
-        var templateHello = Template.make(() -> body(
+        var templateHello = Template.make(() -> scope(
             """
             System.out.println("Hello");
             """
         ));
 
         // A Template with a single Integer argument.
-        var templateCompare = Template.make("arg", (Integer arg) -> body(
+        var templateCompare = Template.make("arg", (Integer arg) -> scope(
             "System.out.println(", arg, ");\n",  // capture arg via lambda argument
             "System.out.println(#arg);\n",       // capture arg via hashtag replacement
             "System.out.println(#{arg});\n",     // capture arg via hashtag replacement with brackets
@@ -156,7 +160,7 @@ public class TestTutorial {
             // argument values into Strings. However, since these are not (yet)
             // available, the Template Framework provides two alternative ways of
             // formatting Strings:
-            // 1) By appending to the comma-separated list of Tokens passed to body().
+            // 1) By appending to the comma-separated list of Tokens passed to scope().
             //    Appending as a Token works whenever one has a reference to the Object
             //    in Java code. But often, this is rather cumbersome and looks awkward,
             //    given all the additional quotes and commands required. Hence, it
@@ -180,7 +184,7 @@ public class TestTutorial {
 
         // A Template that creates the body of the Class and main method, and then
         // uses the two Templates above inside it.
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -204,8 +208,16 @@ public class TestTutorial {
     // Note: hashtag replacements are a workaround for the missing string templates.
     //       If we had string templates, we could just capture the typed lambda
     //       arguments, and use them directly in the String via string templating.
+    //
+    // Important: hashtag replacements are always constrained to a single template
+    //            and are not available in any nested templates. Hashtag replacements
+    //            are only there to facilitate string templating within the limited
+    //            scope of a template. You may consider it like a "local variable"
+    //            for code generation purposes only.
+    //            If you need to pass some value to a nested Template, consider using
+    //            a Template argument, and capturing that Template argument.
     public static String generateWithHashtagAndDollarReplacements() {
-        var template1 = Template.make("x", (Integer x) -> body(
+        var template1 = Template.make("x", (Integer x) -> scope(
             // We have the "#x" hashtag replacement from the argument capture above.
             // Additionally, we can define "#con" as a hashtag replacement from let:
             let("con", 3 * x),
@@ -219,29 +231,27 @@ public class TestTutorial {
             """
         ));
 
-        var template2 = Template.make("x", (Integer x) ->
+        var template2 = Template.make("x", (Integer x) -> scope(
             // Sometimes it can be helpful to not just create a hashtag replacement
             // with let, but also to capture the variable to use it as lambda parameter.
-            let("y", 11 * x, y ->
-                body(
-                    """
-                    System.out.println("T2: #x, #y");
-                    """,
-                    template1.asToken(y)
-                )
-            )
-        );
+            let("y", 11 * x, y -> scope(
+                """
+                System.out.println("T2: #x, #y");
+                """,
+                template1.asToken(y)
+            ))
+        ));
 
         // This template generates an int variable and assigns it a value.
         // Together with template4, we see that each template has a unique renaming
         // for a $-name replacement.
-        var template3 = Template.make("name", "value", (String name, Integer value) -> body(
+        var template3 = Template.make("name", "value", (String name, Integer value) -> scope(
             """
             int #name = #value; // Note: $var is not #name
             """
         ));
 
-        var template4 = Template.make(() -> body(
+        var template4 = Template.make(() -> scope(
             """
             // We will define the variable $var:
             """,
@@ -252,7 +262,7 @@ public class TestTutorial {
             """
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             // The Template Framework API only guarantees that every Template use
             // has a unique ID. When using the Templates, all we need is that
             // variables from different Template uses do not conflict. But it can
@@ -300,7 +310,7 @@ public class TestTutorial {
     // "INT_CON" and "LONG_CON".
     public static String generateWithHashtagAndDollarReplacements2() {
         // Let us define some final static variables of a specific type.
-        var template1 = Template.make("type", (String type) -> body(
+        var template1 = Template.make("type", (String type) -> scope(
             // The type (e.g. "int") is lower case, let us create the upper case "INT_CON" from it.
             let("TYPE", type.toUpperCase()),
             """
@@ -309,7 +319,7 @@ public class TestTutorial {
         ));
 
         // Let's write a simple class to demonstrate that this works, i.e. produces compilable code.
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -331,50 +341,221 @@ public class TestTutorial {
         return templateClass.render();
     }
 
+    // We already have used "scope" multiple times, but not explained it yet.
+    // So far, we have seen "scope" mostly in the context of Template scopes, but they
+    // can be used in many contexts as we will see below. They can also be used on
+    // their own and in the use of "let", as we will show right now.
+    //
+    // Scopes are even more relevant for DataNames and Structural names.
+    // See: generateWithDataNamesForFieldsAndVariables
+    // See: generateWithScopes1
+    // See: generateWithScopes2
+    public static String generateWithHashtagAndDollarReplacements3() {
+
+        var template1 = Template.make(() -> scope(
+            // We can use scopes to limit the liveness of hashtag replacements.
+            scope(
+                let("x", 3), // does not escape
+                """
+                static int v1_3 = #x;
+                """
+            ),
+            scope(
+                let("x", 5), // does not escape
+                """
+                static int v1_5 = #x;
+                """
+            ),
+            // Using "scope" does not just limit the liveness / availability
+            // of hashtag replacements, but also of DataNames, StructuralNames,
+            // and setFuelCost. We can use "hashtagScope" to only limit hashtag
+            // replacements.
+            hashtagScope(
+                let("x", 7), // does not escape
+                """
+                static int v1_7 = #x;
+                """
+            ),
+            // Using "transparentScope" means the scope is transparent, and the hashtag
+            // replacements escape the scope.
+            transparentScope(
+                let("x", 11), // escapes the "transparentScope".
+                """
+                static int v1_11a = #x;
+                """
+            ),
+            // The hashtag replacement from the "transparentScope" escaped, and is
+            // still available.
+            """
+            static int v1_11b = #x;
+            """
+        ));
+
+        var template2 = Template.make("x", (Integer x) -> scope(
+            // We can map a list of values to a list of scopes. Using a scope that is
+            // non-transparent for hashtag replacements means that we can reuse the same
+            // hashtag key when looping / streaming over multiple values.
+            List.of(3, 5, 7).stream().map(y -> scope(
+                let("y", y), // does not escape -> allows reuse of hashtag key "y".
+                """
+                static int v2_#{x}_#{y} = #x * #y;
+                """
+            )).toList()
+        ));
+
+        var template3 = Template.make("x", (Integer x) -> scope(
+            // When using a "let" that captures the value in a lambda argument, we have
+            // to choose what kind of scope we generate. In most cases "scope" or
+            // "hashtagScope" are the best, because they limit the hashtag replacement
+            // of "y" to the same scope as the lambda argument.
+            let("y", x * 11, y -> scope(
+                """
+                static int v3a_#{x} = #y;
+                """
+            )),
+            // But in rare cases, we may want "y" and some nested "z" to escape.
+            let("y", x * 11, y -> transparentScope(
+                let("z", y * 2),
+                """
+                static int v3b_#{x} = #y - #z;
+                """
+            )),
+            // Because of the "transparentScope", "y" and "z" have escaped.
+            """
+            static int v3c_#{x} = #y - #z;
+            """,
+            // Side note: We can simulate a "let" without lambda with a "let" that has a lambda.
+            // That is not very useful, but a similar trick can be used for other queries, that
+            // only provide a lambda version, and where we only want to use the hashtag replacement.
+            //
+            // Below we see the standard use of "let", where we add a hashtag replacement for "a"
+            // for the rest of the enclosing scope. We then also use a lambda version of "let"
+            // with a transparent scope, which means that "b" escapes that scope and is also
+            // available in the enclosing scope. In the implementation of the framework, we
+            // actually use a "transparentScope", so the standard "let" is really just syntactic
+            // sugar for the lambda "let" with "transparentScope".
+            let("a", -x),
+            let("b", -x, b -> transparentScope()),
+            """
+            static int v3d_#{x} = #a + #b;
+            """
+        ));
+
+        // Let's write a simple class to demonstrate that this works, i.e. produces compilable code.
+        var templateClass = Template.make(() -> scope(
+            """
+            package p.xyz;
+
+            public class InnerTest3c {
+            """,
+            template1.asToken(),
+            template2.asToken(1),
+            template2.asToken(2),
+            template3.asToken(2),
+            """
+                public static void main() {
+                    if (v1_3 != 3 ||
+                        v1_5 != 5 ||
+                        v1_7 != 7 ||
+                        v1_11a != 11 ||
+                        v1_11b != 11 ||
+                        v2_1_3 != 3 ||
+                        v2_1_5 != 5 ||
+                        v2_1_7 != 7 ||
+                        v2_2_3 != 6 ||
+                        v2_2_5 != 10 ||
+                        v2_2_7 != 14 ||
+                        v3a_2 != 22 ||
+                        v3b_2 != -22 ||
+                        v3c_2 != -22 ||
+                        v3d_2 != -4) {
+                        throw new RuntimeException("Wrong result!");
+                    }
+                }
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
     // In this example, we look at the use of Hooks. They allow us to reach back, to outer
     // scopes. For example, we can reach out from inside a method body to a hook anchored at
     // the top of the class, and insert a field.
+    //
+    // When we insert to a hook, we have 3 relevant scopes:
+    // - Anchor scope: the scope defined at "hook.anchor(scope(...))"
+    // - Insertion scope: the scope that is inserted, see "hook.insert(scope(...))"
+    // - Caller scope: the scope we insert from.
+    //
+    // The choice of transparency of an insertion scope (the scope that is inserted) is quite
+    // important. A common use case is to insert a DataName.
+    // See: generateWithDataNamesForFieldsAndVariables
+    // See: generateWithScopes1
+    // See: generateWithScopes2
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
         //       whenever possible. See also the example after this one.
         var myHook = new Hook("MyHook");
 
-        var template1 = Template.make("name", "value", (String name, Integer value) -> body(
+        var template1 = Template.make("name", "value", (String name, Integer value) -> scope(
             """
             public static int #name = #value;
             """
         ));
 
-        var template2 = Template.make("x", (Integer x) -> body(
+        var template2 = Template.make("x", (Integer x) -> scope(
             """
-            // Let us go back to where we anchored the hook with anchor() and define a field named $field there.
-            // Note that in the Java code we have not defined anchor() on the hook, yet. But since it's a lambda
-            // expression, it is not evaluated, yet! Eventually, anchor() will be evaluated before insert() in
-            // this example.
+            // Let us go back to where we anchored the hook with anchor() (see 'templateClass' below) and define a field
+            // named $field1 there.
             """,
-            myHook.insert(template1.asToken($("field"), x)),
+            myHook.insert(scope( // <- insertion scope
+                """
+                public static int $field1 = #x;
+                """
+                // Note that we were able to use the dollar replacement "$field1" and the hashtag
+                // replacement "#x" inside the scope that is inserted to myHook.
+            )),
             """
-            System.out.println("$field: " + $field);
-            if ($field != #x) { throw new RuntimeException("Wrong value!"); }
+            // We can do that by inserting a scope like above, or by inserting a template, like below.
+            //
+            // Which method is used is up to the user. General guidance is if the same code may also
+            // be inserted elsewhere, one should lean towards inserting templates. But in many cases
+            // it is nice to see the inserted code directly, and to be able to use hashtag replacements
+            // from the outer scope directly, without having to route them via template arguments,
+            // as we have to do below.
+            """,
+            // <- caller scope
+            myHook.insert(template1.asToken($("field2"), x)),
+            """
+            System.out.println("$field1: " + $field1);
+            System.out.println("$field2: " + $field2);
+            if ($field1 != #x) { throw new RuntimeException("Wrong value 1!"); }
+            if ($field2 != #x) { throw new RuntimeException("Wrong value 2!"); }
             """
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
             public class InnerTest4 {
             """,
             // We anchor a Hook outside the main method, but inside the Class.
-            // Anchoring a Hook creates a scope, spanning the braces of the
-            // "anchor" call. Any Hook.insert that happens inside this scope
-            // goes to the top of that scope.
-            myHook.anchor(
+            // Anchoring a Hook requires the definition of an inner scope,
+            // aka the "anchor scope", spanning the braces of the "anchor" call.
+            // Any Hook.insert that happens inside this scope goes to the top of
+            // that scope.
+            myHook.anchor(scope( // <- anchor scope
                 // Any Hook.insert goes here.
                 //
-                // <-------- field_X = 5 ------------------+
-                // <-------- field_Y = 7 -------------+    |
+                // <-------- field1_X = 5 -----------------+
+                //           field2_X = 5                  |
+                //                                         |
+                // <-------- field1_Y = 7 ------------+    |
+                //           field2_Y = 7             |    |
                 //                                    |    |
                 """
                 public static void main() {
@@ -384,7 +565,7 @@ public class TestTutorial {
                 """
                 }
                 """
-            ), // The Hook scope ends here.
+            )), // The Hook scope ends here.
             """
             }
             """
@@ -408,46 +589,54 @@ public class TestTutorial {
     // there is a class scope inside another class scope. Similarly, we can nest lambda bodies
     // inside method bodies, so also METHOD_HOOK can be used in such a "re-entrant" way.
     public static String generateWithLibraryHooks() {
-        var templateStaticField = Template.make("name", "value", (String name, Integer value) -> body(
-            """
-            static { System.out.println("Defining static field #name"); }
-            public static int #name = #value;
-            """
-        ));
 
-        var templateLocalVariable = Template.make("name", "value", (String name, Integer value) -> body(
-            """
-            System.out.println("Defining local variable #name");
-            int #name = #value;
-            """
-        ));
-
-        var templateMethodBody = Template.make(() -> body(
+        var templateMethodBody = Template.make(() -> scope(
             """
             // Let's define a local variable $var and a static field $field.
-            """,
-            Hooks.CLASS_HOOK.insert(templateStaticField.asToken($("field"), 5)),
-            Hooks.METHOD_HOOK.insert(templateLocalVariable.asToken($("var"), 11)),
-            """
+            // Since we are inserting them at the anchor before the code below,
+            // they will already be available:
             System.out.println("$field: " + $field);
             System.out.println("$var: " + $var);
+            """,
+            Hooks.CLASS_HOOK.insert(scope(
+                """
+                static { System.out.println("Defining static field $field"); }
+                public static int $field = 5;
+                """
+            )),
+            Hooks.METHOD_HOOK.insert(scope(
+                """
+                System.out.println("Defining local variable $var");
+                int $var = 11;
+                """
+            )),
+            """
             if ($field * $var != 55) { throw new RuntimeException("Wrong value!"); }
             """
+            // Note: we have used "scope" for the "insert" scope. This is fine here as
+            // we are only working with code and hashtags, but not with DataNames. If
+            // we were to also "addDataName" inside the insert scope, we would have to
+            // make sure that the scope is transparent for DataNames, so that they can
+            // escape to the anchor scope, and can be available to the caller of the
+            // insertion. One might want to use "transparentScope" for the insertion scope.
+            // See: generateWithDataNamesForFieldsAndVariables.
+            // See: generateWithScopes1
+            // See: generateWithScopes2
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
             public class InnerTest5 {
             """,
             // Class Hook for fields.
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables, and earlier computations.
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -457,7 +646,7 @@ public class TestTutorial {
                     System.out.println("Going to call other...");
                     other();
                     """
-                ),
+                )),
                 """
                 }
 
@@ -465,7 +654,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, so that it can insert
                 // its own local variables.
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     """
                     System.out.println("Welcome to other!");
                     """,
@@ -473,11 +662,11 @@ public class TestTutorial {
                     """
                     System.out.println("Done with other.");
                     """
-                ),
+                )),
                 """
                 }
                 """
-            ),
+            )),
             """
             }
             """
@@ -493,7 +682,7 @@ public class TestTutorial {
     public static String generateWithRecursionAndBindingsAndFuel() {
         // Binding allows the use of template1 inside of template1, via the binding indirection.
         var binding1 = new TemplateBinding<Template.OneArg<Integer>>();
-        var template1 = Template.make("depth", (Integer depth) -> body(
+        var template1 = Template.make("depth", (Integer depth) -> scope(
             let("fuel", fuel()),
             """
             System.out.println("At depth #depth with fuel #fuel.");
@@ -514,7 +703,7 @@ public class TestTutorial {
         ));
         binding1.bind(template1);
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -561,6 +750,12 @@ public class TestTutorial {
     //
     // To get started, we show an example where all DataNames have the same type, and where
     // all Names are mutable. For simplicity, our type represents the primitive int type.
+    //
+    // Note: the template library contains a lot of types that model the Java types,
+    //       such as primitive types ({@code PrimitiveType}). The following examples
+    //       give insight into how those types work. If you are just interested in
+    //       how to use the predefined types, then you can find other examples in
+    //       {@code examples/TestPrimitiveTypes.java}.
     private record MySimpleInt() implements DataName.Type {
         // The type is only subtype of itself. This is relevant when sampling or weighing
         // DataNames, because we do not just sample from the given type, but also its subtypes.
@@ -577,31 +772,25 @@ public class TestTutorial {
     private static final MySimpleInt mySimpleInt = new MySimpleInt();
 
     // In this example, we generate 3 fields, and add their names to the
-    // current scope. In a nested Template, we can then sample one of these
-    // DataNames, which gives us one of the fields. We increment that randomly
-    // chosen field. At the end, we print all three fields.
+    // current scope. We can then sample some of these DataNames, which
+    // gives us one of those fields each time. We increment those randomly
+    // chosen fields. At the end, we print all three fields.
     public static String generateWithDataNamesSimple() {
-        var templateMain = Template.make(() -> body(
-            // Sample a random DataName, i.e. field, and assign its name to
-            // the hashtag replacement "#f".
-            // We are picking a mutable DataName, because we are not just
-            // reading but also writing to the field.
-            let("f", dataNames(MUTABLE).exactOf(mySimpleInt).sample().name()),
-            """
-            // Let us now sample a random field #f, and increment it.
-            #f += 42;
-            """
-        ));
-
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             // Let us define the names for the three fields.
-            // We can then sample from these names in a nested Template.
             // We make all DataNames mutable, and with the same weight of 1,
             // so that they have equal probability of being sampled.
             // Note: the default weight is 1, so we can also omit the weight.
+            //
+            // Also note that DataNames are only available once they are defined:
+            //
+            // Nothing defined, yet: dataNames() = {}
             addDataName($("f1"), mySimpleInt, MUTABLE, 1),
+            // Only now dataNames() contains f1: dataNames() = {f1}
             addDataName($("f2"), mySimpleInt, MUTABLE, 1),
+            // dataNames() = {f1, f2}
             addDataName($("f3"), mySimpleInt, MUTABLE), // omit weight, default is 1.
+            // dataNames() = {f1, f2, f3}
             """
             package p.xyz;
 
@@ -612,18 +801,35 @@ public class TestTutorial {
                 public static int $f3 = 0;
 
                 public static void main() {
-                    // Let us now call the nested template that samples
-                    // a random field and increments it.
+                    // Let us now sample a random field and assign its name to
+                    // the hashtag replacement "a".
                     """,
-                    templateMain.asToken(),
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sampleAndLetAs("a"),
+                    """
+                    // We can now access the field, and increment it.
+                    #a += 42;
+                    // If we are also interested in the type of the field, we can do:
+                    """,
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sampleAndLetAs("b", "bType"),
+                    """
+                    #b += 7;
+                    // In some cases, we may want to capture the DataName directly, which
+                    // requires capturing the value in a lambda that creates an inner scope:
+                    """,
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sample((DataName dn) -> scope(
+                        let("c", dn.name()),
+                        """
+                        #c += 12;
+                        """
+                    )),
                     """
                     // Now, we can print all three fields, and see which
-                    // one was incremented.
+                    // ones were incremented.
                     System.out.println("f1: " + $f1);
                     System.out.println("f2: " + $f2);
                     System.out.println("f3: " + $f3);
-                    // We have two zeros, and one 42.
-                    if ($f1 + $f2 + $f3 != 42) { throw new RuntimeException("wrong result!"); }
+                    // Make sure they add up to the correct sum.
+                    if ($f1 + $f2 + $f3 != 42 + 7 + 12) { throw new RuntimeException("wrong result!"); }
                 }
             }
             """
@@ -662,8 +868,15 @@ public class TestTutorial {
 
     public static String generateWithDataNamesForFieldsAndVariables() {
         // Define a static field.
-        var templateStaticField = Template.make("type", (DataName.Type type) -> body(
-            addDataName($("field"), type, MUTABLE),
+        // Note: it is very important that we use a "transparentScope" for the template here,
+        //       so that the DataName can escape to outer scopes, so that it is available to
+        //       everything that follows the DataName definition in the outer scope.
+        //       (We could also use "hashtagScope", since those are also transparent for
+        //        names. But it is not great style, because template boundaries are
+        //        non-transparent for hashtags and setFuelCost anyway. So we might as
+        //        well just use "transparentScope".)
+        var templateStaticField = Template.make("type", (DataName.Type type) -> transparentScope(
+            addDataName($("field"), type, MUTABLE), // escapes template because of "transparentScope"
             // Note: since we have overridden MyPrimitive::toString, we can use
             //       the type directly as "#type" in the template, which then
             //       gets hashtag replaced with "int" or "long".
@@ -673,8 +886,10 @@ public class TestTutorial {
         ));
 
         // Define a local variable.
-        var templateLocalVariable = Template.make("type", (DataName.Type type) -> body(
-            addDataName($("var"), type, MUTABLE),
+        // Note: it is very important that we use a "transparentScope" for the template here,
+        //       so that the DataName can escape to outer scopes.
+        var templateLocalVariable = Template.make("type", (DataName.Type type) -> transparentScope(
+            addDataName($("var"), type, MUTABLE), // escapes template because of "transparentScope"
             """
             #type $var = 0;
             """
@@ -682,8 +897,8 @@ public class TestTutorial {
 
         // Sample a random field or variable, from those that are available at
         // the current scope.
-        var templateSample = Template.make("type", (DataName.Type type) -> body(
-            let("name", dataNames(MUTABLE).exactOf(type).sample().name()),
+        var templateSample = Template.make("type", (DataName.Type type) -> scope(
+            dataNames(MUTABLE).exactOf(type).sampleAndLetAs("name"),
             // Note: we could also sample from MUTABLE_OR_IMMUTABLE, we will
             //       cover the concept of mutability in an example further down.
             """
@@ -692,18 +907,36 @@ public class TestTutorial {
         ));
 
         // Check how many fields and variables are available at the current scope.
-        var templateStatus = Template.make(() -> body(
-            let("ints", dataNames(MUTABLE).exactOf(myInt).count()),
-            let("longs", dataNames(MUTABLE).exactOf(myLong).count()),
-            // Note: we could also count the MUTABLE_OR_IMMUTABLE, we will
-            //       cover the concept of mutability in an example further down.
+        var templateStatus = Template.make(() -> scope(
+            dataNames(MUTABLE).exactOf(myInt).count(ints -> scope(
+                dataNames(MUTABLE).exactOf(myLong).count(longs -> scope(
+                    // We have now captured the values as Java variables, and can
+                    // use them inside the scope in some "let" definitions.
+                    let("ints", ints),
+                    let("longs", longs),
+                    // Note: we could also count the MUTABLE_OR_IMMUTABLE, we will
+                    //       cover the concept of mutability in an example further down.
+                    """
+                    System.out.println("Status: #ints ints, #longs longs.");
+                    """
+                ))
+            )),
+            // In a real code generation case, we would most likely want to
+            // have the count as a Java variable so that one can take conditional
+            // action based on the value. For that we have to capture the count
+            // with a lambda and inner scope as above. If we only need to have
+            // the count as a hashtag replacement, we can also use the following
+            // trick:
+            dataNames(MUTABLE).exactOf(myInt).count(c -> transparentScope(let("ints", c))),
+            dataNames(MUTABLE).exactOf(myLong).count(c -> transparentScope(let("longs", c))),
+            // Because of the "transparentScope", the hashtag replacements escape.
             """
             System.out.println("Status: #ints ints, #longs longs.");
             """
         ));
 
         // Definition of the main method body.
-        var templateMain = Template.make(() -> body(
+        var templateMain = Template.make(() -> scope(
             """
             System.out.println("Starting inside main...");
             """,
@@ -736,7 +969,7 @@ public class TestTutorial {
 
         // Definition of another method's body. It is in the same class
         // as the main method, so it has access to the same static fields.
-        var templateOther = Template.make(() -> body(
+        var templateOther = Template.make(() -> scope(
             """
             System.out.println("Starting inside other...");
             """,
@@ -755,19 +988,19 @@ public class TestTutorial {
         ));
 
         // Finally, we put it all together in a class.
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
             public class InnerTest8 {
             """,
             // Class Hook for fields.
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
                 """
                 public static void main() {
                 """,
                 // Method Hook for local variables.
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     """
                     // This is the beginning of the "main" method body.
                     System.out.println("Welcome to main!");
@@ -777,7 +1010,7 @@ public class TestTutorial {
                     System.out.println("Going to call other...");
                     other();
                     """
-                ),
+                )),
                 """
                 }
 
@@ -785,7 +1018,7 @@ public class TestTutorial {
                 """,
                 // Have a separate method hook for other, where it could insert
                 // its own local variables (but happens not to).
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     """
                     System.out.println("Welcome to other!");
                     """,
@@ -793,11 +1026,11 @@ public class TestTutorial {
                     """
                     System.out.println("Done with other.");
                     """
-                ),
+                )),
                 """
                 }
                 """
-            ),
+            )),
             """
             }
             """
@@ -807,83 +1040,119 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // Let us have a closer look at how DataNames interact with scopes created by
-    // Templates and Hooks. Additionally, we see how the execution order of the
-    // lambdas and token evaluation affects the availability of DataNames.
-    //
-    // We inject the results directly into verification inside the code, so it
-    // is relatively simple to see what the expected results are.
-    //
-    // For simplicity, we define a simple "list" function. It collects all
-    // field and variable names, and immediately returns the comma separated
-    // list of the names. We can use that to visualize the available names
-    // at any point.
-    public static String listNames() {
-        return "{" + String.join(", ", dataNames(MUTABLE).exactOf(myInt).toList()
-                                       .stream().map(DataName::name).toList()) + "}";
-    }
+    public static String generateWithScopes1() {
 
-    // Even simpler: count the available variables and return the count immediately.
-    public static int countNames() {
-        return dataNames(MUTABLE).exactOf(myInt).count();
-    }
-
-    // Having defined these helper methods, let us start with the first example.
-    // You should start reading this example bottom-up, starting at
-    // templateClass, then going to templateMain and last to templateInner.
-    public static String generateWithDataNamesAndScopes1() {
-
-        var templateInner = Template.make(() -> body(
-            // We just got called from the templateMain. All tokens from there
-            // are already evaluated, so "v1" is now available:
-            let("l1", listNames()),
+        // For the examples below, we need a convenient way of asserting the state
+        // of the available DataNames.
+        var templateVerify = Template.make("count", "hasAny", "toList", (Integer count, Boolean hasAny, String toList) -> scope(
+            dataNames(MUTABLE).exactOf(myInt).count(c -> transparentScope(let("count2", c))),
+            dataNames(MUTABLE).exactOf(myInt).hasAny(h -> transparentScope(let("hasAny2", h))),
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> transparentScope(
+                let("toList2", String.join(", ", list.stream().map(DataName::name).toList()))
+            )),
             """
-            if (!"{v1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{v1}' but was '#l1'"); }
+            if (#count != #count2 ||
+                #hasAny != #hasAny2 ||
+                !"#toList".equals("#toList2")) {
+                throw new RuntimeException("verify failed");
+            }
             """
         ));
 
-        var templateMain = Template.make(() -> body(
-            // So far, no names were defined. We expect "c1" to be zero.
-            let("c1", countNames()),
-            """
-            if (#c1 != 0) { throw new RuntimeException("c1 was not zero but #c1"); }
-            """,
-            // We now add a local variable "v1" to the scope of this templateMain.
-            // This only generates a token, and does not immediately add the name.
-            // The name is only added once we evaluate the tokens, and arrive at
-            // this particular token.
+        var templateMain = Template.make(() -> scope(
+            "// Start with nothing:\n",
+            templateVerify.asToken(0, false, ""),
+            "// Add v1:\n",
             addDataName("v1", myInt, MUTABLE),
-            // We count again with "c2". The variable "v1" is at this point still
-            // in token form, hence it is not yet made available while executing
-            // the template lambda of templateMain.
-            let("c2", countNames()),
+            "int v1 = 1;\n",
+            "// Check that it is visible:\n",
+            templateVerify.asToken(1, true, "v1"),
+            "// Add v2:\n",
+            addDataName("v2", myInt, MUTABLE),
+            "int v2 = 2;\n",
+            "// Check that both are visible:\n",
+            templateVerify.asToken(2, true, "v1, v2"),
+
+            "// Create a local scope:\n",
+            "{\n", scope( // for consistency, we model the code and template scope together.
+                "// Add v3:\n",
+                addDataName("v3", myInt, MUTABLE),
+                "int v3 = 3;\n",
+                "// Check that all are visible:\n",
+                templateVerify.asToken(3, true, "v1, v2, v3")
+            ), "}\n",
+            "// But after the scope, v3 is no longer available:\n",
+            templateVerify.asToken(2, true, "v1, v2"),
+
+            "// Now let's create a list of variables.\n",
+            List.of(4, 5, 6).stream().map(i -> hashtagScope(
+                // The hashtagScope allows hashtag replacements to be local,
+                // and DataNames to escape, so we can use them afterwards.
+                let("i", i),
+                addDataName("v" + i, myInt, MUTABLE),
+                "int v#i = #i;\n"
+            )).toList(),
+            templateVerify.asToken(5, true, "v1, v2, v4, v5, v6"),
+
+            "// Let's multiply all variables by a factor of 2, using forEach:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach(dn -> scope(
+                let("v", dn.name()),
+                "#v *= 2;\n"
+            )),
+            "// We can also capture the name (v) and type of the DataName:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> scope(
+                "#v *= 2;\n"
+            )),
+            "// Yet another option is using toList, but here that is more cumbersome:\n",
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> scope(
+                list.stream().map(dn -> scope(
+                    let("v", dn.name()),
+                    "#v *= 2;\n"
+                )).toList()
+            )),
+
             """
-            if (#c2 != 0) { throw new RuntimeException("c2 was not zero but #c2"); }
+            // We verify the result again.
             """,
-            // But now we call an inner Template. This is added as a TemplateToken.
-            // This means it is not evaluated immediately, but only once we evaluate
-            // the tokens. By that time, all tokens from above are already evaluated
-            // and we see that "v1" is available.
-            templateInner.asToken()
+            templateVerify.asToken(5, true, "v1, v2, v4, v5, v6"),
+            """
+            if (v1 != 1 * 8 ||
+                v2 != 2 * 8 ||
+                v4 != 4 * 8 ||
+                v5 != 5 * 8 ||
+                v6 != 6 * 8) {
+                throw new RuntimeException("wrong value!");
+            }
+            """,
+
+            "// Let us copy each variable:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> hashtagScope(
+                // Note that we need a hashtagScope here, so that we can reuse "v" and
+                // "type" as hashtag replacements in each iteration, but still let the
+                // copied DataNames escape.
+                addDataName(dn.name() + "_copy", myInt, MUTABLE),
+                "#type #{v}_copy = #v;\n"
+            )),
+            templateVerify.asToken(10, true, "v1, v2, v4, v5, v6, v1_copy, v2_copy, v4_copy, v5_copy, v6_copy")
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
             public class InnerTest9a {
             """,
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
             """
                 public static void main() {
             """,
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     templateMain.asToken()
-                ),
+                )),
             """
                 }
             """
-            ),
+            )),
             """
             }
             """
@@ -893,111 +1162,129 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // Now that we understand this simple example, we go to a more complicated one
-    // where we use Hook.insert. Just as above, you should read this example
-    // bottom-up, starting at templateClass.
-    public static String generateWithDataNamesAndScopes2() {
+    public static String generateWithScopes2() {
 
-        var templateFields = Template.make(() -> body(
-            // We were just called from templateMain. But the code is not
-            // generated into the main scope, rather into the class scope
-            // out in templateClass.
-            // Let us now add a field "f1".
-            addDataName("f1", myInt, MUTABLE),
-            // And let's also generate the code for it.
+        // In this section, we will look at some subtle facts about the behavior of
+        // transparent scopes around hook insertion. This is intended for expert users
+        // so feel free to skip it until you extensively use hook insertion.
+        // More info can also be found in the Javadocs of the Hook class.
+
+        // Helper method to check that the expected DataNames are available.
+        var templateVerify = Template.make("toList", (String toList) -> scope(
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> transparentScope(
+                let("toList2", String.join(", ", list.stream().map(DataName::name).toList()))
+            )),
             """
-            public static int f1 = 42;
-            """,
-            // But why is this DataName now available inside the scope of
-            // templateInner? Does that not mean that "f1" escapes this
-            // templateFields here? Yes it does!
-            // For normal template nesting, the names do not escape the
-            // scope of the nested template. But this here is no normal
-            // template nesting, rather it is an insertion into a Hook,
-            // and we treat those differently. We make the scope of the
-            // inserted templateFields transparent, so that any added
-            // DataNames are added to the scope of the Hook we just
-            // inserted into, i.e. the CLASS_HOOK. This is very important,
-            // if we did not make that scope transparent, we could not
-            // add any DataNames to the class scope anymore, and we could
-            // not add any fields that would be available in the class
-            // scope.
-            Hooks.METHOD_HOOK.anchor(
-                // We now create a separate scope. This one is not the
-                // template scope from above, and it is not transparent.
-                // Hence, "f2" will not be available outside of this
+            if (!"#toList".equals("#toList2")) {
+                throw new RuntimeException("verify failed: '#toList' vs '#toList2'.");
+            }
+            """
+        ));
+
+        var myHook = new Hook("MyHook");
+
+        var templateMain = Template.make(() -> scope(
+            // Start with nothing:
+            templateVerify.asToken(""),
+            addDataName("v1", myInt, MUTABLE),
+            templateVerify.asToken("v1"),
+            // Non-transparent hook anchor:
+            myHook.anchor(scope(
+                templateVerify.asToken("v1"),
+                addDataName("v2", myInt, MUTABLE),
+                templateVerify.asToken("v1, v2"),
+                // Insert a non-transparent scope: nothing escapes.
+                myHook.insert(scope(
+                    // Note that at the anchor insertion point, v2 is not yet
+                    // available, because it is added after the anchoring.
+                    templateVerify.asToken("v1"),
+                    let("x3", 42),
+                    addDataName("v3", myInt, MUTABLE),
+                    templateVerify.asToken("v1, v3")
+                )),
+                // Note: x3 and v3 do not escape.
+                let("x3", 7), // we can define it again.
+                templateVerify.asToken("v1, v2"),
+                // While not letting hashtags escape may be helpful, it is probably
+                // not very helpful if the DataNames don't escape. For example, if
+                // we are inserting some variable at an outer scope, we would like
+                // it to be available for the rest of the scope.
+                // That's where a transparent scope can be helpful.
+                myHook.insert(transparentScope(
+                    // At the anchoring, still only v1 is available.
+                    templateVerify.asToken("v1"),
+                    let("x4", 42), // escapes to caller scope
+                    addDataName("v4", myInt, MUTABLE), // escapes to anchor scope
+                    templateVerify.asToken("v1, v4")
+                )),
+                // x4 escapes to the caller out here, and not to the anchor scope.
+                "// x4: #x4\n",
+                // And v4 escapes to the anchor scope, which is available from here too.
+                // Interesting detail: the ordering in the list indicates that v1
+                // is from the outermost scope of the template, v4 is located at the
+                // anchor scope, and v2 is located inside the anchor scope, and
+                // thus comes last.
+                templateVerify.asToken("v1, v4, v2"),
+                // In most practical cases we probably don't want to let the hashtag
+                // escape, because they just represent something local. So we can
+                // use a hashtagScope, so that DataNames escape, but not hashtags.
+                myHook.insert(hashtagScope(
+                    // Note: both v1 and v4 are now available at the anchoring, since
+                    // v1 was inserted outside the anchoring scope, and v4 was just
+                    // inserted to the anchoring scope.
+                    templateVerify.asToken("v1, v4"),
+                    let("x5", 42), // local, does not escape.
+                    addDataName("v5", myInt, MUTABLE), // escapes to anchor scope
+                    templateVerify.asToken("v1, v4, v5")
+                )),
+                let("x5", 7), // we can define it again.
+                templateVerify.asToken("v1, v4, v5, v2")
+            )),
+            // We left the non-transparent anchoring scope which does not let anything escape
+            templateVerify.asToken("v1"),
+
+            // Let us now do something that probably should never be done. But still
+            // we want to demonstrate it for educational purposes: transparent anchoring
+            // scopes.
+            myHook.anchor(transparentScope(
+                templateVerify.asToken("v1"),
+                // For one, this means that DataName escape the scope directly.
+                addDataName("v6", myInt, MUTABLE),
+                templateVerify.asToken("v1, v6"),
+                // But also if we insert to the anchoring scope, DataNames don't just
+                // escape from the anchoring scope, but further out to the enclosing
                 // scope.
-                addDataName("f2", myInt, MUTABLE),
-                // And let's also generate the code for it.
-                """
-                public static int f2 = 666;
-                """
-                // Similarly, if we called any nested Template here,
-                // and added DataNames inside, this would happen inside
-                // nested scopes that are not transparent. If one wanted
-                // to add names to the CLASS_HOOK from there, one would
-                // have to do another Hook.insert, and make sure that
-                // the names are added from the outermost scope of that
-                // inserted Template, because only that outermost scope
-                // is transparent to the CLASS_HOOK.
-            )
+                myHook.insert(transparentScope(
+                    templateVerify.asToken("v1, v6"),
+                    addDataName("v7", myInt, MUTABLE),
+                    templateVerify.asToken("v1, v6, v7")
+                )),
+                templateVerify.asToken("v1, v6, v7"),
+                let("x6", 42) // escapes the anchor scope
+            )),
+            // We left the transparent anchoring scope which lets the DataNames and
+            // hashtags escape.
+            "// x6: #x6\n",
+            templateVerify.asToken("v1, v6, v7")
         ));
 
-        var templateInner = Template.make(() -> body(
-            // We just got called from the templateMain. All tokens from there
-            // are already evaluated, so there should be some fields available.
-            // We can see field "f1".
-            let("l1", listNames()),
-            """
-            if (!"{f1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{f1}' but was '#l1'"); }
-            """
-            // Now go and have a look at templateFields, to understand how that
-            // field was added, and why not any others.
-        ));
-
-        var templateMain = Template.make(() -> body(
-            // So far, no names were defined. We expect "c1" to be zero.
-            let("c1", countNames()),
-            """
-            if (#c1 != 0) { throw new RuntimeException("c1 was not zero but #c1"); }
-            """,
-            // We would now like to add some fields to the class scope, out in the
-            // templateClass. This creates a token, which is only evaluated after
-            // the completion of the templateMain lambda. Before you go and look
-            // at templateFields, just assume that it does add some fields, and
-            // continue reading in templateMain.
-            Hooks.CLASS_HOOK.insert(templateFields.asToken()),
-            // We count again with "c2". The fields we wanted to add above are not
-            // yet available, because the token is not yet evaluated. Hence, we
-            // still only count zero names.
-            let("c2", countNames()),
-            """
-            if (#c2 != 0) { throw new RuntimeException("c2 was not zero but #c2"); }
-            """,
-            // Now we call an inner Template. This also creates a token, and so it
-            // is not evaluated immediately. And by the time this token is evaluated
-            // the tokens from above are already evaluated, and so the fields should
-            // be available. Go have a look at templateInner now.
-            templateInner.asToken()
-        ));
-
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
             public class InnerTest9b {
             """,
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
             """
                 public static void main() {
             """,
-                Hooks.METHOD_HOOK.anchor(
+                Hooks.METHOD_HOOK.anchor(scope(
                     templateMain.asToken()
-                ),
+                )),
             """
                 }
             """
-            ),
+            )),
             """
             }
             """
@@ -1006,8 +1293,6 @@ public class TestTutorial {
         // Render templateClass to String.
         return templateClass.render();
     }
-
-
     // There are two more concepts to understand more deeply with DataNames.
     //
     // One is the use of mutable and immutable DataNames.
@@ -1045,38 +1330,40 @@ public class TestTutorial {
     private static final List<MyClass> myClassList = List.of(myClassA, myClassA1, myClassA2, myClassA11, myClassB);
 
     public static String generateWithDataNamesForFuzzing() {
-        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> body(
-            addDataName($("field"), type, mutable ? MUTABLE : IMMUTABLE),
+        // This template is used to insert a DataName (field) into an outer scope, hence we must use
+        // "transparentScope" instead of "scope".
+        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> transparentScope(
+            addDataName($("field"), type, mutable ? MUTABLE : IMMUTABLE), // Escapes the template.
             let("isFinal", mutable ? "" : "final"),
             """
             public static #isFinal #type $field = new #type();
             """
         ));
 
-        var templateLoad = Template.make("type", (DataName.Type type) -> body(
+        var templateLoad = Template.make("type", (DataName.Type type) -> scope(
             // We only load from the field, so we do not need a mutable one,
             // we can load from final and non-final fields.
             // We want to find any field from which we can read the value and store
             // it in our variable v of our given type. Hence, we can take a field
             // of the given type or any subtype thereof.
-            let("field", dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(type).sample().name()),
+            dataNames(MUTABLE_OR_IMMUTABLE).subtypeOf(type).sampleAndLetAs("field"),
             """
             #type $v = #field;
             System.out.println("#field: " + $v);
             """
         ));
 
-        var templateStore = Template.make("type", (DataName.Type type) -> body(
+        var templateStore = Template.make("type", (DataName.Type type) -> scope(
             // We are storing to a field, so it better be non-final, i.e. mutable.
             // We want to store a new instance of our given type to a field. This
             // field must be of the given type or any supertype.
-            let("field", dataNames(MUTABLE).supertypeOf(type).sample().name()),
+            dataNames(MUTABLE).supertypeOf(type).sampleAndLetAs("field"),
             """
             #field = new #type();
             """
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -1094,7 +1381,7 @@ public class TestTutorial {
                 // addDataName is restricted to the scope of the templateStaticField. But
                 // with the insertion to CLASS_HOOK, the addDataName goes through the scope
                 // of the templateStaticField out to the scope of the CLASS_HOOK.
-                Hooks.CLASS_HOOK.anchor(
+                Hooks.CLASS_HOOK.anchor(scope(
                     myClassList.stream().map(c ->
                         (Object)Hooks.CLASS_HOOK.insert(templateStaticField.asToken(c, true))
                     ).toList(),
@@ -1118,7 +1405,7 @@ public class TestTutorial {
                         """
                     }
                     """
-                ),
+                )),
             """
             }
             """
@@ -1126,7 +1413,6 @@ public class TestTutorial {
 
         // Render templateClass to String.
         return templateClass.render();
-
     }
 
     // "DataNames" are useful for modeling fields and variables. They hold data,
@@ -1165,9 +1451,9 @@ public class TestTutorial {
 
     public static String generateWithStructuralNamesForMethods() {
         // Define a method, which takes two ints, returns the result of op.
-        var templateMethod = Template.make("op", (String op) -> body(
+        var templateMethod = Template.make("op", (String op) -> transparentScope(
             // Register the method name, so we can later sample.
-            addStructuralName($("methodName"), myMethodType),
+            addStructuralName($("methodName"), myMethodType), // escapes the template because of "transparentScope"
             """
             public static int $methodName(int a, int b) {
                 return a #op b;
@@ -1175,16 +1461,16 @@ public class TestTutorial {
             """
         ));
 
-        var templateSample = Template.make(() -> body(
+        var templateSample = Template.make(() -> scope(
             // Sample a random method, and retrieve its name.
-            let("methodName", structuralNames().exactOf(myMethodType).sample().name()),
+            structuralNames().exactOf(myMethodType).sampleAndLetAs("methodName"),
             """
             System.out.println("Calling #methodName with inputs 7 and 11");
             System.out.println("  result: " + #methodName(7, 11));
             """
         ));
 
-        var templateClass = Template.make(() -> body(
+        var templateClass = Template.make(() -> scope(
             """
             package p.xyz;
 
@@ -1192,7 +1478,7 @@ public class TestTutorial {
                 // Let us define some methods that we can sample from later.
             """,
             // We must anchor a CLASS_HOOK here, and insert the method definitions to that hook.
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
                 // If we directly nest the templateMethod, then the addStructuralName goes to the nested
                 // scope, and is not available at the class scope, i.e. it is not visible
                 // for sampleStructuralName outside of the templateMethod.
@@ -1218,7 +1504,7 @@ public class TestTutorial {
                     }
                 }
                 """
-            )
+            ))
         ));
 
         // Render templateClass to String.

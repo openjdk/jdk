@@ -23,9 +23,17 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents the check if there is any name and the function that is to
+ * be called given the boolean value (true iff there are any names).
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record NameHasAnyToken(
+        NameSet.Predicate predicate,
+        Function<Boolean, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(boolean hasAny) {
+        return function().apply(hasAny);
+    }
+}

@@ -23,9 +23,19 @@
 
 package compiler.lib.template_framework;
 
+import java.util.function.Function;
 import java.util.List;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents the {@code toList} on a filtered name set, including the collection of the
+ * names and the creation of the inner scope with the function.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record NamesToListToken<N>(
+        NameSet.Predicate predicate,
+        Function<List<N>, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(List<Name> names) {
+        List<N> castNames = names.stream().map(n -> (N)n).toList();
+        return function().apply(castNames);
+    }
+}
