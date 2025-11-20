@@ -68,7 +68,9 @@ final class ApplicationBuilder {
                 Optional.ofNullable(srcDir),
                 Optional.ofNullable(contentDirs).orElseGet(List::of),
                 appImageLayout,
-                Optional.ofNullable(runtimeBuilder), launchersAsList, Map.of());
+                Optional.ofNullable(runtimeBuilder),
+                launchersAsList,
+                Map.of());
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {
