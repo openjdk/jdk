@@ -59,7 +59,8 @@ public class MultiNSTNoSessionCreation {
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("MultiNSTNoSessionCreation", "p");
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                    "MultiNSTNoSessionCreation", "p");
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
