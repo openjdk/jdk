@@ -35,6 +35,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -2113,7 +2114,7 @@ class Http2Connection implements Closeable {
                 // if the underlying SocketChannel isn't open, then terminate the connection.
                 // that way when Http2Connection.isOpen() returns false in that situation, then this
                 // getTerminationCause() will return a termination cause.
-                terminate(Http2TerminationCause.forException(new IOException("channel is not open")));
+                terminate(Http2TerminationCause.forException(new ClosedChannelException()));
                 final Http2TerminationCause terminated = this.terminationCause.get();
                 assert terminated != null : "missing termination cause";
                 return terminated;
