@@ -368,7 +368,7 @@ public final class StringSupport {
         }
     }
 
-    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars) {
-        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
+    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, srcLength);
     }
 }

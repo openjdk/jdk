@@ -2647,8 +2647,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param src      the Java string to be written into this segment
      * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
-     *                 the string bytes. The {@code charset} must be a
-     *                 {@linkplain StandardCharsets standard charset}
+     *                 the string bytes.
      * @param srcIndex the starting index of the source string
      * @param dst      the destination segment
      * @param dstOffset the starting offset, in bytes, of the destination segment

@@ -2315,8 +2315,8 @@ public final class System {
             }
 
             @Override
-            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int numChars) {
-                string.copyToSegmentRaw(segment, offset, srcIndex, numChars);
+            public void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
+                string.copyToSegmentRaw(segment, offset, srcIndex, srcLength);
             }
 
             @Override

@@ -2027,8 +2027,11 @@ public final class String
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int numChars) {
-        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, numChars);
+    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
+        if (!isLatin1()) {
+            throw new IllegalStateException("This string does not support copyToSegmentRaw");
+        }
+        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
     }
 
     /**
