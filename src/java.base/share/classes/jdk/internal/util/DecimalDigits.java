@@ -477,9 +477,9 @@ public final class DecimalDigits {
      * <p>
      * The integer {@code v} is formatted as four decimal digits.
      * Values from 0 to 9 are formatted with leading zeros (e.g., 5 becomes "0005"),
-     * values from 10 to 99 become three leading zeros (e.g., 25 becomes "0025"),
-     * values from 100 to 999 become two leading zeros (e.g., 123 becomes "0123"),
-     * and values from 1000 to 9999 become one leading zero or no leading zeros.
+     * values from 10 to 99 add two leading zeros (e.g., 25 becomes "0025"),
+     * values from 100 to 999 add one leading zero (e.g., 123 becomes "0123"),
+     * and values from 1000 to 9999 have no leading zeros.
      * If the value is outside the range 0-9999, the behavior is unspecified.
      *
      * @param buf the {@code StringBuilder} to append to.
