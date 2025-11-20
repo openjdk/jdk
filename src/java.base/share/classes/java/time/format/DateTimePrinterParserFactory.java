@@ -30,7 +30,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
 
 import java.lang.classfile.*;
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
@@ -55,8 +54,6 @@ final class DateTimePrinterParserFactory {
     static final MethodTypeDesc
             MTD_format                     = MethodTypeDesc.of(CD_boolean, CD_DateTimePrintContext, CD_StringBuilder, CD_boolean),
             MTD_constructor                = MethodTypeDesc.of(CD_void, CD_DateTimePrinterParser_array);
-
-    static final RuntimeVisibleAnnotationsAttribute STABLE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/Stable;")));
 
     /**
      * Creates a DateTimePrinter based on the number of printer parsers.
@@ -95,7 +92,7 @@ final class DateTimePrinterParserFactory {
             clb.withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
                .withSuperclass(CD_Object)
                .withInterfaces(clb.constantPool().classEntry(CD_DateTimePrinter))
-               .withField(fieldName, CD_DateTimePrinterParser_array, f -> f.with(STABLE).withFlags(ACC_FINAL | ACC_PRIVATE))
+               .withField(fieldName, CD_DateTimePrinterParser_array, ACC_FINAL | ACC_PRIVATE)
                .withMethodBody(INIT_NAME, MTD_constructor, ACC_PUBLIC, cb -> {
                     int thisSlot    = cb.receiverSlot(),
                         parsersSlot = cb.parameterSlot(0);
