@@ -38,76 +38,76 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class TestAesGcmIntrinsic {
 
-  static final SecureRandom SECURE_RANDOM = newDefaultSecureRandom();
+    static final SecureRandom SECURE_RANDOM = newDefaultSecureRandom();
 
-  private static SecureRandom newDefaultSecureRandom() {
-    SecureRandom retval = new SecureRandom();
-    retval.nextLong(); // force seeding
-    return retval;
-  }
-
-  private static byte[] randBytes(int size) {
-    byte[] rand = new byte[size];
-    SECURE_RANDOM.nextBytes(rand);
-    return rand;
-  }
-
-  private static final int IV_SIZE_IN_BYTES = 12;
-  private static final int TAG_SIZE_IN_BYTES = 16;
-
-  private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
-      throws Exception {
-    byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
-    SecretKey keySpec = new SecretKeySpec(key, "AES");
-    AlgorithmParameterSpec params =
-        new GCMParameterSpec(8 * TAG_SIZE_IN_BYTES, nonce, 0, nonce.length);
-    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-    cipher.init(Cipher.ENCRYPT_MODE, keySpec, params);
-    if (aad != null && aad.length != 0) {
-      cipher.updateAAD(aad);
+    private static SecureRandom newDefaultSecureRandom() {
+        SecureRandom retval = new SecureRandom();
+        retval.nextLong(); // force seeding
+        return retval;
     }
-    int outputSize = cipher.getOutputSize(plaintext.length);
-    int len = IV_SIZE_IN_BYTES + outputSize;
-    byte[] output = new byte[len];
-    System.arraycopy(nonce, 0, output, 0, IV_SIZE_IN_BYTES);
-    cipher.doFinal(plaintext, 0, plaintext.length, output, IV_SIZE_IN_BYTES);
-    return output;
-  }
 
-  // x86-64 parallel intrinsic data size
-  private static final int PARALLEL_LEN = 512;
-  // max data size for x86-64 intrinsic
-  private static final int SPLIT_LEN = 1048576; // 1MB
-
-  private void jitFunc() throws Exception {
-    byte[] aad = randBytes(20);
-    byte[] key = randBytes(16);
-    // Force JIT.
-    for (int i = 0; i < 100000; i++) {
-      byte[] message = randBytes(PARALLEL_LEN);
-      byte[] ciphertext = gcmEncrypt(key, message, aad);
-      if (ciphertext == null) {
-        throw new RuntimeException("ciphertext is null");
-      }
+    private static byte[] randBytes(int size) {
+        byte[] rand = new byte[size];
+        SECURE_RANDOM.nextBytes(rand);
+        return rand;
     }
-    for (int messageSize = SPLIT_LEN; messageSize < SPLIT_LEN + 300; messageSize++) {
-      byte[] message = randBytes(messageSize);
-      try {
-        byte[] ciphertext = gcmEncrypt(key, message, aad);
-        if (ciphertext == null) {
-          throw new RuntimeException("ciphertext is null");
+
+    private static final int IV_SIZE_IN_BYTES = 12;
+    private static final int TAG_SIZE_IN_BYTES = 16;
+
+    private byte[] gcmEncrypt(final byte[] key, final byte[] plaintext, final byte[] aad)
+        throws Exception {
+        byte[] nonce = randBytes(IV_SIZE_IN_BYTES);
+        SecretKey keySpec = new SecretKeySpec(key, "AES");
+        AlgorithmParameterSpec params =
+            new GCMParameterSpec(8 * TAG_SIZE_IN_BYTES, nonce, 0, nonce.length);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, params);
+        if (aad != null && aad.length != 0) {
+            cipher.updateAAD(aad);
         }
-      } catch (Exception e) {
-        throw new Exception("Failed for messageSize " + Integer.toHexString(messageSize), e);
-      }
+        int outputSize = cipher.getOutputSize(plaintext.length);
+        int len = IV_SIZE_IN_BYTES + outputSize;
+        byte[] output = new byte[len];
+        System.arraycopy(nonce, 0, output, 0, IV_SIZE_IN_BYTES);
+        cipher.doFinal(plaintext, 0, plaintext.length, output, IV_SIZE_IN_BYTES);
+        return output;
     }
-  }
 
-  public static void main(String[] args) throws Exception {
-    TestAesGcmIntrinsic test = new TestAesGcmIntrinsic();
-    long startTime = System.currentTimeMillis();
-    while (System.currentTimeMillis() - startTime < 60 * 1000) {
-      test.jitFunc();
+    // x86-64 parallel intrinsic data size
+    private static final int PARALLEL_LEN = 512;
+    // max data size for x86-64 intrinsic
+    private static final int SPLIT_LEN = 1048576; // 1MB
+
+    private void jitFunc() throws Exception {
+        byte[] aad = randBytes(20);
+        byte[] key = randBytes(16);
+        // Force JIT.
+        for (int i = 0; i < 100000; i++) {
+            byte[] message = randBytes(PARALLEL_LEN);
+            byte[] ciphertext = gcmEncrypt(key, message, aad);
+            if (ciphertext == null) {
+                throw new RuntimeException("ciphertext is null");
+            }
+        }
+        for (int messageSize = SPLIT_LEN; messageSize < SPLIT_LEN + 300; messageSize++) {
+            byte[] message = randBytes(messageSize);
+            try {
+                byte[] ciphertext = gcmEncrypt(key, message, aad);
+                if (ciphertext == null) {
+                    throw new RuntimeException("ciphertext is null");
+                }
+            } catch (Exception e) {
+                throw new Exception("Failed for messageSize " + Integer.toHexString(messageSize), e);
+            }
+        }
     }
-  }
+
+    public static void main(String[] args) throws Exception {
+        TestAesGcmIntrinsic test = new TestAesGcmIntrinsic();
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < 60 * 1000) {
+            test.jitFunc();
+        }
+    }
 }
