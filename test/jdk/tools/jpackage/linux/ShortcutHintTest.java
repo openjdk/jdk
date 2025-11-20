@@ -26,13 +26,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --linux-shortcut parameter. Output of the test should be
@@ -178,5 +180,19 @@ public class ShortcutHintTest {
                     .predicate(String::equals)
                     .apply(Files.readAllLines(desktopFile));
         }).run();
+    }
+
+    /**
+     * Test "--linux-menu-group" option.
+     *
+     * @param menuGroup value of "--linux-menu-group" option
+     */
+    @Test
+    // Values from https://specifications.freedesktop.org/menu/latest/category-registry.html#main-category-registry
+    @Parameter("Development")
+    public static void testMenuGroup(String menuGroup) {
+        createTest().addInitializer(JPackageCommand::setFakeRuntime).addInitializer(cmd -> {
+            cmd.addArgument("--linux-shortcut").setArgumentValue("--linux-menu-group", menuGroup);
+        }).run(Action.CREATE_AND_UNPACK);
     }
 }
