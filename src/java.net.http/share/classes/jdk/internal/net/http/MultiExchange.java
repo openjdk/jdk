@@ -25,10 +25,10 @@
 
 package jdk.internal.net.http;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
+import java.net.ProtocolException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.StreamLimitException;
@@ -359,13 +359,28 @@ class MultiExchange<T> implements Cancelable {
         return r.statusCode == 204;
     }
 
-    private boolean bodyIsPresent(Response r) {
+    private CompletionStage<Boolean> bodyIsPresent(Response r, Exchange<T> exchange) {
+
+        // Read the `Content-Length` header
+        var resultFuture = new MinimalFuture<Boolean>();
         HttpHeaders headers = r.headers();
-        if (headers.firstValueAsLong("Content-length").orElse(0L) != 0L)
-            return true;
-        if (headers.firstValue("Transfer-encoding").isPresent())
-            return true;
-        return false;
+        var clK = "Content-length";
+        long cl;
+        try {
+            cl = headers.firstValueAsLong(clK).orElse(0L);
+        } catch (NumberFormatException nfe) {
+            var pe = new ProtocolException("Invalid value in header " + clK);
+            pe.initCause(nfe);
+            exchange.cancel(pe);
+            resultFuture.completeExceptionally(pe);
+            return resultFuture;
+        }
+
+        // Perform the check
+        var result = cl != 0L || headers.firstValue("Transfer-encoding").isPresent();
+        resultFuture.complete(result);
+        return resultFuture;
+
     }
 
     // Call the user's body handler to get an empty body object
@@ -404,13 +419,15 @@ class MultiExchange<T> implements Cancelable {
                         processAltSvcHeader(r, client(), currentreq);
                         Exchange<T> exch = getExchange();
                         if (bodyNotPermitted(r)) {
-                            if (bodyIsPresent(r)) {
-                                IOException ioe = new IOException(
-                                    "unexpected content length header with 204 response");
-                                exch.cancel(ioe);
-                                return MinimalFuture.failedFuture(ioe);
-                            } else
-                                return handleNoBody(r, exch);
+                            return bodyIsPresent(r, exch).thenCompose(bodyIsPresent -> {
+                                if (bodyIsPresent) {
+                                    IOException ioe = new IOException(
+                                            "unexpected content length header with 204 response");
+                                    exch.cancel(ioe);
+                                    return MinimalFuture.failedFuture(ioe);
+                                } else
+                                    return handleNoBody(r, exch);
+                            });
                         }
                         return exch.readBodyAsync(responseHandler)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));

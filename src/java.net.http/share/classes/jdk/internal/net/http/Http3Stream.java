@@ -31,7 +31,6 @@ import java.net.ProtocolException;
 import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -608,6 +607,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
          int responseCode;
          boolean finalResponse = false;
          try {
+             responseHeaders.firstValue(":status");
              responseCode = (int) responseHeaders
                      .firstValueAsLong(":status")
                      .orElseThrow(() -> new IOException("no statuscode in response"));
@@ -653,23 +653,28 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                      responseHeaders);
          }
 
-         try {
-             OptionalLong cl = responseHeaders.firstValueAsLong("content-length");
-             if (finalResponse && cl.isPresent()) {
-                 long cll = cl.getAsLong();
-                 if (cll < 0) {
-                     cancelImpl(new IOException("Invalid content-length value "+cll), Http3Error.H3_MESSAGE_ERROR);
-                     return;
-                 }
-                 if (!(exchange.request().method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED)) {
-                     // HEAD response and 304 response might have a content-length header,
-                     // but it carries no meaning
-                     contentLength = cll;
-                 }
+         var clK = "content-length";
+         var clS = responseHeaders.firstValue(clK).orElse(null);
+         if (finalResponse && clS != null) {
+             long cl;
+             try {
+                 cl = Long.parseLong(clS);
+             } catch (NumberFormatException nfe) {
+                 var pe = new ProtocolException("Invalid " + clK + " value: " + clS);
+                 pe.initCause(nfe);
+                 cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
+                 return;
              }
-         } catch (NumberFormatException nfe) {
-             cancelImpl(nfe, Http3Error.H3_MESSAGE_ERROR);
-             return;
+             if (cl < 0) {
+                 var pe = new ProtocolException("Invalid " + clK + " value: " + cl);
+                 cancelImpl(pe, Http3Error.H3_MESSAGE_ERROR);
+                 return;
+             }
+             if (!(exchange.request().method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED)) {
+                 // HEAD response and 304 response might have a content-length header,
+                 // but it carries no meaning
+                 contentLength = cl;
+             }
          }
 
          if (Log.headers() || debug.on()) {
