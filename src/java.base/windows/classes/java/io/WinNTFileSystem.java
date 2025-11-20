@@ -365,27 +365,28 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public boolean isInvalid(File f) {
-        if (f.getPath().indexOf('\u0000') >= 0)
+        final String pathname = f.getPath();
+
+        // Invalid if the pathname string contains a null character or if
+        // any name in the pathname's name sequence ends with a space
+        if (pathname.indexOf('\u0000') >= 0 || pathname.endsWith(" ")
+            || pathname.contains(" \\"))
             return true;
 
+        // The remaining checks are irrelevant for alternate data streams (ADS)
         if (ENABLE_ADS)
             return false;
 
-        // Invalid if there is a ":" at a position greater than 1, or if there
+        // Invalid if there is a ":" at a position other than 1, or if there
         // is a ":" at position 1 and the first character is not a letter
-        String pathname = f.getPath();
         int lastColon = pathname.lastIndexOf(":");
+        if (lastColon >= 0 &&
+            (lastColon != 1 || !isLetter(pathname.charAt(0))))
+            return true;
 
-        // Valid if there is no ":" present or if the last ":" present is
-        // at index 1 and the first character is a latter
-        if (lastColon < 0 ||
-            (lastColon == 1 && isLetter(pathname.charAt(0))))
-            return false;
-
-        // Invalid if path creation fails
-        Path path = null;
+        // Invalid if the path string cannot be converted to a Path
         try {
-            path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
+            Path path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
             return false;
         } catch (InvalidPathException ignored) {
         }
@@ -481,26 +482,11 @@ final class WinNTFileSystem extends FileSystem {
                 return path;
             return "" + ((char) (c-32)) + ':' + '\\';
         }
-        String canonicalPath = canonicalize0(path);
-        String finalPath = null;
-        try {
-            finalPath = getFinalPath(canonicalPath);
-        } catch (IOException ignored) {
-            finalPath = canonicalPath;
-        }
-        return finalPath;
+        return canonicalize0(path);
     }
 
     private native String canonicalize0(String path)
             throws IOException;
-
-    private String getFinalPath(String path) throws IOException {
-        return getFinalPath0(path);
-    }
-
-    private native String getFinalPath0(String path)
-            throws IOException;
-
 
     /* -- Attribute accessors -- */
 

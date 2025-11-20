@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     s = (*env)->NewStringUTF(env, "java.net.preferIPv4Stack");
     CHECK_NULL_RETURN(s, JNI_VERSION_1_2);
     preferIPv4Stack = (*env)->CallStaticBooleanMethod(env, iCls, mid, s);
-
+    JNU_CHECK_EXCEPTION_RETURN(env, JNI_VERSION_1_2);
     /*
      * Since we have initialized and loaded the socket library we will
      * check now whether we have IPv6 on this platform and if the
@@ -86,7 +86,27 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     /* check if SO_REUSEPORT is supported on this platform */
     REUSEPORT_available = reuseport_supported(IPv6_available);
 
+
     return JNI_VERSION_1_2;
+}
+
+static int enhancedExceptionsInitialized = 0;
+static int enhancedExceptionsAllowed = 0;
+
+int getEnhancedExceptionsAllowed(JNIEnv *env) {
+    jclass cls;
+    jfieldID fid;
+
+    if (enhancedExceptionsInitialized) {
+        return enhancedExceptionsAllowed;
+    }
+    cls = (*env)->FindClass(env, "jdk/internal/util/Exceptions");
+    CHECK_NULL_RETURN(cls, ENH_INIT_ERROR);
+    fid = (*env)->GetStaticFieldID(env, cls, "enhancedNonSocketExceptionText", "Z");
+    CHECK_NULL_RETURN(fid, ENH_INIT_ERROR);
+    enhancedExceptionsAllowed = (*env)->GetStaticBooleanField(env, cls, fid);
+    enhancedExceptionsInitialized = 1;
+    return enhancedExceptionsAllowed;
 }
 
 static int initialized = 0;

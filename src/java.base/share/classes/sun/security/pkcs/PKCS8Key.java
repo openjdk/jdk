@@ -256,7 +256,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * or {@code null} if an encoding error occurs.
      */
     public byte[] getEncoded() {
-        return getEncodedInternal().clone();
+        byte[] b = getEncodedInternal();
+        return (b != null) ? b.clone() : null;
     }
 
     /**

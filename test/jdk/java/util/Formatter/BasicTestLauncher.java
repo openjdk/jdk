@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * @run junit BasicTestLauncher
  */
 public class BasicTestLauncher {
-    // Locale flag for testJVM
-    private static final String JAVA_OPTS = "-Djava.locale.providers=CLDR";
+
     // Test class
     private static final String TEST_CLASS = "Basic";
 
@@ -82,7 +81,7 @@ public class BasicTestLauncher {
      */
     private static OutputAnalyzer RunTest(String timeZone) throws IOException{
         // Build and run Basic class with correct configuration
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(JAVA_OPTS, TEST_CLASS);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(TEST_CLASS);
         pb.environment().put("TZ", timeZone);
         Process process = pb.start();
         return new OutputAnalyzer(process);

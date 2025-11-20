@@ -24,7 +24,7 @@
 
 
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
@@ -46,8 +46,8 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = os::is_MP() ? 0xFF : 0;
   int yields = 0;
   // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
-  while (Atomic::load(&_state) == locked ||
-         Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+  while (AtomicAccess::load(&_state) == locked ||
+         AtomicAccess::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
@@ -113,11 +113,11 @@ ShenandoahReentrantLock::~ShenandoahReentrantLock() {
 
 void ShenandoahReentrantLock::lock() {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
 
   if (owner != thread) {
     ShenandoahSimpleLock::lock();
-    Atomic::store(&_owner, thread);
+    AtomicAccess::store(&_owner, thread);
   }
 
   _count++;
@@ -130,13 +130,13 @@ void ShenandoahReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)nullptr);
+    AtomicAccess::store(&_owner, (Thread*)nullptr);
     ShenandoahSimpleLock::unlock();
   }
 }
 
 bool ShenandoahReentrantLock::owned_by_self() const {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
   return owner == thread;
 }

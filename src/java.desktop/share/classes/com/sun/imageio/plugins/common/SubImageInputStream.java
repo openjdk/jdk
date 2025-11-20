@@ -71,10 +71,4 @@ public final class SubImageInputStream extends ImageInputStreamImpl {
         stream.seek(pos - startingPos);
         streamPos = pos;
     }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        // Empty finalizer (for improved performance; no need to call
-        // super.finalize() in this case)
-    }
 }

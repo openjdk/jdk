@@ -38,6 +38,7 @@
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.processing.RoundEnvironment;
@@ -75,6 +76,12 @@ public class Test {
         }
     }
 
+    static final List<String> OPTIONS = List.of(
+            "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+            "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+            "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
+
     PrintWriter out;
     int errors;
 
@@ -102,10 +109,12 @@ public class Test {
             Iterable<? extends JavaFileObject> files, PrintWriter out,
             int expectedDocComments) {
         out.println("Test annotation processor");
-        JavacTask task = javac.getTask(out, fm, null, null, null, files);
+        JavacTask task = javac.getTask(out, fm, null, OPTIONS, null, files);
         AnnoProc ap = new AnnoProc(DocTrees.instance(task));
         task.setProcessors(Arrays.asList(ap));
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         ap.checker.checkDocComments(expectedDocComments);
     }
 
@@ -113,10 +122,12 @@ public class Test {
             Iterable<? extends JavaFileObject> files, PrintWriter out,
             int expectedDocComments) {
         out.println("Test task listener");
-        JavacTask task = javac.getTask(out, fm, null, null, null, files);
+        JavacTask task = javac.getTask(out, fm, null, OPTIONS, null, files);
         TaskListnr tl = new TaskListnr(DocTrees.instance(task));
         task.addTaskListener(tl);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         tl.checker.checkDocComments(expectedDocComments);
     }
 

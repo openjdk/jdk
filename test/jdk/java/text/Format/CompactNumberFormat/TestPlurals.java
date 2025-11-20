@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8222756
  * @summary Tests plurals support in CompactNumberFormat
- * @run testng/othervm TestPlurals
+ * @run junit/othervm TestPlurals
  */
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestPlurals {
 
     private final static DecimalFormatSymbols DFS = DecimalFormatSymbols.getInstance(Locale.ROOT);
@@ -45,7 +51,6 @@ public class TestPlurals {
     private final static String RULE_3 = "one:n%2=0andn/3=2;";
 
 
-    @DataProvider
     Object[][] pluralRules() {
         return new Object[][]{
             // rules, number, expected
@@ -78,7 +83,6 @@ public class TestPlurals {
         };
     }
 
-    @DataProvider
     Object[][] invalidRules() {
         return new Object [][] {
             {"one:a = 1"},
@@ -92,27 +96,34 @@ public class TestPlurals {
         };
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testNullPluralRules() {
-        String[] pattern = {""};
-        new CompactNumberFormat("#", DFS, PATTERN, null);
+    @Test
+    void testNullPluralRules() {
+        assertThrows(NullPointerException.class, () -> {
+            String[] pattern = {""};
+            new CompactNumberFormat("#", DFS, PATTERN, null);
+        });
     }
 
-    @Test(dataProvider = "pluralRules")
-    public void testPluralRules(String rules, Number n, String expected) {
+    @ParameterizedTest
+    @MethodSource("pluralRules")
+    void testPluralRules(String rules, Number n, String expected) {
         var cnp = new CompactNumberFormat("#", DFS, PATTERN, rules);
-        assertEquals(cnp.format(n), expected);
+        assertEquals(expected, cnp.format(n));
     }
 
-    @Test(dataProvider = "invalidRules", expectedExceptions = IllegalArgumentException.class)
-    public void testInvalidRules(String rules) {
-        new CompactNumberFormat("#", DFS, PATTERN, rules);
+    @ParameterizedTest
+    @MethodSource("invalidRules")
+    void testInvalidRules(String rules) {
+        assertThrows(IllegalArgumentException.class,
+                () -> new CompactNumberFormat("#", DFS, PATTERN, rules));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testLimitExceedingRules() {
-        String andCond = " and n = 1";
-        String invalid = "one: n = 1" + andCond.repeat(2_048 / andCond.length());
-        new CompactNumberFormat("#", DFS, PATTERN, invalid);
+    @Test
+    void testLimitExceedingRules() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String andCond = " and n = 1";
+            String invalid = "one: n = 1" + andCond.repeat(2_048 / andCond.length());
+            new CompactNumberFormat("#", DFS, PATTERN, invalid);
+        });
     }
 }

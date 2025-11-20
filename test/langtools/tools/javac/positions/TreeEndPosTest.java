@@ -174,7 +174,9 @@ public class TreeEndPosTest {
                     compiler.getTask(writer, javaFileManager,
                     dc, options, null,
                     sources);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             for (Diagnostic diagnostic : (List<Diagnostic>) dc.getDiagnostics()) {
                 long actualStart = diagnostic.getStartPosition();
                 long actualEnd = diagnostic.getEndPosition();

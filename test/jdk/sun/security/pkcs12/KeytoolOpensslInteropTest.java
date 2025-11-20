@@ -36,7 +36,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest true
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest true
  */
 
 /*
@@ -48,7 +48,7 @@
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
  * @library /test/lib /sun/security/pkcs11/
- * @run main/othervm KeytoolOpensslInteropTest false
+ * @run main/othervm/timeout=480 KeytoolOpensslInteropTest false
  */
 
 import jdk.test.lib.Asserts;

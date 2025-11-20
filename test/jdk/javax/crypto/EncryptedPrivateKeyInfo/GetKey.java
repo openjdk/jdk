@@ -35,6 +35,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.PEMDecoder;
 import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Arrays;
 
 public class GetKey {
@@ -48,12 +50,29 @@ public class GetKey {
         IycFtI70ciPjgwDSjtCcPxR8fSxJPrm2yOJsRVo=
         -----END ENCRYPTED PRIVATE KEY-----
         """;
+    private static final String encDHECKey =
+        """
+        -----BEGIN ENCRYPTED PRIVATE KEY-----
+        MIIBvDBmBgkqhkiG9w0BBQ0wWTA4BgkqhkiG9w0BBQwwKwQUN8pkErJx7aqH0fJF
+        BcOadPKiuRoCAhAAAgEQMAwGCCqGSIb3DQIJBQAwHQYJYIZIAWUDBAECBBAT1Vwd
+        gU4rTd6zy7lKr4wmBIIBUMe+2+O0AG6t4CMSHcDVceRg2jvbs5PmPjW4Ka5mDich
+        hVEsjSpJLbUyJdbji6UaiUpuWgvYSMLZ10pfhOFw/ssXwCw+JrlXUqDpQGLaW8ZR
+        zSL3CoozTI2Y6EBdWt53KbySwtZMoTpW/W3vPi98bJXtR635msf6gYXmSUP7DyoJ
+        79dxz3pRYsnOuBe0yZ2wTq9iMgTMudzLJAFX2qyi+3KOb1g5Va9DYAqJmzCYOd74
+        +I+0gGNFtSc1vGQYr3cAfcKT8AZ1RHE4IkpnpgFD5HsZ8f4hy0yK8juk9NE9Gzuy
+        B929LBXk6V3L0MKzIABS3QvAlhWETM6XtGBDugzAgsooo9lEHLwYRldvOlL+QYyE
+        CtqDmXOrgEMWvxWGEFCTKYhKkqMKjU3y3GiozEEdb9j2okW1s30yHQjIoj0OR4nB
+        D8GeP0QnY73NfbOw7z81TA==
+        -----END ENCRYPTED PRIVATE KEY-----
+        """;
     private static final String passwdText = "fish";
     private static final char[] password = passwdText.toCharArray();
     private static final SecretKey key = new SecretKeySpec(
         passwdText.getBytes(), "PBE");
 
     public static void main(String[] args) throws Exception {
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
+
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(encEdECKey,
             EncryptedPrivateKeyInfo.class);
         PrivateKey priKey = PEMDecoder.of().withDecryption(password).
@@ -66,11 +85,23 @@ public class GetKey {
                 + "match with expected.");
         }
 
-        // Test getKey(key, provider)
+        // Test getKey(key, provider) provider null
         if (!Arrays.equals(priKey.getEncoded(),
             ekpi.getKey(key, null).getEncoded())) {
             throw new AssertionError("getKey(key, provider) " +
                 "didn't match with expected.");
+        }
+
+        // Test getKey(key, provider) with provider
+        EncryptedPrivateKeyInfo ekpiDH = PEMDecoder.of().decode(encDHECKey,
+                EncryptedPrivateKeyInfo.class);
+        PrivateKey priKeyDH = PEMDecoder.of().withDecryption(password).
+                decode(encDHECKey, PrivateKey.class);
+
+        if (!Arrays.equals(priKeyDH.getEncoded(),
+                ekpiDH.getKey(key, p).getEncoded())) {
+            throw new AssertionError("getKey(key, provider) " +
+                    "didn't match with expected.");
         }
     }
 }

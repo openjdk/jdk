@@ -113,10 +113,15 @@
                                                                             \
   product(int, ZTenuringThreshold, -1, DIAGNOSTIC,                          \
           "Young generation tenuring threshold, -1 for dynamic computation")\
-          range(-1, static_cast<int>(ZPageAgeMax))                          \
+          range(-1, static_cast<int>(ZPageAgeCount) - 1)                    \
                                                                             \
   develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
+                                                                            \
+  develop(size_t, ZFailLargerCommits, 0,                                    \
+          "Commits larger than ZFailLargerCommits will be truncated, "      \
+          "used to stress page allocation commit failure paths "            \
+          "(0: Disabled)")                                                  \
                                                                             \
   develop(uint, ZFakeNUMA, 1,                                               \
           "ZFakeNUMA is used to test the internal NUMA memory support "     \

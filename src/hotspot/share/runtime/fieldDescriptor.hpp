@@ -84,6 +84,7 @@ class fieldDescriptor {
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return field_flags().is_stable(); }
+  bool is_injected()              const    { return field_flags().is_injected(); }
   bool is_volatile()              const    { return access_flags().is_volatile(); }
   bool is_transient()             const    { return access_flags().is_transient(); }
 

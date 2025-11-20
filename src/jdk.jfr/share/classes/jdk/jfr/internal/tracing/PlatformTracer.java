@@ -35,7 +35,6 @@ import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.tracing.MethodTracer;
 
@@ -144,6 +143,7 @@ public final class PlatformTracer {
     public static void addObjectTiming(long duration) {
         OBJECT.invocations().getAndIncrement();
         OBJECT.time().addAndGet(duration);
+        OBJECT.updateMinMax(duration);
     }
 
     public static void addTiming(long id, long duration) {
@@ -151,11 +151,8 @@ public final class PlatformTracer {
         if (entry != null) {
             entry.invocations().getAndIncrement();
             entry.time().addAndGet(duration);
+            entry.updateMinMax(duration);
         }
-    }
-
-    public static boolean isValidFilter(String text) {
-        return Filter.of(text, null) != null;
     }
 
     public static void setFilters(Modification modification, List<String> filters) {
@@ -251,6 +248,7 @@ public final class PlatformTracer {
         timedClasses.clear();
     }
 
+
     // This method has three purposes:
     //
     // 1) Load classes before instrumentation to avoid recursion in class
@@ -265,18 +263,16 @@ public final class PlatformTracer {
     // provided a user has specified a non-empty filter for the MethodTrace or
     // MethodTiming event.
     public static void initialize() {
-        try {
-            Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
-            Thread current = Thread.currentThread();
-            JVM.exclude(current);
-            long methodId = 16384126;
-            long classId = methodId >> 16;
-            ClassLoader cl = null;
-            String className = " java/lang/String";
-            Module m = String.class.getModule();
-            var is = ClassLoader.getSystemClassLoader().getResourceAsStream("java/lang/String.class");
+        Logger.log(LogTag.JFR_METHODTRACE, LogLevel.DEBUG, "Method tracer initialization started.");
+        Thread current = Thread.currentThread();
+        JVM.exclude(current);
+        long methodId = 16384126;
+        long classId = methodId >> 16;
+        ClassLoader cl = null;
+        String className = "java/lang/String";
+        Module m = String.class.getModule();
+        try (var is = ClassLoader.getSystemClassLoader().getResourceAsStream("java/lang/String.class")) {
             byte[] oldBytecode = is.readAllBytes();
-            is.close();
             long[] ids = { methodId };
             String[] names = { "<clinit>" };
             String[] signatures = { "()V" };

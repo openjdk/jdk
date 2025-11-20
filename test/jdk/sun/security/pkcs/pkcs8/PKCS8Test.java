@@ -31,10 +31,13 @@
  *          java.base/sun.security.provider
  *          java.base/sun.security.x509
  * @run main PKCS8Test
+ * @run main/othervm -Dtest.provider.name=SunJCE PKCS8Test
  */
 
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.HexFormat;
 
@@ -45,6 +48,7 @@ import sun.security.provider.DSAPrivateKey;
 
 public class PKCS8Test {
 
+    static Provider provider;
     static final String FORMAT = "PKCS#8";
     static final String EXPECTED_ALG_ID_CHRS = "DSA, \n" +
             "\tp:     02\n\tq:     03\n\tg:     04\n";
@@ -59,7 +63,7 @@ public class PKCS8Test {
                 "0403020101");  // PrivateKey OCTET int x = 1
 
     public static void main(String[] args) throws Exception {
-
+        provider = Security.getProvider(System.getProperty("test.provider.name"));
         byte[] encodedKey = new DSAPrivateKey(
                 BigInteger.valueOf(1),
                 BigInteger.valueOf(2),
@@ -73,7 +77,8 @@ public class PKCS8Test {
                     .toString(encodedKey));
         }
 
-        PKCS8Key decodedKey = (PKCS8Key)PKCS8Key.parseKey(encodedKey);
+        PKCS8Key decodedKey = provider == null ? (PKCS8Key)PKCS8Key.parseKey(encodedKey) :
+                (PKCS8Key)PKCS8Key.parseKey(encodedKey, provider);
 
         assert(ALGORITHM.equalsIgnoreCase(decodedKey.getAlgorithm()));
         assert(FORMAT.equalsIgnoreCase(decodedKey.getFormat()));
@@ -126,7 +131,11 @@ public class PKCS8Test {
         original[1] = (byte) (length - 2);   // the length field inside DER
         original[4] = (byte) newVersion;     // the version inside DER
         try {
-            PKCS8Key.parseKey(original);
+            if (provider == null) {
+                PKCS8Key.parseKey(original);
+            } else {
+                PKCS8Key.parseKey(original, provider);
+            }
         } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }

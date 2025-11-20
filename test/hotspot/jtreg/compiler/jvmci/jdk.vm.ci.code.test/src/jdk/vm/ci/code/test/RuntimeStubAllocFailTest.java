@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class RuntimeStubAllocFailTest {
                     /* totalFrameSize */ 0,
                     /* deoptRescueSlot */ null);
             try {
-                codeCache.installCode(null, stub, null, null, true);
+                codeCache.installCode(null, stub, null, null, true, true);
                 throw new AssertionError("Didn't get expected " + BailoutException.class.getName());
             } catch (BailoutException e) {
                 Asserts.assertEQ(e.getMessage(), "Error installing " + stubToFail + ": code cache is full");

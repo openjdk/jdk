@@ -81,7 +81,9 @@ public class LocalInAnonymous {
         List<String> options = Arrays.asList("-d", classes.toString());
         StringWriter out = new StringWriter();
         JavacTask task = (JavacTask) compiler.getTask(out, null, noErrors, options, null, files);
-        task.call();
+        if (!task.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }
@@ -103,7 +105,9 @@ public class LocalInAnonymous {
                 }
             }
         });
-        task2.call();
+        if (!task2.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }
@@ -112,7 +116,9 @@ public class LocalInAnonymous {
                                 "-processorpath", System.getProperty("test.classes"),
                                 "-processor", Processor.class.getName());
         JavacTask task3 = (JavacTask) compiler.getTask(out, null, noErrors, options, null, files);
-        task3.call();
+        if (!task3.call()) {
+            throw new AssertionError("test failed due to a compilation error");
+        }
         if (!out.toString().isEmpty()) {
             throw new AssertionError("Unexpected output: " + out);
         }

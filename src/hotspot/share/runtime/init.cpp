@@ -36,7 +36,7 @@
 #include "prims/downcallLinker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -68,9 +68,11 @@ void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void icache_init2();
+void initialize_stub_info();    // must precede all blob/stub generation
+void preuniverse_stubs_init();
 void initial_stubs_init();
 
-jint universe_init();           // depends on codeCache_init and initial_stubs_init
+jint universe_init();           // depends on codeCache_init and preuniverse_stubs_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
 void gc_barrier_stubs_init();
 void continuations_init();      // depends on flags (UseCompressedOops) and barrier sets
@@ -129,15 +131,14 @@ jint init_globals() {
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
   icache_init2();                 // depends on VM_Version for choosing the mechanism
-  // stub routines in initial blob are referenced by later generated code
-  initial_stubs_init();
-  // stack overflow exception blob is referenced by the interpreter
-  SharedRuntime::generate_initial_stubs();
-  jint status = universe_init();  // dependent on codeCache_init and
-                                  // initial_stubs_init and metaspace_init.
-  if (status != JNI_OK)
+  // ensure we know about all blobs, stubs and entries
+  initialize_stub_info();
+  // initialize stubs needed before we can init the universe
+  preuniverse_stubs_init();
+  jint status = universe_init();  // dependent on codeCache_init and preuniverse_stubs_init
+  if (status != JNI_OK) {
     return status;
-
+  }
 #ifdef LEAK_SANITIZER
   {
     // Register the Java heap with LSan.
@@ -145,8 +146,13 @@ jint init_globals() {
     LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
   }
 #endif // LEAK_SANITIZER
-  AOTCodeCache::init2();     // depends on universe_init
+  AOTCodeCache::init2();     // depends on universe_init, must be before initial_stubs_init
   AsyncLogWriter::initialize();
+
+  initial_stubs_init();      // stubgen initial stub routines
+  // stack overflow exception blob is referenced by the interpreter
+  AOTCodeCache::init_early_stubs_table();  // need this after stubgen initial stubs and before shared runtime initial stubs
+  SharedRuntime::generate_initial_stubs();
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
   continuation_stubs_init(); // depends on continuations_init
@@ -189,10 +195,7 @@ jint init_globals2() {
   }
 #endif
 
-  // Initialize TrainingData only we're recording/replaying
-  if (TrainingData::have_data() || TrainingData::need_data()) {
-   TrainingData::initialize();
-  }
+  TrainingData::initialize();
 
   if (!universe_post_init()) {
     return JNI_ERR;
@@ -235,7 +238,7 @@ void exit_globals() {
 static volatile bool _init_completed = false;
 
 bool is_init_completed() {
-  return Atomic::load_acquire(&_init_completed);
+  return AtomicAccess::load_acquire(&_init_completed);
 }
 
 void wait_init_completed() {
@@ -248,6 +251,6 @@ void wait_init_completed() {
 void set_init_completed() {
   assert(Universe::is_fully_initialized(), "Should have completed initialization");
   MonitorLocker ml(InitCompleted_lock, Monitor::_no_safepoint_check_flag);
-  Atomic::release_store(&_init_completed, true);
+  AtomicAccess::release_store(&_init_completed, true);
   ml.notify_all();
 }

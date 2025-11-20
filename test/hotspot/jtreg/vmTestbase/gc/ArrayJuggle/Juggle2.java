@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,11 @@
 
 /* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle2 */
 /* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle2 -tg */
+
+/*
+ * The next test stresses the interaction between (mostly) full garbage collections and refinement.
+ */
+/* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -XX:-G1UseAdaptiveIHOP -XX:InitiatingHeapOccupancyPercent=0 -XX:G1HeapRegionSize=1m -XX:G1RSetUpdatingPauseTimePercent=0 -XX:+UnlockDiagnosticVMOptions -XX:G1PerThreadPendingCardThreshold=0 -XX:+VerifyAfterGC -Xlog:gc=debug,gc+refine=debug:gc.log gc.ArrayJuggle.Juggle2 -tg */
 
 package gc.ArrayJuggle;
 

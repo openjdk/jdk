@@ -33,12 +33,12 @@
     </event>
 
     <event name="jdk.SymbolTableStatistics">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">10 s</setting>
     </event>
 
     <event name="jdk.StringTableStatistics">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">10 s</setting>
     </event>
 
@@ -224,6 +224,16 @@
       <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
       <setting name="throttle">off</setting>
+    </event>
+
+    <event name="jdk.CPUTimeSample">
+      <setting name="enabled" control="method-sampling-enabled">false</setting>
+      <setting name="throttle">500/s</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.CPUTimeSamplesLost">
+      <setting name="enabled" control="method-sampling-enabled">true</setting>
     </event>
 
     <event name="jdk.SafepointBegin">
@@ -752,38 +762,42 @@
     </event>
 
     <event name="jdk.ModuleExport">
-      <setting name="enabled">true</setting>
+      <setting name="enabled">false</setting>
       <setting name="period">endChunk</setting>
     </event>
 
     <event name="jdk.FileForce">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">20 ms</setting>
+      <setting name="threshold">20 ms</setting>
     </event>
 
     <event name="jdk.FileRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">20 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">100/s</setting>
     </event>
 
     <event name="jdk.FileWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="file-threshold">20 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">100/s</setting>
     </event>
 
     <event name="jdk.SocketRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-threshold">20 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">100/s</setting>
     </event>
 
     <event name="jdk.SocketWrite">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
-      <setting name="threshold" control="socket-threshold">20 ms</setting>
+      <setting name="threshold">1 ms</setting>
+      <setting name="throttle">100/s</setting>
     </event>
 
     <event name="jdk.Deserialization">
@@ -826,8 +840,9 @@
     </event>
 
     <event name="jdk.JavaExceptionThrow">
-      <setting name="enabled" control="enable-exceptions">false</setting>
+      <setting name="enabled" control="enable-exceptions">true</setting>
       <setting name="stackTrace">true</setting>
+      <setting name="throttle" control="exceptions-throttle-rate">100/s</setting>
     </event>
 
     <event name="jdk.JavaErrorThrow">
@@ -1126,20 +1141,27 @@
         <test name="thread-dump" operator="equal" value="999 d"/>
       </condition>
 
-      <selection name="exceptions" default="errors" label="Exceptions">
+      <selection name="exceptions" default="throttled" label="Exceptions">
         <option label="Off" name="off">off</option>
-        <option label="Errors Only" name="errors">errors</option>
-        <option label="All Exceptions, including Errors" name="all">all</option>
+        <option label="Errors and 100 Exceptions Per Second" name="throttled">throttled</option>
+        <option label="Errors and All Exceptions" name="all">all</option>
       </selection>
 
       <condition name="enable-errors" true="true" false="false">
         <or>
-          <test name="exceptions" operator="equal" value="errors"/>
+          <test name="exceptions" operator="equal" value="throttled"/>
           <test name="exceptions" operator="equal" value="all"/>
         </or>
       </condition>
 
       <condition name="enable-exceptions" true="true" false="false">
+        <or>
+          <test name="exceptions" operator="equal" value="throttled"/>
+          <test name="exceptions" operator="equal" value="all"/>
+        </or>
+      </condition>
+
+      <condition name="exceptions-throttle-rate" true="off" false="100/s">
         <test name="exceptions" operator="equal" value="all"/>
       </condition>
 
@@ -1167,13 +1189,11 @@
 
       <text name="locking-threshold" label="Locking Threshold" contentType="timespan" minimum="0 s">20 ms</text>
 
-      <text name="file-threshold" label="File I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
+      <text name="method-timing" label="Method Timing Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
-      <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">20 ms</text>
-
-      <text name="method-timing" label="Method Timing" contentType="text"></text>
-
-      <text name="method-trace" label="Method Trace" contentType="text"></text>
+      <text name="method-trace" label="Method Trace Filter" contentType="method-filter"
+            description="A filter can be an annotation (@jakarta.ws.rs.GET), a full qualified class name (com.example.Foo), a fully qualified method reference (java.lang.HashMap::resize) or a class initializer (::&lt;clinit&gt;). Use &lt;init&gt; for constructors. Separate multiple filters with semicolon."></text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
     </control>

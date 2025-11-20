@@ -57,6 +57,7 @@ class ZWorkers;
 class ZPartition {
   friend class VMStructs;
   friend class ZPageAllocator;
+  friend class ZUncommitter;
 
 private:
   ZPageAllocator* const _page_allocator;
@@ -68,9 +69,6 @@ private:
   volatile size_t       _capacity;
   volatile size_t       _claimed;
   size_t                _used;
-  double                _last_commit;
-  double                _last_uncommit;
-  size_t                _to_uncommit;
   const uint32_t        _numa_id;
 
   const ZVirtualMemoryManager& virtual_memory_manager() const;
@@ -102,8 +100,6 @@ public:
   void claim_from_cache_or_increase_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity(ZMemoryAllocation* allocation);
   bool claim_capacity_fast_medium(ZMemoryAllocation* allocation);
-
-  size_t uncommit(uint64_t* timeout);
 
   void sort_segments_physical(const ZVirtualMemory& vmem);
 
@@ -224,6 +220,7 @@ private:
   void satisfy_stalled();
 
   bool is_multi_partition_enabled() const;
+  bool is_multi_partition_allowed(const ZPageAllocation* allocation) const;
 
   const ZPartition& partition_from_partition_id(uint32_t partition_id) const;
   ZPartition&       partition_from_partition_id(uint32_t partition_id);
@@ -267,7 +264,7 @@ public:
   ZPageAllocatorStats stats(ZGeneration* generation) const;
   ZPageAllocatorStats update_and_stats(ZGeneration* generation);
 
-  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age, uint32_t preferred_partition);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page);
   void free_pages(ZGenerationId id, const ZArray<ZPage*>* pages);

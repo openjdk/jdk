@@ -44,6 +44,7 @@ import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
 import jdk.jfr.internal.settings.CutoffSetting;
@@ -51,9 +52,11 @@ import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.MethodSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.CPUThrottleSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
+import jdk.jfr.internal.settings.Throttler;
 import jdk.jfr.internal.tracing.Modification;
 import jdk.jfr.internal.util.Utils;
 
@@ -94,6 +97,7 @@ public final class EventControl {
         }
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
+            eventType.setThrottler(new Throttler());
         }
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
@@ -281,18 +285,23 @@ public final class EventControl {
 
     private SettingControl instantiateSettingControl(Class<? extends SettingControl> settingControlClass) throws IllegalAccessException, InstantiationException {
         SecuritySupport.makeVisibleToJFR(settingControlClass);
-        final Constructor<?> cc;
         try {
-            cc = settingControlClass.getDeclaredConstructors()[0];
-        } catch (Exception e) {
-            throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
-        }
-        cc.setAccessible(true);
-        try {
+            Constructor<?> cc = findDefaultConstructor(settingControlClass);
+            cc.setAccessible(true);
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
             throw new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
         }
+    }
+
+    private Constructor<?> findDefaultConstructor(Class<? extends SettingControl> settingControlClass) {
+        for (Constructor<?> c : settingControlClass.getDeclaredConstructors()) {
+            if (c.getParameterCount() == 0) {
+                return c;
+            }
+        }
+        // Programming error by user, fail fast
+        throw new InstantiationError("Could not find default constructor for " + settingControlClass.getName());
     }
 
     private static Control defineEnabled(PlatformEventType type) {
@@ -326,6 +335,9 @@ public final class EventControl {
     private static Control defineThrottle(PlatformEventType type) {
         String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
+        if (type.getName().equals("jdk.CPUTimeSample")) {
+            return new Control(new CPUThrottleSetting(type), def);
+        }
         return new Control(new ThrottleSetting(type, def), def);
     }
 

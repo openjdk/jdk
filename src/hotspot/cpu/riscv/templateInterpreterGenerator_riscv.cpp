@@ -1073,9 +1073,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
@@ -1229,15 +1227,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L, Continue;
 
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word. We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    //
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-    __ safepoint_poll(L, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    __ safepoint_poll(L, true /* at_return */, false /* in_nmethod */);
     __ lwu(t1, Address(xthread, JavaThread::suspend_flags_offset()));
     __ beqz(t1, Continue);
     __ bind(L);
@@ -1261,22 +1251,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
-  if (LockingMode != LM_LEGACY) {
-    // Check preemption for Object.wait()
-    Label not_preempted;
-    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ beqz(t1, not_preempted);
-    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
-    __ jr(t1);
-    __ bind(native_return);
-    __ restore_after_resume(true /* is_native */);
-    // reload result_handler
-    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
-    __ bind(not_preempted);
-  } else {
-    // any pc will do so just use this one for LM_LEGACY to keep code together.
-    __ bind(native_return);
-  }
+  // Check preemption for Object.wait()
+  Label not_preempted;
+  __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  __ beqz(t1, not_preempted);
+  __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  __ jr(t1);
+  __ bind(native_return);
+  __ restore_after_resume(true /* is_native */);
+  // reload result_handler
+  __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+  __ bind(not_preempted);
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1388,7 +1373,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   Label slow_path;
   Label fast_path;
-  __ safepoint_poll(slow_path, true /* at_return */, false /* acquire */, false /* in_nmethod */);
+  __ safepoint_poll(slow_path, true /* at_return */, false /* in_nmethod */);
   __ j(fast_path);
 
   __ bind(slow_path);
@@ -1554,9 +1539,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 
   // start execution
-#ifdef ASSERT
   __ verify_frame_setup();
-#endif
 
   // jvmti support
   __ notify_method_entry();
@@ -1646,6 +1629,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
+  __ restore_bcp(); // We could have returned from deoptimizing this frame, so restore rbcp.
   // Set the popframe_processing bit in pending_popframe_condition
   // indicating that we are currently handling popframe, so that
   // call_VMs that may happen later do not trigger new popframe

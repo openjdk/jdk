@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -302,20 +302,6 @@ public:
     }
 };
 
-//
-// Manage the image module meta data.
-class ImageModuleData {
-    const ImageFileReader* _image_file; // Source image file
-    Endian* _endian;                    // Endian handler
-
-public:
-    ImageModuleData(const ImageFileReader* image_file);
-    ~ImageModuleData();
-
-    // Return the module in which a package resides.    Returns NULL if not found.
-    const char* package_to_module(const char* package_name);
-};
-
 // Image file header, starting at offset 0.
 class ImageHeader {
 private:
@@ -428,7 +414,6 @@ private:
     u4* _offsets_table;  // Location offset table
     u1* _location_bytes; // Location attributes
     u1* _string_bytes;   // String table
-    ImageModuleData *_module_data;       // The ImageModuleData for this image
 
     ImageFileReader(const char* name, bool big_endian);
     ~ImageFileReader();
@@ -577,9 +562,5 @@ public:
 
     // Return the resource for the supplied path.
     void get_resource(ImageLocation& location, u1* uncompressed_data) const;
-
-    // Return the ImageModuleData for this image
-    ImageModuleData * get_image_module_data();
-
 };
 #endif // LIBJIMAGE_IMAGEFILE_HPP

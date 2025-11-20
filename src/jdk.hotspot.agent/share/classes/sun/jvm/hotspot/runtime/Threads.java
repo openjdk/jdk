@@ -30,12 +30,10 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.runtime.win32_amd64.Win32AMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.win32_aarch64.Win32AARCH64JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.linux_x86.LinuxX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_amd64.LinuxAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_aarch64.LinuxAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_riscv64.LinuxRISCV64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_ppc64.LinuxPPC64JavaThreadPDAccess;
-import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.bsd_aarch64.BsdAARCH64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
@@ -101,9 +99,7 @@ public class Threads {
                 access =  new Win32AARCH64JavaThreadPDAccess();
             }
         } else if (os.equals("linux")) {
-            if (cpu.equals("x86")) {
-                access = new LinuxX86JavaThreadPDAccess();
-            } else if (cpu.equals("amd64")) {
+            if (cpu.equals("amd64")) {
                 access = new LinuxAMD64JavaThreadPDAccess();
             } else if (cpu.equals("ppc64")) {
                 access = new LinuxPPC64JavaThreadPDAccess();
@@ -123,9 +119,7 @@ public class Threads {
               }
             }
         } else if (os.equals("bsd")) {
-            if (cpu.equals("x86")) {
-                access = new BsdX86JavaThreadPDAccess();
-            } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
+            if (cpu.equals("amd64") || cpu.equals("x86_64")) {
                 access = new BsdAMD64JavaThreadPDAccess();
             }
         } else if (os.equals("darwin")) {
@@ -158,6 +152,7 @@ public class Threads {
         virtualConstructor.addMapping("JvmtiAgentThread", JavaThread.class);
         virtualConstructor.addMapping("NotificationThread", JavaThread.class);
         virtualConstructor.addMapping("AttachListenerThread", JavaThread.class);
+        virtualConstructor.addMapping("JfrRecorderThread", JavaThread.class);
 
         // These are all the hidden JavaThread subclasses that don't execute java code.
         virtualConstructor.addMapping("StringDedupThread", HiddenJavaThread.class);
@@ -195,7 +190,8 @@ public class Threads {
         } catch (Exception e) {
             throw new RuntimeException("Unable to deduce type of thread from address " + threadAddr +
             " (expected type JavaThread, CompilerThread, MonitorDeflationThread, AttachListenerThread," +
-            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread or JvmtiAgentThread)", e);
+            " DeoptimizeObjectsALotThread, StringDedupThread, NotificationThread, ServiceThread," +
+            " JfrRecorderThread, or JvmtiAgentThread)", e);
         }
     }
 
@@ -222,29 +218,18 @@ public class Threads {
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
         if (monitor.isOwnedAnonymous()) {
-            if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
-                OopHandle object = monitor.object();
-                for (int i = 0; i < getNumberOfThreads(); i++) {
-                    JavaThread thread = getJavaThreadAt(i);
-                    if (thread.isLockOwned(object)) {
-                        return thread;
-                     }
-                }
-                // We should have found the owner, however, as the VM could be in any state, including the middle
-                // of performing GC, it is not always possible to do so. Just return null if we can't locate it.
-                System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
-                System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
-                return null;
-            } else {
-                assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLegacy());
-                Address o = (Address)monitor.stackLocker();
-                for (int i = 0; i < getNumberOfThreads(); i++) {
-                    JavaThread thread = getJavaThreadAt(i);
-                    if (thread.isLockOwned(o))
-                        return thread;
-                }
-                return null;
+            OopHandle object = monitor.object();
+            for (int i = 0; i < getNumberOfThreads(); i++) {
+                JavaThread thread = getJavaThreadAt(i);
+                if (thread.isLockOwned(object)) {
+                    return thread;
+                 }
             }
+            // We should have found the owner, however, as the VM could be in any state, including the middle
+            // of performing GC, it is not always possible to do so. Just return null if we can't locate it.
+            System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
+            System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
+            return null;
         } else {
             return owningThreadFromMonitor(monitor.owner());
         }

@@ -185,6 +185,7 @@ public:
 class ReferenceProcessor : public ReferenceDiscoverer {
   friend class RefProcTask;
   friend class RefProcKeepAliveFinalPhaseTask;
+  friend class RefProcMTDegreeAdjuster;
 public:
   // Names of sub-phases of reference processing. Indicates the type of the reference
   // processed and the associated phase number at the end.
@@ -253,19 +254,22 @@ private:
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
-  void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, bool marks_oops_alive);
+  void run_task(RefProcTask& task, RefProcProxyTask& proxy_task, WorkerThreads* threads, bool marks_oops_alive);
 
   // Drop Soft/Weak/Final references with a null or live referent, and clear
   // and enqueue non-Final references.
   void process_soft_weak_final_refs(RefProcProxyTask& proxy_task,
+                                    WorkerThreads* workers,
                                     ReferenceProcessorPhaseTimes& phase_times);
 
   // Keep alive followers of Final references, and enqueue.
   void process_final_keep_alive(RefProcProxyTask& proxy_task,
+                                WorkerThreads* workers,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
   // Drop and keep alive live Phantom references, or clear and enqueue if dead.
   void process_phantom_refs(RefProcProxyTask& proxy_task,
+                            WorkerThreads* workers,
                             ReferenceProcessorPhaseTimes& phase_times);
 
   // Work methods used by the process_* methods. All methods return the number of
@@ -292,12 +296,14 @@ private:
                                _always_clear_soft_ref_policy : _default_soft_ref_policy;
     _current_soft_ref_policy->setup();   // snapshot the policy threshold
   }
+
+  void set_active_mt_degree(uint v);
+
 public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_NONE); }
 
   uint num_queues() const                  { return _num_queues; }
   uint max_num_queues() const              { return _max_num_queues; }
-  void set_active_mt_degree(uint v);
 
   void start_discovery(bool always_clear) {
     enable_discovery();
@@ -416,6 +422,7 @@ public:
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
   process_discovered_references(RefProcProxyTask& proxy_task,
+                                WorkerThreads* workers,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
   // If a discovery is in process that is being superseded, abandon it: all
@@ -589,6 +596,7 @@ class RefProcMTDegreeAdjuster : public StackObj {
 public:
   RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
                           RefProcPhases phase,
+                          uint num_active_workers,
                           size_t ref_count);
   ~RefProcMTDegreeAdjuster();
 };

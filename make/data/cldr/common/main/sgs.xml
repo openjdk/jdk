@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2025 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-3.0
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="sgs"/>
+	</identity>
+	<localeDisplayNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Kalba: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Skripts: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Regijuons: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a ā b c č d e ē ė {ė̄} f g h i ī j k l m n o ō p r s š t u ū v z ž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{ch} {dz} {dž}]</exemplarCharacters>
+		<exemplarCharacters type="index">[A Ā B C Č D E Ē Ė {Ė̄} F G H I Ī J K L M N O Ō P R S Š T U Ū V Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[, % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>„</quotationStart>
+		<quotationEnd>“</quotationEnd>
+		<alternateQuotationStart>„</alternateQuotationStart>
+		<alternateQuotationEnd>“</alternateQuotationEnd>
+	</delimiters>
+	<posix>
+		<messages>
+			<yesstr>tēp:t</yesstr>
+			<nostr>nē:n</nostr>
+		</messages>
+	</posix>
+</ldml>

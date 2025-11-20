@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 #define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 class ClassLoaderData;
 
@@ -122,8 +122,8 @@ class InstanceKlassFlags {
   IK_STATUS_DO(IK_STATUS_GET_SET)
 #undef IK_STATUS_GET_SET
 
-  void atomic_set_bits(u1 bits)   { Atomic::fetch_then_or(&_status, bits); }
-  void atomic_clear_bits(u1 bits) { Atomic::fetch_then_and(&_status, (u1)(~bits)); }
+  void atomic_set_bits(u1 bits)   { AtomicAccess::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u1 bits) { AtomicAccess::fetch_then_and(&_status, (u1)(~bits)); }
   void print_on(outputStream* st) const;
 };
 
