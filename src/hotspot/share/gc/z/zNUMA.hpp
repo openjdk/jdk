@@ -31,7 +31,7 @@
 class ZNUMA : public AllStatic {
   friend class VMStructs;
   friend class ZNUMATest;
-  friend class ZTest;
+  friend class ZVMTest;
 
 private:
   static bool     _enabled;
