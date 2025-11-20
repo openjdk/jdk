@@ -46,7 +46,6 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.pipeline.DirectedEdge;
 import jdk.jpackage.internal.pipeline.FixedDAG;
 import jdk.jpackage.internal.pipeline.TaskPipelineBuilder;
@@ -62,7 +61,7 @@ final class PackagingPipeline {
      * @param env the build environment
      * @param app the application
      */
-    void execute(BuildEnv env, Application app) throws PackagerException {
+    void execute(BuildEnv env, Application app) {
         execute(contextMapper.apply(createTaskContext(env, app)));
     }
 
@@ -81,7 +80,7 @@ final class PackagingPipeline {
      * @param pkg       the package
      * @param outputDir the output directory for the package file
      */
-    void execute(BuildEnv env, Package pkg, Path outputDir) throws PackagerException {
+    void execute(BuildEnv env, Package pkg, Path outputDir) {
         execute((StartupParameters)createPackagingTaskContext(env, pkg, outputDir, taskConfig));
     }
 
@@ -91,7 +90,7 @@ final class PackagingPipeline {
      *
      * @param startupParameters the pipeline startup parameters
      */
-    void execute(StartupParameters startupParameters) throws PackagerException {
+    void execute(StartupParameters startupParameters) {
         execute(contextMapper.apply(createTaskContext((PackagingTaskContext)startupParameters)));
     }
 
@@ -132,7 +131,7 @@ final class PackagingPipeline {
     }
 
     interface TaskContext extends Predicate<TaskID> {
-        void execute(TaskAction taskAction) throws IOException, PackagerException;
+        void execute(TaskAction taskAction) throws IOException;
     }
 
     record AppImageBuildEnv<T extends Application, U extends AppImageLayout>(BuildEnv env, T app) {
@@ -161,27 +160,27 @@ final class PackagingPipeline {
 
     @FunctionalInterface
     interface ApplicationImageTaskAction<T extends Application, U extends ApplicationLayout> extends TaskAction {
-        void execute(AppImageBuildEnv<T, U> env) throws IOException, PackagerException;
+        void execute(AppImageBuildEnv<T, U> env) throws IOException;
     }
 
     @FunctionalInterface
     interface AppImageTaskAction<T extends Application, U extends AppImageLayout> extends TaskAction {
-        void execute(AppImageBuildEnv<T, U> env) throws IOException, PackagerException;
+        void execute(AppImageBuildEnv<T, U> env) throws IOException;
     }
 
     @FunctionalInterface
     interface CopyAppImageTaskAction<T extends Package> extends TaskAction {
-        void execute(T pkg, AppImageLayout srcAppImage, AppImageLayout dstAppImage) throws IOException, PackagerException;
+        void execute(T pkg, AppImageLayout srcAppImage, AppImageLayout dstAppImage) throws IOException;
     }
 
     @FunctionalInterface
     interface PackageTaskAction<T extends Package, U extends AppImageLayout> extends TaskAction {
-        void execute(PackageBuildEnv<T, U> env) throws IOException, PackagerException;
+        void execute(PackageBuildEnv<T, U> env) throws IOException;
     }
 
     @FunctionalInterface
     interface NoArgTaskAction extends TaskAction {
-        void execute() throws IOException, PackagerException;
+        void execute() throws IOException;
     }
 
     record TaskConfig(Optional<TaskAction> action) {
@@ -493,7 +492,7 @@ final class PackagingPipeline {
         return new PackagingTaskContext(BuildEnv.withAppImageLayout(env, dstLayout), pkg, outputDir, srcLayout);
     }
 
-    private void execute(TaskContext context) throws PackagerException {
+    private void execute(TaskContext context) {
         final Map<TaskID, Callable<Void>> tasks = taskConfig.entrySet().stream().collect(toMap(Map.Entry::getKey, task -> {
             return createTask(context, task.getKey(), task.getValue());
         }));
@@ -508,14 +507,8 @@ final class PackagingPipeline {
 
         try {
             builder.create().call();
-        } catch (ExceptionBox ex) {
-            throw new PackagerException(ex.getCause());
-        } catch (RuntimeException ex) {
-            throw ex;
-        } catch (PackagerException ex) {
-            throw ex;
         } catch (Exception ex) {
-            throw new PackagerException(ex);
+            throw ExceptionBox.rethrowUnchecked(ex);
         }
     }
 
@@ -546,7 +539,7 @@ final class PackagingPipeline {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             if (taskAction instanceof PackageTaskAction<?, ?>) {
                 ((PackageTaskAction<Package, AppImageLayout>)taskAction).execute(pkgBuildEnv());
             } else if (taskAction instanceof CopyAppImageTaskAction<?>) {
@@ -600,7 +593,7 @@ final class PackagingPipeline {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void execute(TaskAction taskAction) throws IOException, PackagerException {
+        public void execute(TaskAction taskAction) throws IOException {
             if (taskAction instanceof AppImageTaskAction<?, ?>) {
                 final var taskEnv = pkg.map(PackagingTaskContext::appImageBuildEnv).orElseGet(this::appBuildEnv);
                 ((AppImageTaskAction<Application, AppImageLayout>)taskAction).execute(taskEnv);

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NotLinkException;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -97,6 +98,19 @@ public final class FileUtils {
 
         for (var copyAction : copyActions) {
             copyAction.apply(options);
+        }
+    }
+
+    public static Path readSymlinkTargetRecursive(Path symlink) throws IOException, NotLinkException {
+        try {
+            var target = Files.readSymbolicLink(symlink);
+            if (Files.isSymbolicLink(target)) {
+                return readSymlinkTargetRecursive(target);
+            } else {
+                return target;
+            }
+        } catch (NotLinkException ex) {
+            throw ex;
         }
     }
 

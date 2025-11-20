@@ -793,7 +793,7 @@ public final class MacHelper {
                 PropertyFinder.cmdlineOptionWithValue("--mac-package-identifier").or(
                         PropertyFinder.cmdlineOptionWithValue("--main-class").map(getPackageIdFromClassName)
                 ),
-                PropertyFinder.appImageFile(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
+                PropertyFinder.appImageFileOptional(AppImageFile::mainLauncherClassName).map(getPackageIdFromClassName)
         ).orElseGet(cmd::name);
     }
 
