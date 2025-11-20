@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "memory/padded.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
