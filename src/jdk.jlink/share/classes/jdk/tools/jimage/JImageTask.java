@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
 
 import jdk.internal.jimage.BasicImageReader;
+import jdk.internal.jimage.BasicImageReader.ImageError.Reason;
 import jdk.internal.jimage.ImageHeader;
 import jdk.internal.jimage.ImageLocation;
 import jdk.tools.jlink.internal.ImageResourcesTree;
@@ -435,6 +437,22 @@ class JImageTask {
                     }
                 }
             } catch (IOException ioe) {
+                // Handle specific errors for which better advice can be given.
+                if (ioe instanceof BasicImageReader.ImageError err) {
+                    if (err.getReason() == Reason.BAD_VERSION) {
+                        Path p = file.toPath();
+                        if (p.endsWith(Path.of("lib", "modules"))) {
+                            // Looks like jimage tool is in the standard JDK directory.
+                            p = p.subpath(0, p.getNameCount() - 2).resolve("bin", "jimage");
+                            if (Files.isRegularFile(p)) {
+                                // Suggest what we hope is the correct tool path.
+                                throw TASK_HELPER.newBadArgs("err.bad.version.suggest", file, p);
+                            }
+                        }
+                        throw TASK_HELPER.newBadArgs("err.bad.version", file);
+                    }
+                }
+                // Non-specific error during processing.
                 throw TASK_HELPER.newBadArgs("err.invalid.jimage", file, ioe.getMessage());
             }
         }

@@ -24,9 +24,7 @@
  */
 package jdk.internal.jimage;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -40,6 +38,10 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import jdk.internal.jimage.decompressor.Decompressor;
+
+import static jdk.internal.jimage.BasicImageReader.ImageError.Reason.BAD_VERSION;
+import static jdk.internal.jimage.BasicImageReader.ImageError.Reason.CORRUPT_JIMAGE;
+import static jdk.internal.jimage.BasicImageReader.ImageError.Reason.INVALID_JIMAGE;
 
 /**
  * @implNote This class needs to maintain JDK 8 source compatibility.
@@ -144,10 +146,10 @@ public class BasicImageReader implements AutoCloseable {
             if (channel.read(headerBuffer, 0L) == headerSize) {
                 headerBuffer.rewind();
             } else {
-                throw new IOException("\"" + name + "\" is not an image file");
+                throw new ImageError(INVALID_JIMAGE, "\"" + name + "\" is not an image file");
             }
         } else if (headerBuffer.capacity() < headerSize) {
-            throw new IOException("\"" + name + "\" is not an image file");
+            throw new ImageError(INVALID_JIMAGE, "\"" + name + "\" is not an image file");
         }
 
         // Interpret the image file header
@@ -164,7 +166,7 @@ public class BasicImageReader implements AutoCloseable {
 
         // Interpret the image index
         if (memoryMap.capacity() < indexSize) {
-            throw new IOException("The image file \"" + name + "\" is corrupted");
+            throw new ImageError(CORRUPT_JIMAGE, "The image file \"" + name + "\" is corrupted");
         }
         redirect = intBuffer(memoryMap, header.getRedirectOffset(), header.getRedirectSize());
         offsets = intBuffer(memoryMap, header.getOffsetsOffset(), header.getOffsetsSize());
@@ -191,14 +193,14 @@ public class BasicImageReader implements AutoCloseable {
         ImageHeader result = ImageHeader.readFrom(buffer);
 
         if (result.getMagic() != ImageHeader.MAGIC) {
-            throw new IOException("\"" + name + "\" is not an image file");
+            throw new ImageError(INVALID_JIMAGE, "\"" + name + "\" is not an image file");
         }
 
         if (result.getMajorVersion() != ImageHeader.MAJOR_VERSION ||
-            result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
-            throw new IOException("The image file \"" + name + "\" is not " +
-                "the correct version. Major: " + result.getMajorVersion() +
-                ". Minor: " + result.getMinorVersion());
+                result.getMinorVersion() != ImageHeader.MINOR_VERSION) {
+            throw new ImageError(BAD_VERSION, "The image file \"" + name + "\" is not " +
+                    "the correct version. Major: " + result.getMajorVersion() +
+                    ". Minor: " + result.getMinorVersion());
         }
 
         return result;
@@ -457,10 +459,31 @@ public class BasicImageReader implements AutoCloseable {
         return null;
     }
 
-    public InputStream getResourceStream(ImageLocation loc) {
-        Objects.requireNonNull(loc);
-        byte[] bytes = getResource(loc);
+    /**
+     * Specialized {@link IOException} thrown during construction which provides
+     * a semantic reason for failure.
+     */
+    public final static class ImageError extends IOException {
+        private static final long serialVersionUID = 6002259582237888214L;
 
-        return new ByteArrayInputStream(bytes);
+        public enum Reason {
+            /** The file being opened does not appear to be a jimage file. */
+            INVALID_JIMAGE,
+            /** The jimage file being opened is corrupted. */
+            CORRUPT_JIMAGE,
+            /** The jimage file being opened has the wrong version. */
+            BAD_VERSION,
+        }
+
+        private final Reason reason;
+
+        public ImageError(Reason reason, String message) {
+            super(message);
+            this.reason = reason;
+        }
+
+        public Reason getReason() {
+            return reason;
+        }
     }
 }
