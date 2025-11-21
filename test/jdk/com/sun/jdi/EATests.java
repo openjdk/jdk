@@ -3065,7 +3065,7 @@ class EAForceEarlyReturnNotInlined extends EATestCaseBaseDebugger {
         // frame[3]: EATestCaseBaseTarget.run()
         // frame[4]: EATestsTarget.main(java.lang.String[])
 
-        env.stepOverLine(thread); // needed to keep target thread interp-only, so dontinline_brkpt_iret is not inligned
+        env.stepOverLine(thread); // needed to keep target thread interp-only, so dontinline_brkpt_iret is not inlined
 
         msg("Step out");
         env.stepOut(thread);                               // return from dontinline_brkpt
