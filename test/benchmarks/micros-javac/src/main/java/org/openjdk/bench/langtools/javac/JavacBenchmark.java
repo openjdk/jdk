@@ -94,7 +94,7 @@ public class JavacBenchmark {
             try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(JavacBenchmark.class.getResourceAsStream("/src.zip")))) {
                 for (ZipEntry entry; (entry = zis.getNextEntry()) != null;) {
                     final String ename = entry.getName();
-                    if (!ename.startsWith("java.desktop") && !ename.startsWith("jdk.internal.vm.compiler") && !ename.startsWith("jdk.aot") && !ename.startsWith("jdk.accessibility")) {
+                    if (!ename.startsWith("java.desktop") && !ename.startsWith("jdk.internal.vm.compiler") && !ename.startsWith("jdk.aot") && !ename.startsWith("jdk.accessibility") && !ename.startsWith("jdk.jsobject")) {
                         if (!entry.isDirectory() && ename.endsWith(".java")) {
                             Path dst = root.resolve(ename);
                             Files.createDirectories(dst.getParent());
