@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @summary Verifies that the HTTP/3 malformed responses are correctly handled
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @run junit H3MalformedResponseTest
+ * @run junit ${test.main.class}
  */
 
 /// Verifies that the HTTP/3 malformed responses are correctly handled.
@@ -186,8 +186,8 @@ class H3MalformedResponseTest {
     }
 
     /// Malformed responses that should not be accepted by the client, but
-    /// should neither cause the connection get closed.
-    static Object[][] malformedResponsesInvalidatingConnection() {
+    /// should neither cause the connection to get closed.
+    static Object[][] malformedResponsesPreservingConnection() {
         return new Object[][]{
                 {"empty", IOException.class, parseHex("")},
                 {"non-final response", IOException.class, parseHex(
@@ -418,25 +418,25 @@ class H3MalformedResponseTest {
     @ParameterizedTest
     @MethodSource("wellFormedResponses")
     void testWellFormedResponse(String desc, byte[] serverResponseBytes) throws Exception {
-        var terminated = configureServerResponse(serverResponseBytes);
+        var connectionTerminated = configureServerResponse(serverResponseBytes);
         try (var client = createClient()) {
             final HttpResponse<Void> response = client.send(REQUEST, BodyHandlers.discarding());
             assertEquals(200, response.statusCode());
-            assertFalse(terminated.getAsBoolean(), "Expected the connection to be open");
+            assertFalse(connectionTerminated.getAsBoolean(), "Expected the connection to be open");
         }
     }
 
     @ParameterizedTest
-    @MethodSource("malformedResponsesInvalidatingConnection")
-    void testMalformedResponseInvalidatingConnection(
+    @MethodSource("malformedResponsesPreservingConnection")
+    void testMalformedResponsePreservingConnection(
             String desc,
             Class<? extends Exception> exceptionClass,
             byte[] serverResponseBytes) {
-        var terminated = configureServerResponse(serverResponseBytes);
+        var connectionTerminated = configureServerResponse(serverResponseBytes);
         try (var client = createClient()) {
             var exception = assertThrows(exceptionClass, () -> client.send(REQUEST, BodyHandlers.discarding()));
             LOGGER.log("Got expected exception for: " + desc, exception);
-            assertFalse(terminated.getAsBoolean(), "Expected the connection to be open");
+            assertFalse(connectionTerminated.getAsBoolean(), "Expected the connection to be open");
         }
     }
 
@@ -462,17 +462,17 @@ class H3MalformedResponseTest {
     }
 
     private static BooleanSupplier configureServerResponse(byte[] serverResponseBytes) {
-        var terminated = new AtomicBoolean();
+        var connectionTerminated = new AtomicBoolean();
         SERVER.addHandler((c, s)-> {
             try (OutputStream outputStream = s.outputStream()) {
                 outputStream.write(serverResponseBytes);
             }
             c.futureTerminationCause().handle((_, _) -> {
-                terminated.set(true);
+                connectionTerminated.set(true);
                 return true;
             });
         });
-        return terminated::get;
+        return connectionTerminated::get;
     }
 
 }
