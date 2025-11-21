@@ -528,7 +528,7 @@ private:
   // if this is the first allocation in the region.
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
-  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, bool delay_total_recomputation = false);
+  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, bool defer_accounting_recomputation = false);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
   // region is entirely empty.
@@ -537,10 +537,10 @@ private:
   // hold evacuated objects.  If this occurs and memory is still available in the Mutator's free set, we will flip a region from
   // the Mutator free set into the Collector or OldCollector free set. The conditions to move this region are checked by
   // the caller, so the given region is always moved.
-  void flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation = false);
+  void flip_to_gc(ShenandoahHeapRegion* r, bool defer_accounting_recomputation = false);
 
   // Return true if and only if the given region is successfully flipped to the old partition
-  bool flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation = false);
+  bool flip_to_old_gc(ShenandoahHeapRegion* r, bool defer_accounting_recomputation = false);
 
   // Update allocation bias and decided whether to allocate from the left or right side of the heap.
   void update_allocation_bias();

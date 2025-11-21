@@ -200,15 +200,15 @@ void ShenandoahFreeSet::account_for_pip_regions(size_t mutator_regions, size_t m
   _partitions.transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId::Collector, ShenandoahFreeSetPartitionId::Mutator,
                                              collector_regions);
 
+  recompute_total_young_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ true>();
+  recompute_total_global_used</* UsedByMutatorChanged */ true, /* UsedByCollectorChanged */ true,
+                              /* UsedByOldCollectorChanged */ false>();
   // Conservatively, act as if we've promoted from both Mutator and Collector partitions
   recompute_total_affiliated</* MutatorEmptiesChanged */ false, /* CollectorEmptiesChanged */ false,
                              /* OldCollectorEmptiesChanged */ false, /* MutatorSizeChanged */ true,
                              /* CollectorSizeChanged */ true, /* OldCollectorSizeChanged */ false,
                              /* AffiliatedChangesAreYoungNeutral */ true, /* AffiliatedChangesAreGlobalNeutral */ true,
                              /* UnaffiliatedChangesAreYoungNeutral */ false>();
-  recompute_total_young_used</* UsedByMutatorChanged */ true, /*UsedByCollectorChanged */ true>();
-  recompute_total_global_used</* UsedByMutatorChanged */ true, /* UsedByCollectorChanged */ true,
-                              /* UsedByOldCollectorChanged */ false>();
 }
 
 ShenandoahFreeSetPartitionId ShenandoahFreeSet::prepare_to_promote_in_place(size_t idx, size_t bytes) {
@@ -1888,7 +1888,7 @@ void ShenandoahFreeSet::recycle_trash() {
   heap->parallel_heap_region_iterate(&closure);
 }
 
-bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, bool delay_total_recomputation) {
+bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity, const bool defer_accounting_recomputation) {
   ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
   ShenandoahYoungGeneration* young_gen = gen_heap->young_generation();
   ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
@@ -1898,7 +1898,7 @@ bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t
     _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                  ShenandoahFreeSetPartitionId::OldCollector, alloc_capacity);
     gen_heap->old_generation()->augment_evacuation_reserve(alloc_capacity);
-    if (delay_total_recomputation) {
+    if (!defer_accounting_recomputation) {
       recompute_total_used</* UsedByMutatorChanged */ true,
                            /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
       // Transferred region is unaffilliated, empty
@@ -1915,7 +1915,7 @@ bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t
   }
 }
 
-bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation) {
+bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r, const bool defer_accounting_recomputation) {
   const size_t idx = r->index();
 
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
@@ -1924,7 +1924,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total
   ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
   const size_t region_alloc_capacity = alloc_capacity(r);
 
-  if (transfer_one_region_from_mutator_to_old_collector(idx, region_alloc_capacity, delay_total_recomputation)) {
+  if (transfer_one_region_from_mutator_to_old_collector(idx, region_alloc_capacity, defer_accounting_recomputation)) {
     return true;
   }
 
@@ -1955,7 +1955,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total
       _partitions.move_from_partition_to_partition(idx,
                                                    ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::OldCollector, region_alloc_capacity);
-      if (delay_total_recomputation) {
+      if (!defer_accounting_recomputation) {
         // Should have no effect on used, since flipped regions are trashed: zero used */
         // Transferred regions are not affiliated, because they are empty (trash)
         recompute_total_affiliated</* MutatorEmptiesChanged */ true, /* CollectorEmptiesChanged */ false,
@@ -1978,7 +1978,7 @@ bool ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r, bool delay_total
   return false;
 }
 
-void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_recomputation) {
+void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r, const bool defer_accounting_recomputation) {
   size_t idx = r->index();
 
   assert(_partitions.partition_id_matches(idx, ShenandoahFreeSetPartitionId::Mutator), "Should be in mutator view");
@@ -1987,7 +1987,7 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r, bool delay_total_rec
   size_t ac = alloc_capacity(r);
   _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                ShenandoahFreeSetPartitionId::Collector, ac);
-  if (!delay_total_recomputation) {
+  if (!defer_accounting_recomputation) {
     recompute_total_used</* UsedByMutatorChanged */ true,
                          /* UsedByCollectorChanged */ false, /* UsedByOldCollectorChanged */ true>();
     // Transfer only affects unaffiliated regions, which stay in young
@@ -2138,7 +2138,8 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_trashed_r
           old_collector_regions++;
           total_old_collector_regions++;
           old_collector_used += region_size_bytes - ac;
-        }      } else {
+        }
+      } else {
         // This region does not have enough free to be part of the free set.  Count all of its memory as used.
         assert(_partitions.membership(idx) == ShenandoahFreeSetPartitionId::NotFree, "Region should have been retired");
         if (region->is_old()) {
@@ -2833,7 +2834,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         young_used_regions++;
         young_used_bytes += region_size_bytes - ac;
       }
-    } else if (!r->is_active_alloc_region()) {
+    } else {
       // Region is not in Mutator partition. Do the accounting.
       ShenandoahFreeSetPartitionId p = _partitions.membership(idx);
       size_t ac = alloc_capacity(r);
