@@ -62,15 +62,12 @@ public class AppImagePackageTest {
     @Test
     public static void test() {
 
-        var appImageCmd = JPackageCommand.helloAppImage()
-                .setArgumentValue("--dest", TKit.createTempDirectory("appimage"));
+        final var appImageCmd = createAppImageCommand();
 
         new PackageTest()
         .addRunOnceInitializer(appImageCmd::execute)
-        .addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageCmd.outputBundle());
-            cmd.removeArgumentWithValue("--input");
-        }).addBundleDesktopIntegrationVerifier(false).run();
+        .usePredefinedAppImage(appImageCmd)
+        .addBundleDesktopIntegrationVerifier(false).run();
     }
 
     /**
@@ -85,10 +82,7 @@ public class AppImagePackageTest {
     @Parameter("false")
     public static void testEmpty(boolean withIcon) throws IOException {
 
-        var appImageCmd = JPackageCommand.helloAppImage()
-                .setFakeRuntime()
-                .setArgumentValue("--name", "EmptyAppImagePackageTest")
-                .setArgumentValue("--dest", TKit.createTempDirectory("appimage"));
+        final var appImageCmd = createAppImageCommand();
 
         new PackageTest()
         .addRunOnceInitializer(appImageCmd::execute)
@@ -116,18 +110,18 @@ public class AppImagePackageTest {
                 TKit.trace("Done");
             }
         })
+        .usePredefinedAppImage(appImageCmd)
         .addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageCmd.outputBundle());
             if (withIcon) {
-                cmd.addArguments("--icon", iconPath("icon"));
+                cmd.setArgumentValue("--icon", iconPath("icon"));
             }
-            cmd.removeArgumentWithValue("--input");
 
             cmd.excludeStandardAsserts(
                     StandardAssert.MAIN_JAR_FILE,
                     StandardAssert.MAIN_LAUNCHER_FILES,
                     StandardAssert.MAC_BUNDLE_STRUCTURE,
-                    StandardAssert.RUNTIME_DIRECTORY);
+                    StandardAssert.RUNTIME_DIRECTORY,
+                    StandardAssert.MAC_RUNTIME_PLIST_JDK_KEY);
         })
         .run(Action.CREATE_AND_UNPACK);
     }
@@ -160,10 +154,8 @@ public class AppImagePackageTest {
      */
     @Test
     public static void testBadAppImage3() {
-        Path appImageDir = TKit.createTempDirectory("appimage");
 
-        JPackageCommand appImageCmd = JPackageCommand.helloAppImage().
-                setFakeRuntime().setArgumentValue("--dest", appImageDir);
+        final var appImageCmd = createAppImageCommand();
 
         configureBadAppImage(appImageCmd.outputBundle()).addRunOnceInitializer(() -> {
             appImageCmd.execute();
@@ -176,15 +168,13 @@ public class AppImagePackageTest {
      */
     @Test
     public static void testBadAppImageFile() {
-        final var appImageRoot = TKit.createTempDirectory("appimage");
 
-        final var appImageCmd = JPackageCommand.helloAppImage().
-                setFakeRuntime().setArgumentValue("--dest", appImageRoot);
+        final var appImageCmd = createAppImageCommand();
 
         final var appImageDir = appImageCmd.outputBundle();
 
         final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-app-image", appImageDir, AppImageFile.getPathInAppImage(appImageDir));
+                "error.invalid-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir);
 
         configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
             appImageCmd.execute();
@@ -196,17 +186,21 @@ public class AppImagePackageTest {
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
-        return configureBadAppImage(appImageDir,
-                JPackageStringBundle.MAIN.cannedFormattedString("error.foreign-app-image", appImageDir));
+        return configureBadAppImage(appImageDir, JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.missing-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir));
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir, CannedFormattedString expectedError) {
         return new PackageTest().addInitializer(cmd -> {
-            cmd.addArguments("--app-image", appImageDir);
-            cmd.removeArgumentWithValue("--input");
+            cmd.usePredefinedAppImage(appImageDir);
             cmd.ignoreDefaultVerbose(true); // no "--verbose" option
             cmd.validateOutput(expectedError);
         }).setExpectedExitCode(1);
+    }
+
+    private static JPackageCommand createAppImageCommand() {
+        final var appImageRoot = TKit.createTempDirectory("appimage");
+        return JPackageCommand.helloAppImage().setFakeRuntime().setArgumentValue("--dest", appImageRoot);
     }
 
     private static Path iconPath(String name) {
