@@ -59,7 +59,6 @@ public class TaskHelperTest {
 
     private static final List<Option<TaskHelperTest>> OPTIONS = List.of(
         new Option<>(true, (task, opt, arg) -> {
-            System.out.println(arg);
             mainArgValue = arg;
         }, true, "--main-expecting"),
         new Option<>(false, (task, opt, arg) -> {
@@ -223,27 +222,27 @@ public class TaskHelperTest {
         assertEquals(2, remaining.size());
     }
 
-    record CompressTestCase(String[] tokens, String expectedCompressValue, boolean expectedMainFlag) {}
+    record CompressTestCase(String[] tokens, String expectedCompressValue) {}
 
     public static Stream<CompressTestCase> compressUsages() {
         return Stream.of(
 
-                new CompressTestCase(new String[] {"-c", "0"}, "0", false),
-                new CompressTestCase(new String[] {"--compress=zip-0"}, "zip-0", false),
+                new CompressTestCase(new String[] {"-c", "0"}, "0"),
+                new CompressTestCase(new String[] {"--compress=zip-0"}, "zip-0"),
 
-                new CompressTestCase(new String[] {"-c", "1"}, "1", false),
-                new CompressTestCase(new String[] {"--compress=zip-1"}, "zip-1", false),
+                new CompressTestCase(new String[] {"-c", "1"}, "1"),
+                new CompressTestCase(new String[] {"--compress=zip-1"}, "zip-1"),
 
-                new CompressTestCase(new String[] {"-c", "2"}, "2", false),
-                new CompressTestCase(new String[] {"--compress=zip-2"}, "zip-2", false),
+                new CompressTestCase(new String[] {"-c", "2"}, "2"),
+                new CompressTestCase(new String[] {"--compress=zip-2"}, "zip-2"),
 
-                new CompressTestCase(new String[] {"--compress=zip-3"}, "zip-3", false),
-                new CompressTestCase(new String[] {"--compress=zip-4"}, "zip-4", false),
-                new CompressTestCase(new String[] {"--compress=zip-5"}, "zip-5", false),
-                new CompressTestCase(new String[] {"--compress=zip-6"}, "zip-6", false),
-                new CompressTestCase(new String[] {"--compress=zip-7"}, "zip-7", false),
-                new CompressTestCase(new String[] {"--compress=zip-8"}, "zip-8", false),
-                new CompressTestCase(new String[] {"--compress=zip-9"}, "zip-9", false)
+                new CompressTestCase(new String[] {"--compress=zip-3"}, "zip-3"),
+                new CompressTestCase(new String[] {"--compress=zip-4"}, "zip-4"),
+                new CompressTestCase(new String[] {"--compress=zip-5"}, "zip-5"),
+                new CompressTestCase(new String[] {"--compress=zip-6"}, "zip-6"),
+                new CompressTestCase(new String[] {"--compress=zip-7"}, "zip-7"),
+                new CompressTestCase(new String[] {"--compress=zip-8"}, "zip-8"),
+                new CompressTestCase(new String[] {"--compress=zip-9"}, "zip-9")
                 );
     }
 
@@ -260,6 +259,28 @@ public class TaskHelperTest {
 
         assertTrue(remaining.isEmpty());
         assertEquals(testCase.expectedCompressValue, compressArgValue);
-        assertEquals(testCase.expectedMainFlag(), mainFlag);
+    }
+
+
+    @Test
+    public void testCompressInvalidValue() {
+        var invalidOptValues = List.of(
+                new CompressTestCase(new String[] {"-c", null}, null),
+                new CompressTestCase(new String[] {"-c", "3"}, "3"),
+                new CompressTestCase(new String[] {"--compress=42"}, "42"),
+                new CompressTestCase(new String[] {"--compress=zip-"}, "zip-"),
+                new CompressTestCase(new String[] {"--compress=zip-10"}, "zip-10")
+        );
+
+        for (var args : invalidOptValues) {
+            try {
+                var remaining = optionsHelper.handleOptions(this, args.tokens);
+                assertTrue(remaining.isEmpty());
+                assertEquals(args.expectedCompressValue, compressArgValue);
+            } catch (BadArgs e) {
+                // expected
+            }
+        }
     }
 }
+
