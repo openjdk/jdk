@@ -33,14 +33,14 @@
 // We use this critical section only for low-contention code, and
 // when it is know that the duration is short. To be used where
 // we're concerned about native mutex_t or HotSpot Mutex:: latency.
+// The class uses low-level leaf-lock primitives to implement
+// synchronization. Not for general synchronization use.
 class SpinCriticalSection {
 private:
   // We use int type as 32-bit atomic operation is the most performant
   // compared to  smaller/larger types.
   volatile int* const _lock;
 
-  // Low-level leaf-lock primitives used to implement synchronization.
-  // Not for general synchronization use.
   static void spin_acquire(volatile int* Lock);
   static void spin_release(volatile int* Lock);
 public:
