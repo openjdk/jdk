@@ -213,7 +213,7 @@ public:
     return (_alloc_type & bit_old_alloc) == 0 ? YOUNG_GENERATION : OLD_GENERATION ;
   }
 
-  inline const char* affiliation_name() const {
+  const char* affiliation_name() const {
     return shenandoah_affiliation_name(affiliation());
   }
 
