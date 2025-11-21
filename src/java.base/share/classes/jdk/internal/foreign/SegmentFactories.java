@@ -212,7 +212,7 @@ public class SegmentFactories {
             allocationBase = allocateMemoryWrapper(allocationSize);
             result = Utils.alignUp(allocationBase, byteAlignment);
         } else {
-            // always allocate at least 'byteAlignment' bytes, so that malloc is guaranteed to 
+            // always allocate at least 'byteAlignment' bytes, so that malloc is guaranteed to
             // return a pointer aligned to that alignment, for cases where byteAlignment > alignedSize
             allocationSize = Math.max(alignedSize, byteAlignment);
             if (shouldReserve) {
