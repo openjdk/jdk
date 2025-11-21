@@ -31,8 +31,6 @@
 // that track a collector
 
 class CollectorCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
   private:
     PerfCounter*      _invocations;
     PerfCounter*      _time;

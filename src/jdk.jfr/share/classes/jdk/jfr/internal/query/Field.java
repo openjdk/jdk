@@ -33,6 +33,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.query.Configuration.Truncate;
 import jdk.jfr.internal.query.Query.Grouper;
 import jdk.jfr.internal.query.Query.OrderElement;
+import jdk.jfr.internal.query.Function.FunctionFactory;
 
 /**
  * Field is the core class of the package.
@@ -136,6 +137,8 @@ final class Field {
     public String missingText = "N/A";
 
     public int precision = -1;
+
+    public FunctionFactory functionFactory;
 
     public Field(FilteredType type, String name) {
         this.type = type;

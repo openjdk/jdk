@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,11 +81,11 @@ private:
   DEBUG_ONLY(uint calculate_length() const;)
 
 public:
-  const Segment* first_segment() const { return Atomic::load(&_first); }
+  const Segment* first_segment() const { return AtomicAccess::load(&_first); }
 
-  uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
+  uint num_total_slots() const { return AtomicAccess::load(&_num_total_slots); }
   uint num_allocated_slots() const {
-    uint allocated = Atomic::load(&_num_allocated_slots);
+    uint allocated = AtomicAccess::load(&_num_allocated_slots);
     assert(calculate_length() == allocated, "Must be");
     return allocated;
   }
@@ -110,9 +110,10 @@ protected:
   void deallocate(void* slot) override { ShouldNotReachHere(); }
 };
 
+static constexpr uint SegmentPayloadMaxAlignment = 8;
 // A single segment/arena containing _num_slots blocks of memory of _slot_size.
 // Segments can be linked together using a singly linked list.
-class G1MonotonicArena::Segment {
+class alignas(SegmentPayloadMaxAlignment) G1MonotonicArena::Segment {
   const uint _slot_size;
   const uint _num_slots;
   Segment* volatile _next;
@@ -122,15 +123,14 @@ class G1MonotonicArena::Segment {
   uint volatile _next_allocate;
   const MemTag _mem_tag;
 
-  char* _bottom;  // Actual data.
-  // Do not add class member variables beyond this point
-
-  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_PADDING_SIZE); }
+  static size_t header_size() { return align_up(sizeof(Segment), SegmentPayloadMaxAlignment); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
-    // The cast (size_t) is required to guard against overflow wrap around.
-    return (size_t)slot_size * num_slots;
+    // The cast is required to guard against overflow wrap around.
+    return static_cast<size_t>(slot_size) * num_slots;
   }
+
+  void* payload(size_t octet) { return &reinterpret_cast<char*>(this)[header_size() + octet]; }
 
   size_t payload_size() const { return payload_size(_slot_size, _num_slots); }
 
@@ -156,7 +156,7 @@ public:
     _next_allocate = 0;
     assert(next != this, " loop condition");
     set_next(next);
-    memset((void*)_bottom, 0, payload_size());
+    memset(payload(0), 0, payload_size());
   }
 
   uint slot_size() const { return _slot_size; }
@@ -176,14 +176,10 @@ public:
   static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag);
   static void delete_segment(Segment* segment);
 
-  // Copies the contents of this segment into the destination.
-  void copy_to(void* dest) const {
-    ::memcpy(dest, _bottom, length() * _slot_size);
-  }
-
   bool is_full() const { return _next_allocate >= _num_slots; }
 };
 
+static_assert(alignof(G1MonotonicArena::Segment) >= SegmentPayloadMaxAlignment, "assert alignment of Segment (and indirectly its payload)");
 
 // Set of (free) Segments. The assumed usage is that allocation
 // to it and removal of segments is strictly separate, but every action may be
@@ -214,8 +210,8 @@ public:
 
   void print_on(outputStream* out, const char* prefix = "");
 
-  size_t num_segments() const { return Atomic::load(&_num_segments); }
-  size_t mem_size() const { return Atomic::load(&_mem_size); }
+  size_t num_segments() const { return AtomicAccess::load(&_num_segments); }
+  size_t mem_size() const { return AtomicAccess::load(&_mem_size); }
 };
 
 // Configuration for G1MonotonicArena, e.g slot size, slot number of next Segment.
@@ -240,6 +236,7 @@ public:
     assert(_initial_num_slots > 0, "Must be");
     assert(_max_num_slots > 0, "Must be");
     assert(_slot_alignment > 0, "Must be");
+    assert(SegmentPayloadMaxAlignment % _slot_alignment == 0, "ensure that _slot_alignment is a divisor of SegmentPayloadMaxAlignment");
   }
 
   virtual uint next_num_slots(uint prev_num_slots) const {

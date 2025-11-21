@@ -61,7 +61,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -74,7 +74,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -85,7 +84,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -135,7 +134,7 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
 
   nmethod::DeoptimizationStatus status =
     inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
-  Atomic::store(&nm->_deoptimization_status, status);
+  AtomicAccess::store(&nm->_deoptimization_status, status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
@@ -589,12 +588,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Verify we have the right vframeArray
   assert(cb->frame_size() >= 0, "Unexpected frame size");
   intptr_t* unpack_sp = stub_frame.sp() + cb->frame_size();
-
-  // If the deopt call site is a MethodHandle invoke call site we have
-  // to adjust the unpack_sp.
-  nmethod* deoptee_nm = deoptee.cb()->as_nmethod_or_null();
-  if (deoptee_nm != nullptr && deoptee_nm->is_method_handle_return(deoptee.pc()))
-    unpack_sp = deoptee.unextended_sp();
+  assert(unpack_sp == deoptee.unextended_sp(), "must be");
 
 #ifdef ASSERT
   assert(cb->is_deoptimization_stub() ||
@@ -1119,7 +1113,7 @@ public:
   static BoxCache<PrimitiveType, CacheType, BoxType>* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BoxCache<PrimitiveType, CacheType, BoxType>* s = new BoxCache<PrimitiveType, CacheType, BoxType>(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1182,7 +1176,7 @@ public:
   static BooleanBoxCache* singleton(Thread* thread) {
     if (_singleton == nullptr) {
       BooleanBoxCache* s = new BooleanBoxCache(thread);
-      if (!Atomic::replace_if_null(&_singleton, s)) {
+      if (!AtomicAccess::replace_if_null(&_singleton, s)) {
         delete s;
       }
     }
@@ -1382,6 +1376,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 
     case T_INT: case T_FLOAT: { // 4 bytes.
       assert(value->type() == T_INT, "Agreement.");
+#if INCLUDE_JVMCI
+      // big_value allows encoding double/long value as e.g. [int = 0, long], and storing
+      // the value in two array elements.
       bool big_value = false;
       if (i + 1 < sv->field_size() && type == T_INT) {
         if (sv->field_at(i)->is_location()) {
@@ -1409,6 +1406,9 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       } else {
         obj->int_at_put(index, value->get_jint());
       }
+#else // not INCLUDE_JVMCI
+      obj->int_at_put(index, value->get_jint());
+#endif // INCLUDE_JVMCI
       break;
     }
 
@@ -1656,7 +1656,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
 #ifdef ASSERT
               else {
                 assert(!UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_metadata_deopt();
+                mon_info->lock()->set_bad_monitor_deopt();
               }
 #endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
@@ -1676,8 +1676,8 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         }
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                              deoptee_thread, thread);
+            ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                           deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
@@ -1809,10 +1809,11 @@ void Deoptimization::deoptimize(JavaThread* thread, frame fr, DeoptReason reason
   deoptimize_single_frame(thread, fr, reason);
 }
 
-#if INCLUDE_JVMCI
-address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
+address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm, bool make_not_entrant) {
   // there is no exception handler for this pc => deoptimize
-  nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  if (make_not_entrant) {
+    nm->make_not_entrant(nmethod::InvalidationReason::MISSING_EXCEPTION_HANDLER);
+  }
 
   // Use Deoptimization::deoptimize for all of its side-effects:
   // gathering traps statistics, logging...
@@ -1826,6 +1827,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
   frame runtime_frame = thread->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
   assert(caller_frame.cb()->as_nmethod_or_null() == nm, "expect top frame compiled method");
+
+  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
+
+  if (!nm->is_compiled_by_jvmci()) {
+    return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
+  }
+
+#if INCLUDE_JVMCI
+  // JVMCI support
   vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
   compiledVFrame* cvf = compiledVFrame::cast(vf);
   ScopeDesc* imm_scope = cvf->scope();
@@ -1841,16 +1851,15 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm) {
     }
   }
 
-  Deoptimization::deoptimize(thread, caller_frame, Deoptimization::Reason_not_compiled_exception_handler);
 
   MethodData* trap_mdo = get_method_data(thread, methodHandle(thread, nm->method()), true);
   if (trap_mdo != nullptr) {
     trap_mdo->inc_trap_count(Deoptimization::Reason_not_compiled_exception_handler);
   }
+#endif
 
   return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
 }
-#endif
 
 void Deoptimization::deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason) {
   assert(thread == Thread::current() ||
@@ -1971,7 +1980,7 @@ class DeoptActionSerializer : public JfrSerializer {
 
 static void register_serializers() {
   static int critical_section = 0;
-  if (1 == critical_section || Atomic::cmpxchg(&critical_section, 0, 1) == 1) {
+  if (1 == critical_section || AtomicAccess::cmpxchg(&critical_section, 0, 1) == 1) {
     return;
   }
   JfrSerializer::register_serializer(TYPE_DEOPTIMIZATIONREASON, true, new DeoptReasonSerializer());
@@ -2753,10 +2762,10 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "not_compiled_exception_handler",
   "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
   "transfer_to_interpreter",
-  "not_compiled_exception_handler",
   "unresolved",
   "jsr_mismatch",
 #endif

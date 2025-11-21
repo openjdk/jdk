@@ -276,9 +276,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   ORG_CFLAGS="$CFLAGS"
   ORG_CXXFLAGS="$CXXFLAGS"
 
-  # autoconf magic only relies on PATH, so update it if tools dir is specified
-  OLD_PATH="$PATH"
-
   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
     if test "x$XCODEBUILD" != x; then
       XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
@@ -300,9 +297,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
-  # Finally prepend TOOLCHAIN_PATH to the PATH, to allow --with-tools-dir to
-  # override all other locations.
-  if test "x$TOOLCHAIN_PATH" != x; then
+  # For the microsoft toolchain the toolchain path needs to be added to the
+  # normal path, or the compiler will not work in some situations in later
+  # configure checks.
+  if test "x$TOOLCHAIN_TYPE" = "xmicrosoft" && test "x$TOOLCHAIN_PATH" != x; then
     export PATH=$TOOLCHAIN_PATH:$PATH
   fi
 ])
@@ -310,13 +308,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 # Restore path, etc
 AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
-  # Restore old path, except for the microsoft toolchain, which requires the
-  # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some situations in later configure checks.
-  if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
-    PATH="$OLD_PATH"
-  fi
-
   # Restore the flags to the user specified values.
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"

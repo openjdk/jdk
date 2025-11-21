@@ -23,7 +23,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "jvmci/metadataHandles.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 jmetadata MetadataHandles::allocate_metadata_handle(Metadata* obj) {
   assert(obj->is_valid() && obj->is_metadata(), "must be");
@@ -154,7 +154,7 @@ void MetadataHandles::do_unloading() {
           // but can't be put on the free list yet. The
           // HandleCleaner will set this to null and
           // put it on the free list.
-          jlong old_value = Atomic::cmpxchg((jlong*)handle, (jlong) value, (jlong) (ptr_tag));
+          jlong old_value = AtomicAccess::cmpxchg((jlong*)handle, (jlong) value, (jlong) (ptr_tag));
           if (old_value == (jlong) value) {
             // Success
           } else {
