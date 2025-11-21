@@ -819,6 +819,17 @@ public:
     return _old_collector_allocator;
   }
 
+  inline void release_alloc_regions() {
+    mutator_allocator()->release_alloc_regions();
+    collector_allocator()->release_alloc_regions();
+  }
+
+  void release_alloc_regions_under_lock() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    release_alloc_regions();
+  }
+
   // Handle allocation for collector (for evacuation).
   HeapWord* allocate_for_collector(ShenandoahAllocRequest& req, bool& in_new_region);
 

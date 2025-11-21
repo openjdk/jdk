@@ -2516,6 +2516,9 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
   // Rebuild free set based on adjusted generation sizes.
   _free_set->finish_rebuild(young_cset_regions, old_cset_regions, old_region_count);
 
+    // Reserve alloc regions for mutator after finishing rebuild.
+  _free_set->mutator_allocator()->reserve_alloc_regions();
+
   if (mode()->is_generational()) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();

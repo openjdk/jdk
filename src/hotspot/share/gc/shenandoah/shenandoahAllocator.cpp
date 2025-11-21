@@ -229,10 +229,11 @@ inline HeapWord* ShenandoahAllocator::atomic_allocate_in(ShenandoahHeapRegion* r
 int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool* in_new_region, HeapWord** obj) {
   ResourceMark rm;
   shenandoah_assert_heaplocked();
-  bool satisfy_alloc_req_first = req != nullptr && *obj == nullptr;
-  size_t min_free_words =  satisfy_alloc_req_first && req->is_lab_alloc() ? req->min_size() : req->size();
+  bool satisfy_alloc_req_first = (req != nullptr && obj != nullptr && *obj == nullptr);
+  size_t min_req_size = 0;
   if (satisfy_alloc_req_first) {
     assert(in_new_region != nullptr && *in_new_region == false, "Sanity check");
+    min_req_size = req->is_lab_alloc() ? req->min_size() : req->size();
   }
 
   int refreshable_alloc_regions = 0;
@@ -273,7 +274,7 @@ int ShenandoahAllocator::refresh_alloc_regions(ShenandoahAllocRequest* req, bool
       for (int i = 0; i < reserved_regions; i++) {
         assert(reserved[i]->affiliation() == affiliation, "Affiliation of reserved region must match, invalid affiliation: %s", shenandoah_affiliation_name(reserved[i]->affiliation()));
         assert(_free_set->membership(reserved[i]->index()) == ShenandoahFreeSetPartitionId::NotFree, "Reserved heap region must have been retired from free set.");
-        if (satisfy_alloc_req_first && reserved[i]->free_words() >= min_free_words) {
+        if (satisfy_alloc_req_first && reserved[i]->free_words() >= min_req_size) {
           bool ready_for_retire = false;
           *obj = atomic_allocate_in(reserved[i], true, *req, *in_new_region, ready_for_retire);
           satisfy_alloc_req_first = *obj == nullptr;

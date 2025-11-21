@@ -217,11 +217,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->tlabs_retire(ResizeTLAB);
   }
 
-  {
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->mutator_allocator()->release_alloc_regions();
-    heap->free_set()->collector_allocator()->release_alloc_regions();
-  }
+  heap->free_set()->release_alloc_regions_under_lock();
 
   OrderAccess::fence();
 
@@ -1115,14 +1111,14 @@ void ShenandoahFullGC::phase5_epilog() {
 
   // Bring regions in proper states after the collection, and set heap properties.
   {
-    heap->free_set()->collector_allocator()->release_alloc_regions();
-
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->collection_set()->clear();
     size_t young_cset_regions, old_cset_regions;
     size_t first_old, last_old, num_old;
+
+    heap->free_set()->collector_allocator()->release_alloc_regions();
     heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
 
     // We also do not expand old generation size following Full GC because we have scrambled age populations and
@@ -1132,6 +1128,8 @@ void ShenandoahFullGC::phase5_epilog() {
     }
 
     heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+
+    heap->free_set()->mutator_allocator()->reserve_alloc_regions();
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();
