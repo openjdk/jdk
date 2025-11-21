@@ -9369,7 +9369,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
     }
 
     cmpq(count, 64 >> shift);
-    jcc(Assembler::greater, L_fill_96_bytes);
+    jccb(Assembler::greater, L_fill_96_bytes);
     fill32(to, 0, xtmp);
     addptr(to, 32);
     subq(count, 32 >> shift);
@@ -9377,7 +9377,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
     bind(L_fill_96_bytes);
     cmpq(count, 96 >> shift);
-    jcc(Assembler::greater, L_fill_128_bytes);
+    jccb(Assembler::greater, L_fill_128_bytes);
     fill64(to, 0, xtmp);
     addptr(to, 64);
     subq(count, 64 >> shift);
@@ -9385,7 +9385,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
     bind(L_fill_128_bytes);
     cmpq(count, 128 >> shift);
-    jcc(Assembler::greater, L_fill_128_bytes_loop_pre_header);
+    jccb(Assembler::greater, L_fill_128_bytes_loop_pre_header);
     fill64(to, 0, xtmp);
     fill32(to, 64, xtmp);
     addptr(to, 96);
@@ -9441,12 +9441,12 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
     bind(L_fill_start_zmm_sequence);
     cmpq(count, 64 >> shift);
-    jcc(Assembler::greater, L_fill_128_bytes_zmm);
+    jccb(Assembler::greater, L_fill_128_bytes_zmm);
     jmp(L_fill_64_tail);
 
     bind(L_fill_128_bytes_zmm);
     cmpq(count, 128 >> shift);
-    jcc(Assembler::greater, L_fill_192_bytes_zmm);
+    jccb(Assembler::greater, L_fill_192_bytes_zmm);
     fill64(to, 0, xtmp, true);
     addptr(to, 64);
     subq(count, 64 >> shift);
@@ -9454,7 +9454,7 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 
     bind(L_fill_192_bytes_zmm);
     cmpq(count, 192 >> shift);
-    jcc(Assembler::greater, L_fill_192_bytes_loop_pre_header_zmm);
+    jccb(Assembler::greater, L_fill_192_bytes_loop_pre_header_zmm);
     fill64(to, 0, xtmp, true);
     fill64(to, 64, xtmp, true);
     addptr(to, 128);
