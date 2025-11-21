@@ -30,11 +30,14 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Array;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 import static java.lang.foreign.ValueLayout.*;
 

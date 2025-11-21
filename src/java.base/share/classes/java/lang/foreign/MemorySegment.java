@@ -2656,8 +2656,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code dst.isAccessibleBy(T) == false}
      * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code numChars}, or {@code dstOffset}
      *         are {@code < 0}
-     * @throws IndexOutOfBoundsException if the {@code numChars + srcIndex} is larger than the length of
-     *         this {@code String} object.
+     * @throws IndexOutOfBoundsException if {@code srcIndex > src.length() - numChars}
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
      *         in bytes, of the string encoded using the given charset.
@@ -2667,6 +2666,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
         Objects.requireNonNull(src);
         Objects.requireNonNull(dstEncoding);
         Objects.requireNonNull(dst);
+        Objects.checkFromIndexSize(srcIndex, numChars, src.length());
 
         AbstractMemorySegmentImpl.copy(src, dstEncoding, srcIndex, dst, dstOffset, numChars);
     }

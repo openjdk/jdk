@@ -105,9 +105,7 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testStringsLength(String testString) {
-        Set<String> excluded = Set.of("yen");
-        // This test only works for strings that can round trip through the given charsets
-        if (!testString.isEmpty() && excluded.stream().noneMatch(testString::startsWith)) {
+        if (!testString.isEmpty()) {
             for (Charset charset : Charset.availableCharsets().values()) {
                 if (charset.canEncode()) {
                     for (Arena arena : arenas()) {
@@ -128,9 +126,7 @@ public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
     public void testStringsCopy(String testString) {
-        Set<String> excluded = Set.of("yen");
-        // This test only works for strings that can round trip through the given charsets
-        if (!testString.isEmpty() && excluded.stream().noneMatch(testString::startsWith)) {
+        if (!testString.isEmpty()) {
             for (Charset charset : Charset.availableCharsets().values()) {
                 if (charset.canEncode()) {
                     for (Arena arena : arenas()) {
@@ -161,8 +157,14 @@ public class TestStringEncoding {
     public void testCopyThrows() {
         try (Arena arena = Arena.ofConfined()) {
             String testString = "abc";
+            String testString_notBytesCompatible = "snowman \u26C4";
             MemorySegment text = arena.allocate(JAVA_BYTE, 3);
+            MemorySegment text_notBytesCompatible = arena.allocate(JAVA_BYTE,
+                    testString_notBytesCompatible.getBytes(StandardCharsets.UTF_8).length);
             MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 0, testString.length());
+            MemorySegment.copy(testString_notBytesCompatible, StandardCharsets.UTF_8, 0,
+                    text_notBytesCompatible, 0,
+                    testString_notBytesCompatible.length());
             // srcIndex < 0
             assertThrows(IndexOutOfBoundsException.class, () ->
                     MemorySegment.copy(testString, StandardCharsets.UTF_8, -1, text, 0, testString.length()));
@@ -177,9 +179,14 @@ public class TestStringEncoding {
                     MemorySegment.copy(testString, StandardCharsets.UTF_8, 1, text, 0, testString.length()));
             assertThrows(IndexOutOfBoundsException.class, () ->
                     MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 0, testString.length() + 1));
-            // dstOffset > byteSize() + B
+            // dstOffset > byteSize() - B
             assertThrows(IndexOutOfBoundsException.class, () ->
                     MemorySegment.copy(testString, StandardCharsets.UTF_8, 0, text, 1, testString.length()));
+            // srcIndex + numChars overflows
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString, StandardCharsets.UTF_8, Integer.MAX_VALUE, text, 0, Integer.MAX_VALUE + 3));
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    MemorySegment.copy(testString_notBytesCompatible, StandardCharsets.UTF_8, Integer.MAX_VALUE, text, 0, Integer.MAX_VALUE + 3));
         }
     }
 
@@ -187,6 +194,7 @@ public class TestStringEncoding {
     public void testAllocateFromThrows() {
         try (Arena arena = Arena.ofConfined()) {
             String testString = "abc";
+            String testString_notBytesCompatible = "snowman \u26C4";
             arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, testString.length());
             arena.allocateFrom(testString, StandardCharsets.UTF_8, 2, 1);
             // srcIndex < 0
@@ -200,6 +208,11 @@ public class TestStringEncoding {
                     arena.allocateFrom(testString, StandardCharsets.UTF_8, 0, testString.length() + 1));
             assertThrows(IndexOutOfBoundsException.class, () ->
                     arena.allocateFrom(testString, StandardCharsets.UTF_8, 1, testString.length()));
+            // srcIndex + numChars overflows
+            assertThrows(IndexOutOfBoundsException.class, () ->
+                    arena.allocateFrom(testString, StandardCharsets.UTF_8, 3, Integer.MAX_VALUE));
+            assertThrows(IndexOutOfBoundsException.class, () -> arena.allocateFrom(
+                    testString_notBytesCompatible, StandardCharsets.UTF_8, 3, Integer.MAX_VALUE));
         }
     }
 
@@ -591,7 +604,7 @@ public class TestStringEncoding {
                 {""},
                 {"X"},
                 {"12345"},
-                {"yen \u00A5"},
+                {"section \u00A7"},
                 {"snowman \u26C4"},
                 {"rainbow \uD83C\uDF08"},
                 {"0"},

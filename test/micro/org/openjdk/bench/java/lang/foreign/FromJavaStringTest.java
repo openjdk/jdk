@@ -74,7 +74,7 @@ public class FromJavaStringTest {
 
     @Benchmark
     public void panama_copy() {
-        MemorySegment.copy(str, UTF_8, 0, strSegment, str.length());
+        MemorySegment.copy(str, UTF_8, 0, strSegment, 0, str.length());
     }
 
     @Benchmark
