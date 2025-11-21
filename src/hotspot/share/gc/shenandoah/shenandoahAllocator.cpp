@@ -310,7 +310,7 @@ HeapWord* ShenandoahAllocator::allocate(ShenandoahAllocRequest &req, bool &in_ne
 void ShenandoahAllocator::release_alloc_regions() {
   assert_at_safepoint();
   shenandoah_assert_heaplocked();
-  log_debug(gc, alloc)("%sAllocator: Releasing all heap regions", _alloc_partition_name);
+  log_debug(gc, alloc)("%sAllocator: Releasing all alloc regions", _alloc_partition_name);
 
   ShenandoahHeapAccountingUpdater accounting_updater(_free_set, _alloc_partition_id);
   size_t total_free_bytes = 0;
@@ -330,6 +330,8 @@ void ShenandoahAllocator::release_alloc_regions() {
         total_free_bytes += free_bytes;
         total_regions_to_unretire++;
         if (!r->has_allocs()) {
+          log_debug(gc, alloc)("%sAllocator: Reverting heap region %li to FREE due to no alloc in the region",
+            _alloc_partition_name, r->index());
           r->make_empty();
           r->set_affiliation(FREE);
           _free_set->partitions()->increase_empty_region_counts(_alloc_partition_id, 1);
@@ -338,7 +340,7 @@ void ShenandoahAllocator::release_alloc_regions() {
         accounting_updater._need_update = true;
       }
     }
-    assert(AtomicAccess::load(&alloc_region._address) == nullptr, "Alloc region is set to nullptr after release.");
+    assert(AtomicAccess::load(&alloc_region._address) == nullptr, "Alloc region is set to nullptr after release");
   }
   _free_set->partitions()->decrease_used(_alloc_partition_id, total_free_bytes);
   _free_set->partitions()->increase_region_counts(_alloc_partition_id, total_regions_to_unretire);
