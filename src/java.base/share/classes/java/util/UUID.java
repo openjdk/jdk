@@ -32,7 +32,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
 
 /**
- * A class that represents an immutable universally unique identifier (UUID).
+ * A class that represents an immutable Universally Unique IDentifier (UUID).
  * A UUID represents a 128-bit value.
  *
  * <p> There exist different variants of these UUIDs.  The methods
