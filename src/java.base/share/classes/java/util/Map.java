@@ -1788,7 +1788,7 @@ public interface Map<K, V> {
      * one or more lazy elements.
      * <p>
      * The returned lazy map strongly references its underlying
-     * computing function used to compute values at least so long as there are
+     * computing function used to compute values at least as long as there are
      * uncomputed values.
      * <p>
      * The returned Map is <em>not</em> {@linkplain Serializable}.
