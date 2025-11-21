@@ -165,7 +165,7 @@ static void generate_queue_insertion(MacroAssembler* masm, ByteSize index_offset
   // (The index field is typed as size_t.)
   __ movptr(temp, Address(thread, in_bytes(index_offset)));   // temp := *(index address)
   __ testptr(temp, temp);                                     // index == 0?
-  __ jcc(Assembler::zero, runtime);                           // jump to runtime if index == 0 (full buffer)
+  __ jccb(Assembler::zero, runtime);                          // jump to runtime if index == 0 (full buffer)
   // The buffer is not full, store value into it.
   __ subptr(temp, wordSize);                                  // temp := next index
   __ movptr(Address(thread, in_bytes(index_offset)), temp);   // *(index address) := next index
@@ -190,21 +190,28 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
                                            const Register pre_val,
                                            const Register thread,
                                            const Register tmp,
-                                           Label& done,
-                                           Label& runtime) {
+                                           Label& done) {
+  Label L_null, L_runtime;
+
   // Do we need to load the previous value?
   if (obj != noreg) {
     __ load_heap_oop(pre_val, Address(obj, 0), noreg, AS_RAW);
   }
   // Is the previous value null?
   __ testptr(pre_val, pre_val);
-  __ jcc(Assembler::equal, done);
+  __ jccb(Assembler::equal, L_null);
   generate_queue_insertion(masm,
                            G1ThreadLocalData::satb_mark_queue_index_offset(),
                            G1ThreadLocalData::satb_mark_queue_buffer_offset(),
-                           runtime,
+                           L_runtime,
                            thread, pre_val, tmp);
+  __ bind(L_null);
+
+  // All done, jump out
   __ jmp(done);
+
+  // Fall through to runtime
+  __ bind(L_runtime);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
@@ -219,7 +226,6 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   const Register thread = r15_thread;
 
   Label done;
-  Label runtime;
 
   assert(pre_val != noreg, "check this code");
 
@@ -231,9 +237,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   generate_pre_barrier_fast_path(masm, thread);
   // If marking is not active (*(mark queue active address) == 0), jump to done
   __ jcc(Assembler::equal, done);
-  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, done, runtime);
-
-  __ bind(runtime);
+  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, done);
 
   // Determine and save the live input values
   __ push_call_clobbered_registers();
@@ -353,7 +357,6 @@ void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
 void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
                                                          G1PreBarrierStubC2* stub) const {
   Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
-  Label runtime;
   Register obj = stub->obj();
   Register pre_val = stub->pre_val();
   Register thread = stub->thread();
@@ -361,9 +364,8 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
   assert(stub->tmp2() == noreg, "not needed in this platform");
 
   __ bind(*stub->entry());
-  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, *stub->continuation(), runtime);
+  generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, *stub->continuation());
 
-  __ bind(runtime);
   generate_c2_barrier_runtime_call(masm, stub, pre_val, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry));
   __ jmp(*stub->continuation());
 }
