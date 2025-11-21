@@ -47,6 +47,9 @@ import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.QuicEndpoint.QuicVirtualThreadedEndpoint;
 import jdk.internal.net.http.quic.QuicEndpoint.QuicSelectableEndpoint;
+import jdk.internal.net.http.quic.QuicEndpoint.UseVTForSelector;
+
+import static jdk.internal.net.http.quic.QuicEndpoint.USE_VT_FOR_SELECTOR;
 
 
 /**
@@ -62,6 +65,9 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
     public static final long IDLE_PERIOD_MS = 1500;
 
     private static final TimeLine source = TimeSource.source();
+    private static final ScopedValue<Boolean> IS_SELECTOR =
+            ScopedValue.newInstance();
+
     final Logger debug = Utils.getDebugLogger(this::name);
 
     private final String name;
@@ -74,7 +80,11 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         this.instance = instance;
         this.name = name;
         this.timerQueue = new QuicTimerQueue(this::wakeup, debug);
-        this.thread = new QuicSelectorThread(this);
+        this.thread = QuicSelectorThread.of(USE_VT_FOR_SELECTOR, this);
+    }
+
+    public static boolean isSelectorThread() {
+        return IS_SELECTOR.orElse(Boolean.FALSE);
     }
 
     public String name() {
@@ -94,6 +104,13 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
     public QuicTimerQueue timer() {
         return timerQueue;
     }
+
+    @Override
+    public final void run() {
+        ScopedValue.where(IS_SELECTOR, true).run(this::runSelector);
+    }
+
+    abstract void runSelector();
 
     /**
      * A {@link QuicSelector} implementation based on blocking
@@ -116,6 +133,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
                 this.endpoints = endpoints;
             }
 
+            @Override
             public void run() {
                 try {
                     endpoint.channelReadLoop();
@@ -200,7 +218,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         }
 
         @Override
-        public void run() {
+        void runSelector() {
             try {
                 if (debug.on()) debug.log("started");
                 long waited = 0;
@@ -321,7 +339,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         }
 
         @Override
-        public void run() {
+        void runSelector() {
             try {
                 if (debug.on()) debug.log("started");
                 while (!done()) {
@@ -455,7 +473,8 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
      * @param unit    the timeout unit
      */
     public void awaitTermination(long timeout, TimeUnit unit) {
-        if (Thread.currentThread() == thread) {
+        if (isSelectorThread()) {
+            assert Thread.currentThread() == thread.thread();
             return;
         }
         try {
@@ -488,12 +507,37 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         shutdown();
     }
 
-    static class QuicSelectorThread extends Thread {
-        QuicSelectorThread(QuicSelector<?> selector)  {
-            super(null, selector,
-                    "Thread(%s)".formatted(selector.name()),
-                    0, false);
-            this.setDaemon(true);
+    private record QuicSelectorThread(Thread thread) {
+        void start() {
+            thread.start();
+        }
+        void join(long millis) throws InterruptedException {
+            thread.join(millis);
+        }
+        static QuicSelectorThread ofPlatform(QuicSelector<?> selector) {
+            Thread thread = Thread.ofPlatform()
+                    .name("Thread(%s)".formatted(selector.name()))
+                    .stackSize(0)
+                    .inheritInheritableThreadLocals(false)
+                    .daemon()
+                    .unstarted(selector);
+            return new QuicSelectorThread(thread);
+        }
+        static QuicSelectorThread ofVirtual(QuicSelector<?> selector) {
+            Thread thread = Thread.ofVirtual()
+                    .name("Thread(%s)".formatted(selector.name()))
+                    .inheritInheritableThreadLocals(false)
+                    .unstarted(selector);
+            return new QuicSelectorThread(thread);
+        }
+        static QuicSelectorThread of(UseVTForSelector config, QuicSelector<?> selector) {
+            return switch (config) {
+                case ALWAYS -> ofVirtual(selector);
+                case NEVER -> ofPlatform(selector);
+                default -> selector instanceof QuicNioSelector
+                        ? ofPlatform(selector)
+                        : ofVirtual(selector);
+            };
         }
     }
 

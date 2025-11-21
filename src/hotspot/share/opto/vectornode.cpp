@@ -292,121 +292,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   }
 }
 
-// Return the scalar opcode for the specified vector opcode
-// and basic type.
-int VectorNode::scalar_opcode(int sopc, BasicType bt) {
-  switch (sopc) {
-    case Op_AddReductionVI:
-    case Op_AddVI:
-      return Op_AddI;
-    case Op_AddReductionVL:
-    case Op_AddVL:
-      return Op_AddL;
-    case Op_MulReductionVI:
-    case Op_MulVI:
-      return Op_MulI;
-    case Op_MulReductionVL:
-    case Op_MulVL:
-      return Op_MulL;
-    case Op_AndReductionV:
-    case Op_AndV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_AndI;
-        case T_LONG:
-          return Op_AndL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_OrReductionV:
-    case Op_OrV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_OrI;
-        case T_LONG:
-          return Op_OrL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_XorReductionV:
-    case Op_XorV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_XorI;
-        case T_LONG:
-          return Op_XorL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MinReductionV:
-    case Op_MinV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-          assert(false, "boolean and char are signed, not implemented for Min");
-          return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_MinI;
-        case T_LONG:
-          return Op_MinL;
-        case T_FLOAT:
-          return Op_MinF;
-        case T_DOUBLE:
-          return Op_MinD;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MaxReductionV:
-    case Op_MaxV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-          assert(false, "boolean and char are signed, not implemented for Max");
-          return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_MaxI;
-        case T_LONG:
-          return Op_MaxL;
-        case T_FLOAT:
-          return Op_MaxF;
-        case T_DOUBLE:
-          return Op_MaxD;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MinVHF:
-      return Op_MinHF;
-    case Op_MaxVHF:
-      return Op_MaxHF;
-    default:
-      assert(false,
-             "Vector node %s is not handled in VectorNode::scalar_opcode",
-             NodeClassNames[sopc]);
-      return 0; // Unimplemented
-  }
-}
-
 // Limits on vector size (number of elements) for auto-vectorization.
 bool VectorNode::vector_size_supported_auto_vectorization(const BasicType bt, int size) {
   return Matcher::max_vector_size_auto_vectorization(bt) >= size &&
@@ -1518,7 +1403,7 @@ Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 // Convert fromLong to maskAll if the input sets or unsets all lanes.
-Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, bool is_mask, const TypeVect* vt) {
+static Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, const TypeVect* vt) {
   uint vlen = vt->length();
   BasicType bt = vt->element_basic_type();
   // The "maskAll" API uses the corresponding integer types for floating-point data.
@@ -1533,7 +1418,7 @@ Node* convertFromLongToMaskAll(PhaseGVN* phase, const TypeLong* bits_type, bool 
     } else {
       con = phase->intcon(con_value);
     }
-    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, is_mask);
+    Node* res = VectorNode::scalar2vector(con, vlen, maskall_bt, vt->isa_vectmask() != nullptr);
     // Convert back to the original floating-point data type.
     if (is_floating_point_type(bt)) {
       res = new VectorMaskCastNode(phase->transform(res), vt);
@@ -1547,7 +1432,7 @@ Node* VectorLoadMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // VectorLoadMask(VectorLongToMask(-1/0)) => Replicate(-1/0)
   if (in(1)->Opcode() == Op_VectorLongToMask) {
     const TypeVect* vt = bottom_type()->is_vect();
-    Node* res = convertFromLongToMaskAll(phase, in(1)->in(1)->bottom_type()->isa_long(), false, vt);
+    Node* res = convertFromLongToMaskAll(phase, in(1)->in(1)->bottom_type()->isa_long(), vt);
     if (res != nullptr) {
       return res;
     }
@@ -1725,6 +1610,34 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
+}
+
+bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
+  switch (vopc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+    case Op_MulReductionVI:
+    case Op_MulReductionVL:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+      // These are cases that all have associative operations, which can
+      // thus be reordered, allowing non-strict order reductions.
+      return false;
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
+      // Floating-point addition and multiplication are non-associative,
+      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // in auto-vectorization.
+      return true;
+    default:
+      assert(false, "not handled: %s", NodeClassNames[vopc]);
+      return true;
+  }
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
@@ -1987,10 +1900,12 @@ Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
 // l is -1 or 0.
 Node* VectorMaskToLongNode::Ideal_MaskAll(PhaseGVN* phase) {
   Node* in1 = in(1);
-  // VectorMaskToLong follows a VectorStoreMask if predicate is not supported.
+  // VectorMaskToLong follows a VectorStoreMask if it doesn't require the mask
+  // saved with a predicate type.
   if (in1->Opcode() == Op_VectorStoreMask) {
-    assert(!in1->in(1)->bottom_type()->isa_vectmask(), "sanity");
-    in1 = in1->in(1);
+    Node* mask = in1->in(1);
+    assert(!Matcher::mask_op_prefers_predicate(Opcode(), mask->bottom_type()->is_vect()), "sanity");
+    in1 = mask;
   }
   if (VectorNode::is_all_ones_vector(in1)) {
     int vlen = in1->bottom_type()->is_vect()->length();
@@ -2047,7 +1962,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // VectorLongToMask(-1/0) => MaskAll(-1/0)
   const TypeLong* bits_type = in(1)->bottom_type()->isa_long();
   if (bits_type && is_mask) {
-    Node* res = convertFromLongToMaskAll(phase, bits_type, true, dst_type);
+    Node* res = convertFromLongToMaskAll(phase, bits_type, dst_type);
     if (res != nullptr) {
       return res;
     }

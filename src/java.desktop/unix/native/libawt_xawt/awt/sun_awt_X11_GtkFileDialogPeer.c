@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,14 +324,14 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
         JNU_CHECK_EXCEPTION(env);
     }
 
-    gtk->gdk_threads_enter();
-
     const char *title = jtitle == NULL? "": (*env)->GetStringUTFChars(env, jtitle, 0);
     if (title == NULL) {
         (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Could not get title");
         return;
     }
+
+    gtk->gdk_threads_enter();
 
     if (mode == java_awt_FileDialog_SAVE) {
         /* Save action */
@@ -360,6 +360,7 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     if (jdir != NULL) {
         const char *dir = (*env)->GetStringUTFChars(env, jdir, 0);
         if (dir == NULL) {
+            gtk->gdk_threads_leave();
             (*env)->ExceptionClear(env);
             JNU_ThrowOutOfMemoryError(env, "Could not get dir");
             return;
@@ -372,6 +373,7 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
     if (jfile != NULL) {
         const char *filename = (*env)->GetStringUTFChars(env, jfile, 0);
         if (filename == NULL) {
+            gtk->gdk_threads_leave();
             (*env)->ExceptionClear(env);
             JNU_ThrowOutOfMemoryError(env, "Could not get filename");
             return;
