@@ -450,14 +450,6 @@ void ShenandoahRegionPartitions::set_capacity_of(ShenandoahFreeSetPartitionId wh
   _available[int(which_partition)] = value - _used[int(which_partition)];
 }
 
-
-void ShenandoahRegionPartitions::increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
-  shenandoah_assert_heaplocked();
-  assert (which_partition < NumPartitions, "Partition must be valid");
-  _capacity[int(which_partition)] += bytes;
-  _available[int(which_partition)] += bytes;
-}
-
 void ShenandoahRegionPartitions::transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId from_partition,
                                                                 ShenandoahFreeSetPartitionId to_partition, size_t regions) {
   shenandoah_assert_heaplocked();
@@ -499,15 +491,6 @@ void ShenandoahRegionPartitions::decrease_available(ShenandoahFreeSetPartitionId
 size_t ShenandoahRegionPartitions::get_available(ShenandoahFreeSetPartitionId which_partition) {
   assert (which_partition < NumPartitions, "Partition must be valid");
   return _available[int(which_partition)];;
-}
-
-void ShenandoahRegionPartitions::increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-  _empty_region_counts[int(which_partition)] += regions;
-}
-
-void ShenandoahRegionPartitions::decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
-  assert(_empty_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
-  _empty_region_counts[int(which_partition)] -= regions;
 }
 
 void ShenandoahRegionPartitions::one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition) {
@@ -3252,7 +3235,7 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
       continue;
     }
     r->try_recycle_under_lock();
-    assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty.");
+    assert(r->is_affiliated() || r->is_empty(), "Affiliated or empty");
     if (!r->is_empty() && r->affiliation() != affiliation) {
       continue;
     }
@@ -3292,25 +3275,28 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     return 0;
   }
 
-  for (int i = 0; i < reserved_free_region_count; i++) {
-    ShenandoahHeapRegion* r = free_heap_regions[i];
-    r->set_affiliation(affiliation);
-    r->make_regular_allocation(affiliation);
-    partitions()->one_region_is_no_longer_empty(partition);
-    if (affiliation == OLD_GENERATION) {
-      // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
-      // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
-      // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
-      // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
-      // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
-      // coalesce-and-fill processing.
-      r->end_preemptible_coalesce_and_fill();
-      _heap->old_generation()->clear_cards_for(r);
+  if (reserved_free_region_count > 0) {
+    partitions()->decrease_empty_region_counts(partition, (size_t) reserved_free_region_count);;
+    for (int i = 0; i < reserved_free_region_count; i++) {
+      ShenandoahHeapRegion* r = free_heap_regions[i];
+      r->set_affiliation(affiliation);
+      r->make_regular_allocation(affiliation);
+      if (affiliation == OLD_GENERATION) {
+        // Any OLD region allocated during concurrent coalesce-and-fill does not need to be coalesced and filled because
+        // all objects allocated within this region are above TAMS (and thus are implicitly marked).  In case this is an
+        // OLD region and concurrent preparation for mixed evacuations visits this region before the start of the next
+        // old-gen concurrent mark (i.e. this region is allocated following the start of old-gen concurrent mark but before
+        // concurrent preparations for mixed evacuations are completed), we mark this region as not requiring any
+        // coalesce-and-fill processing.
+        r->end_preemptible_coalesce_and_fill();
+        _heap->old_generation()->clear_cards_for(r);
+      }
     }
   }
 
   for (int i = 0; i < reserved_regions_count; i++) {
     ShenandoahHeapRegion* r = reserved_regions[i];
+    assert(r->affiliation() == affiliation, "Region must have been affiliated");
     // The region still have capacity for at least one lab alloc
     size_t reserved_bytes = partitions()->retire_from_partition(partition, r->index(), r->used());
     if (partition == ShenandoahFreeSetPartitionId::Mutator) {
@@ -3377,36 +3363,32 @@ ShenandoahHeapRegion* ShenandoahFreeSet::find_heap_region_for_allocation_interna
       }
       continue;
     }
+    if (r->is_empty()) {
+      result = r;
+      break;
+    }
     size_t ac_words = alloc_capacity_words(r);
     if (is_lab_alloc && ac_words != ShenandoahHeapRegion::region_size_words()) {
       // For lab, must make sure the alloc capacity is still sufficient after aligning down;
       ac_words = align_down((ac_words * HeapWordSize) >> LogHeapWordSize, MinObjAlignment);
     }
     if (ac_words >= min_free_words) {
-      if (r->is_empty()) {
-        assert(r->affiliation() == FREE, "Empty region must be free");
-        r->set_affiliation(affiliation);
-        r->make_regular_allocation(affiliation);
-        partitions()->one_region_is_no_longer_empty(partition);
-        new_region = true;
-      }
-      assert(r->affiliation() == affiliation, "Must be");
       result = r;
       break;
     }
   }
 
-  if (first_free_region != nullptr) {
-    assert(partition == ShenandoahFreeSetPartitionId::Collector || partition == ShenandoahFreeSetPartitionId::OldCollector, "Must be");
+  if (result == nullptr && use_affiliated_region_first && first_free_region != nullptr) {
     assert(first_free_region->is_empty(), "Free region must be empty");
-    first_free_region->set_affiliation(affiliation);
-    first_free_region->make_regular_allocation(affiliation);
-    partitions()->one_region_is_no_longer_empty(partition);
-    new_region = true;
     result = first_free_region;
   }
 
-  if (new_region) {
+  if (result != nullptr && result->is_empty()) {
+    assert(result->affiliation() == FREE, "New region must be free");
+    result->set_affiliation(affiliation);
+    result->make_regular_allocation(affiliation);
+    partitions()->one_region_is_no_longer_empty(partition);
+
     if (affiliation == OLD_GENERATION) {
       result->end_preemptible_coalesce_and_fill();
       _heap->old_generation()->clear_cards_for(result);

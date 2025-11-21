@@ -299,14 +299,27 @@ public:
     return _region_counts[int(which_partition)];
   }
 
-  void increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
-  inline void decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline void increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    _empty_region_counts[int(which_partition)] += regions;
+  }
+
+  inline void decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions) {
+    assert(_empty_region_counts[int(which_partition)] >= regions, "Cannot remove more regions than are present");
+    _empty_region_counts[int(which_partition)] -= regions;
+  }
+
   inline size_t get_empty_region_counts(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     return _empty_region_counts[int(which_partition)];
   }
 
-  inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    _capacity[int(which_partition)] += bytes;
+    _available[int(which_partition)] += bytes;
+  }
+
   inline void decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
   inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) {
     assert (which_partition < NumPartitions, "Partition must be valid");
@@ -634,7 +647,7 @@ public:
          OldCollectorSizeChanged || OldCollectorEmptiesChanged)) {
       _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
     }
-/* // TODO need to add these sanity back later
+ // TODO need to add these sanity back later
 #ifdef ASSERT
     if (ShenandoahHeap::heap()->mode()->is_generational()) {
       assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
@@ -642,7 +655,7 @@ public:
     }
     assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
 #endif
-*/
+
   }
 
   inline size_t max_regions() const { return _partitions.max(); }
