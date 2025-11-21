@@ -23,8 +23,10 @@
  *
  */
 
-#include "cgroupV2Subsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
+#include "cgroupV2Subsystem_linux.hpp"
+
+#include <math.h>
 
 // Constructor
 CgroupV2Controller::CgroupV2Controller(char* mount_path,
@@ -61,22 +63,39 @@ int CgroupV2CpuController::cpu_shares() {
     log_debug(os, container)("CPU Shares is: %d", -1);
     return -1;
   }
+  // cg v2 values must be in range [1-10000]
+  assert(shares_int >= 1 && shares_int <= 10000, "invariant");
 
   // CPU shares (OCI) value needs to get translated into
   // a proper Cgroups v2 value. See:
-  // https://github.com/containers/crun/blob/master/crun.1.md#cpu-controller
+  // https://github.com/containers/crun/blob/1.24/crun.1.md#cpu-controller
   //
   // Use the inverse of (x == OCI value, y == cgroupsv2 value):
-  // ((262142 * y - 1)/9999) + 2 = x
+  // y = 10^(log2(x)^2/612 + 125/612 * log2(x) - 7.0/34.0)
   //
-  int x = 262142 * shares_int - 1;
-  double frac = x/9999.0;
-  x = ((int)frac) + 2;
+  // By re-arranging it to the standard quadratic form:
+  // log2(x)^2 + 125 * log2(x) - (126 + 612 * log_10(y)) = 0
+  //
+  // Therefore, log2(x) = (-125 + sqrt( 125^2 - 4 * (-(126 + 612 * log_10(y)))))/2
+  //
+  // As a result we have the inverse (we can discount substraction of the
+  // square root value since those values result in very small numbers and the
+  // cpu shares values - OCI - are in range [2,262144]):
+  //
+  // x = 2^((-125 + sqrt(16129 + 2448* log10(y)))/2)
+  //
+  double log_multiplicand = log10(shares_int);
+  double discriminant = 16129 + 2448 * log_multiplicand;
+  double square_root = sqrt(discriminant);
+  double exponent = (-125 + square_root)/2;
+  double scaled_val = pow(2, exponent);
+  int x = (int) scaled_val;
   log_trace(os, container)("Scaled CPU shares value is: %d", x);
   // Since the scaled value is not precise, return the closest
   // multiple of PER_CPU_SHARES for a more conservative mapping
   if ( x <= PER_CPU_SHARES ) {
-     // will always map to 1 CPU
+     // Don't do the multiples of PER_CPU_SHARES mapping since we
+     // have a value <= PER_CPU_SHARES
      log_debug(os, container)("CPU Shares is: %d", x);
      return x;
   }
@@ -181,7 +200,7 @@ jlong CgroupV2MemoryController::memory_usage_in_bytes() {
   return (jlong)memusage;
 }
 
-jlong CgroupV2MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
+jlong CgroupV2MemoryController::memory_soft_limit_in_bytes(julong upper_bound) {
   jlong mem_soft_limit;
   CONTAINER_READ_NUMBER_CHECKED_MAX(reader(), "/memory.low", "Memory Soft Limit", mem_soft_limit);
   return mem_soft_limit;
@@ -224,19 +243,19 @@ jlong CgroupV2MemoryController::cache_usage_in_bytes() {
 // respectively. In order to properly report a cgroup v1 like
 // compound value we need to sum the two values. Setting a swap limit
 // without also setting a memory limit is not allowed.
-jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong phys_mem,
-                                                               julong host_swap /* unused in cg v2 */) {
+jlong CgroupV2MemoryController::memory_and_swap_limit_in_bytes(julong upper_mem_bound,
+                                                               julong upper_swap_bound /* unused in cg v2 */) {
   jlong swap_limit;
   bool is_ok = reader()->read_number_handle_max("/memory.swap.max", &swap_limit);
   if (!is_ok) {
     // Some container tests rely on this trace logging to happen.
     log_trace(os, container)("Swap Limit failed: %d", OSCONTAINER_ERROR);
     // swap disabled at kernel level, treat it as no swap
-    return read_memory_limit_in_bytes(phys_mem);
+    return read_memory_limit_in_bytes(upper_mem_bound);
   }
   log_trace(os, container)("Swap Limit is: " JLONG_FORMAT, swap_limit);
   if (swap_limit >= 0) {
-    jlong memory_limit = read_memory_limit_in_bytes(phys_mem);
+    jlong memory_limit = read_memory_limit_in_bytes(upper_mem_bound);
     assert(memory_limit >= 0, "swap limit without memory limit?");
     return memory_limit + swap_limit;
   }
@@ -252,7 +271,7 @@ jlong memory_swap_current_value(CgroupV2Controller* ctrl) {
   return (jlong)swap_current;
 }
 
-jlong CgroupV2MemoryController::memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) {
+jlong CgroupV2MemoryController::memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
   jlong memory_usage = memory_usage_in_bytes();
   if (memory_usage >= 0) {
       jlong swap_current = memory_swap_current_value(reader());
@@ -276,7 +295,7 @@ jlong memory_limit_value(CgroupV2Controller* ctrl) {
  *    memory limit in bytes or
  *    -1 for unlimited, OSCONTAINER_ERROR for an error
  */
-jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
+jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong upper_bound) {
   jlong limit = memory_limit_value(reader());
   if (log_is_enabled(Trace, os, container)) {
     if (limit == -1) {
@@ -287,18 +306,18 @@ jlong CgroupV2MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
   }
   if (log_is_enabled(Debug, os, container)) {
     julong read_limit = (julong)limit; // avoid signed/unsigned compare
-    if (limit < 0 || read_limit >= phys_mem) {
+    if (limit < 0 || read_limit >= upper_bound) {
       const char* reason;
       if (limit == -1) {
         reason = "unlimited";
       } else if (limit == OSCONTAINER_ERROR) {
         reason = "failed";
       } else {
-        assert(read_limit >= phys_mem, "Expected mem limit to exceed host memory");
+        assert(read_limit >= upper_bound, "Expected mem limit to exceed upper memory bound");
         reason = "ignored";
       }
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
-                               reason, limit, phys_mem);
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", upper bound is " JLONG_FORMAT,
+                               reason, limit, upper_bound);
     }
   }
   return limit;
@@ -327,7 +346,7 @@ bool CgroupV2Controller::needs_hierarchy_adjustment() {
   return strcmp(_cgroup_path, "/") != 0;
 }
 
-void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
+void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong upper_mem_bound) {
   jlong swap_current = memory_swap_current_value(reader());
   jlong swap_limit = memory_swap_limit_value(reader());
 

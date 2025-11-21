@@ -38,9 +38,9 @@
 #include "runtime/java.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
-#include "utilities/resourceHash.hpp"
 
 PackageEntry::PackageEntry(Symbol* name, ModuleEntry* module) :
   _name(name),
@@ -212,7 +212,7 @@ PackageEntryTable::~PackageEntryTable() {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef ResourceHashtable<
+typedef HashTable<
   const PackageEntry*,
   PackageEntry*,
   557, // prime number

@@ -739,7 +739,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             if (jvmci_name != nullptr) {
               size_t size = ::strlen(blob_name) + ::strlen(" jvmci_name=") + ::strlen(jvmci_name) + 1;
               char* new_blob_name = (char*)os::malloc(size, mtInternal);
-              os::snprintf(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
+              os::snprintf_checked(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
               os::free((void*)blob_name);
               blob_name = new_blob_name;
             }

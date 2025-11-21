@@ -26,6 +26,10 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "cppstdlib/cstddef.hpp"
+#include "cppstdlib/limits.hpp"
+#include "cppstdlib/type_traits.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -33,10 +37,7 @@
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
-#include <cstddef>
 #include <cstdint>
-#include <limits>
-#include <type_traits>
 
 class oopDesc;
 
@@ -85,6 +86,9 @@ class oopDesc;
 // they cannot be defined and potential callers will fail to compile.
 #define NONCOPYABLE(C) C(C const&) = delete; C& operator=(C const&) = delete /* next token must be ; */
 
+// offset_of was a workaround for UB with offsetof uses that are no longer an
+// issue.  This can be removed once all uses have been converted.
+#define offset_of(klass, field) offsetof(klass, field)
 
 //----------------------------------------------------------------------------------------------------
 // Printf-style formatters for fixed- and variable-width types as pointers and
@@ -132,6 +136,7 @@ class oopDesc;
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 #define UINT64_FORMAT_0          "%016"       PRIx64
+#define PHYS_MEM_TYPE_FORMAT     "%"          PRIu64
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
@@ -414,6 +419,11 @@ const uintx max_uintx = (uintx)-1;
 
 typedef unsigned int uint;   NEEDS_CLEANUP
 
+// This typedef is to address the issue of running a 32-bit VM. In this case the amount
+// of physical memory may not fit in size_t, so we have to have a larger type. Once 32-bit
+// is deprecated, one can use size_t.
+typedef uint64_t physical_memory_size_type;
+
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
 
@@ -533,6 +543,7 @@ const intptr_t NULL_WORD = 0;
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
+const int max_method_parameter_length = 255; // JVM spec, 22nd ed. section 4.3.3 (p.83)
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
@@ -641,19 +652,11 @@ inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low (jlong* value, jint low )    { *value &= (jlong)0xffffffff << 32;
-                                                   *value |= (jlong)(julong)(juint)low; }
-
-inline void set_high(jlong* value, jint high)    { *value &= (jlong)(julong)(juint)0xffffffff;
-                                                   *value |= (jlong)high       << 32; }
-
 inline jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
+  // First cast jint values to juint, so cast to julong will zero-extend.
+  julong high = (julong)(juint)h << 32;
+  julong low = (julong)(juint)l;
+  return (jlong)(high | low);
 }
 
 union jlong_accessor {
@@ -1009,17 +1012,6 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
-enum LockingMode {
-  // Use only heavy monitors for locking
-  LM_MONITOR     = 0,
-  // Legacy stack-locking, with monitors as 2nd tier
-  LM_LEGACY      = 1,
-  // New lightweight locking, with monitors as 2nd tier
-  LM_LIGHTWEIGHT = 2
-};
-
-extern const int LockingMode;
-
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1262,6 +1254,32 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
+// Some convenient bit shift operations that accepts a BasicType as the last
+// argument. These avoid potential mistakes with overloaded functions only
+// distinguished by lhs argument type.
+#define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
+inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
+  if (bt == T_INT) {                                   \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
+  }                                                    \
+  assert(bt == T_LONG, "unsupported basic type");      \
+  return FUNC(lhs, rhs);                              \
+}
+
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_left)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right_unsigned)
+
+#undef JAVA_INTERGER_SHIFT_BASIC_TYPE
+
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
 // Checks overflow conditions and saturates the result to min_jint/max_jint.
@@ -1332,7 +1350,7 @@ typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
 //----------------------------------------------------------------------------------------------------
-// Default hash/equals functions used by ResourceHashtable
+// Default hash/equals functions used by HashTable
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);
@@ -1355,6 +1373,14 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 // Converts any type T to a reference type.
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
+
+// This provides a workaround for static_assert(false) in discarded or
+// otherwise uninstantiated places.  Instead use
+//   static_assert(DependentAlwaysFalse<T>, "...")
+// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
+// using have implemented that change as a DR:
+// https://cplusplus.github.io/CWG/issues/2518.html
+template<typename T> inline constexpr bool DependentAlwaysFalse = false;
 
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
