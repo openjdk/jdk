@@ -3240,12 +3240,12 @@ int ShenandoahFreeSet::reserve_alloc_regions(ShenandoahFreeSetPartitionId partit
 
 template<typename Iter>
 int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahFreeSetPartitionId partition, int const regions_to_reserve, ShenandoahHeapRegion** reserved_regions) {
+  ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
   bool use_affiliated_first = partition != ShenandoahFreeSetPartitionId::Mutator;
   ShenandoahHeapRegion* free_heap_regions[ShenandoahAllocator::MAX_ALLOC_REGION_COUNT];
   int free_heap_region_count = 0;
-
-  ShenandoahAffiliation affiliation = partition == ShenandoahFreeSetPartitionId::OldCollector ? OLD_GENERATION : YOUNG_GENERATION;
   int reserved_regions_count = 0;
+
   for (idx_t idx = iterator.current(); iterator.has_next() && reserved_regions_count < regions_to_reserve; idx = iterator.next()) {
     ShenandoahHeapRegion* r = _heap->get_region(idx);
     if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
@@ -3286,7 +3286,7 @@ int ShenandoahFreeSet::reserve_alloc_regions_internal(Iter iterator, ShenandoahF
     }
   }
 
-  if (reserved_free_region_count == 0) {
+  if (reserved_regions_count == 0) {
     return 0;
   }
 
