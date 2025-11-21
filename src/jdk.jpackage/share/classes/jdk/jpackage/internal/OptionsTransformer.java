@@ -26,7 +26,6 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.cli.StandardOption.ADDITIONAL_LAUNCHERS;
 import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
-import static jdk.jpackage.internal.cli.StandardOption.DESCRIPTION;
 import static jdk.jpackage.internal.cli.StandardOption.ICON;
 import static jdk.jpackage.internal.cli.StandardOption.NAME;
 import static jdk.jpackage.internal.cli.StandardOption.PREDEFINED_APP_IMAGE;
@@ -60,18 +59,8 @@ record OptionsTransformer(Options mainOptions, Optional<ExternalApplication> ext
                                 NAME, li.name(),
                                 // This should prevent the code building the Launcher instance
                                 // from the Options object from trying to create a startup info object.
-                                PREDEFINED_APP_IMAGE, PREDEFINED_APP_IMAGE.getFrom(mainOptions),
-                                //
-                                // For backward compatibility, descriptions of the additional
-                                // launchers in the predefined app image will be set to
-                                // the application description, if available, or to the name
-                                // of the main launcher in the predefined app image.
-                                //
-                                // All launchers in the predefined app image will have the same description.
-                                // This is wrong and should be revised.
-                                //
-                                DESCRIPTION, DESCRIPTION.findIn(mainOptions).orElseGet(ea::appName)
-                            )));
+                                PREDEFINED_APP_IMAGE, PREDEFINED_APP_IMAGE.getFrom(mainOptions)
+                        )));
                     }).toList()
             );
             return Options.concat(

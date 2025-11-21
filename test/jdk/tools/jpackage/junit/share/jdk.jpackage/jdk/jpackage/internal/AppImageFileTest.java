@@ -24,6 +24,7 @@
 package jdk.jpackage.internal;
 
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.DESCRIPTION;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_NAME;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LINUX_LAUNCHER_SHORTCUT;
@@ -258,6 +259,11 @@ public class AppImageFileTest {
                 return this;
             }
 
+            LauncherBuilder description(String v) {
+                description = v;
+                return this;
+            }
+
             LauncherBuilder addExtra(Map<String, String> v) {
                 extra.add(v);
                 return this;
@@ -281,7 +287,7 @@ public class AppImageFileTest {
                         Optional.empty(),
                         List.of(),
                         service,
-                        null,
+                        description(),
                         Optional.empty(),
                         null,
                         extra.asStringValues());
@@ -295,6 +301,10 @@ public class AppImageFileTest {
                 }
             }
 
+            private String description() {
+                return Optional.ofNullable(description).orElseGet(this::name);
+            }
+
             private boolean isMainLauncher() {
                 return name.isEmpty();
             }
@@ -305,11 +315,13 @@ public class AppImageFileTest {
                     allProps.add(LAUNCHER_AS_SERVICE, Boolean.valueOf(service));
                 }
                 allProps.add(LAUNCHER_NAME, name());
+                allProps.add(DESCRIPTION, description());
                 return LauncherInfo.create(allProps.asObjectValues());
             }
 
             private final Optional<String> name;
             private boolean service;
+            private String description;
             private final ExtraPropertyBuilder extra = new ExtraPropertyBuilder();
         }
 
@@ -435,8 +447,28 @@ public class AppImageFileTest {
                 createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
                     // Missing 'app-version' element.
                     return List.of(
-                            "<main-launcher name='D'/>",
+                            "<main-launcher name='D'>",
+                            "  <description>Foo</description>",
+                            "</main-launcher>",
                             "<main-class>Hello</main-class>"
+                    );
+                }),
+                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
+                    // Missing 'description' element in the main launcher.
+                    return List.of(
+                            "<app-version>321</app-version>",
+                            "<main-launcher name='B'/>"
+                    );
+                }),
+                createWithHeader(AppImageFile.getPlatform(os), AppImageFile.getVersion(), () -> {
+                    // Missing 'description' element in the additional launcher.
+                    return List.of(
+                            "<app-version>123</app-version>",
+                            "<main-launcher name='B'>",
+                            "  <description>Foo</description>",
+                            "</main-launcher>",
+                            "<main-class>Hello</main-class>",
+                            "<add-launcher name='C'/>"
                     );
                 })
         ));
@@ -451,7 +483,9 @@ public class AppImageFileTest {
     private static List<String> createValidBodyWithHeader(String platform, String version) {
         return createWithHeader(platform, version, () -> {
             return List.of(
-                    "<main-launcher name='D'/>",
+                    "<main-launcher name='D'>",
+                    "  <description>Blah-Blah-Blah</description>",
+                    "</main-launcher>",
                     "<app-version>100</app-version>",
                     "<main-class>Hello</main-class>"
             );
@@ -483,16 +517,24 @@ public class AppImageFileTest {
                 "<signed>true</signed>",
                 "<app-store>False</app-store>",
                 "<add-launcher name='add-launcher'>",
+                "  <description>Quick brown fox</description>",
                 "  <service>true</service>",
                 "  <linux-shortcut>true</linux-shortcut>",
                 "  <win-shortcut>false</win-shortcut>",
                 "  <win-menu>app-dir</win-menu>",
                 "</add-launcher>",
-                "<main-launcher name='Bar'/>"
+                "<main-launcher name='Bar'>",
+                "  <description>Bar launcher description</description>",
+                "</main-launcher>"
         );
 
         Supplier<AppBuilder.LauncherBuilder> appBuilder = () -> {
-            return build().mainClass("Foo").version("1.34").appName("Bar").addlauncher("add-launcher").service(true);
+            return build()
+                    .mainClass("Foo")
+                    .version("1.34")
+                    .appName("Bar")
+                    .mainlauncher().description("Bar launcher description").commit()
+                    .addlauncher("add-launcher").service(true).description("Quick brown fox");
         };
 
         List<ReadTestSpec> testCases = new ArrayList<>();
@@ -513,19 +555,24 @@ public class AppImageFileTest {
     private static Stream<ReadTestSpec> testValidXml() {
         return Stream.concat(platformSpecificProperties().stream(), Stream.of(
                 ReadTestSpec.build().expect(
-                        build().version("72").appName("Y").mainClass("main.Class")
+                        build().version("72").mainlauncher().description("Blah-Blah-Blah").commit().appName("Y").mainClass("main.Class")
                 ).xml(
-                        "<main-launcher name='Y'/>",
+                        "<main-launcher name='Y'>",
+                        "  <description>Blah-Blah-Blah</description>",
+                        "</main-launcher>",
                         "<app-version>72</app-version>",
                         "<main-class>main.Class</main-class>"
                 ),
                 ReadTestSpec.build().os(OperatingSystem.LINUX).expect(
                         build()
+                        .mainlauncher().description("Main launcher description").commit()
                         .addlauncher("another-launcher")
                                 .addExtra(LINUX_LAUNCHER_SHORTCUT, new LauncherShortcut(LauncherShortcutStartupDirectory.APP_DIR))
+                                .description("another-launcher description")
                                 .commit()
                         .addlauncher("service-launcher")
                                 .service(true)
+                                .description("service-launcher description")
                                 .commit()
                 ).xml(
                         "<app-version>1.2</app-version>",
@@ -536,13 +583,17 @@ public class AppImageFileTest {
                         "<signed>true</signed>",
                         "<add-launcher name='service-launcher' service='true'>",
                         "  <linux-shortcut><nested>foo</nested></linux-shortcut>",
+                        "  <description>service-launcher description</description>",
                         "</add-launcher>",
                         "<add-launcher name='another-launcher'>",
                         "  <linux-shortcut>true</linux-shortcut>",
                         "  <linux-shortcut>app-<!-- This is a comment -->dir</linux-shortcut>",
+                        "  <description>another-launcher description</description>",
                         "</add-launcher>",
                         "<main-launcher name='Bar'/>",
-                        "<main-launcher name='Foo'/>"
+                        "<main-launcher name='Foo'>",
+                        "  <description>Main launcher description</description>",
+                        "</main-launcher>"
                 )
         ).map(ReadTestSpec.Builder::create));
     }

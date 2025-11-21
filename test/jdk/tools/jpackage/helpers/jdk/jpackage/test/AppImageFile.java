@@ -23,9 +23,9 @@
 package jdk.jpackage.test;
 
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
@@ -75,8 +77,8 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     public Map<String, Map<String, String>> addLaunchers() {
         var map = launchers.entrySet().stream().filter(e -> {
             return !e.getKey().equals(mainLauncherName);
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (k, _) -> {
-            throw new IllegalStateException(String.format("Duplicate key %s", k));
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (v, _) -> {
+            throw new IllegalStateException(String.format("Duplicate value [%s]", v));
         }, LinkedHashMap::new));
         return Collections.unmodifiableMap(map);
     }
@@ -93,6 +95,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
 
             xml.writeStartElement("main-launcher");
             xml.writeAttribute("name", mainLauncherName);
+            writeLauncherDescription(xml, mainLauncherName);
             xml.writeEndElement();
 
             mainLauncherClassName.ifPresent(toConsumer(v -> {
@@ -113,6 +116,9 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
                 xml.writeStartElement("add-launcher");
                 xml.writeAttribute("name", al);
                 var props = launchers.get(al);
+                if (!props.containsKey("description")) {
+                    writeLauncherDescription(xml, al);
+                }
                 for (var prop : props.keySet().stream().sorted().toList()) {
                     xml.writeStartElement(prop);
                     xml.writeCharacters(props.get(prop));
@@ -158,8 +164,8 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
             }, launcherProps -> {
                 launcherProps.remove("name");
                 return Collections.unmodifiableMap(launcherProps);
-            }, (k, _) -> {
-                throw new IllegalStateException(String.format("Duplicate key %s", k));
+            }, (v, _) -> {
+                throw new IllegalStateException(String.format("Duplicate value [%s]", v));
             }, LinkedHashMap::new));
 
             return new AppImageFile(
@@ -171,6 +177,12 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
                     Collections.unmodifiableMap(launchers));
 
         }).get();
+    }
+
+    private static void writeLauncherDescription(XMLStreamWriter xml, String description) throws XMLStreamException {
+        xml.writeStartElement("description");
+        xml.writeCharacters(Objects.requireNonNull(description));
+        xml.writeEndElement();
     }
 
     private static HashMap<String, String> readLauncherProperties(XPath xPath, Element launcherElement) throws XPathExpressionException {

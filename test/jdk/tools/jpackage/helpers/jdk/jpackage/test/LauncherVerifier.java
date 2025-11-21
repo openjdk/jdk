@@ -444,7 +444,7 @@ public final class LauncherVerifier {
         return PropertyFinder.findLauncherProperty(cmd, launcherName,
                 PropertyFinder.cmdlineOptionWithValue("--description"),
                 PropertyFinder.launcherPropertyFile("description"),
-                PropertyFinder.nop()
+                PropertyFinder.appImageFileLauncher(cmd, launcherName, "description")
         ).orElseGet(() -> {
             if (cmd.isMainLauncher(launcherName)) {
                 return cmd.mainLauncherName();

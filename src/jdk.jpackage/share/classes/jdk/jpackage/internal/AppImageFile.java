@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.DESCRIPTION;
 import static jdk.jpackage.internal.cli.StandardAppImageFileOption.LAUNCHER_NAME;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
@@ -322,6 +323,7 @@ final class AppImageFile {
             if (launcher.isService()) {
                 standardProps.add(Map.entry(LAUNCHER_AS_SERVICE.getName(), Boolean.TRUE.toString()));
             }
+            standardProps.add(Map.entry(DESCRIPTION.getName(), launcher.description()));
 
             return Stream.concat(
                     standardProps.stream(),
