@@ -141,8 +141,9 @@ import sun.nio.cs.UTF_8;
  *       Case folding is locale-independent and language-neutral and may map a single code
  *       point to multiple code points (1:M mappings). For example, the German sharp
  *       s ({@code U+00DF}) is folded to the sequence {@code "ss"}.
- *       Use these methods when you need Unicode-compliant caseless matching,
- *       searching, or ordering.</li>
+ *       Use these methods when you need Unicode-compliant
+ *       <a href="https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790">
+ *       caseless matching</a>, searching, or ordering.</li>
  * </ul>
  *
  * <p>Unless otherwise noted, methods for comparing Strings do not take locale into
@@ -2253,6 +2254,7 @@ public final class String
      *          the same sequence of characters as this string under Unicode case
      *          folding; {@code false} otherwise.
      *
+     * @spec    https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790 Unicode Caseless Matching
      * @see     #compareToFoldCase(String)
      * @see     #equalsIgnoreCase(String)
      * @since   26
@@ -2451,6 +2453,8 @@ public final class String
      * @return  a negative integer, zero, or a positive integer as the specified
      *          String is greater than, equal to, or less than this String,
      *          ignoring case considerations by case folding.
+     *
+     * @spec    https://www.unicode.org/versions/latest/core-spec/chapter-5/#G21790 Unicode Caseless Matching
      * @see     java.text.Collator
      * @see     #compareToIgnoreCase(String)
      * @see     #equalsFoldCase(String)
