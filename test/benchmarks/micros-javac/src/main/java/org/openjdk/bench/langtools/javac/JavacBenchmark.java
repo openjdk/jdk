@@ -188,7 +188,7 @@ public class JavacBenchmark {
                 };
             }
         }) {
-            String[] cmdLine = new String[] {"-XDcompilePolicy=simple", "-implicit:none", "-nowarn", "--module-source-path", root.toString(), "-d", root.toString(), "-XDignore.symbol.file=true", "@" + srcList.toString()};
+            String[] cmdLine = new String[] {"-source", "25", "-XDcompilePolicy=simple", "-implicit:none", "-nowarn", "--module-source-path", root.toString(), "-d", root.toString(), "-XDignore.symbol.file=true", "@" + srcList.toString()};
             if (new Main("javac").compile(cmdLine, ctx).exitCode != 0) {
                 throw new IOException("compilation failed");
             }
