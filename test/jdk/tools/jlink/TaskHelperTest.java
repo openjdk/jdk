@@ -74,7 +74,7 @@ public class TaskHelperTest {
     private static boolean mainFlag = false;
     private static String compressArgValue;
 
-    public record ArgTestCase(String cmdLine, String[] tokens, String pluginArgValue, String mainArgValue, boolean mainFlagSet) {};
+    public record ArgTestCase(String cmdLine, String[] tokens, String pluginArgValue, String mainArgValue, boolean mainFlagSet) {}
 
     public static class TestPluginWithRawOption implements Plugin {
         @Override
@@ -265,18 +265,18 @@ public class TaskHelperTest {
     @Test
     public void testCompressInvalidValue() {
         var invalidOptValues = List.of(
-                new CompressTestCase(new String[] {"-c", null}, null),
-                new CompressTestCase(new String[] {"-c", "3"}, "3"),
+                new CompressTestCase(new String[] {"-c"}, null),
+                new CompressTestCase(new String[] {"-c 3"}, "3"),
                 new CompressTestCase(new String[] {"--compress=42"}, "42"),
                 new CompressTestCase(new String[] {"--compress=zip-"}, "zip-"),
                 new CompressTestCase(new String[] {"--compress=zip-10"}, "zip-10")
         );
 
-        for (var args : invalidOptValues) {
+        for (var testCase : invalidOptValues) {
             try {
-                var remaining = optionsHelper.handleOptions(this, args.tokens);
+                var remaining = optionsHelper.handleOptions(this, testCase.tokens);
                 assertTrue(remaining.isEmpty());
-                assertEquals(args.expectedCompressValue, compressArgValue);
+                assertEquals(testCase.expectedCompressValue, compressArgValue);
             } catch (BadArgs e) {
                 // expected
             }
