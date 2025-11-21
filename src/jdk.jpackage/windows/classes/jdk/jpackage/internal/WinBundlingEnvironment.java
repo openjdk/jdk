@@ -46,7 +46,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createMsiPackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinMsiPackage,
+                WinFromOpions.createWinMsiPackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
@@ -60,7 +60,7 @@ public class WinBundlingEnvironment extends DefaultBundlingEnvironment {
     private static void createExePackage(Options options, WinSystemEnvironment sysEnv) {
 
         createNativePackage(options,
-                WinFromOpions::createWinExePackage,
+                WinFromOpions.createWinExePackage(options),
                 buildEnv()::create,
                 WinPackagingPipeline.build(),
                 (env, pkg, outputDir) -> {
