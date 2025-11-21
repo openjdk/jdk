@@ -530,7 +530,7 @@ public final class StandardOption {
                 });
             }))
             .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
-            .converterExceptionFormatString("error.invalid-option-value")
+            .converterExceptionFormatString("error.parameter-not-launcher-shortcut-dir")
             .converter(mainLauncherShortcutConv())
             .defaultOptionalValue(new LauncherShortcut(LauncherShortcutStartupDirectory.DEFAULT))
             .valuePattern("shortcut startup directory");
@@ -629,8 +629,8 @@ public final class StandardOption {
                 .converterExceptionFactory((optionName, optionValue, formatString, cause) -> {
                     final var theCause = cause.orElseThrow();
                     if (theCause instanceof AddLauncherSyntaxException) {
-                        return ERROR_WITHOUT_CONTEXT.create(optionName,
-                                optionValue, "ERR_NoAddLauncherName", cause);
+                        return ERROR_WITH_VALUE_AND_OPTION_NAME.create(optionName,
+                                optionValue, "error.parameter-add-launcher-malformed", cause);
                     } else {
                         return (RuntimeException)theCause;
                     }
