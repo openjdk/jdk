@@ -1699,7 +1699,7 @@ void PhaseIdealLoop::LoopExitTest::build() {
   if (!_loop->is_invariant(_limit)) { // Limit must be loop-invariant
      return;
   }
-  if (!_loop->is_invariant(_incr)) { // Trip counter must be loop-variant
+  if (_loop->is_invariant(_incr)) { // Trip counter must be loop-variant
     return;
   }
 
