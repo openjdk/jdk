@@ -158,6 +158,8 @@ public final class QuicCubicCongestionController extends QuicBaseCongestionContr
         lastFullWindow = congestionRecoveryStartTime;
         // ((wmax_segments - cwnd_segments) / C) ^ (1/3) seconds
         kNanos = (long)(Math.cbrt((wMaxBytes - congestionWindow) / C / maxDatagramSize) * 1_000_000_000);
+        // kNanos may be negative if we reduced the window below minimum,
+        // and fast convergence was used. This is acceptable.
         if (Log.quicCC()) {
             Log.logQuic(dbgTag + " Congestion: ssThresh: " + ssThresh +
                     ", in flight: " + bytesInFlight +
